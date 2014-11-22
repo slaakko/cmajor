@@ -1,0 +1,184 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+#include <Cm.Parsing/Scope.hpp>
+#include <Cm.Parsing/Namespace.hpp>
+#include <Cm.Parsing/Utility.hpp>
+#include <Cm.Util/TextUtils.hpp>
+
+namespace Cm { namespace Parsing {
+
+Scope::Scope(const std::string& name_, Scope* enclosingScope_): ParsingObject(name_, enclosingScope_), fullNameComputed(false)
+{
+}
+
+std::string Scope::FullName() const
+{
+    if (!fullNameComputed)
+    {
+        Scope* parentScope = EnclosingScope();
+        std::string parentScopeFullName = parentScope ? parentScope->FullName() : "";
+        fullName = parentScopeFullName.empty() ? Name() : parentScopeFullName + "." + Name();
+        fullNameComputed = true;
+    }
+    return fullName;
+}
+
+void Scope::Accept(Visitor& visitor)
+{
+    FullNameMapIt e = fullNameMap.end();
+    for (FullNameMapIt i = fullNameMap.begin(); i != e; ++i)
+    {
+        ParsingObject* object = i->second;
+        object->Accept(visitor);
+    }
+}
+
+void Scope::Add(ParsingObject* object)
+{
+    Own(object);
+    std::string objectFullName = object->FullName();
+    if (!fullNameMap.insert(std::make_pair(objectFullName, object)).second)
+    {
+        std::string msg = "object '" + objectFullName + "' already exists (detected in scope '" + FullName() + "')";
+        throw std::runtime_error(msg);
+    }
+    if (!shortNameMap.insert(std::make_pair(object->Name(), object)).second)
+    {
+        std::string msg = "object '" + objectFullName + "' already exists (detected in scope '" + FullName() + "')";
+        throw std::runtime_error(msg);
+    }
+}
+
+Scope* Scope::GetGlobalScope() const
+{
+    Scope* globalScope = const_cast<Scope*>(this);
+    while (globalScope->EnclosingScope())
+    {
+        globalScope = globalScope->EnclosingScope();
+    }
+    return globalScope;
+}
+
+void Scope::AddNamespace(Namespace* ns)
+{
+    Own(ns);
+    Namespace* parent = GetGlobalScope()->Ns();
+    std::vector<std::string> nameComponents = Cm::Util::Split(ns->FullName(), '.');
+    if (nameComponents.empty())
+    {
+        throw std::runtime_error("namespace components empty");
+    }
+    int n = int(nameComponents.size());
+    for (int i = 0; i < n - 1; ++i)
+    {
+        const std::string& namespaceName = nameComponents[i];
+        Scope* enclosingScope = parent->GetScope();
+        ParsingObject* object = enclosingScope->Get(namespaceName);
+        if (object)
+        {
+            if (object->IsNamespace())
+            {
+                parent = static_cast<Namespace*>(object);
+            }
+            else
+            {
+                throw std::runtime_error("object '" + namespaceName + "' does not denote a namespace");
+            }
+        }
+        else
+        {
+            parent = new Namespace(namespaceName, enclosingScope);
+            Own(parent);
+            parent->GetScope()->SetName(namespaceName);
+            parent->GetScope()->SetNs(parent);
+            enclosingScope->Add(parent);
+        }
+    }
+    std::string name = nameComponents[n - 1];
+    ns->SetName(name);
+    ns->GetScope()->SetName(name);
+    ns->SetEnclosingScope(parent->GetScope());
+    ns->GetScope()->SetEnclosingScope(parent->GetScope());
+    parent->GetScope()->Add(ns);
+}
+
+ParsingObject* Scope::GetQualifiedObject(const std::string& qualifiedObjectName) const
+{
+    std::vector<std::string> components = Cm::Util::Split(qualifiedObjectName, '.');
+    int n = int(components.size());
+    Scope* scope = const_cast<Scope*>(this);
+    while (scope)
+    {
+        Scope* subScope = scope;
+        int i = 0;
+        ShortNameMapIt it = subScope->shortNameMap.find(components[i]);
+        while (it != subScope->shortNameMap.end())
+        {
+            ParsingObject* object = it->second;
+            if (i == n - 1)
+            {
+                return object;
+            }
+            ++i;
+            subScope = object->GetScope();
+            it = subScope->shortNameMap.find(components[i]);
+        }
+        scope = scope->EnclosingScope();
+    }
+    return nullptr;
+}
+
+ParsingObject* Scope::Get(const std::string& objectName) const
+{
+    if (objectName.find('.') != std::string::npos)
+    {
+        FullNameMapIt i = fullNameMap.find(objectName);
+        if (i != fullNameMap.end())
+        {
+            return i->second;
+        }
+        else
+        {
+            ParsingObject* object = GetQualifiedObject(objectName);
+            if (object)
+            {
+                return object;
+            }
+        }
+    }
+    else
+    {
+        ShortNameMapIt i = shortNameMap.find(objectName);
+        if (i != shortNameMap.end())
+        {
+            return i->second;
+        }
+    }
+    return nullptr;
+}
+
+Namespace* Scope::GetNamespace(const std::string& fullNamespaceName) const
+{
+    ParsingObject* object = GetQualifiedObject(fullNamespaceName);
+    if (object)
+    {
+        if (object->IsNamespace())
+        {
+            return static_cast<Namespace*>(object);
+        }
+        else
+        {
+            throw std::runtime_error("object '" + fullNamespaceName + "' is not a namespace");
+        }
+    }
+    return nullptr;
+}
+
+} } // namespace Cm::Parsing

@@ -1,0 +1,91 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+#include <Cm.Parsing/Action.hpp>
+#include <Cm.Parsing/Visitor.hpp>
+#include <cctype>
+
+namespace Cm { namespace Parsing {
+
+ParsingAction::~ParsingAction()
+{
+}
+
+FailureAction::~FailureAction()
+{
+}
+
+PreCall::~PreCall()
+{
+}
+
+PostCall::~PostCall()
+{
+}
+
+ActionParser::ActionParser(const std::string& name_, Parser* child_):
+    UnaryParser(name_, child_, child_->Info()), successCode(), failCode(), action(), failureAction() 
+{
+}
+
+ActionParser::ActionParser(const std::string& name_, Cm::Parsing::CppObjectModel::CompoundStatement* successCode_, Parser* child_): 
+    UnaryParser(name_, child_, child_->Info()), successCode(successCode_), failCode(), action(), failureAction() 
+{
+}
+
+ActionParser::ActionParser(const std::string& name_, Cm::Parsing::CppObjectModel::CompoundStatement* successCode_, Cm::Parsing::CppObjectModel::CompoundStatement* failCode_, 
+    Parser* child_): UnaryParser(name_, child_, child_->Info()), successCode(successCode_), failCode(failCode_), action(), failureAction() 
+{
+}
+
+std::string ActionParser::MethodName() const 
+{ 
+    return Name() + "Action"; 
+}
+
+std::string ActionParser::VariableName() const 
+{ 
+    return (Name().length() > 0 ? std::string(1, std::tolower(Name()[0])) + Name().substr(1) : Name()) + "ActionParser"; 
+}
+
+Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack)
+{
+    Span span = scanner.GetSpan();
+    Match match = Child()->Parse(scanner, stack);
+    if (match.Hit())
+    {
+        if (action)
+        {
+            bool pass = true;
+            span.SetEnd(scanner.GetSpan().Start());
+            const char* matchBegin = scanner.Start() + span.Start();
+            const char* matchEnd = scanner.Start() + span.End();
+            (*action)(matchBegin, matchEnd, span, scanner.FileName(), pass);
+            if (!pass)
+            {
+                return Match::Nothing();
+            }
+        }
+    }
+    else if (failureAction)
+    {
+        (*failureAction)();
+    }
+    return match;
+}
+
+void ActionParser::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    Child()->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
+
+} } // namespace Cm::Parsing
