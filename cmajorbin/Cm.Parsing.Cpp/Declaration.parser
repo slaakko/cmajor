@@ -1,0 +1,119 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[cpp]#include <Cm.Parsing.Cpp/Declarator.hpp>
+[cpp]#include <Cm.Parsing.Cpp/Identifier.hpp>
+[cpp]#include <Cm.Parsing.Cpp/Expression.hpp>
+[hpp]#include <Cm.Parsing.CppObjectModel/Declaration.hpp>
+[cpp]#include <Cm.Parsing.CppObjectModel/Type.hpp>
+
+namespace Cm.Parsing.Cpp
+{
+    [cpp]using namespace Cm::Parsing::CppObjectModel;
+
+    grammar DeclarationGrammar
+    {
+        using stdlib.identifier;
+        using DeclaratorGrammar.InitDeclaratorList;
+        using DeclaratorGrammar.TypeId;
+        using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
+        using ExpressionGrammar.AssignmentExpression;
+        
+        BlockDeclaration: Cm::Parsing::CppObjectModel::CppObject*
+                        ::= NamespaceAliasDefinition{ value = NamespaceAliasDefinition; }
+                        |   UsingDirective{ value = UsingDirective; }
+                        |   UsingDeclaration{ value = UsingDeclaration; }
+                        |   SimpleDeclaration{ value = SimpleDeclaration; }
+                        ;
+                                    
+        SimpleDeclaration: Cm::Parsing::CppObjectModel::SimpleDeclaration*
+                        ::= empty{ value = new SimpleDeclaration(); }
+                            DeclSpecifierSeq(value)? (InitDeclaratorList{ value->SetInitDeclaratorList(InitDeclaratorList); })? ';'
+                        ;
+                                        
+        DeclSpecifierSeq(Cm::Parsing::CppObjectModel::SimpleDeclaration* declaration)
+                        ::= (DeclSpecifier{ declaration->Add(DeclSpecifier); })+ 
+                        |   TypeName{ declaration->Add(TypeName); }
+                        ;
+                                        
+        DeclSpecifier: Cm::Parsing::CppObjectModel::DeclSpecifier*
+                        ::= StorageClassSpecifier{ value = StorageClassSpecifier; }
+                        |   TypeSpecifier{ value = TypeSpecifier; }
+                        |   Typedef{ value = Typedef; }
+                        ;
+                                        
+        StorageClassSpecifier: Cm::Parsing::CppObjectModel::StorageClassSpecifier*
+                        ::= keyword_list(identifier, 
+                            ["auto", "register", "static", "extern", "mutable"])
+                        {
+                            value = new Cm::Parsing::CppObjectModel::StorageClassSpecifier(std::string(matchBegin, matchEnd));
+                        }
+                        ;
+                                        
+        TypeSpecifier: Cm::Parsing::CppObjectModel::TypeSpecifier*
+                        ::= SimpleTypeSpecifier{ value = SimpleTypeSpecifier; }
+                        |   CVQualifier{ value = CVQualifier; }
+                        ;
+
+        SimpleTypeSpecifier: Cm::Parsing::CppObjectModel::TypeSpecifier*
+                        ::= keyword_list(identifier,
+                            ["char", "wchar_t", "bool", "short", "int", "long", "signed", "unsigned", "float", "double", "void"])
+                            {
+                                value = new Cm::Parsing::CppObjectModel::TypeSpecifier(std::string(matchBegin, matchEnd));
+                            }
+                        ;
+                        
+        TypeName: Cm::Parsing::CppObjectModel::TypeName*
+                        ::= QualifiedId{ value = new Cm::Parsing::CppObjectModel::TypeName(std::string(matchBegin, matchEnd)); }('<'{ value->IsTemplate() = true; } TemplateArgumentList(value) '>')?
+                        ;
+                        
+        TemplateArgumentList(Cm::Parsing::CppObjectModel::TypeName* typeName)
+                        ::= TemplateArgument{ typeName->AddTemplateArgument(TemplateArgument); } % ','
+                        ;
+                        
+        TemplateArgument: Cm::Parsing::CppObjectModel::CppObject*
+                        ::= TypeId{ value = TypeId; }
+                        |   AssignmentExpression{ value = AssignmentExpression; }
+                        ;
+    
+        Typedef: Cm::Parsing::CppObjectModel::DeclSpecifier*
+                        ::= keyword("typedef")
+                        {
+                            value = new Typedef(); 
+                        }
+                        ;
+
+        CVQualifier: Cm::Parsing::CppObjectModel::TypeSpecifier*
+                        ::= keyword("const"){ value = new Const(); }
+                        |   keyword("volatile"){ value = new Volatile(); }
+                        ;
+                        
+        NamespaceAliasDefinition: Cm::Parsing::CppObjectModel::UsingObject*
+                        ::= keyword("namespace") Identifier '=' QualifiedId ';'
+                        {
+                            value = new Cm::Parsing::CppObjectModel::NamespaceAlias(Identifier, QualifiedId); 
+                        }
+                        ;
+                        
+        UsingDeclaration: Cm::Parsing::CppObjectModel::UsingObject*
+                        ::= keyword("using") QualifiedId ';'
+                        {
+                            value = new Cm::Parsing::CppObjectModel::UsingDeclaration(QualifiedId); 
+                        }
+                        ;
+                        
+        UsingDirective: Cm::Parsing::CppObjectModel::UsingObject*
+                        ::= keyword("using") keyword("namespace") QualifiedId ';'
+                        {
+                            value = new Cm::Parsing::CppObjectModel::UsingDirective(QualifiedId); 
+                        }
+                        ;
+    }
+}

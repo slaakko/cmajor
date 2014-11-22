@@ -1,0 +1,289 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[cpp]#include <Cm.Parsing.Cpp/Declaration.hpp>
+[cpp]#include <Cm.Parsing.Cpp/Declarator.hpp>
+[cpp]#include <Cm.Parsing.Cpp/Literal.hpp>
+[cpp]#include <Cm.Parsing.Cpp/Identifier.hpp>
+[cpp]#include <Cm.Util/TextUtils.hpp>
+[hpp]#include <Cm.Parsing.CppObjectModel/Expression.hpp>
+[cpp]#include <Cm.Parsing.CppObjectModel/Type.hpp>
+
+namespace Cm.Parsing.Cpp
+{
+    [cpp]using namespace Cm::Parsing::CppObjectModel;
+    [cpp]using Cm::Util::Trim;
+
+    grammar ExpressionGrammar
+    {
+        using LiteralGrammar.Literal;
+        using DeclaratorGrammar.TypeId;
+        using DeclaratorGrammar.TypeSpecifierSeq;
+        using DeclaratorGrammar.PtrOperator;
+        using IdentifierGrammar.QualifiedId;
+        using DeclarationGrammar.SimpleTypeSpecifier;
+        using DeclarationGrammar.TypeName;
+        
+        Expression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= AssignmentExpression:left{ value = left; } (',' AssignmentExpression:right{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, comma, 0, right); })*
+                            ;
+        
+        ConstantExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= Expression{ value = Expression; }
+                            ;
+                            
+        AssignmentExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= (LogicalOrExpression AssingmentOp AssignmentExpression!){ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(LogicalOrExpression, AssingmentOp, 1, AssignmentExpression); }
+                            |   ConditionalExpression{ value = ConditionalExpression; }
+                            |   ThrowExpression{ value = ThrowExpression; }
+                            ;
+                            
+        AssingmentOp: Operator
+                            ::= ('=' | "*=" | "/=" | "%=" | "+=" | "-=" | ">>=" | "<<=" | "&=" | "^=" | "|="){ value = GetOperator(std::string(matchBegin, matchEnd)); }
+                            ;
+                            
+        ThrowExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= (keyword("throw") AssignmentExpression?){ value = new Cm::Parsing::CppObjectModel::ThrowExpr(AssignmentExpression); }
+                            ;
+                            
+        ConditionalExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= LogicalOrExpression:left{ value = left; } (('?' Expression! ':' AssignmentExpression!){ value = new Cm::Parsing::CppObjectModel::ConditionalExpr(value, Expression, AssignmentExpression); })?
+                            ;
+                            
+        LogicalOrExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= LogicalAndExpression:left{ value = left; } ("||" LogicalAndExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, or_, 2, right); })*
+                            ;
+                            
+        LogicalAndExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= InclusiveOrExpression:left{ value = left; } ("&&" InclusiveOrExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, and_, 3, right); })*
+                            ;
+                            
+        InclusiveOrExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= ExclusiveOrExpression:left{ value = left; } (('|' - "||") ExclusiveOrExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, bitor_, 4, right); })*
+                            ;
+                            
+        ExclusiveOrExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= AndExpression:left{ value = left; } ('^' AndExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, bitxor, 5, right); })*
+                            ;
+                            
+        AndExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= EqualityExpression:left{ value = left; } (('&' - "&&") EqualityExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, bitand_, 6, right); })*
+                            ;
+                            
+        EqualityExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= RelationalExpression:left{ value = left; } (EqOp RelationalExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, EqOp, 7, right); })*
+                            ;
+                            
+        EqOp: Operator      ::= "=="{ value = eq; }
+                            |   "!="{ value = notEq; }
+                            ;
+                            
+        RelationalExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= ShiftExpression:left{ value = left; } (RelOp ShiftExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, RelOp, 8, right); })*
+                            ;
+                            
+        RelOp: Operator     ::= "<="{ value = lessOrEq; }
+                            |   ">="{ value = greaterOrEq; }
+                            |   ('<' - "<<"){ value = less; }
+                            |   ('>' - ">>"){ value = greater; }
+                            ;
+                            
+        ShiftExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= AdditiveExpression:left{ value = left; } (ShiftOp AdditiveExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, ShiftOp, 9, right); })*
+                            ;
+                            
+        ShiftOp: Operator   ::= ("<<" - "<<="){ value = shiftLeft; }
+                            |   (">>" - ">>="){ value = shiftRight; }
+                            ;
+                            
+        AdditiveExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= MultiplicativeExpression:left{ value = left; } (AddOp MultiplicativeExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, AddOp, 10, right); })*
+                            ;
+                            
+        AddOp: Operator     ::= ('+' - "+="){ value = plus; }
+                            |   ('-' - ("-=" | "->")){ value = minus; }
+                            ;
+                            
+        MultiplicativeExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= PmExpression:left{ value = left; } (MulOp PmExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, MulOp, 11, right); })*
+                            ;
+                            
+        MulOp: Operator     ::= ('*' - "*="){ value = mul; }
+                            |   ('/' - "/="){ value = div; }
+                            |   ('%' - "%="){ value = rem; }
+                            ;
+                            
+        PmExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= CastExpression:left{ value = left; } (PmOp CastExpression:right!{ value = new Cm::Parsing::CppObjectModel::BinaryOpExpr(value, PmOp, 12, right); })*
+                            ;
+                            
+        PmOp: Operator      ::= ".*"{ value = dotStar; }
+                            | "->*"{ value = arrowStar; }
+                            ;
+        
+        CastExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= ('(' TypeId ')' CastExpression){ value = new Cm::Parsing::CppObjectModel::CastExpr(TypeId, CastExpression); }
+                            |   UnaryExpression{ value = UnaryExpression; }
+                            ;
+        
+        UnaryExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= (PostfixExpression{ value =  PostfixExpression; } | PostCastExpression{ value = PostCastExpression; })
+                            |   ("++" UnaryExpression:e1!){ value = new Cm::Parsing::CppObjectModel::PreIncrementExpr(e1); }
+                            |   ("--" UnaryExpression:e2!){ value = new Cm::Parsing::CppObjectModel::PreDecrementExpr(e2); }
+                            |   (UnaryOperator CastExpression!){ value = new Cm::Parsing::CppObjectModel::UnaryOpExpr(UnaryOperator, CastExpression); }
+                            |   (keyword("sizeof") '(' TypeId! ')'!){ value = new Cm::Parsing::CppObjectModel::SizeOfExpr(TypeId, true); }
+                            |   (keyword("sizeof") UnaryExpression:e3!){ value = new Cm::Parsing::CppObjectModel::SizeOfExpr(e3, false); }
+                            |   NewExpression{ value = NewExpression; }
+                            |   DeleteExpression{ value = DeleteExpression; }
+                            ;
+                            
+        UnaryOperator: Operator
+                            ::= ('*' - "*="){ value = deref; }
+                            |   ('&' - "&="){ value = addrOf; }
+                            |   ('+' - "+="){ value = plus; }
+                            |   ('-' - "-="){ value = minus; }
+                            |   ('!' - "!="){ value = not_; }
+                            |   '~'{ value = neg; }
+                            ;
+                            
+        NewExpression(var bool global, var TypeId* typeId, var bool parens): Cm::Parsing::CppObjectModel::CppObject*
+                            ::= (("::"{ global = true; })? keyword("new") NewPlacement? 
+                                (   NewTypeId{ typeId = NewTypeId; parens = false; } 
+                                |   '(' TypeId{ typeId = TypeId; parens = true; } ')'
+                                )   NewInitializer?
+                            )
+                            {
+                                value = new Cm::Parsing::CppObjectModel::NewExpr(global, NewPlacement, typeId, parens, NewInitializer);
+                            }
+                            ;
+                            
+        NewTypeId: Cm::Parsing::CppObjectModel::TypeId*
+                            ::= empty{ value = new TypeId(); }
+                                (TypeSpecifierSeq(value) | TypeName{ value->TypeSpecifiers().push_back(TypeName); }) (NewDeclarator{ value->Declarator() = NewDeclarator; })?
+                            ;
+                            
+        NewDeclarator: std::string
+                            ::= 
+                            (   PtrOperator NewDeclarator? 
+                            |   DirectNewDeclarator
+                            )
+                            { 
+                                value = Trim(std::string(matchBegin, matchEnd)); 
+                            }
+                            ;
+                            
+        DirectNewDeclarator ::= '[' Expression ']' ('[' ConstantExpression ']')*
+                            ;
+                            
+        NewPlacement: std::vector<Cm::Parsing::CppObjectModel::CppObject*>
+                            ::= ('(' ExpressionList ')'){ value = ExpressionList; }
+                            ;
+        
+        NewInitializer: std::vector<Cm::Parsing::CppObjectModel::CppObject*>
+                            ::= ('(' ExpressionList? ')'){ value = ExpressionList; }
+                            ;
+        
+        DeleteExpression(var bool global, var bool array): Cm::Parsing::CppObjectModel::CppObject*
+                            ::= (("::"{ global = true; })? keyword("delete") ('[' ']'{ array = true; })? CastExpression)
+                            {
+                                value = new Cm::Parsing::CppObjectModel::DeleteExpr(global, array, CastExpression);
+                            }
+                            ;
+        
+        PostfixExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= PrimaryExpression{ value =  PrimaryExpression; }
+                            (   ('[' Expression:index! ']'!){ value = new Cm::Parsing::CppObjectModel::IndexExpr(value, index); }
+                            |   ('(' (ExpressionList:invoke)? ')'!){ value = new Cm::Parsing::CppObjectModel::InvokeExpr(value, invoke); }
+                            |   (('.' - ".*") IdExpression:member!){ value = new Cm::Parsing::CppObjectModel::MemberAccessExpr(value, member); }
+                            |   (("->" - "->*") IdExpression:ptrmember!){ value = new Cm::Parsing::CppObjectModel::PtrMemberAccessExpr(value, ptrmember); }
+                            |   "++"{ value = new PostIncrementExpr(value); }
+                            |   "--"{ value = new PostDecrementExpr(value); }
+                            )
+                            *
+                            |   (TypeSpecifierOrTypeName '(' ExpressionList:typeConstruction? ')') { value = new Cm::Parsing::CppObjectModel::InvokeExpr(TypeSpecifierOrTypeName, typeConstruction); }
+                            ;
+                            
+        TypeSpecifierOrTypeName: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= SimpleTypeSpecifier{ value = SimpleTypeSpecifier; }
+                            |   TypeName{ value = TypeName; }
+                            ;
+                            
+        PostCastExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= (keyword("dynamic_cast") '<'! TypeId:dct! '>'! '('! Expression:dce! ')'!){ value = new Cm::Parsing::CppObjectModel::PostCastExpr("dynamic_cast", dct, dce); }
+                            |   (keyword("static_cast") '<'! TypeId:sct! '>'! '('! Expression:sce! ')'!){ value = new Cm::Parsing::CppObjectModel::PostCastExpr("static_cast", sct, sce); }
+                            |   (keyword("reinterpret_cast") '<'! TypeId:rct! '>'! '('! Expression:rce! ')'!){ value = new Cm::Parsing::CppObjectModel::PostCastExpr("reinterpret_cast", rct, rce); }
+                            |   (keyword("const_cast") '<'! TypeId:cct! '>'! '('! Expression:cce! ')'!){ value = new Cm::Parsing::CppObjectModel::PostCastExpr("const_cast", cct, cce); }
+                            |   (keyword("typeid") '('! Expression:typeidExpr! ')'!){ value = new Cm::Parsing::CppObjectModel::TypeIdExpr(typeidExpr); }
+                            ;
+                            
+        ExpressionList: std::vector<Cm::Parsing::CppObjectModel::CppObject*>
+                            ::= AssignmentExpression{ value.push_back(AssignmentExpression); } % ','
+                            ;
+        
+        PrimaryExpression: Cm::Parsing::CppObjectModel::CppObject*
+                            ::= Literal{ value = Literal; }
+                            |   keyword("this"){ value = new Cm::Parsing::CppObjectModel::ThisAccess(); }
+                            |   '(' Expression ')'!{ value = Expression; }
+                            |   IdExpression{ value = IdExpression; }
+                            ;
+                            
+        IdExpression: Cm::Parsing::CppObjectModel::IdExpr*
+                            ::= token(QualifiedId:id1 "::" OperatorFunctionId){ value = new Cm::Parsing::CppObjectModel::IdExpr(std::string(matchBegin, matchEnd)); }
+                            |   token("::"? OperatorFunctionId){ value = new Cm::Parsing::CppObjectModel::IdExpr(std::string(matchBegin, matchEnd)); }
+                            |   QualifiedId:id2{ value = new Cm::Parsing::CppObjectModel::IdExpr(std::string(matchBegin, matchEnd)); }
+                            ;
+                            
+        OperatorFunctionId  ::= keyword("operator") Operator
+                            ;
+                            
+        Operator            ::= '[' ']'
+                            |   '(' ')'
+                            |   "->*"
+                            |   "->"
+                            |   ','
+                            |   "--"
+                            |   "++"
+                            |   "||"
+                            |   "&&"
+                            |   "<="
+                            |   ">="
+                            |   "!="
+                            |   "=="
+                            |   "<<="
+                            |   ">>="
+                            |   "<<"
+                            |   ">>"
+                            |   "|="
+                            |   "&="
+                            |   "^="
+                            |   "%="
+                            |   "/="
+                            |   "*="
+                            |   "-="
+                            |   "+="
+                            |   '<'
+                            |   '>'
+                            |   '='
+                            |   '!'
+                            |   '~'
+                            |   '|'
+                            |   '&'
+                            |   '^'
+                            |   '%'
+                            |   '/'
+                            |   '*'
+                            |   '-'
+                            |   '+'
+                            |   keyword("new") '[' ']'
+                            |   keyword("delete") '[' ']'
+                            |   keyword("new")
+                            |   keyword("delete")
+                            ;
+    }
+}

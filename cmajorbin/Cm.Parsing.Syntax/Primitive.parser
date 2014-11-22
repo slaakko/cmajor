@@ -1,0 +1,122 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Parsing/Primitive.hpp>
+[hpp]#include <Cm.Parsing/Keyword.hpp>
+[cpp]#include <Cm.Parsing.Syntax/Element.hpp>
+
+namespace Cm.Parsing.Syntax
+{
+    grammar PrimitiveGrammar
+    {
+        using stdlib.char;
+        using stdlib.string;
+        using stdlib.escape;
+        using ElementGrammar.QualifiedId;
+        using ElementGrammar.StringArray;
+
+        Primitive: Cm::Parsing::Parser*
+                        ::= Char{ value = Char; }
+                        |   String{ value = String; }
+                        |   CharSet{ value = CharSet; }
+                        |   Keyword{ value = Keyword; }
+                        |   KeywordList{ value = KeywordList; }
+                        |   Empty{ value = Empty; }
+                        |   Space{ value = Space; }
+                        |   AnyChar{ value = AnyChar; }
+                        |   Letter{ value = Letter; }
+                        |   Digit{ value = Digit; }
+                        |   HexDigit{ value = HexDigit; }
+                        |   Punctuation{ value = Punctuation; }
+                        ;
+
+        Char: Cm::Parsing::Parser*
+                        ::= char:chr{ value = new CharParser(chr); }
+                        ;
+
+        String: Cm::Parsing::Parser*
+                        ::= string:str{ value = new StringParser(str); }
+                        ;
+
+        CharSet(var bool inverse, var std::string s): Cm::Parsing::Parser*
+                        ::= token
+                            (   '['
+                                ('^'{ inverse = true; })? 
+                                (CharSetRange{ s.append(CharSetRange); })*
+                                ']'!
+                            )
+                            {
+                                value = new CharSetParser(s, inverse);
+                            }
+                            ;
+
+        CharSetRange: std::string
+                        ::= CharSetChar:first 
+                            ('-' CharSetChar:last
+                                { 
+                                    value.append(1, first);
+                                    value.append(1, '-');
+                                    value.append(1, last);
+                                }
+                            |   empty{ value.append(1, first); }
+                            )
+                            ;
+                            
+        CharSetChar: char   ::= [^\\\]]{ value = *matchBegin; }
+                            |   escape{ value = escape; }
+                            ;
+
+        Keyword: Cm::Parsing::Parser*
+                            ::= keyword("keyword") '('! KeywordBody! ')'!{ value = KeywordBody; }
+                            ;
+
+        KeywordBody: Cm::Parsing::Parser*
+                            ::= string:str
+                            (   ',' QualifiedId:continuation!{ value = new KeywordParser(str, continuation); }
+                            |   empty{ value = new KeywordParser(str); }
+                            )
+                            ;
+
+        KeywordList: Cm::Parsing::Parser*
+                            ::= keyword("keyword_list") '('! KeywordListBody! ')'!{ value = KeywordListBody; }
+                            ;
+
+        KeywordListBody(var std::vector<std::string> keywords): Cm::Parsing::Parser*
+                            ::= QualifiedId:selector! ','! StringArray(&keywords)!{ value = new KeywordListParser(selector, keywords); }
+                            ;
+
+        Empty: Cm::Parsing::Parser*
+                            ::= keyword("empty"){ value = new EmptyParser(); }
+                            ;
+
+        Space: Cm::Parsing::Parser*
+                            ::= keyword("space"){ value = new SpaceParser(); }
+                            ;
+
+        AnyChar: Cm::Parsing::Parser*
+                            ::= keyword("anychar"){ value = new AnyCharParser(); }
+                            ;
+
+        Letter: Cm::Parsing::Parser*
+                            ::= keyword("letter"){ value = new LetterParser(); }
+                            ;
+
+        Digit: Cm::Parsing::Parser*
+                            ::= keyword("digit"){ value = new DigitParser(); }
+                            ;
+
+        HexDigit: Cm::Parsing::Parser*
+                            ::= keyword("hexdigit"){ value = new HexDigitParser(); }
+                            ;
+
+        Punctuation: Cm::Parsing::Parser*
+                            ::= keyword("punctuation"){ value = new PunctuationParser(); }
+                            ;
+    }
+}

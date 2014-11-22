@@ -1,0 +1,77 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Parsing/Scope.hpp>
+[hpp]#include <Cm.Parsing/Grammar.hpp>
+[cpp]#include <Cm.Parsing/Rule.hpp>
+[cpp]#include <Cm.Parsing.CppObjectModel/Type.hpp>
+[cpp]#include <Cm.Parsing.Cpp/Declarator.hpp>
+
+namespace Cm.Parsing.Syntax
+{
+    grammar ElementGrammar
+    {
+        using stdlib.qualified_id;
+        using stdlib.identifier;
+        using stdlib.string;
+        using Cm.Parsing.Cpp.DeclaratorGrammar.TypeId;
+        using Cm.Parsing.Cpp.DeclaratorGrammar.Declarator;
+
+        RuleLink(Cm::Parsing::Grammar* grammar)
+                            ::= (keyword("using") identifier:aliasName '=' qualified_id:ruleName ';')
+                                { 
+                                    RuleLink* link(new RuleLink(aliasName, grammar, ruleName)); 
+                                    link->SetSpan(span); 
+                                    grammar->AddRuleLink(link); 
+                                }
+                            |   (keyword("using") qualified_id ';')
+                                { 
+                                    RuleLink* link(new RuleLink(grammar, qualified_id)); 
+                                    link->SetSpan(span);
+                                    grammar->AddRuleLink(link);  
+                                }
+                            ;
+
+        Signature(Cm::Parsing::Rule* rule)
+                            ::= ParameterList(rule)? ReturnType(rule)?
+                            ;
+
+        ParameterList(Cm::Parsing::Rule* rule)
+                            ::= '(' ((Variable(rule) | Parameter(rule)) % ',') ')'!
+                            ;
+
+        Variable(Cm::Parsing::Rule* rule)
+                            ::= keyword("var") TypeId Declarator{ rule->AddLocalVariable(AttrOrVariable(TypeId->ToString(), Declarator)); }
+                            ;
+
+        Parameter(Cm::Parsing::Rule* rule)
+                            ::= TypeId Declarator{ rule->AddInheritedAttribute(AttrOrVariable(TypeId->ToString(), Declarator)); }
+                            ;
+
+        ReturnType(Cm::Parsing::Rule* rule)
+                            ::= (':' - "::") TypeId{ rule->SetValueTypeName(TypeId->ToString()); }
+                            ;
+
+        Keyword             ::= keyword_list(identifier, 
+                                ["using", "grammar", "start", "skip", "token", "keyword", "keyword_list", "empty", "space", "anychar", "letter", "digit", "hexdigit", "punctuation", "var"])
+                            ;
+
+        Identifier: std::string
+                            ::= (identifier - Keyword){ value = std::string(matchBegin, matchEnd); }
+                            ;
+
+        QualifiedId: std::string
+                            ::= token(Identifier:first('.' Identifier:rest)*){ value = std::string(matchBegin, matchEnd); }
+                            ;
+
+        StringArray(std::vector<std::string>* array)
+                            ::= '[' (string:str{ array->push_back(str); } % ',') ']'!
+                            ;
+    }
+}
