@@ -293,6 +293,7 @@ public:
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.rule->AddLocalVariable(AttrOrVariable(context.fromTypeId->ToString(), context.fromDeclarator));
+        delete context.fromTypeId;
     }
     void PostTypeId(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -357,6 +358,7 @@ public:
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.rule->AddInheritedAttribute(AttrOrVariable(context.fromTypeId->ToString(), context.fromDeclarator));
+		delete context.fromTypeId;
     }
     void PostTypeId(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -419,6 +421,7 @@ public:
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.rule->SetValueTypeName(context.fromTypeId->ToString());
+        delete context.fromTypeId;
     }
     void PostTypeId(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -613,27 +616,27 @@ private:
 void ElementGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Soul.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.Cpp.DeclaratorGrammar");
     if (!grammar0)
     {
-        grammar0 = Soul::Parsing::stdlib::Create(parsingDomain);
+        grammar0 = Cm::Parsing::Cpp::DeclaratorGrammar::Create(parsingDomain);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.Cpp.DeclaratorGrammar");
+    Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Cpp::DeclaratorGrammar::Create(parsingDomain);
+        grammar1 = Cm::Parsing::stdlib::Create(parsingDomain);
     }
     AddGrammarReference(grammar1);
 }
 
 void ElementGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Soul.Parsing.stdlib.qualified_id"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeId", this, "Cm.Parsing.Cpp.DeclaratorGrammar.TypeId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Declarator", this, "Cm.Parsing.Cpp.DeclaratorGrammar.Declarator"));
-    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Soul.Parsing.stdlib.identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Soul.Parsing.stdlib.string"));
+    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
+    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
+    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeId", this, "Cm.Parsing.Cpp.DeclaratorGrammar.TypeId"));
     AddRule(new RuleLinkRule("RuleLink", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::ActionParser("A0",

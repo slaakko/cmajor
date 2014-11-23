@@ -9,6 +9,7 @@
 
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
+#include <algorithm>
 
 namespace Cm { namespace Parsing {
 

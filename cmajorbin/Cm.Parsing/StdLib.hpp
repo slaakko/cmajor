@@ -1,11 +1,11 @@
-#ifndef StdLib_hpp_14206
-#define StdLib_hpp_14206
+#ifndef StdLib_hpp_31865
+#define StdLib_hpp_31865
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
 #include <stdint.h>
 
-namespace Soul { namespace Parsing {
+namespace Cm { namespace Parsing {
 
 class stdlib : public Cm::Parsing::Grammar
 {
@@ -33,6 +33,6 @@ private:
     class stringRule;
 };
 
-} } // namespace Soul.Parsing
+} } // namespace Cm.Parsing
 
-#endif // StdLib_hpp_14206
+#endif // StdLib_hpp_31865

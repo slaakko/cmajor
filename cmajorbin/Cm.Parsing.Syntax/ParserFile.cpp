@@ -523,10 +523,10 @@ private:
 void ParserFileGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Soul.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Soul::Parsing::stdlib::Create(parsingDomain);
+        grammar0 = Cm::Parsing::stdlib::Create(parsingDomain);
     }
     AddGrammarReference(grammar0);
     Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.Cpp.DeclarationGrammar");
@@ -545,11 +545,11 @@ void ParserFileGrammar::GetReferencedGrammars()
 
 void ParserFileGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Soul.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("UsingDirective", this, "Cm.Parsing.Cpp.DeclarationGrammar.UsingDirective"));
-    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Soul.Parsing.stdlib.qualified_id"));
+    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRuleLink(new Cm::Parsing::RuleLink("UsingDeclaration", this, "Cm.Parsing.Cpp.DeclarationGrammar.UsingDeclaration"));
-    AddRuleLink(new Cm::Parsing::RuleLink("newline", this, "Soul.Parsing.stdlib.newline"));
+    AddRuleLink(new Cm::Parsing::RuleLink("newline", this, "Cm.Parsing.stdlib.newline"));
     AddRuleLink(new Cm::Parsing::RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
     AddRuleLink(new Cm::Parsing::RuleLink("NamespaceAliasDefinition", this, "Cm.Parsing.Cpp.DeclarationGrammar.NamespaceAliasDefinition"));
     AddRule(new ParserFileRule("ParserFile", GetScope(),

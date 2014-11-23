@@ -10,7 +10,7 @@
 [hpp]#include <stdint.h>
 [cpp]#include <sstream>
 
-namespace Soul.Parsing
+namespace Cm.Parsing
 {
     grammar stdlib
     {

@@ -433,7 +433,7 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
     int grammarIndex = 0;
     if (!grammar.GrammarReferences().empty())
     {
-        cppFormatter.WriteLine("Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();");
+        cppFormatter.WriteLine("Cm::Parsing::ParsingDomain* pd = GetParsingDomain();");
         GrammarSetIt e = grammar.GrammarReferences().cend();
         for (GrammarSetIt i = grammar.GrammarReferences().cbegin(); i != e; ++i)
         {
@@ -441,11 +441,11 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
             std::string grammarReferenceName = grammarReference->FullName();
             std::string grammarVar = "grammar" + std::to_string(grammarIndex);
             ++grammarIndex;
-            cppFormatter.WriteLine("Cm::Parsing::Grammar* " + grammarVar + " = parsingDomain->GetGrammar(\"" + grammarReferenceName + "\");");
+            cppFormatter.WriteLine("Cm::Parsing::Grammar* " + grammarVar + " = pd->GetGrammar(\"" + grammarReferenceName + "\");");
             cppFormatter.WriteLine("if (!" + grammarVar + ")");
             cppFormatter.WriteLine("{");
             cppFormatter.IncIndent();
-            cppFormatter.WriteLine(grammarVar + " = " + Replace(grammarReferenceName, ".", "::") + "::Create(parsingDomain);");
+            cppFormatter.WriteLine(grammarVar + " = " + Replace(grammarReferenceName, ".", "::") + "::Create(pd);");
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("}");
             cppFormatter.WriteLine("AddGrammarReference(" + grammarVar + ");");

@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_5437
-#define Statement_hpp_5437
+#ifndef Statement_hpp_30562
+#define Statement_hpp_30562
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -12,7 +12,7 @@ class StatementGrammar : public Cm::Parsing::Grammar
 public:
     static StatementGrammar* Create();
     static StatementGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
-    Cm::Parsing::CppObjectModel::Statement* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
+    Cm::Parsing::CppObjectModel::CompoundStatement* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
 private:
     StatementGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -47,4 +47,4 @@ private:
 
 } } } // namespace Cm.Parsing.Cpp
 
-#endif // Statement_hpp_5437
+#endif // Statement_hpp_30562

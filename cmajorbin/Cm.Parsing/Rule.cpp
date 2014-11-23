@@ -193,8 +193,8 @@ Match Rule::Parse(Scanner& scanner, ObjectStack& stack)
         scanner.Log()->DecIndent();
         if (match.Hit())
         {
-            std::string match(scanner.Start() + startIndex, scanner.Start() + scanner.GetSpan().Start());
-            scanner.Log()->WriteSuccess(match);
+            std::string matched(scanner.Start() + startIndex, scanner.Start() + scanner.GetSpan().Start());
+            scanner.Log()->WriteSuccess(matched);
         }
         else
         {
@@ -241,7 +241,7 @@ RuleLink::RuleLink(const std::string& name_, Grammar* grammar_, const std::strin
     std::string prefix = GetPrefix(linkedRuleName);
     if (prefix == "stdlib")
     {
-        linkedRuleName = "Soul.Parsing.stdlib." + GetCommonName(linkedRuleName);
+        linkedRuleName = "Cm.Parsing.stdlib." + GetCommonName(linkedRuleName);
     }
 }
 
@@ -250,7 +250,7 @@ RuleLink::RuleLink(Grammar* grammar_, const std::string& linkedRuleName_): Parsi
     std::string prefix = GetPrefix(linkedRuleName);
     if (prefix == "stdlib")
     {
-        linkedRuleName = "Soul.Parsing.stdlib." + GetCommonName(linkedRuleName);
+        linkedRuleName = "Cm.Parsing.stdlib." + GetCommonName(linkedRuleName);
     }
 }
 

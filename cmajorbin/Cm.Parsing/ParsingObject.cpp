@@ -13,11 +13,11 @@
 
 namespace Cm { namespace Parsing {
 
-ParsingObject::ParsingObject(const std::string& name_): name(name_), isOwned(false), owner(external), enclosingScope(nullptr)
+ParsingObject::ParsingObject(const std::string& name_): name(name_), owner(external), isOwned(false), enclosingScope(nullptr), scope(nullptr)
 {
 }
 
-ParsingObject::ParsingObject(const std::string& name_, Scope* enclosingScope_): name(name_), isOwned(false), owner(external), enclosingScope(enclosingScope_)
+ParsingObject::ParsingObject(const std::string& name_, Scope* enclosingScope_): name(name_), owner(external), isOwned(false), enclosingScope(enclosingScope_), scope(nullptr)
 {
 }
 

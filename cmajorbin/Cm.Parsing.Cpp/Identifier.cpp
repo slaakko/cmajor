@@ -177,10 +177,10 @@ private:
 void IdentifierGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Soul.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Soul::Parsing::stdlib::Create(parsingDomain);
+        grammar0 = Cm::Parsing::stdlib::Create(parsingDomain);
     }
     AddGrammarReference(grammar0);
     Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.Cpp.KeywordGrammar");
@@ -193,8 +193,8 @@ void IdentifierGrammar::GetReferencedGrammars()
 
 void IdentifierGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Soul.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRule(new IdentifierRule("Identifier", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::DifferenceParser(

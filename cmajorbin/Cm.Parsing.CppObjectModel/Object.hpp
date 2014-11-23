@@ -29,6 +29,7 @@ public:
     void Own(CppObject* object);
     bool IsOwned() const { return isOwned; }
     void SetOwned() { isOwned = true; }
+	void ResetOwned() { isOwned = false; }
     virtual std::string ToString() const;
     virtual void Print(CodeFormatter& formatter);
     virtual void Accept(Visitor& visitor) = 0;

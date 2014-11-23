@@ -6,9 +6,10 @@
 #include <Cm.Parsing/Nonterminal.hpp>
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Parsing/StdLib.hpp>
+#include <Cm.Parsing/XmlLog.hpp>
 #include <sstream>
 
-namespace Soul { namespace Parsing {
+namespace Cm { namespace Parsing {
 
 using namespace Cm::Parsing;
 
@@ -27,7 +28,7 @@ stdlib* stdlib::Create(Cm::Parsing::ParsingDomain* parsingDomain)
     return grammar;
 }
 
-stdlib::stdlib(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::Parsing::Grammar("stdlib", parsingDomain_->GetNamespaceScope("Soul.Parsing"), parsingDomain_)
+stdlib::stdlib(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::Parsing::Grammar("stdlib", parsingDomain_->GetNamespaceScope("Cm.Parsing"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -40,16 +41,16 @@ public:
     {
         SetValueTypeName("int");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<int>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<int>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -83,16 +84,16 @@ public:
     {
         SetValueTypeName("unsigned");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<unsigned>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<unsigned>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -126,16 +127,16 @@ public:
     {
         SetValueTypeName("int64_t");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<int64_t>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<int64_t>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -169,16 +170,16 @@ public:
     {
         SetValueTypeName("uint64_t");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<uint64_t>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<uint64_t>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -212,16 +213,16 @@ public:
     {
         SetValueTypeName("uint64_t");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<uint64_t>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<uint64_t>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -255,16 +256,16 @@ public:
     {
         SetValueTypeName("uint64_t");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<uint64_t>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<uint64_t>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -280,12 +281,12 @@ public:
     {
         context.value = context.fromhex;
     }
-    void Posthex(ObjectStack& stack, bool matched)
+    void Posthex(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromhex_value = std::move(stack.top());
-            context.fromhex = *static_cast<ValueObject<uint64_t>*>(fromhex_value.get());
+            context.fromhex = *static_cast<Cm::Parsing::ValueObject<uint64_t>*>(fromhex_value.get());
             stack.pop();
         }
     }
@@ -308,16 +309,16 @@ public:
     {
         SetValueTypeName("double");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<double>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<double>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -351,16 +352,16 @@ public:
     {
         SetValueTypeName("double");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<double>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<double>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -394,16 +395,16 @@ public:
     {
         SetValueTypeName("double");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<double>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<double>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -427,21 +428,21 @@ public:
     {
         context.value = context.fromi;
     }
-    void Postr(ObjectStack& stack, bool matched)
+    void Postr(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromr_value = std::move(stack.top());
-            context.fromr = *static_cast<ValueObject<double>*>(fromr_value.get());
+            context.fromr = *static_cast<Cm::Parsing::ValueObject<double>*>(fromr_value.get());
             stack.pop();
         }
     }
-    void Posti(ObjectStack& stack, bool matched)
+    void Posti(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromi_value = std::move(stack.top());
-            context.fromi = *static_cast<ValueObject<int>*>(fromi_value.get());
+            context.fromi = *static_cast<Cm::Parsing::ValueObject<int>*>(fromi_value.get());
             stack.pop();
         }
     }
@@ -465,16 +466,16 @@ public:
     {
         SetValueTypeName("bool");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<bool>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<bool>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -512,16 +513,16 @@ public:
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<std::string>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -553,16 +554,16 @@ public:
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<std::string>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -580,21 +581,21 @@ public:
     {
         context.value = std::string(matchBegin, matchEnd);
     }
-    void Postfirst(ObjectStack& stack, bool matched)
+    void Postfirst(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromfirst_value = std::move(stack.top());
-            context.fromfirst = *static_cast<ValueObject<std::string>*>(fromfirst_value.get());
+            context.fromfirst = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromfirst_value.get());
             stack.pop();
         }
     }
-    void Postrest(ObjectStack& stack, bool matched)
+    void Postrest(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromrest_value = std::move(stack.top());
-            context.fromrest = *static_cast<ValueObject<std::string>*>(fromrest_value.get());
+            context.fromrest = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromrest_value.get());
             stack.pop();
         }
     }
@@ -618,16 +619,16 @@ public:
     {
         SetValueTypeName("char");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<char>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<char>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -678,21 +679,21 @@ public:
             break;
         }
     }
-    void Postx(ObjectStack& stack, bool matched)
+    void Postx(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromx_value = std::move(stack.top());
-            context.fromx = *static_cast<ValueObject<uint64_t>*>(fromx_value.get());
+            context.fromx = *static_cast<Cm::Parsing::ValueObject<uint64_t>*>(fromx_value.get());
             stack.pop();
         }
     }
-    void PostdecimalEscape(ObjectStack& stack, bool matched)
+    void PostdecimalEscape(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromdecimalEscape_value = std::move(stack.top());
-            context.fromdecimalEscape = *static_cast<ValueObject<unsigned>*>(fromdecimalEscape_value.get());
+            context.fromdecimalEscape = *static_cast<Cm::Parsing::ValueObject<unsigned>*>(fromdecimalEscape_value.get());
             stack.pop();
         }
     }
@@ -716,16 +717,16 @@ public:
     {
         SetValueTypeName("char");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<char>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<char>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -747,12 +748,12 @@ public:
     {
         context.value = context.fromescape;
     }
-    void Postescape(ObjectStack& stack, bool matched)
+    void Postescape(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromescape_value = std::move(stack.top());
-            context.fromescape = *static_cast<ValueObject<char>*>(fromescape_value.get());
+            context.fromescape = *static_cast<Cm::Parsing::ValueObject<char>*>(fromescape_value.get());
             stack.pop();
         }
     }
@@ -775,16 +776,16 @@ public:
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(ObjectStack& stack)
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(ObjectStack& stack, bool matched)
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<std::string>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -806,12 +807,12 @@ public:
     {
         context.value.append(1, context.fromescape);
     }
-    void Postescape(ObjectStack& stack, bool matched)
+    void Postescape(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromescape_value = std::move(stack.top());
-            context.fromescape = *static_cast<ValueObject<char>*>(fromescape_value.get());
+            context.fromescape = *static_cast<Cm::Parsing::ValueObject<char>*>(fromescape_value.get());
             stack.pop();
         }
     }
@@ -832,205 +833,205 @@ void stdlib::GetReferencedGrammars()
 
 void stdlib::CreateRules()
 {
-    AddRule(new Rule("spaces", GetScope(),
-        new PositiveParser(
-            new SpaceParser())));
-    AddRule(new Rule("newline", GetScope(),
-        new AlternativeParser(
-            new AlternativeParser(
-                new StringParser("\r\n"),
-                new StringParser("\n")),
-            new StringParser("\r"))));
-    AddRule(new Rule("comment", GetScope(),
-        new AlternativeParser(
-            new NonterminalParser("line_comment", "line_comment", 0),
-            new NonterminalParser("block_comment", "block_comment", 0))));
-    AddRule(new Rule("line_comment", GetScope(),
-        new SequenceParser(
-            new SequenceParser(
-                new StringParser("//"),
-                new KleeneStarParser(
-                    new CharSetParser("\r\n", true))),
-            new NonterminalParser("newline", "newline", 0))));
-    AddRule(new Rule("block_comment", GetScope(),
-        new SequenceParser(
-            new SequenceParser(
-                new StringParser("/*"),
-                new KleeneStarParser(
-                    new AlternativeParser(
-                        new AlternativeParser(
-                            new NonterminalParser("string", "string", 0),
-                            new NonterminalParser("char", "char", 0)),
-                        new DifferenceParser(
-                            new AnyCharParser(),
-                            new StringParser("*/"))))),
-            new StringParser("*/"))));
-    AddRule(new Rule("spaces_and_comments", GetScope(),
-        new PositiveParser(
-            new AlternativeParser(
-                new SpaceParser(),
-                new NonterminalParser("comment", "comment", 0)))));
-    AddRule(new Rule("digit_sequence", GetScope(),
-        new TokenParser(
-            new PositiveParser(
-                new DigitParser()))));
-    AddRule(new Rule("sign", GetScope(),
-        new AlternativeParser(
-            new CharParser('+'),
-            new CharParser('-'))));
+    AddRule(new Cm::Parsing::Rule("spaces", GetScope(),
+        new Cm::Parsing::PositiveParser(
+            new Cm::Parsing::SpaceParser())));
+    AddRule(new Cm::Parsing::Rule("newline", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::StringParser("\r\n"),
+                new Cm::Parsing::StringParser("\n")),
+            new Cm::Parsing::StringParser("\r"))));
+    AddRule(new Cm::Parsing::Rule("comment", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::NonterminalParser("line_comment", "line_comment", 0),
+            new Cm::Parsing::NonterminalParser("block_comment", "block_comment", 0))));
+    AddRule(new Cm::Parsing::Rule("line_comment", GetScope(),
+        new Cm::Parsing::SequenceParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::StringParser("//"),
+                new Cm::Parsing::KleeneStarParser(
+                    new Cm::Parsing::CharSetParser("\r\n", true))),
+            new Cm::Parsing::NonterminalParser("newline", "newline", 0))));
+    AddRule(new Cm::Parsing::Rule("block_comment", GetScope(),
+        new Cm::Parsing::SequenceParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::StringParser("/*"),
+                new Cm::Parsing::KleeneStarParser(
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::NonterminalParser("string", "string", 0),
+                            new Cm::Parsing::NonterminalParser("char", "char", 0)),
+                        new Cm::Parsing::DifferenceParser(
+                            new Cm::Parsing::AnyCharParser(),
+                            new Cm::Parsing::StringParser("*/"))))),
+            new Cm::Parsing::StringParser("*/"))));
+    AddRule(new Cm::Parsing::Rule("spaces_and_comments", GetScope(),
+        new Cm::Parsing::PositiveParser(
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::SpaceParser(),
+                new Cm::Parsing::NonterminalParser("comment", "comment", 0)))));
+    AddRule(new Cm::Parsing::Rule("digit_sequence", GetScope(),
+        new Cm::Parsing::TokenParser(
+            new Cm::Parsing::PositiveParser(
+                new Cm::Parsing::DigitParser()))));
+    AddRule(new Cm::Parsing::Rule("sign", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::CharParser('+'),
+            new Cm::Parsing::CharParser('-'))));
     AddRule(new intRule("int", GetScope(),
-        new ActionParser("A0",
-            new TokenParser(
-                new SequenceParser(
-                    new OptionalParser(
-                        new NonterminalParser("sign", "sign", 0)),
-                    new NonterminalParser("digit_sequence", "digit_sequence", 0))))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::OptionalParser(
+                        new Cm::Parsing::NonterminalParser("sign", "sign", 0)),
+                    new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0))))));
     AddRule(new uintRule("uint", GetScope(),
-        new ActionParser("A0",
-            new NonterminalParser("digit_sequence", "digit_sequence", 0))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0))));
     AddRule(new longRule("long", GetScope(),
-        new ActionParser("A0",
-            new TokenParser(
-                new SequenceParser(
-                    new OptionalParser(
-                        new NonterminalParser("sign", "sign", 0)),
-                    new NonterminalParser("digit_sequence", "digit_sequence", 0))))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::OptionalParser(
+                        new Cm::Parsing::NonterminalParser("sign", "sign", 0)),
+                    new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0))))));
     AddRule(new ulongRule("ulong", GetScope(),
-        new ActionParser("A0",
-            new NonterminalParser("digit_sequence", "digit_sequence", 0))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0))));
     AddRule(new hexRule("hex", GetScope(),
-        new ActionParser("A0",
-            new TokenParser(
-                new PositiveParser(
-                    new HexDigitParser())))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::PositiveParser(
+                    new Cm::Parsing::HexDigitParser())))));
     AddRule(new hex_literalRule("hex_literal", GetScope(),
-        new ActionParser("A0",
-            new TokenParser(
-                new SequenceParser(
-                    new AlternativeParser(
-                        new StringParser("0x"),
-                        new StringParser("0X")),
-                    new ExpectationParser(
-                        new NonterminalParser("hex", "hex", 0)))))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::StringParser("0x"),
+                        new Cm::Parsing::StringParser("0X")),
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::NonterminalParser("hex", "hex", 0)))))));
     AddRule(new realRule("real", GetScope(),
-        new ActionParser("A0",
-            new TokenParser(
-                new SequenceParser(
-                    new OptionalParser(
-                        new NonterminalParser("sign", "sign", 0)),
-                    new AlternativeParser(
-                        new NonterminalParser("fractional_real", "fractional_real", 0),
-                        new NonterminalParser("exponent_real", "exponent_real", 0)))))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::OptionalParser(
+                        new Cm::Parsing::NonterminalParser("sign", "sign", 0)),
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::NonterminalParser("fractional_real", "fractional_real", 0),
+                        new Cm::Parsing::NonterminalParser("exponent_real", "exponent_real", 0)))))));
     AddRule(new urealRule("ureal", GetScope(),
-        new ActionParser("A0",
-            new AlternativeParser(
-                new NonterminalParser("fractional_real", "fractional_real", 0),
-                new NonterminalParser("exponent_real", "exponent_real", 0)))));
-    AddRule(new Rule("fractional_real", GetScope(),
-        new AlternativeParser(
-            new TokenParser(
-                new SequenceParser(
-                    new SequenceParser(
-                        new SequenceParser(
-                            new OptionalParser(
-                                new NonterminalParser("digit_sequence", "digit_sequence", 0)),
-                            new CharParser('.')),
-                        new NonterminalParser("digit_sequence", "digit_sequence", 0)),
-                    new OptionalParser(
-                        new NonterminalParser("exponent_part", "exponent_part", 0)))),
-            new TokenParser(
-                new SequenceParser(
-                    new NonterminalParser("digit_sequence", "digit_sequence", 0),
-                    new CharParser('.'))))));
-    AddRule(new Rule("exponent_real", GetScope(),
-        new TokenParser(
-            new SequenceParser(
-                new NonterminalParser("digit_sequence", "digit_sequence", 0),
-                new NonterminalParser("exponent_part", "exponent_part", 0)))));
-    AddRule(new Rule("exponent_part", GetScope(),
-        new TokenParser(
-            new SequenceParser(
-                new SequenceParser(
-                    new CharSetParser("eE"),
-                    new OptionalParser(
-                        new NonterminalParser("sign", "sign", 0))),
-                new NonterminalParser("digit_sequence", "digit_sequence", 0)))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::NonterminalParser("fractional_real", "fractional_real", 0),
+                new Cm::Parsing::NonterminalParser("exponent_real", "exponent_real", 0)))));
+    AddRule(new Cm::Parsing::Rule("fractional_real", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::OptionalParser(
+                                new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0)),
+                            new Cm::Parsing::CharParser('.')),
+                        new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0)),
+                    new Cm::Parsing::OptionalParser(
+                        new Cm::Parsing::NonterminalParser("exponent_part", "exponent_part", 0)))),
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0),
+                    new Cm::Parsing::CharParser('.'))))));
+    AddRule(new Cm::Parsing::Rule("exponent_real", GetScope(),
+        new Cm::Parsing::TokenParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0),
+                new Cm::Parsing::NonterminalParser("exponent_part", "exponent_part", 0)))));
+    AddRule(new Cm::Parsing::Rule("exponent_part", GetScope(),
+        new Cm::Parsing::TokenParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::CharSetParser("eE"),
+                    new Cm::Parsing::OptionalParser(
+                        new Cm::Parsing::NonterminalParser("sign", "sign", 0))),
+                new Cm::Parsing::NonterminalParser("digit_sequence", "digit_sequence", 0)))));
     AddRule(new numberRule("number", GetScope(),
-        new AlternativeParser(
-            new ActionParser("A0",
-                new NonterminalParser("r", "real", 0)),
-            new ActionParser("A1",
-                new NonterminalParser("i", "int", 0)))));
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::NonterminalParser("r", "real", 0)),
+            new Cm::Parsing::ActionParser("A1",
+                new Cm::Parsing::NonterminalParser("i", "int", 0)))));
     AddRule(new boolRule("bool", GetScope(),
-        new AlternativeParser(
-            new ActionParser("A0",
-                new KeywordParser("true")),
-            new ActionParser("A1",
-                new KeywordParser("false")))));
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::KeywordParser("true")),
+            new Cm::Parsing::ActionParser("A1",
+                new Cm::Parsing::KeywordParser("false")))));
     AddRule(new identifierRule("identifier", GetScope(),
-        new ActionParser("A0",
-            new TokenParser(
-                new SequenceParser(
-                    new AlternativeParser(
-                        new LetterParser(),
-                        new CharParser('_')),
-                    new KleeneStarParser(
-                        new AlternativeParser(
-                            new AlternativeParser(
-                                new LetterParser(),
-                                new DigitParser()),
-                            new CharParser('_'))))))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::LetterParser(),
+                        new Cm::Parsing::CharParser('_')),
+                    new Cm::Parsing::KleeneStarParser(
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::AlternativeParser(
+                                new Cm::Parsing::LetterParser(),
+                                new Cm::Parsing::DigitParser()),
+                            new Cm::Parsing::CharParser('_'))))))));
     AddRule(new qualified_idRule("qualified_id", GetScope(),
-        new ActionParser("A0",
-            new TokenParser(
-                new SequenceParser(
-                    new NonterminalParser("first", "identifier", 0),
-                    new KleeneStarParser(
-                        new SequenceParser(
-                            new CharParser('.'),
-                            new NonterminalParser("rest", "identifier", 0))))))));
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::NonterminalParser("first", "identifier", 0),
+                    new Cm::Parsing::KleeneStarParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::CharParser('.'),
+                            new Cm::Parsing::NonterminalParser("rest", "identifier", 0))))))));
     AddRule(new escapeRule("escape", GetScope(),
-        new TokenParser(
-            new SequenceParser(
-                new CharParser('\\'),
-                new AlternativeParser(
-                    new AlternativeParser(
-                        new SequenceParser(
-                            new CharSetParser("xX"),
-                            new ActionParser("A0",
-                                new NonterminalParser("x", "hex", 0))),
-                        new SequenceParser(
-                            new CharSetParser("dD"),
-                            new ActionParser("A1",
-                                new NonterminalParser("decimalEscape", "uint", 0)))),
-                    new ActionParser("A2",
-                        new CharSetParser("dDxX", true)))))));
+        new Cm::Parsing::TokenParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::CharParser('\\'),
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::CharSetParser("xX"),
+                            new Cm::Parsing::ActionParser("A0",
+                                new Cm::Parsing::NonterminalParser("x", "hex", 0))),
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::CharSetParser("dD"),
+                            new Cm::Parsing::ActionParser("A1",
+                                new Cm::Parsing::NonterminalParser("decimalEscape", "uint", 0)))),
+                    new Cm::Parsing::ActionParser("A2",
+                        new Cm::Parsing::CharSetParser("dDxX", true)))))));
     AddRule(new charRule("char", GetScope(),
-        new TokenParser(
-            new SequenceParser(
-                new SequenceParser(
-                    new CharParser('\''),
-                    new AlternativeParser(
-                        new ActionParser("A0",
-                            new CharSetParser("\\\r\n", true)),
-                        new ActionParser("A1",
-                            new NonterminalParser("escape", "escape", 0)))),
-                new ExpectationParser(
-                    new CharParser('\''))))));
+        new Cm::Parsing::TokenParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::CharParser('\''),
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::ActionParser("A0",
+                            new Cm::Parsing::CharSetParser("\\\r\n", true)),
+                        new Cm::Parsing::ActionParser("A1",
+                            new Cm::Parsing::NonterminalParser("escape", "escape", 0)))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser('\''))))));
     AddRule(new stringRule("string", GetScope(),
-        new TokenParser(
-            new SequenceParser(
-                new SequenceParser(
-                    new CharParser('\"'),
-                    new KleeneStarParser(
-                        new AlternativeParser(
-                            new ActionParser("A0",
-                                new PositiveParser(
-                                    new CharSetParser("\"\\\r\n", true))),
-                            new ActionParser("A1",
-                                new NonterminalParser("escape", "escape", 0))))),
-                new ExpectationParser(
-                    new CharParser('\"'))))));
+        new Cm::Parsing::TokenParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::CharParser('\"'),
+                    new Cm::Parsing::KleeneStarParser(
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::ActionParser("A0",
+                                new Cm::Parsing::PositiveParser(
+                                    new Cm::Parsing::CharSetParser("\"\\\r\n", true))),
+                            new Cm::Parsing::ActionParser("A1",
+                                new Cm::Parsing::NonterminalParser("escape", "escape", 0))))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser('\"'))))));
 }
 
-} } // namespace Soul.Parsing
+} } // namespace Cm.Parsing

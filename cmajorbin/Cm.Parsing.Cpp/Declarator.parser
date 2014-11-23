@@ -1,7 +1,7 @@
-﻿/*========================================================================
+/*========================================================================
     Copyright (c) 2012-2015 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
- 
+
     Distributed under the GNU General Public License, version 3 (GPLv3).
     (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
 
@@ -27,93 +27,97 @@ namespace Cm.Parsing.Cpp
         using DeclarationGrammar.TypeName;
         using DeclarationGrammar.TypeSpecifier;
         using DeclarationGrammar.CVQualifier;
-        
-        InitDeclaratorList: Cm::Parsing::CppObjectModel::InitDeclaratorList*
-                        ::= empty{ value = new InitDeclaratorList(); }
-                            InitDeclarator{ value->Add(InitDeclarator); } % ','
+
+        InitDeclaratorList(var std::unique_ptr<InitDeclaratorList> idl): Cm::Parsing::CppObjectModel::InitDeclaratorList*
+                        ::= empty{ idl.reset(new InitDeclaratorList()); }
+                            (InitDeclarator{ idl->Add(InitDeclarator); } % ','){ value = idl.release(); }
                         ;
-                        
+
         InitDeclarator: Cm::Parsing::CppObjectModel::InitDeclarator*
                         ::= (Declarator Initializer?)
                         {
                             value = new InitDeclarator(Declarator, Initializer);
                         }
                         ;
-                        
+
         Declarator: std::string
-                        ::= 
-                        (   DirectDeclarator 
+                        ::=
+                        (   DirectDeclarator
                         |   PtrOperator Declarator
                         )
-                        { 
-                            value = Trim(std::string(matchBegin, matchEnd)); 
-                        }
-                        ;
-                        
-        DirectDeclarator 
-                        ::= DeclaratorId
-                        (
-                            '[' ConstantExpression? ']'
-                            '(' Declarator ')'
-                        )*
-                        ;
-                        
-        DeclaratorId    ::= IdExpression
-                        |   TypeName
-                        ;
-    
-        TypeId: Cm::Parsing::CppObjectModel::TypeId*
-                        ::= empty{ value = new TypeId(); } 
-                        (TypeSpecifierSeq(value) | TypeName{ value->Add(TypeName); }) 
-                        (AbstractDeclarator{ value->Declarator() = AbstractDeclarator; })?
-                        ;
-                        
-        Type: Cm::Parsing::CppObjectModel::Type*     
-                        ::= empty{ value = new Type(); }
-                            (   (TypeSpecifier{ value->Add(TypeSpecifier); })+
-                            |   TypeName{ value->Add(TypeName); }
-                            )
-                        ;
-                        
-        TypeSpecifierSeq(Cm::Parsing::CppObjectModel::TypeId* typeId)
-                        ::= (TypeSpecifier{ typeId->TypeSpecifiers().push_back(TypeSpecifier); })+
-                        ;
-                        
-        AbstractDeclarator: std::string
-                        ::= 
-                        (   PtrOperator AbstractDeclarator?
-                        |   DirectAbstractDeclarator
-                        )
-                        { 
+                        {
                             value = Trim(std::string(matchBegin, matchEnd));
                         }
                         ;
-                        
-        DirectAbstractDeclarator
-                        ::= 
-                        (   '[' ConstantExpression? ']'
+
+        DirectDeclarator(var std::unique_ptr<CppObject> o)
+                        ::= DeclaratorId
+                        (
+                            '[' (ConstantExpression{ o.reset(ConstantExpression); })? ']'
+                            '(' Declarator ')'
+                        )*
+                        ;
+
+        DeclaratorId(var std::unique_ptr<CppObject> o)
+						::= IdExpression{ o.reset(IdExpression); }
+                        |   TypeName{ o.reset(TypeName); }
+                        ;
+
+        TypeId(var std::unique_ptr<TypeId> ti): Cm::Parsing::CppObjectModel::TypeId*
+                        ::= empty{ ti.reset(new TypeId()); }
+                        (
+                            (TypeSpecifierSeq(ti.get()) | TypeName{ ti->Add(TypeName); })
+                            (AbstractDeclarator{ ti->Declarator() = AbstractDeclarator; })?
+                        ){ value = ti.release(); }
+                        ;
+
+        Type(var std::unique_ptr<Type> t): Cm::Parsing::CppObjectModel::Type*
+                        ::= empty{ t.reset(new Type()); }
+                            (   (TypeSpecifier{ t->Add(TypeSpecifier); })+
+                            |   TypeName{ t->Add(TypeName); }
+                            ){ value = t.release(); }
+                        ;
+
+        TypeSpecifierSeq(Cm::Parsing::CppObjectModel::TypeId* typeId)
+                        ::= (TypeSpecifier{ typeId->Add(TypeSpecifier); })+
+                        ;
+
+        AbstractDeclarator: std::string
+                        ::=
+                        (   PtrOperator AbstractDeclarator?
+                        |   DirectAbstractDeclarator
+                        )
+                        {
+                            value = Trim(std::string(matchBegin, matchEnd));
+                        }
+                        ;
+
+        DirectAbstractDeclarator(var std::unique_ptr<CppObject> o)
+                        ::=
+                        (   '[' (ConstantExpression{ o.reset(ConstantExpression); })? ']'
                         |   '(' AbstractDeclarator ')'
                         )+
                         ;
-    
+
         PtrOperator     ::= '*' CVQualifierSeq?
                         |   '&'
                         ;
-        
-        CVQualifierSeq  ::= CVQualifier+
+
+        CVQualifierSeq(var std::unique_ptr<CppObject> o)
+						::= (CVQualifier{ o.reset(CVQualifier); })+
                         ;
-                        
+
         Initializer: Cm::Parsing::CppObjectModel::Initializer*
-                        ::= '=' InitializerClause{ value = new Initializer(InitializerClause, Cm::Parsing::CppObjectModel::GetEmptyVector()); }
+                        ::= '=' InitializerClause{ value = new Initializer(InitializerClause, GetEmptyVector()); }
                         |   ('(' ExpressionList ')'){ value = new Initializer(nullptr, ExpressionList); }
                         ;
-                        
+
         InitializerClause: Cm::Parsing::CppObjectModel::AssignInit*
                         ::= AssignmentExpression{  value = new AssignInit(AssignmentExpression); }
                         |   '{'{ value = new AssignInit(nullptr); } InitializerList(value) '}'
                         |   '{' '}'{ value = new AssignInit(nullptr); }
                         ;
-                        
+
         InitializerList(Cm::Parsing::CppObjectModel::AssignInit* init)
                         ::= InitializerClause{ init->Add(InitializerClause); } % ','
                         ;
