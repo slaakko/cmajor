@@ -1,5 +1,5 @@
-#ifndef Composite_hpp_6331
-#define Composite_hpp_6331
+#ifndef Composite_hpp_10647
+#define Composite_hpp_10647
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -29,4 +29,4 @@ private:
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // Composite_hpp_6331
+#endif // Composite_hpp_10647

@@ -263,25 +263,25 @@ private:
 
 void RuleGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.Syntax.CompositeGrammar");
+    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::Syntax::CompositeGrammar::Create(parsingDomain);
+        grammar0 = Cm::Parsing::Syntax::ElementGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Syntax.CompositeGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Syntax::ElementGrammar::Create(parsingDomain);
+        grammar1 = Cm::Parsing::Syntax::CompositeGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void RuleGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRuleLink(new Cm::Parsing::RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
     AddRule(new RuleRule("Rule", GetScope(),
         new Cm::Parsing::SequenceParser(

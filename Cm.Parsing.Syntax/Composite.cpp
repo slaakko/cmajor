@@ -669,11 +669,11 @@ private:
 
 void CompositeGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.Syntax.PrimaryGrammar");
+    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Syntax.PrimaryGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::Syntax::PrimaryGrammar::Create(parsingDomain);
+        grammar0 = Cm::Parsing::Syntax::PrimaryGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
 }

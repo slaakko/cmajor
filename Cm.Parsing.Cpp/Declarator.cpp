@@ -976,29 +976,29 @@ private:
 
 void DeclaratorGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.Cpp.DeclarationGrammar");
+    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Cpp.ExpressionGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::Cpp::DeclarationGrammar::Create(parsingDomain);
+        grammar0 = Cm::Parsing::Cpp::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.Cpp.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Cpp.DeclarationGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Cpp::ExpressionGrammar::Create(parsingDomain);
+        grammar1 = Cm::Parsing::Cpp::DeclarationGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void DeclaratorGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("AssignmentExpression", this, "ExpressionGrammar.AssignmentExpression"));
-    AddRuleLink(new Cm::Parsing::RuleLink("IdExpression", this, "ExpressionGrammar.IdExpression"));
     AddRuleLink(new Cm::Parsing::RuleLink("ConstantExpression", this, "ExpressionGrammar.ConstantExpression"));
+    AddRuleLink(new Cm::Parsing::RuleLink("AssignmentExpression", this, "ExpressionGrammar.AssignmentExpression"));
     AddRuleLink(new Cm::Parsing::RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeSpecifier", this, "DeclarationGrammar.TypeSpecifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("IdExpression", this, "ExpressionGrammar.IdExpression"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeName", this, "DeclarationGrammar.TypeName"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeSpecifier", this, "DeclarationGrammar.TypeSpecifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("CVQualifier", this, "DeclarationGrammar.CVQualifier"));
     AddRule(new InitDeclaratorListRule("InitDeclaratorList", GetScope(),
         new Cm::Parsing::SequenceParser(

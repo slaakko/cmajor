@@ -1,5 +1,5 @@
-#ifndef Declarator_hpp_20080
-#define Declarator_hpp_20080
+#ifndef Declarator_hpp_10102
+#define Declarator_hpp_10102
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -35,4 +35,4 @@ private:
 
 } } } // namespace Cm.Parsing.Cpp
 
-#endif // Declarator_hpp_20080
+#endif // Declarator_hpp_10102

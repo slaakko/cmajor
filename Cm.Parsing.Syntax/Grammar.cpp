@@ -317,17 +317,17 @@ private:
 
 void GrammarGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.Syntax.RuleGrammar");
+    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::Syntax::RuleGrammar::Create(parsingDomain);
+        grammar0 = Cm::Parsing::Syntax::ElementGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Syntax.RuleGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Syntax::ElementGrammar::Create(parsingDomain);
+        grammar1 = Cm::Parsing::Syntax::RuleGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
@@ -335,10 +335,10 @@ void GrammarGrammar::GetReferencedGrammars()
 void GrammarGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Rule", this, "RuleGrammar.Rule"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
+    AddRuleLink(new Cm::Parsing::RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Rule", this, "RuleGrammar.Rule"));
     AddRule(new GrammarRule("Grammar", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
