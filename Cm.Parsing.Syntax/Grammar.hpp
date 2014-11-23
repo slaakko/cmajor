@@ -1,5 +1,5 @@
-#ifndef Grammar_hpp_10647
-#define Grammar_hpp_10647
+#ifndef Grammar_hpp_15252
+#define Grammar_hpp_15252
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -25,4 +25,4 @@ private:
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // Grammar_hpp_10647
+#endif // Grammar_hpp_15252

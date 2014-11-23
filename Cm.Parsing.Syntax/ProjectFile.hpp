@@ -1,5 +1,5 @@
-#ifndef ProjectFile_hpp_10647
-#define ProjectFile_hpp_10647
+#ifndef ProjectFile_hpp_15252
+#define ProjectFile_hpp_15252
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // ProjectFile_hpp_10647
+#endif // ProjectFile_hpp_15252

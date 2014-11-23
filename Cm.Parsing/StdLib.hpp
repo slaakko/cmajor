@@ -1,5 +1,5 @@
-#ifndef StdLib_hpp_31865
-#define StdLib_hpp_31865
+#ifndef StdLib_hpp_15252
+#define StdLib_hpp_15252
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -35,4 +35,4 @@ private:
 
 } } // namespace Cm.Parsing
 
-#endif // StdLib_hpp_31865
+#endif // StdLib_hpp_15252

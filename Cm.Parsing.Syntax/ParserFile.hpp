@@ -1,5 +1,5 @@
-#ifndef ParserFile_hpp_10647
-#define ParserFile_hpp_10647
+#ifndef ParserFile_hpp_15252
+#define ParserFile_hpp_15252
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -28,4 +28,4 @@ private:
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // ParserFile_hpp_10647
+#endif // ParserFile_hpp_15252
