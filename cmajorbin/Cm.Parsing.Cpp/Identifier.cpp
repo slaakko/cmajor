@@ -176,25 +176,25 @@ private:
 
 void IdentifierGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::stdlib::Create(parsingDomain);
+        grammar0 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.Cpp.KeywordGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Cpp.KeywordGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Cpp::KeywordGrammar::Create(parsingDomain);
+        grammar1 = Cm::Parsing::Cpp::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void IdentifierGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
     AddRule(new IdentifierRule("Identifier", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::DifferenceParser(

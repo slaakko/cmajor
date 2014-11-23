@@ -108,11 +108,11 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
 
 void KeywordGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::stdlib::Create(parsingDomain);
+        grammar0 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
 }
