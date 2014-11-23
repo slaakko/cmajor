@@ -15,9 +15,6 @@
 #include <string>
 #include <stdlib.h>
 
-#include <Cm.Parsing.Cpp/Statement.hpp>
-#include <Cm.Util/MappedInputFile.hpp>
-
 #if defined(_MSC_VER) && !defined(NDEBUG)
     #define _CRTDBG_MAP_ALLOC
     #include <stdlib.h>
@@ -114,12 +111,6 @@ int main(int argc, const char** argv)
             const std::string& projectFilePath = projectFilePaths[i];
             Cm::Parsing::Syntax::Compile(projectFilePath, libraryDirectories);
         }
-/*
-		Cm::Parsing::Cpp::StatementGrammar* grammar = Cm::Parsing::Cpp::StatementGrammar::Create();
-		const std::string& projectFilePath = projectFilePaths[0];
-		Cm::Util::MappedInputFile file(projectFilePath);
-		std::unique_ptr<Cm::Parsing::CppObjectModel::CompoundStatement> statement(grammar->Parse(file.Begin(), file.End(), 0, projectFilePath));
-*/
     }
     catch (std::exception& ex)
     {

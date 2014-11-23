@@ -22,8 +22,7 @@ public:
     MappedInputFile(const std::string& fileName_);
     ~MappedInputFile();
     const char* Begin() const;
-    const char* End() const { return Begin() + Size(); }
-    uint64_t Size() const;
+	const char* End() const;
 private:
     MappedInputFileImpl* impl;
 };

@@ -1,6 +1,6 @@
 project Cm.Parsing.Cpp;
 
-reference <StdLib.sll>;
+reference <StdLib.pl>;
 source <Declaration.parser>;
 source <Declarator.parser>;
 source <Expression.parser>;

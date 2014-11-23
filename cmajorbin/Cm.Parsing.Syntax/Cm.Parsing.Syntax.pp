@@ -1,7 +1,7 @@
 project Cm.Parsing.Syntax;
 
-reference <StdLib.sll>;
-reference <../Cm.Parsing.Cpp/Cm.Parsing.Cpp.sll>;
+reference <StdLib.pl>;
+reference <../Cm.Parsing.Cpp/Cm.Parsing.Cpp.pl>;
 source <Composite.parser>;
 source <Element.parser>;
 source <Grammar.parser>;
