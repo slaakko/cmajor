@@ -19,15 +19,15 @@
 
 namespace Cm { namespace Parsing {
 
-Grammar::Grammar(const std::string& name_, Scope* enclosingScope_): ParsingObject(name_, enclosingScope_), parsingDomain(new ParsingDomain()), 
-    linking(false), linked(false), log(0), maxLogLineLength(256)
+Grammar::Grammar(const std::string& name_, Scope* enclosingScope_): ParsingObject(name_, enclosingScope_), parsingDomain(new ParsingDomain()), ns(nullptr),
+    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), log(0), maxLogLineLength(256)
 {
     RegisterParsingDomain(parsingDomain);
     SetScope(new Scope(Name(), EnclosingScope()));
 }
 
-Grammar::Grammar(const std::string& name_, Scope* enclosingScope_, ParsingDomain* parsingDomain_): ParsingObject(name_, enclosingScope_), parsingDomain(parsingDomain_), 
-    linking(false), linked(false), log(0), maxLogLineLength(256)
+Grammar::Grammar(const std::string& name_, Scope* enclosingScope_, ParsingDomain* parsingDomain_): ParsingObject(name_, enclosingScope_), parsingDomain(parsingDomain_), ns(nullptr), 
+    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), log(0), maxLogLineLength(256)
 {
     SetScope(new Scope(Name(), EnclosingScope()));
 }
@@ -137,6 +137,7 @@ Match Grammar::Parse(Scanner& scanner, ObjectStack& stack)
             if (skipRule)
             {
                 contentParser = new SequenceParser(new SequenceParser(new OptionalParser(skipRule), startRule), new OptionalParser(skipRule));
+				Own(contentParser);
             }
             else
             {
@@ -196,11 +197,13 @@ void Grammar::Link()
 
 void Grammar::AddGrammarReference(Grammar* grammarReference)
 {
+    Own(grammarReference);
     grammarReferences.insert(grammarReference);
 }
 
 void Grammar::AddRuleLink(RuleLink* ruleLink)
 {
+    Own(ruleLink);
     ruleLinks.insert(ruleLink);
 }
 

@@ -25,9 +25,9 @@ namespace Cm.Parsing.Cpp
                         ;
                 
         IntegerLiteral: Cm::Parsing::CppObjectModel::Literal*
-                        ::= token(DecimalLiteral:dl IntegerSuffix:is1?) { value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
-                        |   token(OctalLiteral:ol IntegerSuffix:is2?){ value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
-                        |   token(HexadecimalLiteral:hl IntegerSuffix:is3?){ value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
+                        ::= token(DecimalLiteral:dl IntegerSuffix:is1?) { value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   token(OctalLiteral:ol IntegerSuffix:is2?){ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   token(HexadecimalLiteral:hl IntegerSuffix:is3?){ value = new Literal(std::string(matchBegin, matchEnd)); }
                         ;
                         
         DecimalLiteral  ::= token([1-9] digit*)
@@ -58,9 +58,9 @@ namespace Cm.Parsing.Cpp
                         ;
                         
         CharacterLiteral: Cm::Parsing::CppObjectModel::Literal*
-                        ::= NarrowCharacterLiteral{ value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
-                        |   UniversalCharacterLiteral{ value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
-                        |   WideCharacterLiteral{ value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
+                        ::= NarrowCharacterLiteral{ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   UniversalCharacterLiteral{ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   WideCharacterLiteral{ value = new Literal(std::string(matchBegin, matchEnd)); }
                         ;
                             
         NarrowCharacterLiteral
@@ -102,8 +102,8 @@ namespace Cm.Parsing.Cpp
                         ;
                         
         FloatingLiteral: Cm::Parsing::CppObjectModel::Literal*
-                        ::= token(FractionalConstant ExponentPart? FloatingSuffix?){ value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
-                        |   token(DigitSequence ExponentPart FloatingSuffix?){ value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
+                        ::= token(FractionalConstant ExponentPart? FloatingSuffix?){ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   token(DigitSequence ExponentPart FloatingSuffix?){ value = new Literal(std::string(matchBegin, matchEnd)); }
                         ;
                         
         FractionalConstant
@@ -124,7 +124,7 @@ namespace Cm.Parsing.Cpp
                         ;
                         
         StringLiteral: Cm::Parsing::CppObjectModel::Literal*
-                        ::= token(EncodingPrefix? '"' SCharSequence? '"'){ value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd)); }
+                        ::= token(EncodingPrefix? '"' SCharSequence? '"'){ value = new Literal(std::string(matchBegin, matchEnd)); }
                         ;
                         
         EncodingPrefix  ::= "u8" | 'u' | 'U' | 'L'
@@ -138,8 +138,8 @@ namespace Cm.Parsing.Cpp
                         ;
                         
         BooleanLiteral: Cm::Parsing::CppObjectModel::Literal*
-                        ::= keyword("true"){ value = new Cm::Parsing::CppObjectModel::Literal("true"); }
-                        |   keyword("false"){ value = new Cm::Parsing::CppObjectModel::Literal("false"); }
+                        ::= keyword("true"){ value = new Literal("true"); }
+                        |   keyword("false"){ value = new Literal("false"); }
                         ;
                         
         PointerLiteral: Cm::Parsing::CppObjectModel::Literal*

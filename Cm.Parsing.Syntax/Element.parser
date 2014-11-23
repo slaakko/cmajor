@@ -47,15 +47,15 @@ namespace Cm.Parsing.Syntax
                             ;
 
         Variable(Cm::Parsing::Rule* rule)
-                            ::= keyword("var") TypeId Declarator{ rule->AddLocalVariable(AttrOrVariable(TypeId->ToString(), Declarator)); }
+                            ::= keyword("var") TypeId Declarator{ rule->AddLocalVariable(AttrOrVariable(TypeId->ToString(), Declarator)); delete TypeId; }
                             ;
 
         Parameter(Cm::Parsing::Rule* rule)
-                            ::= TypeId Declarator{ rule->AddInheritedAttribute(AttrOrVariable(TypeId->ToString(), Declarator)); }
+                            ::= TypeId Declarator{ rule->AddInheritedAttribute(AttrOrVariable(TypeId->ToString(), Declarator)); delete TypeId; }
                             ;
 
         ReturnType(Cm::Parsing::Rule* rule)
-                            ::= (':' - "::") TypeId{ rule->SetValueTypeName(TypeId->ToString()); }
+                            ::= (':' - "::") TypeId{ rule->SetValueTypeName(TypeId->ToString()); delete TypeId; }
                             ;
 
         Keyword             ::= keyword_list(identifier, 

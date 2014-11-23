@@ -1,5 +1,5 @@
-#ifndef Expression_hpp_10969
-#define Expression_hpp_10969
+#ifndef Expression_hpp_22976
+#define Expression_hpp_22976
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -46,6 +46,7 @@ private:
     class NewExpressionRule;
     class NewTypeIdRule;
     class NewDeclaratorRule;
+    class DirectNewDeclaratorRule;
     class NewPlacementRule;
     class NewInitializerRule;
     class DeleteExpressionRule;
@@ -59,4 +60,4 @@ private:
 
 } } } // namespace Cm.Parsing.Cpp
 
-#endif // Expression_hpp_10969
+#endif // Expression_hpp_22976

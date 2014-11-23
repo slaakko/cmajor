@@ -56,17 +56,17 @@ std::string ActionParser::VariableName() const
 
 Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
-    Span span = scanner.GetSpan();
+    Span actionSpan = scanner.GetSpan();
     Match match = Child()->Parse(scanner, stack);
     if (match.Hit())
     {
         if (action)
         {
             bool pass = true;
-            span.SetEnd(scanner.GetSpan().Start());
-            const char* matchBegin = scanner.Start() + span.Start();
-            const char* matchEnd = scanner.Start() + span.End();
-            (*action)(matchBegin, matchEnd, span, scanner.FileName(), pass);
+			actionSpan.SetEnd(scanner.GetSpan().Start());
+            const char* matchBegin = scanner.Start() + actionSpan.Start();
+            const char* matchEnd = scanner.Start() + actionSpan.End();
+            (*action)(matchBegin, matchEnd, actionSpan, scanner.FileName(), pass);
             if (!pass)
             {
                 return Match::Nothing();

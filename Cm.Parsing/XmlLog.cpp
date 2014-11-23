@@ -9,6 +9,7 @@
 
 #include <Cm.Parsing/XmlLog.hpp>
 #include <Cm.Parsing/Utility.hpp>
+#include <algorithm>
 
 namespace Cm { namespace Parsing {
 

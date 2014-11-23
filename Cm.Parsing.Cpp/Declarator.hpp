@@ -1,5 +1,5 @@
-#ifndef Declarator_hpp_12379
-#define Declarator_hpp_12379
+#ifndef Declarator_hpp_20080
+#define Declarator_hpp_20080
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -20,10 +20,14 @@ private:
     class InitDeclaratorListRule;
     class InitDeclaratorRule;
     class DeclaratorRule;
+    class DirectDeclaratorRule;
+    class DeclaratorIdRule;
     class TypeIdRule;
     class TypeRule;
     class TypeSpecifierSeqRule;
     class AbstractDeclaratorRule;
+    class DirectAbstractDeclaratorRule;
+    class CVQualifierSeqRule;
     class InitializerRule;
     class InitializerClauseRule;
     class InitializerListRule;
@@ -31,4 +35,4 @@ private:
 
 } } } // namespace Cm.Parsing.Cpp
 
-#endif // Declarator_hpp_12379
+#endif // Declarator_hpp_20080

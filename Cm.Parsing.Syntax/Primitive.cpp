@@ -1154,10 +1154,10 @@ private:
 void PrimitiveGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* parsingDomain = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Soul.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Soul::Parsing::stdlib::Create(parsingDomain);
+        grammar0 = Cm::Parsing::stdlib::Create(parsingDomain);
     }
     AddGrammarReference(grammar0);
     Cm::Parsing::Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
@@ -1170,10 +1170,10 @@ void PrimitiveGrammar::GetReferencedGrammars()
 
 void PrimitiveGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Soul.Parsing.stdlib.char"));
+    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Soul.Parsing.stdlib.string"));
-    AddRuleLink(new Cm::Parsing::RuleLink("escape", this, "Soul.Parsing.stdlib.escape"));
+    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
+    AddRuleLink(new Cm::Parsing::RuleLink("escape", this, "Cm.Parsing.stdlib.escape"));
     AddRuleLink(new Cm::Parsing::RuleLink("StringArray", this, "ElementGrammar.StringArray"));
     AddRule(new PrimitiveRule("Primitive", GetScope(),
         new Cm::Parsing::AlternativeParser(

@@ -1,5 +1,5 @@
-#ifndef Identifier_hpp_8533
-#define Identifier_hpp_8533
+#ifndef Identifier_hpp_20080
+#define Identifier_hpp_20080
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -22,4 +22,4 @@ private:
 
 } } } // namespace Cm.Parsing.Cpp
 
-#endif // Identifier_hpp_8533
+#endif // Identifier_hpp_20080

@@ -38,7 +38,11 @@ ParsingDomainRepository::ParsingDomainRepository()
 
 void ParsingDomainRepository::Register(ParsingDomain* parsingDomain)
 {
-    parsingDomains.insert(std::unique_ptr<ParsingDomain>(parsingDomain));
+    if (!parsingDomain->IsOwned())
+    {
+        parsingDomain->SetOwned();
+        parsingDomains.insert(std::unique_ptr<ParsingDomain>(parsingDomain));
+    }
 }
 
 int ParsingDomainRepository::initCount = 0;

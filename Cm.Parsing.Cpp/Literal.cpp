@@ -244,15 +244,15 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
 private:
     struct Context
@@ -297,15 +297,15 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
 private:
     struct Context
@@ -389,11 +389,11 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
 private:
     struct Context
@@ -434,7 +434,7 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal(std::string(matchBegin, matchEnd));
+        context.value = new Literal(std::string(matchBegin, matchEnd));
     }
 private:
     struct Context
@@ -477,11 +477,11 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal("true");
+        context.value = new Literal("true");
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Cm::Parsing::CppObjectModel::Literal("false");
+        context.value = new Literal("false");
     }
 private:
     struct Context

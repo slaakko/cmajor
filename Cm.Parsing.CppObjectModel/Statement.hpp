@@ -219,7 +219,6 @@ public:
     DeclarationStatement(CppObject* declaration_);
     virtual void Print(CodeFormatter& formatter);
     virtual void Accept(Visitor& visitor);
-    CppObject* Declaration() const { return declaration; }
 private:
     CppObject* declaration;
 };

@@ -30,6 +30,9 @@ namespace Cm.Parsing.Cpp
         using IdentifierGrammar.Identifier;
         using DeclarationGrammar.SimpleDeclaration;
         using DeclarationGrammar.BlockDeclaration;
+		using stdlib.spaces_and_comments;
+		skip spaces_and_comments;
+		start CompoundStatement;
         
         Statement: Cm::Parsing::CppObjectModel::Statement*
                     ::= LabeledStatement{ value = LabeledStatement; }
@@ -61,10 +64,10 @@ namespace Cm.Parsing.Cpp
                     ::= (Expression ';'!){ value = new ExpressionStatement(Expression); }
                     ;
                     
-        CompoundStatement: Cm::Parsing::CppObjectModel::CompoundStatement*
-                    ::= '{'{ value = new CompoundStatement(); } 
-                        (Statement{ value->Add(Statement); })* 
-                        '}'!
+        CompoundStatement(var std::unique_ptr<CompoundStatement> cs): Cm::Parsing::CppObjectModel::CompoundStatement*
+                    ::= '{'{ cs.reset(new CompoundStatement()); } 
+                        (Statement{ cs->Add(Statement); })* 
+                        '}'!{ value = cs.release(); }
                     ;
                     
         SelectionStatement: Cm::Parsing::CppObjectModel::Statement*
@@ -162,14 +165,14 @@ namespace Cm.Parsing.Cpp
                     ::= BlockDeclaration{ value = new DeclarationStatement(BlockDeclaration); }
                     ;
                     
-        Condition: Cm::Parsing::CppObjectModel::CppObject*
-                    ::= TypeId Declarator '=' AssignmentExpression{ value = new ConditionWithDeclarator(TypeId, Declarator, AssignmentExpression); }
+        Condition(var std::unique_ptr<TypeId> ti): Cm::Parsing::CppObjectModel::CppObject*
+                    ::= TypeId{ ti.reset(TypeId); } Declarator '=' AssignmentExpression{ value = new ConditionWithDeclarator(ti.release(), Declarator, AssignmentExpression); }
                     |   Expression{ value = Expression; }
                     ;
                     
         TryStatement: Cm::Parsing::CppObjectModel::TryStatement*
                     ::= keyword("try") CompoundStatement! { value = new TryStatement(CompoundStatement); }
-                    HandlerSeq(value)!
+                        HandlerSeq(value)!
                     ;
         
         HandlerSeq(TryStatement* st)
@@ -183,16 +186,19 @@ namespace Cm.Parsing.Cpp
                     }
                     ;
                     
-        ExceptionDeclaration: Cm::Parsing::CppObjectModel::ExceptionDeclaration*
-                    ::= empty{ value = new ExceptionDeclaration(); }
+        ExceptionDeclaration(var std::unique_ptr<ExceptionDeclaration> ed): Cm::Parsing::CppObjectModel::ExceptionDeclaration*
+                    ::= empty{ ed.reset(new ExceptionDeclaration()); }
                     (
-                        TypeSpecifierSeq(value->GetTypeId())
-                        (   Declarator{ value->GetTypeId()->Declarator() = Declarator; }
-                        |   AbstractDeclarator{ value->GetTypeId()->Declarator() = AbstractDeclarator; }
+                        TypeSpecifierSeq(ed->GetTypeId())
+                        (   Declarator{ ed->GetTypeId()->Declarator() = Declarator; }
+                        |   AbstractDeclarator{ ed->GetTypeId()->Declarator() = AbstractDeclarator; }
                         |   empty
                         )
                     |   "..."{ value->CatchAll() = true; }
                     )
+					{
+						value = ed.release();
+					}
                     ;
     }
 }

@@ -427,6 +427,7 @@ void ConditionWithDeclarator::Accept(Visitor& visitor)
 
 DeclarationStatement::DeclarationStatement(CppObject* declaration_): Statement("declaration"), declaration(declaration_) 
 {
+	Own(declaration);
 }
 
 void DeclarationStatement::Print(CodeFormatter& formatter)

@@ -66,11 +66,11 @@ Scope* Scope::GetGlobalScope() const
     return globalScope;
 }
 
-void Scope::AddNamespace(Namespace* ns)
+void Scope::AddNamespace(Namespace* nsToAdd)
 {
-    Own(ns);
+    Own(nsToAdd);
     Namespace* parent = GetGlobalScope()->Ns();
-    std::vector<std::string> nameComponents = Cm::Util::Split(ns->FullName(), '.');
+    std::vector<std::string> nameComponents = Cm::Util::Split(nsToAdd->FullName(), '.');
     if (nameComponents.empty())
     {
         throw std::runtime_error("namespace components empty");
@@ -79,8 +79,8 @@ void Scope::AddNamespace(Namespace* ns)
     for (int i = 0; i < n - 1; ++i)
     {
         const std::string& namespaceName = nameComponents[i];
-        Scope* enclosingScope = parent->GetScope();
-        ParsingObject* object = enclosingScope->Get(namespaceName);
+        Scope* parentScope = parent->GetScope();
+        ParsingObject* object = parentScope->Get(namespaceName);
         if (object)
         {
             if (object->IsNamespace())
@@ -94,29 +94,29 @@ void Scope::AddNamespace(Namespace* ns)
         }
         else
         {
-            parent = new Namespace(namespaceName, enclosingScope);
+            parent = new Namespace(namespaceName, parentScope);
             Own(parent);
             parent->GetScope()->SetName(namespaceName);
             parent->GetScope()->SetNs(parent);
-            enclosingScope->Add(parent);
+			parentScope->Add(parent);
         }
     }
-    std::string name = nameComponents[n - 1];
-    ns->SetName(name);
-    ns->GetScope()->SetName(name);
-    ns->SetEnclosingScope(parent->GetScope());
-    ns->GetScope()->SetEnclosingScope(parent->GetScope());
-    parent->GetScope()->Add(ns);
+    std::string commonName = nameComponents[n - 1];
+	nsToAdd->SetName(commonName);
+	nsToAdd->GetScope()->SetName(commonName);
+	nsToAdd->SetEnclosingScope(parent->GetScope());
+	nsToAdd->GetScope()->SetEnclosingScope(parent->GetScope());
+    parent->GetScope()->Add(nsToAdd);
 }
 
 ParsingObject* Scope::GetQualifiedObject(const std::string& qualifiedObjectName) const
 {
     std::vector<std::string> components = Cm::Util::Split(qualifiedObjectName, '.');
     int n = int(components.size());
-    Scope* scope = const_cast<Scope*>(this);
-    while (scope)
+    Scope* s = const_cast<Scope*>(this);
+    while (s)
     {
-        Scope* subScope = scope;
+        Scope* subScope = s;
         int i = 0;
         ShortNameMapIt it = subScope->shortNameMap.find(components[i]);
         while (it != subScope->shortNameMap.end())
@@ -130,7 +130,7 @@ ParsingObject* Scope::GetQualifiedObject(const std::string& qualifiedObjectName)
             subScope = object->GetScope();
             it = subScope->shortNameMap.find(components[i]);
         }
-        scope = scope->EnclosingScope();
+        s = s->EnclosingScope();
     }
     return nullptr;
 }

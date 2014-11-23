@@ -1,5 +1,5 @@
-#ifndef Declaration_hpp_12840
-#define Declaration_hpp_12840
+#ifndef Declaration_hpp_30562
+#define Declaration_hpp_30562
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -38,4 +38,4 @@ private:
 
 } } } // namespace Cm.Parsing.Cpp
 
-#endif // Declaration_hpp_12840
+#endif // Declaration_hpp_30562

@@ -40,6 +40,7 @@ IdentifierCharsRule::IdentifierCharsRule():
                         new CharParser('_')),
                     new CharParser('.')))))
 {
+    rule->SetOwned();
 }
 
 void IdentifierCharsRule::Init()
@@ -71,6 +72,7 @@ KeywordParser::KeywordParser(const std::string& keyword_): Parser("keyword", "\"
 {
     continuationRule = IdentifierCharsRule::Instance().GetRule();
     keywordStringParser = new StringParser(keyword);
+    Own(keywordStringParser);
     CreateKeywordRule();
 }
 
@@ -78,6 +80,7 @@ KeywordParser::KeywordParser(const std::string& keyword_, const std::string& con
 {
     continuationRule = IdentifierCharsRule::Instance().GetRule();
     keywordStringParser = new StringParser(keyword);
+    Own(keywordStringParser);
     CreateKeywordRule();
 }
 
@@ -100,6 +103,7 @@ void KeywordParser::CreateKeywordRule()
                 new SequenceParser(
                     keywordStringParser,
                     continuationRule))));
+    Own(keywordRule);
 }
 
 Match KeywordParser::Parse(Scanner& scanner, ObjectStack& stack)

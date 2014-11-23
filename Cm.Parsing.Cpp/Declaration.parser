@@ -33,9 +33,9 @@ namespace Cm.Parsing.Cpp
                         |   SimpleDeclaration{ value = SimpleDeclaration; }
                         ;
                                     
-        SimpleDeclaration: Cm::Parsing::CppObjectModel::SimpleDeclaration*
-                        ::= empty{ value = new SimpleDeclaration(); }
-                            DeclSpecifierSeq(value)? (InitDeclaratorList{ value->SetInitDeclaratorList(InitDeclaratorList); })? ';'
+        SimpleDeclaration(var std::unique_ptr<SimpleDeclaration> sd): Cm::Parsing::CppObjectModel::SimpleDeclaration*
+                        ::= empty{ sd.reset(new SimpleDeclaration()); }
+                            (DeclSpecifierSeq(sd.get())? (InitDeclaratorList{ sd->SetInitDeclaratorList(InitDeclaratorList); })? ';'){ value = sd.release(); }
                         ;
                                         
         DeclSpecifierSeq(Cm::Parsing::CppObjectModel::SimpleDeclaration* declaration)
@@ -53,7 +53,7 @@ namespace Cm.Parsing.Cpp
                         ::= keyword_list(identifier, 
                             ["auto", "register", "static", "extern", "mutable"])
                         {
-                            value = new Cm::Parsing::CppObjectModel::StorageClassSpecifier(std::string(matchBegin, matchEnd));
+                            value = new StorageClassSpecifier(std::string(matchBegin, matchEnd));
                         }
                         ;
                                         
@@ -66,7 +66,7 @@ namespace Cm.Parsing.Cpp
                         ::= keyword_list(identifier,
                             ["char", "wchar_t", "bool", "short", "int", "long", "signed", "unsigned", "float", "double", "void"])
                             {
-                                value = new Cm::Parsing::CppObjectModel::TypeSpecifier(std::string(matchBegin, matchEnd));
+                                value = new TypeSpecifier(std::string(matchBegin, matchEnd));
                             }
                         ;
                         
@@ -98,21 +98,21 @@ namespace Cm.Parsing.Cpp
         NamespaceAliasDefinition: Cm::Parsing::CppObjectModel::UsingObject*
                         ::= keyword("namespace") Identifier '=' QualifiedId ';'
                         {
-                            value = new Cm::Parsing::CppObjectModel::NamespaceAlias(Identifier, QualifiedId); 
+                            value = new NamespaceAlias(Identifier, QualifiedId); 
                         }
                         ;
                         
         UsingDeclaration: Cm::Parsing::CppObjectModel::UsingObject*
                         ::= keyword("using") QualifiedId ';'
                         {
-                            value = new Cm::Parsing::CppObjectModel::UsingDeclaration(QualifiedId); 
+                            value = new UsingDeclaration(QualifiedId); 
                         }
                         ;
                         
         UsingDirective: Cm::Parsing::CppObjectModel::UsingObject*
                         ::= keyword("using") keyword("namespace") QualifiedId ';'
                         {
-                            value = new Cm::Parsing::CppObjectModel::UsingDirective(QualifiedId); 
+                            value = new UsingDirective(QualifiedId); 
                         }
                         ;
     }

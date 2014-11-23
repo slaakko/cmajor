@@ -51,13 +51,16 @@ std::string ResolveReferenceFilePath(const std::string& relativeReferenceFilePat
 void Compile(const std::string& projectFilePath, const std::vector<std::string>& libraryDirectories)
 {
     std::cout << "Parsing project file " << projectFilePath << "...\n";
-    ProjectFileGrammar* projectFileGrammar = ProjectFileGrammar::Create();
-    LibraryFileGrammar* libraryFileGrammar = LibraryFileGrammar::Create();
-    ParserFileGrammar* parserFileGrammar = ParserFileGrammar::Create();
+    std::unique_ptr<Cm::Parsing::ParsingDomain> projectParsingDomain(new Cm::Parsing::ParsingDomain());
+    projectParsingDomain->SetOwned();
+    ProjectFileGrammar* projectFileGrammar = ProjectFileGrammar::Create(projectParsingDomain.get());
+    LibraryFileGrammar* libraryFileGrammar = LibraryFileGrammar::Create(projectParsingDomain.get());
+    ParserFileGrammar* parserFileGrammar = ParserFileGrammar::Create(projectParsingDomain.get());
     Cm::Util::MappedInputFile projectFile(projectFilePath);
     std::unique_ptr<Project> project(projectFileGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath));
     std::cout << "Compiling project '" << project->Name() << "'...\n";
     std::unique_ptr<Cm::Parsing::ParsingDomain> parsingDomain(new Cm::Parsing::ParsingDomain());
+    parsingDomain->SetOwned();
     std::cout << "Parsing library files...\n";
     const std::vector<std::string>& referenceFiles = project->ReferenceFiles();
     int nr = int(referenceFiles.size());

@@ -123,7 +123,7 @@ ExpectationParser::ExpectationParser(Parser* child_): UnaryParser("expectation",
 
 Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
-    Span span = scanner.GetSpan();
+    Span expectationSpan = scanner.GetSpan();
     Match match = Match::Nothing();
     try
     {
@@ -139,7 +139,7 @@ Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack)
     }
     else
     {
-        throw ExpectationFailure(Child()->Info(), scanner.FileName(), span, scanner.Start(), scanner.End());
+        throw ExpectationFailure(Child()->Info(), scanner.FileName(), expectationSpan, scanner.Start(), scanner.End());
     }
 }
 
@@ -181,15 +181,15 @@ SequenceParser::SequenceParser(Parser* left_, Parser* right_): BinaryParser("seq
 
 Match SequenceParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
-    Match left = Left()->Parse(scanner, stack);
-    if (left.Hit())
+    Match leftMatch = Left()->Parse(scanner, stack);
+    if (leftMatch.Hit())
     {
         scanner.Skip();
-        Match right = Right()->Parse(scanner, stack);
-        if (right.Hit())
+        Match rightMatch = Right()->Parse(scanner, stack);
+        if (rightMatch.Hit())
         {
-            left.Concatenate(right);
-            return left;
+			leftMatch.Concatenate(rightMatch);
+            return leftMatch;
         }
     }
     return Match::Nothing();
@@ -211,10 +211,10 @@ AlternativeParser::AlternativeParser(Parser* left_, Parser* right_): BinaryParse
 Match AlternativeParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
-    Match left = Left()->Parse(scanner, stack);
-    if (left.Hit())
+    Match leftMatch = Left()->Parse(scanner, stack);
+    if (leftMatch.Hit())
     {
-        return left;
+        return leftMatch;
     }
     scanner.SetSpan(save);
     return Right()->Parse(scanner, stack);
@@ -236,17 +236,17 @@ DifferenceParser::DifferenceParser(Parser* left_, Parser* right_): BinaryParser(
 Match DifferenceParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
-    Match left = Left()->Parse(scanner, stack);
-    if (left.Hit())
+    Match leftMatch = Left()->Parse(scanner, stack);
+    if (leftMatch.Hit())
     {
         Span tmp = scanner.GetSpan();
         scanner.SetSpan(save);
         save = tmp;
-        Match right = Right()->Parse(scanner, stack);
-        if (!right.Hit() || right.Length() < left.Length())
+        Match rightMatch = Right()->Parse(scanner, stack);
+        if (!rightMatch.Hit() || rightMatch.Length() < leftMatch.Length())
         {
             scanner.SetSpan(save);
-            return left;
+            return leftMatch;
         }
     }
     return Match::Nothing();
@@ -268,19 +268,19 @@ ExclusiveOrParser::ExclusiveOrParser(Parser* left_, Parser* right_): BinaryParse
 Match ExclusiveOrParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
-    Match left = Left()->Parse(scanner, stack);
+    Match leftMatch = Left()->Parse(scanner, stack);
     Span temp = scanner.GetSpan();
     scanner.SetSpan(save);
     save = temp;
-    Match right = Right()->Parse(scanner, stack);
-    bool match = left.Hit() ? !right.Hit() : right.Hit();
+    Match rightMatch = Right()->Parse(scanner, stack);
+    bool match = leftMatch.Hit() ? !rightMatch.Hit() : rightMatch.Hit();
     if (match)
     {
-        if (left.Hit())
+        if (leftMatch.Hit())
         {
             scanner.SetSpan(save);
         }
-        return left.Hit() ? left : right;
+        return leftMatch.Hit() ? leftMatch : rightMatch;
     }
     return Match::Nothing();
 }
@@ -301,14 +301,14 @@ IntersectionParser::IntersectionParser(Parser* left_, Parser* right_): BinaryPar
 Match IntersectionParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
-    Match left = Left()->Parse(scanner, stack);
-    if (left.Hit())
+    Match leftMatch = Left()->Parse(scanner, stack);
+    if (leftMatch.Hit())
     {
         scanner.SetSpan(save);
-        Match right = Right()->Parse(scanner, stack);
-        if (left.Length() == right.Length())
+        Match rightMatch = Right()->Parse(scanner, stack);
+        if (leftMatch.Length() == rightMatch.Length())
         {
-            return left;
+            return leftMatch;
         }
     }
     return Match::Nothing();
