@@ -3194,22 +3194,22 @@ private:
 void ExpressionGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Cpp.DeclaratorGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Cpp.LiteralGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::Cpp::DeclaratorGrammar::Create(pd);
+        grammar0 = Cm::Parsing::Cpp::LiteralGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Cpp.LiteralGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Cpp.DeclarationGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Cpp::LiteralGrammar::Create(pd);
+        grammar1 = Cm::Parsing::Cpp::DeclarationGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.Cpp.DeclarationGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.Cpp.DeclaratorGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parsing::Cpp::DeclarationGrammar::Create(pd);
+        grammar2 = Cm::Parsing::Cpp::DeclaratorGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
     Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parsing.Cpp.IdentifierGrammar");
@@ -3222,11 +3222,11 @@ void ExpressionGrammar::GetReferencedGrammars()
 
 void ExpressionGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeSpecifierSeq", this, "DeclaratorGrammar.TypeSpecifierSeq"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeId", this, "DeclaratorGrammar.TypeId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeId", this, "DeclaratorGrammar.TypeId"));
     AddRuleLink(new Cm::Parsing::RuleLink("PtrOperator", this, "DeclaratorGrammar.PtrOperator"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeSpecifierSeq", this, "DeclaratorGrammar.TypeSpecifierSeq"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("SimpleTypeSpecifier", this, "DeclarationGrammar.SimpleTypeSpecifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeName", this, "DeclarationGrammar.TypeName"));
     AddRule(new ExpressionRule("Expression", GetScope(),

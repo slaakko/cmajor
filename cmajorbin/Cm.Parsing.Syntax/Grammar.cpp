@@ -334,9 +334,9 @@ void GrammarGrammar::GetReferencedGrammars()
 
 void GrammarGrammar::CreateRules()
 {
+    AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRuleLink(new Cm::Parsing::RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
     AddRuleLink(new Cm::Parsing::RuleLink("Rule", this, "RuleGrammar.Rule"));
     AddRule(new GrammarRule("Grammar", GetScope(),
