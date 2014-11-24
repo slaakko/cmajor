@@ -7,8 +7,8 @@
 
  ========================================================================*/
 
-#ifndef BASIC_TYPE_INCLUDED
-#define BASIC_TYPE_INCLUDED
+#ifndef CM_AST_BASIC_TYPE_INCLUDED
+#define CM_AST_BASIC_TYPE_INCLUDED
 #include <Cm.Ast/Node.hpp>
 
 namespace Cm { namespace Ast {
@@ -16,94 +16,95 @@ namespace Cm { namespace Ast {
 class BoolNode: public Node
 {
 public:
-    BoolNode();
-    virtual std::ostream& Write(std::ostream& s);
+    BoolNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::boolNode; }
 };
 
 class SByteNode: public Node
 {
 public:
-    SByteNode();
-    virtual std::ostream& Write(std::ostream& s);
+    SByteNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::sbyteNode; }
 };
 
 class ByteNode: public Node
 {
 public:
-    ByteNode();
-    virtual std::ostream& Write(std::ostream& s);
+    ByteNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::byteNode; }
 };
 
 class ShortNode: public Node
 {
 public:
-    ShortNode();
-    virtual std::ostream& Write(std::ostream& s);
+    ShortNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::shortNode; }
 };
 
 class UShortNode: public Node
 {
 public:
-    UShortNode();
-    virtual std::ostream& Write(std::ostream& s);
+    UShortNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::ushortNode; }
 };
 
 class IntNode: public Node
 {
 public:
-    IntNode();
-    virtual std::ostream& Write(std::ostream& s);
+    IntNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::intNode; }
 };
 
-class UIntNode: public Node
+class UIntNode : public Node
 {
 public:
-    UIntNode();
-    virtual std::ostream& Write(std::ostream& s);
+    UIntNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::uintNode; }
 };
 
 class LongNode: public Node
 {
 public:
-    LongNode();
-    virtual std::ostream& Write(std::ostream& s);
+    LongNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::longNode; }
 };
 
 class ULongNode: public Node
 {
 public:
-    ULongNode();
-    virtual std::ostream& Write(std::ostream& s);
+    ULongNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::ulongNode; }
 };
 
 class FloatNode: public Node
 {
 public:
-    FloatNode();
-    virtual std::ostream& Write(std::ostream& s);
+    FloatNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::floatNode; }
 };
 
 class DoubleNode: public Node
 {
 public:
-    DoubleNode();
-    virtual std::ostream& Write(std::ostream& s);
+    DoubleNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::doubleNode; }
 };
 
 class CharNode: public Node
 {
 public:
-    CharNode();
-    virtual std::ostream& Write(std::ostream& s);
+    CharNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::charNode; }
 };
 
 class VoidNode: public Node
 {
 public:
-    VoidNode();
-    virtual std::ostream& Write(std::ostream& s);
+    VoidNode(const Span& span_);
+    NodeType GetType() const override { return NodeType::voidNode; }
 };
 
 } } // namespace Cm::Ast
 
-#endif // BASIC_TYPE_INCLUDED
+#endif // CM_AST_BASIC_TYPE_INCLUDED
+

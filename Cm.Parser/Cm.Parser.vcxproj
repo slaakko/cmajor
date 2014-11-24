@@ -18,6 +18,31 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="BasicType.parser" />
+    <None Include="Cm.Parser.pl" />
+    <None Include="Cm.Parser.pp" />
+    <None Include="Identifier.parser" />
+    <None Include="Keyword.parser" />
+    <None Include="Literal.parser" />
+    <None Include="TypeExpr.parser" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Identifier.cpp" />
+    <ClCompile Include="Keyword.cpp" />
+    <ClCompile Include="Literal.cpp" />
+    <ClCompile Include="ParsingContext.cpp" />
+    <ClCompile Include="TypeExpr.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Identifier.hpp" />
+    <ClInclude Include="Keyword.hpp" />
+    <ClInclude Include="Literal.hpp" />
+    <ClInclude Include="ParsingContext.hpp" />
+    <ClInclude Include="TypeExpr.hpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3720AEB0-BEB8-4C7E-AF9B-50A0DB65348B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -75,7 +100,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -90,7 +115,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -107,7 +132,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,7 +151,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

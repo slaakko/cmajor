@@ -1,0 +1,31 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+namespace Cm.Parser
+{
+    grammar KeywordGrammar
+    {
+        using stdlib.identifier;
+        
+        Keyword 
+            ::= keyword_list(identifier, 
+                ["bool", "true", "false", 
+                "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", 
+                "float", "double", "char", "void", "enum", "cast",
+                "namespace", "using", "static", "extern", "is", "explicit", "delegate", "inline", "cdecl", "nothrow",
+                "public", "protected", "private", "internal", "virtual", "abstract", "override", "suppress", "default", "supplement",
+                "operator", "class", "return", "if", "else",
+                "switch", "case", "default", "while", "do", "for", 
+                "break", "continue", "goto", "typedef", "typename", "const", "null", "this", "base",
+                "construct", "destroy", "new", "delete", "sizeof", "try", "catch", "throw",
+                "concept", "where", "axiom", "and", "or", "not"])
+            ;
+        
+    }
+}

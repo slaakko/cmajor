@@ -137,7 +137,7 @@ Match Grammar::Parse(Scanner& scanner, ObjectStack& stack)
             if (skipRule)
             {
                 contentParser = new SequenceParser(new SequenceParser(new OptionalParser(skipRule), startRule), new OptionalParser(skipRule));
-				Own(contentParser);
+                Own(contentParser);
             }
             else
             {

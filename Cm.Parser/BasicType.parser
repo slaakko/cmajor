@@ -1,0 +1,34 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Ast/BasicType.hpp>
+
+namespace Cm.Parser
+{
+    [cpp]using namespace Cm::Ast;
+
+    grammar BasicTypeGrammar
+    {
+        BasicType: Cm::Ast::Node*
+            ::= keyword("bool"){ value = new BoolNode(span); }
+            |    keyword("sbyte"){ value = new SByteNode(span); }
+            |    keyword("byte"){ value = new ByteNode(span); }
+            |    keyword("short"){ value = new ShortNode(span); }
+            |    keyword("ushort"){ value = new UShortNode(span); }
+            |    keyword("int"){ value = new IntNode(span); }
+            |    keyword("uint"){ value = new UIntNode(span); }
+            |    keyword("long"){ value = new LongNode(span); }
+            |    keyword("ulong"){ value = new ULongNode(span); }
+            |    keyword("float"){ value = new FloatNode(span); }
+            |    keyword("double"){ value = new DoubleNode(span); }
+            |    keyword("char"){ value = new CharNode(span); }
+            |    keyword("void"){ value = new VoidNode(span); }
+            ;
+    }
+}

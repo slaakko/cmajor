@@ -28,7 +28,7 @@ public:
     void Own(ParsingObject* object);
     bool IsOwned() const { return isOwned; }
     void SetOwned() { isOwned = true; }
-	void ResetOwned() { isOwned = false; }
+    void ResetOwned() { isOwned = false; }
     void SetOwner(int owner_) { owner = owner_; }
     int Owner() const { return owner; }
     void SetExternal() { owner = external; }

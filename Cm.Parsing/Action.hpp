@@ -28,15 +28,15 @@ class MemberParsingAction: public ParsingAction
 public:
     MemberParsingAction(Type* type_, void (Type::*pm)(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)): 
         type(type_), memfun(pm)
-	{	
-	}
+    {    
+    }
     virtual void operator()(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass) const
-	{	
+    {    
         (type->*memfun)(matchBegin, matchEnd, span, fileName, pass);
-	}
+    }
 private:
     Type* type;
-	void (Type::*memfun)(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass);
+    void (Type::*memfun)(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass);
 };
 
 class FailureAction

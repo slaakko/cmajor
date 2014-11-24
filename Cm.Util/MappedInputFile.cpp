@@ -37,19 +37,19 @@ MappedInputFile::~MappedInputFile()
 
 const char* MappedInputFile::Begin() const
 {
-	const char* start = impl->Data();
-	if (impl->Size() >= 3)
-	{
-		if ((unsigned char)*start == (unsigned char)0xEF) ++start;
-		if ((unsigned char)*start == (unsigned char)0xBB) ++start;
-		if ((unsigned char)*start == (unsigned char)0xBF) ++start;
-	}
+    const char* start = impl->Data();
+    if (impl->Size() >= 3)
+    {
+        if ((unsigned char)*start == (unsigned char)0xEF) ++start;
+        if ((unsigned char)*start == (unsigned char)0xBB) ++start;
+        if ((unsigned char)*start == (unsigned char)0xBF) ++start;
+    }
     return start;
 }
 
 const char* MappedInputFile::End() const
 {
-	return impl->Data() + impl->Size();
+    return impl->Data() + impl->Size();
 }
 
 } } // namespace Cm::Util

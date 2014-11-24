@@ -7,50 +7,43 @@
 
  ========================================================================*/
 
-#ifndef NODE_INCLUDED
-#define NODE_INCLUDED
-#include <memory>
-#include <ostream>
-#include <stdint.h>
+#ifndef CM_AST_NODE_INCLUDED
+#define CM_AST_NODE_INCLUDED
+#include <Cm.Parsing/Scanner.hpp>
+#include <cstdint>
 
 namespace Cm { namespace Ast {
+
+using Cm::Parsing::Span;
 
 enum class NodeType: uint8_t
 {
     boolNode, sbyteNode, byteNode, shortNode, ushortNode, intNode, uintNode, longNode, ulongNode, floatNode, doubleNode, charNode, voidNode, 
+    booleanLiteralNode, sbyteLiteralNode, byteLiteralNode, shortLiteralNode, ushortLiteralNode, intLiteralNode, uintLiteralNode, longLiteralNode, ulongLiteralNode, 
+    floatLiteralNode, doubleLiteralNode, charLiteralNode, stringLiteralNode, nullLiteralNode,
+    derivedTypeExprNode,
+    identifierNode,
     maxNode
 };
 
-std::ostream& operator<<(std::ostream& s, NodeType nt);
+class Reader;
+class Writer;
 
 class Node
 {
 public:
     Node();
-    virtual std::ostream& Write(std::ostream& s) = 0;
-};
-
-std::ostream& operator<<(std::ostream& s, Node& node);
-
-class UnaryNode: Node
-{
-public: 
-    UnaryNode(Node* child_);
-    virtual std::ostream& Write(std::ostream& s);
+    Node(Span span_);
+    virtual ~Node();
+    virtual NodeType GetType() const = 0;
+    virtual void Read(Reader& reader);
+    virtual void Write(Writer& writer);
+    const Span& GetSpan() const { return span; }
+    Span& GetSpan() { return span; }
 private:
-    std::unique_ptr<Node> child;
-};
-
-class BinaryNode: Node
-{
-public:
-    BinaryNode(Node* left_, Node* right_);
-    virtual std::ostream& Write(std::ostream& s);
-private:
-    std::unique_ptr<Node> left;
-    std::unique_ptr<Node> right;
+    Span span;
 };
 
 } } // namespace Cm::Ast
 
-#endif // NODE_INCLUDED
+#endif // CM_AST_NODE_INCLUDED
