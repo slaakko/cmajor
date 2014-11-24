@@ -129,17 +129,17 @@ namespace Cm.Parsing.Cpp
 
         CastExpression(var std::unique_ptr<CppObject> ce, var std::unique_ptr<CppObject> ti): Cm::Parsing::CppObjectModel::CppObject*
                             ::= 
-							(	('(' TypeId{ ti.reset(TypeId); } ')' CastExpression){ ce.reset(new CastExpr(ti.release(), CastExpression)); }
+                            (    ('(' TypeId{ ti.reset(TypeId); } ')' CastExpression){ ce.reset(new CastExpr(ti.release(), CastExpression)); }
                             |   UnaryExpression{ ce.reset(UnaryExpression); }
-							)
-							{
-								value = ce.release();
-							}
+                            )
+                            {
+                                value = ce.release();
+                            }
                             ;
 
         UnaryExpression(var std::unique_ptr<CppObject> ue): Cm::Parsing::CppObjectModel::CppObject*
                             ::= 
-							(	(PostfixExpression{ ue.reset(PostfixExpression); } | PostCastExpression{ ue.reset(PostCastExpression); })
+                            (    (PostfixExpression{ ue.reset(PostfixExpression); } | PostCastExpression{ ue.reset(PostCastExpression); })
                             |   ("++" UnaryExpression:e1!){ ue.reset(new PreIncrementExpr(e1)); }
                             |   ("--" UnaryExpression:e2!){ ue.reset(new PreDecrementExpr(e2)); }
                             |   (UnaryOperator CastExpression!){ ue.reset(new UnaryOpExpr(UnaryOperator, CastExpression)); }
@@ -147,10 +147,10 @@ namespace Cm.Parsing.Cpp
                             |   (keyword("sizeof") UnaryExpression:e3!){ ue.reset(new SizeOfExpr(e3, false)); }
                             |   NewExpression{ ue.reset(NewExpression); }
                             |   DeleteExpression{ ue.reset(DeleteExpression); }
-							)
-							{
-								value = ue.release();
-							}
+                            )
+                            {
+                                value = ue.release();
+                            }
                             ;
 
         UnaryOperator: Operator
@@ -189,7 +189,7 @@ namespace Cm.Parsing.Cpp
                             ;
 
         DirectNewDeclarator(var std::unique_ptr<CppObject> e) 
-							::= '[' Expression{ e.reset(Expression); } ']' ('[' ConstantExpression{ e.reset(ConstantExpression); } ']')*
+                            ::= '[' Expression{ e.reset(Expression); } ']' ('[' ConstantExpression{ e.reset(ConstantExpression); } ']')*
                             ;
 
         NewPlacement: std::vector<Cm::Parsing::CppObjectModel::CppObject*>
@@ -209,20 +209,20 @@ namespace Cm.Parsing.Cpp
 
         PostfixExpression(var std::unique_ptr<CppObject> pe): Cm::Parsing::CppObjectModel::CppObject*
                             ::= 
-							(	PrimaryExpression{ pe.reset(PrimaryExpression); }
-								(   ('[' Expression:index! ']'!){ pe.reset(new IndexExpr(pe.release(), index)); }
-								|   ('(' (ExpressionList:invoke)? ')'!){ pe.reset(new InvokeExpr(pe.release(), invoke)); }
-								|   (('.' - ".*") IdExpression:member!){ pe.reset(new MemberAccessExpr(pe.release(), member)); }
-								|   (("->" - "->*") IdExpression:ptrmember!){ pe.reset(new PtrMemberAccessExpr(pe.release(), ptrmember)); }
-								|   "++"{ pe.reset(new PostIncrementExpr(pe.release())); }
-								|   "--"{ pe.reset(new PostDecrementExpr(pe.release())); }
-								)
-								*
-								|   (TypeSpecifierOrTypeName '(' ExpressionList:typeConstruction? ')') { pe.reset(new InvokeExpr(TypeSpecifierOrTypeName, typeConstruction)); }
-							)
-							{
-								value = pe.release();
-							}
+                            (    PrimaryExpression{ pe.reset(PrimaryExpression); }
+                                (   ('[' Expression:index! ']'!){ pe.reset(new IndexExpr(pe.release(), index)); }
+                                |   ('(' (ExpressionList:invoke)? ')'!){ pe.reset(new InvokeExpr(pe.release(), invoke)); }
+                                |   (('.' - ".*") IdExpression:member!){ pe.reset(new MemberAccessExpr(pe.release(), member)); }
+                                |   (("->" - "->*") IdExpression:ptrmember!){ pe.reset(new PtrMemberAccessExpr(pe.release(), ptrmember)); }
+                                |   "++"{ pe.reset(new PostIncrementExpr(pe.release())); }
+                                |   "--"{ pe.reset(new PostDecrementExpr(pe.release())); }
+                                )
+                                *
+                                |   (TypeSpecifierOrTypeName '(' ExpressionList:typeConstruction? ')') { pe.reset(new InvokeExpr(TypeSpecifierOrTypeName, typeConstruction)); }
+                            )
+                            {
+                                value = pe.release();
+                            }
                             ;
 
         TypeSpecifierOrTypeName: Cm::Parsing::CppObjectModel::CppObject*
@@ -244,14 +244,14 @@ namespace Cm.Parsing.Cpp
 
         PrimaryExpression(var std::unique_ptr<CppObject> pe): Cm::Parsing::CppObjectModel::CppObject*
                             ::= 
-							(	Literal{ pe.reset(Literal); }
+                            (    Literal{ pe.reset(Literal); }
                             |   keyword("this"){ pe.reset(new ThisAccess()); }
                             |   '(' Expression ')'!{ pe.reset(Expression); }
                             |   IdExpression{ pe.reset(IdExpression); }
-							)
-							{
-								value = pe.release();
-							}
+                            )
+                            {
+                                value = pe.release();
+                            }
                             ;
 
         IdExpression: Cm::Parsing::CppObjectModel::IdExpr*

@@ -30,9 +30,9 @@ namespace Cm.Parsing.Cpp
         using IdentifierGrammar.Identifier;
         using DeclarationGrammar.SimpleDeclaration;
         using DeclarationGrammar.BlockDeclaration;
-		using stdlib.spaces_and_comments;
-		skip spaces_and_comments;
-		start CompoundStatement;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        start CompoundStatement;
         
         Statement: Cm::Parsing::CppObjectModel::Statement*
                     ::= LabeledStatement{ value = LabeledStatement; }
@@ -196,9 +196,9 @@ namespace Cm.Parsing.Cpp
                         )
                     |   "..."{ value->CatchAll() = true; }
                     )
-					{
-						value = ed.release();
-					}
+                    {
+                        value = ed.release();
+                    }
                     ;
     }
 }

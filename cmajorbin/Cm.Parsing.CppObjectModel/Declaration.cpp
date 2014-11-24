@@ -66,11 +66,11 @@ void AssignInit::Accept(Visitor& visitor)
 
 Initializer::Initializer(AssignInit* assignInit_, const std::vector<CppObject*>& expressionList_): CppObject("initializer"), assignInit(assignInit_), expressionList(expressionList_) 
 {
-	Own(assignInit);
-	for (CppObject* expr : expressionList)
-	{
-		Own(expr);
-	}
+    Own(assignInit);
+    for (CppObject* expr : expressionList)
+    {
+        Own(expr);
+    }
 }
 
 void Initializer::Print(CodeFormatter& formatter)
@@ -106,7 +106,7 @@ void Initializer::Accept(Visitor& visitor)
 
 InitDeclarator::InitDeclarator(const std::string& declarator_, Initializer* initializer_): CppObject("initDeclarator"), declarator(declarator_), initializer(initializer_) 
 {
-	Own(initializer);
+    Own(initializer);
 }
 
 void InitDeclarator::Print(CodeFormatter& formatter)

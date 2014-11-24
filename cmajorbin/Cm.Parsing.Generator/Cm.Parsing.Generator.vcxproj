@@ -90,7 +90,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -106,7 +106,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -125,7 +125,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,7 +145,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

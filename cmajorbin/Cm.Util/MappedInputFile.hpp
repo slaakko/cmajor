@@ -22,7 +22,7 @@ public:
     MappedInputFile(const std::string& fileName_);
     ~MappedInputFile();
     const char* Begin() const;
-	const char* End() const;
+    const char* End() const;
 private:
     MappedInputFileImpl* impl;
 };

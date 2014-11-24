@@ -11,121 +11,56 @@
 
 namespace Cm { namespace Ast {
 
-BoolNode::BoolNode()
+BoolNode::BoolNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& BoolNode::Write(std::ostream& s)
-{
-    return s << NodeType::boolNode;
-}
-
-SByteNode::SByteNode()
+SByteNode::SByteNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& SByteNode::Write(std::ostream& s)
-{
-    return s << NodeType::sbyteNode;
-}
-
-ByteNode::ByteNode()
+ByteNode::ByteNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& ByteNode::Write(std::ostream& s)
-{
-    return s << NodeType::byteNode;
-}
-
-ShortNode::ShortNode()
+ShortNode::ShortNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& ShortNode::Write(std::ostream& s)
-{
-    return s << NodeType::shortNode;
-}
-
-UShortNode::UShortNode()
+UShortNode::UShortNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& UShortNode::Write(std::ostream& s)
-{
-    return s << NodeType::ushortNode;
-}
-
-IntNode::IntNode()
+IntNode::IntNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& IntNode::Write(std::ostream& s)
-{
-    return s << NodeType::intNode;
-}
-
-UIntNode::UIntNode()
+UIntNode::UIntNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& UIntNode::Write(std::ostream& s)
-{
-    return s << NodeType::uintNode;
-}
-
-LongNode::LongNode()
+LongNode::LongNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& LongNode::Write(std::ostream& s)
-{
-    return s << NodeType::longNode;
-}
-
-ULongNode::ULongNode()
+ULongNode::ULongNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& ULongNode::Write(std::ostream& s)
-{
-    return s << NodeType::ulongNode;
-}
-
-FloatNode::FloatNode()
+FloatNode::FloatNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& FloatNode::Write(std::ostream& s)
-{
-    return s << NodeType::floatNode;
-}
-
-DoubleNode::DoubleNode()
+DoubleNode::DoubleNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& DoubleNode::Write(std::ostream& s)
-{
-    return s << NodeType::doubleNode;
-}
-
-CharNode::CharNode()
+CharNode::CharNode(const Span& span_): Node(span_)
 {
 }
 
-std::ostream& CharNode::Write(std::ostream& s)
+VoidNode::VoidNode(const Span& span_): Node(span_)
 {
-    return s << NodeType::charNode;
-}
-
-VoidNode::VoidNode()
-{
-}
-
-std::ostream& VoidNode::Write(std::ostream& s)
-{
-    return s << NodeType::voidNode;
 }
 
 } } // namespace Cm::Ast

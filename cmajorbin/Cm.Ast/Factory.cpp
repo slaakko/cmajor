@@ -9,6 +9,8 @@
 
 #include <Cm.Ast/Factory.hpp>
 #include <Cm.Ast/BasicType.hpp>
+#include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Literal.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -20,15 +22,27 @@ template<typename T>
 class Creator: public NodeCreator
 {
 public:
-    virtual Node* CreateNode() 
+    virtual Node* CreateNode(Span span) 
     {
-        return new T();
+        return new T(span);
     }
 };
+
+std::unique_ptr<Factory> Factory::instance;
 
 void Factory::Init()
 {
     instance = std::unique_ptr<Factory>(new Factory());
+}
+
+Factory& Factory::Instance()
+{
+    return *instance;
+}
+
+void Factory::Done()
+{
+    instance.reset();
 }
 
 Factory::Factory()
@@ -41,9 +55,9 @@ void Factory::Register(NodeType nodeType, NodeCreator* creator)
     creators[int(nodeType)] = std::unique_ptr<NodeCreator>(creator);
 }
 
-Node* Factory::CreateNode(NodeType nodeType)
+Node* Factory::CreateNode(NodeType nodeType, Span span)
 {
-    Node* node = creators[int(nodeType)]->CreateNode();
+    Node* node = creators[int(nodeType)]->CreateNode(span);
     return node;
 }
 
@@ -63,6 +77,26 @@ void InitFactory()
     Factory::Instance().Register(NodeType::doubleNode, new Creator<DoubleNode>());
     Factory::Instance().Register(NodeType::charNode, new Creator<CharNode>());
     Factory::Instance().Register(NodeType::voidNode, new Creator<VoidNode>());
+    Factory::Instance().Register(NodeType::booleanLiteralNode, new Creator<BooleanLiteralNode>());
+    Factory::Instance().Register(NodeType::sbyteLiteralNode, new Creator<SByteLiteralNode>());
+    Factory::Instance().Register(NodeType::byteLiteralNode, new Creator<ByteLiteralNode>());
+    Factory::Instance().Register(NodeType::shortLiteralNode, new Creator<ShortLiteralNode>());
+    Factory::Instance().Register(NodeType::ushortLiteralNode, new Creator<UShortLiteralNode>());
+    Factory::Instance().Register(NodeType::intLiteralNode, new Creator<IntLiteralNode>());
+    Factory::Instance().Register(NodeType::uintLiteralNode, new Creator<UIntLiteralNode>());
+    Factory::Instance().Register(NodeType::longLiteralNode, new Creator<LongLiteralNode>());
+    Factory::Instance().Register(NodeType::ulongLiteralNode, new Creator<ULongLiteralNode>());
+    Factory::Instance().Register(NodeType::floatLiteralNode, new Creator<FloatLiteralNode>());
+    Factory::Instance().Register(NodeType::doubleLiteralNode, new Creator<DoubleLiteralNode>());
+    Factory::Instance().Register(NodeType::charLiteralNode, new Creator<CharLiteralNode>());
+    Factory::Instance().Register(NodeType::stringLiteralNode, new Creator<StringLiteralNode>());
+    Factory::Instance().Register(NodeType::nullLiteralNode, new Creator<NullLiteralNode>());
+    Factory::Instance().Register(NodeType::identifierNode, new Creator<IdentifierNode>());
+}
+
+void DoneFactory()
+{
+    Factory::Done();
 }
 
 } } // namespace Cm::Ast

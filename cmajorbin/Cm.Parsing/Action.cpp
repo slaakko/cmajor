@@ -63,7 +63,7 @@ Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack)
         if (action)
         {
             bool pass = true;
-			actionSpan.SetEnd(scanner.GetSpan().Start());
+            actionSpan.SetEnd(scanner.GetSpan().Start());
             const char* matchBegin = scanner.Start() + actionSpan.Start();
             const char* matchEnd = scanner.Start() + actionSpan.End();
             (*action)(matchBegin, matchEnd, actionSpan, scanner.FileName(), pass);

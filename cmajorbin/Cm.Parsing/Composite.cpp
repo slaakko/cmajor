@@ -188,7 +188,7 @@ Match SequenceParser::Parse(Scanner& scanner, ObjectStack& stack)
         Match rightMatch = Right()->Parse(scanner, stack);
         if (rightMatch.Hit())
         {
-			leftMatch.Concatenate(rightMatch);
+            leftMatch.Concatenate(rightMatch);
             return leftMatch;
         }
     }

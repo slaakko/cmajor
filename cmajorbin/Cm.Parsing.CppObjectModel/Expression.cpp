@@ -63,7 +63,7 @@ PostfixExpression::PostfixExpression(const std::string& name_, CppObject* child_
 
 IndexExpr::IndexExpr(CppObject* child_, CppObject* index_): PostfixExpression("[]", child_), index(index_) 
 {
-	Own(index);
+    Own(index);
 }
 
 void IndexExpr::Print(CodeFormatter& formatter)
@@ -423,7 +423,7 @@ NewExpr::NewExpr(bool global_, const std::vector<CppObject*>& placement_, TypeId
     {
         Own(p);
     }
-	Own(typeId);
+    Own(typeId);
     for (CppObject* i : initializer)
     {
         Own(i);

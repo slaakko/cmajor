@@ -11,37 +11,24 @@
 
 namespace Cm { namespace Ast {
 
-std::ostream& operator<<(std::ostream& s, NodeType nt)
-{
-    return s << static_cast<uint8_t>(nt);
-}
-
 Node::Node()
 {
 }
 
-std::ostream& operator<<(std::ostream& s, Node& node)
-{
-    return node.Write(s);
-}
-
-UnaryNode::UnaryNode(Node* child_): child(child_)
+Node::Node(Span span_): span(span_)
 {
 }
 
-std::ostream& UnaryNode::Write(std::ostream& s)
-{
-    return child->Write(s);
-}
-
-BinaryNode::BinaryNode(Node* left_, Node* right_): left(left_), right(right_)
+Node::~Node()
 {
 }
 
-std::ostream& BinaryNode::Write(std::ostream& s)
-{    
-    left->Write(s);
-    return right->Write(s);
+void Node::Read(Reader& reader)
+{
+}
+
+void Node::Write(Writer& writer)
+{
 }
 
 } } // namespace Cm::Ast

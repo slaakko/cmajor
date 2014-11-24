@@ -98,14 +98,14 @@ void Scope::AddNamespace(Namespace* nsToAdd)
             Own(parent);
             parent->GetScope()->SetName(namespaceName);
             parent->GetScope()->SetNs(parent);
-			parentScope->Add(parent);
+            parentScope->Add(parent);
         }
     }
     std::string commonName = nameComponents[n - 1];
-	nsToAdd->SetName(commonName);
-	nsToAdd->GetScope()->SetName(commonName);
-	nsToAdd->SetEnclosingScope(parent->GetScope());
-	nsToAdd->GetScope()->SetEnclosingScope(parent->GetScope());
+    nsToAdd->SetName(commonName);
+    nsToAdd->GetScope()->SetName(commonName);
+    nsToAdd->SetEnclosingScope(parent->GetScope());
+    nsToAdd->GetScope()->SetEnclosingScope(parent->GetScope());
     parent->GetScope()->Add(nsToAdd);
 }
 
