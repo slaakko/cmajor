@@ -51,4 +51,3 @@ private:
 } } // namespace Cm::Ast
 
 #endif // CM_AST_READER_INCLUDED
-

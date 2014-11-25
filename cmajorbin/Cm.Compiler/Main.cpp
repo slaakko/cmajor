@@ -7,7 +7,7 @@
 
  ========================================================================*/
 
-#include <Cm.Parser/Constant.hpp>
+#include <Cm.Parser/Delegate.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Factory.hpp>
@@ -51,15 +51,15 @@ int main(int argc, const char** argv)
     {
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
-        Cm::Parser::ConstantGrammar* grammar = Cm::Parser::ConstantGrammar::Create();
+        Cm::Parser::DelegateGrammar* grammar = Cm::Parser::DelegateGrammar::Create();
         Cm::Parser::ParsingContext ctx;
-        std::string s("public const int foo = 1;");
+        std::string s("internal class delegate int foo(int x, bool y, ulong z);");
         std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
-            Cm::Ast::Writer writer("C:\\temp\\constant.mc");
+            Cm::Ast::Writer writer("C:\\temp\\delegate.mc");
             writer.Write(node.get());
         }
-        Cm::Ast::Reader reader("C:\\temp\\constant.mc");
+        Cm::Ast::Reader reader("C:\\temp\\delegate.mc");
         std::unique_ptr<Cm::Ast::Node> n(reader.ReadNode());
     }
     catch (const std::exception& ex)

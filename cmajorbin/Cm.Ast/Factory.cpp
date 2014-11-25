@@ -16,6 +16,8 @@
 #include <Cm.Ast/Template.hpp>
 #include <Cm.Ast/Enumeration.hpp>
 #include <Cm.Ast/Constant.hpp>
+#include <Cm.Ast/Parameter.hpp>
+#include <Cm.Ast/Delegate.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -143,6 +145,9 @@ void InitFactory()
     Factory::Instance().Register(NodeType::enumTypeNode, new Creator<EnumTypeNode>());
     Factory::Instance().Register(NodeType::enumConstantNode, new Creator<EnumConstantNode>());
     Factory::Instance().Register(NodeType::constantNode, new Creator<ConstantNode>());
+    Factory::Instance().Register(NodeType::parameterNode, new Creator<ParameterNode>());
+    Factory::Instance().Register(NodeType::delegateNode, new Creator<DelegateNode>());
+    Factory::Instance().Register(NodeType::classDelegateNode, new Creator<ClassDelegateNode>());
 }
 
 void DoneFactory()

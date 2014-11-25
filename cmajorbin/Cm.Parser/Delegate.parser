@@ -1,0 +1,42 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Parser/ParsingContext.hpp>
+[hpp]#include <Cm.Ast/Node.hpp>
+[cpp]#include <Cm.Ast/Delegate.hpp>
+[cpp]#include <Cm.Parser/Parameter.hpp>
+[cpp]#include <Cm.Parser/Specifier.hpp>
+[cpp]#include <Cm.Parser/TypeExpr.hpp>
+[cpp]#include <Cm.Parser/Identifier.hpp>
+
+namespace Cm.Parser
+{
+    using namespace Cm::Ast;
+
+    grammar DelegateGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using TypeExprGrammar.TypeExpr;
+        using IdentifierGrammar.Identifier;
+        using ParameterGrammar.ParameterList;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        start ClassDelegate;
+
+        Delegate(ParsingContext* ctx): Cm::Ast::Node*
+            ::= (Specifiers keyword("delegate") TypeExpr(ctx)! Identifier!){ value = new DelegateNode(span, Specifiers, TypeExpr, Identifier); } ParameterList(ctx, value)! 
+                ';'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        ClassDelegate(ParsingContext* ctx): Cm::Ast::Node*
+            ::= (Specifiers keyword("class") keyword("delegate") TypeExpr(ctx)! Identifier!){ value = new ClassDelegateNode(span, Specifiers, TypeExpr, Identifier); } ParameterList(ctx, value)! 
+                ';'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+    }
+}
