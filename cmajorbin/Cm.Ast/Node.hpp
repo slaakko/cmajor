@@ -10,6 +10,7 @@
 #ifndef CM_AST_NODE_INCLUDED
 #define CM_AST_NODE_INCLUDED
 #include <Cm.Parsing/Scanner.hpp>
+#include <memory>
 #include <cstdint>
 
 namespace Cm { namespace Ast {
@@ -22,7 +23,11 @@ enum class NodeType: uint8_t
     booleanLiteralNode, sbyteLiteralNode, byteLiteralNode, shortLiteralNode, ushortLiteralNode, intLiteralNode, uintLiteralNode, longLiteralNode, ulongLiteralNode, 
     floatLiteralNode, doubleLiteralNode, charLiteralNode, stringLiteralNode, nullLiteralNode,
     derivedTypeExprNode,
-    identifierNode,
+    equivalenceNode, implicationNode, disjunctionNode, conjunctionNode, bitOrNode, bitXorNode, bitAndNode, equalNode, notEqualNode, lessNode, greaterNode, lessOrEqualNode, greaterOrEqualNode,
+    shiftLeftNode, shiftRightNode, addNode, subNode, mulNode, divNode, remNode, invokeNode, indexNode, dotNode, arrowNode, postfixIncNode, postfixDecNode, derefNode, addrOfNode, 
+    notNode, unaryPlusNode, unaryMinusNode, complementNode, prefixIncNode, prefixDecNode, sizeOfNode, typeNameNode, 
+    castNode, newNode, constructNode, thisNode, baseNode,
+    identifierNode, templateIdNode,
     maxNode
 };
 
@@ -38,10 +43,51 @@ public:
     virtual NodeType GetType() const = 0;
     virtual void Read(Reader& reader);
     virtual void Write(Writer& writer);
+    virtual void AddArgument(Node* argument) {}
     const Span& GetSpan() const { return span; }
     Span& GetSpan() { return span; }
 private:
     Span span;
+};
+
+class UnaryNode : public Node
+{
+public:
+    UnaryNode(const Span& span_);
+    UnaryNode(const Span& span_, Node* child_);
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    Node* Child() const { return child.get(); }
+private:
+    std::unique_ptr<Node> child;
+};
+
+
+class BinaryNode : public Node
+{
+public:
+    BinaryNode(const Span& span_);
+    BinaryNode(const Span& span_, Node* left_, Node* right_);
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    Node* Left() const { return left.get(); }
+    Node* Right() const { return right.get(); }
+private:
+    std::unique_ptr<Node> left;
+    std::unique_ptr<Node> right;
+};
+
+class NodeList
+{
+public:
+    NodeList();
+    int Count() const { return int(nodes.size()); }
+    Node* operator[](int index) const { return nodes[index].get(); }
+    void Add(Node* node) { nodes.push_back(std::unique_ptr<Node>(node)); }
+    void Read(Reader& reader);
+    void Write(Writer& writer);
+private:
+    std::vector<std::unique_ptr<Node>> nodes;
 };
 
 } } // namespace Cm::Ast

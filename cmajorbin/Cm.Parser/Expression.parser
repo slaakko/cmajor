@@ -1,0 +1,332 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+ [hpp]#include <Cm.Parser/ParsingContext.hpp>
+ [hpp]#include <Cm.Ast/Node.hpp>
+ [cpp]#include <Cm.Parser/Operator.hpp>
+ [cpp]#include <Cm.Ast/Expression.hpp>
+ [cpp]#include <Cm.Parser/Literal.hpp>
+ [cpp]#include <Cm.Parser/BasicType.hpp>
+ [cpp]#include <Cm.Parser/Identifier.hpp>
+ [cpp]#include <Cm.Parser/Template.hpp>
+ [cpp]#include <Cm.Parser/TypeExpr.hpp>
+
+namespace Cm.Parser
+{
+    [cpp]using namespace Cm::Ast;
+
+    grammar ExpressionGrammar
+    {
+        using LiteralGrammar.Literal;
+        using BasicTypeGrammar.BasicType;
+        using IdentifierGrammar.Identifier;
+        using TemplateGrammar.TemplateId;
+        using TypeExprGrammar.TypeExpr;
+
+        Expression(ParsingContext* ctx): Cm::Ast::Node*
+            ::= Equivalence(ctx){ value = Equivalence; }
+            ;
+
+        Equivalence(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*
+            ::= 
+            (   Implication(ctx):left{ expr.reset(left); s = span; }
+                (   "<=>"{ if (!ctx->ParsingConcept() || ctx->ParsingTemplateId()) pass = false; }
+                    Implication(ctx):right!{ s.SetEnd(span.End()); expr.reset(new EquivalenceNode(s, expr.release(), right)); }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Implication(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*
+            ::= 
+            (   Disjunction(ctx):left{ expr.reset(left); s = span; }
+                (   "=>"{ if (!ctx->ParsingConcept() || ctx->ParsingTemplateId()) pass = false; }
+                    Implication(ctx):right!{ s.SetEnd(span.End()); expr.reset(new ImplicationNode(s, expr.release(), right)); }
+                )?
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Disjunction(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*
+            ::=
+            (   Conjunction(ctx):left{ expr.reset(left); s = span; }
+                (   "||"{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; }
+                    Conjunction(ctx):right!{ s.SetEnd(span.End()); expr.reset(new DisjunctionNode(s, expr.release(), right)); }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Conjunction(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*
+            ::=
+            (   BitOr(ctx):left{ expr.reset(left); s = span; }
+                (   "&&"{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; }
+                    BitOr(ctx):right!{ s.SetEnd(span.End()); expr.reset(new ConjunctionNode(s, expr.release(), right)); }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        BitOr(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*
+            ::=
+            (   BitXor(ctx):left{ expr.reset(left); s = span; }
+                (   ('|' - "||"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; }
+                    BitXor(ctx):right!{ s.SetEnd(span.End()); expr.reset(new BitOrNode(s, expr.release(), right)); }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        BitXor(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*
+            ::=
+            (   BitAnd(ctx):left{ expr.reset(left); s = span; }
+                (   '^'{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; }
+                    BitAnd(ctx):right!{ s.SetEnd(span.End()); expr.reset(new BitXorNode(s, expr.release(), right)); }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        BitAnd(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*
+            ::=
+            (   Equality(ctx):left{ expr.reset(left); s = span; }
+                (   ('&' - "&&"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; }
+                    Equality(ctx):right!{ s.SetEnd(span.End()); expr.reset(new BitAndNode(s, expr.release(), right)); }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Equality(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Cm::Ast::Node*
+            ::=
+            (   Relational(ctx):left{ expr.reset(left); s = span; }
+                (
+                    (   "=="{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::eq; }
+                    |   "!="{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::neq; }
+                    )
+                    Relational(ctx):right!
+                    { 
+                        s.SetEnd(span.End()); 
+                        switch (op)
+                        {
+                            case Operator::eq: expr.reset(new EqualNode(s, expr.release(), right)); break;
+                            case Operator::neq: expr.reset(new NotEqualNode(s, expr.release(), right)); break;
+                        }
+                    }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Relational(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Cm::Ast::Node*
+            ::=
+            (   Shift(ctx):left{ expr.reset(left); s = span; }
+                (
+                    (   ("<=" - "<=>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::lessOrEq; }
+                    |   ">="{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::greaterOrEq; }
+                    |   ('<' - ("<<" | "<=>")){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::less; }
+                    |   ('>' - ">>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::greater; }
+                    )
+                    Shift(ctx):right!
+                    { 
+                        s.SetEnd(span.End()); 
+                        switch (op)
+                        {
+                            case Operator::lessOrEq: expr.reset(new LessOrEqualNode(s, expr.release(), right)); break;
+                            case Operator::greaterOrEq: expr.reset(new GreaterOrEqualNode(s, expr.release(), right)); break;
+                            case Operator::less: expr.reset(new LessNode(s, expr.release(), right)); break;
+                            case Operator::greater: expr.reset(new GreaterNode(s, expr.release(), right)); break;
+                        }
+                    }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Shift(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Cm::Ast::Node*
+            ::=
+            (   Additive(ctx):left{ expr.reset(left); s = span; }
+                (
+                    (   "<<"{ if (ctx->ParsingLvalue()) pass = false; else op = Operator::shiftLeft; }
+                    |   ">>"{ if (ctx->ParsingLvalue()) pass = false; else op = Operator::shiftRight; }
+                    )
+                    empty{ ctx->BeginParsingArguments(); } Additive(ctx):right!
+                    { 
+                        s.SetEnd(span.End()); 
+                        switch (op)
+                        {
+                            case Operator::shiftLeft: expr.reset(new ShiftLeftNode(s, expr.release(), right)); break;
+                            case Operator::shiftRight: expr.reset(new ShiftRightNode(s, expr.release(), right)); break;
+                        }
+                        ctx->EndParsingArguments();
+                    }
+                    /
+                    {
+                        ctx->EndParsingArguments();
+                    }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Additive(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Cm::Ast::Node*
+            ::=
+            (   Multiplicative(ctx):left{ expr.reset(left); s = span; }
+                (
+                    (   '+'{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::plus; }
+                    |   '-'{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::minus; }
+                    )
+                    Multiplicative(ctx):right!
+                    { 
+                        s.SetEnd(span.End()); 
+                        switch (op)
+                        {
+                            case Operator::plus: expr.reset(new AddNode(s, expr.release(), right)); break;
+                            case Operator::minus: expr.reset(new SubNode(s, expr.release(), right)); break;
+                        }
+                    }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Multiplicative(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Cm::Ast::Node*
+            ::=
+            (   Prefix(ctx):left{ expr.reset(left); s = span; }
+                (
+                    (   '*'{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::mul; }
+                    |   '/'{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::div; }
+                    |   '%'{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::rem; }
+                    )
+                    Prefix(ctx):right!
+                    { 
+                        s.SetEnd(span.End()); 
+                        switch (op)
+                        {
+                            case Operator::mul: expr.reset(new MulNode(s, expr.release(), right)); break;
+                            case Operator::div: expr.reset(new DivNode(s, expr.release(), right)); break;
+                            case Operator::rem: expr.reset(new RemNode(s, expr.release(), right)); break;
+                        }
+                    }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Prefix(ParsingContext* ctx, var Span s, var Operator op): Cm::Ast::Node*
+            ::= (   
+                    (   "++"{ s = span; op = Operator::preInc; }
+                    |   "--"{ s = span; op = Operator::preDec; }
+                    |   '-'{ s = span; if (ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::minus; }
+                    |   '+'{ s = span; if (ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::plus; }
+                    |   ('!' - "!="){ s = span; if (ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::not_; }
+                    |   '~'{ s = span; if (ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::complement; }
+                    |   ('&' - "&&"){ s = span; if (ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::addressOf; }
+                    |   '*'{ s = span; if (ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::deref; }
+                    )
+                    Prefix(ctx):prefix
+                    {
+                        s.SetEnd(span.End());
+                        switch (op)
+                        {
+                            case Operator::preInc: value = new PrefixIncNode(s, prefix); break;
+                            case Operator::preDec: value = new PrefixDecNode(s, prefix); break;
+                            case Operator::minus: value = new UnaryMinusNode(s, prefix); break;
+                            case Operator::plus: value = new UnaryPlusNode(s, prefix); break;
+                            case Operator::not_: value = new NotNode(s, prefix); break;
+                            case Operator::complement: value = new ComplementNode(s, prefix); break;
+                            case Operator::addressOf: value = new AddrOfNode(s, prefix); break;
+                            case Operator::deref: value = new DerefNode(s, prefix); break;
+                        }
+                    }
+                )
+                |   Postfix(ctx)
+            ;
+
+        Postfix(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*
+            ::= 
+            (   Primary(ctx){ s = span; expr.reset(Primary); }
+                (   "++"{ s.SetEnd(span.End()); expr.reset(new PostfixIncNode(s, expr.release())); }
+                |   "--"{ s.SetEnd(span.End()); expr.reset(new PostfixDecNode(s, expr.release())); }
+                |   '.' Identifier:dotMemberId!{ s.SetEnd(span.End()); expr.reset(new DotNode(s, expr.release(), dotMemberId)); }
+                |   "->" Identifier:arrowMemberId!{ s.SetEnd(span.End()); expr.reset(new ArrowNode(s, expr.release(), arrowMemberId)); }
+                |   '('{ expr.reset(new InvokeNode(s, expr.release())); } ArgumentList(ctx, expr.get()) ')'!{ expr->GetSpan().SetEnd(span.End()); }
+                |   '[' Expression(ctx):index! ']'! { s.SetEnd(span.End()); expr.reset(new IndexNode(s, expr.release(), index)); }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        Primary(ParsingContext* ctx): Cm::Ast::Node*
+            ::= ('(' Expression(ctx) ')'){ value = Expression; }
+            |   Literal{ value = Literal; }
+            |   BasicType{ value = BasicType; }
+            |   SizeOfExpr(ctx){ value = SizeOfExpr; }
+            |   CastExpr(ctx){ value = CastExpr; }
+            |   ConstructExpr(ctx){ value = ConstructExpr; }
+            |   NewExpr(ctx){ value = NewExpr; }
+            |   TemplateId(ctx){ value = TemplateId; }
+            |   Identifier{ value = Identifier; }
+            |   keyword("this"){ value = new ThisNode(span); }
+            |   keyword("base"){ value = new BaseNode(span); }
+            |   (keyword("typename") '(' Expression(ctx):subject ')'){ value = new TypeNameNode(span, subject); }
+            ;
+
+        SizeOfExpr(ParsingContext* ctx): Cm::Ast::Node*
+            ::= (keyword("sizeof") '('! Expression(ctx)! ')'!){ value = new SizeOfNode(span, Expression); }
+            ;
+
+        CastExpr(ParsingContext* ctx): Cm::Ast::Node*
+            ::= (keyword("cast") '<'! TypeExpr(ctx):typeExpr! '>'! '('! Expression(ctx):sourceExpr! ')'!){ value = new CastNode(span, typeExpr, sourceExpr); }
+            ;
+
+        ConstructExpr(ParsingContext* ctx): Cm::Ast::Node*
+            ::= (keyword("construct") '<'! TypeExpr(ctx):typeExpr!){ value = new ConstructNode(span, typeExpr); } '>'! '('! ExpressionList(ctx, value) ')'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        NewExpr(ParsingContext* ctx): Cm::Ast::Node*
+            ::= (keyword("new") TypeExpr(ctx):typeExpr!){ value = new NewNode(span, typeExpr); } '('! ArgumentList(ctx, value) ')'!{ value->GetSpan().SetEnd(span.End()); } 
+            ;
+
+        ArgumentList(ParsingContext* ctx, Cm::Ast::Node* node)
+            ::= ExpressionList(ctx, node)?
+            ;
+
+        ExpressionList(ParsingContext* ctx, Cm::Ast::Node* node)
+            ::= empty{ ctx->BeginParsingArguments(); } (Expression(ctx):arg{ node->AddArgument(arg); } % ',') { ctx->EndParsingArguments(); } / { ctx->EndParsingArguments(); }
+            ;
+
+    }
+}

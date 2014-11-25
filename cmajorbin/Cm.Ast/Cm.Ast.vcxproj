@@ -20,23 +20,27 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Factory.hpp" />
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="InitDone.hpp" />
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Node.hpp" />
     <ClInclude Include="Reader.hpp" />
+    <ClInclude Include="Template.hpp" />
     <ClInclude Include="TypeExpr.hpp" />
     <ClInclude Include="Writer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="InitDone.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="Template.cpp" />
     <ClCompile Include="TypeExpr.cpp" />
     <ClCompile Include="Writer.cpp" />
   </ItemGroup>

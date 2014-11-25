@@ -35,7 +35,7 @@ IdentifierGrammar::IdentifierGrammar(Cm::Parsing::ParsingDomain* parsingDomain_)
     SetOwner(0);
 }
 
-Cm::Ast::Node* IdentifierGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
+Cm::Ast::IdentifierNode* IdentifierGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
 {
     Cm::Parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<Cm::Parsing::XmlLog> xmlLog;
@@ -64,7 +64,7 @@ Cm::Ast::Node* IdentifierGrammar::Parse(const char* start, const char* end, int 
         }
     }
     std::unique_ptr<Cm::Parsing::Object> value = std::move(stack.top());
-    Cm::Ast::Node* result = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(value.get());
+    Cm::Ast::IdentifierNode* result = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>*>(value.get());
     stack.pop();
     return result;
 }
@@ -75,7 +75,7 @@ public:
     IdentifierRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
-        SetValueTypeName("Cm::Ast::Node*");
+        SetValueTypeName("Cm::Ast::IdentifierNode*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -86,7 +86,7 @@ public:
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Node*>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -115,7 +115,7 @@ private:
     struct Context
     {
         Context(): value(), fromidentifier() {}
-        Cm::Ast::Node* value;
+        Cm::Ast::IdentifierNode* value;
         std::string fromidentifier;
     };
     std::stack<Context> contextStack;
@@ -128,7 +128,7 @@ public:
     QualifiedIdRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
-        SetValueTypeName("Cm::Ast::Node*");
+        SetValueTypeName("Cm::Ast::IdentifierNode*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -139,7 +139,7 @@ public:
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Node*>(context.value)));
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
@@ -168,7 +168,7 @@ private:
     struct Context
     {
         Context(): value(), fromidentifier() {}
-        Cm::Ast::Node* value;
+        Cm::Ast::IdentifierNode* value;
         std::string fromidentifier;
     };
     std::stack<Context> contextStack;
@@ -194,8 +194,8 @@ void IdentifierGrammar::GetReferencedGrammars()
 
 void IdentifierGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRule(new IdentifierRule("Identifier", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::TokenParser(

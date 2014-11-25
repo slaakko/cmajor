@@ -1,0 +1,42 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Ast/Node.hpp>
+[hpp]#include <Cm.Parser/ParsingContext.hpp>
+[cpp]#include <Cm.Ast/Template.hpp>
+[cpp]#include <Cm.Parser/Identifier.hpp>
+[cpp]#include <Cm.Parser/TypeExpr.hpp>
+
+namespace Cm.Parser
+{
+    [cpp]using namespace Cm::Ast;
+
+    grammar TemplateGrammar
+    {
+        using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
+        using TypeExprGrammar.TypeExpr;
+
+        TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId): Cm::Ast::Node*
+            ::= empty{ ctx->BeginParsingTemplateId(); }
+                (   QualifiedId:subject{ templateId.reset(new TemplateIdNode(span, subject)); }
+                    '<' (TypeExpr(ctx):templateArg{ templateId->AddTemplateArgument(templateArg); } % ',') '>'
+                )
+                {
+                    ctx->EndParsingTemplateId();
+                    value = templateId.release();
+                    value->GetSpan().SetEnd(span.End());
+                }
+                /
+                {
+                    ctx->EndParsingTemplateId(); 
+                }
+            ;
+    }
+}

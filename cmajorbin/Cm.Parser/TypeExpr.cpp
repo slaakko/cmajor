@@ -335,7 +335,7 @@ public:
         if (matched)
         {
             std::unique_ptr<Cm::Parsing::Object> fromQualifiedId_value = std::move(stack.top());
-            context.fromQualifiedId = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromQualifiedId_value.get());
+            context.fromQualifiedId = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>*>(fromQualifiedId_value.get());
             stack.pop();
         }
     }
@@ -351,7 +351,7 @@ private:
         ParsingContext* ctx;
         Cm::Ast::DerivedTypeExprNode* node;
         Cm::Ast::Node* fromBasicType;
-        Cm::Ast::Node* fromQualifiedId;
+        Cm::Ast::IdentifierNode* fromQualifiedId;
     };
     std::stack<Context> contextStack;
     Context context;

@@ -17,6 +17,7 @@ namespace Cm { namespace Ast {
 using Cm::Ser::BinaryReader;
 enum class Derivation : uint8_t;
 class DerivationList;
+class IdentifierNode;
 
 class Reader
 {
@@ -25,6 +26,7 @@ public:
     NodeType ReadNodeType();
     Span ReadSpan();
     Node* ReadNode();
+    IdentifierNode* ReadIdentifierNode();
     std::string ReadString();
     bool ReadBool();
     int8_t ReadSByte();
