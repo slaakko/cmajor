@@ -8,6 +8,7 @@
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Parsing/StdLib.hpp>
 #include <Cm.Parsing/XmlLog.hpp>
+#include <Cm.Ast/Typedef.hpp>
 #include <Cm.Parser/BasicType.hpp>
 #include <Cm.Parser/Identifier.hpp>
 

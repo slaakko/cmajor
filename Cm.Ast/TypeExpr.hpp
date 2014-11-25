@@ -14,7 +14,6 @@
 
 namespace Cm { namespace Ast {
 
-
 enum class Derivation: uint8_t
 {
     none = 0,
@@ -45,7 +44,7 @@ class DerivedTypeExprNode : public Node
 public:
     DerivedTypeExprNode(const Span& span_);
     DerivedTypeExprNode(const Span& span_, const DerivationList& derivations_, Node* baseTypeExprNode_);
-    NodeType GetType() const override { return NodeType::derivedTypeExprNode; }
+    NodeType GetNodeType() const override { return NodeType::derivedTypeExprNode; }
     Node* Clone() const override;
     const DerivationList& Derivations() const { return derivations; }
     Node* ReleaseBaseTypeExprNode() { return baseTypeExprNode.release();  }

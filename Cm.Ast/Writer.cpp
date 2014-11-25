@@ -29,7 +29,7 @@ void Writer::Write(const Span& span)
 
 void Writer::Write(Node* node)
 {
-    Write(node->GetType());
+    Write(node->GetNodeType());
     Write(node->GetSpan());
     node->Write(*this);
 }

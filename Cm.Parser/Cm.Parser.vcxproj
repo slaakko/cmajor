@@ -32,6 +32,7 @@
     <None Include="Parameter.parser" />
     <None Include="Specifier.parser" />
     <None Include="Template.parser" />
+    <None Include="Typedef.parser" />
     <None Include="TypeExpr.parser" />
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +48,7 @@
     <ClCompile Include="ParsingContext.cpp" />
     <ClCompile Include="Specifier.cpp" />
     <ClCompile Include="Template.cpp" />
+    <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeExpr.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -63,6 +65,7 @@
     <ClInclude Include="ParsingContext.hpp" />
     <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Template.hpp" />
+    <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeExpr.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

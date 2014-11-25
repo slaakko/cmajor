@@ -18,6 +18,7 @@
 #include <Cm.Ast/Constant.hpp>
 #include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Delegate.hpp>
+#include <Cm.Ast/Typedef.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -148,6 +149,7 @@ void InitFactory()
     Factory::Instance().Register(NodeType::parameterNode, new Creator<ParameterNode>());
     Factory::Instance().Register(NodeType::delegateNode, new Creator<DelegateNode>());
     Factory::Instance().Register(NodeType::classDelegateNode, new Creator<ClassDelegateNode>());
+    Factory::Instance().Register(NodeType::typedefNode, new Creator<TypedefNode>());
 }
 
 void DoneFactory()

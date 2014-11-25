@@ -44,7 +44,7 @@ Node* Reader::ReadNode()
 IdentifierNode* Reader::ReadIdentifierNode()
 {
     Node* node = ReadNode();
-    if (node->GetType() != NodeType::identifierNode)
+    if (node->GetNodeType() != NodeType::identifierNode)
     {
         throw std::runtime_error("identifier node expected");
     }
