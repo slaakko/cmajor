@@ -22,6 +22,11 @@ BooleanLiteralNode::BooleanLiteralNode(const Span& span_, bool value_) : Node(sp
 {
 }
 
+Node* BooleanLiteralNode::Clone() const 
+{
+    return new BooleanLiteralNode(GetSpan(), value);
+}
+
 void BooleanLiteralNode::Read(Reader& reader)
 {
     value = reader.ReadBool();
@@ -38,6 +43,11 @@ SByteLiteralNode::SByteLiteralNode(const Span& span_) : Node(span_), value(0)
 
 SByteLiteralNode::SByteLiteralNode(const Span& span_, int8_t value_) : Node(span_), value(value_)
 {
+}
+
+Node* SByteLiteralNode::Clone() const
+{
+    return new SByteLiteralNode(GetSpan(), value);
 }
 
 void SByteLiteralNode::Read(Reader& reader)
@@ -58,6 +68,11 @@ ByteLiteralNode::ByteLiteralNode(const Span& span_, uint8_t value_) : Node(span_
 {
 }
 
+Node* ByteLiteralNode::Clone() const
+{
+    return new ByteLiteralNode(GetSpan(), value);
+}
+
 void ByteLiteralNode::Read(Reader& reader)
 {
     value = reader.ReadByte();
@@ -74,6 +89,11 @@ ShortLiteralNode::ShortLiteralNode(const Span& span_) : Node(span_), value(0)
 
 ShortLiteralNode::ShortLiteralNode(const Span& span_, int16_t value_) : Node(span_), value(value_)
 {
+}
+
+Node* ShortLiteralNode::Clone() const
+{
+    return new ShortLiteralNode(GetSpan(), value);
 }
 
 void ShortLiteralNode::Read(Reader& reader)
@@ -94,6 +114,11 @@ UShortLiteralNode::UShortLiteralNode(const Span& span_, uint16_t value_) : Node(
 {
 }
 
+Node* UShortLiteralNode::Clone() const
+{
+    return new UShortLiteralNode(GetSpan(), value);
+}
+
 void UShortLiteralNode::Read(Reader& reader)
 {
     value = reader.ReadUShort();
@@ -110,6 +135,11 @@ IntLiteralNode::IntLiteralNode(const Span& span_) : Node(span_), value(0)
 
 IntLiteralNode::IntLiteralNode(const Span& span_, int32_t value_) : Node(span_), value(value_)
 {
+}
+
+Node* IntLiteralNode::Clone() const
+{
+    return new IntLiteralNode(GetSpan(), value);
 }
 
 void IntLiteralNode::Read(Reader& reader)
@@ -130,6 +160,11 @@ UIntLiteralNode::UIntLiteralNode(const Span& span_, uint32_t value_) : Node(span
 {
 }
 
+Node* UIntLiteralNode::Clone() const
+{
+    return new UIntLiteralNode(GetSpan(), value);
+}
+
 void UIntLiteralNode::Read(Reader& reader)
 {
     value = reader.ReadUInt();
@@ -148,6 +183,11 @@ LongLiteralNode::LongLiteralNode(const Span& span_, int64_t value_) : Node(span_
 {
 }
 
+Node* LongLiteralNode::Clone() const
+{
+    return new LongLiteralNode(GetSpan(), value);
+}
+
 void LongLiteralNode::Read(Reader& reader)
 {
     value = reader.ReadLong();
@@ -164,6 +204,11 @@ ULongLiteralNode::ULongLiteralNode(const Span& span_) : Node(span_), value(0)
 
 ULongLiteralNode::ULongLiteralNode(const Span& span_, uint64_t value_) : Node(span_), value(value_)
 {
+}
+
+Node* ULongLiteralNode::Clone() const
+{
+    return new ULongLiteralNode(GetSpan(), value);
 }
 
 void ULongLiteralNode::Read(Reader& reader)
@@ -206,7 +251,12 @@ FloatLiteralNode::FloatLiteralNode(const Span& span_, float value_) : Node(span_
 {
 }
 
-void FloatLiteralNode::Read(Reader& reader) 
+Node* FloatLiteralNode::Clone() const
+{
+    return new FloatLiteralNode(GetSpan(), value);
+}
+
+void FloatLiteralNode::Read(Reader& reader)
 {
     value = reader.ReadFloat();
 }
@@ -224,16 +274,9 @@ DoubleLiteralNode::DoubleLiteralNode(const Span& span_, double value_) : Node(sp
 {
 }
 
-Node* CreateFloatingLiteralNode(const Span& span, double value, bool float_)
+Node* DoubleLiteralNode::Clone() const
 {
-    if (float_)
-    {
-        return new FloatLiteralNode(span, static_cast<float>(value));
-    }
-    else
-    {
-        return new DoubleLiteralNode(span, value);
-    }
+    return new DoubleLiteralNode(GetSpan(), value);
 }
 
 void DoubleLiteralNode::Read(Reader& reader)
@@ -246,12 +289,29 @@ void DoubleLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+Node* CreateFloatingLiteralNode(const Span& span, double value, bool float_)
+{
+    if (float_)
+    {
+        return new FloatLiteralNode(span, static_cast<float>(value));
+    }
+    else
+    {
+        return new DoubleLiteralNode(span, value);
+    }
+}
+
 CharLiteralNode::CharLiteralNode(const Span& span_) : Node(span_), value('\0')
 {
 }
 
 CharLiteralNode::CharLiteralNode(const Span& span_, char value_) : Node(span_), value(value_)
 {
+}
+
+Node* CharLiteralNode::Clone() const
+{
+    return new CharLiteralNode(GetSpan(), value);
 }
 
 void CharLiteralNode::Read(Reader& reader)
@@ -272,6 +332,11 @@ StringLiteralNode::StringLiteralNode(const Span& span_, const std::string& value
 {
 }
 
+Node* StringLiteralNode::Clone() const
+{
+    return new StringLiteralNode(GetSpan(), value);
+}
+
 void StringLiteralNode::Read(Reader& reader)
 {
     value = reader.ReadString();
@@ -284,6 +349,11 @@ void StringLiteralNode::Write(Writer& writer)
 
 NullLiteralNode::NullLiteralNode(const Span& span_) : Node(span_)
 {
+}
+
+Node* NullLiteralNode::Clone() const
+{
+    return new NullLiteralNode(GetSpan());
 }
 
 } } // namespace Cm::Ast

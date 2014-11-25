@@ -1554,6 +1554,8 @@ public:
         a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrefixRule>(this, &PrefixRule::A7Action));
         Cm::Parsing::ActionParser* a8ActionParser = GetAction("A8");
         a8ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrefixRule>(this, &PrefixRule::A8Action));
+        Cm::Parsing::ActionParser* a9ActionParser = GetAction("A9");
+        a9ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrefixRule>(this, &PrefixRule::A9Action));
         Cm::Parsing::NonterminalParser* prefixNonterminalParser = GetNonterminal("prefix");
         prefixNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrefixRule>(this, &PrefixRule::Preprefix));
         prefixNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrefixRule>(this, &PrefixRule::Postprefix));
@@ -1629,6 +1631,10 @@ public:
             case Operator::deref: context.value = new DerefNode(context.s, context.fromprefix);
             break;
         }
+    }
+    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromPostfix;
     }
     void Preprefix(Cm::Parsing::ObjectStack& stack)
     {
@@ -2530,45 +2536,52 @@ private:
 void ExpressionGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.LiteralGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::LiteralGrammar::Create(pd);
+        grammar0 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.LiteralGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::BasicTypeGrammar::Create(pd);
+        grammar1 = Cm::Parser::LiteralGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar2 = Cm::Parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::TemplateGrammar::Create(pd);
+        grammar3 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar4 = Cm::Parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parsing.stdlib");
+    if (!grammar5)
+    {
+        grammar5 = Cm::Parsing::stdlib::Create(pd);
+    }
+    AddGrammarReference(grammar5);
 }
 
 void ExpressionGrammar::CreateRules()
 {
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
     AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRule(new ExpressionRule("Expression", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("Equivalence", "Equivalence", 1))));
@@ -2787,7 +2800,8 @@ void ExpressionGrammar::CreateRules()
                         new Cm::Parsing::CharParser('*'))),
                 new Cm::Parsing::ActionParser("A8",
                     new Cm::Parsing::NonterminalParser("prefix", "Prefix", 1))),
-            new Cm::Parsing::NonterminalParser("Postfix", "Postfix", 1))));
+            new Cm::Parsing::ActionParser("A9",
+                new Cm::Parsing::NonterminalParser("Postfix", "Postfix", 1)))));
     AddRule(new PostfixRule("Postfix", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -2956,6 +2970,7 @@ void ExpressionGrammar::CreateRules()
                     new Cm::Parsing::ActionParser("A2",
                         new Cm::Parsing::NonterminalParser("arg", "Expression", 1)),
                     new Cm::Parsing::CharParser(','))))));
+    SetSkipRuleName("spaces_and_comments");
 }
 
 } } // namespace Cm.Parser

@@ -28,6 +28,8 @@ namespace Cm.Parser
         using IdentifierGrammar.Identifier;
         using TemplateGrammar.TemplateId;
         using TypeExprGrammar.TypeExpr;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
 
         Expression(ParsingContext* ctx): Cm::Ast::Node*
             ::= Equivalence(ctx){ value = Equivalence; }
@@ -270,7 +272,7 @@ namespace Cm.Parser
                         }
                     }
                 )
-                |   Postfix(ctx)
+                |   Postfix(ctx){ value = Postfix; }
             ;
 
         Postfix(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*

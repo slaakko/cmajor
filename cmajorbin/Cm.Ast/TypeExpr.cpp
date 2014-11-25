@@ -35,6 +35,11 @@ DerivedTypeExprNode::DerivedTypeExprNode(const Span& span_, const DerivationList
 {
 }
 
+Node* DerivedTypeExprNode::Clone() const
+{
+    return new DerivedTypeExprNode(GetSpan(), derivations, baseTypeExprNode->Clone());
+}
+
 void DerivedTypeExprNode::Read(Reader& reader)
 {
     derivations = reader.ReadDerivationList();
@@ -55,6 +60,17 @@ void DerivedTypeExprNode::Add(Derivation derivation)
 void DerivedTypeExprNode::SetBaseTypeExpr(Node* baseTypeExprNode_)
 {
     baseTypeExprNode.reset(baseTypeExprNode_);
+}
+
+Node* MakeTypeExprNode(DerivedTypeExprNode* derivedTypeExprNode)
+{
+    if (derivedTypeExprNode->Derivations().NumDerivations() == 0)
+    {
+        Node* baseTypeExprNode = derivedTypeExprNode->ReleaseBaseTypeExprNode();
+        delete derivedTypeExprNode;
+        return baseTypeExprNode;
+    }
+    return derivedTypeExprNode;
 }
 
 } } // namespace Cm::Ast

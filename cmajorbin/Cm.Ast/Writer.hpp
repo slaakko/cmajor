@@ -16,6 +16,7 @@ namespace Cm { namespace Ast {
 
 class DerivationList;
 enum class Derivation : uint8_t;
+enum class Specifiers : uint16_t;
 
 using Cm::Ser::BinaryWriter;
 
@@ -41,6 +42,7 @@ public:
     void Write(char x);
     void Write(Derivation x);
     void Write(const DerivationList& derivationList);
+    void Write(Specifiers x);
 private:
     BinaryWriter binaryWriter;
 };

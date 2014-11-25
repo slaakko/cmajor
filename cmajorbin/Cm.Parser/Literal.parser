@@ -38,15 +38,15 @@ namespace Cm.Parser
 
         IntegerLiteral(var int start): Cm::Ast::Node*
             ::= token(
-                    ulong{ start = span.Start(); } 
-                    (    ('u' | 'U'){ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), ulong, true); } 
-                    |    empty{ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), ulong, false); }
-                    )
-                )
-            |    token(
                     hex_literal{ start = span.Start(); } 
                     (    ('u' | 'U'){ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), hex_literal, true); } 
                     |    empty{ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), hex_literal, false); }
+                    )
+                )
+            |   token(
+                    ulong{ start = span.Start(); } 
+                    (    ('u' | 'U'){ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), ulong, true); } 
+                    |    empty{ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), ulong, false); }
                     )
                 )
             ;

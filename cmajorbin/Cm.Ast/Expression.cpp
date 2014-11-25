@@ -21,12 +21,22 @@ EquivalenceNode::EquivalenceNode(const Span& span_, Node* left_, Node* right_) :
 {
 }
 
+Node* EquivalenceNode::Clone() const
+{
+    return new EquivalenceNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 ImplicationNode::ImplicationNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 ImplicationNode::ImplicationNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* ImplicationNode::Clone() const
+{
+    return new ImplicationNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 DisjunctionNode::DisjunctionNode(const Span& span_) : BinaryNode(span_)
@@ -37,12 +47,22 @@ DisjunctionNode::DisjunctionNode(const Span& span_, Node* left_, Node* right_) :
 {
 }
 
+Node* DisjunctionNode::Clone() const
+{
+    return new DisjunctionNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 ConjunctionNode::ConjunctionNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 ConjunctionNode::ConjunctionNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* ConjunctionNode::Clone() const
+{
+    return new ConjunctionNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 BitOrNode::BitOrNode(const Span& span_) : BinaryNode(span_)
@@ -53,12 +73,22 @@ BitOrNode::BitOrNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(
 {
 }
 
+Node* BitOrNode::Clone() const
+{
+    return new BitOrNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 BitXorNode::BitXorNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 BitXorNode::BitXorNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* BitXorNode::Clone() const
+{
+    return new BitXorNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 BitAndNode::BitAndNode(const Span& span_) : BinaryNode(span_)
@@ -69,12 +99,22 @@ BitAndNode::BitAndNode(const Span& span_, Node* left_, Node* right_) : BinaryNod
 {
 }
 
+Node* BitAndNode::Clone() const
+{
+    return new BitAndNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 EqualNode::EqualNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 EqualNode::EqualNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* EqualNode::Clone() const
+{
+    return new EqualNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 NotEqualNode::NotEqualNode(const Span& span_) : BinaryNode(span_)
@@ -85,12 +125,22 @@ NotEqualNode::NotEqualNode(const Span& span_, Node* left_, Node* right_) : Binar
 {
 }
 
+Node* NotEqualNode::Clone() const
+{
+    return new NotEqualNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 LessNode::LessNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 LessNode::LessNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* LessNode::Clone() const
+{
+    return new LessNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 GreaterNode::GreaterNode(const Span& span_) : BinaryNode(span_)
@@ -101,12 +151,22 @@ GreaterNode::GreaterNode(const Span& span_, Node* left_, Node* right_) : BinaryN
 {
 }
 
+Node* GreaterNode::Clone() const
+{
+    return new GreaterNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 LessOrEqualNode::LessOrEqualNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 LessOrEqualNode::LessOrEqualNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* LessOrEqualNode::Clone() const
+{
+    return new LessOrEqualNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 GreaterOrEqualNode::GreaterOrEqualNode(const Span& span_) : BinaryNode(span_)
@@ -117,12 +177,22 @@ GreaterOrEqualNode::GreaterOrEqualNode(const Span& span_, Node* left_, Node* rig
 {
 }
 
+Node* GreaterOrEqualNode::Clone() const
+{
+    return new GreaterOrEqualNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 ShiftLeftNode::ShiftLeftNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 ShiftLeftNode::ShiftLeftNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* ShiftLeftNode::Clone() const
+{
+    return new ShiftLeftNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 ShiftRightNode::ShiftRightNode(const Span& span_) : BinaryNode(span_)
@@ -133,12 +203,22 @@ ShiftRightNode::ShiftRightNode(const Span& span_, Node* left_, Node* right_) : B
 {
 }
 
+Node* ShiftRightNode::Clone() const
+{
+    return new ShiftRightNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 AddNode::AddNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 AddNode::AddNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* AddNode::Clone() const
+{
+    return new AddNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 SubNode::SubNode(const Span& span_) : BinaryNode(span_)
@@ -149,12 +229,22 @@ SubNode::SubNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span
 {
 }
 
+Node* SubNode::Clone() const
+{
+    return new SubNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 MulNode::MulNode(const Span& span_) : BinaryNode(span_)
 {
 }
 
 MulNode::MulNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span_, left_, right_)
 {
+}
+
+Node* MulNode::Clone() const
+{
+    return new MulNode(GetSpan(), Left()->Clone(), Right()->Clone());
 }
 
 DivNode::DivNode(const Span& span_) : BinaryNode(span_)
@@ -165,6 +255,11 @@ DivNode::DivNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span
 {
 }
 
+Node* DivNode::Clone() const
+{
+    return new DivNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 RemNode::RemNode(const Span& span_) : BinaryNode(span_)
 {
 }
@@ -173,12 +268,27 @@ RemNode::RemNode(const Span& span_, Node* left_, Node* right_) : BinaryNode(span
 {
 }
 
+Node* RemNode::Clone() const
+{
+    return new RemNode(GetSpan(), Left()->Clone(), Right()->Clone());
+}
+
 InvokeNode::InvokeNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
 InvokeNode::InvokeNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
+}
+
+Node* InvokeNode::Clone() const
+{
+    InvokeNode* clone = new InvokeNode(GetSpan(), Child()->Clone());
+    for (const std::unique_ptr<Node>& argument : arguments)
+    {
+        clone->AddArgument(argument->Clone());
+    }
+    return clone;
 }
 
 void InvokeNode::AddArgument(Node* argument)
@@ -206,6 +316,11 @@ IndexNode::IndexNode(const Span& span_, Node* subject_, Node* index_) : UnaryNod
 {
 }
 
+Node* IndexNode::Clone() const
+{
+    return new IndexNode(GetSpan(), Child()->Clone(), index->Clone());
+}
+
 void IndexNode::Read(Reader& reader)
 {
     UnaryNode::Read(reader);
@@ -224,6 +339,11 @@ DotNode::DotNode(const Span& span_) : UnaryNode(span_)
 
 DotNode::DotNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : UnaryNode(span_, subject_), memberId(memberId_)
 {
+}
+
+Node* DotNode::Clone() const
+{
+    return new DotNode(GetSpan(), Child()->Clone(), static_cast<IdentifierNode*>(memberId->Clone()));
 }
 
 void DotNode::Read(Reader& reader)
@@ -246,6 +366,11 @@ ArrowNode::ArrowNode(const Span& span_, Node* subject_, IdentifierNode* memberId
 {
 }
 
+Node* ArrowNode::Clone() const
+{
+    return new ArrowNode(GetSpan(), Child()->Clone(), static_cast<IdentifierNode*>(memberId->Clone()));
+}
+
 void ArrowNode::Read(Reader& reader)
 {
     UnaryNode::Read(reader);
@@ -266,12 +391,22 @@ PostfixIncNode::PostfixIncNode(const Span& span_, Node* subject_) : UnaryNode(sp
 {
 }
 
+Node* PostfixIncNode::Clone() const
+{
+    return new PostfixIncNode(GetSpan(), Child()->Clone());
+}
+
 PostfixDecNode::PostfixDecNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
 PostfixDecNode::PostfixDecNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
+}
+
+Node* PostfixDecNode::Clone() const
+{
+    return new PostfixDecNode(GetSpan(), Child()->Clone());
 }
 
 DerefNode::DerefNode(const Span& span_) : UnaryNode(span_)
@@ -282,12 +417,22 @@ DerefNode::DerefNode(const Span& span_, Node* subject_) : UnaryNode(span_, subje
 {
 }
 
+Node* DerefNode::Clone() const
+{
+    return new DerefNode(GetSpan(), Child()->Clone());
+}
+
 AddrOfNode::AddrOfNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
 AddrOfNode::AddrOfNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
+}
+
+Node* AddrOfNode::Clone() const
+{
+    return new AddrOfNode(GetSpan(), Child()->Clone());
 }
 
 NotNode::NotNode(const Span& span_) : UnaryNode(span_)
@@ -298,12 +443,22 @@ NotNode::NotNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
 }
 
+Node* NotNode::Clone() const
+{
+    return new NotNode(GetSpan(), Child()->Clone());
+}
+
 UnaryPlusNode::UnaryPlusNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
 UnaryPlusNode::UnaryPlusNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
+}
+
+Node* UnaryPlusNode::Clone() const
+{
+    return new UnaryPlusNode(GetSpan(), Child()->Clone());
 }
 
 UnaryMinusNode::UnaryMinusNode(const Span& span_) : UnaryNode(span_)
@@ -314,12 +469,22 @@ UnaryMinusNode::UnaryMinusNode(const Span& span_, Node* subject_) : UnaryNode(sp
 {
 }
 
+Node* UnaryMinusNode::Clone() const
+{
+    return new UnaryMinusNode(GetSpan(), Child()->Clone());
+}
+
 ComplementNode::ComplementNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
 ComplementNode::ComplementNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
+}
+
+Node* ComplementNode::Clone() const
+{
+    return new ComplementNode(GetSpan(), Child()->Clone());
 }
 
 PrefixIncNode::PrefixIncNode(const Span& span_) : UnaryNode(span_)
@@ -330,12 +495,22 @@ PrefixIncNode::PrefixIncNode(const Span& span_, Node* subject_) : UnaryNode(span
 {
 }
 
+Node* PrefixIncNode::Clone() const
+{
+    return new PrefixIncNode(GetSpan(), Child()->Clone());
+}
+
 PrefixDecNode::PrefixDecNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
 PrefixDecNode::PrefixDecNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
+}
+
+Node* PrefixDecNode::Clone() const
+{
+    return new PrefixDecNode(GetSpan(), Child()->Clone());
 }
 
 SizeOfNode::SizeOfNode(const Span& span_) : UnaryNode(span_)
@@ -346,6 +521,11 @@ SizeOfNode::SizeOfNode(const Span& span_, Node* subject_) : UnaryNode(span_, sub
 {
 }
 
+Node* SizeOfNode::Clone() const
+{
+    return new SizeOfNode(GetSpan(), Child()->Clone());
+}
+
 TypeNameNode::TypeNameNode(const Span& span_) : UnaryNode(span_)
 {
 }
@@ -354,12 +534,22 @@ TypeNameNode::TypeNameNode(const Span& span_, Node* subject_) : UnaryNode(span_,
 {
 }
 
+Node* TypeNameNode::Clone() const
+{
+    return new TypeNameNode(GetSpan(), Child()->Clone());
+}
+
 CastNode::CastNode(const Span& span_) : Node(span_)
 {
 }
 
 CastNode::CastNode(const Span& span_, Node* targetTypeExpr_, Node* sourceExpr_) : Node(span_), targetTypeExpr(targetTypeExpr_), sourceExpr(sourceExpr_)
 {
+}
+
+Node* CastNode::Clone() const
+{
+    return new CastNode(GetSpan(), targetTypeExpr->Clone(), sourceExpr->Clone());
 }
 
 void CastNode::Read(Reader& reader)
@@ -380,6 +570,16 @@ NewNode::NewNode(const Span& span_) : Node(span_)
 
 NewNode::NewNode(const Span& span_, Node* typeExpr_) : Node(span_), typeExpr(typeExpr_)
 {
+}
+
+Node* NewNode::Clone() const
+{
+    NewNode* clone = new NewNode(GetSpan(), typeExpr->Clone());
+    for (const std::unique_ptr<Node>& argument : arguments)
+    {
+        clone->AddArgument(argument->Clone());
+    }
+    return clone;
 }
 
 void NewNode::AddArgument(Node* argument)
@@ -407,6 +607,16 @@ ConstructNode::ConstructNode(const Span& span_, Node* typeExpr_) : Node(span_), 
 {
 }
 
+Node* ConstructNode::Clone() const
+{
+    ConstructNode* clone = new ConstructNode(GetSpan(), typeExpr->Clone());
+    for (const std::unique_ptr<Node>& argument : arguments)
+    {
+        clone->AddArgument(argument->Clone());
+    }
+    return clone;
+}
+
 void ConstructNode::AddArgument(Node* argument)
 {
     arguments.Add(argument);
@@ -428,8 +638,18 @@ ThisNode::ThisNode(const Span& span_) : Node(span_)
 {
 }
 
+Node* ThisNode::Clone() const
+{
+    return new ThisNode(GetSpan());
+}
+
 BaseNode::BaseNode(const Span& span_) : Node(span_)
 {
+}
+
+Node* BaseNode::Clone() const
+{
+    return new BaseNode(GetSpan());
 }
 
 } } // namespace Cm::Ast

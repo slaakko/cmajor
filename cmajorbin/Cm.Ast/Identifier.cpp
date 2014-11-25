@@ -21,6 +21,11 @@ IdentifierNode::IdentifierNode(const Span& span_, const std::string& identifier_
 {
 }
 
+Node* IdentifierNode::Clone() const
+{
+    return new IdentifierNode(GetSpan(), identifier);
+}
+
 void IdentifierNode::Read(Reader& reader) 
 {
     identifier = reader.ReadString();

@@ -23,7 +23,7 @@
 
         TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*
             ::= empty{ ctx->BeginParsingTypeExpr(); node.reset(new DerivedTypeExprNode(span)); }
-                PrefixTypeExpr(ctx, node.get()){ node->GetSpan().SetEnd(span.End()); value = node.release(); ctx->EndParsingTypeExpr(); } / { ctx->EndParsingTypeExpr(); }
+                PrefixTypeExpr(ctx, node.get()){ node->GetSpan().SetEnd(span.End()); value = MakeTypeExprNode(node.release()); ctx->EndParsingTypeExpr(); } / { ctx->EndParsingTypeExpr(); }
             ;
 
         PrefixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node)

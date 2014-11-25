@@ -1,5 +1,5 @@
-#ifndef Keyword_hpp_3470
-#define Keyword_hpp_3470
+#ifndef Keyword_hpp_24885
+#define Keyword_hpp_24885
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -20,4 +20,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Keyword_hpp_3470
+#endif // Keyword_hpp_24885

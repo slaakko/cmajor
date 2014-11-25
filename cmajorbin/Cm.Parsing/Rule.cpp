@@ -26,6 +26,7 @@ AttrOrVariable::AttrOrVariable(const std::string& typeName_, const std::string& 
 
 Rule::Rule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
     Parser(name_, "<" + name_ + ">"),
+    grammar(nullptr),
     definition(definition_),
     inheritedAttributes(),
     localVariables(),
@@ -39,6 +40,7 @@ Rule::Rule(const std::string& name_, Scope* enclosingScope_, Parser* definition_
 
 Rule::Rule(const std::string& name_, Scope* enclosingScope_):
     Parser(name_, "<" + name_ + ">"),
+    grammar(nullptr),
     definition(),
     inheritedAttributes(),
     localVariables(),

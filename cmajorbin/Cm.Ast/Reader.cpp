@@ -133,4 +133,10 @@ DerivationList Reader::ReadDerivationList()
     return derivationList;
 }
 
+Specifiers Reader::ReadSpecifiers()
+{
+    uint16_t s = ReadUShort();
+    return *reinterpret_cast<Specifiers*>(&s);
+}
+
 } } // namespace Cm::Ast

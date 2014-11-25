@@ -1,9 +1,11 @@
 project Cm.Parser;
 reference <StdLib.pl>;
 source <BasicType.parser>;
+source <Enumeration.parser>;
 source <Expression.parser>;
 source <Identifier.parser>;
 source <Keyword.parser>;
 source <Literal.parser>;
+source <Specifier.parser>;
 source <Template.parser>;
 source <TypeExpr.parser>;
