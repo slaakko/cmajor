@@ -4,12 +4,9 @@ namespace Cm.Parser
     {
         BasicType: Cm::Ast::Node*;
     }
-    grammar TypeExprGrammar
+    grammar ConstantGrammar
     {
-        TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*;
-        PrefixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
-        PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
-        PrimaryTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
+        Constant(ParsingContext* ctx): Cm::Ast::Node*;
     }
     grammar EnumerationGrammar
     {
@@ -69,5 +66,12 @@ namespace Cm.Parser
     {
         Specifiers: Cm::Ast::Specifiers;
         Specifier: Cm::Ast::Specifiers;
+    }
+    grammar TypeExprGrammar
+    {
+        TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*;
+        PrefixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
+        PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
+        PrimaryTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
     }
 }

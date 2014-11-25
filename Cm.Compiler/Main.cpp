@@ -7,7 +7,7 @@
 
  ========================================================================*/
 
-#include <Cm.Parser/Enumeration.hpp>
+#include <Cm.Parser/Constant.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Factory.hpp>
@@ -51,15 +51,15 @@ int main(int argc, const char** argv)
     {
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
-        Cm::Parser::EnumerationGrammar* grammar = Cm::Parser::EnumerationGrammar::Create();
+        Cm::Parser::ConstantGrammar* grammar = Cm::Parser::ConstantGrammar::Create();
         Cm::Parser::ParsingContext ctx;
-        std::string s("public enum Foo { alpha, beta }");
+        std::string s("public const int foo = 1;");
         std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
-            Cm::Ast::Writer writer("C:\\temp\\enumeration.mc");
+            Cm::Ast::Writer writer("C:\\temp\\constant.mc");
             writer.Write(node.get());
         }
-        Cm::Ast::Reader reader("C:\\temp\\enumeration.mc");
+        Cm::Ast::Reader reader("C:\\temp\\constant.mc");
         std::unique_ptr<Cm::Ast::Node> n(reader.ReadNode());
     }
     catch (const std::exception& ex)
