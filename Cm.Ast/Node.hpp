@@ -28,27 +28,29 @@ enum class NodeType: uint8_t
     notNode, unaryPlusNode, unaryMinusNode, complementNode, prefixIncNode, prefixDecNode, sizeOfNode, typeNameNode, 
     castNode, newNode, constructNode, thisNode, baseNode,
     identifierNode, templateIdNode,
-    enumTypeNode, enumConstantNode, constantNode,
+    enumTypeNode, enumConstantNode, constantNode, parameterNode, delegateNode, classDelegateNode,
     maxNode
 };
 
 class Reader;
 class Writer;
+class IdentifierNode;
 
 class Node
 {
 public:
     Node();
-    Node(Span span_);
+    Node(const Span& span_);
     virtual ~Node();
     virtual NodeType GetType() const = 0;
     virtual Node* Clone() const = 0;
-    virtual Node* GetValue() const { return nullptr; }
-    virtual void Read(Reader& reader);
-    virtual void Write(Writer& writer);
-    virtual void AddArgument(Node* argument) {}
     const Span& GetSpan() const { return span; }
     Span& GetSpan() { return span; }
+    virtual void Read(Reader& reader);
+    virtual void Write(Writer& writer);
+    virtual Node* GetValue() const;
+    virtual void AddArgument(Node* argument);
+    virtual void AddParameter(const Span& span_, Node* paramTypeExpr, IdentifierNode* paramId);
 private:
     Span span;
 };

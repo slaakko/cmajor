@@ -8,6 +8,11 @@ namespace Cm.Parser
     {
         Constant(ParsingContext* ctx): Cm::Ast::Node*;
     }
+    grammar ParameterGrammar
+    {
+        ParameterList(ParsingContext* ctx, Cm::Ast::Node* owner);
+        Parameter(ParsingContext* ctx, Cm::Ast::Node* owner);
+    }
     grammar EnumerationGrammar
     {
         EnumType(ParsingContext* ctx): Cm::Ast::EnumTypeNode*;
@@ -24,9 +29,10 @@ namespace Cm.Parser
         StringLiteral(var std::string r): Cm::Ast::Node*;
         NullLiteral: Cm::Ast::Node*;
     }
-    grammar TemplateGrammar
+    grammar DelegateGrammar
     {
-        TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId): Cm::Ast::Node*;
+        Delegate(ParsingContext* ctx): Cm::Ast::Node*;
+        ClassDelegate(ParsingContext* ctx): Cm::Ast::Node*;
     }
     grammar ExpressionGrammar
     {
@@ -66,6 +72,10 @@ namespace Cm.Parser
     {
         Specifiers: Cm::Ast::Specifiers;
         Specifier: Cm::Ast::Specifiers;
+    }
+    grammar TemplateGrammar
+    {
+        TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId): Cm::Ast::Node*;
     }
     grammar TypeExprGrammar
     {

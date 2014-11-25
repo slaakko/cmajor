@@ -17,12 +17,28 @@ Node::Node()
 {
 }
 
-Node::Node(Span span_): span(span_)
+Node::Node(const Span& span_): span(span_)
 {
 }
 
 Node::~Node()
 {
+}
+
+Node* Node::GetValue() const 
+{ 
+    throw std::runtime_error("member function not applicable");
+    return nullptr; 
+}
+
+void Node::AddArgument(Node* argument) 
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+void Node::AddParameter(const Span& span_, Node* paramTypeExpr, IdentifierNode* paramId) 
+{
+    throw std::runtime_error("member function not applicable");
 }
 
 void Node::Read(Reader& reader)
