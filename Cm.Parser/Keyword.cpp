@@ -84,7 +84,6 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("short");
     keywords0.push_back("sizeof");
     keywords0.push_back("static");
-    keywords0.push_back("supplement");
     keywords0.push_back("suppress");
     keywords0.push_back("switch");
     keywords0.push_back("this");

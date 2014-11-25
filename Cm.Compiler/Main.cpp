@@ -7,7 +7,7 @@
 
  ========================================================================*/
 
-#include <Cm.Parser/Literal.hpp>
+#include <Cm.Parser/Enumeration.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Factory.hpp>
@@ -51,14 +51,15 @@ int main(int argc, const char** argv)
     {
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
-        Cm::Parser::LiteralGrammar* grammar = Cm::Parser::LiteralGrammar::Create();
-        std::string s("123u");
-        std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, ""));
+        Cm::Parser::EnumerationGrammar* grammar = Cm::Parser::EnumerationGrammar::Create();
+        Cm::Parser::ParsingContext ctx;
+        std::string s("public enum Foo { alpha, beta }");
+        std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
-            Cm::Ast::Writer writer("C:\\temp\\intliteral.mc");
+            Cm::Ast::Writer writer("C:\\temp\\enumeration.mc");
             writer.Write(node.get());
         }
-        Cm::Ast::Reader reader("C:\\temp\\intliteral.mc");
+        Cm::Ast::Reader reader("C:\\temp\\enumeration.mc");
         std::unique_ptr<Cm::Ast::Node> n(reader.ReadNode());
     }
     catch (const std::exception& ex)

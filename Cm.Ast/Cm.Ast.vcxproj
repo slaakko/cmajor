@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Factory.hpp" />
     <ClInclude Include="Identifier.hpp" />
@@ -27,12 +28,14 @@
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Node.hpp" />
     <ClInclude Include="Reader.hpp" />
+    <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Template.hpp" />
     <ClInclude Include="TypeExpr.hpp" />
     <ClInclude Include="Writer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="Factory.cpp" />

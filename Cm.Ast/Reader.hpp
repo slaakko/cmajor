@@ -18,6 +18,7 @@ using Cm::Ser::BinaryReader;
 enum class Derivation : uint8_t;
 class DerivationList;
 class IdentifierNode;
+enum class Specifiers : uint16_t;
 
 class Reader
 {
@@ -42,6 +43,7 @@ public:
     char ReadChar();
     Derivation ReadDerivation();
     DerivationList ReadDerivationList();
+    Specifiers ReadSpecifiers();
 private:
     BinaryReader binaryReader;
 };

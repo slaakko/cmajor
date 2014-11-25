@@ -301,10 +301,10 @@ public:
         a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IntegerLiteralRule>(this, &IntegerLiteralRule::A4Action));
         Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
         a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IntegerLiteralRule>(this, &IntegerLiteralRule::A5Action));
-        Cm::Parsing::NonterminalParser* ulongNonterminalParser = GetNonterminal("ulong");
-        ulongNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IntegerLiteralRule>(this, &IntegerLiteralRule::Postulong));
         Cm::Parsing::NonterminalParser* hex_literalNonterminalParser = GetNonterminal("hex_literal");
         hex_literalNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IntegerLiteralRule>(this, &IntegerLiteralRule::Posthex_literal));
+        Cm::Parsing::NonterminalParser* ulongNonterminalParser = GetNonterminal("ulong");
+        ulongNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IntegerLiteralRule>(this, &IntegerLiteralRule::Postulong));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -312,11 +312,11 @@ public:
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), context.start, span.End()), context.fromulong, true);
+        context.value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), context.start, span.End()), context.fromhex_literal, true);
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), context.start, span.End()), context.fromulong, false);
+        context.value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), context.start, span.End()), context.fromhex_literal, false);
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -324,20 +324,11 @@ public:
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), context.start, span.End()), context.fromhex_literal, true);
+        context.value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), context.start, span.End()), context.fromulong, true);
     }
     void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), context.start, span.End()), context.fromhex_literal, false);
-    }
-    void Postulong(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        if (matched)
-        {
-            std::unique_ptr<Cm::Parsing::Object> fromulong_value = std::move(stack.top());
-            context.fromulong = *static_cast<Cm::Parsing::ValueObject<uint64_t>*>(fromulong_value.get());
-            stack.pop();
-        }
+        context.value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), context.start, span.End()), context.fromulong, false);
     }
     void Posthex_literal(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -348,14 +339,23 @@ public:
             stack.pop();
         }
     }
+    void Postulong(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromulong_value = std::move(stack.top());
+            context.fromulong = *static_cast<Cm::Parsing::ValueObject<uint64_t>*>(fromulong_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): value(), start(), fromulong(), fromhex_literal() {}
+        Context(): value(), start(), fromhex_literal(), fromulong() {}
         Cm::Ast::Node* value;
         int start;
-        uint64_t fromulong;
         uint64_t fromhex_literal;
+        uint64_t fromulong;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -602,12 +602,12 @@ void LiteralGrammar::GetReferencedGrammars()
 
 void LiteralGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRuleLink(new Cm::Parsing::RuleLink("bool", this, "Cm.Parsing.stdlib.bool"));
     AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRuleLink(new Cm::Parsing::RuleLink("ureal", this, "Cm.Parsing.stdlib.ureal"));
-    AddRuleLink(new Cm::Parsing::RuleLink("hex_literal", this, "Cm.Parsing.stdlib.hex_literal"));
     AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
+    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
+    AddRuleLink(new Cm::Parsing::RuleLink("hex_literal", this, "Cm.Parsing.stdlib.hex_literal"));
     AddRule(new LiteralRule("Literal", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
@@ -634,7 +634,7 @@ void LiteralGrammar::CreateRules()
             new Cm::Parsing::TokenParser(
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::ActionParser("A0",
-                        new Cm::Parsing::NonterminalParser("ulong", "ulong", 0)),
+                        new Cm::Parsing::NonterminalParser("hex_literal", "hex_literal", 0)),
                     new Cm::Parsing::AlternativeParser(
                         new Cm::Parsing::ActionParser("A1",
                             new Cm::Parsing::AlternativeParser(
@@ -645,7 +645,7 @@ void LiteralGrammar::CreateRules()
             new Cm::Parsing::TokenParser(
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::ActionParser("A3",
-                        new Cm::Parsing::NonterminalParser("hex_literal", "hex_literal", 0)),
+                        new Cm::Parsing::NonterminalParser("ulong", "ulong", 0)),
                     new Cm::Parsing::AlternativeParser(
                         new Cm::Parsing::ActionParser("A4",
                             new Cm::Parsing::AlternativeParser(

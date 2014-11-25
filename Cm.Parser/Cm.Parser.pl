@@ -4,6 +4,29 @@ namespace Cm.Parser
     {
         BasicType: Cm::Ast::Node*;
     }
+    grammar TypeExprGrammar
+    {
+        TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*;
+        PrefixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
+        PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
+        PrimaryTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
+    }
+    grammar EnumerationGrammar
+    {
+        EnumType(ParsingContext* ctx): Cm::Ast::EnumTypeNode*;
+        EnumConstants(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType);
+        EnumConstant(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType, var Span s): Cm::Ast::Node*;
+    }
+    grammar LiteralGrammar
+    {
+        Literal: Cm::Ast::Node*;
+        BooleanLiteral: Cm::Ast::Node*;
+        IntegerLiteral(var int start): Cm::Ast::Node*;
+        FloatingLiteral(var int start): Cm::Ast::Node*;
+        CharLiteral: Cm::Ast::Node*;
+        StringLiteral(var std::string r): Cm::Ast::Node*;
+        NullLiteral: Cm::Ast::Node*;
+    }
     grammar TemplateGrammar
     {
         TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId): Cm::Ast::Node*;
@@ -42,21 +65,9 @@ namespace Cm.Parser
         Identifier: Cm::Ast::IdentifierNode*;
         QualifiedId: Cm::Ast::IdentifierNode*;
     }
-    grammar TypeExprGrammar
+    grammar SpecifierGrammar
     {
-        TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*;
-        PrefixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
-        PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
-        PrimaryTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
-    }
-    grammar LiteralGrammar
-    {
-        Literal: Cm::Ast::Node*;
-        BooleanLiteral: Cm::Ast::Node*;
-        IntegerLiteral(var int start): Cm::Ast::Node*;
-        FloatingLiteral(var int start): Cm::Ast::Node*;
-        CharLiteral: Cm::Ast::Node*;
-        StringLiteral(var std::string r): Cm::Ast::Node*;
-        NullLiteral: Cm::Ast::Node*;
+        Specifiers: Cm::Ast::Specifiers;
+        Specifier: Cm::Ast::Specifiers;
     }
 }

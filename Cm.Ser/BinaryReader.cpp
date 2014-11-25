@@ -167,16 +167,15 @@ char BinaryReader::ReadChar()
 std::string BinaryReader::ReadString()
 {
     std::string s;
-    bool nulRead = false;
     while (pos != end && *pos)
     {
-        if (!*pos)
-        {
-            nulRead = true;
-        }
         s.append(1, *pos++);
     }
-    if (pos == end && !nulRead)
+    if (pos != end && !*pos)
+    {
+        ++pos;
+    }
+    else
     {
         throw std::runtime_error("unexpected end of file '" + fileName + "' while reading string");
     }

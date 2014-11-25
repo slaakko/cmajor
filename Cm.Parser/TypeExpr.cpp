@@ -116,7 +116,7 @@ public:
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.node->GetSpan().SetEnd(span.End());
-        context.value = context.node.release();
+        context.value = MakeTypeExprNode(context.node.release());
         context.ctx->EndParsingTypeExpr();
     }
     void A1ActionFail()

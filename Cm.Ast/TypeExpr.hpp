@@ -46,6 +46,9 @@ public:
     DerivedTypeExprNode(const Span& span_);
     DerivedTypeExprNode(const Span& span_, const DerivationList& derivations_, Node* baseTypeExprNode_);
     NodeType GetType() const override { return NodeType::derivedTypeExprNode; }
+    Node* Clone() const override;
+    const DerivationList& Derivations() const { return derivations; }
+    Node* ReleaseBaseTypeExprNode() { return baseTypeExprNode.release();  }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Add(Derivation derivation);
@@ -60,6 +63,8 @@ private:
     DerivationList derivations;
     std::unique_ptr<Node> baseTypeExprNode;
 };
+
+Node* MakeTypeExprNode(DerivedTypeExprNode* derivedTypeExprNode);
 
 } } // namespace Cm::Ast
 

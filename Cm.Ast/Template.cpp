@@ -21,6 +21,16 @@ TemplateIdNode::TemplateIdNode(const Span& span_, Node* subject_): Node(span_), 
 {
 }
 
+Node* TemplateIdNode::Clone() const
+{
+    TemplateIdNode* clone = new TemplateIdNode(GetSpan(), subject->Clone());
+    for (const std::unique_ptr<Node>& templateArgument : templateArguments)
+    {
+        clone->AddTemplateArgument(templateArgument->Clone());
+    }
+    return clone;
+}
+
 void TemplateIdNode::AddTemplateArgument(Node* templateArgument)
 {
     templateArguments.Add(templateArgument);

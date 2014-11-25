@@ -28,6 +28,7 @@ enum class NodeType: uint8_t
     notNode, unaryPlusNode, unaryMinusNode, complementNode, prefixIncNode, prefixDecNode, sizeOfNode, typeNameNode, 
     castNode, newNode, constructNode, thisNode, baseNode,
     identifierNode, templateIdNode,
+    enumTypeNode, enumConstantNode,
     maxNode
 };
 
@@ -41,6 +42,8 @@ public:
     Node(Span span_);
     virtual ~Node();
     virtual NodeType GetType() const = 0;
+    virtual Node* Clone() const = 0;
+    virtual Node* GetValue() const { return nullptr; }
     virtual void Read(Reader& reader);
     virtual void Write(Writer& writer);
     virtual void AddArgument(Node* argument) {}
@@ -80,9 +83,13 @@ private:
 class NodeList
 {
 public:
+    typedef std::vector<std::unique_ptr<Node>>::const_iterator const_iterator;
     NodeList();
+    const_iterator begin() const { return nodes.begin(); }
+    const_iterator end() const { return nodes.end(); }
     int Count() const { return int(nodes.size()); }
     Node* operator[](int index) const { return nodes[index].get(); }
+    Node* Back() const { return nodes.back().get(); }
     void Add(Node* node) { nodes.push_back(std::unique_ptr<Node>(node)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
