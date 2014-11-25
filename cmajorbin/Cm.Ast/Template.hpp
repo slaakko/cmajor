@@ -18,7 +18,7 @@ class TemplateIdNode : public Node
 public:
     TemplateIdNode(const Span& span_);
     TemplateIdNode(const Span& span_, Node* subject_);
-    NodeType GetType() const override { return NodeType::templateIdNode; }
+    NodeType GetNodeType() const override { return NodeType::templateIdNode; }
     Node* Clone() const override;
     void AddTemplateArgument(Node* templateArgument);
     void Read(Reader& reader) override;

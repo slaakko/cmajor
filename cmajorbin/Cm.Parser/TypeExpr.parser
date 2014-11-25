@@ -9,6 +9,7 @@
 
  [hpp]#include <Cm.Ast/TypeExpr.hpp>
  [hpp]#include <Cm.Parser/ParsingContext.hpp>
+ [cpp]#include <Cm.Ast/Typedef.hpp>
  [cpp]#include <Cm.Parser/BasicType.hpp>
  [cpp]#include <Cm.Parser/Identifier.hpp>
 

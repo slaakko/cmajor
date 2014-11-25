@@ -11,4 +11,5 @@ source <Literal.parser>;
 source <Parameter.parser>;
 source <Specifier.parser>;
 source <Template.parser>;
+source <Typedef.parser>;
 source <TypeExpr.parser>;

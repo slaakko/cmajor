@@ -7,7 +7,7 @@
 
  ========================================================================*/
 
-#include <Cm.Parser/Delegate.hpp>
+#include <Cm.Parser/Typedef.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Factory.hpp>
@@ -51,9 +51,9 @@ int main(int argc, const char** argv)
     {
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
-        Cm::Parser::DelegateGrammar* grammar = Cm::Parser::DelegateGrammar::Create();
+        Cm::Parser::TypedefGrammar* grammar = Cm::Parser::TypedefGrammar::Create();
         Cm::Parser::ParsingContext ctx;
-        std::string s("internal class delegate int foo(int x, bool y, ulong z);");
+        std::string s("protected typedef int myint;");
         std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
             Cm::Ast::Writer writer("C:\\temp\\delegate.mc");

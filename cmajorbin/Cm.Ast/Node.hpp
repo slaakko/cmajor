@@ -28,7 +28,7 @@ enum class NodeType: uint8_t
     notNode, unaryPlusNode, unaryMinusNode, complementNode, prefixIncNode, prefixDecNode, sizeOfNode, typeNameNode, 
     castNode, newNode, constructNode, thisNode, baseNode,
     identifierNode, templateIdNode,
-    enumTypeNode, enumConstantNode, constantNode, parameterNode, delegateNode, classDelegateNode,
+    enumTypeNode, enumConstantNode, constantNode, parameterNode, delegateNode, classDelegateNode, typedefNode,
     maxNode
 };
 
@@ -42,7 +42,7 @@ public:
     Node();
     Node(const Span& span_);
     virtual ~Node();
-    virtual NodeType GetType() const = 0;
+    virtual NodeType GetNodeType() const = 0;
     virtual Node* Clone() const = 0;
     const Span& GetSpan() const { return span; }
     Span& GetSpan() { return span; }

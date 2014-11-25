@@ -77,6 +77,10 @@ namespace Cm.Parser
     {
         TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId): Cm::Ast::Node*;
     }
+    grammar TypedefGrammar
+    {
+        Typedef(ParsingContext* ctx): Cm::Ast::Node*;
+    }
     grammar TypeExprGrammar
     {
         TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*;

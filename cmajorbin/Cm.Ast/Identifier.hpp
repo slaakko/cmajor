@@ -18,7 +18,7 @@ class IdentifierNode : public Node
 public:
     IdentifierNode(const Span& span_);
     IdentifierNode(const Span& span_, const std::string& identifier_);
-    NodeType GetType() const override { return NodeType::identifierNode; }
+    NodeType GetNodeType() const override { return NodeType::identifierNode; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
