@@ -20,11 +20,11 @@ namespace Cm.Parser
         using KeywordGrammar.Keyword;
         start QualifiedId;
 
-        Identifier: Cm::Ast::Node*
+        Identifier: Cm::Ast::IdentifierNode*
             ::= token(identifier - Keyword){ value = new IdentifierNode(span, std::string(matchBegin, matchEnd)); }
             ;
 
-        QualifiedId: Cm::Ast::Node*
+        QualifiedId: Cm::Ast::IdentifierNode*
             ::= token((identifier - Keyword) % '.'){ value = new IdentifierNode(span, std::string(matchBegin, matchEnd)); }
             ;
     }

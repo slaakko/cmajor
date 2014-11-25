@@ -22,25 +22,32 @@
     <None Include="BasicType.parser" />
     <None Include="Cm.Parser.pl" />
     <None Include="Cm.Parser.pp" />
+    <None Include="Expression.parser" />
     <None Include="Identifier.parser" />
     <None Include="Keyword.parser" />
     <None Include="Literal.parser" />
+    <None Include="Template.parser" />
     <None Include="TypeExpr.parser" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="Keyword.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="ParsingContext.cpp" />
+    <ClCompile Include="Template.cpp" />
     <ClCompile Include="TypeExpr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="Keyword.hpp" />
     <ClInclude Include="Literal.hpp" />
+    <ClInclude Include="Operator.hpp" />
     <ClInclude Include="ParsingContext.hpp" />
+    <ClInclude Include="Template.hpp" />
     <ClInclude Include="TypeExpr.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

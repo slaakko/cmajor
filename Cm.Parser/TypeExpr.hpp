@@ -1,5 +1,5 @@
-#ifndef TypeExpr_hpp_19881
-#define TypeExpr_hpp_19881
+#ifndef TypeExpr_hpp_3470
+#define TypeExpr_hpp_3470
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // TypeExpr_hpp_19881
+#endif // TypeExpr_hpp_3470

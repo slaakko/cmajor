@@ -11,6 +11,7 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 #include <Cm.Ast/Node.hpp>
 #include <Cm.Ast/Factory.hpp>
 #include <Cm.Ast/TypeExpr.hpp>
+#include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -38,6 +39,16 @@ Node* Reader::ReadNode()
     Node* node = Factory::Instance().CreateNode(nodeType, span);
     node->Read(*this);
     return node;
+}
+
+IdentifierNode* Reader::ReadIdentifierNode()
+{
+    Node* node = ReadNode();
+    if (node->GetType() != NodeType::identifierNode)
+    {
+        throw std::runtime_error("identifier node expected");
+    }
+    return static_cast<IdentifierNode*>(node);
 }
 
 std::string Reader::ReadString()
