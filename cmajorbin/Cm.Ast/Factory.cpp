@@ -15,6 +15,7 @@
 #include <Cm.Ast/TypeExpr.hpp>
 #include <Cm.Ast/Template.hpp>
 #include <Cm.Ast/Enumeration.hpp>
+#include <Cm.Ast/Constant.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -141,6 +142,7 @@ void InitFactory()
     Factory::Instance().Register(NodeType::templateIdNode, new Creator<TemplateIdNode>());
     Factory::Instance().Register(NodeType::enumTypeNode, new Creator<EnumTypeNode>());
     Factory::Instance().Register(NodeType::enumConstantNode, new Creator<EnumConstantNode>());
+    Factory::Instance().Register(NodeType::constantNode, new Creator<ConstantNode>());
 }
 
 void DoneFactory()

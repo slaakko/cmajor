@@ -28,7 +28,7 @@ enum class NodeType: uint8_t
     notNode, unaryPlusNode, unaryMinusNode, complementNode, prefixIncNode, prefixDecNode, sizeOfNode, typeNameNode, 
     castNode, newNode, constructNode, thisNode, baseNode,
     identifierNode, templateIdNode,
-    enumTypeNode, enumConstantNode,
+    enumTypeNode, enumConstantNode, constantNode,
     maxNode
 };
 

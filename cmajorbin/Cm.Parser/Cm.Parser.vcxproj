@@ -22,6 +22,7 @@
     <None Include="BasicType.parser" />
     <None Include="Cm.Parser.pl" />
     <None Include="Cm.Parser.pp" />
+    <None Include="Constant.parser" />
     <None Include="Enumeration.parser" />
     <None Include="Expression.parser" />
     <None Include="Identifier.parser" />
@@ -33,6 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Identifier.cpp" />
@@ -45,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Identifier.hpp" />
