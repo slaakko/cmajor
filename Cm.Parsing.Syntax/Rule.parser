@@ -18,13 +18,18 @@ namespace Cm.Parsing.Syntax
         using ElementGrammar.Identifier;
         using ElementGrammar.Signature;
         using CompositeGrammar.Alternative;
+        using stdlib.string;
 
         Rule(Cm::Parsing::Scope* enclosingScope): Cm::Parsing::Rule*
                     ::= RuleHeader(enclosingScope){ value = RuleHeader; } "::=" RuleBody(value)
                     ;
 
         RuleHeader(Cm::Parsing::Scope* enclosingScope): Cm::Parsing::Rule*
-                    ::= Identifier:name{value = new Rule(name, enclosingScope); value->SetSpan(span); } Signature(value)
+                    ::= Identifier:name{value = new Rule(name, enclosingScope); value->SetSpan(span); } Signature(value) SynchronizeSpecification(value)?
+                    ;
+
+        SynchronizeSpecification(Cm::Parsing::Rule* rule)
+                    ::= keyword("synchronize") '('! string:synChars{ rule->Synchronize(synChars); } ')'!
                     ;
 
         RuleBody(Cm::Parsing::Rule* rule)

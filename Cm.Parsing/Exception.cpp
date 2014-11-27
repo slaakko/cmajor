@@ -76,4 +76,13 @@ ExpectationFailure::ExpectationFailure(const std::string& info_, const std::stri
 {
 }
 
+void ExpectationFailure::CombineInfo(const std::string& parentInfo)
+{
+    info = parentInfo + info;
+}
+
+CombinedParsingError::CombinedParsingError(): std::runtime_error("parsing failed")
+{
+}
+
 } } // namespace Cm::Parsing

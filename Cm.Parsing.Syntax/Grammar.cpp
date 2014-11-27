@@ -165,6 +165,8 @@ public:
         startClauseNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<GrammarContentRule>(this, &GrammarContentRule::PreStartClause));
         Cm::Parsing::NonterminalParser* skipClauseNonterminalParser = GetNonterminal("SkipClause");
         skipClauseNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<GrammarContentRule>(this, &GrammarContentRule::PreSkipClause));
+        Cm::Parsing::NonterminalParser* recoverClauseNonterminalParser = GetNonterminal("RecoverClause");
+        recoverClauseNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<GrammarContentRule>(this, &GrammarContentRule::PreRecoverClause));
         Cm::Parsing::NonterminalParser* ruleLinkNonterminalParser = GetNonterminal("RuleLink");
         ruleLinkNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<GrammarContentRule>(this, &GrammarContentRule::PreRuleLink));
         Cm::Parsing::NonterminalParser* ruleNonterminalParser = GetNonterminal("Rule");
@@ -180,6 +182,10 @@ public:
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Parsing::Grammar*>(context.grammar)));
     }
     void PreSkipClause(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Parsing::Grammar*>(context.grammar)));
+    }
+    void PreRecoverClause(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Parsing::Grammar*>(context.grammar)));
     }
@@ -315,6 +321,46 @@ private:
     Context context;
 };
 
+class GrammarGrammar::RecoverClauseRule : public Cm::Parsing::Rule
+{
+public:
+    RecoverClauseRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("Cm::Parsing::Grammar*", "grammar"));
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> grammar_value = std::move(stack.top());
+        context.grammar = *static_cast<Cm::Parsing::ValueObject<Cm::Parsing::Grammar*>*>(grammar_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RecoverClauseRule>(this, &RecoverClauseRule::A0Action));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.grammar->SetRecover();
+    }
+private:
+    struct Context
+    {
+        Context(): grammar() {}
+        Cm::Parsing::Grammar* grammar;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 void GrammarGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
@@ -334,10 +380,10 @@ void GrammarGrammar::GetReferencedGrammars()
 
 void GrammarGrammar::CreateRules()
 {
+    AddRuleLink(new Cm::Parsing::RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
     AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
     AddRuleLink(new Cm::Parsing::RuleLink("Rule", this, "RuleGrammar.Rule"));
     AddRule(new GrammarRule("Grammar", GetScope(),
         new Cm::Parsing::SequenceParser(
@@ -358,8 +404,10 @@ void GrammarGrammar::CreateRules()
             new Cm::Parsing::AlternativeParser(
                 new Cm::Parsing::AlternativeParser(
                     new Cm::Parsing::AlternativeParser(
-                        new Cm::Parsing::NonterminalParser("StartClause", "StartClause", 1),
-                        new Cm::Parsing::NonterminalParser("SkipClause", "SkipClause", 1)),
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::NonterminalParser("StartClause", "StartClause", 1),
+                            new Cm::Parsing::NonterminalParser("SkipClause", "SkipClause", 1)),
+                        new Cm::Parsing::NonterminalParser("RecoverClause", "RecoverClause", 1)),
                     new Cm::Parsing::NonterminalParser("RuleLink", "RuleLink", 1)),
                 new Cm::Parsing::ActionParser("A0",
                     new Cm::Parsing::NonterminalParser("Rule", "Rule", 1))))));
@@ -379,6 +427,12 @@ void GrammarGrammar::CreateRules()
                     new Cm::Parsing::NonterminalParser("skp", "QualifiedId", 0))),
             new Cm::Parsing::ActionParser("A0",
                 new Cm::Parsing::CharParser(';')))));
+    AddRule(new RecoverClauseRule("RecoverClause", GetScope(),
+        new Cm::Parsing::SequenceParser(
+            new Cm::Parsing::KeywordParser("recover"),
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
 }
 
 } } } // namespace Cm.Parsing.Syntax

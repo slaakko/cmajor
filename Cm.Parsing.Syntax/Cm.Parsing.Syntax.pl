@@ -48,11 +48,13 @@ namespace Cm.Parsing.Syntax
         GrammarContent(Cm::Parsing::Grammar* grammar);
         StartClause(Cm::Parsing::Grammar* grammar);
         SkipClause(Cm::Parsing::Grammar* grammar);
+        RecoverClause(Cm::Parsing::Grammar* grammar);
     }
     grammar RuleGrammar
     {
         Rule(Cm::Parsing::Scope* enclosingScope): Cm::Parsing::Rule*;
         RuleHeader(Cm::Parsing::Scope* enclosingScope): Cm::Parsing::Rule*;
+        SynchronizeSpecification(Cm::Parsing::Rule* rule);
         RuleBody(Cm::Parsing::Rule* rule);
     }
     grammar PrimaryGrammar

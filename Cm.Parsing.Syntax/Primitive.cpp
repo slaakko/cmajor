@@ -1170,9 +1170,9 @@ void PrimitiveGrammar::GetReferencedGrammars()
 
 void PrimitiveGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("escape", this, "Cm.Parsing.stdlib.escape"));
     AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
+    AddRuleLink(new Cm::Parsing::RuleLink("escape", this, "Cm.Parsing.stdlib.escape"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("StringArray", this, "ElementGrammar.StringArray"));
     AddRule(new PrimitiveRule("Primitive", GetScope(),

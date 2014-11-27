@@ -9,6 +9,7 @@
 
 #include <Cm.Parsing/Scanner.hpp>
 #include <Cm.Parsing/Parser.hpp>
+#include <Cm.Parsing/Exception.hpp>
 
 namespace Cm { namespace Parsing {
 
@@ -28,7 +29,8 @@ std::string NarrowString(const char* start, const char* end)
 }
 
 Scanner::Scanner(const char* start_, const char* end_, const std::string& fileName_, int fileIndex_, Parser* skipper_): 
-    start(start_), end(end_), skipper(skipper_), skipping(false), tokenCounter(0), fileName(fileName_), span(fileIndex_), log(nullptr)
+    start(start_), end(end_), skipper(skipper_), skipping(false), tokenCounter(0), fileName(fileName_), span(fileIndex_), 
+    log(nullptr), expectationCounter(0), recover(false)
 {
 }
 
@@ -75,6 +77,48 @@ std::string Scanner::RestOfLine()
 {
     std::string restOfLine(start + span.Start(), start + (LineEndIndex() - span.Start()));
     return restOfLine;
+}
+
+void Scanner::AddException(const ExpectationFailure& exception)
+{
+    if (!combinedError)
+    {
+        combinedError.reset(new CombinedParsingError());
+    }
+    combinedError->Errors().push_back(exception);
+}
+
+void Scanner::Synchronize(const std::string& synchronizeCharacters)
+{
+    if (AtEnd()) return;
+    char c = GetChar();
+    while (!AtEnd() && synchronizeCharacters.find(c) == std::string::npos)
+    {
+        ++*this;
+        c = GetChar();
+    }
+    if (!AtEnd())
+    {
+        ++*this;
+    }
+    expectationCounter = 0;
+}
+
+bool Scanner::HasErrors() const
+{
+    return combinedError && !combinedError->Errors().empty();
+}
+
+const CombinedParsingError& Scanner::GetCombinedError() const
+{
+    if (combinedError)
+    {
+        return *combinedError;
+    }
+    else
+    {
+        throw std::runtime_error("scanner exception not active");
+    }
 }
 
 } } // namespace Cm::Parsing

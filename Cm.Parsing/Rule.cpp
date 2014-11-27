@@ -205,6 +205,14 @@ Match Rule::Parse(Scanner& scanner, ObjectStack& stack)
         scanner.Log()->DecIndent();
         scanner.Log()->WriteEndRule(Name());
     }
+    if (!match.Hit() && scanner.Recover() && IsSynchronizingRule())
+    {
+        scanner.Synchronize(synchronizeCharacters);
+        if (!scanner.AtEnd())
+        {
+            match = Match::Synchronize();
+        }
+    }
     return match;
 }
 
@@ -216,6 +224,11 @@ void Rule::Accept(Visitor& visitor)
         definition->Accept(visitor);
     }
     visitor.EndVisit(*this);
+}
+
+void Rule::Synchronize(const std::string& synchronizeCharacters_)
+{
+    synchronizeCharacters = synchronizeCharacters_;
 }
 
 std::string GetPrefix(const std::string& fullName)

@@ -40,9 +40,19 @@ class ExpectationFailure : public ParsingException
 public:
     ExpectationFailure(const std::string& info_, const std::string& fileName_, const Span& span_, const char* start, const char* end);
     const std::string& Info() const { return info; }
+    void CombineInfo(const std::string& parentInfo);
 private:
     std::string info;
+};
 
+class CombinedParsingError : public std::runtime_error
+{
+public:
+    CombinedParsingError();
+    const std::vector<ExpectationFailure>& Errors() const { return errors; }
+    std::vector<ExpectationFailure>& Errors() { return errors; }
+private:
+    std::vector<ExpectationFailure> errors;
 };
 
 } } // namespace Cm::Parsing

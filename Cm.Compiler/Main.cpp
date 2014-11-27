@@ -7,11 +7,12 @@
 
  ========================================================================*/
 
-#include <Cm.Parser/Typedef.hpp>
+#include <Cm.Parser/Statement.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Factory.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Parsing/Exception.hpp>
 
 #include <Cm.Ast/InitDone.hpp>
 #include <Cm.Parsing/InitDone.hpp>
@@ -45,22 +46,31 @@ int main(int argc, const char** argv)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;
     _CrtSetDbgFlag(dbgFlags);
-    //_CrtSetBreakAlloc(5457);
+    //_CrtSetBreakAlloc(32401);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     try
     {
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
-        Cm::Parser::TypedefGrammar* grammar = Cm::Parser::TypedefGrammar::Create();
+        Cm::Parser::StatementGrammar* grammar = Cm::Parser::StatementGrammar::Create();
+        grammar->SetRecover();
         Cm::Parser::ParsingContext ctx;
-        std::string s("protected typedef int myint;");
+        std::string s("{ int x : 0; int y := 0; }");
         std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
-            Cm::Ast::Writer writer("C:\\temp\\delegate.mc");
+            Cm::Ast::Writer writer("C:\\temp\\statement.mc");
             writer.Write(node.get());
         }
-        Cm::Ast::Reader reader("C:\\temp\\delegate.mc");
+        Cm::Ast::Reader reader("C:\\temp\\statement.mc");
         std::unique_ptr<Cm::Ast::Node> n(reader.ReadNode());
+    }
+    catch (const Cm::Parsing::CombinedParsingError& ex)
+    {
+        for (const Cm::Parsing::ExpectationFailure& exp : ex.Errors())
+        {
+            std::cerr << exp.what() << std::endl;
+        }
+        return 3;
     }
     catch (const std::exception& ex)
     {

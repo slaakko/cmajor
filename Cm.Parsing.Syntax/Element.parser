@@ -59,7 +59,9 @@ namespace Cm.Parsing.Syntax
                             ;
 
         Keyword             ::= keyword_list(identifier, 
-                                ["using", "grammar", "start", "skip", "token", "keyword", "keyword_list", "empty", "space", "anychar", "letter", "digit", "hexdigit", "punctuation", "var"])
+                                [   "using", "grammar", "start", "skip", "recover", "synchronize", "token", "keyword", "keyword_list", 
+                                    "empty", "space", "anychar", "letter", "digit", "hexdigit", "punctuation", "var"
+                                ])
                             ;
 
         Identifier: std::string

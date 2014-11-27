@@ -19,6 +19,7 @@
 #include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Delegate.hpp>
 #include <Cm.Ast/Typedef.hpp>
+#include <Cm.Ast/Statement.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -150,6 +151,39 @@ void InitFactory()
     Factory::Instance().Register(NodeType::delegateNode, new Creator<DelegateNode>());
     Factory::Instance().Register(NodeType::classDelegateNode, new Creator<ClassDelegateNode>());
     Factory::Instance().Register(NodeType::typedefNode, new Creator<TypedefNode>());
+    Factory::Instance().Register(NodeType::labelNode, new Creator<LabelNode>());
+    Factory::Instance().Register(NodeType::simpleStatementNode, new Creator<SimpleStatementNode>());
+    Factory::Instance().Register(NodeType::returnStatementNode, new Creator<ReturnStatementNode>());
+    Factory::Instance().Register(NodeType::conditionalStatementNode, new Creator<ConditionalStatement>());
+    Factory::Instance().Register(NodeType::switchStatementNode, new Creator<SwitchStatementNode>());
+    Factory::Instance().Register(NodeType::caseStatementNode, new Creator<CaseStatementNode>());
+    Factory::Instance().Register(NodeType::defaultStatementNode, new Creator<DefaultStatementNode>());
+    Factory::Instance().Register(NodeType::gotoCaseStatementNode, new Creator<GotoCaseStatementNode>());
+    Factory::Instance().Register(NodeType::gotoDefaultStatementNode, new Creator<GotoDefaultStatementNode>());
+    Factory::Instance().Register(NodeType::whileStatementNode, new Creator<WhileStatementNode>());
+    Factory::Instance().Register(NodeType::doStatementNode, new Creator<DoStatementNode>());
+    Factory::Instance().Register(NodeType::rangeForStatementNode, new Creator<RangeForStatementNode>());
+    Factory::Instance().Register(NodeType::forStatementNode, new Creator<ForStatementNode>());
+    Factory::Instance().Register(NodeType::compoundStatementNode, new Creator<CompoundStatementNode>());
+    Factory::Instance().Register(NodeType::breakStatementNode, new Creator<BreakStatementNode>());
+    Factory::Instance().Register(NodeType::continueStatemetNode, new Creator<ContinueStatementNode>());
+    Factory::Instance().Register(NodeType::gotoStatementNode, new Creator<GotoStatementNode>());
+    Factory::Instance().Register(NodeType::typedefStatementNode, new Creator<TypedefStatementNode>());
+    Factory::Instance().Register(NodeType::assignmentStatementNode, new Creator<AssignmentStatementNode>());
+    Factory::Instance().Register(NodeType::constructionStatementNode, new Creator<ConstructionStatementNode>());
+    Factory::Instance().Register(NodeType::deleteStatementNode, new Creator<DeleteStatementNode>());
+    Factory::Instance().Register(NodeType::destroyStatementNode, new Creator<DestroyStatementNode>());
+    Factory::Instance().Register(NodeType::throwStatementNode, new Creator<ThrowStatementNode>());
+    Factory::Instance().Register(NodeType::tryStatementNode, new Creator<TryStatementNode>());
+    Factory::Instance().Register(NodeType::catchNode, new Creator<CatchNode>());
+    Factory::Instance().Register(NodeType::assertStatementNode, new Creator<AssertStatementNode>());
+    Factory::Instance().Register(NodeType::condCompDisjunctionNode, new Creator<CondCompDisjunctionNode>());
+    Factory::Instance().Register(NodeType::condCompConjunctionNode, new Creator<CondCompConjunctionNode>());
+    Factory::Instance().Register(NodeType::condCompNotNode, new Creator<CondCompNotNode>());
+    Factory::Instance().Register(NodeType::condCompPrimaryNode, new Creator<CondCompPrimaryNode>());
+    Factory::Instance().Register(NodeType::condCompSymbolNode, new Creator<CondCompSymbolNode>());
+    Factory::Instance().Register(NodeType::condCompilationPartNode, new Creator<CondCompilationPartNode>());
+    Factory::Instance().Register(NodeType::condCompStatementNode, new Creator<CondCompStatementNode>());
 }
 
 void DoneFactory()

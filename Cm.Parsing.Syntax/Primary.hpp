@@ -1,5 +1,5 @@
-#ifndef Primary_hpp_15252
-#define Primary_hpp_15252
+#ifndef Primary_hpp_19440
+#define Primary_hpp_19440
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -30,4 +30,4 @@ private:
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // Primary_hpp_15252
+#endif // Primary_hpp_19440
