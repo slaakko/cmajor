@@ -18,6 +18,12 @@ using Cm::Ser::BinaryReader;
 enum class Derivation : uint8_t;
 class DerivationList;
 class IdentifierNode;
+class LabelNode;
+class StatementNode;
+class CompoundStatementNode;
+class CondCompExprNode;
+class CondCompSymbolNode;
+class CondCompilationPartNode;
 enum class Specifiers : uint16_t;
 
 class Reader
@@ -28,6 +34,12 @@ public:
     Span ReadSpan();
     Node* ReadNode();
     IdentifierNode* ReadIdentifierNode();
+    LabelNode* ReadLabelNode();
+    StatementNode* ReadStatementNode();
+    CompoundStatementNode* ReadCompoundStatementNode();
+    CondCompExprNode* ReadCondCompExprNode();
+    CondCompSymbolNode* ReadCondCompSymbolNode();
+    CondCompilationPartNode* ReadCondCompPartNode();
     std::string ReadString();
     bool ReadBool();
     int8_t ReadSByte();

@@ -31,6 +31,7 @@
     <None Include="Literal.parser" />
     <None Include="Parameter.parser" />
     <None Include="Specifier.parser" />
+    <None Include="Statement.parser" />
     <None Include="Template.parser" />
     <None Include="Typedef.parser" />
     <None Include="TypeExpr.parser" />
@@ -47,6 +48,7 @@
     <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="ParsingContext.cpp" />
     <ClCompile Include="Specifier.cpp" />
+    <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Template.cpp" />
     <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeExpr.cpp" />
@@ -64,6 +66,7 @@
     <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="ParsingContext.hpp" />
     <ClInclude Include="Specifier.hpp" />
+    <ClInclude Include="Statement.hpp" />
     <ClInclude Include="Template.hpp" />
     <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeExpr.hpp" />

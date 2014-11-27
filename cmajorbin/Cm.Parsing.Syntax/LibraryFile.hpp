@@ -1,5 +1,5 @@
-#ifndef LibraryFile_hpp_15252
-#define LibraryFile_hpp_15252
+#ifndef LibraryFile_hpp_19440
+#define LibraryFile_hpp_19440
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -27,4 +27,4 @@ private:
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // LibraryFile_hpp_15252
+#endif // LibraryFile_hpp_19440

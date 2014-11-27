@@ -22,11 +22,13 @@
     <ClInclude Include="CodeFormatter.hpp" />
     <ClInclude Include="MappedInputFile.hpp" />
     <ClInclude Include="TextUtils.hpp" />
+    <ClInclude Include="Uuid.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CodeFormatter.cpp" />
     <ClCompile Include="MappedInputFile.cpp" />
     <ClCompile Include="TextUtils.cpp" />
+    <ClCompile Include="Uuid.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD}</ProjectGuid>

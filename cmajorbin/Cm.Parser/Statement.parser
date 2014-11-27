@@ -1,0 +1,259 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+ [hpp]#include <Cm.Parser/ParsingContext.hpp>
+ [hpp]#include <Cm.Ast/Statement.hpp>
+ [cpp]#include <Cm.Parser/Keyword.hpp>
+ [cpp]#include <Cm.Parser/Expression.hpp>
+ [cpp]#include <Cm.Parser/TypeExpr.hpp>
+ [cpp]#include <Cm.Parser/Identifier.hpp>
+ 
+namespace Cm.Parser
+{
+    [cpp]using namespace Cm::Ast;
+
+    grammar StatementGrammar
+    {
+        using stdlib.identifier;
+        using KeywordGrammar.Keyword;
+        using ExpressionGrammar.Expression;
+        using TypeExprGrammar.TypeExpr;
+        using IdentifierGrammar.Identifier;
+        using ExpressionGrammar.ArgumentList;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        start CompoundStatement;
+        recover;
+ 
+        Statement(ParsingContext* ctx): Cm::Ast::StatementNode* synchronize(";}")
+            ::= LabeledStatement(ctx){ value = LabeledStatement; }
+            |   ControlStatement(ctx){ value = ControlStatement; }
+            |   TypedefStatement(ctx){ value = TypedefStatement; }
+            |   SimpleStatement(ctx){ value = SimpleStatement; }
+            |   AssignmentStatement(ctx){ value = AssignmentStatement; }
+            |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            |   DeleteStatement(ctx){ value = DeleteStatement; }
+            |   DestroyStatement(ctx){ value = DestroyStatement; }
+            |   ThrowStatement(ctx){ value = ThrowStatement; }
+            |   TryStatement(ctx){ value = TryStatement; }
+            |   AssertStatement(ctx){ value = AssertStatement; }
+            |   ConditionalCompilationStatement(ctx){ value = ConditionalCompilationStatement; }
+            ;
+
+        LabelId: std::string
+            ::= (identifier - Keyword){ value = std::string(matchBegin, matchEnd); }
+            ;
+
+        Label(var std::string label): Cm::Ast::LabelNode*
+            ::= (LabelId{ label = LabelId; } ':'){ value = new LabelNode(span, label); }
+            ;
+
+        LabeledStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::=  Label Statement(ctx){ Statement->SetLabelNode(Label); value = Statement; }
+            ;
+
+        SimpleStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): Cm::Ast::StatementNode*
+            ::= (empty{ ctx->BeginParsingSimpleStatement(); } (Expression(ctx){ expr.reset(Expression); })? ';')
+            { 
+                ctx->EndParsingSimpleStatement(); value = new SimpleStatementNode(span, expr.release()); 
+            } 
+            / 
+            { 
+                ctx->EndParsingSimpleStatement(); 
+            }
+            ;
+
+        ControlStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= ReturnStatement(ctx){ value = ReturnStatement; }
+            |   ConditionalStatement(ctx){ value = ConditionalStatement; }
+            |   SwitchStatement(ctx){ value = SwitchStatement; }
+            |   WhileStatement(ctx){ value = WhileStatement; }
+            |   DoStatement(ctx){ value = DoStatement; }
+            |   RangeForStatement(ctx){ value = RangeForStatement; }
+            |   ForStatement(ctx){ value = ForStatement; }
+            |   CompoundStatement(ctx){ value = CompoundStatement; }
+            |   BreakStatement(ctx){ value = BreakStatement; }
+            |   GotoStatement(ctx){ value = GotoStatement; }
+            ;
+
+        ReturnStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("return") Expression(ctx)? ';'!){ value = new ReturnStatementNode(span, Expression); }
+            ;
+
+        ConditionalStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("if") '('! Expression(ctx)! ')'! Statement(ctx):thenS! (keyword("else") Statement(ctx):elseS)?){ value = new ConditionalStatement(span, Expression, thenS, elseS); }
+            ;
+
+        SwitchStatement(ParsingContext* ctx): Cm::Ast::SwitchStatementNode*
+            ::=  (keyword("switch") '('! Expression(ctx)!){ value = new SwitchStatementNode(span, Expression); } ')'! 
+                '{'! (CaseStatement(ctx){ value->AddCase(CaseStatement); } | DefaultStatement(ctx){ value->SetDefault(DefaultStatement); })* '}'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        CaseStatement(ParsingContext* ctx, var std::unique_ptr<CaseStatementNode> caseS): Cm::Ast::CaseStatementNode*
+            ::= (empty{ caseS.reset(new CaseStatementNode(span)); } CaseList(ctx, caseS.get()) 
+                    (   Label:gcl? GotoCaseStatement(ctx){ GotoCaseStatement->SetLabelNode(gcl); caseS->AddStatement(GotoCaseStatement); } 
+                    |   Label:gdl? GotoDefaultStatement(ctx){ GotoDefaultStatement->SetLabelNode(gdl); caseS->AddStatement(GotoDefaultStatement); } 
+                    |   Statement(ctx){ caseS->AddStatement(Statement); }
+                    )*
+                )
+                {
+                    value = caseS.release(); 
+                    value->GetSpan().SetEnd(span.End());
+                }
+            ;
+
+        DefaultStatement(ParsingContext* ctx): Cm::Ast::DefaultStatementNode*
+            ::= keyword("default") ':'!{ value = new DefaultStatementNode(span); }
+                    (   Label? GotoCaseStatement(ctx){ GotoCaseStatement->SetLabelNode(Label); value->AddStatement(GotoCaseStatement); }
+                    |   Statement(ctx){ value->AddStatement(Statement); }
+                    )*
+            ;
+
+        CaseList(ParsingContext* ctx, Cm::Ast::CaseStatementNode* caseS)
+            ::= (keyword("case") Expression(ctx)! ':'!{ caseS->AddExpr(Expression); })+
+            ;
+
+        GotoCaseStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("goto") keyword("case") Expression(ctx)! ';'!){ value = new GotoCaseStatementNode(span, Expression); }
+            ;
+
+        GotoDefaultStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("goto") keyword("default") ';'){ value = new GotoDefaultStatementNode(span); }
+            ;
+
+        WhileStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("while") '('! Expression(ctx)! ')'! Statement(ctx)!){ value = new WhileStatementNode(span, Expression, Statement); }
+            ;
+
+        DoStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("do") Statement(ctx)! keyword("while")! '('! Expression(ctx)! ')'! ';'!){ value = new DoStatementNode(span, Statement, Expression); }
+            ;
+
+        RangeForStatement(ParsingContext* ctx, var std::unique_ptr<Node> varType, var std::unique_ptr<IdentifierNode> varId): Cm::Ast::StatementNode*
+            ::= (keyword("for") '(' TypeExpr(ctx){ varType.reset(TypeExpr); } Identifier{ varId.reset(Identifier); } ':' Expression(ctx)! ')'! Statement(ctx)!)
+                { 
+                    value = new RangeForStatementNode(span, varType.release(), varId.release(), Expression, Statement); 
+                }
+            ;
+
+        ForStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("for") '('! ForInitStatement(ctx)! Expression(ctx):condition? ';'! Expression(ctx):increment? ')'! Statement(ctx)!)
+                {
+                    value = new ForStatementNode(span, ForInitStatement, condition, increment, Statement);
+                }
+            ;
+
+        ForInitStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= AssignmentStatement(ctx){ value = AssignmentStatement; }
+            |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            |   ';'{ value = new SimpleStatementNode(span, nullptr); }
+            ;
+
+        CompoundStatement(ParsingContext* ctx): Cm::Ast::CompoundStatementNode*
+            ::= ('{'{ value = new CompoundStatementNode(span); } (Statement(ctx){ value->AddStatement(Statement); })* '}'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        BreakStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("break") ';'!){ value = new BreakStatementNode(span); }
+            ;
+
+        ContinueStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("continue") ';'!){ value = new ContinueStatementNode(span); }
+            ;
+
+        GotoStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("goto") Label! ';'!){ value = new GotoStatementNode(span, Label); }
+            ;
+
+        TypedefStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("typedef") Expression(ctx)! Identifier!){ value = new TypedefStatementNode(span, Expression, Identifier); }
+            ;
+
+        AssignmentStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): Cm::Ast::StatementNode*
+            ::= empty{ ctx->BeginParsingLvalue(); } (Expression(ctx):target{ ctx->EndParsingLvalue(); targetExpr.reset(target); } / { ctx->EndParsingLvalue(); } '=' Expression(ctx):source! ';'!)
+                {
+                    value = new AssignmentStatementNode(span, targetExpr.release(), source);
+                }
+            ;
+
+        ConstructionStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (TypeExpr(ctx) Identifier!){ value = new ConstructionStatementNode(span, TypeExpr, Identifier); } 
+                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })? ';'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        DeleteStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("delete") Expression(ctx)! ';'!){ value = new DeleteStatementNode(span, Expression); }
+            ;
+
+        DestroyStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("destroy") Expression(ctx)! ';'!){ value = new DestroyStatementNode(span, Expression); }
+            ;
+
+        ThrowStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= (keyword("throw") Expression(ctx)! ';'!){ value = new ThrowStatementNode(span, Expression); }
+            ;
+
+        TryStatement(ParsingContext* ctx): Cm::Ast::TryStatementNode*
+            ::= (keyword("try") CompoundStatement(ctx)!){ value = new  TryStatementNode(span, CompoundStatement); } Handlers(ctx, value)!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        Handlers(ParsingContext* ctx, Cm::Ast::TryStatementNode* tryS)
+            ::= Handler(ctx){ tryS->AddHandler(Handler); }
+            ;
+
+        Handler(ParsingContext* ctx): Cm::Ast::CatchNode*
+            ::= (keyword("catch") TypeExpr(ctx)! Identifier! CompoundStatement(ctx)!){ value = new CatchNode(span, TypeExpr, Identifier, CompoundStatement); }
+            ;
+
+        AssertStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+            ::= ('#' keyword("assert") Expression(ctx)! ';'!){ value = new AssertStatementNode(span, Expression); }
+            ;
+
+        ConditionalCompilationStatement(ParsingContext* ctx): Cm::Ast::CondCompStatementNode*
+            ::= ('#' keyword("if") '('! ConditionalCompilationExpr:ifExpr){ value = new CondCompStatementNode(span, ifExpr); } ')'! (Statement(ctx):ifS{ value->AddIfStatement(ifS); })*
+                (
+                    ('#' keyword("elif") '('! ConditionalCompilationExpr:elifExpr){ value->AddElifExpr(span, elifExpr); } ')'! (Statement(ctx):elifS{ value->AddElifStatement(elifS); })*
+                )*
+                (
+                    ('#' keyword("else") (Statement(ctx):elseS){ value->AddElseStatement(span, elseS); })*
+                )?
+                '#'! keyword("endif")!
+                ;
+
+        ConditionalCompilationExpr: Cm::Ast::CondCompExprNode*
+            ::= ConditionalCompilationDisjunction{ value = ConditionalCompilationDisjunction; }
+            ;
+
+        ConditionalCompilationDisjunction(var Span s): Cm::Ast::CondCompExprNode*
+            ::= ConditionalCompilationConjunction:left{ s = span; value = left; } ("||" ConditionalCompilationConjunction:right{ s.SetEnd(span.End()); value = new CondCompDisjunctionNode(s, value, right); })*
+            ;
+
+        ConditionalCompilationConjunction(var Span s): Cm::Ast::CondCompExprNode*
+            ::= ConditionalCompilationPrefix:left{ s = span; value = left; } ("&&" ConditionalCompilationPrefix:right{ s.SetEnd(span.End()); value = new CondCompConjunctionNode(s, value, right); })*
+            ;
+
+        ConditionalCompilationPrefix: Cm::Ast::CondCompExprNode*
+            ::= ('!' ConditionalCompilationPrefix:left!){ value = new CondCompNotNode(span, left); }
+            |   ConditionalCompilationPrimary:right!{ value = right; }
+            ;
+
+        ConditionalCompilationPrimary: Cm::Ast::CondCompExprNode*
+            ::= ConditionalCompilationSymbol:symbol{ value = new CondCompPrimaryNode(span, symbol); }
+            |   ConditionalCompilationExpr:expr{ value = expr; }
+            ;
+
+        ConditionalCompilationSymbol: Cm::Ast::CondCompSymbolNode*
+            ::= Symbol{ value = new CondCompSymbolNode(span, Symbol); }
+            ;
+
+        Symbol: std::string
+            ::= (identifier - Keyword){ value = std::string(matchBegin, matchEnd); }
+            ;
+    }
+}

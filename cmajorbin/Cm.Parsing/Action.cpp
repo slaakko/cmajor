@@ -58,7 +58,8 @@ Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span actionSpan = scanner.GetSpan();
     Match match = Child()->Parse(scanner, stack);
-    if (match.Hit())
+    bool recovering = scanner.Recovering();
+    if (match.Hit() && !recovering)
     {
         if (action)
         {
@@ -73,7 +74,7 @@ Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack)
             }
         }
     }
-    else if (failureAction)
+    else if (failureAction && !recovering)
     {
         (*failureAction)();
     }

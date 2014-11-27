@@ -32,6 +32,7 @@
     <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="Reader.hpp" />
     <ClInclude Include="Specifier.hpp" />
+    <ClInclude Include="Statement.hpp" />
     <ClInclude Include="Template.hpp" />
     <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeExpr.hpp" />
@@ -50,6 +51,7 @@
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Template.cpp" />
     <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeExpr.cpp" />

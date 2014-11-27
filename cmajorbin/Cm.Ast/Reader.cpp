@@ -12,6 +12,7 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 #include <Cm.Ast/Factory.hpp>
 #include <Cm.Ast/TypeExpr.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Statement.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -49,6 +50,81 @@ IdentifierNode* Reader::ReadIdentifierNode()
         throw std::runtime_error("identifier node expected");
     }
     return static_cast<IdentifierNode*>(node);
+}
+
+LabelNode* Reader::ReadLabelNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::labelNode)
+    {
+        throw std::runtime_error("label node expected");
+    }
+    return static_cast<LabelNode*>(node);
+}
+
+StatementNode* Reader::ReadStatementNode()
+{
+    Node* node = ReadNode();
+    if (node->IsStatementNode())
+    {
+        return static_cast<StatementNode*>(node);
+    }
+    else
+    {
+        throw std::runtime_error("statement node expected");
+    }
+}
+
+CompoundStatementNode* Reader::ReadCompoundStatementNode()
+{
+    Node* node = ReadNode();
+    if (node->IsCompoundStatementNode())
+    {
+        return static_cast<CompoundStatementNode*>(node);
+    }
+    else
+    {
+        throw std::runtime_error("compound statement node expected");
+    }
+}
+
+CondCompExprNode* Reader::ReadCondCompExprNode()
+{
+    Node* node = ReadNode();
+    if (node->IsCondCompExprNode())
+    {
+        return static_cast<CondCompExprNode*>(node);
+    }
+    else
+    {
+        throw std::runtime_error("conditional compilation expression node expected");
+    }
+}
+
+CondCompSymbolNode* Reader::ReadCondCompSymbolNode()
+{
+    Node* node = ReadNode();
+    if (node->IsCondCompSymbolNode())
+    {
+        return static_cast<CondCompSymbolNode*>(node);
+    }
+    else
+    {
+        throw std::runtime_error("conditional compilation symbol node expected");
+    }
+}
+
+CondCompilationPartNode* Reader::ReadCondCompPartNode()
+{
+    Node* node = ReadNode();
+    if (node->IsCondCompPartNode())
+    {
+        return static_cast<CondCompilationPartNode*>(node);
+    }
+    else
+    {
+        throw std::runtime_error("conditional compilation part node expected");
+    }
 }
 
 std::string Reader::ReadString()

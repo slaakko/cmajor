@@ -993,13 +993,13 @@ void DeclaratorGrammar::GetReferencedGrammars()
 
 void DeclaratorGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("IdExpression", this, "ExpressionGrammar.IdExpression"));
     AddRuleLink(new Cm::Parsing::RuleLink("ConstantExpression", this, "ExpressionGrammar.ConstantExpression"));
-    AddRuleLink(new Cm::Parsing::RuleLink("AssignmentExpression", this, "ExpressionGrammar.AssignmentExpression"));
+    AddRuleLink(new Cm::Parsing::RuleLink("IdExpression", this, "ExpressionGrammar.IdExpression"));
     AddRuleLink(new Cm::Parsing::RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeSpecifier", this, "DeclarationGrammar.TypeSpecifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeName", this, "DeclarationGrammar.TypeName"));
     AddRuleLink(new Cm::Parsing::RuleLink("CVQualifier", this, "DeclarationGrammar.CVQualifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("AssignmentExpression", this, "ExpressionGrammar.AssignmentExpression"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeName", this, "DeclarationGrammar.TypeName"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeSpecifier", this, "DeclarationGrammar.TypeSpecifier"));
     AddRule(new InitDeclaratorListRule("InitDeclaratorList", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",

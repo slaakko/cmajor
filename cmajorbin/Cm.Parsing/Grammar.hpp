@@ -56,6 +56,8 @@ public:
     void AddRuleLink(RuleLink* ruleLink);
     void ResolveStartRule();
     void ResolveSkipRule();
+    bool Recover() const { return recover; }
+    void SetRecover() { recover = true; }
 private:
     ParsingDomain* parsingDomain;
     Namespace* ns;
@@ -73,6 +75,7 @@ private:
     Rule* skipRule;
     std::ostream* log;
     int maxLogLineLength;
+    bool recover;
 };
 
 } } // namespace Cm::Parsing
