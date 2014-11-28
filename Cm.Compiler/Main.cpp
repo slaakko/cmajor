@@ -55,7 +55,7 @@ int main(int argc, const char** argv)
         Cm::Parser::StatementGrammar* grammar = Cm::Parser::StatementGrammar::Create();
         grammar->SetRecover();
         Cm::Parser::ParsingContext ctx;
-        std::string s("{ int x : 0; int y := 0; }");
+        std::string s("{ #if (DEBUG && ASSERT) foo(); bar(); #elif (FOO) alpha(); beta(); #endif }");
         std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
             Cm::Ast::Writer writer("C:\\temp\\statement.mc");

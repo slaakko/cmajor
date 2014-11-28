@@ -1049,13 +1049,22 @@ Node* CondCompilationPartNode::Clone() const
 
 void CondCompilationPartNode::Read(Reader& reader)
 {
-    expr.reset(reader.ReadCondCompExprNode());
+    bool exprPresent = reader.ReadBool();
+    if (exprPresent)
+    {
+        expr.reset(reader.ReadCondCompExprNode());
+    }
     statements.Read(reader);
 }
 
 void CondCompilationPartNode::Write(Writer& writer)
 {
-    writer.Write(expr.get());
+    bool exprPesent = expr != nullptr;
+    writer.Write(exprPesent);
+    if (exprPesent)
+    {
+        writer.Write(expr.get());
+    }
     statements.Write(writer);
 }
 
