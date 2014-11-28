@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_21497
-#define Statement_hpp_21497
+#ifndef Statement_hpp_18136
+#define Statement_hpp_18136
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -21,6 +21,7 @@ private:
     class StatementRule;
     class LabelIdRule;
     class LabelRule;
+    class TargetLabelRule;
     class LabeledStatementRule;
     class SimpleStatementRule;
     class ControlStatementRule;
@@ -63,4 +64,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Statement_hpp_21497
+#endif // Statement_hpp_18136

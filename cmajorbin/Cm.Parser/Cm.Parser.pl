@@ -78,6 +78,7 @@ namespace Cm.Parser
         Statement(ParsingContext* ctx): Cm::Ast::StatementNode*;
         LabelId: std::string;
         Label(var std::string label): Cm::Ast::LabelNode*;
+        TargetLabel(var std::string label): Cm::Ast::LabelNode*;
         LabeledStatement(ParsingContext* ctx): Cm::Ast::StatementNode*;
         SimpleStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): Cm::Ast::StatementNode*;
         ControlStatement(ParsingContext* ctx): Cm::Ast::StatementNode*;

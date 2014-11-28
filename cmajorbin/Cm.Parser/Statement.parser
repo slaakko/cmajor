@@ -54,6 +54,10 @@ namespace Cm.Parser
             ::= (LabelId{ label = LabelId; } ':'){ value = new LabelNode(span, label); }
             ;
 
+        TargetLabel(var std::string label): Cm::Ast::LabelNode*
+            ::= (LabelId{ label = LabelId; }){ value = new LabelNode(span, label); }
+            ;
+
         LabeledStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
             ::=  Label Statement(ctx){ Statement->SetLabelNode(Label); value = Statement; }
             ;
@@ -79,6 +83,7 @@ namespace Cm.Parser
             |   ForStatement(ctx){ value = ForStatement; }
             |   CompoundStatement(ctx){ value = CompoundStatement; }
             |   BreakStatement(ctx){ value = BreakStatement; }
+            |   ContinueStatement(ctx){ value = ContinueStatement; }
             |   GotoStatement(ctx){ value = GotoStatement; }
             ;
 
@@ -168,11 +173,11 @@ namespace Cm.Parser
             ;
 
         GotoStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("goto") Label! ';'!){ value = new GotoStatementNode(span, Label); }
+            ::= (keyword("goto") TargetLabel! ';'!){ value = new GotoStatementNode(span, TargetLabel); }
             ;
 
         TypedefStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("typedef") Expression(ctx)! Identifier!){ value = new TypedefStatementNode(span, Expression, Identifier); }
+            ::= (keyword("typedef") TypeExpr(ctx)! Identifier! ';'!){ value = new TypedefStatementNode(span, TypeExpr, Identifier); }
             ;
 
         AssignmentStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): Cm::Ast::StatementNode*
@@ -204,11 +209,11 @@ namespace Cm.Parser
             ;
 
         Handlers(ParsingContext* ctx, Cm::Ast::TryStatementNode* tryS)
-            ::= Handler(ctx){ tryS->AddHandler(Handler); }
+            ::= (Handler(ctx){ tryS->AddHandler(Handler); })+
             ;
 
         Handler(ParsingContext* ctx): Cm::Ast::CatchNode*
-            ::= (keyword("catch") TypeExpr(ctx)! Identifier! CompoundStatement(ctx)!){ value = new CatchNode(span, TypeExpr, Identifier, CompoundStatement); }
+            ::= (keyword("catch") '('! TypeExpr(ctx)! Identifier! ')'! CompoundStatement(ctx)!){ value = new CatchNode(span, TypeExpr, Identifier, CompoundStatement); }
             ;
 
         AssertStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
@@ -221,7 +226,7 @@ namespace Cm.Parser
                     ('#' keyword("elif") '('! ConditionalCompilationExpr:elifExpr){ value->AddElifExpr(span, elifExpr); } ')'! (Statement(ctx):elifS{ value->AddElifStatement(elifS); })*
                 )*
                 (
-                    ('#' keyword("else") (Statement(ctx):elseS){ value->AddElseStatement(span, elseS); })*
+                    '#' keyword("else") (Statement(ctx):elseS{ value->AddElseStatement(span, elseS); })*
                 )?
                 '#'! keyword("endif")!
                 ;

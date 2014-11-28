@@ -205,7 +205,7 @@ Match Rule::Parse(Scanner& scanner, ObjectStack& stack)
         scanner.Log()->DecIndent();
         scanner.Log()->WriteEndRule(Name());
     }
-    if (!match.Hit() && scanner.Recover() && IsSynchronizingRule())
+    if (!match.Hit() && scanner.Recovering() && IsSynchronizingRule())
     {
         scanner.Synchronize(synchronizeCharacters);
         if (!scanner.AtEnd())
