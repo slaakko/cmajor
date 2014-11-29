@@ -29,6 +29,8 @@ class ParameterNode;
 class FunctionGroupIdNode;
 class AxiomStatementNode;
 class ConceptIdNode;
+class TemplateParatemerNode;
+class WhereConstraintNode;
 enum class Specifiers : uint16_t;
 
 class Reader
@@ -50,6 +52,8 @@ public:
     AxiomStatementNode* ReadAxiomStatementNode();
     FunctionGroupIdNode* ReadFunctionGroupIdNode();
     ConceptIdNode* ReadConceptIdNode();
+    TemplateParameterNode* ReadTemplateParameterNode();
+    WhereConstraintNode* ReadWhereConstraintNode();
     std::string ReadString();
     bool ReadBool();
     int8_t ReadSByte();

@@ -1,5 +1,5 @@
-#ifndef Template_hpp_3610
-#define Template_hpp_3610
+#ifndef Template_hpp_27023
+#define Template_hpp_27023
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -19,8 +19,10 @@ private:
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class TemplateIdRule;
+    class TemplateParameterRule;
+    class TemplateParameterListRule;
 };
 
 } } // namespace Cm.Parser
 
-#endif // Template_hpp_3610
+#endif // Template_hpp_27023

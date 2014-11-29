@@ -15,6 +15,7 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 #include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Statement.hpp>
 #include <Cm.Ast/Concept.hpp>
+#include <Cm.Ast/Template.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -62,6 +63,26 @@ ParameterNode* Reader::ReadParameterNode()
         throw std::runtime_error("parameter node expected");
     }
     return static_cast<ParameterNode*>(node);
+}
+
+TemplateParameterNode* Reader::ReadTemplateParameterNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::templateParameterNode)
+    {
+        throw std::runtime_error("template parameter node expected");
+    }
+    return static_cast<TemplateParameterNode*>(node);
+}
+
+WhereConstraintNode* Reader::ReadWhereConstraintNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::whereConstraintNode)
+    {
+        throw std::runtime_error("where constraint node expected");
+    }
+    return static_cast<WhereConstraintNode*>(node);
 }
 
 AxiomStatementNode* Reader::ReadAxiomStatementNode()

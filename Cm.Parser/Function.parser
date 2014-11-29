@@ -11,6 +11,11 @@
 [hpp]#include <Cm.Ast/Function.hpp>
 [cpp]#include <Cm.Parser/Keyword.hpp>
 [cpp]#include <Cm.Parser/TypeExpr.hpp>
+[cpp]#include <Cm.Parser/Specifier.hpp>
+[cpp]#include <Cm.Parser/Template.hpp>
+[cpp]#include <Cm.Parser/Parameter.hpp>
+[cpp]#include <Cm.Parser/Concept.hpp>
+[cpp]#include <Cm.Parser/Statement.hpp>
 
 namespace Cm.Parser
 {
@@ -21,6 +26,24 @@ namespace Cm.Parser
         using stdlib.identifier;
         using KeywordGrammar.Keyword;
         using TypeExprGrammar.TypeExpr;
+        using SpecifierGrammar.Specifiers;
+        using TemplateGrammar.TemplateParameterList;
+        using ParameterGrammar.ParameterList;
+        using ConceptGrammar.WhereConstraint;
+        using StatementGrammar.CompoundStatement;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        recover;
+
+        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): Cm::Ast::FunctionNode*
+            ::= (Specifiers TypeExpr(ctx) FunctionGroupId(ctx){ fun.reset(new FunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } 
+                TemplateParameterList(ctx, fun.get())? ParameterList(ctx, fun.get()) (WhereConstraint(ctx){ fun->SetConstraint(WhereConstraint); })?){ s = span; } CompoundStatement(ctx)
+            {
+                fun->SetBody(CompoundStatement);
+                fun->GetSpan().SetEnd(s.End());
+                value = fun.release();
+            }
+            ;
 
         FunctionGroupId(ParsingContext* ctx): Cm::Ast::FunctionGroupIdNode*
             ::= token(identifier - Keyword){ value = new FunctionGroupIdNode(span, std::string(matchBegin, matchEnd)); }

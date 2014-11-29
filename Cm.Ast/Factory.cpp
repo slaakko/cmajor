@@ -200,6 +200,8 @@ void InitFactory()
     Factory::Instance().Register(NodeType::conceptIdNode, new Creator<ConceptIdNode>());
     Factory::Instance().Register(NodeType::conceptNode, new Creator<ConceptNode>());
     Factory::Instance().Register(NodeType::functionGroupIdNode, new Creator<FunctionGroupIdNode>());
+    Factory::Instance().Register(NodeType::templateParameterNode, new Creator<TemplateParameterNode>());
+    Factory::Instance().Register(NodeType::functionNode, new Creator<FunctionNode>());
 }
 
 void DoneFactory()

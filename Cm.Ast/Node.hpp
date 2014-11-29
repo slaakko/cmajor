@@ -36,7 +36,7 @@ enum class NodeType: uint8_t
     condCompDisjunctionNode, condCompConjunctionNode, condCompNotNode, condCompPrimaryNode, condCompSymbolNode, condCompilationPartNode, condCompStatementNode,
     disjunctiveConstraintNode, conjunctiveConstraintNode, whereConstraintNode, isConstraintNode, multiParamConstraintNode, typenameConstraintNode,
     constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
-    functionGroupIdNode, 
+    functionGroupIdNode, templateParameterNode, functionNode,
     maxNode
 };
 
@@ -44,6 +44,7 @@ class Reader;
 class Writer;
 class IdentifierNode;
 class ParameterNode;
+class TemplateParameterNode;
 
 class Node
 {
@@ -60,6 +61,7 @@ public:
     virtual Node* GetValue() const;
     virtual void AddArgument(Node* argument);
     virtual void AddParameter(ParameterNode* parameter);
+    virtual void AddTemplateParameter(TemplateParameterNode* templateParameter);
     virtual bool IsStatementNode() const { return false; }
     virtual bool IsCompoundStatementNode() const { return false; }
     virtual bool IsCondCompExprNode() const { return false; }

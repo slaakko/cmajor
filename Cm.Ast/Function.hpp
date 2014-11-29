@@ -9,7 +9,9 @@
 
 #ifndef CM_AST_FUNCTION_INCLUDED
 #define CM_AST_FUNCTION_INCLUDED
+#include <Cm.Ast/Specifier.hpp>
 #include <Cm.Ast/Parameter.hpp>
+#include <Cm.Ast/Template.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -24,6 +26,32 @@ public:
     void Write(Writer& writer) override;
 private:
     std::string functionGroupId;
+};
+
+class WhereConstraintNode;
+class CompoundStatementNode;
+
+class FunctionNode : public Node
+{
+public:
+    FunctionNode(const Span& span_);
+    FunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_);
+    NodeType GetNodeType() const override { return NodeType::functionNode; }
+    void AddTemplateParameter(TemplateParameterNode* templateParameter) override;
+    void AddParameter(ParameterNode* parameter) override;
+    void SetConstraint(WhereConstraintNode* constraint_);
+    void SetBody(CompoundStatementNode* body_);
+    Node* Clone() const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+private:
+    Specifiers specifiers;
+    std::unique_ptr<Node> returnTypeExpr;
+    std::unique_ptr<FunctionGroupIdNode> groupId;
+    TemplateParameterNodeList templateParameters;
+    ParameterNodeList parameters;
+    std::unique_ptr<WhereConstraintNode> constraint;
+    std::unique_ptr<CompoundStatementNode> body;
 };
 
 } } // namespace Cm::Ast
