@@ -8,23 +8,25 @@
  ========================================================================*/
 
 [hpp]#include <Cm.Parser/ParsingContext.hpp>
-[hpp]#include <Cm.Ast/Node.hpp>
+[hpp]#include <Cm.Ast/Parameter.hpp>
 [cpp]#include <Cm.Parser/TypeExpr.hpp>
 [cpp]#include <Cm.Parser/Identifier.hpp>
 
 namespace Cm.Parser
 {
+    using namespace Cm::Ast;
+
     grammar ParameterGrammar
     {
         using TypeExprGrammar.TypeExpr;
         using IdentifierGrammar.Identifier;
 
         ParameterList(ParsingContext* ctx, Cm::Ast::Node* owner)
-            ::= '('! (Parameter(ctx, owner) % ',')? ')'!
+            ::= '('! (Parameter(ctx){ owner->AddParameter(Parameter); } % ',')? ')'!
             ;
 
-        Parameter(ParsingContext* ctx, Cm::Ast::Node* owner)
-            ::= (TypeExpr(ctx) Identifier?){ owner->AddParameter(span, TypeExpr, Identifier); }
+        Parameter(ParsingContext* ctx): Cm::Ast::ParameterNode*
+            ::= (TypeExpr(ctx) Identifier?){ value = new ParameterNode(span, TypeExpr, Identifier); }
             ;
     }
 }

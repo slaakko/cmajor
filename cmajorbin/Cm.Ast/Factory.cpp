@@ -20,6 +20,7 @@
 #include <Cm.Ast/Delegate.hpp>
 #include <Cm.Ast/Typedef.hpp>
 #include <Cm.Ast/Statement.hpp>
+#include <Cm.Ast/Concept.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -184,6 +185,21 @@ void InitFactory()
     Factory::Instance().Register(NodeType::condCompSymbolNode, new Creator<CondCompSymbolNode>());
     Factory::Instance().Register(NodeType::condCompilationPartNode, new Creator<CondCompilationPartNode>());
     Factory::Instance().Register(NodeType::condCompStatementNode, new Creator<CondCompStatementNode>());
+    Factory::Instance().Register(NodeType::disjunctiveConstraintNode, new Creator<DisjunctiveConstraintNode>());
+    Factory::Instance().Register(NodeType::conjunctiveConstraintNode, new Creator<ConjunctiveConstraintNode>());
+    Factory::Instance().Register(NodeType::whereConstraintNode, new Creator<WhereConstraintNode>());
+    Factory::Instance().Register(NodeType::isConstraintNode, new Creator<IsConstraintNode>());
+    Factory::Instance().Register(NodeType::multiParamConstraintNode, new Creator<MultiParamConstraintNode>());
+    Factory::Instance().Register(NodeType::typenameConstraintNode, new Creator<TypenameConstraintNode>());
+    Factory::Instance().Register(NodeType::constructorConstraintNode, new Creator<ConstructorConstraintNode>());
+    Factory::Instance().Register(NodeType::destructorConstraintNode, new Creator<DestructorConstraintNode>());
+    Factory::Instance().Register(NodeType::memberFunctionConstraintNode, new Creator<MemberFunctionConstraintNode>());
+    Factory::Instance().Register(NodeType::functionConstraintNode, new Creator<FunctionConstraintNode>());
+    Factory::Instance().Register(NodeType::axiomNode, new Creator<AxiomNode>());
+    Factory::Instance().Register(NodeType::axiomStatementNode, new Creator<AxiomStatementNode>());
+    Factory::Instance().Register(NodeType::conceptIdNode, new Creator<ConceptIdNode>());
+    Factory::Instance().Register(NodeType::conceptNode, new Creator<ConceptNode>());
+    Factory::Instance().Register(NodeType::functionGroupIdNode, new Creator<FunctionGroupIdNode>());
 }
 
 void DoneFactory()

@@ -13,6 +13,7 @@
 
 namespace Cm { namespace Parser {
 
+using namespace Cm::Ast;
 using namespace Cm::Parsing;
 
 ParameterGrammar* ParameterGrammar::Create()
@@ -94,20 +95,36 @@ public:
     }
     virtual void Link()
     {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ParameterListRule>(this, &ParameterListRule::A0Action));
         Cm::Parsing::NonterminalParser* parameterNonterminalParser = GetNonterminal("Parameter");
         parameterNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ParameterListRule>(this, &ParameterListRule::PreParameter));
+        parameterNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ParameterListRule>(this, &ParameterListRule::PostParameter));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.owner->AddParameter(context.fromParameter);
     }
     void PreParameter(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Node*>(context.owner)));
+    }
+    void PostParameter(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromParameter_value = std::move(stack.top());
+            context.fromParameter = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ParameterNode*>*>(fromParameter_value.get());
+            stack.pop();
+        }
     }
 private:
     struct Context
     {
-        Context(): ctx(), owner() {}
+        Context(): ctx(), owner(), fromParameter() {}
         ParsingContext* ctx;
         Cm::Ast::Node* owner;
+        Cm::Ast::ParameterNode* fromParameter;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -120,21 +137,22 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("Cm::Ast::Node*", "owner"));
+        SetValueTypeName("Cm::Ast::ParameterNode*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> owner_value = std::move(stack.top());
-        context.owner = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(owner_value.get());
-        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
     virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
     {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::ParameterNode*>(context.value)));
+        }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
@@ -150,7 +168,7 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.owner->AddParameter(span, context.fromTypeExpr, context.fromIdentifier);
+        context.value = new ParameterNode(span, context.fromTypeExpr, context.fromIdentifier);
     }
     void PreTypeExpr(Cm::Parsing::ObjectStack& stack)
     {
@@ -177,9 +195,9 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), owner(), fromTypeExpr(), fromIdentifier() {}
+        Context(): ctx(), value(), fromTypeExpr(), fromIdentifier() {}
         ParsingContext* ctx;
-        Cm::Ast::Node* owner;
+        Cm::Ast::ParameterNode* value;
         Cm::Ast::Node* fromTypeExpr;
         Cm::Ast::IdentifierNode* fromIdentifier;
     };
@@ -215,7 +233,8 @@ void ParameterGrammar::CreateRules()
                     new Cm::Parsing::CharParser('(')),
                 new Cm::Parsing::OptionalParser(
                     new Cm::Parsing::ListParser(
-                        new Cm::Parsing::NonterminalParser("Parameter", "Parameter", 2),
+                        new Cm::Parsing::ActionParser("A0",
+                            new Cm::Parsing::NonterminalParser("Parameter", "Parameter", 1)),
                         new Cm::Parsing::CharParser(',')))),
             new Cm::Parsing::ExpectationParser(
                 new Cm::Parsing::CharParser(')')))));

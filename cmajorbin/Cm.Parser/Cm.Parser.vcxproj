@@ -22,10 +22,12 @@
     <None Include="BasicType.parser" />
     <None Include="Cm.Parser.pl" />
     <None Include="Cm.Parser.pp" />
+    <None Include="Concept.parser" />
     <None Include="Constant.parser" />
     <None Include="Delegate.parser" />
     <None Include="Enumeration.parser" />
     <None Include="Expression.parser" />
+    <None Include="Function.parser" />
     <None Include="Identifier.parser" />
     <None Include="Keyword.parser" />
     <None Include="Literal.parser" />
@@ -38,10 +40,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Concept.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Expression.cpp" />
+    <ClCompile Include="Function.cpp" />
     <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="Keyword.cpp" />
     <ClCompile Include="Literal.cpp" />
@@ -55,10 +59,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Concept.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Expression.hpp" />
+    <ClInclude Include="Function.hpp" />
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="Keyword.hpp" />
     <ClInclude Include="Literal.hpp" />

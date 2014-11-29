@@ -30,13 +30,45 @@ Node* ParameterNode::Clone() const
 void ParameterNode::Read(Reader& reader)
 {
     typeExpr.reset(reader.ReadNode());
-    id.reset(reader.ReadIdentifierNode());
+    bool hasId = reader.ReadBool();
+    if (hasId)
+    {
+        id.reset(reader.ReadIdentifierNode());
+    }
 }
 
 void ParameterNode::Write(Writer& writer)
 {
     writer.Write(typeExpr.get());
-    writer.Write(id.get());
+    bool hasId = id != nullptr;
+    writer.Write(hasId);
+    if (hasId)
+    {
+        writer.Write(id.get());
+    }
+}
+
+ParameterNodeList::ParameterNodeList()
+{
+}
+
+void ParameterNodeList::Read(Reader& reader)
+{
+    uint32_t n = reader.ReadUInt();
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        parameterNodes.push_back(std::unique_ptr<ParameterNode>(reader.ReadParameterNode()));
+    }
+}
+
+void ParameterNodeList::Write(Writer& writer)
+{
+    uint32_t n = static_cast<uint32_t>(parameterNodes.size());
+    writer.Write(n);
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        writer.Write(parameterNodes[i].get());
+    }
 }
 
 } } // namespace Cm::Ast

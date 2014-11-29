@@ -1,0 +1,171 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Parser/ParsingContext.hpp>
+[hpp]#include <Cm.Ast/Concept.hpp>
+[cpp]#include <Cm.Parser/Specifier.hpp>
+[cpp]#include <Cm.Parser/Identifier.hpp>
+[cpp]#include <Cm.Parser/Parameter.hpp>
+[cpp]#include <Cm.Parser/Expression.hpp>
+[cpp]#include <Cm.Parser/Function.hpp>
+[cpp]#include <Cm.Parser/TypeExpr.hpp>
+
+namespace Cm.Parser
+{
+    using namespace Cm::Ast;
+
+    grammar ConceptGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
+        using ParameterGrammar.ParameterList;
+        using ExpressionGrammar.Expression;
+        using TypeExprGrammar.TypeExpr;
+        using FunctionGrammar.FunctionGroupId;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        recover;
+
+        Concept(ParsingContext* ctx): Cm::Ast::ConceptNode*
+            ::= empty{ ctx->BeginParsingConcept(); }
+                ((Specifiers keyword("concept") Identifier:conceptName!){ value = new ConceptNode(span, conceptName); } '<'! (Identifier:typeParameter{ value->AddTypeParameter(typeParameter); } % ',') '>'! 
+                ((Refinement{ value->SetRefinement(Refinement); })? (WhereConstraint(ctx){ value->AddConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
+                '{'! ConceptBody(ctx, value)! '}'!)
+                {
+                    ctx->EndParsingConcept();
+                }
+                /
+                {
+                    ctx->EndParsingConcept();
+                }
+            ;
+
+        Refinement: Cm::Ast::ConceptIdNode*
+            ::= (':' QualifiedId!{ value = new ConceptIdNode(span, QualifiedId); } '<'! (Identifier{ value->AddTypeParameter(Identifier); } % ',') '>'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        ConceptBody(ParsingContext* ctx, Cm::Ast::ConceptNode* concept)
+            ::= (ConceptBodyConstraint(ctx, concept) | Axiom(ctx, concept))*
+            ;
+
+        ConceptBodyConstraint(ParsingContext* ctx, Cm::Ast::ConceptNode* concept) synchronize(";")
+            ::= TypenameConstraint(ctx){ concept->AddConstraint(TypenameConstraint); }
+            |   SignatureConstraint(ctx, concept->FirstTypeParameter()){ concept->AddConstraint(SignatureConstraint); }
+            |   EmbeddedConstraint(ctx){ concept->AddConstraint(EmbeddedConstraint); }
+            ;
+
+        Axiom(ParsingContext* ctx, Cm::Ast::ConceptNode* concept, var std::unique_ptr<AxiomNode> axiom)
+            ::= ((keyword("axiom") Identifier? ParameterList(ctx, axiom.get())?){ axiom.reset(new AxiomNode(span, Identifier)); }
+                '{'! AxiomBody(ctx, axiom.get())! '}'!)
+                {
+                    concept->AddAxiom(axiom.release());
+                }
+            ;
+
+        AxiomBody(ParsingContext* ctx, Cm::Ast::AxiomNode* axiom)
+            ::= (AxiomStatement(ctx){ axiom->AddStatement(AxiomStatement); })*
+            ;
+
+        AxiomStatement(ParsingContext* ctx): Cm::Ast::AxiomStatementNode* synchronize(";")
+            ::= (Expression(ctx) ';'!){ value = new AxiomStatementNode(span, Expression); }
+            ;
+
+        TypenameConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*
+            ::= (keyword("typename") Identifier! ';'!){ value = new TypenameConstraintNode(span, Identifier); }
+            ;
+
+        SignatureConstraint(ParsingContext* ctx, std::string firstTypeParameter): Cm::Ast::ConstraintNode*
+            ::= ConstructorConstraint(ctx, firstTypeParameter){ value = ConstructorConstraint; }
+            |   DestructorConstraint(ctx, firstTypeParameter){ value = DestructorConstraint; }
+            |   MemberFunctionConstraint(ctx){ value = MemberFunctionConstraint; }
+            |   FunctionConstraint(ctx){ value = FunctionConstraint; }
+            ;
+
+        ConstructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*
+            ::= (keyword("explicit")? Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; if (pass) value = new ConstructorConstraintNode(span); } ParameterList(ctx, value)! ';'!)
+                { 
+                    value->GetSpan().SetEnd(span.End());
+                }
+            ;
+
+        DestructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*
+            ::= ('~' Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; } '('! ')'! ';'!)
+                {
+                    value = new DestructorConstraintNode(span);
+                }
+            ;
+
+        MemberFunctionConstraint(ParsingContext* ctx, var std::unique_ptr<Node> returnType, var std::unique_ptr<IdentifierNode> typeParam): Cm::Ast::ConstraintNode*
+            ::= (TypeExpr(ctx){ returnType.reset(TypeExpr); } 
+                Identifier{ typeParam.reset(Identifier); } '.' FunctionGroupId(ctx)!{ value = new MemberFunctionConstraintNode(span, returnType.release(), typeParam.release(), FunctionGroupId); } 
+                ParameterList(ctx, value)! ';'!)
+                {
+                    value->GetSpan().SetEnd(span.End());
+                }
+            ;
+
+        FunctionConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*
+            ::= (TypeExpr(ctx) FunctionGroupId(ctx)!{ value = new FunctionConstraintNode(span, TypeExpr, FunctionGroupId); } ParameterList(ctx, value)! ';'!)
+                {
+                    value->GetSpan().SetEnd(span.End());
+                }
+            ;
+
+        EmbeddedConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*
+            ::= (WhereConstraint(ctx) ';'!){ value = WhereConstraint; }
+            ;
+
+        WhereConstraint(ParsingContext* ctx): Cm::Ast::WhereConstraintNode*
+            ::= (keyword("where") ConstraintExpr(ctx)!){ value = new WhereConstraintNode(span, ConstraintExpr); }
+            ;
+
+        ConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*
+            ::= DisjunctiveConstraintExpr(ctx){ value = DisjunctiveConstraintExpr; }
+            ;
+
+        DisjunctiveConstraintExpr(ParsingContext* ctx, var Span s): Cm::Ast::ConstraintNode*
+            ::= ConjunctiveConstraintExpr(ctx):left{ value = left; s = span; } 
+                (   keyword("or") ConjunctiveConstraintExpr(ctx):right{ s.SetEnd(span.End()); value = new DisjunctiveConstraintNode(s, value, right); })*
+            ;
+
+        ConjunctiveConstraintExpr(ParsingContext* ctx, var Span s): Cm::Ast::ConstraintNode*
+            ::= PrimaryConstraintExpr(ctx):left{ value = left; s = span; }
+                (   keyword("and") PrimaryConstraintExpr(ctx):right{ s.SetEnd(span.End()); value = new ConjunctiveConstraintNode(s, value, right); })*
+            ;
+
+        PrimaryConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*
+            ::= AtomicConstraintExpr(ctx){ value = AtomicConstraintExpr; }
+            |   ('(' ConstraintExpr(ctx) ')'!){ value = ConstraintExpr; }
+            ;
+
+        AtomicConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*
+            ::= IsConstraint(ctx){ value = IsConstraint; }
+            |   MultiParamConstraint(ctx){ value = MultiParamConstraint; }
+            ;
+
+        IsConstraint(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): Cm::Ast::ConstraintNode*
+            ::= (TypeExpr(ctx){ typeExpr.reset(TypeExpr); } keyword("is") ConceptOrTypeName(ctx)!){ value = new IsConstraintNode(span, typeExpr.release(), ConceptOrTypeName); }
+            ;
+
+        ConceptOrTypeName(ParsingContext* ctx): Cm::Ast::Node*
+            ::= TypeExpr(ctx){ value = TypeExpr; }
+            ;
+
+        MultiParamConstraint(ParsingContext* ctx,var std::unique_ptr<MultiParamConstraintNode> constraint): Cm::Ast::ConstraintNode*
+            ::= (QualifiedId{ constraint.reset(new MultiParamConstraintNode(span, QualifiedId)); }
+                '<' (TypeExpr(ctx){ constraint->AddTypeExpr(TypeExpr); } % ',') '>'!)
+                {
+                    value = constraint.release();
+                    value->GetSpan().SetEnd(span.End());
+                }
+            ;
+
+    }
+}

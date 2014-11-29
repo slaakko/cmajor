@@ -8,16 +8,31 @@ namespace Cm.Parser
     {
         Constant(ParsingContext* ctx): Cm::Ast::Node*;
     }
-    grammar ParameterGrammar
+    grammar ConceptGrammar
     {
-        ParameterList(ParsingContext* ctx, Cm::Ast::Node* owner);
-        Parameter(ParsingContext* ctx, Cm::Ast::Node* owner);
-    }
-    grammar EnumerationGrammar
-    {
-        EnumType(ParsingContext* ctx): Cm::Ast::EnumTypeNode*;
-        EnumConstants(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType);
-        EnumConstant(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType, var Span s): Cm::Ast::Node*;
+        Concept(ParsingContext* ctx): Cm::Ast::ConceptNode*;
+        Refinement: Cm::Ast::ConceptIdNode*;
+        ConceptBody(ParsingContext* ctx, Cm::Ast::ConceptNode* concept);
+        ConceptBodyConstraint(ParsingContext* ctx, Cm::Ast::ConceptNode* concept);
+        Axiom(ParsingContext* ctx, Cm::Ast::ConceptNode* concept, var std::unique_ptr<AxiomNode> axiom);
+        AxiomBody(ParsingContext* ctx, Cm::Ast::AxiomNode* axiom);
+        AxiomStatement(ParsingContext* ctx): Cm::Ast::AxiomStatementNode*;
+        TypenameConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
+        SignatureConstraint(ParsingContext* ctx, std::string firstTypeParameter): Cm::Ast::ConstraintNode*;
+        ConstructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*;
+        DestructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*;
+        MemberFunctionConstraint(ParsingContext* ctx, var std::unique_ptr<Node> returnType, var std::unique_ptr<IdentifierNode> typeParam): Cm::Ast::ConstraintNode*;
+        FunctionConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
+        EmbeddedConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
+        WhereConstraint(ParsingContext* ctx): Cm::Ast::WhereConstraintNode*;
+        ConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
+        DisjunctiveConstraintExpr(ParsingContext* ctx, var Span s): Cm::Ast::ConstraintNode*;
+        ConjunctiveConstraintExpr(ParsingContext* ctx, var Span s): Cm::Ast::ConstraintNode*;
+        PrimaryConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
+        AtomicConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
+        IsConstraint(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): Cm::Ast::ConstraintNode*;
+        ConceptOrTypeName(ParsingContext* ctx): Cm::Ast::Node*;
+        MultiParamConstraint(ParsingContext* ctx, var std::unique_ptr<MultiParamConstraintNode> constraint): Cm::Ast::ConstraintNode*;
     }
     grammar LiteralGrammar
     {
@@ -28,6 +43,12 @@ namespace Cm.Parser
         CharLiteral: Cm::Ast::Node*;
         StringLiteral(var std::string r): Cm::Ast::Node*;
         NullLiteral: Cm::Ast::Node*;
+    }
+    grammar EnumerationGrammar
+    {
+        EnumType(ParsingContext* ctx): Cm::Ast::EnumTypeNode*;
+        EnumConstants(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType);
+        EnumConstant(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType, var Span s): Cm::Ast::Node*;
     }
     grammar DelegateGrammar
     {
@@ -59,6 +80,11 @@ namespace Cm.Parser
         ArgumentList(ParsingContext* ctx, Cm::Ast::Node* node);
         ExpressionList(ParsingContext* ctx, Cm::Ast::Node* node);
     }
+    grammar FunctionGrammar
+    {
+        FunctionGroupId(ParsingContext* ctx): Cm::Ast::FunctionGroupIdNode*;
+        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): Cm::Ast::FunctionGroupIdNode*;
+    }
     grammar KeywordGrammar
     {
         Keyword;
@@ -67,6 +93,11 @@ namespace Cm.Parser
     {
         Identifier: Cm::Ast::IdentifierNode*;
         QualifiedId: Cm::Ast::IdentifierNode*;
+    }
+    grammar ParameterGrammar
+    {
+        ParameterList(ParsingContext* ctx, Cm::Ast::Node* owner);
+        Parameter(ParsingContext* ctx): Cm::Ast::ParameterNode*;
     }
     grammar SpecifierGrammar
     {

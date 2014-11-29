@@ -26,21 +26,16 @@ DelegateNode::DelegateNode(const Span& span_, Specifiers specifiers_, Node* retu
 Node* DelegateNode::Clone() const
 {
     DelegateNode* clone = new DelegateNode(GetSpan(), specifiers, returnTypeExpr->Clone(), static_cast<IdentifierNode*>(id->Clone()));
-    for (const std::unique_ptr<Node>& parameterNode : parameters)
+    for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        ParameterNode* parameter = static_cast<ParameterNode*>(parameterNode.get());
-        clone->AddParameter(parameter->GetSpan(), parameter->TypeExpr()->Clone(), static_cast<IdentifierNode*>(parameter->Id()->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
     }
     return clone;
 }
 
-void DelegateNode::AddParameter(const Span& span_, Node* paramTypeExpr, IdentifierNode* paramId)
+void DelegateNode::AddParameter(ParameterNode* parameter)
 {
-    if (paramId == nullptr)
-    {
-        paramId = new IdentifierNode(span_, "__parameter" + std::to_string(parameters.Count()));
-    }
-    parameters.Add(new ParameterNode(span_, paramTypeExpr, paramId));
+    parameters.Add(parameter);
 }
 
 void DelegateNode::Read(Reader& reader)
@@ -70,21 +65,16 @@ ClassDelegateNode::ClassDelegateNode(const Span& span_, Specifiers specifiers_, 
 Node* ClassDelegateNode::Clone() const
 {
     ClassDelegateNode* clone = new ClassDelegateNode(GetSpan(), specifiers, returnTypeExpr->Clone(), static_cast<IdentifierNode*>(id->Clone()));
-    for (const std::unique_ptr<Node>& parameterNode : parameters)
+    for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        ParameterNode* parameter = static_cast<ParameterNode*>(parameterNode.get());
-        clone->AddParameter(parameter->GetSpan(), parameter->TypeExpr()->Clone(), static_cast<IdentifierNode*>(parameter->Id()->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
     }
     return clone;
 }
 
-void ClassDelegateNode::AddParameter(const Span& span_, Node* paramTypeExpr, IdentifierNode* paramId)
+void ClassDelegateNode::AddParameter(ParameterNode* parameter)
 {
-    if (paramId == nullptr)
-    {
-        paramId = new IdentifierNode(span_, "__parameter" + std::to_string(parameters.Count()));
-    }
-    parameters.Add(new ParameterNode(span_, paramTypeExpr, paramId));
+    parameters.Add(parameter);
 }
 
 void ClassDelegateNode::Read(Reader& reader)

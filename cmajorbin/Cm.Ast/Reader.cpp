@@ -12,7 +12,9 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 #include <Cm.Ast/Factory.hpp>
 #include <Cm.Ast/TypeExpr.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Statement.hpp>
+#include <Cm.Ast/Concept.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -50,6 +52,49 @@ IdentifierNode* Reader::ReadIdentifierNode()
         throw std::runtime_error("identifier node expected");
     }
     return static_cast<IdentifierNode*>(node);
+}
+
+ParameterNode* Reader::ReadParameterNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::parameterNode)
+    {
+        throw std::runtime_error("parameter node expected");
+    }
+    return static_cast<ParameterNode*>(node);
+}
+
+AxiomStatementNode* Reader::ReadAxiomStatementNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::axiomStatementNode)
+    {
+        throw std::runtime_error("axiom statement node expected");
+    }
+    return static_cast<AxiomStatementNode*>(node);
+}
+
+ConstraintNode* Reader::ReadConstraintNode()
+{
+    Node* node = ReadNode();
+    if (node->IsConstraintNode())
+    {
+        return static_cast<ConstraintNode*>(node);
+    }
+    else
+    {
+        throw std::runtime_error("constraint node expected");
+    }
+}
+
+FunctionGroupIdNode* Reader::ReadFunctionGroupIdNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::functionGroupIdNode)
+    {
+        throw std::runtime_error("function group identifier node expected");
+    }
+    return static_cast<FunctionGroupIdNode*>(node);
 }
 
 LabelNode* Reader::ReadLabelNode()
@@ -125,6 +170,16 @@ CondCompilationPartNode* Reader::ReadCondCompPartNode()
     {
         throw std::runtime_error("conditional compilation part node expected");
     }
+}
+
+ConceptIdNode* Reader::ReadConceptIdNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::conceptIdNode)
+    {
+        throw std::runtime_error("concept identifier node expected");
+    }
+    return static_cast<ConceptIdNode*>(node);
 }
 
 std::string Reader::ReadString()

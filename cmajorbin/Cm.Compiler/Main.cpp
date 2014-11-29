@@ -7,7 +7,7 @@
 
  ========================================================================*/
 
-#include <Cm.Parser/Statement.hpp>
+#include <Cm.Parser/Concept.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Factory.hpp>
@@ -46,22 +46,22 @@ int main(int argc, const char** argv)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;
     _CrtSetDbgFlag(dbgFlags);
-    //_CrtSetBreakAlloc(32401);
+    //_CrtSetBreakAlloc(30424);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     try
     {
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
-        Cm::Parser::StatementGrammar* grammar = Cm::Parser::StatementGrammar::Create();
+        Cm::Parser::ConceptGrammar* grammar = Cm::Parser::ConceptGrammar::Create();
         grammar->SetRecover();
         Cm::Parser::ParsingContext ctx;
-        std::string s("{ #if (DEBUG && ASSERT) foo(); bar(); #elif (FOO) alpha(); beta(); #endif }");
+        std::string s("public concept Foo<T, U> { where T is CopyConstructible or T is MoveConstructible and Same<T, U>; } ");
         std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
-            Cm::Ast::Writer writer("C:\\temp\\statement.mc");
+            Cm::Ast::Writer writer("C:\\temp\\concept.mc");
             writer.Write(node.get());
         }
-        Cm::Ast::Reader reader("C:\\temp\\statement.mc");
+        Cm::Ast::Reader reader("C:\\temp\\concept.mc");
         std::unique_ptr<Cm::Ast::Node> n(reader.ReadNode());
     }
     catch (const Cm::Parsing::CombinedParsingError& ex)

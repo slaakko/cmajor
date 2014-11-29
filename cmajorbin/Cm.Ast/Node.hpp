@@ -31,15 +31,19 @@ enum class NodeType: uint8_t
     enumTypeNode, enumConstantNode, constantNode, parameterNode, delegateNode, classDelegateNode, typedefNode,
     labelNode,
     simpleStatementNode, returnStatementNode, conditionalStatementNode, switchStatementNode, caseStatementNode, defaultStatementNode, gotoCaseStatementNode, gotoDefaultStatementNode,
-    whileStatementNode, doStatementNode, rangeForStatementNode, forStatementNode, compoundStatementNode, breakStatementNode, continueStatemetNode, gotoStatementNode, typedefStatementNode, 
+    whileStatementNode, doStatementNode, rangeForStatementNode, forStatementNode, compoundStatementNode, breakStatementNode, continueStatemetNode, gotoStatementNode, typedefStatementNode,
     assignmentStatementNode, constructionStatementNode, deleteStatementNode, destroyStatementNode, throwStatementNode, tryStatementNode, catchNode, assertStatementNode,
     condCompDisjunctionNode, condCompConjunctionNode, condCompNotNode, condCompPrimaryNode, condCompSymbolNode, condCompilationPartNode, condCompStatementNode,
+    disjunctiveConstraintNode, conjunctiveConstraintNode, whereConstraintNode, isConstraintNode, multiParamConstraintNode, typenameConstraintNode,
+    constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
+    functionGroupIdNode, 
     maxNode
 };
 
 class Reader;
 class Writer;
 class IdentifierNode;
+class ParameterNode;
 
 class Node
 {
@@ -55,12 +59,13 @@ public:
     virtual void Write(Writer& writer);
     virtual Node* GetValue() const;
     virtual void AddArgument(Node* argument);
-    virtual void AddParameter(const Span& span_, Node* paramTypeExpr, IdentifierNode* paramId);
+    virtual void AddParameter(ParameterNode* parameter);
     virtual bool IsStatementNode() const { return false; }
     virtual bool IsCompoundStatementNode() const { return false; }
     virtual bool IsCondCompExprNode() const { return false; }
     virtual bool IsCondCompSymbolNode() const { return false; }
     virtual bool IsCondCompPartNode() const { return false; }
+    virtual bool IsConstraintNode() const { return false; }
 private:
     Span span;
 };
