@@ -36,7 +36,7 @@ void Node::AddArgument(Node* argument)
     throw std::runtime_error("member function not applicable");
 }
 
-void Node::AddParameter(const Span& span_, Node* paramTypeExpr, IdentifierNode* paramId) 
+void Node::AddParameter(ParameterNode* parameter)
 {
     throw std::runtime_error("member function not applicable");
 }

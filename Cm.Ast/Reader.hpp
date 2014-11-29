@@ -24,6 +24,11 @@ class CompoundStatementNode;
 class CondCompExprNode;
 class CondCompSymbolNode;
 class CondCompilationPartNode;
+class ConstraintNode;
+class ParameterNode;
+class FunctionGroupIdNode;
+class AxiomStatementNode;
+class ConceptIdNode;
 enum class Specifiers : uint16_t;
 
 class Reader
@@ -40,6 +45,11 @@ public:
     CondCompExprNode* ReadCondCompExprNode();
     CondCompSymbolNode* ReadCondCompSymbolNode();
     CondCompilationPartNode* ReadCondCompPartNode();
+    ConstraintNode* ReadConstraintNode();
+    ParameterNode* ReadParameterNode();
+    AxiomStatementNode* ReadAxiomStatementNode();
+    FunctionGroupIdNode* ReadFunctionGroupIdNode();
+    ConceptIdNode* ReadConceptIdNode();
     std::string ReadString();
     bool ReadBool();
     int8_t ReadSByte();

@@ -31,6 +31,23 @@ private:
     std::unique_ptr<IdentifierNode> id;
 };
 
+class ParameterNodeList
+{
+public:
+    typedef std::vector<std::unique_ptr<ParameterNode>>::const_iterator const_iterator;
+    ParameterNodeList();
+    const_iterator begin() const { return parameterNodes.begin(); }
+    const_iterator end() const { return parameterNodes.end(); }
+    int Count() const { return int(parameterNodes.size()); }
+    ParameterNode* operator[](int index) const { return parameterNodes[index].get(); }
+    ParameterNode* Back() const { return parameterNodes.back().get(); }
+    void Add(ParameterNode* parameter) { parameterNodes.push_back(std::unique_ptr<ParameterNode>(parameter)); }
+    void Read(Reader& reader);
+    void Write(Writer& writer);
+private:
+    std::vector<std::unique_ptr<ParameterNode>> parameterNodes;
+};
+
 } } // namespace Cm::Ast
 
 #endif // CM_AST_PARAMETER_INCLUDED

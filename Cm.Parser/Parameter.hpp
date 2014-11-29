@@ -1,10 +1,10 @@
-#ifndef Parameter_hpp_21190
-#define Parameter_hpp_21190
+#ifndef Parameter_hpp_3844
+#define Parameter_hpp_3844
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
 #include <Cm.Parser/ParsingContext.hpp>
-#include <Cm.Ast/Node.hpp>
+#include <Cm.Ast/Parameter.hpp>
 
 namespace Cm { namespace Parser {
 
@@ -24,4 +24,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Parameter_hpp_21190
+#endif // Parameter_hpp_3844

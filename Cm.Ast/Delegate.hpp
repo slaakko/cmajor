@@ -9,7 +9,7 @@
 
 #ifndef CM_AST_DELEGATE_INCLUDED
 #define CM_AST_DELEGATE_INCLUDED
-#include <Cm.Ast/Node.hpp>
+#include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Specifier.hpp>
 
 namespace Cm { namespace Ast {
@@ -23,14 +23,14 @@ public:
     DelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::delegateNode; }
     Node* Clone() const override;
-    void AddParameter(const Span& span_, Node* paramTypeExpr, IdentifierNode* paramId) override;
+    void AddParameter(ParameterNode* parameter) override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
     std::unique_ptr<IdentifierNode> id;
-    NodeList parameters;
+    ParameterNodeList parameters;
 };
 
 class ClassDelegateNode : public Node
@@ -40,14 +40,14 @@ public:
     ClassDelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::classDelegateNode; }
     Node* Clone() const override;
-    void AddParameter(const Span& span_, Node* paramTypeExpr, IdentifierNode* paramId) override;
+    void AddParameter(ParameterNode* parameter) override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
     std::unique_ptr<IdentifierNode> id;
-    NodeList parameters;
+    ParameterNodeList parameters;
 };
 
 } } // namespace Cm::Ast
