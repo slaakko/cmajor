@@ -38,5 +38,13 @@ namespace Cm.Parser
                     ctx->EndParsingTemplateId(); 
                 }
             ;
+
+        TemplateParameter(ParsingContext* ctx): Cm::Ast::TemplateParameterNode*
+            ::= (Identifier ('=' TypeExpr(ctx))?){ value = new TemplateParameterNode(span, Identifier, TypeExpr); }
+            ;
+
+        TemplateParameterList(ParsingContext* ctx, Node* owner)
+            ::= '<' (TemplateParameter(ctx){ owner->AddTemplateParameter(TemplateParameter); } % ',') '>'!
+            ;
     }
 }

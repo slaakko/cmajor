@@ -7,7 +7,7 @@
 
  ========================================================================*/
 
-#include <Cm.Parser/Concept.hpp>
+#include <Cm.Parser/Function.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Factory.hpp>
@@ -52,10 +52,10 @@ int main(int argc, const char** argv)
     {
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
-        Cm::Parser::ConceptGrammar* grammar = Cm::Parser::ConceptGrammar::Create();
+        Cm::Parser::FunctionGrammar* grammar = Cm::Parser::FunctionGrammar::Create();
         grammar->SetRecover();
         Cm::Parser::ParsingContext ctx;
-        std::string s("public concept Foo<T, U> { where T is CopyConstructible or T is MoveConstructible and Same<T, U>; } ");
+        std::string s("public void Swap<T>(T& left, T& right) where T is MoveConstructible and T is Assignable and T is Destructible { T temp = Rvalue(left); left = Rvalue(right); right = Rvalue(temp); }");
         std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
             Cm::Ast::Writer writer("C:\\temp\\concept.mc");

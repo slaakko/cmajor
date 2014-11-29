@@ -8,10 +8,68 @@
 ========================================================================*/
 
 #include <Cm.Ast/Template.hpp>
+#include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
 
 namespace Cm { namespace Ast {
+
+TemplateParameterNodeList::TemplateParameterNodeList()
+{
+}
+
+void TemplateParameterNodeList::Read(Reader& reader)
+{
+    uint32_t n = reader.ReadUInt();
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        templateParameterNodes.push_back(std::unique_ptr<TemplateParameterNode>(reader.ReadTemplateParameterNode()));
+    }
+}
+
+void TemplateParameterNodeList::Write(Writer& writer)
+{
+    uint32_t n = static_cast<uint32_t>(templateParameterNodes.size());
+    writer.Write(n);
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        writer.Write(templateParameterNodes[i].get());
+    }
+}
+
+TemplateParameterNode::TemplateParameterNode(const Span& span_) : Node(span_)
+{
+}
+
+TemplateParameterNode::TemplateParameterNode(const Span& span_, IdentifierNode* id_, Node* defaultTemplateArgument_) : Node(span_), id(id_), defaultTemplateArgument(defaultTemplateArgument_)
+{
+}
+
+Node* TemplateParameterNode::Clone() const
+{
+    return new TemplateParameterNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone()), defaultTemplateArgument->Clone());
+}
+
+void TemplateParameterNode::Read(Reader& reader)
+{
+    id.reset(reader.ReadIdentifierNode());
+    bool hasDefaultTemplateArgument = reader.ReadBool();
+    if (hasDefaultTemplateArgument)
+    {
+        defaultTemplateArgument.reset(reader.ReadNode());
+    }
+}
+
+void TemplateParameterNode::Write(Writer& writer)
+{
+    writer.Write(id.get());
+    bool hasDefaultTemplateArgument = defaultTemplateArgument != nullptr;
+    writer.Write(hasDefaultTemplateArgument);
+    if (hasDefaultTemplateArgument)
+    {
+        writer.Write(defaultTemplateArgument.get());
+    }
+}
 
 TemplateIdNode::TemplateIdNode(const Span& span_): Node(span_)
 {

@@ -13,6 +13,39 @@
 
 namespace Cm { namespace Ast {
 
+class TemplateParameterNode;
+
+class TemplateParameterNodeList
+{
+public:
+    typedef std::vector<std::unique_ptr<TemplateParameterNode>>::const_iterator const_iterator;
+    TemplateParameterNodeList();
+    const_iterator begin() const { return templateParameterNodes.begin(); }
+    const_iterator end() const { return templateParameterNodes.end(); }
+    int Count() const { return int(templateParameterNodes.size()); }
+    TemplateParameterNode* operator[](int index) const { return templateParameterNodes[index].get(); }
+    TemplateParameterNode* Back() const { return templateParameterNodes.back().get(); }
+    void Add(TemplateParameterNode* templateParameter) { templateParameterNodes.push_back(std::unique_ptr<TemplateParameterNode>(templateParameter)); }
+    void Read(Reader& reader);
+    void Write(Writer& writer);
+private:
+    std::vector<std::unique_ptr<TemplateParameterNode>> templateParameterNodes;
+};
+
+class TemplateParameterNode : public Node
+{
+public:
+    TemplateParameterNode(const Span& span_);
+    TemplateParameterNode(const Span& span_, IdentifierNode* id_, Node* defaultTemplateArgument_);
+    NodeType GetNodeType() const override { return NodeType::templateParameterNode; }
+    Node* Clone() const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+private:
+    std::unique_ptr<IdentifierNode> id;
+    std::unique_ptr<Node> defaultTemplateArgument;
+};
+
 class TemplateIdNode : public Node
 {
 public:

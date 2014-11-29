@@ -82,6 +82,7 @@ namespace Cm.Parser
     }
     grammar FunctionGrammar
     {
+        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): Cm::Ast::FunctionNode*;
         FunctionGroupId(ParsingContext* ctx): Cm::Ast::FunctionGroupIdNode*;
         OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): Cm::Ast::FunctionGroupIdNode*;
     }
@@ -152,6 +153,8 @@ namespace Cm.Parser
     grammar TemplateGrammar
     {
         TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId): Cm::Ast::Node*;
+        TemplateParameter(ParsingContext* ctx): Cm::Ast::TemplateParameterNode*;
+        TemplateParameterList(ParsingContext* ctx, Node* owner);
     }
     grammar TypedefGrammar
     {

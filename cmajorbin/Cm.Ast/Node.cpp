@@ -41,6 +41,11 @@ void Node::AddParameter(ParameterNode* parameter)
     throw std::runtime_error("member function not applicable");
 }
 
+void Node::AddTemplateParameter(TemplateParameterNode* templateParameter)
+{
+    throw std::runtime_error("member function not applicable");
+}
+
 void Node::Read(Reader& reader)
 {
 }

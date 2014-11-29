@@ -1,5 +1,5 @@
-#ifndef Function_hpp_28261
-#define Function_hpp_28261
+#ifndef Function_hpp_28107
+#define Function_hpp_28107
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -13,15 +13,16 @@ class FunctionGrammar : public Cm::Parsing::Grammar
 public:
     static FunctionGrammar* Create();
     static FunctionGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
-    Cm::Ast::FunctionGroupIdNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    Cm::Ast::FunctionNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
     FunctionGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
+    class FunctionRule;
     class FunctionGroupIdRule;
     class OperatorFunctionGroupIdRule;
 };
 
 } } // namespace Cm.Parser
 
-#endif // Function_hpp_28261
+#endif // Function_hpp_28107
