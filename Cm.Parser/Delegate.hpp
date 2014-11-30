@@ -1,5 +1,5 @@
-#ifndef Delegate_hpp_23486
-#define Delegate_hpp_23486
+#ifndef Delegate_hpp_5728
+#define Delegate_hpp_5728
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -24,4 +24,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Delegate_hpp_23486
+#endif // Delegate_hpp_5728

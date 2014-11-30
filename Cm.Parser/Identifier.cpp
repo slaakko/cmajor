@@ -194,8 +194,8 @@ void IdentifierGrammar::GetReferencedGrammars()
 
 void IdentifierGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
     AddRule(new IdentifierRule("Identifier", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::TokenParser(

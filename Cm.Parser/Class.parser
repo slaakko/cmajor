@@ -1,0 +1,144 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Parser/ParsingContext.hpp>
+[hpp]#include <Cm.Ast/Class.hpp>
+[cpp]#include <Cm.Parser/Specifier.hpp>
+[cpp]#include <Cm.Parser/Identifier.hpp>
+[cpp]#include <Cm.Parser/Template.hpp>
+[cpp]#include <Cm.Parser/Concept.hpp>
+[cpp]#include <Cm.Parser/Statement.hpp>
+[cpp]#include <Cm.Parser/Parameter.hpp>
+[cpp]#include <Cm.Parser/Enumeration.hpp>
+[cpp]#include <Cm.Parser/Constant.hpp>
+[cpp]#include <Cm.Parser/Delegate.hpp>
+[cpp]#include <Cm.Parser/Typedef.hpp>
+[cpp]#include <Cm.Parser/Expression.hpp>
+[cpp]#include <Cm.Parser/TypeExpr.hpp>
+[cpp]#include <Cm.Parser/Function.hpp>
+
+namespace Cm.Parser
+{
+    using namespace Cm::Ast;
+
+    grammar ClassGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
+        using TemplateGrammar.TemplateParameterList;
+        using TemplateGrammar.TemplateId;
+        using ConceptGrammar.WhereConstraint;
+        using StatementGrammar.CompoundStatement;
+        using ParameterGrammar.ParameterList;
+        using EnumerationGrammar.EnumType;
+        using ConstantGrammar.Constant;
+        using DelegateGrammar.Delegate;
+        using DelegateGrammar.ClassDelegate;
+        using TypedefGrammar.Typedef;
+        using ExpressionGrammar.ArgumentList;
+        using TypeExprGrammar.TypeExpr;
+        using FunctionGrammar.FunctionGroupId;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+
+        Class(ParsingContext* ctx): Cm::Ast::ClassNode*
+            ::= (Specifiers keyword("class") Identifier){ value = new ClassNode(span, Specifiers, Identifier); } TemplateParameterList(ctx, value)? Inheritance(ctx, value)? 
+                (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? '{'! ClassContent(ctx, value)! '}'!
+            ;
+
+        Inheritance(ParsingContext* ctx, Cm::Ast::ClassNode* cls)
+            ::= ':'{ ctx->BeginParsingTypeExpr(); }
+                BaseClassTypeExpr(ctx)!{ cls->SetBaseClassTypeExpr(BaseClassTypeExpr); ctx->EndParsingTypeExpr(); } / { ctx->EndParsingTypeExpr(); }
+            ;
+                
+        BaseClassTypeExpr(ParsingContext* ctx): Cm::Ast::Node*
+            ::= TemplateId(ctx){ value = TemplateId; }
+            |   QualifiedId{ value = QualifiedId; }
+            ;
+
+        ClassContent(ParsingContext* ctx, Cm::Ast::ClassNode* cls)
+            ::= (ClassMember(ctx, cls){ cls->AddMember(ClassMember); })*
+            ;
+
+        ClassMember(ParsingContext* ctx, Cm::Ast::ClassNode* cls): Cm::Ast::Node*
+            ::= StaticConstructor(ctx, cls){ value = StaticConstructor; }
+            |   Constructor(ctx, cls){ value = Constructor; }
+            |   Destructor(ctx, cls){ value = Destructor; }
+            |   MemberFunction(ctx){ value = MemberFunction; }
+            |   ConversionFunction(ctx){ value = ConversionFunction; }
+            |   EnumType(ctx){ value = EnumType; }
+            |   Constant(ctx){ value = Constant; }
+            |   MemberVariable(ctx){ value = MemberVariable; }
+            |   Class(ctx){ value = Class; }
+            |   Delegate(ctx){ value = Delegate; }
+            |   ClassDelegate(ctx){ value = ClassDelegate; }
+            |   Typedef(ctx){ value = Typedef; }
+            ;
+
+        InitializerList(ParsingContext* ctx, Node* owner)
+            ::= ':' (Initializer(ctx){ owner->AddInitializer(Initializer); } % ',')
+            ;
+                
+        Initializer(ParsingContext* ctx): Cm::Ast::InitializerNode*
+            ::= BaseInitializer(ctx){ value = BaseInitializer; }
+            |   ThisInitializer(ctx){ value = ThisInitializer; }
+            |   MemberInitializer(ctx){ value = MemberInitializer; }
+            ;
+
+        MemberInitializer(ParsingContext* ctx): Cm::Ast::MemberInitializerNode*
+            ::= (Identifier!{ value = new MemberInitializerNode(span, Identifier); } '('! ArgumentList(ctx, value) ')'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        BaseInitializer(ParsingContext* ctx): Cm::Ast::BaseInitializerNode*
+            ::= (keyword("base"){ value = new BaseInitializerNode(span); } '('! ArgumentList(ctx, value) ')'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        ThisInitializer(ParsingContext* ctx): Cm::Ast::ThisInitializerNode*
+            ::= (keyword("this"){ value = new ThisInitializerNode(span); } '('! ArgumentList(ctx, value) ')'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        StaticConstructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::StaticConstructorNode*
+            ::= ((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&')) 
+                '(' ')'){ pass = id->Str() == cls->Id() && HasStaticSpecifier(Specifiers); if (pass) value = new StaticConstructorNode(span, Specifiers); }
+                InitializerList(ctx, value)? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
+                CompoundStatement(ctx){ value->SetBody(CompoundStatement); }
+            ;
+
+        Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::ConstructorNode*
+            ::= ((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&'))){ pass = id->Str() == cls->Id(); if (pass) value = new ConstructorNode(span, Specifiers); }
+                ParameterList(ctx, value)
+                InitializerList(ctx, value)? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
+                CompoundStatement(ctx){ value->SetBody(CompoundStatement); }
+            ;
+
+        Destructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var Span s): Cm::Ast::DestructorNode*
+            ::= (Specifiers '~' Identifier{ id.reset(Identifier); pass = id->Str() == cls->Id(); }  '('! ')'!){ s = span; } 
+                CompoundStatement(ctx){ value = new DestructorNode(s, Specifiers, CompoundStatement); }
+            ;
+
+        MemberFunction(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Cm::Ast::MemberFunctionNode*
+            ::= ((Specifiers TypeExpr(ctx) FunctionGroupId(ctx)){ memFun.reset(new MemberFunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } ParameterList(ctx, memFun.get()) 
+                (keyword("const"){ memFun->SetConst(); })?
+                (WhereConstraint(ctx){ memFun->SetConstraint(WhereConstraint); })?){ memFun->GetSpan().SetEnd(span.End()); }
+                CompoundStatement(ctx){ memFun->SetBody(CompoundStatement); value = memFun.release(); }
+            ;
+
+        ConversionFunction(ParsingContext* ctx, var bool setConst, var Span s): Cm::Ast::ConversionFunctionNode*
+            ::= (Specifiers keyword("operator") TypeExpr(ctx) '('! ')'! (keyword("const"){ setConst = true; })? WhereConstraint(ctx)?){ s = span; } CompoundStatement(ctx)
+                { 
+                    value = new ConversionFunctionNode(s, Specifiers, TypeExpr, setConst, WhereConstraint, CompoundStatement); 
+                }
+            ;
+
+        MemberVariable(ParsingContext* ctx): Cm::Ast::MemberVariableNode*
+            ::= (Specifiers TypeExpr(ctx) Identifier ';'){ value = new MemberVariableNode(span, Specifiers, TypeExpr, Identifier); }
+            ;
+    }
+}

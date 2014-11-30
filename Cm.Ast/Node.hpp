@@ -36,7 +36,8 @@ enum class NodeType: uint8_t
     condCompDisjunctionNode, condCompConjunctionNode, condCompNotNode, condCompPrimaryNode, condCompSymbolNode, condCompilationPartNode, condCompStatementNode,
     disjunctiveConstraintNode, conjunctiveConstraintNode, whereConstraintNode, isConstraintNode, multiParamConstraintNode, typenameConstraintNode,
     constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
-    functionGroupIdNode, templateParameterNode, functionNode,
+    functionGroupIdNode, templateParameterNode, functionNode, 
+    classNode, memberInitializerNode, baseInitializerNode, thisInitializerNode, staticConstructorNode, constructorNode, destructorNode, memberFunctionNode, conversionFunctionNode, memberVariableNode,
     maxNode
 };
 
@@ -45,6 +46,7 @@ class Writer;
 class IdentifierNode;
 class ParameterNode;
 class TemplateParameterNode;
+class InitializerNode;
 
 class Node
 {
@@ -62,12 +64,14 @@ public:
     virtual void AddArgument(Node* argument);
     virtual void AddParameter(ParameterNode* parameter);
     virtual void AddTemplateParameter(TemplateParameterNode* templateParameter);
+    virtual void AddInitializer(InitializerNode* initializer);
     virtual bool IsStatementNode() const { return false; }
     virtual bool IsCompoundStatementNode() const { return false; }
     virtual bool IsCondCompExprNode() const { return false; }
     virtual bool IsCondCompSymbolNode() const { return false; }
     virtual bool IsCondCompPartNode() const { return false; }
     virtual bool IsConstraintNode() const { return false; }
+    virtual bool IsInitializerNode() const { return false; }
 private:
     Span span;
 };

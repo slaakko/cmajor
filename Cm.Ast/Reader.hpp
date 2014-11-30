@@ -31,6 +31,7 @@ class AxiomStatementNode;
 class ConceptIdNode;
 class TemplateParatemerNode;
 class WhereConstraintNode;
+class InitializerNode;
 enum class Specifiers : uint16_t;
 
 class Reader
@@ -54,6 +55,7 @@ public:
     ConceptIdNode* ReadConceptIdNode();
     TemplateParameterNode* ReadTemplateParameterNode();
     WhereConstraintNode* ReadWhereConstraintNode();
+    InitializerNode* ReadInitializerNode();
     std::string ReadString();
     bool ReadBool();
     int8_t ReadSByte();

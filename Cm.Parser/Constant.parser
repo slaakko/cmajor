@@ -29,7 +29,7 @@ namespace Cm.Parser
         skip spaces_and_comments;
 
         Constant(ParsingContext* ctx): Cm::Ast::Node*
-            ::= (Specifiers keyword("const") TypeExpr(ctx)! Identifier! '=' Expression(ctx)! ';'!){ value = new ConstantNode(span, Specifiers, TypeExpr, Identifier, Expression); }
+            ::= (Specifiers keyword("const") TypeExpr(ctx)! Identifier! '='! Expression(ctx)! ';'!){ value = new ConstantNode(span, Specifiers, TypeExpr, Identifier, Expression); }
             ;
     }
 }

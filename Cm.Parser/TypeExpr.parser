@@ -35,8 +35,8 @@
         PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node)
             ::= PrimaryTypeExpr(ctx, node)
             (    "&&"{ node->AddRvalueRef(); }
-            |    "&"{ node->AddReference(); }
-            |    "*"{ node->AddPointer(); }
+            |    '&'{ node->AddReference(); }
+            |    '*'{ node->AddPointer(); }
             )*
             ;
 

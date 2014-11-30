@@ -1,5 +1,5 @@
-#ifndef Typedef_hpp_29727
-#define Typedef_hpp_29727
+#ifndef Typedef_hpp_5728
+#define Typedef_hpp_5728
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -23,4 +23,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Typedef_hpp_29727
+#endif // Typedef_hpp_5728
