@@ -213,7 +213,7 @@ namespace Cm.Parser
             ;
 
         Handler(ParsingContext* ctx): Cm::Ast::CatchNode*
-            ::= (keyword("catch") '('! TypeExpr(ctx)! Identifier! ')'! CompoundStatement(ctx)!){ value = new CatchNode(span, TypeExpr, Identifier, CompoundStatement); }
+            ::= (keyword("catch") '('! TypeExpr(ctx)! Identifier? ')'! CompoundStatement(ctx)!){ value = new CatchNode(span, TypeExpr, Identifier, CompoundStatement); }
             ;
 
         AssertStatement(ParsingContext* ctx): Cm::Ast::StatementNode*

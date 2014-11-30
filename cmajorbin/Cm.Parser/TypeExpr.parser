@@ -9,10 +9,12 @@
 
  [hpp]#include <Cm.Ast/TypeExpr.hpp>
  [hpp]#include <Cm.Parser/ParsingContext.hpp>
+ [cpp]#include <Cm.Ast/Expression.hpp>
  [cpp]#include <Cm.Ast/Typedef.hpp>
  [cpp]#include <Cm.Parser/BasicType.hpp>
  [cpp]#include <Cm.Parser/Identifier.hpp>
-
+ [cpp]#include <Cm.Parser/Template.hpp>
+ 
  namespace Cm.Parser
  {
     [cpp]using namespace Cm::Ast;
@@ -20,7 +22,9 @@
     grammar TypeExprGrammar
     {
         using BasicTypeGrammar.BasicType;
+        using IdentifierGrammar.Identifier;
         using IdentifierGrammar.QualifiedId;
+        using TemplateGrammar.TemplateId;
 
         TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*
             ::= empty{ ctx->BeginParsingTypeExpr(); node.reset(new DerivedTypeExprNode(span)); }
@@ -32,9 +36,10 @@
             |    PostfixTypeExpr(ctx, node)
             ;
 
-        PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node)
-            ::= PrimaryTypeExpr(ctx, node)
-            (    "&&"{ node->AddRvalueRef(); }
+        PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node, var Span s)
+            ::= PrimaryTypeExpr(ctx, node){ s = span; }
+            (   '.' Identifier:dotMemberId!{ s.SetEnd(span.End()); node->SetBaseTypeExpr(new DotNode(s, node->ReleaseBaseTypeExprNode(), dotMemberId)); }
+            |   "&&"{ node->AddRvalueRef(); }
             |    '&'{ node->AddReference(); }
             |    '*'{ node->AddPointer(); }
             )*
@@ -42,8 +47,9 @@
 
         PrimaryTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node)
             ::= BasicType{ node->SetBaseTypeExpr(BasicType); }
-            |    QualifiedId{ node->SetBaseTypeExpr(QualifiedId); }
-            |    '('{ node->AddLeftParen(); } PrefixTypeExpr(ctx, node)! ')'!{ node->AddRightParen(); }
+            |   TemplateId(ctx){ node->SetBaseTypeExpr(TemplateId); }
+            |   QualifiedId{ node->SetBaseTypeExpr(QualifiedId); }
+            |   '('{ node->AddLeftParen(); } PrefixTypeExpr(ctx, node)! ')'{ node->AddRightParen(); }
             ;
     }
  }

@@ -10,6 +10,8 @@
 #include <Cm.Parsing/Scanner.hpp>
 #include <Cm.Parsing/Parser.hpp>
 #include <Cm.Parsing/Exception.hpp>
+#include <Cm.Parsing/Rule.hpp>
+#include <cctype>
 
 namespace Cm { namespace Parsing {
 
@@ -28,18 +30,44 @@ std::string NarrowString(const char* start, const char* end)
     return s;
 }
 
+bool countSourceLines = false;;
+int numParsedSourceLines = 0;
+
+void SetCountSourceLines(bool count)
+{
+    countSourceLines = count;
+}
+
+int GetParsedSourceLines()
+{
+    return numParsedSourceLines;
+}
+
 Scanner::Scanner(const char* start_, const char* end_, const std::string& fileName_, int fileIndex_, Parser* skipper_): 
     start(start_), end(end_), skipper(skipper_), skipping(false), tokenCounter(0), fileName(fileName_), span(fileIndex_), 
-    log(nullptr), expectationCounter(0), recover(false)
+    log(nullptr), expectationCounter(0), recover(false), atBeginningOfLine(true)
 {
+    if (countSourceLines)
+    {
+        numParsedSourceLines = 0;
+    }
 }
 
 void Scanner::operator++()
 {
     char c = GetChar();
+    if (countSourceLines)
+    {
+        if (!skipping && atBeginningOfLine && !std::isspace(c))
+        {
+            ++numParsedSourceLines;
+            atBeginningOfLine = false;
+        }
+    }
     ++span;
     if (c == '\n')
     {
+        atBeginningOfLine = true;
         span.IncLineNumber();
     }
 }
@@ -75,7 +103,7 @@ int Scanner::LineEndIndex()
 
 std::string Scanner::RestOfLine()
 {
-    std::string restOfLine(start + span.Start(), start + (LineEndIndex() - span.Start()));
+    std::string restOfLine(start + span.Start(), start + LineEndIndex());
     return restOfLine;
 }
 
@@ -86,6 +114,16 @@ void Scanner::AddException(const ExpectationFailure& exception)
         combinedError.reset(new CombinedParsingError());
     }
     combinedError->Errors().push_back(exception);
+}
+
+void Scanner::AddInfo(const std::string& info)
+{
+    if (!combinedError)
+    {
+        throw std::runtime_error("scanner exception not active");
+    }
+    ExpectationFailure& ex = combinedError->Errors().back();
+    combinedError->Errors().back() = ExpectationFailure(info + ex.Info(), ex.FileName(), ex.GetSpan(), start, end);
 }
 
 void Scanner::Synchronize(const std::string& synchronizeCharacters)

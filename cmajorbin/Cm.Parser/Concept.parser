@@ -55,14 +55,14 @@ namespace Cm.Parser
             ::= (ConceptBodyConstraint(ctx, concept) | Axiom(ctx, concept))*
             ;
 
-        ConceptBodyConstraint(ParsingContext* ctx, Cm::Ast::ConceptNode* concept) synchronize(";")
+        ConceptBodyConstraint(ParsingContext* ctx, Cm::Ast::ConceptNode* concept) synchronize(";}")
             ::= TypenameConstraint(ctx){ concept->AddConstraint(TypenameConstraint); }
             |   SignatureConstraint(ctx, concept->FirstTypeParameter()){ concept->AddConstraint(SignatureConstraint); }
             |   EmbeddedConstraint(ctx){ concept->AddConstraint(EmbeddedConstraint); }
             ;
 
         Axiom(ParsingContext* ctx, Cm::Ast::ConceptNode* concept, var std::unique_ptr<AxiomNode> axiom)
-            ::= ((keyword("axiom") Identifier? ParameterList(ctx, axiom.get())?){ axiom.reset(new AxiomNode(span, Identifier)); }
+            ::= ((keyword("axiom") Identifier? empty{ axiom.reset(new AxiomNode(span, Identifier)); } ParameterList(ctx, axiom.get())?){ axiom->GetSpan().SetEnd(span.End()); }
                 '{'! AxiomBody(ctx, axiom.get())! '}'!)
                 {
                     concept->AddAxiom(axiom.release());
@@ -73,7 +73,7 @@ namespace Cm.Parser
             ::= (AxiomStatement(ctx){ axiom->AddStatement(AxiomStatement); })*
             ;
 
-        AxiomStatement(ParsingContext* ctx): Cm::Ast::AxiomStatementNode* synchronize(";")
+        AxiomStatement(ParsingContext* ctx): Cm::Ast::AxiomStatementNode* synchronize(";}")
             ::= (Expression(ctx) ';'!){ value = new AxiomStatementNode(span, Expression); }
             ;
 
@@ -89,7 +89,7 @@ namespace Cm.Parser
             ;
 
         ConstructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*
-            ::= (keyword("explicit")? Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; if (pass) value = new ConstructorConstraintNode(span); } ParameterList(ctx, value)! ';'!)
+            ::= (keyword("explicit")? Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; if (pass) value = new ConstructorConstraintNode(span); } ParameterList(ctx, value) ';'!)
                 { 
                     value->GetSpan().SetEnd(span.End());
                 }
@@ -141,8 +141,8 @@ namespace Cm.Parser
             ;
 
         PrimaryConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*
-            ::= AtomicConstraintExpr(ctx){ value = AtomicConstraintExpr; }
-            |   ('(' ConstraintExpr(ctx) ')'!){ value = ConstraintExpr; }
+            ::=  ('(' ConstraintExpr(ctx) ')'!){ value = ConstraintExpr; }
+            |   AtomicConstraintExpr(ctx){ value = AtomicConstraintExpr; }
             ;
 
         AtomicConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*
