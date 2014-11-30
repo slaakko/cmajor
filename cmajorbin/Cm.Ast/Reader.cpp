@@ -16,6 +16,7 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 #include <Cm.Ast/Statement.hpp>
 #include <Cm.Ast/Concept.hpp>
 #include <Cm.Ast/Template.hpp>
+#include <Cm.Ast/Class.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -93,6 +94,19 @@ AxiomStatementNode* Reader::ReadAxiomStatementNode()
         throw std::runtime_error("axiom statement node expected");
     }
     return static_cast<AxiomStatementNode*>(node);
+}
+
+InitializerNode* Reader::ReadInitializerNode()
+{
+    Node* node = ReadNode();
+    if (node->IsInitializerNode())
+    {
+        return static_cast<InitializerNode*>(node);
+    }
+    else
+    {
+        throw std::runtime_error("initializer node expected");
+    }
 }
 
 ConstraintNode* Reader::ReadConstraintNode()

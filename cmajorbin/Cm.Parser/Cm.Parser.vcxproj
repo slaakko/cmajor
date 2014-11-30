@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="BasicType.parser" />
+    <None Include="Class.parser" />
     <None Include="Cm.Parser.pl" />
     <None Include="Cm.Parser.pp" />
     <None Include="Concept.parser" />
@@ -40,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Class.cpp" />
     <ClCompile Include="Concept.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
@@ -59,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Class.hpp" />
     <ClInclude Include="Concept.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />

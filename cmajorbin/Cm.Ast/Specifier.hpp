@@ -36,6 +36,13 @@ inline Specifiers operator|(Specifiers left, Specifiers right)
     return Specifiers(uint16_t(left) | uint16_t(right));
 }
 
+inline Specifiers operator&(Specifiers left, Specifiers right)
+{
+    return Specifiers(uint16_t(left) & uint16_t(right));
+}
+
+bool HasStaticSpecifier(Specifiers s);
+
 } } // namespace Cm::Ast
 
 #endif // CM_AST_SPECIFIER_INCLUDED

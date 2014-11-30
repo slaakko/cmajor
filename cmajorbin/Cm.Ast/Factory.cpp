@@ -21,6 +21,7 @@
 #include <Cm.Ast/Typedef.hpp>
 #include <Cm.Ast/Statement.hpp>
 #include <Cm.Ast/Concept.hpp>
+#include <Cm.Ast/Class.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -202,6 +203,16 @@ void InitFactory()
     Factory::Instance().Register(NodeType::functionGroupIdNode, new Creator<FunctionGroupIdNode>());
     Factory::Instance().Register(NodeType::templateParameterNode, new Creator<TemplateParameterNode>());
     Factory::Instance().Register(NodeType::functionNode, new Creator<FunctionNode>());
+    Factory::Instance().Register(NodeType::classNode, new Creator<ClassNode>());
+    Factory::Instance().Register(NodeType::memberInitializerNode, new Creator<MemberInitializerNode>());
+    Factory::Instance().Register(NodeType::baseInitializerNode, new Creator<BaseInitializerNode>());
+    Factory::Instance().Register(NodeType::thisInitializerNode, new Creator<ThisInitializerNode>());
+    Factory::Instance().Register(NodeType::staticConstructorNode, new Creator<StaticConstructorNode>());
+    Factory::Instance().Register(NodeType::constructorNode, new Creator<ConstructorNode>());
+    Factory::Instance().Register(NodeType::destructorNode, new Creator<DestructorNode>());
+    Factory::Instance().Register(NodeType::memberFunctionNode, new Creator<MemberFunctionNode>());
+    Factory::Instance().Register(NodeType::conversionFunctionNode, new Creator<ConversionFunctionNode>());
+    Factory::Instance().Register(NodeType::memberVariableNode, new Creator<MemberVariableNode>());
 }
 
 void DoneFactory()

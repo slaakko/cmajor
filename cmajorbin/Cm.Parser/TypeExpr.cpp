@@ -361,24 +361,24 @@ private:
 void TypeExprGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::BasicTypeGrammar::Create(pd);
+        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar1 = Cm::Parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void TypeExprGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRule(new TypeExprRule("TypeExpr", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",
@@ -401,9 +401,9 @@ void TypeExprGrammar::CreateRules()
                         new Cm::Parsing::ActionParser("A0",
                             new Cm::Parsing::StringParser("&&")),
                         new Cm::Parsing::ActionParser("A1",
-                            new Cm::Parsing::StringParser("&"))),
+                            new Cm::Parsing::CharParser('&'))),
                     new Cm::Parsing::ActionParser("A2",
-                        new Cm::Parsing::StringParser("*")))))));
+                        new Cm::Parsing::CharParser('*')))))));
     AddRule(new PrimaryTypeExprRule("PrimaryTypeExpr", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(

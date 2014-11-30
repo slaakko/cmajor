@@ -1,5 +1,5 @@
-#ifndef TypeExpr_hpp_29207
-#define TypeExpr_hpp_29207
+#ifndef TypeExpr_hpp_5728
+#define TypeExpr_hpp_5728
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // TypeExpr_hpp_29207
+#endif // TypeExpr_hpp_5728

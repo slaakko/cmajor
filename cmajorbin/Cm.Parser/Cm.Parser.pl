@@ -4,6 +4,31 @@ namespace Cm.Parser
     {
         BasicType: Cm::Ast::Node*;
     }
+    grammar FunctionGrammar
+    {
+        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): Cm::Ast::FunctionNode*;
+        FunctionGroupId(ParsingContext* ctx): Cm::Ast::FunctionGroupIdNode*;
+        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): Cm::Ast::FunctionGroupIdNode*;
+    }
+    grammar ClassGrammar
+    {
+        Class(ParsingContext* ctx): Cm::Ast::ClassNode*;
+        Inheritance(ParsingContext* ctx, Cm::Ast::ClassNode* cls);
+        BaseClassTypeExpr(ParsingContext* ctx): Cm::Ast::Node*;
+        ClassContent(ParsingContext* ctx, Cm::Ast::ClassNode* cls);
+        ClassMember(ParsingContext* ctx, Cm::Ast::ClassNode* cls): Cm::Ast::Node*;
+        InitializerList(ParsingContext* ctx, Node* owner);
+        Initializer(ParsingContext* ctx): Cm::Ast::InitializerNode*;
+        MemberInitializer(ParsingContext* ctx): Cm::Ast::MemberInitializerNode*;
+        BaseInitializer(ParsingContext* ctx): Cm::Ast::BaseInitializerNode*;
+        ThisInitializer(ParsingContext* ctx): Cm::Ast::ThisInitializerNode*;
+        StaticConstructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::StaticConstructorNode*;
+        Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::ConstructorNode*;
+        Destructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var Span s): Cm::Ast::DestructorNode*;
+        MemberFunction(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Cm::Ast::MemberFunctionNode*;
+        ConversionFunction(ParsingContext* ctx, var bool setConst, var Span s): Cm::Ast::ConversionFunctionNode*;
+        MemberVariable(ParsingContext* ctx): Cm::Ast::MemberVariableNode*;
+    }
     grammar ConstantGrammar
     {
         Constant(ParsingContext* ctx): Cm::Ast::Node*;
@@ -80,20 +105,14 @@ namespace Cm.Parser
         ArgumentList(ParsingContext* ctx, Cm::Ast::Node* node);
         ExpressionList(ParsingContext* ctx, Cm::Ast::Node* node);
     }
-    grammar FunctionGrammar
-    {
-        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): Cm::Ast::FunctionNode*;
-        FunctionGroupId(ParsingContext* ctx): Cm::Ast::FunctionGroupIdNode*;
-        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): Cm::Ast::FunctionGroupIdNode*;
-    }
-    grammar KeywordGrammar
-    {
-        Keyword;
-    }
     grammar IdentifierGrammar
     {
         Identifier: Cm::Ast::IdentifierNode*;
         QualifiedId: Cm::Ast::IdentifierNode*;
+    }
+    grammar KeywordGrammar
+    {
+        Keyword;
     }
     grammar ParameterGrammar
     {

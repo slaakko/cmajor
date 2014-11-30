@@ -22,7 +22,7 @@ namespace Cm.Parser
         using IdentifierGrammar.Identifier;
 
         ParameterList(ParsingContext* ctx, Cm::Ast::Node* owner)
-            ::= '('! (Parameter(ctx){ owner->AddParameter(Parameter); } % ',')? ')'!
+            ::= '(' (Parameter(ctx){ owner->AddParameter(Parameter); } % ',')? ')'!
             ;
 
         Parameter(ParsingContext* ctx): Cm::Ast::ParameterNode*

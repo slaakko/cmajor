@@ -7,7 +7,7 @@
 
  ========================================================================*/
 
-#include <Cm.Parser/Function.hpp>
+#include <Cm.Parser/Class.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Factory.hpp>
@@ -46,22 +46,22 @@ int main(int argc, const char** argv)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;
     _CrtSetDbgFlag(dbgFlags);
-    //_CrtSetBreakAlloc(30424);
+    //_CrtSetBreakAlloc(55187);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     try
     {
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
-        Cm::Parser::FunctionGrammar* grammar = Cm::Parser::FunctionGrammar::Create();
+        Cm::Parser::ClassGrammar* grammar = Cm::Parser::ClassGrammar::Create();
         grammar->SetRecover();
         Cm::Parser::ParsingContext ctx;
-        std::string s("public void Swap<T>(T& left, T& right) where T is MoveConstructible and T is Assignable and T is Destructible { T temp = Rvalue(left); left = Rvalue(right); right = Rvalue(temp); }");
+        std::string s("public class Foo { typedef int* iterator; }");
         std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
         {
-            Cm::Ast::Writer writer("C:\\temp\\concept.mc");
+            Cm::Ast::Writer writer("C:\\temp\\class.mc");
             writer.Write(node.get());
         }
-        Cm::Ast::Reader reader("C:\\temp\\concept.mc");
+        Cm::Ast::Reader reader("C:\\temp\\class.mc");
         std::unique_ptr<Cm::Ast::Node> n(reader.ReadNode());
     }
     catch (const Cm::Parsing::CombinedParsingError& ex)

@@ -1,5 +1,5 @@
-#ifndef Enumeration_hpp_30926
-#define Enumeration_hpp_30926
+#ifndef Enumeration_hpp_5728
+#define Enumeration_hpp_5728
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -25,4 +25,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Enumeration_hpp_30926
+#endif // Enumeration_hpp_5728
