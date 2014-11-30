@@ -861,20 +861,34 @@ CatchNode::CatchNode(const Span& span_, Node* exceptionTypeExpr_, IdentifierNode
 
 Node* CatchNode::Clone() const
 {
-    return new CatchNode(GetSpan(), exceptionTypeExpr->Clone(), static_cast<IdentifierNode*>(exceptionId->Clone()), static_cast<CompoundStatementNode*>(catchBlock->Clone()));
+    IdentifierNode* clonedId = nullptr;
+    if (exceptionId)
+    {
+        clonedId = static_cast<IdentifierNode*>(exceptionId->Clone());
+    }
+    return new CatchNode(GetSpan(), exceptionTypeExpr->Clone(), clonedId, static_cast<CompoundStatementNode*>(catchBlock->Clone()));
 }
 
 void CatchNode::Read(Reader& reader)
 {
     exceptionTypeExpr.reset(reader.ReadNode());
-    exceptionId.reset(reader.ReadIdentifierNode());
+    bool hasId = reader.ReadBool();
+    if (hasId)
+    {
+        exceptionId.reset(reader.ReadIdentifierNode());
+    }
     catchBlock.reset(reader.ReadCompoundStatementNode());
 }
 
 void CatchNode::Write(Writer& writer) 
 {
     writer.Write(exceptionTypeExpr.get());
-    writer.Write(exceptionId.get());
+    bool hasId = exceptionId != nullptr;
+    writer.Write(hasId);
+    if (hasId)
+    {
+        writer.Write(exceptionId.get());
+    }
     writer.Write(catchBlock.get());
 }
 

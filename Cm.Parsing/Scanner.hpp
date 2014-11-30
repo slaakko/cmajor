@@ -16,6 +16,9 @@
 
 namespace Cm { namespace Parsing {
 
+void SetCountSourceLines(bool count);
+int GetParsedSourceLines();
+
 class Span
 {
 public:
@@ -70,6 +73,7 @@ public:
     int Scanner::LineEndIndex();
     std::string RestOfLine();
     void AddException(const ExpectationFailure& exception);
+    void AddInfo(const std::string& info);
     bool Recover() const { return recover; }
     void SetRecover() { recover = true; }
     int ExpectationCounter() const { return expectationCounter; }
@@ -90,6 +94,7 @@ private:
     int expectationCounter;
     bool recover;
     std::unique_ptr<CombinedParsingError> combinedError;
+    bool atBeginningOfLine;
 };
 
 } } // namespace Cm::Parsing

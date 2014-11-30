@@ -1,0 +1,88 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+ [hpp]#include <Cm.Ast/Project.hpp>
+
+namespace Cm.Parser
+{
+    using namespace Cm::Ast;
+
+    grammar ProjectGrammar
+    {
+        using stdlib.identifier;
+        using stdlib.qualified_id;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+
+        Project(std::string config, std::string backend): Cm::Ast::Project*
+            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend); }
+                Declarations(value)
+            ;
+
+        Declarations(Cm::Ast::Project* project)
+            ::= (Declaration(project){ project->AddDeclaration(Declaration); })*
+            ;
+
+        Declaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= SourceFileDeclaration(project){ value = SourceFileDeclaration; }
+            |   AsmSourceFileDeclaration(project){ value = AsmSourceFileDeclaration; }
+            |   CSourceFileDeclaration(project){ value = CSourceFileDeclaration; }
+            |   TextFileDeclaration(project){ value = TextFileDeclaration; }
+            |   ReferenceFileDeclaration(project){ value = ReferenceFileDeclaration; }
+            |   CLibraryDeclaration{ value = CLibraryDeclaration; }
+            |   TargetDeclaration{ value = TargetDeclaration; }
+            |   AssemblyFileDeclaration(project){ value = AssemblyFileDeclaration; }
+            |   ExecutableFileDeclaration(project){ value = ExecutableFileDeclaration; }
+            ;
+
+        SourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("source") FilePath! Properties? ';'!){ value = new SourceFileDeclaration(span, SourceFileType::cm, FilePath, project->BasePath(), Properties); }
+            ;
+
+        AsmSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("asmsource") FilePath! Properties? ';'!){ value = new SourceFileDeclaration(span, SourceFileType::asm_, FilePath, project->BasePath(), Properties); }
+            ;
+
+        CSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("csource") FilePath! Properties? ';'!){ value = new SourceFileDeclaration(span, SourceFileType::c, FilePath, project->BasePath(), Properties); }
+            ;
+
+        TextFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("text") FilePath! Properties? ';'!){ value = new SourceFileDeclaration(span, SourceFileType::text, FilePath, project->BasePath(), Properties); }
+            ;
+
+        ReferenceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("reference") FilePath! Properties? ';'!){ value = new ReferenceFileDeclaration(span, FilePath, project->BasePath(), Properties); }
+            ;
+
+        AssemblyFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("assembly") FilePath! ';'!){ value = new AssemblyFileDeclaration(span, FilePath, project->OutputBasePath()); }
+            ;
+
+        ExecutableFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("executable") FilePath! ';'!){ value = new ExecutableFileDeclaration(span, FilePath, project->OutputBasePath()); }
+            ;
+
+        CLibraryDeclaration: Cm::Ast::ProjectDeclaration*
+            ::= (keyword("clib") FilePath! Properties? ';'!){ value = new CLibraryDeclaration(span, FilePath, Properties); }
+            ;
+
+        TargetDeclaration: Cm::Ast::ProjectDeclaration*
+            ::= keyword("target") '='! (keyword("program"){ value = new TargetDeclaration(span, Target::program); } | keyword("library"){ value = new TargetDeclaration(span, Target::library); })! ';'!
+            ;
+
+        Properties: Cm::Ast::Properties
+            ::= '[' ((identifier:name '=' identifier:val){ value.AddProperty(name, val); } % ',') ']'!
+            ;
+
+        FilePath: std::string
+            ::= token('<' ([^>]+){ value = std::string(matchBegin, matchEnd); } '>'!)
+            ;
+    }
+}

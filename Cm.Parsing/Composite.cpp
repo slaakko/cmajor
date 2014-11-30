@@ -153,6 +153,10 @@ Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack)
             {
                 scanner.AddException(ExpectationFailure(Child()->Info(), scanner.FileName(), expectationSpan, scanner.Start(), scanner.End()));
             }
+            else
+            {
+                scanner.AddInfo(Child()->Info());
+            }
             return match;
         }
         else

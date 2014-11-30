@@ -38,6 +38,7 @@ enum class NodeType: uint8_t
     constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
     functionGroupIdNode, templateParameterNode, functionNode, 
     classNode, memberInitializerNode, baseInitializerNode, thisInitializerNode, staticConstructorNode, constructorNode, destructorNode, memberFunctionNode, conversionFunctionNode, memberVariableNode,
+    aliasNode, namespaceImportNode,
     maxNode
 };
 

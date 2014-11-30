@@ -115,19 +115,19 @@ namespace Cm.Parser
             ::= ((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&'))){ pass = id->Str() == cls->Id(); if (pass) value = new ConstructorNode(span, Specifiers); }
                 ParameterList(ctx, value)
                 InitializerList(ctx, value)? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
-                CompoundStatement(ctx){ value->SetBody(CompoundStatement); }
+                (CompoundStatement(ctx){ value->SetBody(CompoundStatement); } | ';')
             ;
 
         Destructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var Span s): Cm::Ast::DestructorNode*
             ::= (Specifiers '~' Identifier{ id.reset(Identifier); pass = id->Str() == cls->Id(); }  '('! ')'!){ s = span; } 
-                CompoundStatement(ctx){ value = new DestructorNode(s, Specifiers, CompoundStatement); }
+                (CompoundStatement(ctx) | ';'){ value = new DestructorNode(s, Specifiers, CompoundStatement); }
             ;
 
         MemberFunction(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Cm::Ast::MemberFunctionNode*
             ::= ((Specifiers TypeExpr(ctx) FunctionGroupId(ctx)){ memFun.reset(new MemberFunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } ParameterList(ctx, memFun.get()) 
                 (keyword("const"){ memFun->SetConst(); })?
                 (WhereConstraint(ctx){ memFun->SetConstraint(WhereConstraint); })?){ memFun->GetSpan().SetEnd(span.End()); }
-                CompoundStatement(ctx){ memFun->SetBody(CompoundStatement); value = memFun.release(); }
+                (CompoundStatement(ctx) | ';'){ memFun->SetBody(CompoundStatement); value = memFun.release(); }
             ;
 
         ConversionFunction(ParsingContext* ctx, var bool setConst, var Span s): Cm::Ast::ConversionFunctionNode*

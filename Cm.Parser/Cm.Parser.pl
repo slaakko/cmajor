@@ -29,6 +29,47 @@ namespace Cm.Parser
         ConversionFunction(ParsingContext* ctx, var bool setConst, var Span s): Cm::Ast::ConversionFunctionNode*;
         MemberVariable(ParsingContext* ctx): Cm::Ast::MemberVariableNode*;
     }
+    grammar LiteralGrammar
+    {
+        Literal: Cm::Ast::Node*;
+        BooleanLiteral: Cm::Ast::Node*;
+        IntegerLiteral(var int start): Cm::Ast::Node*;
+        FloatingLiteral(var int start): Cm::Ast::Node*;
+        CharLiteral: Cm::Ast::Node*;
+        StringLiteral(var std::string r): Cm::Ast::Node*;
+        NullLiteral: Cm::Ast::Node*;
+    }
+    grammar EnumerationGrammar
+    {
+        EnumType(ParsingContext* ctx): Cm::Ast::EnumTypeNode*;
+        EnumConstants(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType);
+        EnumConstant(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType, var Span s): Cm::Ast::Node*;
+    }
+    grammar DelegateGrammar
+    {
+        Delegate(ParsingContext* ctx): Cm::Ast::Node*;
+        ClassDelegate(ParsingContext* ctx): Cm::Ast::Node*;
+    }
+    grammar CompileUnitGrammar
+    {
+        CompileUnit(ParsingContext* ctx): Cm::Ast::CompileUnit*;
+        NamespaceContent(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit);
+        UsingDirectives(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit);
+        UsingDirective(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit);
+        UsingAliasDirective: Cm::Ast::AliasNode*;
+        UsingNamespaceDirective: Cm::Ast::NamespaceImportNode*;
+        Definitions(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit);
+        Definition(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit): Cm::Ast::Node*;
+        NamespaceDefinition(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit): Cm::Ast::Node*;
+        FunctionDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+        ConstantDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+        EnumerationDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+        TypedefDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+        ClassDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+        DelegateDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+        ClassDelegateDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+        ConceptDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+    }
     grammar ConstantGrammar
     {
         Constant(ParsingContext* ctx): Cm::Ast::Node*;
@@ -58,27 +99,6 @@ namespace Cm.Parser
         IsConstraint(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): Cm::Ast::ConstraintNode*;
         ConceptOrTypeName(ParsingContext* ctx): Cm::Ast::Node*;
         MultiParamConstraint(ParsingContext* ctx, var std::unique_ptr<MultiParamConstraintNode> constraint): Cm::Ast::ConstraintNode*;
-    }
-    grammar LiteralGrammar
-    {
-        Literal: Cm::Ast::Node*;
-        BooleanLiteral: Cm::Ast::Node*;
-        IntegerLiteral(var int start): Cm::Ast::Node*;
-        FloatingLiteral(var int start): Cm::Ast::Node*;
-        CharLiteral: Cm::Ast::Node*;
-        StringLiteral(var std::string r): Cm::Ast::Node*;
-        NullLiteral: Cm::Ast::Node*;
-    }
-    grammar EnumerationGrammar
-    {
-        EnumType(ParsingContext* ctx): Cm::Ast::EnumTypeNode*;
-        EnumConstants(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType);
-        EnumConstant(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType, var Span s): Cm::Ast::Node*;
-    }
-    grammar DelegateGrammar
-    {
-        Delegate(ParsingContext* ctx): Cm::Ast::Node*;
-        ClassDelegate(ParsingContext* ctx): Cm::Ast::Node*;
     }
     grammar ExpressionGrammar
     {
@@ -114,10 +134,37 @@ namespace Cm.Parser
     {
         Keyword;
     }
+    grammar SolutionGrammar
+    {
+        Solution: Cm::Ast::Solution*;
+        Declarations(Cm::Ast::Solution* solution);
+        Declaration(Cm::Ast::Solution* solution): Cm::Ast::SolutionDeclaration*;
+        ProjectFileDeclaration(Cm::Ast::Solution* solution): Cm::Ast::SolutionDeclaration*;
+        ActiveProjectDeclaration: Cm::Ast::SolutionDeclaration*;
+        ProjectDependencyDeclaration: Cm::Ast::ProjectDependencyDeclaration*;
+        FilePath: std::string;
+    }
     grammar ParameterGrammar
     {
         ParameterList(ParsingContext* ctx, Cm::Ast::Node* owner);
         Parameter(ParsingContext* ctx): Cm::Ast::ParameterNode*;
+    }
+    grammar ProjectGrammar
+    {
+        Project(std::string config, std::string backend): Cm::Ast::Project*;
+        Declarations(Cm::Ast::Project* project);
+        Declaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        SourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        AsmSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        CSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        TextFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        ReferenceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        AssemblyFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        ExecutableFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        CLibraryDeclaration: Cm::Ast::ProjectDeclaration*;
+        TargetDeclaration: Cm::Ast::ProjectDeclaration*;
+        Properties: Cm::Ast::Properties;
+        FilePath: std::string;
     }
     grammar SpecifierGrammar
     {
@@ -183,7 +230,7 @@ namespace Cm.Parser
     {
         TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*;
         PrefixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
-        PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
+        PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node, var Span s);
         PrimaryTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node);
     }
 }

@@ -380,7 +380,12 @@ void AxiomNode::AddStatement(AxiomStatementNode* statement)
 
 Node* AxiomNode::Clone() const
 {
-    AxiomNode* clone = new AxiomNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone()));
+    IdentifierNode* clonedId = nullptr;
+    if (id)
+    {
+        clonedId = static_cast<IdentifierNode*>(id->Clone());
+    }
+    AxiomNode* clone = new AxiomNode(GetSpan(), clonedId);
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
         clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
@@ -394,14 +399,23 @@ Node* AxiomNode::Clone() const
 
 void AxiomNode::Read(Reader& reader)
 {
-    id.reset(reader.ReadIdentifierNode());
+    bool hasId = reader.ReadBool();
+    if (hasId)
+    {
+        id.reset(reader.ReadIdentifierNode());
+    }
     parameters.Read(reader);
     axiomStatements.Read(reader);
 }
 
 void AxiomNode::Write(Writer& writer)
 {
-    writer.Write(id.get());
+    bool hasId = id != nullptr;
+    writer.Write(hasId);
+    if (hasId)
+    {
+        writer.Write(id.get());
+    }   
     parameters.Write(writer);
     axiomStatements.Write(writer);
 }

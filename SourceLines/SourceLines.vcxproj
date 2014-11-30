@@ -18,104 +18,33 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="BasicType.parser" />
-    <None Include="Class.parser" />
-    <None Include="Cm.Parser.pl" />
-    <None Include="Cm.Parser.pp" />
-    <None Include="CompileUnit.parser" />
-    <None Include="Concept.parser" />
-    <None Include="Constant.parser" />
-    <None Include="Delegate.parser" />
-    <None Include="Enumeration.parser" />
-    <None Include="Expression.parser" />
-    <None Include="Function.parser" />
-    <None Include="Identifier.parser" />
-    <None Include="Keyword.parser" />
-    <None Include="Literal.parser" />
-    <None Include="Parameter.parser" />
-    <None Include="Project.parser" />
-    <None Include="Solution.parser" />
-    <None Include="Specifier.parser" />
-    <None Include="Statement.parser" />
-    <None Include="Template.parser" />
-    <None Include="Typedef.parser" />
-    <None Include="TypeExpr.parser" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="BasicType.cpp" />
-    <ClCompile Include="Class.cpp" />
-    <ClCompile Include="CompileUnit.cpp" />
-    <ClCompile Include="Concept.cpp" />
-    <ClCompile Include="Constant.cpp" />
-    <ClCompile Include="Delegate.cpp" />
-    <ClCompile Include="Enumeration.cpp" />
-    <ClCompile Include="Expression.cpp" />
-    <ClCompile Include="Function.cpp" />
-    <ClCompile Include="Identifier.cpp" />
-    <ClCompile Include="Keyword.cpp" />
-    <ClCompile Include="Literal.cpp" />
-    <ClCompile Include="Parameter.cpp" />
-    <ClCompile Include="ParsingContext.cpp" />
-    <ClCompile Include="Project.cpp" />
-    <ClCompile Include="Solution.cpp" />
-    <ClCompile Include="Specifier.cpp" />
-    <ClCompile Include="Statement.cpp" />
-    <ClCompile Include="Template.cpp" />
-    <ClCompile Include="Typedef.cpp" />
-    <ClCompile Include="TypeExpr.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="BasicType.hpp" />
-    <ClInclude Include="Class.hpp" />
-    <ClInclude Include="CompileUnit.hpp" />
-    <ClInclude Include="Concept.hpp" />
-    <ClInclude Include="Constant.hpp" />
-    <ClInclude Include="Delegate.hpp" />
-    <ClInclude Include="Enumeration.hpp" />
-    <ClInclude Include="Expression.hpp" />
-    <ClInclude Include="Function.hpp" />
-    <ClInclude Include="Identifier.hpp" />
-    <ClInclude Include="Keyword.hpp" />
-    <ClInclude Include="Literal.hpp" />
-    <ClInclude Include="Operator.hpp" />
-    <ClInclude Include="Parameter.hpp" />
-    <ClInclude Include="ParsingContext.hpp" />
-    <ClInclude Include="Project.hpp" />
-    <ClInclude Include="Solution.hpp" />
-    <ClInclude Include="Specifier.hpp" />
-    <ClInclude Include="Statement.hpp" />
-    <ClInclude Include="Template.hpp" />
-    <ClInclude Include="Typedef.hpp" />
-    <ClInclude Include="TypeExpr.hpp" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3720AEB0-BEB8-4C7E-AF9B-50A0DB65348B}</ProjectGuid>
+    <ProjectGuid>{0D15B451-63AC-4078-AEE6-6837FC95360B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>CmParser</RootNamespace>
+    <RootNamespace>SourceLines</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -137,20 +66,36 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>slines</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>slines</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>slines</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>slines</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Programming\boost32;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Parser.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -159,13 +104,14 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Parser.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -176,15 +122,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Programming\boost32;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Parser.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -195,17 +142,21 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Parser.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

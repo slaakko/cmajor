@@ -372,7 +372,7 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("Cm::Ast::ConceptNode*", "concept"));
-        Synchronize(";");
+        Synchronize(";}");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -506,6 +506,8 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AxiomRule>(this, &AxiomRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AxiomRule>(this, &AxiomRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AxiomRule>(this, &AxiomRule::A2Action));
         Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AxiomRule>(this, &AxiomRule::PostIdentifier));
         Cm::Parsing::NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
@@ -518,6 +520,10 @@ public:
         context.concept->AddAxiom(context.axiom.release());
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.axiom->GetSpan().SetEnd(span.End());
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.axiom.reset(new AxiomNode(span, context.fromIdentifier));
     }
@@ -623,7 +629,7 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("Cm::Ast::AxiomStatementNode*");
-        Synchronize(";");
+        Synchronize(";}");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -1643,33 +1649,20 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryConstraintExprRule>(this, &PrimaryConstraintExprRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryConstraintExprRule>(this, &PrimaryConstraintExprRule::A1Action));
-        Cm::Parsing::NonterminalParser* atomicConstraintExprNonterminalParser = GetNonterminal("AtomicConstraintExpr");
-        atomicConstraintExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrimaryConstraintExprRule>(this, &PrimaryConstraintExprRule::PreAtomicConstraintExpr));
-        atomicConstraintExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryConstraintExprRule>(this, &PrimaryConstraintExprRule::PostAtomicConstraintExpr));
         Cm::Parsing::NonterminalParser* constraintExprNonterminalParser = GetNonterminal("ConstraintExpr");
         constraintExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrimaryConstraintExprRule>(this, &PrimaryConstraintExprRule::PreConstraintExpr));
         constraintExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryConstraintExprRule>(this, &PrimaryConstraintExprRule::PostConstraintExpr));
+        Cm::Parsing::NonterminalParser* atomicConstraintExprNonterminalParser = GetNonterminal("AtomicConstraintExpr");
+        atomicConstraintExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrimaryConstraintExprRule>(this, &PrimaryConstraintExprRule::PreAtomicConstraintExpr));
+        atomicConstraintExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryConstraintExprRule>(this, &PrimaryConstraintExprRule::PostAtomicConstraintExpr));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = context.fromAtomicConstraintExpr;
+        context.value = context.fromConstraintExpr;
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = context.fromConstraintExpr;
-    }
-    void PreAtomicConstraintExpr(Cm::Parsing::ObjectStack& stack)
-    {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-    }
-    void PostAtomicConstraintExpr(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        if (matched)
-        {
-            std::unique_ptr<Cm::Parsing::Object> fromAtomicConstraintExpr_value = std::move(stack.top());
-            context.fromAtomicConstraintExpr = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ConstraintNode*>*>(fromAtomicConstraintExpr_value.get());
-            stack.pop();
-        }
+        context.value = context.fromAtomicConstraintExpr;
     }
     void PreConstraintExpr(Cm::Parsing::ObjectStack& stack)
     {
@@ -1684,14 +1677,27 @@ public:
             stack.pop();
         }
     }
+    void PreAtomicConstraintExpr(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostAtomicConstraintExpr(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromAtomicConstraintExpr_value = std::move(stack.top());
+            context.fromAtomicConstraintExpr = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ConstraintNode*>*>(fromAtomicConstraintExpr_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromAtomicConstraintExpr(), fromConstraintExpr() {}
+        Context(): ctx(), value(), fromConstraintExpr(), fromAtomicConstraintExpr() {}
         ParsingContext* ctx;
         Cm::Ast::ConstraintNode* value;
-        Cm::Ast::ConstraintNode* fromAtomicConstraintExpr;
         Cm::Ast::ConstraintNode* fromConstraintExpr;
+        Cm::Ast::ConstraintNode* fromAtomicConstraintExpr;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -2027,28 +2033,28 @@ private:
 void ConceptGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar0 = Cm::Parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::FunctionGrammar::Create(pd);
+        grammar1 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar2 = Cm::Parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::ExpressionGrammar::Create(pd);
+        grammar3 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
     Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
@@ -2057,10 +2063,10 @@ void ConceptGrammar::GetReferencedGrammars()
         grammar4 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::ParameterGrammar::Create(pd);
+        grammar5 = Cm::Parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
     Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parsing.stdlib");
@@ -2073,13 +2079,13 @@ void ConceptGrammar::GetReferencedGrammars()
 
 void ConceptGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new ConceptRule("Concept", GetScope(),
         new Cm::Parsing::SequenceParser(
@@ -2162,9 +2168,12 @@ void ConceptGrammar::CreateRules()
                         new Cm::Parsing::ActionParser("A1",
                             new Cm::Parsing::SequenceParser(
                                 new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::KeywordParser("axiom"),
-                                    new Cm::Parsing::OptionalParser(
-                                        new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                                    new Cm::Parsing::SequenceParser(
+                                        new Cm::Parsing::KeywordParser("axiom"),
+                                        new Cm::Parsing::OptionalParser(
+                                            new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                                    new Cm::Parsing::ActionParser("A2",
+                                        new Cm::Parsing::EmptyParser())),
                                 new Cm::Parsing::OptionalParser(
                                     new Cm::Parsing::NonterminalParser("ParameterList", "ParameterList", 2)))),
                         new Cm::Parsing::ExpectationParser(
@@ -2213,8 +2222,7 @@ void ConceptGrammar::CreateRules()
                             new Cm::Parsing::KeywordParser("explicit")),
                         new Cm::Parsing::ActionParser("A1",
                             new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::NonterminalParser("ParameterList", "ParameterList", 2))),
+                    new Cm::Parsing::NonterminalParser("ParameterList", "ParameterList", 2)),
                 new Cm::Parsing::ExpectationParser(
                     new Cm::Parsing::CharParser(';'))))));
     AddRule(new DestructorConstraintRule("DestructorConstraint", GetScope(),
@@ -2300,14 +2308,14 @@ void ConceptGrammar::CreateRules()
     AddRule(new PrimaryConstraintExprRule("PrimaryConstraintExpr", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("AtomicConstraintExpr", "AtomicConstraintExpr", 1)),
-            new Cm::Parsing::ActionParser("A1",
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::CharParser('('),
                         new Cm::Parsing::NonterminalParser("ConstraintExpr", "ConstraintExpr", 1)),
                     new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser(')')))))));
+                        new Cm::Parsing::CharParser(')')))),
+            new Cm::Parsing::ActionParser("A1",
+                new Cm::Parsing::NonterminalParser("AtomicConstraintExpr", "AtomicConstraintExpr", 1)))));
     AddRule(new AtomicConstraintExprRule("AtomicConstraintExpr", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::ActionParser("A0",

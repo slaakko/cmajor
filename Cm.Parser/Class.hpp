@@ -1,5 +1,5 @@
-#ifndef Class_hpp_8716
-#define Class_hpp_8716
+#ifndef Class_hpp_28851
+#define Class_hpp_28851
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -38,4 +38,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Class_hpp_8716
+#endif // Class_hpp_28851

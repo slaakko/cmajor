@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
     <ClInclude Include="Class.hpp" />
+    <ClInclude Include="CompileUnit.hpp" />
     <ClInclude Include="Concept.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
@@ -31,9 +32,12 @@
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="InitDone.hpp" />
     <ClInclude Include="Literal.hpp" />
+    <ClInclude Include="Namespace.hpp" />
     <ClInclude Include="Node.hpp" />
     <ClInclude Include="Parameter.hpp" />
+    <ClInclude Include="Project.hpp" />
     <ClInclude Include="Reader.hpp" />
+    <ClInclude Include="Solution.hpp" />
     <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Statement.hpp" />
     <ClInclude Include="Template.hpp" />
@@ -44,6 +48,7 @@
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
     <ClCompile Include="Class.cpp" />
+    <ClCompile Include="CompileUnit.cpp" />
     <ClCompile Include="Concept.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
@@ -54,9 +59,12 @@
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="InitDone.cpp" />
+    <ClCompile Include="Namespace.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Parameter.cpp" />
+    <ClCompile Include="Project.cpp" />
     <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="Solution.cpp" />
     <ClCompile Include="Specifier.cpp" />
     <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Template.cpp" />

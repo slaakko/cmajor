@@ -8,9 +8,11 @@
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Parsing/StdLib.hpp>
 #include <Cm.Parsing/XmlLog.hpp>
+#include <Cm.Ast/Expression.hpp>
 #include <Cm.Ast/Typedef.hpp>
 #include <Cm.Parser/BasicType.hpp>
 #include <Cm.Parser/Identifier.hpp>
+#include <Cm.Parser/Template.hpp>
 
 namespace Cm { namespace Parser {
 
@@ -208,6 +210,7 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("Cm::Ast::DerivedTypeExprNode*", "node"));
+        AddLocalVariable(AttrOrVariable("Span", "s"));
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -233,18 +236,33 @@ public:
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixTypeExprRule>(this, &PostfixTypeExprRule::A1Action));
         Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
         a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixTypeExprRule>(this, &PostfixTypeExprRule::A2Action));
+        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixTypeExprRule>(this, &PostfixTypeExprRule::A3Action));
+        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixTypeExprRule>(this, &PostfixTypeExprRule::A4Action));
         Cm::Parsing::NonterminalParser* primaryTypeExprNonterminalParser = GetNonterminal("PrimaryTypeExpr");
         primaryTypeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PostfixTypeExprRule>(this, &PostfixTypeExprRule::PrePrimaryTypeExpr));
+        Cm::Parsing::NonterminalParser* dotMemberIdNonterminalParser = GetNonterminal("dotMemberId");
+        dotMemberIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PostfixTypeExprRule>(this, &PostfixTypeExprRule::PostdotMemberId));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.node->AddRvalueRef();
+        context.s = span;
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.node->AddReference();
+        context.s.SetEnd(span.End());
+        context.node->SetBaseTypeExpr(new DotNode(context.s, context.node->ReleaseBaseTypeExprNode(), context.fromdotMemberId));
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.node->AddRvalueRef();
+    }
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.node->AddReference();
+    }
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.node->AddPointer();
     }
@@ -253,12 +271,23 @@ public:
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::DerivedTypeExprNode*>(context.node)));
     }
+    void PostdotMemberId(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromdotMemberId_value = std::move(stack.top());
+            context.fromdotMemberId = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>*>(fromdotMemberId_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): ctx(), node() {}
+        Context(): ctx(), node(), s(), fromdotMemberId() {}
         ParsingContext* ctx;
         Cm::Ast::DerivedTypeExprNode* node;
+        Span s;
+        Cm::Ast::IdentifierNode* fromdotMemberId;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -299,8 +328,13 @@ public:
         a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::A2Action));
         Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
         a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::A3Action));
+        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::A4Action));
         Cm::Parsing::NonterminalParser* basicTypeNonterminalParser = GetNonterminal("BasicType");
         basicTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostBasicType));
+        Cm::Parsing::NonterminalParser* templateIdNonterminalParser = GetNonterminal("TemplateId");
+        templateIdNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PreTemplateId));
+        templateIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostTemplateId));
         Cm::Parsing::NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
         qualifiedIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostQualifiedId));
         Cm::Parsing::NonterminalParser* prefixTypeExprNonterminalParser = GetNonterminal("PrefixTypeExpr");
@@ -312,13 +346,17 @@ public:
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.node->SetBaseTypeExpr(context.fromQualifiedId);
+        context.node->SetBaseTypeExpr(context.fromTemplateId);
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.node->AddLeftParen();
+        context.node->SetBaseTypeExpr(context.fromQualifiedId);
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.node->AddLeftParen();
+    }
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.node->AddRightParen();
     }
@@ -328,6 +366,19 @@ public:
         {
             std::unique_ptr<Cm::Parsing::Object> fromBasicType_value = std::move(stack.top());
             context.fromBasicType = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromBasicType_value.get());
+            stack.pop();
+        }
+    }
+    void PreTemplateId(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostTemplateId(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromTemplateId_value = std::move(stack.top());
+            context.fromTemplateId = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromTemplateId_value.get());
             stack.pop();
         }
     }
@@ -348,10 +399,11 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), node(), fromBasicType(), fromQualifiedId() {}
+        Context(): ctx(), node(), fromBasicType(), fromTemplateId(), fromQualifiedId() {}
         ParsingContext* ctx;
         Cm::Ast::DerivedTypeExprNode* node;
         Cm::Ast::Node* fromBasicType;
+        Cm::Ast::Node* fromTemplateId;
         Cm::Ast::IdentifierNode* fromQualifiedId;
     };
     std::stack<Context> contextStack;
@@ -361,24 +413,32 @@ private:
 void TypeExprGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar0 = Cm::Parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::BasicTypeGrammar::Create(pd);
+        grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    if (!grammar2)
+    {
+        grammar2 = Cm::Parser::TemplateGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar2);
 }
 
 void TypeExprGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRule(new TypeExprRule("TypeExpr", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",
@@ -394,32 +454,41 @@ void TypeExprGrammar::CreateRules()
             new Cm::Parsing::NonterminalParser("PostfixTypeExpr", "PostfixTypeExpr", 2))));
     AddRule(new PostfixTypeExprRule("PostfixTypeExpr", GetScope(),
         new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::NonterminalParser("PrimaryTypeExpr", "PrimaryTypeExpr", 2),
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::NonterminalParser("PrimaryTypeExpr", "PrimaryTypeExpr", 2)),
             new Cm::Parsing::KleeneStarParser(
                 new Cm::Parsing::AlternativeParser(
                     new Cm::Parsing::AlternativeParser(
-                        new Cm::Parsing::ActionParser("A0",
-                            new Cm::Parsing::StringParser("&&")),
-                        new Cm::Parsing::ActionParser("A1",
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::CharParser('.'),
+                                new Cm::Parsing::ActionParser("A1",
+                                    new Cm::Parsing::ExpectationParser(
+                                        new Cm::Parsing::NonterminalParser("dotMemberId", "Identifier", 0)))),
+                            new Cm::Parsing::ActionParser("A2",
+                                new Cm::Parsing::StringParser("&&"))),
+                        new Cm::Parsing::ActionParser("A3",
                             new Cm::Parsing::CharParser('&'))),
-                    new Cm::Parsing::ActionParser("A2",
+                    new Cm::Parsing::ActionParser("A4",
                         new Cm::Parsing::CharParser('*')))))));
     AddRule(new PrimaryTypeExprRule("PrimaryTypeExpr", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::NonterminalParser("BasicType", "BasicType", 0)),
-                new Cm::Parsing::ActionParser("A1",
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::ActionParser("A0",
+                        new Cm::Parsing::NonterminalParser("BasicType", "BasicType", 0)),
+                    new Cm::Parsing::ActionParser("A1",
+                        new Cm::Parsing::NonterminalParser("TemplateId", "TemplateId", 1))),
+                new Cm::Parsing::ActionParser("A2",
                     new Cm::Parsing::NonterminalParser("QualifiedId", "QualifiedId", 0))),
             new Cm::Parsing::SequenceParser(
                 new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::ActionParser("A2",
+                    new Cm::Parsing::ActionParser("A3",
                         new Cm::Parsing::CharParser('(')),
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::NonterminalParser("PrefixTypeExpr", "PrefixTypeExpr", 2))),
-                new Cm::Parsing::ActionParser("A3",
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser(')')))))));
+                new Cm::Parsing::ActionParser("A4",
+                    new Cm::Parsing::CharParser(')'))))));
 }
 
 } } // namespace Cm.Parser
