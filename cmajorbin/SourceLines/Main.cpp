@@ -78,7 +78,7 @@ int main(int argc, const char** argv)
 {
     if (argc < 2)
     {
-        std::cout << "usage: slines [options] {file.cms | file.cmp}" << std::endl;
+        std::cout << "usage: slines [options] {file.cms | file.cmp | file.cm}" << std::endl;
         std::cout << "options:" << std::endl;
         std::cout << "-debug: debug parsing" << std::endl;
         return 0;
@@ -107,9 +107,13 @@ int main(int argc, const char** argv)
                 {
                     ParseProject(projectGrammar, compileUnitGrammar, arg);
                 }
+                else if (p.extension() == ".cm")
+                {
+                    ParseCompileUnit(compileUnitGrammar, arg);
+                }
                 else
                 {
-                    throw std::runtime_error("argument '" + arg + " is not Cmajor project or solution file");
+                    throw std::runtime_error("argument '" + arg + " is not Cmajor solution, project or source file");
                 }
             }
         }
