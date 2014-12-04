@@ -28,6 +28,8 @@ public:
     void Add(AxiomStatementNode* statement) { axiomStatementNodes.push_back(std::unique_ptr<AxiomStatementNode>(statement)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
+    void Print(CodeFormatter& formatter);
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<AxiomStatementNode>> axiomStatementNodes;
 };
@@ -52,6 +54,8 @@ public:
     void Add(ConstraintNode* constraint) { constraintNodes.push_back(std::unique_ptr<ConstraintNode>(constraint)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
+    void Print(CodeFormatter& formatter);
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<ConstraintNode>> constraintNodes;
 };
@@ -77,6 +81,8 @@ public:
     DisjunctiveConstraintNode(const Span& span_, ConstraintNode* left_, ConstraintNode* right_);
     NodeType GetNodeType() const override { return NodeType::disjunctiveConstraintNode; }
     Node* Clone() const override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 };
 
 class ConjunctiveConstraintNode : public BinaryConstraintNode
@@ -86,6 +92,8 @@ public:
     ConjunctiveConstraintNode(const Span& span_, ConstraintNode* left_, ConstraintNode* right_);
     NodeType GetNodeType() const override { return NodeType::conjunctiveConstraintNode; }
     Node* Clone() const override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 };
 
 class WhereConstraintNode : public ConstraintNode
@@ -97,6 +105,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<ConstraintNode> constraint;
 };
@@ -110,6 +120,10 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    Node* TypeExpr() const { return typeExpr.get(); }
+    Node* ConceptOrTypeName() const { return conceptOrTypeName.get();  }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> typeExpr;
     std::unique_ptr<Node> conceptOrTypeName;
@@ -125,6 +139,10 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    IdentifierNode* ConceptId() const { return conceptId.get(); }
+    const NodeList& TypeExprNodes() const { return typeExprNodes; }
 private:
     std::unique_ptr<IdentifierNode> conceptId;
     NodeList typeExprNodes;
@@ -139,6 +157,9 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    IdentifierNode* TypeId() const { return typeId.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<IdentifierNode> typeId;
 };
@@ -158,6 +179,9 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    const ParameterNodeList& Parameters() const { return parameters; }
 private:
     ParameterNodeList parameters;
 };
@@ -168,6 +192,8 @@ public:
     DestructorConstraintNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::destructorConstraintNode; }
     Node* Clone() const override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 };
 
 class MemberFunctionConstraintNode : public SignatureConstraintNode
@@ -180,6 +206,12 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
+    IdentifierNode* TypeParamId() const { return typeParamId.get(); }
+    FunctionGroupIdNode* GroupId() const { return functionGroupId.get(); }
+    const ParameterNodeList& Parameters() const { return parameters; }
 private:
     std::unique_ptr<Node> returnTypeExpr;
     std::unique_ptr<IdentifierNode> typeParamId;
@@ -197,6 +229,11 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
+    FunctionGroupIdNode* GroupId() const { return functionGroupId.get(); }
+    const ParameterNodeList& Parameters() const { return parameters; }
 private:
     std::unique_ptr<Node> returnTypeExpr;
     std::unique_ptr<FunctionGroupIdNode> functionGroupId;
@@ -212,6 +249,9 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    Node* Expression() const { return expression.get(); }
 private:
     std::unique_ptr<Node> expression;
 };
@@ -227,6 +267,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter);
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<IdentifierNode> id;
     ParameterNodeList parameters;
@@ -243,6 +285,10 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    IdentifierNode* Id() const { return id.get(); }
+    const NodeList& TypeParameters() const { return typeParameters; }
 private:
     std::unique_ptr<IdentifierNode> id;
     NodeList typeParameters;
@@ -252,7 +298,7 @@ class ConceptNode : public Node
 {
 public:
     ConceptNode(const Span& span_);
-    ConceptNode(const Span& span_, IdentifierNode* id_);;
+    ConceptNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::conceptNode; }
     const std::string& FirstTypeParameter() const;
     void AddTypeParameter(Node* typeParameter);
@@ -262,12 +308,23 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    std::string Name() const override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    IdentifierNode* Id() const { return id.get(); }
+    const NodeList& TypeParameters() const { typeParameters; }
+    ConceptIdNode* Refinement() const { return refinement.get(); }
 private:
+    Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;
     NodeList typeParameters;
     std::unique_ptr<ConceptIdNode> refinement;
     ConstraintNodeList constraints;
     NodeList axioms;
+    Node* parent;
 };
 
 } } // namespace Cm::Ast

@@ -25,11 +25,11 @@ namespace Cm.Parser
 
         Literal: Cm::Ast::Node*
             ::= BooleanLiteral{ value = BooleanLiteral; }
-            |    FloatingLiteral{ value = FloatingLiteral; }
-            |    IntegerLiteral{ value = IntegerLiteral; }
-            |    CharLiteral{ value = CharLiteral; }
-            |    StringLiteral{ value = StringLiteral; }
-            |    NullLiteral{ value = NullLiteral; }
+            |   FloatingLiteral{ value = FloatingLiteral; }
+            |   IntegerLiteral{ value = IntegerLiteral; }
+            |   CharLiteral{ value = CharLiteral; }
+            |   StringLiteral{ value = StringLiteral; }
+            |   NullLiteral{ value = NullLiteral; }
             ;
 
         BooleanLiteral: Cm::Ast::Node*

@@ -9,6 +9,7 @@
 
 [hpp]#include <Cm.Parser/ParsingContext.hpp>
 [hpp]#include <Cm.Ast/Class.hpp>
+[cpp]#include <Cm.Ast/Identifier.hpp>
 [cpp]#include <Cm.Parser/Specifier.hpp>
 [cpp]#include <Cm.Parser/Identifier.hpp>
 [cpp]#include <Cm.Parser/Template.hpp>
@@ -106,20 +107,20 @@ namespace Cm.Parser
 
         StaticConstructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::StaticConstructorNode*
             ::= ((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&')) 
-                '(' ')'){ pass = id->Str() == cls->Id() && HasStaticSpecifier(Specifiers); if (pass) value = new StaticConstructorNode(span, Specifiers); }
+                '(' ')'){ pass = id->Str() == cls->Id()->Str() && HasStaticSpecifier(Specifiers); if (pass) value = new StaticConstructorNode(span, Specifiers); }
                 InitializerList(ctx, value)? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
                 CompoundStatement(ctx){ value->SetBody(CompoundStatement); }
             ;
 
         Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::ConstructorNode*
-            ::= ((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&'))){ pass = id->Str() == cls->Id(); if (pass) value = new ConstructorNode(span, Specifiers); }
+            ::= ((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&'))){ pass = id->Str() == cls->Id()->Str(); if (pass) value = new ConstructorNode(span, Specifiers); }
                 ParameterList(ctx, value)
                 InitializerList(ctx, value)? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
                 (CompoundStatement(ctx){ value->SetBody(CompoundStatement); } | ';')
             ;
 
         Destructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var Span s): Cm::Ast::DestructorNode*
-            ::= (Specifiers '~' Identifier{ id.reset(Identifier); pass = id->Str() == cls->Id(); }  '('! ')'!){ s = span; } 
+            ::= (Specifiers '~' Identifier{ id.reset(Identifier); pass = id->Str() == cls->Id()->Str(); }  '('! ')'!){ s = span; } 
                 (CompoundStatement(ctx) | ';'){ value = new DestructorNode(s, Specifiers, CompoundStatement); }
             ;
 

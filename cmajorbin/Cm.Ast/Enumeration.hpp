@@ -27,10 +27,18 @@ public:
     Node* GetLastConstant();
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    std::string Name() const override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    IdentifierNode* Id() const { return id.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;
     NodeList constants;
+    Node* parent;
 };
 
 class EnumConstantNode : public Node
@@ -43,9 +51,17 @@ public:
     Node* GetValue() const override { return value.get(); }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    std::string Name() const override;
+    IdentifierNode* Id() const { return id.get(); }
+    Node* Value() const { return value.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<IdentifierNode> id;
     std::unique_ptr<Node> value;
+    Node* parent;
 };
 
 Node* MakeNextEnumConstantValue(const Span& span, EnumTypeNode* enumType);

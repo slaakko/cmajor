@@ -28,6 +28,7 @@ public:
     void Add(TemplateParameterNode* templateParameter) { templateParameterNodes.push_back(std::unique_ptr<TemplateParameterNode>(templateParameter)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
+    std::string ToString() const;
 private:
     std::vector<std::unique_ptr<TemplateParameterNode>> templateParameterNodes;
 };
@@ -41,6 +42,7 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
 private:
     std::unique_ptr<IdentifierNode> id;
     std::unique_ptr<Node> defaultTemplateArgument;
@@ -56,6 +58,7 @@ public:
     void AddTemplateArgument(Node* templateArgument);
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
 private:
     std::unique_ptr<Node> subject;
     NodeList templateArguments;

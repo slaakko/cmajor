@@ -22,6 +22,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     bool value;
 };
@@ -35,6 +37,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     int8_t value;
 };
@@ -48,6 +52,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     uint8_t value;
 };
@@ -61,6 +67,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     int16_t value;
 };
@@ -74,6 +82,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     uint16_t value;
 };
@@ -87,6 +97,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     int32_t value;
 };
@@ -100,6 +112,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     uint32_t value;
 };
@@ -113,6 +127,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     int64_t value;
 };
@@ -126,6 +142,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     uint64_t value;
 };
@@ -141,6 +159,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     float value;
 };
@@ -154,6 +174,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     double value;
 };
@@ -169,6 +191,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     char value;
 };
@@ -182,6 +206,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     std::string value;
 };
@@ -192,6 +218,8 @@ public:
     NullLiteralNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::nullLiteralNode; }
     Node* Clone() const override;
+    std::string ToString() const override { return "null"; }
+    void Accept(Visitor& visitor) override;
 };
 
 } } // namespace Cm::Ast

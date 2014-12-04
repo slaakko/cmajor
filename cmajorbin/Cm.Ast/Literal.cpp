@@ -10,6 +10,8 @@
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
+#include <Cm.Util/TextUtils.hpp>
 #include <limits>
 
 namespace Cm { namespace Ast {
@@ -37,6 +39,16 @@ void BooleanLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+std::string BooleanLiteralNode::ToString() const
+{
+    return value ? "true" : "false";
+}
+
+void BooleanLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 SByteLiteralNode::SByteLiteralNode(const Span& span_) : Node(span_), value(0)
 {
 }
@@ -58,6 +70,16 @@ void SByteLiteralNode::Read(Reader& reader)
 void SByteLiteralNode::Write(Writer& writer)
 {
     writer.Write(value);
+}
+
+std::string SByteLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void SByteLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 ByteLiteralNode::ByteLiteralNode(const Span& span_) : Node(span_), value(0)
@@ -83,6 +105,16 @@ void ByteLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+std::string ByteLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void ByteLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 ShortLiteralNode::ShortLiteralNode(const Span& span_) : Node(span_), value(0)
 {
 }
@@ -104,6 +136,16 @@ void ShortLiteralNode::Read(Reader& reader)
 void ShortLiteralNode::Write(Writer& writer)
 {
     writer.Write(value);
+}
+
+std::string ShortLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void ShortLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 UShortLiteralNode::UShortLiteralNode(const Span& span_) : Node(span_), value(0)
@@ -129,6 +171,16 @@ void UShortLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+std::string UShortLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void UShortLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 IntLiteralNode::IntLiteralNode(const Span& span_) : Node(span_), value(0)
 {
 }
@@ -150,6 +202,16 @@ void IntLiteralNode::Read(Reader& reader)
 void IntLiteralNode::Write(Writer& writer)
 {
     writer.Write(value);
+}
+
+std::string IntLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void IntLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 UIntLiteralNode::UIntLiteralNode(const Span& span_) : Node(span_), value(0)
@@ -175,6 +237,16 @@ void UIntLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+std::string UIntLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void UIntLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 LongLiteralNode::LongLiteralNode(const Span& span_) : Node(span_), value(0)
 {
 }
@@ -198,6 +270,16 @@ void LongLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+std::string LongLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void LongLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 ULongLiteralNode::ULongLiteralNode(const Span& span_) : Node(span_), value(0)
 {
 }
@@ -219,6 +301,16 @@ void ULongLiteralNode::Read(Reader& reader)
 void ULongLiteralNode::Write(Writer& writer)
 {
     writer.Write(value);
+}
+
+std::string ULongLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void ULongLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 Node* CreateIntegerLiteralNode(const Span& span, uint64_t value, bool unsignedSuffix)
@@ -266,6 +358,16 @@ void FloatLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+std::string FloatLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void FloatLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 DoubleLiteralNode::DoubleLiteralNode(const Span& span_) : Node(span_), value(0.0)
 {
 }
@@ -287,6 +389,16 @@ void DoubleLiteralNode::Read(Reader& reader)
 void DoubleLiteralNode::Write(Writer& writer)
 {
     writer.Write(value);
+}
+
+std::string DoubleLiteralNode::ToString() const
+{
+    return std::to_string(value);
+}
+
+void DoubleLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 Node* CreateFloatingLiteralNode(const Span& span, double value, bool float_)
@@ -324,6 +436,18 @@ void CharLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+std::string CharLiteralNode::ToString() const
+{
+    std::string s(1, '\'');
+    s.append(Cm::Util::CharStr(value)).append(1, '\'');
+    return s;
+}
+
+void CharLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 StringLiteralNode::StringLiteralNode(const Span& span_) : Node(span_), value("")
 {
 }
@@ -347,6 +471,18 @@ void StringLiteralNode::Write(Writer& writer)
     writer.Write(value);
 }
 
+std::string StringLiteralNode::ToString() const
+{
+    std::string s(1, '"');
+    s.append(Cm::Util::StringStr(value)).append(1, '"');
+    return s;
+}
+
+void StringLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 NullLiteralNode::NullLiteralNode(const Span& span_) : Node(span_)
 {
 }
@@ -354,6 +490,11 @@ NullLiteralNode::NullLiteralNode(const Span& span_) : Node(span_)
 Node* NullLiteralNode::Clone() const
 {
     return new NullLiteralNode(GetSpan());
+}
+
+void NullLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::Ast

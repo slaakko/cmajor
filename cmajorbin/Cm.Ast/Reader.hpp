@@ -32,6 +32,8 @@ class ConceptIdNode;
 class TemplateParatemerNode;
 class WhereConstraintNode;
 class InitializerNode;
+class NamespaceNode;
+class CompileUnitNode;
 enum class Specifiers : uint16_t;
 
 class Reader
@@ -56,6 +58,8 @@ public:
     TemplateParameterNode* ReadTemplateParameterNode();
     WhereConstraintNode* ReadWhereConstraintNode();
     InitializerNode* ReadInitializerNode();
+    NamespaceNode* ReadNamespaceNode();
+    CompileUnitNode* ReadCompileUnitNode();
     std::string ReadString();
     bool ReadBool();
     int8_t ReadSByte();

@@ -24,6 +24,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    const std::string& Str() const { return functionGroupId; }
+    std::string ToString() const override { return functionGroupId; }
 private:
     std::string functionGroupId;
 };
@@ -44,6 +46,17 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    std::string Name() const override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
+    FunctionGroupIdNode* GroupId() const { return groupId.get(); }
+    const TemplateParameterNodeList& TemplateParameters() const { return templateParameters; }
+    const ParameterNodeList& Parameters() const { return parameters; }
+    WhereConstraintNode* Constraint() const { return constraint.get(); }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
@@ -52,6 +65,7 @@ private:
     ParameterNodeList parameters;
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
+    Node* parent;
 };
 
 } } // namespace Cm::Ast

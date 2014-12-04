@@ -11,6 +11,7 @@
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -34,6 +35,22 @@ void AxiomStatementNodeList::Write(Writer& writer)
     for (uint32_t i = 0; i < n; ++i)
     {
         writer.Write(axiomStatementNodes[i].get());
+    }
+}
+
+void AxiomStatementNodeList::Print(CodeFormatter& formatter)
+{
+    for (const std::unique_ptr<AxiomStatementNode>& axiomStatement : axiomStatementNodes)
+    {
+        formatter.WriteLine(axiomStatement->ToString());
+    }
+}
+
+void AxiomStatementNodeList::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<AxiomStatementNode>& axiomStatement : axiomStatementNodes)
+    {
+        axiomStatement->Accept(visitor);
     }
 }
 
@@ -61,6 +78,22 @@ void ConstraintNodeList::Write(Writer& writer)
     for (uint32_t i = 0; i < n; ++i)
     {
         writer.Write(constraintNodes[i].get());
+    }
+}
+
+void ConstraintNodeList::Print(CodeFormatter& formatter)
+{
+    for (const std::unique_ptr<ConstraintNode>& constraint : constraintNodes)
+    {
+        formatter.WriteLine(constraint->ToString());
+    }
+}
+
+void ConstraintNodeList::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<ConstraintNode>& constraint : constraintNodes)
+    {
+        constraint->Accept(visitor);
     }
 }
 
@@ -97,6 +130,19 @@ Node* DisjunctiveConstraintNode::Clone() const
     return new DisjunctiveConstraintNode(GetSpan(), static_cast<ConstraintNode*>(Left()->Clone()), static_cast<ConstraintNode*>(Right()->Clone()));
 }
 
+std::string DisjunctiveConstraintNode::ToString() const
+{
+    return Left()->ToString() + " or " + Right()->ToString();
+}
+
+void DisjunctiveConstraintNode::Accept(Visitor& visitor) 
+{
+    visitor.BeginVisit(*this);
+    Left()->Accept(visitor);
+    Right()->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 ConjunctiveConstraintNode::ConjunctiveConstraintNode(const Span& span_) : BinaryConstraintNode(span_)
 {
 }
@@ -108,6 +154,19 @@ ConjunctiveConstraintNode::ConjunctiveConstraintNode(const Span& span_, Constrai
 Node* ConjunctiveConstraintNode::Clone() const
 {
     return new ConjunctiveConstraintNode(GetSpan(), static_cast<ConstraintNode*>(Left()->Clone()), static_cast<ConstraintNode*>(Right()->Clone()));
+}
+
+std::string ConjunctiveConstraintNode::ToString() const
+{
+    return Left()->ToString() + " and " + Right()->ToString();
+}
+
+void ConjunctiveConstraintNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    Left()->Accept(visitor);
+    Right()->Accept(visitor);
+    visitor.EndVisit(*this);
 }
 
 WhereConstraintNode::WhereConstraintNode(const Span& span_) : ConstraintNode(span_)
@@ -133,6 +192,18 @@ void WhereConstraintNode::Write(Writer& writer)
     writer.Write(constraint.get());
 }
 
+std::string WhereConstraintNode::ToString() const
+{
+    return "where " + constraint->ToString();
+}
+
+void WhereConstraintNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    constraint->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 IsConstraintNode::IsConstraintNode(const Span& span_) : ConstraintNode(span_)
 {
 }
@@ -156,6 +227,16 @@ void IsConstraintNode::Write(Writer& writer)
 {
     writer.Write(typeExpr.get());
     writer.Write(conceptOrTypeName.get());
+}
+
+std::string IsConstraintNode::ToString() const
+{
+    return typeExpr->ToString() + " is " + conceptOrTypeName->ToString();
+}
+
+void IsConstraintNode::Accept(Visitor& visitor)
+{
+    return visitor.Visit(*this);
 }
 
 MultiParamConstraintNode::MultiParamConstraintNode(const Span& span_) : ConstraintNode(span_)
@@ -193,6 +274,32 @@ void MultiParamConstraintNode::Write(Writer& writer)
     typeExprNodes.Write(writer);
 }
 
+std::string MultiParamConstraintNode::ToString() const
+{
+    std::string s = conceptId->ToString();
+    s.append(1, '<');
+    bool first = true;
+    for (const std::unique_ptr<Node>& typeExpr : typeExprNodes)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            s.append(", ");
+        }
+        s.append(typeExpr->ToString());
+    }
+    s.append(1, '>');
+    return s;
+}
+
+void MultiParamConstraintNode::Accept(Visitor& visitor)
+{
+    return visitor.Visit(*this);
+}
+
 TypenameConstraintNode::TypenameConstraintNode(const Span& span_) : ConstraintNode(span_)
 {
 }
@@ -214,6 +321,16 @@ void TypenameConstraintNode::Read(Reader& reader)
 void TypenameConstraintNode::Write(Writer& writer)
 {
     writer.Write(typeId.get());
+}
+
+std::string TypenameConstraintNode::ToString() const
+{
+    return "typename " + typeId->ToString() + ";";
+}
+
+void TypenameConstraintNode::Accept(Visitor& visitor)
+{
+    return visitor.Visit(*this);
 }
 
 SignatureConstraintNode::SignatureConstraintNode(const Span& span_) : ConstraintNode(span_)
@@ -249,6 +366,16 @@ void ConstructorConstraintNode::Write(Writer& writer)
     parameters.Write(writer);
 }
 
+std::string ConstructorConstraintNode::ToString() const
+{
+    return "@constructor" + parameters.ToString() + ";";
+}
+
+void ConstructorConstraintNode::Accept(Visitor& visitor)
+{
+    return visitor.Visit(*this);
+}
+
 DestructorConstraintNode::DestructorConstraintNode(const Span& span_) : SignatureConstraintNode(span_)
 {
 }
@@ -256,6 +383,16 @@ DestructorConstraintNode::DestructorConstraintNode(const Span& span_) : Signatur
 Node* DestructorConstraintNode::Clone() const
 {
     return new DestructorConstraintNode(GetSpan());
+}
+
+std::string DestructorConstraintNode::ToString() const 
+{
+    return "@destructor();";
+    
+}
+void DestructorConstraintNode::Accept(Visitor& visitor)
+{
+    return visitor.Visit(*this);
 }
 
 MemberFunctionConstraintNode::MemberFunctionConstraintNode(const Span& span_) : SignatureConstraintNode(span_)
@@ -299,6 +436,18 @@ void MemberFunctionConstraintNode::Write(Writer& writer)
     parameters.Write(writer);
 }
 
+std::string MemberFunctionConstraintNode::ToString() const
+{
+    std::string s = returnTypeExpr->ToString();
+    s.append(1, ' ').append(typeParamId->ToString()).append(1, '.').append(functionGroupId->ToString()).append(parameters.ToString()).append(1, ';');
+    return s;
+}
+
+void MemberFunctionConstraintNode::Accept(Visitor& visitor)
+{
+    return visitor.Visit(*this);
+}
+
 FunctionConstraintNode::FunctionConstraintNode(const Span& span_) : SignatureConstraintNode(span_)
 {
 }
@@ -337,6 +486,18 @@ void FunctionConstraintNode::Write(Writer& writer)
     parameters.Write(writer);
 }
 
+std::string FunctionConstraintNode::ToString() const
+{
+    std::string s = returnTypeExpr->ToString();
+    s.append(1, ' ').append(functionGroupId->ToString()).append(parameters.ToString()).append(1, ';');
+    return s;
+}
+
+void FunctionConstraintNode::Accept(Visitor& visitor)
+{
+    return visitor.Visit(*this);
+}
+
 AxiomStatementNode::AxiomStatementNode(const Span& span_) : Node(span_)
 {
 }
@@ -358,6 +519,17 @@ void AxiomStatementNode::Read(Reader& reader)
 void AxiomStatementNode::Write(Writer& writer)
 {
     writer.Write(expression.get());
+}
+
+
+std::string AxiomStatementNode::ToString() const
+{
+    return expression->ToString() + ";";
+}
+
+void AxiomStatementNode::Accept(Visitor& visitor)
+{
+    return visitor.Visit(*this);
 }
 
 AxiomNode::AxiomNode(const Span& span_) : Node(span_)
@@ -420,6 +592,29 @@ void AxiomNode::Write(Writer& writer)
     axiomStatements.Write(writer);
 }
 
+void AxiomNode::Print(CodeFormatter& formatter)
+{
+    std::string s = "axiom";
+    if (id)
+    {
+        s.append(1, ' ').append(id->ToString());
+    }
+    s.append(parameters.ToString());
+    formatter.WriteLine(s);
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    axiomStatements.Print(formatter);
+    formatter.DecIndent();
+    formatter.WriteLine("}");
+}
+
+void AxiomNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    axiomStatements.Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 ConceptIdNode::ConceptIdNode(const Span& span_) : Node(span_)
 {
 }
@@ -455,11 +650,21 @@ void ConceptIdNode::Write(Writer& writer)
     typeParameters.Write(writer);
 }
 
-ConceptNode::ConceptNode(const Span& span_) : Node(span_)
+std::string ConceptIdNode::ToString() const 
+{ 
+    return id->ToString() + "<" + typeParameters.ToString() + ">";
+}
+
+void ConceptIdNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+ConceptNode::ConceptNode(const Span& span_) : Node(span_), parent(nullptr)
 {
 }
 
-ConceptNode::ConceptNode(const Span& span_, IdentifierNode* id_) : Node(span_), id(id_)
+ConceptNode::ConceptNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_), parent(nullptr)
 {
 }
 
@@ -490,7 +695,7 @@ void ConceptNode::AddAxiom(AxiomNode* axiom)
 
 Node* ConceptNode::Clone() const
 {
-    ConceptNode* clone = new ConceptNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone()));
+    ConceptNode* clone = new ConceptNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone()));
     for (const std::unique_ptr<Node>& typeParameter : typeParameters)
     {
         clone->AddTypeParameter(typeParameter->Clone());
@@ -512,6 +717,7 @@ Node* ConceptNode::Clone() const
 
 void ConceptNode::Read(Reader& reader)
 {
+    specifiers = reader.ReadSpecifiers();
     id.reset(reader.ReadIdentifierNode());
     typeParameters.Read(reader);
     bool hasRefinement = reader.ReadBool();
@@ -525,6 +731,7 @@ void ConceptNode::Read(Reader& reader)
 
 void ConceptNode::Write(Writer& writer)
 {
+    writer.Write(specifiers);
     writer.Write(id.get());
     typeParameters.Write(writer);
     bool hasRefinement = refinement != nullptr;
@@ -535,6 +742,50 @@ void ConceptNode::Write(Writer& writer)
     }
     constraints.Write(writer);
     axioms.Write(writer);
+}
+
+void ConceptNode::Print(CodeFormatter& formatter) 
+{
+    std::string s = SpecifierStr(specifiers);
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append("concept ").append(id->ToString()).append(1, '<').append(typeParameters.ToString()).append(1, '>');
+    if (refinement)
+    {
+        s.append(" : ").append(refinement->ToString());
+    }
+    formatter.WriteLine(s);
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    constraints.Print(formatter);
+    axioms.Print(formatter);
+    formatter.DecIndent();
+    formatter.WriteLine("}");
+}
+
+Node* ConceptNode::Parent() const
+{
+    return parent;
+}
+
+void ConceptNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+std::string ConceptNode::Name() const
+{ 
+    return id->Str(); 
+}
+
+void ConceptNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    constraints.Accept(visitor);
+    axioms.Accept(visitor);
+    visitor.EndVisit(*this);
 }
 
 } } // namespace Cm::Ast

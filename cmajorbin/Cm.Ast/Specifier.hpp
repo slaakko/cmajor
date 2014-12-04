@@ -9,6 +9,7 @@
 
 #ifndef CM_AST_SPECIFIER_INCLUDED
 #define CM_AST_SPECIFIER_INCLUDED
+#include <string>
 #include <stdint.h>
 
 namespace Cm { namespace Ast {
@@ -42,6 +43,7 @@ inline Specifiers operator&(Specifiers left, Specifiers right)
 }
 
 bool HasStaticSpecifier(Specifiers s);
+std::string SpecifierStr(Specifiers s);
 
 } } // namespace Cm::Ast
 

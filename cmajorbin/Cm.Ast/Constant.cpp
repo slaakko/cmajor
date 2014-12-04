@@ -11,14 +11,16 @@
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
-ConstantNode::ConstantNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
+ConstantNode::ConstantNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
 {
 }
 
-ConstantNode::ConstantNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_, Node* value_): specifiers(specifiers_), typeExpr(typeExpr_), id(id_), value(value_)
+ConstantNode::ConstantNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_, Node* value_): 
+    specifiers(specifiers_), typeExpr(typeExpr_), id(id_), value(value_), parent(nullptr)
 {
 }
 
@@ -41,6 +43,37 @@ void ConstantNode::Write(Writer& writer)
     writer.Write(typeExpr.get());
     writer.Write(id.get());
     writer.Write(value.get());
+}
+
+void ConstantNode::Print(CodeFormatter& formatter) 
+{
+    std::string s = SpecifierStr(specifiers);
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append(typeExpr->ToString()).append(1, ' ').append(id->ToString()).append(" = ").append(value->ToString()).append(";");
+    formatter.WriteLine(s);
+}
+
+Node* ConstantNode::Parent() const
+{
+    return parent;
+}
+
+void ConstantNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+std::string ConstantNode::Name() const 
+{ 
+    return id->Str(); 
+}
+
+void ConstantNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::Ast

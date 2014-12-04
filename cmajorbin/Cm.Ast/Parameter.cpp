@@ -48,6 +48,16 @@ void ParameterNode::Write(Writer& writer)
     }
 }
 
+std::string ParameterNode::ToString() const
+{
+    std::string s = typeExpr->ToString();
+    if (id)
+    {
+        s.append(1, ' ').append(id->ToString());
+    }
+    return s;
+}
+
 ParameterNodeList::ParameterNodeList()
 {
 }
@@ -69,6 +79,26 @@ void ParameterNodeList::Write(Writer& writer)
     {
         writer.Write(parameterNodes[i].get());
     }
+}
+
+std::string ParameterNodeList::ToString() const
+{
+    std::string s(1, '(');
+    bool first = true;
+    for (const std::unique_ptr<ParameterNode>& parameter : parameterNodes)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            s.append(", ");
+        }
+        s.append(parameter->ToString());
+    }
+    s.append(1, ')');
+    return s;
 }
 
 } } // namespace Cm::Ast

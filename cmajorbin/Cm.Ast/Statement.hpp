@@ -14,6 +14,7 @@
 namespace Cm {  namespace Ast {
 
 class StatementNode;
+class Visitor;
 
 class StatementNodeList
 {
@@ -28,6 +29,8 @@ public:
     void Add(StatementNode* statement) { statementNodes.push_back(std::unique_ptr<StatementNode>(statement)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
+    void Print(CodeFormatter& formatter);
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<StatementNode>> statementNodes;
 };
@@ -41,6 +44,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override { return label + ":";  }
+    std::string Label() const { return label; }
 private:
     std::string label;
 };
@@ -52,10 +57,15 @@ public:
     bool IsStatementNode() const override { return true; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
     void SetLabelNode(LabelNode* labelNode_);
     void CloneLabelTo(StatementNode* clone) const;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    LabelNode* Label() const { return labelNode.get(); }
 private:
     std::unique_ptr<LabelNode> labelNode;
+    Node* parent;
 };
 
 class SimpleStatementNode : public StatementNode
@@ -67,6 +77,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> expr;
 };
@@ -80,19 +92,23 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> expr;
 };
 
-class ConditionalStatement : public StatementNode
+class ConditionalStatementNode : public StatementNode
 {
 public:
-    ConditionalStatement(const Span& span_);
-    ConditionalStatement(const Span& span_, Node* condition_, StatementNode* thenS_, StatementNode* elseS_);
+    ConditionalStatementNode(const Span& span_);
+    ConditionalStatementNode(const Span& span_, Node* condition_, StatementNode* thenS_, StatementNode* elseS_);
     NodeType GetNodeType() const override { return NodeType::conditionalStatementNode; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> condition;
     std::unique_ptr<StatementNode> thenS;
@@ -113,6 +129,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> condition;
     StatementNodeList caseStatements;
@@ -129,6 +147,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     NodeList expressions;
     StatementNodeList statements;
@@ -143,6 +163,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     StatementNodeList statements;
 };
@@ -156,6 +178,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> targetCaseExpr;
 };
@@ -166,6 +190,8 @@ public:
     GotoDefaultStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::gotoDefaultStatementNode; }
     Node* Clone() const override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 };
 
 class WhileStatementNode : public StatementNode
@@ -177,6 +203,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> condition;
     std::unique_ptr<StatementNode> statement;
@@ -191,6 +219,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<StatementNode> statement;
     std::unique_ptr<Node> condition;
@@ -205,6 +235,10 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
+    Node* VarTypeExpr() const { return varTypeExpr.get(); }
+    IdentifierNode* VarId() const { return varId.get(); }
 private:
     std::unique_ptr<Node> varTypeExpr;
     std::unique_ptr<IdentifierNode> varId;
@@ -221,6 +255,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<StatementNode> init;
     std::unique_ptr<Node> condition;
@@ -237,7 +273,9 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
     virtual bool IsCompoundStatementNode() const { return true; }
+    void Accept(Visitor& visitor) override;
 private:
     StatementNodeList statements;
 };
@@ -248,6 +286,8 @@ public:
     BreakStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::breakStatementNode; }
     Node* Clone() const override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 };
 
 class ContinueStatementNode : public StatementNode
@@ -256,6 +296,8 @@ public:
     ContinueStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::continueStatemetNode; }
     Node* Clone() const override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 };
 
 class GotoStatementNode : public StatementNode
@@ -267,6 +309,9 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
+    LabelNode* Target() const { return target.get(); }
 private:
     std::unique_ptr<LabelNode> target;
 };
@@ -280,6 +325,10 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
+    Node* TypeExpr() const { return typeExpr.get(); }
+    IdentifierNode* Id() const { return id.get(); }
 private:
     std::unique_ptr<Node> typeExpr;
     std::unique_ptr<IdentifierNode> id;
@@ -294,6 +343,9 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
+    std::string ToString() const { return targetExpr->ToString() + " = " + sourceExpr->ToString() + ";"; }
 private:
     std::unique_ptr<Node> targetExpr;
     std::unique_ptr<Node> sourceExpr;
@@ -309,6 +361,11 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
+    std::string ToString() const;
+    Node* TypeExpr() const { return typeExpr.get(); }
+    IdentifierNode* Id() const { return id.get(); }
 private:
     std::unique_ptr<Node> typeExpr;
     std::unique_ptr<IdentifierNode> id;
@@ -324,6 +381,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> pointerExpr;
 };
@@ -337,6 +396,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> pointerExpr;
 };
@@ -350,6 +411,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> exceptionExpr;
 };
@@ -366,6 +429,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<CompoundStatementNode> tryBlock;
     NodeList handlers;
@@ -380,10 +445,17 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    void Accept(Visitor& visitor) override;
+    Node* ExceptionTypeExpr() const { return exceptionTypeExpr.get(); }
+    IdentifierNode* ExceptionId() const { return exceptionId.get(); }
 private:
     std::unique_ptr<Node> exceptionTypeExpr;
     std::unique_ptr<IdentifierNode> exceptionId;
     std::unique_ptr<CompoundStatementNode> catchBlock;
+    Node* parent;
 };
 
 class AssertStatementNode : public StatementNode
@@ -395,6 +467,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> assertExpr;
 };
@@ -408,6 +482,7 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override { return symbol; }
     virtual bool IsCondCompSymbolNode() const { return true; }
 private:
     std::string symbol;
@@ -418,6 +493,8 @@ class CondCompExprNode : public Node
 public:
     CondCompExprNode(const Span& span_);
     bool IsCondCompExprNode() const override { return true; }
+    virtual bool IsCondCompDisjunctionNode() const { return false; }
+    virtual bool IsCondCompBinExprNode() const { return false; }
 };
 
 class CondCompBinExprNode : public CondCompExprNode
@@ -429,6 +506,7 @@ public:
     void Write(Writer& writer) override;
     CondCompExprNode* Left() const { return left.get(); }
     CondCompExprNode* Right() const { return right.get(); }
+    virtual bool IsCondCompBinExprNode() const { return true; }
 private:
     std::unique_ptr<CondCompExprNode> left;
     std::unique_ptr<CondCompExprNode> right;
@@ -440,7 +518,10 @@ public:
     CondCompDisjunctionNode(const Span& span_);
     CondCompDisjunctionNode(const Span& span_, CondCompExprNode* left_, CondCompExprNode* right_);
     NodeType GetNodeType() const override { return NodeType::condCompDisjunctionNode; }
+    virtual bool IsCondCompDisjunctionNode() const { return true; }
     Node* Clone() const override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 };
 
 class CondCompConjunctionNode : public CondCompBinExprNode
@@ -450,6 +531,8 @@ public:
     CondCompConjunctionNode(const Span& span_, CondCompExprNode* left_, CondCompExprNode* right_);
     NodeType GetNodeType() const override { return NodeType::condCompConjunctionNode; }
     Node* Clone() const override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 };
 
 class CondCompNotNode : public CondCompExprNode
@@ -461,6 +544,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<CondCompExprNode> subject;
 };
@@ -474,6 +559,9 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    CondCompSymbolNode* Symbol() const { return symbolNode.get(); }
 private:
     std::unique_ptr<CondCompSymbolNode> symbolNode;
 };
@@ -487,12 +575,17 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
     void AddStatement(StatementNode* statement);
     bool IsCondCompPartNode() const override { return true; }
     CondCompExprNode* Expr() const { return expr.get(); }
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<CondCompExprNode> expr;
     StatementNodeList statements;
+    Node* parent;
 };
 
 class CondCompilationPartNodeList
@@ -508,6 +601,7 @@ public:
     void Add(CondCompilationPartNode* part) { partNodes.push_back(std::unique_ptr<CondCompilationPartNode>(part)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<CondCompilationPartNode>> partNodes;
 };
@@ -521,10 +615,12 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
     void AddIfStatement(StatementNode* ifS);
     void AddElifExpr(const Span& span, CondCompExprNode* elifExpr);
     void AddElifStatement(StatementNode* elifS);
     void AddElseStatement(const Span& span, StatementNode* elseS);
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<CondCompilationPartNode> ifPart;
     CondCompilationPartNodeList elifParts;

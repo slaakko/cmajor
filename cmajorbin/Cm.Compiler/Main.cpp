@@ -7,6 +7,7 @@
 
  ========================================================================*/
 
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Parser/Class.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Reader.hpp>
@@ -50,8 +51,14 @@ int main(int argc, const char** argv)
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     try
     {
-        std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         InitDone initDone;
+        Cm::Sym::SymbolTable symbolTable;
+        symbolTable.BeginNamespaceScope("alpha.beta.gamma");
+        symbolTable.EndNamespaceScope();
+        symbolTable.BeginNamespaceScope("alpha.beta.gamma");
+        symbolTable.EndNamespaceScope();
+/*
+        std::cout << "Cmajor Binary Compiler version " << version << std::endl;
         Cm::Parser::ClassGrammar* grammar = Cm::Parser::ClassGrammar::Create();
         grammar->SetRecover();
         Cm::Parser::ParsingContext ctx;
@@ -63,6 +70,7 @@ int main(int argc, const char** argv)
         }
         Cm::Ast::Reader reader("C:\\temp\\class.mc");
         std::unique_ptr<Cm::Ast::Node> n(reader.ReadNode());
+*/
     }
     catch (const Cm::Parsing::CombinedParsingError& ex)
     {

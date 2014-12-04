@@ -52,7 +52,7 @@ int ParseCompileUnit(Cm::Parser::CompileUnitGrammar* compileUnitGrammar, const s
     Cm::Util::MappedInputFile sourceFile(sourceFilePath);
     SetCountSourceLines(true);
     Cm::Parser::ParsingContext ctx;
-    std::unique_ptr<Cm::Ast::CompileUnit> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), 0, sourceFilePath, &ctx));
+    std::unique_ptr<Cm::Ast::CompileUnitNode> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), 0, sourceFilePath, &ctx));
     SetCountSourceLines(false);
     int numSourceLines = GetParsedSourceLines();
     std::cout << "> " << sourceFilePath << " : " << numSourceLines << std::endl;

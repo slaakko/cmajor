@@ -11,14 +11,15 @@
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
-TypedefNode::TypedefNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
+TypedefNode::TypedefNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
 {
 }
 
-TypedefNode::TypedefNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_)
+TypedefNode::TypedefNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_), parent(nullptr)
 {
 }
 
@@ -39,6 +40,37 @@ void TypedefNode::Write(Writer& writer)
     writer.Write(specifiers);
     writer.Write(typeExpr.get());
     writer.Write(id.get());
+}
+
+void TypedefNode::Print(CodeFormatter& formatter)
+{
+    std::string s = SpecifierStr(specifiers);
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append("typedef ").append(typeExpr->ToString()).append(1, ' ').append(id->ToString()).append(1, ';');
+    formatter.WriteLine(s);
+}
+
+Node* TypedefNode::Parent() const
+{
+    return parent;
+}
+
+void TypedefNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+std::string TypedefNode::Name() const
+{
+    return id->Str();
+}
+
+void TypedefNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::Ast

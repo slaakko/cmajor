@@ -47,23 +47,23 @@ namespace Cm.Parser
         skip spaces_and_comments;
         recover;
 
-        CompileUnit(ParsingContext* ctx): Cm::Ast::CompileUnit*
-            ::= empty{ value = new CompileUnit(fileName); }
-                NamespaceContent(ctx, value)
+        CompileUnit(ParsingContext* ctx): Cm::Ast::CompileUnitNode*
+            ::= empty{ value = new CompileUnitNode(span, fileName); }
+                NamespaceContent(ctx, value->GlobalNs())
             ;
 
-        NamespaceContent(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit)
-            ::= UsingDirectives(ctx, compileUnit) 
-                Definitions(ctx, compileUnit)
+        NamespaceContent(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns)
+            ::= UsingDirectives(ctx, ns) 
+                Definitions(ctx, ns)
             ;
 
-        UsingDirectives(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit)
-            ::= UsingDirective(ctx, compileUnit)*
+        UsingDirectives(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns)
+            ::= UsingDirective(ctx, ns)*
             ;
 
-        UsingDirective(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit)
-            ::= UsingAliasDirective{ compileUnit->AddNode(UsingAliasDirective); }
-            |   UsingNamespaceDirective{ compileUnit->AddNode(UsingNamespaceDirective); }
+        UsingDirective(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns)
+            ::= UsingAliasDirective{ ns->AddMember(UsingAliasDirective); }
+            |   UsingNamespaceDirective{ ns->AddMember(UsingNamespaceDirective); }
             ;
 
         UsingAliasDirective: Cm::Ast::AliasNode*
@@ -74,12 +74,12 @@ namespace Cm.Parser
             ::= (keyword("using") QualifiedId! ';'!){ value = new NamespaceImportNode(span, QualifiedId); }
             ;
 
-        Definitions(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit)
-            ::= (Definition(ctx, compileUnit){ compileUnit->AddNode(Definition); })*
+        Definitions(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns)
+            ::= (Definition(ctx, ns){ ns->AddMember(Definition); })*
             ;
 
-        Definition(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit): Cm::Ast::Node*
-            ::= NamespaceDefinition(ctx, compileUnit){ value = NamespaceDefinition; }
+        Definition(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns): Cm::Ast::Node*
+            ::= NamespaceDefinition(ctx, ns){ value = NamespaceDefinition; }
             |   FunctionDefinition(ctx){ value = FunctionDefinition; }
             |   ConstantDefinition(ctx){ value = ConstantDefinition; }
             |   EnumerationDefinition(ctx){ value = EnumerationDefinition; }
@@ -90,8 +90,8 @@ namespace Cm.Parser
             |   ConceptDefinition(ctx){ value = ConceptDefinition; }
             ;
 
-        NamespaceDefinition(ParsingContext* ctx, Cm::Ast::CompileUnit* compileUnit): Cm::Ast::Node*
-            ::= keyword("namespace") QualifiedId! '{'! NamespaceContent(ctx, compileUnit)! '}'!
+        NamespaceDefinition(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns): Cm::Ast::NamespaceNode*
+            ::= (keyword("namespace") QualifiedId!){ value = new NamespaceNode(span, QualifiedId); } '{'! NamespaceContent(ctx, value)! '}'!
             ;
 
         FunctionDefinition(ParsingContext* ctx): Cm::Ast::Node*

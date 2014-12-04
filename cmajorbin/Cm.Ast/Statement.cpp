@@ -11,6 +11,7 @@
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -37,6 +38,22 @@ void StatementNodeList::Write(Writer& writer)
     }
 }
 
+void StatementNodeList::Print(CodeFormatter& formatter)
+{
+    for (const std::unique_ptr<StatementNode>& statement : statementNodes)
+    {
+        statement->Print(formatter);
+    }
+}
+
+void StatementNodeList::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<StatementNode>& statement : statementNodes)
+    {
+        statement->Accept(visitor);
+    }
+}
+
 LabelNode::LabelNode(const Span& span_) : Node(span_)
 {
 }
@@ -60,7 +77,7 @@ void LabelNode::Write(Writer& writer)
     writer.Write(label);
 }
 
-StatementNode::StatementNode(const Span& span_) : Node(span_)
+StatementNode::StatementNode(const Span& span_) : Node(span_), parent(nullptr)
 {
 }
 
@@ -83,6 +100,16 @@ void StatementNode::Write(Writer& writer)
     }
 }
 
+void StatementNode::Print(CodeFormatter& formatter)
+{
+    if (labelNode != nullptr)
+    {
+        formatter.DecIndent();
+        formatter.WriteLine(labelNode->ToString());
+        formatter.IncIndent();
+    }
+}
+
 void StatementNode::SetLabelNode(LabelNode* labelNode_)
 {
     labelNode.reset(labelNode_);
@@ -94,6 +121,16 @@ void StatementNode::CloneLabelTo(StatementNode* clone) const
     {
         clone->SetLabelNode(static_cast<LabelNode*>(labelNode->Clone()));
     }
+}
+
+Node* StatementNode::Parent() const
+{
+    return parent;
+}
+
+void StatementNode::SetParent(Node* parent_)
+{
+    parent = parent_;
 }
 
 SimpleStatementNode::SimpleStatementNode(const Span& span_) : StatementNode(span_)
@@ -137,6 +174,25 @@ void SimpleStatementNode::Write(Writer& writer)
     }
 }
 
+void SimpleStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    if (expr)
+    {
+        formatter.WriteLine(expr->ToString());
+    }
+}
+
+void SimpleStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (expr && visitor.VisitExpressions())
+    {
+        expr->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
 ReturnStatementNode::ReturnStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -178,27 +234,52 @@ void ReturnStatementNode::Write(Writer& writer)
     }
 }
 
-ConditionalStatement::ConditionalStatement(const Span& span_) : StatementNode(span_)
+void ReturnStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    if (expr)
+    {
+        formatter.WriteLine(expr->ToString());
+    }
+}
+
+void ReturnStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (expr && visitor.VisitExpressions())
+    {
+        expr->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
+ConditionalStatementNode::ConditionalStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
-ConditionalStatement::ConditionalStatement(const Span& span_, Node* condition_, StatementNode* thenS_, StatementNode* elseS_) : StatementNode(span_), condition(condition_), thenS(thenS_), elseS(elseS_)
+ConditionalStatementNode::ConditionalStatementNode(const Span& span_, Node* condition_, StatementNode* thenS_, StatementNode* elseS_) :
+    StatementNode(span_), condition(condition_), thenS(thenS_), elseS(elseS_)
 {
+    thenS->SetParent(this);
+    if (elseS)
+    {
+        elseS->SetParent(this);
+    }
 }
 
-Node* ConditionalStatement::Clone() const
+Node* ConditionalStatementNode::Clone() const
 {
     StatementNode* clonedElseS = nullptr;
     if (elseS)
     {
         clonedElseS = static_cast<StatementNode*>(elseS->Clone());
     }
-    ConditionalStatement* clone = new ConditionalStatement(GetSpan(), condition->Clone(), static_cast<StatementNode*>(thenS->Clone()), clonedElseS);
+    ConditionalStatementNode* clone = new ConditionalStatementNode(GetSpan(), condition->Clone(), static_cast<StatementNode*>(thenS->Clone()), clonedElseS);
     CloneLabelTo(clone);
     return clone;
 }
 
-void ConditionalStatement::Read(Reader& reader)
+void ConditionalStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     condition.reset(reader.ReadNode());
@@ -210,7 +291,7 @@ void ConditionalStatement::Read(Reader& reader)
     }
 }
 
-void ConditionalStatement::Write(Writer& writer)
+void ConditionalStatementNode::Write(Writer& writer)
 {
     StatementNode::Write(writer);
     writer.Write(condition.get());
@@ -223,6 +304,51 @@ void ConditionalStatement::Write(Writer& writer)
     }
 }
 
+void ConditionalStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.Write("if (" + condition->ToString() + ")");
+    if (thenS->IsCompoundStatementNode())
+    {
+        formatter.WriteLine();
+        thenS->Print(formatter);
+    }
+    else
+    {
+        formatter.Write(" ");
+        thenS->Print(formatter);
+    }
+    if (elseS)
+    {
+        formatter.Write("else");
+        if (elseS->IsCompoundStatementNode())
+        {
+            formatter.WriteLine();
+            elseS->Print(formatter);
+        }
+        else
+        {
+            formatter.Write(" ");
+            elseS->Print(formatter);
+        }
+    }
+}
+
+void ConditionalStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        condition->Accept(visitor);
+    }
+    thenS->Accept(visitor);
+    if (elseS)
+    {
+        elseS->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
 SwitchStatementNode::SwitchStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -233,6 +359,7 @@ SwitchStatementNode::SwitchStatementNode(const Span& span_, Node* condition_) : 
 
 void SwitchStatementNode::AddCase(StatementNode* caseS)
 {
+    caseS->SetParent(this);
     caseStatements.Add(caseS);
 }
 
@@ -242,6 +369,7 @@ void SwitchStatementNode::SetDefault(StatementNode* defaultS)
     {
         throw std::runtime_error("already has default statement");
     }
+    defaultS->SetParent(this);
     defaultStatement.reset(defaultS);
 }
 
@@ -285,6 +413,36 @@ void SwitchStatementNode::Write(Writer& writer)
     }
 }
 
+void SwitchStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("switch (" + condition->ToString() + ")");
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    caseStatements.Print(formatter);
+    if (defaultStatement)
+    {
+        defaultStatement->Print(formatter);
+    }
+    formatter.DecIndent();
+    formatter.WriteLine("}");
+}
+
+void SwitchStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        condition->Accept(visitor);
+    }
+    caseStatements.Accept(visitor);
+    if (defaultStatement)
+    {
+        defaultStatement->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
 CaseStatementNode::CaseStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -296,6 +454,7 @@ void CaseStatementNode::AddExpr(Node* expr)
 
 void CaseStatementNode::AddStatement(StatementNode* statement)
 {
+    statement->SetParent(this);
     statements.Add(statement);
 }
 
@@ -328,12 +487,38 @@ void CaseStatementNode::Write(Writer& writer)
     statements.Write(writer);
 }
 
+void CaseStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    for (const std::unique_ptr<Node>& expr : expressions)
+    {
+        formatter.Write("case " + expr->ToString() + ": ");
+    }
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    statements.Print(formatter);
+    formatter.DecIndent();
+    formatter.WriteLine("}");
+}
+
+void CaseStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        expressions.Accept(visitor);
+    }
+    statements.Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 DefaultStatementNode::DefaultStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
 void DefaultStatementNode::AddStatement(StatementNode* statement)
 {
+    statement->SetParent(this);
     statements.Add(statement);
 }
 
@@ -358,6 +543,24 @@ void DefaultStatementNode::Write(Writer& writer)
 {
     StatementNode::Write(writer);
     statements.Write(writer);
+}
+
+void DefaultStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("default:");
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    statements.Print(formatter);
+    formatter.DecIndent();
+    formatter.WriteLine("}");
+}
+
+void DefaultStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    statements.Accept(visitor);
+    visitor.EndVisit(*this);
 }
 
 GotoCaseStatementNode::GotoCaseStatementNode(const Span& span_) : StatementNode(span_)
@@ -387,6 +590,22 @@ void GotoCaseStatementNode::Write(Writer& writer)
     writer.Write(targetCaseExpr.get());
 }
 
+void GotoCaseStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("goto case " + targetCaseExpr->ToString() + ";");
+}
+
+void GotoCaseStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        targetCaseExpr->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
 GotoDefaultStatementNode::GotoDefaultStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -398,12 +617,24 @@ Node* GotoDefaultStatementNode::Clone() const
     return clone;
 }
 
+void GotoDefaultStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("goto default;");
+}
+
+void GotoDefaultStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 WhileStatementNode::WhileStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
 WhileStatementNode::WhileStatementNode(const Span& span_, Node* condition_, StatementNode* statement_) : StatementNode(span_), condition(condition_), statement(statement_)
 {
+    statement->SetParent(this);
 }
 
 Node* WhileStatementNode::Clone() const
@@ -427,12 +658,40 @@ void WhileStatementNode::Write(Writer& writer)
     writer.Write(statement.get());
 }
 
+void WhileStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.Write("while (" + condition->ToString() + ")");
+    if (statement->IsCompoundStatementNode())
+    {
+        formatter.WriteLine();
+        statement->Print(formatter);
+    }
+    else
+    {
+        formatter.Write(" ");
+        statement->Print(formatter);
+    }
+}
+
+void WhileStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        condition->Accept(visitor);
+    }
+    statement->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 DoStatementNode::DoStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
 DoStatementNode::DoStatementNode(const Span& span_, StatementNode* statement_, Node* condition_) : StatementNode(span_), statement(statement_), condition(condition_)
 {
+    statement->SetParent(this);
 }
 
 Node* DoStatementNode::Clone() const
@@ -456,6 +715,34 @@ void DoStatementNode::Write(Writer& writer)
     writer.Write(condition.get());
 }
 
+void DoStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.Write("do");
+    if (statement->IsCompoundStatementNode())
+    {
+        formatter.WriteLine();
+        statement->Print(formatter);
+    }
+    else
+    {
+        formatter.Write(" ");
+        statement->Print(formatter);
+    }
+    formatter.WriteLine("while (" + condition->ToString() + ");");
+}
+
+void DoStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    statement->Accept(visitor);
+    if (visitor.VisitExpressions())
+    {
+        condition->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
 RangeForStatementNode::RangeForStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -463,6 +750,7 @@ RangeForStatementNode::RangeForStatementNode(const Span& span_) : StatementNode(
 RangeForStatementNode::RangeForStatementNode(const Span& span_, Node* varTypeExpr_, IdentifierNode* varId_, Node* container_, StatementNode* action_) :
     StatementNode(span_), varTypeExpr(varTypeExpr_), varId(varId_), container(container_), action(action_)
 {
+    action->SetParent(this);
 }
 
 Node* RangeForStatementNode::Clone() const
@@ -490,6 +778,33 @@ void RangeForStatementNode::Write(Writer& writer)
     writer.Write(action.get());
 }
 
+void RangeForStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.Write("for (" + varTypeExpr->ToString() + " " + varId->ToString() + " : " + container->ToString() + ")");
+    if (action->IsCompoundStatementNode())
+    {
+        formatter.WriteLine();
+        action->Print(formatter);
+    }
+    else
+    {
+        formatter.Write(" ");
+        action->Print(formatter);
+    }
+}
+
+void RangeForStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        container->Accept(visitor);
+    }
+    action->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 ForStatementNode::ForStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -497,6 +812,8 @@ ForStatementNode::ForStatementNode(const Span& span_) : StatementNode(span_)
 ForStatementNode::ForStatementNode(const Span& span_, StatementNode* init_, Node* condition_, Node* increment_, StatementNode* action_) :
     StatementNode(span_), init(init_), condition(condition_), increment(increment_), action(action_)
 {
+    init->SetParent(this);
+    action->SetParent(this);
 }
 
 Node* ForStatementNode::Clone() const
@@ -552,12 +869,61 @@ void ForStatementNode::Write(Writer& writer)
     writer.Write(action.get());
 }
 
+void ForStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.Write("for (" + init->ToString());
+    if (condition)
+    {
+        formatter.Write(" " + condition->ToString());
+    }
+    else
+    {
+        formatter.Write("; ");
+    }
+    if (increment)
+    {
+        formatter.Write(increment->ToString());
+    }
+    formatter.Write(")");
+    if (action->IsCompoundStatementNode())
+    {
+        formatter.WriteLine();
+        action->Print(formatter);
+    }
+    else
+    {
+        formatter.Write(" ");
+        action->Print(formatter);
+    }
+}
+
+void ForStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    init->Accept(visitor);
+    if (visitor.VisitExpressions())
+    {
+        if (condition)
+        {
+            condition->Accept(visitor);
+        }
+        if (increment)
+        {
+            increment->Accept(visitor);
+        }
+    }
+    action->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 CompoundStatementNode::CompoundStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
 void CompoundStatementNode::AddStatement(StatementNode* statement)
 {
+    statement->SetParent(this);
     statements.Add(statement);
 }
 
@@ -584,6 +950,23 @@ void CompoundStatementNode::Write(Writer& writer)
     statements.Write(writer);
 }
 
+void CompoundStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    statements.Print(formatter);
+    formatter.DecIndent();
+    formatter.WriteLine("}");
+}
+
+void CompoundStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    statements.Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 BreakStatementNode::BreakStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -595,6 +978,17 @@ Node* BreakStatementNode::Clone() const
     return clone;
 }
 
+void BreakStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("break;");
+}
+
+void BreakStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 ContinueStatementNode::ContinueStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -604,6 +998,17 @@ Node* ContinueStatementNode::Clone() const
     ContinueStatementNode* clone = new ContinueStatementNode(GetSpan());
     CloneLabelTo(clone);
     return clone;
+}
+
+void ContinueStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("continue;");
+}
+
+void ContinueStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 GotoStatementNode::GotoStatementNode(const Span& span_) : StatementNode(span_)
@@ -631,6 +1036,17 @@ void GotoStatementNode::Write(Writer& writer)
 {
     StatementNode::Write(writer);
     writer.Write(target.get());
+}
+
+void GotoStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("goto " + target->Label() + ";");
+}
+
+void GotoStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 TypedefStatementNode::TypedefStatementNode(const Span& span_) : StatementNode(span_)
@@ -662,6 +1078,17 @@ void TypedefStatementNode::Write(Writer& writer)
     writer.Write(id.get());
 }
 
+void TypedefStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("typedef " + typeExpr->ToString() + " " + id->ToString() + ";");
+}
+
+void TypedefStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 AssignmentStatementNode::AssignmentStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -689,6 +1116,23 @@ void AssignmentStatementNode::Write(Writer& writer)
     StatementNode::Write(writer);
     writer.Write(targetExpr.get());
     writer.Write(sourceExpr.get());
+}
+
+void AssignmentStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine(ToString());
+}
+
+void AssignmentStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        targetExpr->Accept(visitor);
+        sourceExpr->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 ConstructionStatementNode::ConstructionStatementNode(const Span& span_) : StatementNode(span_)
@@ -731,6 +1175,27 @@ void ConstructionStatementNode::Write(Writer& writer)
     arguments.Write(writer);
 }
 
+void ConstructionStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine(ToString());
+}
+
+void ConstructionStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        arguments.Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
+std::string ConstructionStatementNode::ToString() const 
+{ 
+    return typeExpr->ToString() + " " + id->ToString() + "(" + arguments.ToString() + ");"; 
+}
+
 DeleteStatementNode::DeleteStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -756,6 +1221,22 @@ void DeleteStatementNode::Write(Writer& writer)
 {
     StatementNode::Write(writer);
     writer.Write(pointerExpr.get());
+}
+
+void DeleteStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("delete " + pointerExpr->ToString() + ";");
+}
+
+void DeleteStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        pointerExpr->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 DestroyStatementNode::DestroyStatementNode(const Span& span_) : StatementNode(span_)
@@ -785,6 +1266,22 @@ void DestroyStatementNode::Write(Writer& writer)
     writer.Write(pointerExpr.get());
 }
 
+void DestroyStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("destroy " + pointerExpr->ToString() + ";");
+}
+
+void DestroyStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        pointerExpr->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
 ThrowStatementNode::ThrowStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -812,16 +1309,34 @@ void ThrowStatementNode::Write(Writer& writer)
     writer.Write(exceptionExpr.get());
 }
 
+void ThrowStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("throw " + exceptionExpr->ToString() + ";");
+}
+
+void ThrowStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        exceptionExpr->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
 TryStatementNode::TryStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
 TryStatementNode::TryStatementNode(const Span& span_, CompoundStatementNode* tryBlock_) : StatementNode(span_), tryBlock(tryBlock_)
 {
+    tryBlock->SetParent(this);
 }
 
 void TryStatementNode::AddHandler(CatchNode* handler)
 {
+    handler->SetParent(this);
     handlers.Add(handler);
 }
 
@@ -850,13 +1365,32 @@ void TryStatementNode::Write(Writer& writer)
     handlers.Write(writer);
 }
 
-CatchNode::CatchNode(const Span& span_) : Node(span_) 
+void TryStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    tryBlock->Print(formatter);
+    for (const std::unique_ptr<Node>& handler : handlers)
+    {
+        handler->Print(formatter);
+    }
+}
+
+void TryStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    tryBlock->Accept(visitor);
+    handlers.Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
+CatchNode::CatchNode(const Span& span_) : Node(span_), parent(nullptr)
 {
 }
 
 CatchNode::CatchNode(const Span& span_, Node* exceptionTypeExpr_, IdentifierNode* exceptionId_, CompoundStatementNode* catchBlock_) :
-    Node(span_), exceptionTypeExpr(exceptionTypeExpr_), exceptionId(exceptionId_), catchBlock(catchBlock_)
+    Node(span_), exceptionTypeExpr(exceptionTypeExpr_), exceptionId(exceptionId_), catchBlock(catchBlock_), parent(nullptr)
 {
+    catchBlock->SetParent(this);
 }
 
 Node* CatchNode::Clone() const
@@ -892,6 +1426,29 @@ void CatchNode::Write(Writer& writer)
     writer.Write(catchBlock.get());
 }
 
+void CatchNode::Print(CodeFormatter& formatter)
+{
+    formatter.WriteLine("catch (" + exceptionTypeExpr->ToString() + " " + exceptionId->ToString() + ")");
+    catchBlock->Print(formatter);
+}
+
+Node* CatchNode::Parent() const
+{
+    return parent;
+}
+
+void CatchNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+void CatchNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    catchBlock->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 AssertStatementNode::AssertStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -919,6 +1476,22 @@ void AssertStatementNode::Write(Writer& writer)
     writer.Write(assertExpr.get());
 }
 
+void AssertStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.WriteLine("#assert(" + assertExpr->ToString() + ");");
+}
+
+void AssertStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        assertExpr->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
 CondCompSymbolNode::CondCompSymbolNode(const Span& span_) : Node(span_)
 {
 }
@@ -941,6 +1514,7 @@ void CondCompSymbolNode::Write(Writer& writer)
 {
     writer.Write(symbol);
 }
+
 
 CondCompExprNode::CondCompExprNode(const Span& span_) : Node(span_)
 {
@@ -979,6 +1553,19 @@ Node* CondCompDisjunctionNode::Clone() const
     return new CondCompDisjunctionNode(GetSpan(), static_cast<CondCompExprNode*>(Left()->Clone()), static_cast<CondCompExprNode*>(Right()->Clone()));
 }
 
+std::string CondCompDisjunctionNode::ToString() const 
+{
+    return Left()->ToString() + " || " + Right()->ToString();
+}
+
+void CondCompDisjunctionNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    Left()->Accept(visitor);
+    Right()->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 CondCompConjunctionNode::CondCompConjunctionNode(const Span& span_) : CondCompBinExprNode(span_)
 {
 }
@@ -990,6 +1577,37 @@ CondCompConjunctionNode::CondCompConjunctionNode(const Span& span_, CondCompExpr
 Node* CondCompConjunctionNode::Clone() const
 {
     return new CondCompConjunctionNode(GetSpan(), static_cast<CondCompExprNode*>(Left()->Clone()), static_cast<CondCompExprNode*>(Right()->Clone()));
+}
+
+std::string CondCompConjunctionNode::ToString() const
+{
+    std::string left;
+    if (Left()->IsCondCompDisjunctionNode())
+    {
+        left = "(" + Left()->ToString() + ")";
+    }
+    else
+    {
+        left = Left()->ToString();
+    }
+    std::string right;
+    if (Right()->IsCondCompDisjunctionNode())
+    {
+        right = "(" + Right()->ToString() + ")";
+    }
+    else
+    {
+        right = Right()->ToString();
+    }
+    return left + " && " + right;
+}
+
+void CondCompConjunctionNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    Left()->Accept(visitor);
+    Right()->Accept(visitor);
+    visitor.EndVisit(*this);
 }
 
 CondCompNotNode::CondCompNotNode(const Span& span_) : CondCompExprNode(span_)
@@ -1015,6 +1633,27 @@ void CondCompNotNode::Write(Writer& writer)
     writer.Write(subject.get());
 }
 
+std::string CondCompNotNode::ToString() const
+{
+    std::string s;
+    if (subject->IsCondCompBinExprNode())
+    {
+        s = "(" + subject->ToString() + ")";
+    }
+    else
+    {
+        s = subject->ToString();
+    }
+    return "!" + s;
+}
+
+void CondCompNotNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    subject->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 CondCompPrimaryNode::CondCompPrimaryNode(const Span& span_) : CondCompExprNode(span_)
 {
 }
@@ -1038,16 +1677,27 @@ void CondCompPrimaryNode::Write(Writer& writer)
     writer.Write(symbolNode.get());
 }
 
-CondCompilationPartNode::CondCompilationPartNode(const Span& span_) : Node(span_)
+std::string CondCompPrimaryNode::ToString() const
+{
+    return symbolNode->ToString();
+}
+
+void CondCompPrimaryNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+CondCompilationPartNode::CondCompilationPartNode(const Span& span_) : Node(span_), parent(nullptr)
 {
 }
 
-CondCompilationPartNode::CondCompilationPartNode(const Span& span_, CondCompExprNode* expr_) : Node(span_), expr(expr_)
+CondCompilationPartNode::CondCompilationPartNode(const Span& span_, CondCompExprNode* expr_) : Node(span_), expr(expr_), parent(nullptr)
 {
 }
 
 void CondCompilationPartNode::AddStatement(StatementNode* statement)
 {
+    statement->SetParent(this);
     statements.Add(statement);
 }
 
@@ -1082,6 +1732,32 @@ void CondCompilationPartNode::Write(Writer& writer)
     statements.Write(writer);
 }
 
+void CondCompilationPartNode::Print(CodeFormatter& formatter)
+{
+    formatter.WriteLine("(" + expr->ToString() + ")");
+    formatter.IncIndent();
+    statements.Print(formatter);
+    formatter.DecIndent();
+}
+
+Node* CondCompilationPartNode::Parent() const
+{
+    return parent;
+}
+
+void CondCompilationPartNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+void CondCompilationPartNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    expr->Accept(visitor);
+    statements.Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
 CondCompilationPartNodeList::CondCompilationPartNodeList()
 {
 }
@@ -1105,12 +1781,21 @@ void CondCompilationPartNodeList::Write(Writer& writer)
     }
 }
 
+void CondCompilationPartNodeList::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<CondCompilationPartNode>& part : partNodes)
+    {
+        part->Accept(visitor);
+    }
+}
+
 CondCompStatementNode::CondCompStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
 CondCompStatementNode::CondCompStatementNode(const Span& span_, CondCompExprNode* ifExpr) : StatementNode(span_), ifPart(new CondCompilationPartNode(span_, ifExpr))
 {
+    ifPart->SetParent(this);
 }
 
 Node* CondCompStatementNode::Clone() const
@@ -1118,11 +1803,15 @@ Node* CondCompStatementNode::Clone() const
     CondCompStatementNode* clone = new CondCompStatementNode(GetSpan(), static_cast<CondCompExprNode*>(ifPart->Expr()->Clone()));
     for (const std::unique_ptr<CondCompilationPartNode>& elifPart : elifParts)
     {
-        clone->elifParts.Add(static_cast<CondCompilationPartNode*>(elifPart->Clone()));
+        CondCompilationPartNode* clonedElifPart = static_cast<CondCompilationPartNode*>(elifPart->Clone());
+        clonedElifPart->SetParent(clone);
+        clone->elifParts.Add(clonedElifPart);
     }
     if (elsePart)
     {
-        clone->elsePart.reset(static_cast<CondCompilationPartNode*>(elsePart->Clone()));
+        CondCompilationPartNode* clonedElsePart = static_cast<CondCompilationPartNode*>(elsePart->Clone());
+        clonedElsePart->SetParent(clone);
+        clone->elsePart.reset(clonedElsePart);
     }
     CloneLabelTo(clone);
     return clone;
@@ -1153,6 +1842,25 @@ void CondCompStatementNode::Write(Writer& writer)
     }
 }
 
+void CondCompStatementNode::Print(CodeFormatter& formatter)
+{
+    formatter.DecIndent();
+    formatter.Write("#if ");
+    ifPart->Print(formatter);
+    for (const std::unique_ptr<CondCompilationPartNode>& elifPart : elifParts)
+    {
+        formatter.Write("#elif ");
+        elifPart->Print(formatter);
+    }
+    if (elsePart)
+    {
+        formatter.Write("#else");
+        elsePart->Print(formatter);
+    }
+    formatter.WriteLine("#endif");
+    formatter.IncIndent();
+}
+
 void CondCompStatementNode::AddIfStatement(StatementNode* ifS)
 {
     ifPart->AddStatement(ifS);
@@ -1160,7 +1868,9 @@ void CondCompStatementNode::AddIfStatement(StatementNode* ifS)
 
 void CondCompStatementNode::AddElifExpr(const Span& span, CondCompExprNode* elifExpr)
 {
-    elifParts.Add(new CondCompilationPartNode(span, elifExpr));
+    CondCompilationPartNode* elifPart = new CondCompilationPartNode(span, elifExpr);
+    elifPart->SetParent(this);
+    elifParts.Add(elifPart);
 }
 
 void CondCompStatementNode::AddElifStatement(StatementNode* elifS)
@@ -1173,8 +1883,21 @@ void CondCompStatementNode::AddElseStatement(const Span& span, StatementNode* el
     if (!elsePart)
     {
         elsePart.reset(new CondCompilationPartNode(span));
+        elsePart->SetParent(this);
     }
     elsePart->AddStatement(elseS);
+}
+
+void CondCompStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    ifPart->Accept(visitor);
+    elifParts.Accept(visitor);
+    if (elsePart)
+    {
+        elsePart->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 } } // namespace Cm::Ast

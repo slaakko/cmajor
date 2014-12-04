@@ -12,6 +12,7 @@
 #include <Cm.Ast/Statement.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -38,12 +39,12 @@ void FunctionGroupIdNode::Write(Writer& writer)
     writer.Write(functionGroupId);
 }
 
-FunctionNode::FunctionNode(const Span& span_) : Node(span_)
+FunctionNode::FunctionNode(const Span& span_) : Node(span_), parent(nullptr)
 {
 }
 
 FunctionNode::FunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_) :
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_)
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_), parent(nullptr)
 {
 }
 
@@ -98,7 +99,11 @@ void FunctionNode::Read(Reader& reader)
     {
         constraint.reset(reader.ReadWhereConstraintNode());
     }
-    body.reset(reader.ReadCompoundStatementNode());
+    bool hasBody = reader.ReadBool();
+    if (hasBody)
+    {
+        body.reset(reader.ReadCompoundStatementNode());
+    }
 }
 
 void FunctionNode::Write(Writer& writer)
@@ -114,7 +119,63 @@ void FunctionNode::Write(Writer& writer)
     {
         writer.Write(constraint.get());
     }
-    writer.Write(body.get());
+    bool hasBody = body != nullptr;
+    writer.Write(hasBody);
+    if (hasBody)
+    {
+        writer.Write(body.get());
+    }
+}
+
+void FunctionNode::Print(CodeFormatter& formatter)
+{
+    std::string s = SpecifierStr(specifiers);
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append(returnTypeExpr->ToString()).append(1, ' ').append(groupId->ToString()).append(templateParameters.ToString()).append(parameters.ToString());
+    if (constraint)
+    {
+        s.append(1, ' ').append(constraint->ToString());
+    }
+    if (body)
+    {
+        formatter.WriteLine(s);
+        body->Print(formatter);
+    }
+    else
+    {
+        s.append(1, ';');
+        formatter.WriteLine(s);
+    }
+}
+
+Node* FunctionNode::Parent() const
+{
+    return parent;
+}
+
+void FunctionNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+std::string FunctionNode::Name() const 
+{
+    std::string name = groupId->Str();
+    name.append(parameters.ToString());
+    return name;
+}
+
+void FunctionNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (body)
+    {
+        body->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 } } // namespace Cm::Ast

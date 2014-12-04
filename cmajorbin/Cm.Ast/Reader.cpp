@@ -1,9 +1,9 @@
 /*========================================================================
-Copyright (c) 2012-2015 Seppo Laakko
-http://sourceforge.net/projects/cmajor/
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
 
-Distributed under the GNU General Public License, version 3 (GPLv3).
-(See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
 
 ========================================================================*/
 
@@ -17,6 +17,8 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 #include <Cm.Ast/Concept.hpp>
 #include <Cm.Ast/Template.hpp>
 #include <Cm.Ast/Class.hpp>
+#include <Cm.Ast/Namespace.hpp>
+#include <Cm.Ast/CompileUnit.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -107,6 +109,26 @@ InitializerNode* Reader::ReadInitializerNode()
     {
         throw std::runtime_error("initializer node expected");
     }
+}
+
+NamespaceNode* Reader::ReadNamespaceNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::namespaceNode)
+    {
+        throw std::runtime_error("namespace node expected");
+    }
+    return static_cast<NamespaceNode*>(node);
+}
+
+CompileUnitNode* Reader::ReadCompileUnitNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::compileUnitNode)
+    {
+        throw std::runtime_error("compile unit node expected");
+    }
+    return static_cast<CompileUnitNode*>(node);
 }
 
 ConstraintNode* Reader::ReadConstraintNode()

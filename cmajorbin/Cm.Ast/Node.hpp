@@ -9,13 +9,16 @@
 
 #ifndef CM_AST_NODE_INCLUDED
 #define CM_AST_NODE_INCLUDED
+#include <Cm.Ast/Rank.hpp>
 #include <Cm.Parsing/Scanner.hpp>
+#include <Cm.Util/CodeFormatter.hpp>
 #include <memory>
 #include <cstdint>
 
 namespace Cm { namespace Ast {
 
 using Cm::Parsing::Span;
+using Cm::Util::CodeFormatter;
 
 enum class NodeType: uint8_t
 {
@@ -38,7 +41,7 @@ enum class NodeType: uint8_t
     constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
     functionGroupIdNode, templateParameterNode, functionNode, 
     classNode, memberInitializerNode, baseInitializerNode, thisInitializerNode, staticConstructorNode, constructorNode, destructorNode, memberFunctionNode, conversionFunctionNode, memberVariableNode,
-    aliasNode, namespaceImportNode,
+    aliasNode, namespaceImportNode, namespaceNode, compileUnitNode,
     maxNode
 };
 
@@ -48,6 +51,7 @@ class IdentifierNode;
 class ParameterNode;
 class TemplateParameterNode;
 class InitializerNode;
+class Visitor;
 
 class Node
 {
@@ -61,6 +65,7 @@ public:
     Span& GetSpan() { return span; }
     virtual void Read(Reader& reader);
     virtual void Write(Writer& writer);
+    virtual void Print(CodeFormatter& formatter);
     virtual Node* GetValue() const;
     virtual void AddArgument(Node* argument);
     virtual void AddParameter(ParameterNode* parameter);
@@ -73,6 +78,14 @@ public:
     virtual bool IsCondCompPartNode() const { return false; }
     virtual bool IsConstraintNode() const { return false; }
     virtual bool IsInitializerNode() const { return false; }
+    virtual Rank GetRank() const { return Rank::primary; }
+    virtual std::string ToString() const { return std::string(); }
+    virtual std::string GetOpStr() const { return std::string(); }
+    virtual Node* Parent() const;
+    virtual void SetParent(Node* parent_);
+    virtual std::string Name() const;
+    std::string FullName() const;
+    virtual void Accept(Visitor& visitor);
 private:
     Span span;
 };
@@ -85,6 +98,8 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     Node* Child() const { return child.get(); }
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> child;
 };
@@ -99,6 +114,8 @@ public:
     void Write(Writer& writer) override;
     Node* Left() const { return left.get(); }
     Node* Right() const { return right.get(); }
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> left;
     std::unique_ptr<Node> right;
@@ -117,6 +134,9 @@ public:
     void Add(Node* node) { nodes.push_back(std::unique_ptr<Node>(node)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
+    void Print(CodeFormatter& formatter);
+    std::string ToString() const;
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<Node>> nodes;
 };

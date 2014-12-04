@@ -92,7 +92,7 @@ namespace Cm.Parser
             ;
 
         ConditionalStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("if") '('! Expression(ctx)! ')'! Statement(ctx):thenS! (keyword("else") Statement(ctx):elseS)?){ value = new ConditionalStatement(span, Expression, thenS, elseS); }
+            ::= (keyword("if") '('! Expression(ctx)! ')'! Statement(ctx):thenS! (keyword("else") Statement(ctx):elseS)?){ value = new ConditionalStatementNode(span, Expression, thenS, elseS); }
             ;
 
         SwitchStatement(ParsingContext* ctx): Cm::Ast::SwitchStatementNode*

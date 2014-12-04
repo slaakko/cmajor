@@ -36,4 +36,9 @@ void IdentifierNode::Write(Writer& writer)
     writer.Write(identifier);
 }
 
+std::string IdentifierNode::ToString() const
+{
+    return identifier;
+}
+
 } } // namespace Cm::Ast

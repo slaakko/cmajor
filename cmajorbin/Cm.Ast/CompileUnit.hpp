@@ -9,19 +9,27 @@
 
 #ifndef CM_AST_COMPILE_UNIT_INCLUDED
 #define CM_AST_COMPILE_UNIT_INCLUDED
-#include <Cm.Ast/Node.hpp>
+#include <Cm.Ast/Namespace.hpp>
 
 namespace Cm { namespace Ast {
 
-class CompileUnit
+class Visitor;
+
+class CompileUnitNode : public Node
 {
 public:
-    CompileUnit(const std::string& filePath_);
-    void AddNode(Node* node);
+    CompileUnitNode(const Span& span_);
+    CompileUnitNode(const Span& span_, const std::string& filePath_);
+    NodeType GetNodeType() const override { return NodeType::compileUnitNode; }
+    NamespaceNode* GlobalNs() const { return globalNs.get(); }
+    Node* Clone() const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
 private:
     std::string filePath;
-
-    NodeList nodes;
+    std::unique_ptr<NamespaceNode> globalNs;
 };
 
 } } // namespace Cm::Ast

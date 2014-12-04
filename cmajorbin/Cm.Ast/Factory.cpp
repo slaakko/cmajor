@@ -22,6 +22,8 @@
 #include <Cm.Ast/Statement.hpp>
 #include <Cm.Ast/Concept.hpp>
 #include <Cm.Ast/Class.hpp>
+#include <Cm.Ast/Namespace.hpp>
+#include <Cm.Ast/CompileUnit.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -156,7 +158,7 @@ void InitFactory()
     Factory::Instance().Register(NodeType::labelNode, new Creator<LabelNode>());
     Factory::Instance().Register(NodeType::simpleStatementNode, new Creator<SimpleStatementNode>());
     Factory::Instance().Register(NodeType::returnStatementNode, new Creator<ReturnStatementNode>());
-    Factory::Instance().Register(NodeType::conditionalStatementNode, new Creator<ConditionalStatement>());
+    Factory::Instance().Register(NodeType::conditionalStatementNode, new Creator<ConditionalStatementNode>());
     Factory::Instance().Register(NodeType::switchStatementNode, new Creator<SwitchStatementNode>());
     Factory::Instance().Register(NodeType::caseStatementNode, new Creator<CaseStatementNode>());
     Factory::Instance().Register(NodeType::defaultStatementNode, new Creator<DefaultStatementNode>());
@@ -213,6 +215,10 @@ void InitFactory()
     Factory::Instance().Register(NodeType::memberFunctionNode, new Creator<MemberFunctionNode>());
     Factory::Instance().Register(NodeType::conversionFunctionNode, new Creator<ConversionFunctionNode>());
     Factory::Instance().Register(NodeType::memberVariableNode, new Creator<MemberVariableNode>());
+    Factory::Instance().Register(NodeType::aliasNode, new Creator<AliasNode>());
+    Factory::Instance().Register(NodeType::namespaceImportNode, new Creator<NamespaceImportNode>());
+    Factory::Instance().Register(NodeType::namespaceNode, new Creator<NamespaceNode>());
+    Factory::Instance().Register(NodeType::compileUnitNode, new Creator<CompileUnitNode>());
 }
 
 void DoneFactory()
