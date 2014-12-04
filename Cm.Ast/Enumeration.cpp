@@ -12,14 +12,15 @@
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
-EnumTypeNode::EnumTypeNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
+EnumTypeNode::EnumTypeNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
 {
 }
 
-EnumTypeNode::EnumTypeNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_)
+EnumTypeNode::EnumTypeNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_), parent(nullptr)
 {
 }
 
@@ -35,6 +36,7 @@ Node* EnumTypeNode::Clone() const
 
 void EnumTypeNode::AddConstant(Node* constant)
 {
+    constant->SetParent(this);
     constants.Add(constant);
 }
 
@@ -64,11 +66,44 @@ void EnumTypeNode::Write(Writer& writer)
     constants.Write(writer);
 }
 
-EnumConstantNode::EnumConstantNode(const Span& span_) : Node(span_)
+void EnumTypeNode::Print(CodeFormatter& formatter)
+{
+    std::string s = SpecifierStr(specifiers);
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append(1, '{').append(constants.ToString()).append(1, '}');
+    formatter.WriteLine(s);
+}
+
+Node* EnumTypeNode::Parent() const
+{
+    return parent;
+}
+
+void EnumTypeNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+std::string EnumTypeNode::Name() const 
+{
+    return id->Str(); 
+}
+
+void EnumTypeNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    constants.Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
+EnumConstantNode::EnumConstantNode(const Span& span_) : Node(span_), parent(nullptr)
 {
 }
 
-EnumConstantNode::EnumConstantNode(const Span& span_, IdentifierNode* id_, Node* value_) : Node(span_), id(id_), value(value_)
+EnumConstantNode::EnumConstantNode(const Span& span_, IdentifierNode* id_, Node* value_) : Node(span_), id(id_), value(value_), parent(nullptr)
 {
 }
 
@@ -87,6 +122,31 @@ void EnumConstantNode::Write(Writer& writer)
 {
     writer.Write(id.get());
     writer.Write(value.get());
+}
+
+std::string EnumConstantNode::ToString() const
+{
+    return id->ToString() + " = " + value->ToString();
+}
+
+Node* EnumConstantNode::Parent() const
+{
+    return parent;
+}
+
+void EnumConstantNode::SetParent(Node* parent_) 
+{
+    parent = parent_;
+}
+
+std::string EnumConstantNode::Name() const 
+{
+    return id->Str(); 
+}
+
+void EnumConstantNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 Node* MakeNextEnumConstantValue(const Span& span, EnumTypeNode* enumType)

@@ -21,6 +21,9 @@ public:
     EquivalenceNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::equivalenceNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::equivalence; }
+    virtual std::string GetOpStr() const { return "<=>"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class ImplicationNode : public BinaryNode
@@ -30,6 +33,9 @@ public:
     ImplicationNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::implicationNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::implication; }
+    virtual std::string GetOpStr() const { return "=>"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class DisjunctionNode : public BinaryNode
@@ -39,6 +45,9 @@ public:
     DisjunctionNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::disjunctionNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::disjunction; }
+    virtual std::string GetOpStr() const { return "||"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class ConjunctionNode : public BinaryNode
@@ -48,6 +57,9 @@ public:
     ConjunctionNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::conjunctionNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::conjunction; }
+    virtual std::string GetOpStr() const { return "&&"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class BitOrNode : public BinaryNode
@@ -57,6 +69,9 @@ public:
     BitOrNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::bitOrNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::bitOr; }
+    virtual std::string GetOpStr() const { return "|"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class BitXorNode : public BinaryNode
@@ -66,6 +81,9 @@ public:
     BitXorNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::bitXorNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::bitXor; }
+    virtual std::string GetOpStr() const { return "^"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class BitAndNode : public BinaryNode
@@ -75,6 +93,9 @@ public:
     BitAndNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::bitAndNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::bitAnd; }
+    virtual std::string GetOpStr() const { return "&"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class EqualNode : public BinaryNode
@@ -84,6 +105,9 @@ public:
     EqualNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::equalNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::equality; }
+    virtual std::string GetOpStr() const { return "=="; }
+    void Accept(Visitor& visitor) override;
 };
 
 class NotEqualNode : public BinaryNode
@@ -93,6 +117,9 @@ public:
     NotEqualNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::notEqualNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::equality; }
+    virtual std::string GetOpStr() const { return "!="; }
+    void Accept(Visitor& visitor) override;
 };
 
 class LessNode : public BinaryNode
@@ -102,6 +129,9 @@ public:
     LessNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::lessNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::relational; }
+    virtual std::string GetOpStr() const { return "<"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class GreaterNode : public BinaryNode
@@ -111,6 +141,9 @@ public:
     GreaterNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::greaterNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::relational; }
+    virtual std::string GetOpStr() const { return ">"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class LessOrEqualNode : public BinaryNode
@@ -120,6 +153,9 @@ public:
     LessOrEqualNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::lessOrEqualNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::relational; }
+    virtual std::string GetOpStr() const { return "<="; }
+    void Accept(Visitor& visitor) override;
 };
 
 class GreaterOrEqualNode : public BinaryNode
@@ -129,6 +165,9 @@ public:
     GreaterOrEqualNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::greaterOrEqualNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::relational; }
+    virtual std::string GetOpStr() const { return ">="; }
+    void Accept(Visitor& visitor) override;
 };
 
 class ShiftLeftNode : public BinaryNode
@@ -138,6 +177,9 @@ public:
     ShiftLeftNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::shiftLeftNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::shift; }
+    virtual std::string GetOpStr() const { return "<<"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class ShiftRightNode : public BinaryNode
@@ -147,6 +189,9 @@ public:
     ShiftRightNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::shiftRightNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::shift; }
+    virtual std::string GetOpStr() const { return ">>"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class AddNode : public BinaryNode
@@ -156,6 +201,9 @@ public:
     AddNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::addNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::additive; }
+    virtual std::string GetOpStr() const { return "+"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class SubNode : public BinaryNode
@@ -165,6 +213,9 @@ public:
     SubNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::subNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::additive; }
+    virtual std::string GetOpStr() const { return "-"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class MulNode : public BinaryNode
@@ -174,6 +225,9 @@ public:
     MulNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::mulNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::multiplicative; }
+    virtual std::string GetOpStr() const { return "*"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class DivNode : public BinaryNode
@@ -183,6 +237,9 @@ public:
     DivNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::divNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::multiplicative; }
+    virtual std::string GetOpStr() const { return "/"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class RemNode : public BinaryNode
@@ -192,6 +249,9 @@ public:
     RemNode(const Span& span_, Node* left_, Node* right_);
     NodeType GetNodeType() const override { return NodeType::remNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::multiplicative; }
+    virtual std::string GetOpStr() const { return "%"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class InvokeNode : public UnaryNode
@@ -204,6 +264,10 @@ public:
     void AddArgument(Node* argument) override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    Rank GetRank() const override { return Rank::postfix; }
+    std::string ToString() const override;
+    Node* Subject() const { return Child(); }
+    void Accept(Visitor& visitor) override;
 private:
     NodeList arguments;
 };
@@ -217,6 +281,11 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    Rank GetRank() const override { return Rank::postfix; }
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    Node* Subject() const { return Child(); }
+    Node* Index() const { return index.get(); }
 private:
     std::unique_ptr<Node> index;
 };
@@ -228,8 +297,13 @@ public:
     DotNode(const Span& span_, Node* subject_, IdentifierNode* memberId_);
     NodeType GetNodeType() const override { return NodeType::dotNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::postfix; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    Node* Subject() const { return Child(); }
+    IdentifierNode* MemberId() const { return memberId.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<IdentifierNode> memberId;
 };
@@ -243,6 +317,11 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    Rank GetRank() const override { return Rank::postfix; }
+    std::string ToString() const override;
+    Node* Subject() const { return Child(); }
+    IdentifierNode* MemberId() const { return memberId.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<IdentifierNode> memberId;
 };
@@ -254,6 +333,10 @@ public:
     PostfixIncNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::postfixIncNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::postfix; }
+    std::string ToString() const override;
+    Node* Subject() const { return Child(); }
+    void Accept(Visitor& visitor) override;
 };
 
 class PostfixDecNode : public UnaryNode
@@ -263,6 +346,10 @@ public:
     PostfixDecNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::postfixDecNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::postfix; }
+    std::string ToString() const override;
+    Node* Subject() const { return Child(); }
+    void Accept(Visitor& visitor) override;
 };
 
 class DerefNode : public UnaryNode
@@ -272,6 +359,10 @@ public:
     DerefNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::derefNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::prefix; }
+    virtual std::string GetOpStr() const { return "*";  }
+    Node* Subject() const { return Child(); }
+    void Accept(Visitor& visitor) override;
 };
 
 class AddrOfNode : public UnaryNode
@@ -281,6 +372,10 @@ public:
     AddrOfNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::addrOfNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::prefix; }
+    virtual std::string GetOpStr() const { return "&"; }
+    Node* Subject() const { return Child(); }
+    void Accept(Visitor& visitor) override;
 };
 
 class NotNode : public UnaryNode
@@ -290,6 +385,9 @@ public:
     NotNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::notNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::prefix; }
+    virtual std::string GetOpStr() const { return "!"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class UnaryPlusNode : public UnaryNode
@@ -299,6 +397,9 @@ public:
     UnaryPlusNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::unaryPlusNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::prefix; }
+    virtual std::string GetOpStr() const { return "+"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class UnaryMinusNode : public UnaryNode
@@ -308,6 +409,9 @@ public:
     UnaryMinusNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::unaryMinusNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::prefix; }
+    virtual std::string GetOpStr() const { return "-"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class ComplementNode : public UnaryNode
@@ -317,6 +421,9 @@ public:
     ComplementNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::complementNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::prefix; }
+    virtual std::string GetOpStr() const { return "~"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class PrefixIncNode : public UnaryNode
@@ -326,6 +433,9 @@ public:
     PrefixIncNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::prefixIncNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::prefix; }
+    virtual std::string GetOpStr() const { return "++"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class PrefixDecNode : public UnaryNode
@@ -335,6 +445,9 @@ public:
     PrefixDecNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::prefixDecNode; }
     Node* Clone() const override;
+    Rank GetRank() const override { return Rank::prefix; }
+    virtual std::string GetOpStr() const { return "--"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class SizeOfNode : public UnaryNode
@@ -344,6 +457,9 @@ public:
     SizeOfNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::sizeOfNode; }
     Node* Clone() const override;
+    std::string ToString() const override { return "sizeof(" + Child()->ToString() + ")";  }
+    Node* Subject() const { return Child(); }
+    void Accept(Visitor& visitor) override;
 };
 
 class TypeNameNode : public UnaryNode
@@ -353,6 +469,9 @@ public:
     TypeNameNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::typeNameNode; }
     Node* Clone() const override;
+    std::string ToString() const override { return "typename(" + Child()->ToString() + ")"; }
+    Node* Subject() const { return Child(); }
+    void Accept(Visitor& visitor) override;
 };
 
 class CastNode : public Node
@@ -364,6 +483,10 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    Node* TargetTypeExpr() const { return targetTypeExpr.get(); }
+    Node* SourceExpr() const { return sourceExpr.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> targetTypeExpr;
     std::unique_ptr<Node> sourceExpr;
@@ -379,6 +502,9 @@ public:
     void AddArgument(Node* argument) override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    Node* TypeExpr() const { return typeExpr.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> typeExpr;
     NodeList arguments;
@@ -394,6 +520,9 @@ public:
     void AddArgument(Node* argument) override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    Node* TypeExpr() const { return typeExpr.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> typeExpr;
     NodeList arguments;
@@ -405,6 +534,8 @@ public:
     ThisNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::thisNode; }
     Node* Clone() const override;
+    std::string ToString() const override { return "this"; }
+    void Accept(Visitor& visitor) override;
 };
 
 class BaseNode : public Node
@@ -413,6 +544,8 @@ public:
     BaseNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::baseNode; }
     Node* Clone() const override;
+    std::string ToString() const override { return "base";  }
+    void Accept(Visitor& visitor) override;
 };
 
 } } // namespace Cm::Ast

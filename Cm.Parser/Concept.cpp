@@ -146,7 +146,7 @@ public:
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new ConceptNode(span, context.fromconceptName);
+        context.value = new ConceptNode(span, context.fromSpecifiers, context.fromconceptName);
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -2033,46 +2033,46 @@ private:
 void ConceptGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::ParameterGrammar::Create(pd);
+        grammar0 = Cm::Parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar1 = Cm::Parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::ExpressionGrammar::Create(pd);
+        grammar2 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar3 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar4 = Cm::Parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::FunctionGrammar::Create(pd);
+        grammar5 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar5);
-    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar6)
     {
-        grammar6 = Cm::Parsing::stdlib::Create(pd);
+        grammar6 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
 }
@@ -2081,12 +2081,12 @@ void ConceptGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
     AddRule(new ConceptRule("Concept", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",

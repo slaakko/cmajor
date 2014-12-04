@@ -1,5 +1,5 @@
-#ifndef CompileUnit_hpp_23292
-#define CompileUnit_hpp_23292
+#ifndef CompileUnit_hpp_8809
+#define CompileUnit_hpp_8809
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -13,7 +13,7 @@ class CompileUnitGrammar : public Cm::Parsing::Grammar
 public:
     static CompileUnitGrammar* Create();
     static CompileUnitGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
-    Cm::Ast::CompileUnit* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    Cm::Ast::CompileUnitNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
     CompileUnitGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -39,4 +39,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // CompileUnit_hpp_23292
+#endif // CompileUnit_hpp_8809

@@ -35,7 +35,7 @@ namespace Cm.Parser
 
         Concept(ParsingContext* ctx): Cm::Ast::ConceptNode*
             ::= empty{ ctx->BeginParsingConcept(); }
-                ((Specifiers keyword("concept") Identifier:conceptName!){ value = new ConceptNode(span, conceptName); } '<'! (Identifier:typeParameter{ value->AddTypeParameter(typeParameter); } % ',') '>'! 
+                ((Specifiers keyword("concept") Identifier:conceptName!){ value = new ConceptNode(span, Specifiers, conceptName); } '<'! (Identifier:typeParameter{ value->AddTypeParameter(typeParameter); } % ',') '>'! 
                 ((Refinement{ value->SetRefinement(Refinement); })? (WhereConstraint(ctx){ value->AddConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
                 '{'! ConceptBody(ctx, value)! '}'!)
                 {

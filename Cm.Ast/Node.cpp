@@ -59,6 +59,49 @@ void Node::Write(Writer& writer)
 {
 }
 
+void Node::Print(CodeFormatter& formatter)
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+Node* Node::Parent() const
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+void Node::SetParent(Node* parent_)
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+std::string Node::Name() const
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+std::string Node::FullName() const
+{
+    std::string parentFullName;
+    Node* parent = Parent();
+    if (parent)
+    {
+        parentFullName = parent->FullName();
+    }
+    if (parentFullName.empty())
+    {
+        return Name();
+    }
+    else
+    {
+        return parentFullName + "." + Name(); 
+    }
+}
+
+void Node::Accept(Visitor& visitor)
+{
+    throw std::runtime_error("member function not applicable");
+}
+
 UnaryNode::UnaryNode(const Span& span_): Node(span_)
 {
 }
@@ -75,6 +118,27 @@ void UnaryNode::Read(Reader& reader)
 void UnaryNode::Write(Writer& writer) 
 {
     writer.Write(child.get());
+}
+
+std::string UnaryNode::ToString() const
+{
+    std::string s = GetOpStr();
+    if (child->GetRank() > GetRank())
+    {
+        s.append(1, '(');
+    }
+    s.append(child->ToString());
+    if (child->GetRank() > GetRank())
+    {
+        s.append(1, ')');
+    }
+    return s;
+
+}
+
+void UnaryNode::Accept(Visitor& visitor)
+{
+    child->Accept(visitor);
 }
 
 BinaryNode::BinaryNode(const Span& span_) : Node(span_)
@@ -97,6 +161,37 @@ void BinaryNode::Write(Writer& writer)
     writer.Write(right.get());
 }
 
+std::string BinaryNode::ToString() const
+{
+    std::string s;
+    if (left->GetRank() > GetRank())
+    {
+        s.append(1, '(');
+    }
+    s.append(left->ToString());
+    if (left->GetRank() > GetRank())
+    {
+        s.append(1, ')');
+    }
+    s.append(1, ' ').append(GetOpStr()).append(1, ' ');
+    if (right->GetRank() > GetRank())
+    {
+        s.append(1, '(');
+    }
+    s.append(right->ToString());
+    if (right->GetRank() > GetRank())
+    {
+        s.append(1, ')');
+    }
+    return s;
+}
+
+void BinaryNode::Accept(Visitor& visitor)
+{
+    left->Accept(visitor);
+    right->Accept(visitor);
+}
+
 NodeList::NodeList()
 {
 }
@@ -117,6 +212,41 @@ void NodeList::Write(Writer& writer)
     for (uint32_t i = 0; i < n; ++i)
     {
         writer.Write(nodes[i].get());
+    }
+}
+
+void NodeList::Print(CodeFormatter& formatter)
+{
+    for (const std::unique_ptr<Node>& node : nodes)
+    {
+        node->Print(formatter);
+    }
+}
+
+std::string NodeList::ToString() const
+{
+    std::string s;
+    bool first = true;
+    for (const std::unique_ptr<Node>& node : nodes)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            s.append(", ");
+        }
+        s.append(node->ToString());
+    }
+    return s;
+}
+
+void NodeList::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<Node>& node : nodes)
+    {
+        node->Accept(visitor);
     }
 }
 

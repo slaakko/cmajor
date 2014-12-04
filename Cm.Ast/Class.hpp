@@ -30,10 +30,18 @@ public:
     void SetBaseClassTypeExpr(Node* baseClassTypeExpr_);
     void SetConstraint(WhereConstraintNode* constraint_);
     void AddMember(Node* member);
-    const std::string& Id() const;
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    std::string Name() const override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    IdentifierNode* Id() const { return id.get(); }
+    const TemplateParameterNodeList& TemplateParameters() const { return templateParameters; }
+    WhereConstraintNode* Constraint() const { return constraint.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;
@@ -41,6 +49,7 @@ private:
     std::unique_ptr<Node> baseClassTypeExpr;
     std::unique_ptr<WhereConstraintNode> constraint;
     NodeList members;
+    Node* parent;
 };
 
 class InitializerNode : public Node
@@ -65,6 +74,8 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<IdentifierNode> memberId;
 };
@@ -75,6 +86,8 @@ public:
     BaseInitializerNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::baseInitializerNode; }
     Node* Clone() const override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 };
 
 class ThisInitializerNode : public InitializerNode
@@ -83,6 +96,8 @@ public:
     ThisInitializerNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::thisInitializerNode; }
     Node* Clone() const override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
 };
 
 class InitializerNodeList
@@ -98,6 +113,8 @@ public:
     void Add(InitializerNode* initializer) { initializerNodes.push_back(std::unique_ptr<InitializerNode>(initializer)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
+    std::string ToString() const;
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<InitializerNode>> initializerNodes;
 };
@@ -114,11 +131,18 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    WhereConstraintNode* Constraint() const { return constraint.get(); }
 private:
     Specifiers specifiers;
     InitializerNodeList initializers;
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
+    Node* parent;
 };
 
 class ConstructorNode : public Node
@@ -134,12 +158,20 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    const ParameterNodeList& Parameters() const { return parameters; }
+    WhereConstraintNode* Constraint() const { return constraint.get(); }
 private:
     Specifiers specifiers;
     ParameterNodeList parameters;
     InitializerNodeList initializers;
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
+    Node* parent;
 };
 
 class DestructorNode : public Node
@@ -153,11 +185,19 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    const ParameterNodeList& Parameters() const { return parameters; }
+    WhereConstraintNode* Constraint() const { return constraint.get(); }
 private:
     Specifiers specifiers;
     ParameterNodeList parameters;
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
+    Node* parent;
 };
 
 class MemberFunctionNode : public Node
@@ -173,6 +213,15 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
+    FunctionGroupIdNode* GroupId() const { return groupId.get(); }
+    const ParameterNodeList& Parameters() const { return parameters; }
+    WhereConstraintNode* Constraint() const { return constraint.get(); }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
@@ -180,6 +229,7 @@ private:
     ParameterNodeList parameters;
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
+    Node* parent;
 };
 
 class ConversionFunctionNode : public Node
@@ -191,11 +241,19 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
+    WhereConstraintNode* Constraint() const { return constraint.get(); }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
+    Node* parent;
 };
 
 class MemberVariableNode : public Node
@@ -207,10 +265,18 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    Node* Parent() const override;
+    void SetParent(Node* parent_) override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    Node* TypeExpr() const { return typeExpr.get(); }
+    IdentifierNode* Id() const { return id.get(); }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> typeExpr;
     std::unique_ptr<IdentifierNode> id;
+    Node* parent;
 };
 
 } } // namespace Cm::Ast

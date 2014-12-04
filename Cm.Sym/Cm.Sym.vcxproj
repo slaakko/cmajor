@@ -19,23 +19,25 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChunkAllocator.hpp" />
-    <ClInclude Include="CodeFormatter.hpp" />
-    <ClInclude Include="MappedInputFile.hpp" />
-    <ClInclude Include="TextUtils.hpp" />
-    <ClInclude Include="Uuid.hpp" />
+    <ClInclude Include="Exception.hpp" />
+    <ClInclude Include="Namespace.hpp" />
+    <ClInclude Include="Scope.hpp" />
+    <ClInclude Include="Symbol.hpp" />
+    <ClInclude Include="SymbolTable.hpp" />
+    <ClInclude Include="Type.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChunkAllocator.cpp" />
-    <ClCompile Include="CodeFormatter.cpp" />
-    <ClCompile Include="MappedInputFile.cpp" />
-    <ClCompile Include="TextUtils.cpp" />
-    <ClCompile Include="Uuid.cpp" />
+    <ClCompile Include="Exception.cpp" />
+    <ClCompile Include="Namespace.cpp" />
+    <ClCompile Include="Scope.cpp" />
+    <ClCompile Include="Symbol.cpp" />
+    <ClCompile Include="SymbolTable.cpp" />
+    <ClCompile Include="Type.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD}</ProjectGuid>
+    <ProjectGuid>{A12C2C5B-D12E-457A-8D1C-69A9E6759064}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>CmUtil</RootNamespace>
+    <RootNamespace>CmSym</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -89,7 +91,6 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -104,7 +105,6 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -121,7 +121,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,7 +139,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

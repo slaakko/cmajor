@@ -8,16 +8,51 @@
 ========================================================================*/
 
 #include <Cm.Ast/CompileUnit.hpp>
+#include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Reader.hpp>
+#include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
-CompileUnit::CompileUnit(const std::string& filePath_) : filePath(filePath_)
+CompileUnitNode::CompileUnitNode(const Span& span_) : Node(span_)
 {
 }
 
-void CompileUnit::AddNode(Node* node)
+CompileUnitNode::CompileUnitNode(const Span& span_, const std::string& filePath_) : Node(span_), filePath(filePath_), globalNs(new NamespaceNode(span_, new IdentifierNode(span_, "")))
 {
-    nodes.Add(node);
+}
+
+Node* CompileUnitNode::Clone() const
+{
+    CompileUnitNode* clone = new CompileUnitNode(GetSpan(), filePath);
+    clone->globalNs.reset(static_cast<NamespaceNode*>(globalNs->Clone()));
+    return clone;
+}
+
+void CompileUnitNode::Read(Reader& reader)
+{
+    filePath = reader.ReadString();
+    globalNs.reset(reader.ReadNamespaceNode());
+}
+
+void CompileUnitNode::Write(Writer& writer)
+{
+    writer.Write(filePath);
+    writer.Write(globalNs.get());
+}
+
+void CompileUnitNode::Print(CodeFormatter& formatter)
+{
+    formatter.WriteLine("> " + filePath);
+    globalNs->Print(formatter);
+}
+
+void CompileUnitNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    globalNs->Accept(visitor);
+    visitor.EndVisit(*this);
 }
 
 } } // namespace Cm::Ast

@@ -12,14 +12,16 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 #include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
-DelegateNode::DelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
+DelegateNode::DelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
 {
 }
 
-DelegateNode::DelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_)
+DelegateNode::DelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_) : 
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_), parent(nullptr)
 {
 }
 
@@ -54,11 +56,43 @@ void DelegateNode::Write(Writer& writer)
     parameters.Write(writer);
 }
 
-ClassDelegateNode::ClassDelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
+void DelegateNode::Print(CodeFormatter& formatter)
+{
+    std::string s = SpecifierStr(specifiers);
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append("delegate ").append(returnTypeExpr->ToString()).append(1, ' ').append(id->ToString()).append(parameters.ToString()).append(1, ';');
+    formatter.WriteLine(s);
+}
+
+Node* DelegateNode::Parent() const
+{
+    return parent;
+}
+
+void DelegateNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+std::string DelegateNode::Name() const 
+{ 
+    return id->Str(); 
+}
+
+void DelegateNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+ClassDelegateNode::ClassDelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
 {
 }
 
-ClassDelegateNode::ClassDelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_)
+ClassDelegateNode::ClassDelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_) : 
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_), parent(nullptr)
 {
 }
 
@@ -91,6 +125,37 @@ void ClassDelegateNode::Write(Writer& writer)
     writer.Write(returnTypeExpr.get());
     writer.Write(id.get());
     parameters.Write(writer);
+}
+
+void ClassDelegateNode::Print(CodeFormatter& formatter)
+{
+    std::string s = SpecifierStr(specifiers);
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append("class delegate ").append(returnTypeExpr->ToString()).append(1, ' ').append(id->ToString()).append(parameters.ToString()).append(1, ';');
+    formatter.WriteLine(s);
+}
+
+Node* ClassDelegateNode::Parent() const
+{
+    return parent;
+}
+
+void ClassDelegateNode::SetParent(Node* parent_)
+{
+    parent = parent_;
+}
+
+std::string ClassDelegateNode::Name() const 
+{ 
+    return id->Str(); 
+}
+
+void ClassDelegateNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::Ast

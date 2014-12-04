@@ -25,6 +25,8 @@ enum class Derivation: uint8_t
     rightParen = 6
 };
 
+std::string DerivationStr(Derivation d);
+
 const int maxDerivations = 7;
 
 class DerivationList
@@ -50,6 +52,7 @@ public:
     Node* ReleaseBaseTypeExprNode() { return baseTypeExprNode.release();  }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    std::string ToString() const override;
     void Add(Derivation derivation);
     void AddConst() { Add(Derivation::const_); }
     void AddRvalueRef() { Add(Derivation::rvalueRef); }

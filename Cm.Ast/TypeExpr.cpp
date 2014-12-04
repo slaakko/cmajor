@@ -13,6 +13,20 @@
 
 namespace Cm { namespace Ast {
 
+std::string DerivationStr(Derivation d)
+{
+    switch (d)
+    {
+        case Derivation::const_: return "const";
+        case Derivation::reference: return "&";
+        case Derivation::rvalueRef: return "&&";
+        case Derivation::pointer: return "*";
+        case Derivation::leftParen: return "(";
+        case Derivation::rightParen: return ")";
+    }
+    return "";
+}
+
 DerivationList::DerivationList() : numDerivations(0)
 {
     memset(&derivations[0], 0, sizeof(derivations));
@@ -50,6 +64,54 @@ void DerivedTypeExprNode::Write(Writer& writer)
 {
     writer.Write(derivations);
     writer.Write(baseTypeExprNode.get());
+}
+
+std::string DerivedTypeExprNode::ToString() const
+{
+    std::string s;
+    uint8_t derivationIndex = 0;
+    uint8_t n = derivations.NumDerivations();
+    if (derivationIndex < n)
+    {
+        Derivation d = derivations[derivationIndex];
+        if (d == Derivation::const_)
+        {
+            s.append(DerivationStr(d));
+            ++derivationIndex;
+        }
+    }
+    if (derivationIndex < n)
+    {
+        Derivation d = derivations[derivationIndex];
+        if (d == Derivation::leftParen)
+        {
+            if (!s.empty())
+            {
+                s.append(1, ' ');
+            }
+            s.append(DerivationStr(d));
+            ++derivationIndex;
+            if (derivationIndex < n)
+            {
+                Derivation d = derivations[derivationIndex];
+                if (d == Derivation::const_)
+                {
+                    s.append(DerivationStr(d));
+                    ++derivationIndex;
+                }
+            }
+        }
+    }
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append(baseTypeExprNode->ToString());
+    for (uint8_t i = derivationIndex; i < n; ++i)
+    {
+        s.append(DerivationStr(derivations[i]));
+    }
+    return s;
 }
 
 void DerivedTypeExprNode::Add(Derivation derivation)

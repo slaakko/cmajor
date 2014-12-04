@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Ast/Project.hpp>
+#include <Cm.Ast/Writer.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -208,9 +209,19 @@ void Project::AddDeclaration(ProjectDeclaration* declaration)
     declarations.push_back(std::unique_ptr<ProjectDeclaration>(declaration));
 }
 
-void Project::AddCompileUnit(CompileUnit* compileUnit)
+void Project::AddCompileUnit(CompileUnitNode* compileUnit)
 {
-    compileUnits.push_back(std::unique_ptr<CompileUnit>(compileUnit));
+    compileUnits.push_back(std::unique_ptr<CompileUnitNode>(compileUnit));
+}
+
+void Project::Write(Writer& writer)
+{
+    uint16_t numCompileUnits = static_cast<uint16_t>(compileUnits.size());
+    writer.Write(numCompileUnits);
+    for (const std::unique_ptr<CompileUnitNode>& compileUnit : compileUnits)
+    {
+        writer.Write(compileUnit.get());
+    }
 }
 
 } } // namespace Cm::Ast

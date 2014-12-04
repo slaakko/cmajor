@@ -37,6 +37,31 @@ void TemplateParameterNodeList::Write(Writer& writer)
     }
 }
 
+std::string TemplateParameterNodeList::ToString() const
+{
+    std::string s;
+    if (templateParameterNodes.empty())
+    {
+        return s;
+    }
+    s.append(1, '<');
+    bool first = true;
+    for (const std::unique_ptr<TemplateParameterNode>& templateParam : templateParameterNodes)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            s.append(", ");
+        }
+        s.append(templateParam->ToString());
+    }
+    s.append(1, '>');
+    return s;
+}
+
 TemplateParameterNode::TemplateParameterNode(const Span& span_) : Node(span_)
 {
 }
@@ -69,6 +94,16 @@ void TemplateParameterNode::Write(Writer& writer)
     {
         writer.Write(defaultTemplateArgument.get());
     }
+}
+
+std::string TemplateParameterNode::ToString() const
+{
+    std::string s = id->ToString();
+    if (defaultTemplateArgument)
+    {
+        s.append(" = ").append(defaultTemplateArgument->ToString());
+    }
+    return s;
 }
 
 TemplateIdNode::TemplateIdNode(const Span& span_): Node(span_)
@@ -104,6 +139,13 @@ void TemplateIdNode::Write(Writer& writer)
 {
     writer.Write(subject.get());
     templateArguments.Write(writer);
+}
+
+std::string TemplateIdNode::ToString() const
+{
+    std::string s = subject->ToString();
+    s.append(1, '<').append(templateArguments.ToString()).append(1, '>');
+    return s;
 }
 
 } } // namespace Cm::Ast
