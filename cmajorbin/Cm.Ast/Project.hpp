@@ -15,6 +15,8 @@
 
 namespace Cm { namespace Ast {
 
+class Visitor;
+
 enum class SourceFileType
 {
     cm, asm_, c, text
@@ -136,6 +138,7 @@ public:
     const std::string& LibraryFilePath() const { return libraryFilePath; }
     const std::string& ExecutableFilePath() const { return executableFilePath; }
     void Write(Writer& writer);
+    void VisitCompileUnits(Visitor& visitor);
 private:
     std::string name;
     std::string filePath;

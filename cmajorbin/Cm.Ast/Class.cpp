@@ -413,7 +413,10 @@ void StaticConstructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     initializers.Accept(visitor);
-    body->Accept(visitor);
+    if (body && visitor.VisitBodies())
+    {
+        body->Accept(visitor);
+    }
     visitor.EndVisit(*this);
 }
 
@@ -541,7 +544,7 @@ void ConstructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     initializers.Accept(visitor);
-    if (body)
+    if (body && visitor.VisitBodies())
     {
         body->Accept(visitor);
     }
@@ -660,7 +663,7 @@ void DestructorNode::SetParent(Node* parent_)
 void DestructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (body)
+    if (body && visitor.VisitBodies())
     {
         body->Accept(visitor);
     }
@@ -789,7 +792,7 @@ void MemberFunctionNode::SetParent(Node* parent_)
 void MemberFunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (body)
+    if (body && visitor.VisitBodies())
     {
         body->Accept(visitor);
     }
@@ -887,7 +890,7 @@ void ConversionFunctionNode::SetParent(Node* parent_)
 void ConversionFunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (body)
+    if (body && visitor.VisitBodies())
     {
         body->Accept(visitor);
     }

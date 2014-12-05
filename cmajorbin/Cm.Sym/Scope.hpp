@@ -47,7 +47,7 @@ public:
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const;
     NamespaceSymbol* Ns() { return ns; }
     void SetNs(NamespaceSymbol* ns_) { ns = ns_; }
-    Scope* CreateNamespace(const std::string& qualifiedNsName);
+    NamespaceSymbol* CreateNamespace(const std::string& qualifiedNsName, Cm::Ast::Node* node);
 private:
     typedef std::unordered_map<std::string, Symbol*> SymbolMap;
     typedef SymbolMap::const_iterator SymbolMapIt;

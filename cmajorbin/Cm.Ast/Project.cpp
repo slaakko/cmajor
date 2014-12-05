@@ -224,4 +224,12 @@ void Project::Write(Writer& writer)
     }
 }
 
+void Project::VisitCompileUnits(Visitor& visitor)
+{
+    for (const std::unique_ptr<CompileUnitNode>& compileUnit : compileUnits)
+    {
+        compileUnit->Accept(visitor);
+    }
+}
+
 } } // namespace Cm::Ast

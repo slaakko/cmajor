@@ -171,7 +171,7 @@ std::string FunctionNode::Name() const
 void FunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (body)
+    if (body && visitor.VisitBodies())
     {
         body->Accept(visitor);
     }

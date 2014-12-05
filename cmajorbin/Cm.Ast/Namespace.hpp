@@ -28,6 +28,7 @@ public:
     void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* Id() const { return id.get(); }
+    bool IsGlobalNamespaceNode() const { return parent == nullptr; }
 private:
     std::unique_ptr<IdentifierNode> id;
     NodeList members;

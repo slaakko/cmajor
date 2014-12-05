@@ -7,12 +7,19 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/Type.hpp>
+#ifndef CM_SYM_CLASS_SYMBOL_INCLUDED
+#define CM_SYM_CLASS_SYMBOL_INCLUDED
+#include <Cm.Sym/ContainerSymbol.hpp>
+#include <Cm.Ast/Class.hpp>
 
 namespace Cm { namespace Sym {
 
-TypeSymbol::TypeSymbol(const std::string& name_) : Symbol(name_)
+class ClassSymbol : public ContainerSymbol
 {
-}
+public:
+    ClassSymbol(Cm::Ast::ClassNode* classNode);
+};
 
 } } // namespace Cm::Sym
+
+#endif // CM_SYM_CLASS_SYMBOL_INCLUDED

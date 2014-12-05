@@ -9,7 +9,11 @@
 
 #ifndef CM_SYM_SYMBOL_TABLE_INCLUDED
 #define CM_SYM_SYMBOL_TABLE_INCLUDED
-#include <Cm.Sym/Namespace.hpp>
+#include <Cm.Sym/NamespaceSymbol.hpp>
+#include <Cm.Ast/Namespace.hpp>
+#include <Cm.Ast/Class.hpp>
+#include <Cm.Ast/Enumeration.hpp>
+#include <Cm.Ast/Enumeration.hpp>
 #include <stack>
 
 namespace Cm { namespace Sym {
@@ -18,12 +22,19 @@ class SymbolTable
 {
 public:
     SymbolTable();
-    void BeginNamespaceScope(const std::string& qualifiedNsName);
+    void BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode);
     void EndNamespaceScope();
+    void BeginClassScope(Cm::Ast::ClassNode* classNode);
+    void EndClassScope();
+    void BeginEnumScope(Cm::Ast::EnumTypeNode* enumTypeNode);
+    void EndEnumScope();
+    void AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode);
 private:
     NamespaceSymbol globalNs;
-    Scope* currentScope;
-    std::stack<Scope*> scopeStack;
+    ContainerSymbol* container;
+    std::stack<ContainerSymbol*> containerStack;
+    void BeginContainer(ContainerSymbol* container_);
+    void EndContainer();
 };
 
 } } // namespace Cm::Sym

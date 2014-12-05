@@ -7,12 +7,7 @@
 
  ========================================================================*/
 
-#include <Cm.Sym/SymbolTable.hpp>
-#include <Cm.Parser/Class.hpp>
-#include <Cm.Ast/Writer.hpp>
-#include <Cm.Ast/Reader.hpp>
-#include <Cm.Ast/Factory.hpp>
-#include <Cm.Ast/Identifier.hpp>
+#include <Cm.Build/Build.hpp>
 #include <Cm.Parsing/Exception.hpp>
 
 #include <Cm.Ast/InitDone.hpp>
@@ -52,25 +47,17 @@ int main(int argc, const char** argv)
     try
     {
         InitDone initDone;
-        Cm::Sym::SymbolTable symbolTable;
-        symbolTable.BeginNamespaceScope("alpha.beta.gamma");
-        symbolTable.EndNamespaceScope();
-        symbolTable.BeginNamespaceScope("alpha.beta.gamma");
-        symbolTable.EndNamespaceScope();
-/*
+        std::vector<std::string> projectFilePaths;
         std::cout << "Cmajor Binary Compiler version " << version << std::endl;
-        Cm::Parser::ClassGrammar* grammar = Cm::Parser::ClassGrammar::Create();
-        grammar->SetRecover();
-        Cm::Parser::ParsingContext ctx;
-        std::string s("public class Foo { typedef int* iterator; }");
-        std::unique_ptr<Cm::Ast::Node> node(grammar->Parse(s.c_str(), s.c_str() + s.length(), 0, "", &ctx));
+        for (int i = 1; i < argc; ++i)
         {
-            Cm::Ast::Writer writer("C:\\temp\\class.mc");
-            writer.Write(node.get());
+            std::string arg = argv[i];
+            projectFilePaths.push_back(arg);
         }
-        Cm::Ast::Reader reader("C:\\temp\\class.mc");
-        std::unique_ptr<Cm::Ast::Node> n(reader.ReadNode());
-*/
+        for (const std::string& projectFilePath : projectFilePaths)
+        {
+            Cm::Build::Build(projectFilePath);
+        }
     }
     catch (const Cm::Parsing::CombinedParsingError& ex)
     {
