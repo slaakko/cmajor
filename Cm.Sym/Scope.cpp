@@ -9,7 +9,7 @@
 
 #include <Cm.Sym/Scope.hpp>
 #include <Cm.Sym/Exception.hpp>
-#include <Cm.Sym/Namespace.hpp>
+#include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Util/TextUtils.hpp>
 
 namespace Cm { namespace Sym {
@@ -104,7 +104,7 @@ Symbol* Scope::Lookup(const std::string& name, ScopeLookup lookup) const
     }
 }
 
-Scope* Scope::CreateNamespace(const std::string& qualifiedNsName)
+NamespaceSymbol* Scope::CreateNamespace(const std::string& qualifiedNsName, Cm::Ast::Node* node)
 {
     Scope* scope = this;
     NamespaceSymbol* parentNs = scope->Ns();
@@ -127,6 +127,7 @@ Scope* Scope::CreateNamespace(const std::string& qualifiedNsName)
         else
         {
             NamespaceSymbol* newNs = new NamespaceSymbol(component);
+            newNs->SetNode(node);
             scope = newNs->GetScope();
             scope->SetParent(parentNs->GetScope());
             parentNs->AddSymbol(newNs);
@@ -141,7 +142,7 @@ Scope* Scope::CreateNamespace(const std::string& qualifiedNsName)
             parentNs = newNs;
         }
     }
-    return scope;
+    return parentNs;
 }
 
 } } // namespace Cm::Sym

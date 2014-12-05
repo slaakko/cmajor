@@ -7,8 +7,8 @@
 
 ========================================================================*/
 
-#ifndef CM_PARSER_PARSINGCONTEXT
-#define CM_PARSER_PARSINGCONTEXT
+#ifndef CM_PARSER_PARSING_CONTEXT
+#define CM_PARSER_PARSING_CONTEXT
 #include <stack>
 
 namespace Cm { namespace Parser {
@@ -52,4 +52,4 @@ private:
 
 } } // namespace Cm::Parser
 
-#endif // CM_PARSER_PARSINGCONTEXT
+#endif // CM_PARSER_PARSING_CONTEXT

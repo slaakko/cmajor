@@ -19,16 +19,24 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ClassSymbol.hpp" />
+    <ClInclude Include="ContainerSymbol.hpp" />
+    <ClInclude Include="DeclarationVisitor.hpp" />
+    <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="Exception.hpp" />
-    <ClInclude Include="Namespace.hpp" />
+    <ClInclude Include="NamespaceSymbol.hpp" />
     <ClInclude Include="Scope.hpp" />
     <ClInclude Include="Symbol.hpp" />
     <ClInclude Include="SymbolTable.hpp" />
     <ClInclude Include="Type.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ClassSymbol.cpp" />
+    <ClCompile Include="ContainerSymbol.cpp" />
+    <ClCompile Include="DeclarationVisitor.cpp" />
+    <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="Exception.cpp" />
-    <ClCompile Include="Namespace.cpp" />
+    <ClCompile Include="NamespaceSymbol.cpp" />
     <ClCompile Include="Scope.cpp" />
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="SymbolTable.cpp" />

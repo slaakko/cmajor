@@ -7,18 +7,24 @@
 
 ========================================================================*/
 
-#ifndef CM_SYM_TYPE_INCLUDED
-#define CM_SYM_TYPE_INCLUDED
-#include <Cm.Sym/Symbol.hpp>
+#ifndef CM_SYM_CONTAINER_SYMBOL_INCLUDED
+#define CM_SYM_CONTAINER_SYMBOL_INCLUDED
+#include <Cm.Sym/Scope.hpp>
 
 namespace Cm { namespace Sym {
 
-class TypeSymbol : public Symbol
+class ContainerSymbol : public Symbol
 {
 public:
-    TypeSymbol(const std::string& name_);
+    ContainerSymbol();
+    ContainerSymbol(const std::string& name_);
+    virtual Scope* GetScope() { return &scope; }
+    void AddSymbol(Symbol* symbol);
+private:
+    Scope scope;
+    std::vector<std::unique_ptr<Symbol>> symbols;
 };
 
 } } // namespace Cm::Sym
 
-#endif // CM_SYM_TYPE_INCLUDED
+#endif // CM_SYM_CONTAINER_SYMBOL_INCLUDED
