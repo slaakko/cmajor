@@ -9,10 +9,7 @@
 
 #ifndef CM_AST_CLASS_INCLUDED
 #define CM_AST_CLASS_INCLUDED
-#include <Cm.Ast/Node.hpp>
-#include <Cm.Ast/Specifier.hpp>
-#include <Cm.Ast/Template.hpp>
-#include <Cm.Ast/Parameter.hpp>
+#include <Cm.Ast/Function.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -26,6 +23,7 @@ public:
     ClassNode(const Span& span_);
     ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::classNode; }
+    virtual bool IsClassNode() const { return true; }
     void AddTemplateParameter(TemplateParameterNode* templateParameter) override;
     void SetBaseClassTypeExpr(Node* baseClassTypeExpr_);
     void SetConstraint(WhereConstraintNode* constraint_);
@@ -119,120 +117,69 @@ private:
     std::vector<std::unique_ptr<InitializerNode>> initializerNodes;
 };
 
-class StaticConstructorNode : public Node
+class StaticConstructorNode : public FunctionNode
 {
 public:
     StaticConstructorNode(const Span& span_);
     StaticConstructorNode(const Span& span_, Specifiers specifiers_);
     NodeType GetNodeType() const override { return NodeType::staticConstructorNode; }
     void AddInitializer(InitializerNode* initializer) override;
-    void SetConstraint(WhereConstraintNode* constraint_);
-    void SetBody(CompoundStatementNode* body_);
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
-    Specifiers GetSpecifiers() const { return specifiers; }
-    WhereConstraintNode* Constraint() const { return constraint.get(); }
 private:
-    Specifiers specifiers;
     InitializerNodeList initializers;
-    std::unique_ptr<WhereConstraintNode> constraint;
-    std::unique_ptr<CompoundStatementNode> body;
-    Node* parent;
 };
 
-class ConstructorNode : public Node
+class ConstructorNode : public FunctionNode
 {
 public:
     ConstructorNode(const Span& span_);
     ConstructorNode(const Span& span_, Specifiers specifiers_);
     NodeType GetNodeType() const override { return NodeType::constructorNode; }
-    void AddParameter(ParameterNode* parameter) override;
     void AddInitializer(InitializerNode* initializer) override;
-    void SetConstraint(WhereConstraintNode* constraint_);
-    void SetBody(CompoundStatementNode* body_);
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
-    Specifiers GetSpecifiers() const { return specifiers; }
-    const ParameterNodeList& Parameters() const { return parameters; }
-    WhereConstraintNode* Constraint() const { return constraint.get(); }
 private:
-    Specifiers specifiers;
-    ParameterNodeList parameters;
     InitializerNodeList initializers;
-    std::unique_ptr<WhereConstraintNode> constraint;
-    std::unique_ptr<CompoundStatementNode> body;
-    Node* parent;
 };
 
-class DestructorNode : public Node
+class DestructorNode : public FunctionNode
 {
 public:
     DestructorNode(const Span& span_);
     DestructorNode(const Span& span_, Specifiers specifiers_, CompoundStatementNode* body_);
     NodeType GetNodeType() const override { return NodeType::destructorNode; }
-    void AddParameter(ParameterNode* parameter) override;
-    void SetConstraint(WhereConstraintNode* constraint_);
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
-    Specifiers GetSpecifiers() const { return specifiers; }
-    const ParameterNodeList& Parameters() const { return parameters; }
-    WhereConstraintNode* Constraint() const { return constraint.get(); }
-private:
-    Specifiers specifiers;
-    ParameterNodeList parameters;
-    std::unique_ptr<WhereConstraintNode> constraint;
-    std::unique_ptr<CompoundStatementNode> body;
-    Node* parent;
 };
 
-class MemberFunctionNode : public Node
+class MemberFunctionNode : public FunctionNode
 {
 public:
     MemberFunctionNode(const Span& span_);
     MemberFunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_);
     NodeType GetNodeType() const override { return NodeType::memberFunctionNode; }
-    void AddParameter(ParameterNode* parameter) override;
-    void SetConstraint(WhereConstraintNode* constraint_);
-    void SetBody(CompoundStatementNode* body_);
     void SetConst();
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
-    Specifiers GetSpecifiers() const { return specifiers; }
-    Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
-    FunctionGroupIdNode* GroupId() const { return groupId.get(); }
-    const ParameterNodeList& Parameters() const { return parameters; }
-    WhereConstraintNode* Constraint() const { return constraint.get(); }
+    bool IsConst() const { return isConst; }
 private:
-    Specifiers specifiers;
-    std::unique_ptr<Node> returnTypeExpr;
-    std::unique_ptr<FunctionGroupIdNode> groupId;
-    ParameterNodeList parameters;
-    std::unique_ptr<WhereConstraintNode> constraint;
-    std::unique_ptr<CompoundStatementNode> body;
-    Node* parent;
+    bool isConst;
 };
 
-class ConversionFunctionNode : public Node
+class ConversionFunctionNode : public MemberFunctionNode
 {
 public:
     ConversionFunctionNode(const Span& span_);
@@ -242,18 +189,7 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
-    Specifiers GetSpecifiers() const { return specifiers; }
-    Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
-    WhereConstraintNode* Constraint() const { return constraint.get(); }
-private:
-    Specifiers specifiers;
-    std::unique_ptr<Node> returnTypeExpr;
-    std::unique_ptr<WhereConstraintNode> constraint;
-    std::unique_ptr<CompoundStatementNode> body;
-    Node* parent;
 };
 
 class MemberVariableNode : public Node

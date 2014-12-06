@@ -85,6 +85,10 @@ void ClassNode::Read(Reader& reader)
         constraint.reset(reader.ReadWhereConstraintNode());
     }
     members.Read(reader);
+    for (const std::unique_ptr<Node>& member : members)
+    {
+        member->SetParent(this);
+    }
 }
 
 void ClassNode::Write(Writer& writer)
@@ -311,11 +315,11 @@ void InitializerNodeList::Accept(Visitor& visitor)
     }
 }
 
-StaticConstructorNode::StaticConstructorNode(const Span& span_) : Node(span_), parent(nullptr)
+StaticConstructorNode::StaticConstructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
 
-StaticConstructorNode::StaticConstructorNode(const Span& span_, Specifiers specifiers_) : Node(span_), specifiers(specifiers_), parent(nullptr)
+StaticConstructorNode::StaticConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, "@static_ctor"))
 {
 }
 
@@ -324,113 +328,81 @@ void StaticConstructorNode::AddInitializer(InitializerNode* initializer)
     initializers.Add(initializer);
 }
 
-void StaticConstructorNode::SetConstraint(WhereConstraintNode* constraint_)
-{
-    constraint.reset(constraint_);
-}
-
-void StaticConstructorNode::SetBody(CompoundStatementNode* body_)
-{
-    body.reset(body_);
-}
 
 Node* StaticConstructorNode::Clone() const
 {
-    StaticConstructorNode* clone = new StaticConstructorNode(GetSpan(), specifiers);
+    StaticConstructorNode* clone = new StaticConstructorNode(GetSpan(), GetSpecifiers());
     for (const std::unique_ptr<InitializerNode>& initializer : initializers)
     {
         clone->AddInitializer(static_cast<InitializerNode*>(initializer->Clone()));
     }
-    if (constraint)
+    if (Constraint())
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(constraint->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone()));
     }
-    clone->SetBody(static_cast<CompoundStatementNode*>(body->Clone()));
+    if (Body())
+    {
+        clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone()));
+    }
     return clone;
 }
 
 void StaticConstructorNode::Read(Reader& reader)
 {
-    specifiers = reader.ReadSpecifiers();
+    FunctionNode::Read(reader);
     initializers.Read(reader);
-    bool hasConstraint = reader.ReadBool();
-    if (hasConstraint)
-    {
-        constraint.reset(reader.ReadWhereConstraintNode());
-    }
-    bool hasBody = reader.ReadBool();
-    if (hasBody)
-    {
-        body.reset(reader.ReadCompoundStatementNode());
-    }
 }
 
 void StaticConstructorNode::Write(Writer& writer)
 {
-    writer.Write(specifiers);
+    FunctionNode::Write(writer);
     initializers.Write(writer);
-    bool hasConstraint = constraint != nullptr;
-    writer.Write(hasConstraint);
-    if (hasConstraint)
-    {
-        writer.Write(constraint.get());
-    }
-    bool hasBody = body != nullptr;
-    writer.Write(hasBody);
-    if (hasBody)
-    {
-        writer.Write(body.get());
-    }
 }
 
 void StaticConstructorNode::Print(CodeFormatter& formatter)
 {
-    std::string s = SpecifierStr(specifiers);
+    std::string s = SpecifierStr(GetSpecifiers());
     if (!s.empty())
     {
         s.append(1, ' ');
     }
-    s.append("@static_ctor()").append(initializers.ToString());
-    if (constraint)
+    if (Parent() && Parent()->IsClassNode())
     {
-        s.append(1, ' ').append(constraint->ToString());
+        s.append(Parent()->Name()).append("()");
+    }
+    else
+    {
+        s.append("@static_ctor()");
+    }
+    s.append(initializers.ToString());
+    if (Constraint())
+    {
+        s.append(1, ' ').append(Constraint()->ToString());
     }
     formatter.WriteLine(s);
-    body->Print(formatter);
-}
-
-Node* StaticConstructorNode::Parent() const
-{
-    return parent;
-}
-
-void StaticConstructorNode::SetParent(Node* parent_)
-{
-    parent = parent_;
+    if (Body())
+    {
+        Body()->Print(formatter);
+    }
 }
 
 void StaticConstructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     initializers.Accept(visitor);
-    if (body && visitor.VisitBodies())
+    if (Body() && visitor.VisitBodies())
     {
-        body->Accept(visitor);
+        Body()->Accept(visitor);
     }
     visitor.EndVisit(*this);
 }
 
-ConstructorNode::ConstructorNode(const Span& span_) : Node(span_), parent(nullptr)
+ConstructorNode::ConstructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
 
-ConstructorNode::ConstructorNode(const Span& span_, Specifiers specifiers_) : Node(span_), specifiers(specifiers_), parent(nullptr)
+ConstructorNode::ConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(GetSpan(), "@constructor"))
 {
-}
-
-void ConstructorNode::AddParameter(ParameterNode* parameter)
-{
-    parameters.Add(parameter);
 }
 
 void ConstructorNode::AddInitializer(InitializerNode* initializer)
@@ -438,20 +410,10 @@ void ConstructorNode::AddInitializer(InitializerNode* initializer)
     initializers.Add(initializer);
 }
 
-void ConstructorNode::SetConstraint(WhereConstraintNode* constraint_)
-{
-    constraint.reset(constraint_);
-}
-
-void ConstructorNode::SetBody(CompoundStatementNode* body_)
-{
-    body.reset(body_);
-}
-
 Node* ConstructorNode::Clone() const
 {
-    ConstructorNode* clone = new ConstructorNode(GetSpan(), specifiers);
-    for (const std::unique_ptr<ParameterNode>& parameter : parameters)
+    ConstructorNode* clone = new ConstructorNode(GetSpan(), GetSpecifiers());
+    for (const std::unique_ptr<ParameterNode>& parameter : Parameters())
     {
         clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
     }
@@ -459,189 +421,131 @@ Node* ConstructorNode::Clone() const
     {
         clone->AddInitializer(static_cast<InitializerNode*>(initializer->Clone()));
     }
-    if (constraint)
+    if (Constraint())
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(constraint->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone()));
     }
-    if (body)
+    if (Body())
     {
-        clone->SetBody(static_cast<CompoundStatementNode*>(body->Clone()));
+        clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone()));
     }
     return clone;
 }
 
 void ConstructorNode::Read(Reader& reader)
 {
-    specifiers = reader.ReadSpecifiers();
-    parameters.Read(reader);
+    FunctionNode::Read(reader);
     initializers.Read(reader);
-    bool hasConstraint = reader.ReadBool();
-    if (hasConstraint)
-    {
-        constraint.reset(reader.ReadWhereConstraintNode());
-    }
-    bool hasBody = reader.ReadBool();
-    if (hasBody)
-    {
-        body.reset(reader.ReadCompoundStatementNode());
-    }
 }
 
 void ConstructorNode::Write(Writer& writer)
 {
-    writer.Write(specifiers);
-    parameters.Write(writer);
+    FunctionNode::Write(writer);
     initializers.Write(writer);
-    bool hasConstraint = constraint != nullptr;
-    writer.Write(hasConstraint);
-    if (hasConstraint)
-    {
-        writer.Write(constraint.get());
-    }
-    bool hasBody = body != nullptr;
-    writer.Write(hasBody);
-    if (hasBody)
-    {
-        writer.Write(body.get());
-    }
 }
 
 void ConstructorNode::Print(CodeFormatter& formatter)
 {
-    std::string s = SpecifierStr(specifiers);
+    std::string s = SpecifierStr(GetSpecifiers());
     if (!s.empty())
     {
         s.append(1, ' ');
     }
-    s.append("@constructor").append(parameters.ToString()).append(initializers.ToString());
-    if (constraint)
+    if (Parent() && Parent()->IsClassNode())
     {
-        s.append(1, ' ').append(constraint->ToString());
+        s.append(Parent()->Name());
     }
-    if (body)
+    else
+    {
+        s.append("@constructor");
+    }
+    s.append(Parameters().ToString());
+    s.append(initializers.ToString());
+    if (Constraint())
+    {
+        s.append(1, ' ').append(Constraint()->ToString());
+    }
+    if (Body())
     {
         formatter.WriteLine(s);
-        body->Print(formatter);
+        Body()->Print(formatter);
     }
     else
     {
         s.append(1, ';');
         formatter.WriteLine(s);
     }
-}
-
-Node* ConstructorNode::Parent() const
-{
-    return parent;
-}
-
-void ConstructorNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 void ConstructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     initializers.Accept(visitor);
-    if (body && visitor.VisitBodies())
+    const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
+    if (Body() && visitor.VisitBodies())
     {
-        body->Accept(visitor);
+        Body()->Accept(visitor);
     }
     visitor.EndVisit(*this);
 }
 
-DestructorNode::DestructorNode(const Span& span_) : Node(span_), parent(nullptr)
+DestructorNode::DestructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
 
-DestructorNode::DestructorNode(const Span& span_, Specifiers specifiers_, CompoundStatementNode* body_) : Node(span_), specifiers(specifiers_), body(body_), parent(nullptr)
+DestructorNode::DestructorNode(const Span& span_, Specifiers specifiers_, CompoundStatementNode* body_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(GetSpan(), "@destructor"))
 {
-}
-
-void DestructorNode::AddParameter(ParameterNode* parameter)
-{
-    parameters.Add(parameter);
-}
-
-void DestructorNode::SetConstraint(WhereConstraintNode* constraint_)
-{
-    constraint.reset(constraint_);
+    SetBody(body_);
 }
 
 Node* DestructorNode::Clone() const
 {
     CompoundStatementNode* clonedBody = nullptr;
-    if (body)
+    if (Body())
     {
-        clonedBody = static_cast<CompoundStatementNode*>(body->Clone());
+        clonedBody = static_cast<CompoundStatementNode*>(Body()->Clone());
     }
-    DestructorNode* clone = new DestructorNode(GetSpan(), specifiers, clonedBody);
-    for (const std::unique_ptr<ParameterNode>& parameter : parameters)
+    DestructorNode* clone = new DestructorNode(GetSpan(), GetSpecifiers(), clonedBody);
+    if (Constraint())
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
-    }
-    if (constraint)
-    {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(constraint->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone()));
     }
     return clone;
 }
 
 void DestructorNode::Read(Reader& reader)
 {
-    specifiers = reader.ReadSpecifiers();
-    parameters.Read(reader);
-    bool hasConstraint = reader.ReadBool();
-    if (hasConstraint)
-    {
-        constraint.reset(reader.ReadWhereConstraintNode());
-    }
-    bool hasBody = reader.ReadBool();
-    if (hasBody)
-    {
-        body.reset(reader.ReadCompoundStatementNode());
-    }
+    FunctionNode::Read(reader);
 }
 
 void DestructorNode::Write(Writer& writer)
 {
-    writer.Write(specifiers);
-    parameters.Write(writer);
-    bool hasConstraint = constraint != nullptr;
-    writer.Write(hasConstraint);
-    if (hasConstraint)
-    {
-        writer.Write(constraint.get());
-    }
-    bool hasBody = body != nullptr;
-    writer.Write(hasBody);
-    if (hasBody)
-    {
-        writer.Write(body.get());
-    }
+    FunctionNode::Write(writer);
 }
 
 void DestructorNode::Print(CodeFormatter& formatter)
 {
-    std::string s = SpecifierStr(specifiers);
+    std::string s = SpecifierStr(GetSpecifiers());
     if (!s.empty())
     {
         s.append(1, ' ');
     }
-    s.append("@destructor").append("()");
-    if (constraint)
+    if (Parent() && Parent()->IsClassNode())
     {
-        s.append(1, ' ').append(constraint->ToString());
+        s.append("~").append(Parent()->Name()).append("()");
     }
-    if (body)
+    else
+    {
+        s.append("@destructor").append("()");
+    }
+    if (Constraint())
+    {
+        s.append(1, ' ').append(Constraint()->ToString());
+    }
+    if (Body())
     {
         formatter.WriteLine(s);
-        formatter.WriteLine("{");
-        formatter.IncIndent();
-        body->Print(formatter);
-        formatter.DecIndent();
-        formatter.WriteLine("}");
+        Body()->Print(formatter);
     }
     else
     {
@@ -650,225 +554,151 @@ void DestructorNode::Print(CodeFormatter& formatter)
     }
 }
 
-Node* DestructorNode::Parent() const
-{
-    return parent;
-}
-
-void DestructorNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 void DestructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (body && visitor.VisitBodies())
+    if (Body() && visitor.VisitBodies())
     {
-        body->Accept(visitor);
+        Body()->Accept(visitor);
     }
     visitor.EndVisit(*this);
 }
 
-MemberFunctionNode::MemberFunctionNode(const Span& span_) : Node(span_), parent(nullptr)
+MemberFunctionNode::MemberFunctionNode(const Span& span_) : FunctionNode(span_)
 {
 }
 
 MemberFunctionNode::MemberFunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_) : 
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_), parent(nullptr)
+    FunctionNode(span_, specifiers_, returnTypeExpr_, groupId_), isConst(false)
 {
-}
-
-void MemberFunctionNode::AddParameter(ParameterNode* parameter)
-{
-    parameters.Add(parameter);
-}
-
-void MemberFunctionNode::SetConstraint(WhereConstraintNode* constraint_)
-{
-    constraint.reset(constraint_);
-}
-
-void MemberFunctionNode::SetBody(CompoundStatementNode* body_)
-{
-    body.reset(body_);
 }
 
 void MemberFunctionNode::SetConst()
 {
-    // todo
+    isConst = true;
 }
 
 Node* MemberFunctionNode::Clone() const
 {
-    MemberFunctionNode* clone = new MemberFunctionNode(GetSpan(), specifiers, returnTypeExpr->Clone(), static_cast<FunctionGroupIdNode*>(groupId->Clone()));
-    for (const std::unique_ptr<ParameterNode>& parameter : parameters)
+    MemberFunctionNode* clone = new MemberFunctionNode(GetSpan(), GetSpecifiers(), ReturnTypeExpr()->Clone(), static_cast<FunctionGroupIdNode*>(GroupId()->Clone()));
+    for (const std::unique_ptr<ParameterNode>& parameter : Parameters())
     {
         clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
     }
-    if (constraint)
+    if (Constraint())
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(constraint->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone()));
     }
-    if (body)
+    if (Body())
     {
-        clone->SetBody(static_cast<CompoundStatementNode*>(body->Clone()));
+        clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone()));
     }
     return clone;
 }
 
 void MemberFunctionNode::Read(Reader& reader)
 {
-    specifiers = reader.ReadSpecifiers();
-    returnTypeExpr.reset(reader.ReadNode());
-    groupId.reset(reader.ReadFunctionGroupIdNode());
-    parameters.Read(reader);
-    bool hasConstraint = reader.ReadBool();
-    if (hasConstraint)
-    {
-        constraint.reset(reader.ReadWhereConstraintNode());
-    }
-    bool hasBody = reader.ReadBool();
-    if (hasBody)
-    {
-        body.reset(reader.ReadCompoundStatementNode());
-    }
+    FunctionNode::Read(reader);
+    isConst = reader.ReadBool();
 }
 
 void MemberFunctionNode::Write(Writer& writer)
 {
-    writer.Write(specifiers);
-    writer.Write(returnTypeExpr.get());
-    writer.Write(groupId.get());
-    parameters.Write(writer);
-    bool hasConstraint = constraint != nullptr;
-    writer.Write(hasConstraint);
-    if (hasConstraint)
-    {
-        writer.Write(constraint.get());
-    }
-    bool hasBody = body != nullptr;
-    writer.Write(hasBody);
-    if (hasBody)
-    {
-        writer.Write(body.get());
-    }
+    FunctionNode::Write(writer);
+    writer.Write(isConst);
 }
 
 void MemberFunctionNode::Print(CodeFormatter& formatter)
 {
-    std::string s = SpecifierStr(specifiers);
+    std::string s = SpecifierStr(GetSpecifiers());
     if (!s.empty())
     {
         s.append(1, ' ');
     }
-    s.append(returnTypeExpr->ToString()).append(1, ' ').append(groupId->ToString()).append(parameters.ToString());
-    if (constraint)
+    s.append(ReturnTypeExpr()->ToString()).append(1, ' ').append(GroupId()->ToString()).append(Parameters().ToString());
+    if (Constraint())
     {
-        s.append(1, ' ').append(constraint->ToString());
+        s.append(1, ' ').append(Constraint()->ToString());
     }
-    if (body)
+    if (Body())
     {
         formatter.WriteLine(s);
-        body->Print(formatter);
+        Body()->Print(formatter);
     }
     else
     {
         s.append(1, ';');
         formatter.WriteLine(s);
     }
-}
-
-Node* MemberFunctionNode::Parent() const
-{
-    return parent;
-}
-
-void MemberFunctionNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 void MemberFunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (body && visitor.VisitBodies())
+    const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
+    if (Body() && visitor.VisitBodies())
     {
-        body->Accept(visitor);
+        Body()->Accept(visitor);
     }
     visitor.EndVisit(*this);
 }
 
-ConversionFunctionNode::ConversionFunctionNode(const Span& span_) : Node(span_), parent(nullptr)
+ConversionFunctionNode::ConversionFunctionNode(const Span& span_) : MemberFunctionNode(span_)
 {
 }
 
 ConversionFunctionNode::ConversionFunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, bool setConst_, WhereConstraintNode* constraint_, CompoundStatementNode* body_) :
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), constraint(constraint_), body(body_), parent(nullptr)
+    MemberFunctionNode(span_, specifiers_, returnTypeExpr_, new FunctionGroupIdNode(GetSpan(), "@operator_conv"))
 {
-    // setConst todo
+    SetConstraint(constraint_);
+    SetBody(body_);
+    if (setConst_)
+    {
+        SetConst();
+    }
 }
 
 Node* ConversionFunctionNode::Clone() const
 {
     WhereConstraintNode* clonedConstraint = nullptr;
-    if (constraint)
+    if (Constraint())
     {
-        clonedConstraint = static_cast<WhereConstraintNode*>(constraint->Clone());
+        clonedConstraint = static_cast<WhereConstraintNode*>(Constraint()->Clone());
     }
-    return new ConversionFunctionNode(GetSpan(), specifiers, returnTypeExpr->Clone(), false, clonedConstraint, static_cast<CompoundStatementNode*>(body->Clone()));
+    CompoundStatementNode* clonedBody = nullptr;
+    if (Body())
+    {
+        clonedBody = static_cast<CompoundStatementNode*>(Body()->Clone());
+    }
+    return new ConversionFunctionNode(GetSpan(), GetSpecifiers(), ReturnTypeExpr()->Clone(), IsConst(), clonedConstraint, clonedBody);
 }
 
 void ConversionFunctionNode::Read(Reader& reader)
 {
-    specifiers = reader.ReadSpecifiers();
-    returnTypeExpr.reset(reader.ReadNode());
-    bool hasConstraint = reader.ReadBool();
-    if (hasConstraint)
-    {
-        constraint.reset(reader.ReadWhereConstraintNode());
-    }
-    bool hasBody = reader.ReadBool();
-    if (hasBody)
-    {
-        body.reset(reader.ReadCompoundStatementNode());
-    }
+    MemberFunctionNode::Read(reader);
 }
 
 void ConversionFunctionNode::Write(Writer& writer)
 {
-    writer.Write(specifiers);
-    writer.Write(returnTypeExpr.get());
-    bool hasConstraint = constraint != nullptr;
-    writer.Write(hasConstraint);
-    if (hasConstraint)
-    {
-        writer.Write(constraint.get());
-    }
-    bool hasBody = body != nullptr;
-    writer.Write(hasBody);
-    if (hasBody)
-    {
-        writer.Write(body.get());
-    }
+    MemberFunctionNode::Write(writer);
 }
 
 void ConversionFunctionNode::Print(CodeFormatter& formatter)
 {
-    std::string s = SpecifierStr(specifiers);
+    std::string s = SpecifierStr(GetSpecifiers());
     if (!s.empty())
     {
         s.append(1, ' ');
     }
-    s.append("operator ").append(returnTypeExpr->ToString()).append("()");
-    if (constraint)
+    s.append("operator ").append(ReturnTypeExpr()->ToString()).append("()");
+    if (Constraint())
     {
-        s.append(1, ' ').append(constraint->ToString());
+        s.append(1, ' ').append(Constraint()->ToString());
     }
-    if (body)
+    if (Body())
     {
         formatter.WriteLine(s);
-        body->Print(formatter);
+        Body()->Print(formatter);
     }
     else
     {
@@ -877,22 +707,12 @@ void ConversionFunctionNode::Print(CodeFormatter& formatter)
     }
 }
 
-Node* ConversionFunctionNode::Parent() const
-{
-    return parent;
-}
-
-void ConversionFunctionNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 void ConversionFunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (body && visitor.VisitBodies())
+    if (Body() && visitor.VisitBodies())
     {
-        body->Accept(visitor);
+        Body()->Accept(visitor);
     }
     visitor.EndVisit(*this);
 }

@@ -90,7 +90,11 @@ Node* FunctionNode::Clone() const
 void FunctionNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
-    returnTypeExpr.reset(reader.ReadNode());
+    bool hasReturnTypeExpr = reader.ReadBool();
+    if (hasReturnTypeExpr)
+    {
+        returnTypeExpr.reset(reader.ReadNode());
+    }
     groupId.reset(reader.ReadFunctionGroupIdNode());
     templateParameters.Read(reader);
     parameters.Read(reader);
@@ -109,7 +113,12 @@ void FunctionNode::Read(Reader& reader)
 void FunctionNode::Write(Writer& writer)
 {
     writer.Write(specifiers);
-    writer.Write(returnTypeExpr.get());
+    bool hasReturnTypeExpr = returnTypeExpr != nullptr;
+    writer.Write(hasReturnTypeExpr);
+    if (hasReturnTypeExpr)
+    {
+        writer.Write(returnTypeExpr.get());
+    }
     writer.Write(groupId.get());
     templateParameters.Write(writer);
     parameters.Write(writer);
@@ -134,7 +143,11 @@ void FunctionNode::Print(CodeFormatter& formatter)
     {
         s.append(1, ' ');
     }
-    s.append(returnTypeExpr->ToString()).append(1, ' ').append(groupId->ToString()).append(templateParameters.ToString()).append(parameters.ToString());
+    if (returnTypeExpr)
+    {
+        s.append(returnTypeExpr->ToString()).append(1, ' ');
+    }
+    s.append(groupId->ToString()).append(templateParameters.ToString()).append(parameters.ToString());
     if (constraint)
     {
         s.append(1, ' ').append(constraint->ToString());
@@ -171,6 +184,7 @@ std::string FunctionNode::Name() const
 void FunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
+    parameters.Accept(visitor);
     if (body && visitor.VisitBodies())
     {
         body->Accept(visitor);

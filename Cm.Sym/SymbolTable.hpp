@@ -13,7 +13,9 @@
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Class.hpp>
 #include <Cm.Ast/Enumeration.hpp>
-#include <Cm.Ast/Enumeration.hpp>
+#include <Cm.Ast/Function.hpp>
+#include <Cm.Ast/Delegate.hpp>
+#include <Cm.Ast/Constant.hpp>
 #include <stack>
 
 namespace Cm { namespace Sym {
@@ -29,6 +31,13 @@ public:
     void BeginEnumScope(Cm::Ast::EnumTypeNode* enumTypeNode);
     void EndEnumScope();
     void AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode);
+    void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode);
+    void EndFunctionScope();
+    void BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode);
+    void EndDelegateScope();
+    void BeginClassDelegateScope(Cm::Ast::ClassDelegateNode* classDelegateNode);
+    void EndClassDelegateScope();
+    void AddConstant(Cm::Ast::ConstantNode* constantNode);
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
