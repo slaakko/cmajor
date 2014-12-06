@@ -57,6 +57,7 @@ public:
     const TemplateParameterNodeList& TemplateParameters() const { return templateParameters; }
     const ParameterNodeList& Parameters() const { return parameters; }
     WhereConstraintNode* Constraint() const { return constraint.get(); }
+    CompoundStatementNode* Body() const { return body.get(); }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;

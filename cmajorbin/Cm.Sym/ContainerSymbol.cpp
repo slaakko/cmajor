@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Sym/ContainerSymbol.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -25,6 +26,12 @@ void ContainerSymbol::AddSymbol(Symbol* symbol)
     scope.Install(symbol);
     symbols.push_back(std::unique_ptr<Symbol>(symbol));
     symbol->SetParent(this);
+}
+
+void ContainerSymbol::AddFunctionSymbol(FunctionSymbol* functionSymbol)
+{
+    symbols.push_back(std::unique_ptr<Symbol>(functionSymbol));
+    functionSymbol->SetParent(this);
 }
 
 } } // namespace Cm::Sym

@@ -51,4 +51,39 @@ void DeclarationVisitor::Visit(Cm::Ast::EnumConstantNode& enumConstantNode)
     symbolTable.AddEnumConstant(&enumConstantNode);
 }
 
+void DeclarationVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
+{
+    symbolTable.BeginFunctionScope(&functionNode);
+}
+
+void DeclarationVisitor::EndVisit(Cm::Ast::FunctionNode& functionNode)
+{
+    symbolTable.EndFunctionScope();
+}
+
+void DeclarationVisitor::BeginVisit(Cm::Ast::DelegateNode& delegateNode)
+{
+    symbolTable.BeginDelegateScope(&delegateNode);
+}
+
+void DeclarationVisitor::EndVisit(Cm::Ast::DelegateNode& delegateNode)
+{
+    symbolTable.EndDelegateScope();
+}
+
+void DeclarationVisitor::BeginVisit(Cm::Ast::ClassDelegateNode& classDelegateNode)
+{
+    symbolTable.BeginClassDelegateScope(&classDelegateNode);
+}
+
+void DeclarationVisitor::EndVisit(Cm::Ast::ClassDelegateNode& classDelegateNode)
+{
+    symbolTable.EndClassDelegateScope();
+}
+
+void DeclarationVisitor::Visit(Cm::Ast::ConstantNode& constantNode)
+{
+    symbolTable.AddConstant(&constantNode);
+}
+
 } } // namespace Cm::Sym

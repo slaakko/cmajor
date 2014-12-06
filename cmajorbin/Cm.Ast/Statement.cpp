@@ -179,7 +179,11 @@ void SimpleStatementNode::Print(CodeFormatter& formatter)
     StatementNode::Print(formatter);
     if (expr)
     {
-        formatter.WriteLine(expr->ToString());
+        formatter.WriteLine(expr->ToString() + ";");
+    }
+    else
+    {
+        formatter.WriteLine(";");
     }
 }
 
@@ -237,9 +241,14 @@ void ReturnStatementNode::Write(Writer& writer)
 void ReturnStatementNode::Print(CodeFormatter& formatter)
 {
     StatementNode::Print(formatter);
+    formatter.Write("return");
     if (expr)
     {
-        formatter.WriteLine(expr->ToString());
+        formatter.WriteLine(" " + expr->ToString() + ";");
+    }
+    else
+    {
+        formatter.WriteLine(";");
     }
 }
 

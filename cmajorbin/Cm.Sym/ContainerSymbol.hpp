@@ -13,6 +13,8 @@
 
 namespace Cm { namespace Sym {
 
+class FunctionSymbol;
+
 class ContainerSymbol : public Symbol
 {
 public:
@@ -20,6 +22,7 @@ public:
     ContainerSymbol(const std::string& name_);
     virtual Scope* GetScope() { return &scope; }
     void AddSymbol(Symbol* symbol);
+    void AddFunctionSymbol(FunctionSymbol* functionSymbol);
 private:
     Scope scope;
     std::vector<std::unique_ptr<Symbol>> symbols;

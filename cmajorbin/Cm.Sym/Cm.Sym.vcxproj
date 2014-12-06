@@ -20,27 +20,33 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClassSymbol.hpp" />
+    <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="ContainerSymbol.hpp" />
     <ClInclude Include="DeclarationVisitor.hpp" />
+    <ClInclude Include="DelegateSymbol.hpp" />
     <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="Exception.hpp" />
+    <ClInclude Include="FunctionSymbol.hpp" />
     <ClInclude Include="NamespaceSymbol.hpp" />
+    <ClInclude Include="ParameterSymbol.hpp" />
     <ClInclude Include="Scope.hpp" />
     <ClInclude Include="Symbol.hpp" />
     <ClInclude Include="SymbolTable.hpp" />
-    <ClInclude Include="Type.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClassSymbol.cpp" />
+    <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="ContainerSymbol.cpp" />
     <ClCompile Include="DeclarationVisitor.cpp" />
+    <ClCompile Include="DelegateSymbol.cpp" />
     <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="Exception.cpp" />
+    <ClCompile Include="FunctionSymbol.cpp" />
     <ClCompile Include="NamespaceSymbol.cpp" />
+    <ClCompile Include="ParameterSymbol.cpp" />
     <ClCompile Include="Scope.cpp" />
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
-    <ClCompile Include="Type.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A12C2C5B-D12E-457A-8D1C-69A9E6759064}</ProjectGuid>

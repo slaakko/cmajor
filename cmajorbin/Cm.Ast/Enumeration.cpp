@@ -57,6 +57,10 @@ void EnumTypeNode::Read(Reader& reader)
     specifiers = reader.ReadSpecifiers();
     id.reset(reader.ReadIdentifierNode());
     constants.Read(reader);
+    for (const std::unique_ptr<Node>& constant : constants)
+    {
+        constant->SetParent(this);
+    }
 }
 
 void EnumTypeNode::Write(Writer& writer)

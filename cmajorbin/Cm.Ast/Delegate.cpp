@@ -84,7 +84,12 @@ std::string DelegateNode::Name() const
 
 void DelegateNode::Accept(Visitor& visitor)
 {
-    visitor.Visit(*this);
+    visitor.BeginVisit(*this);
+    for (const std::unique_ptr<ParameterNode>& parameter : parameters)
+    {
+        parameter->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 ClassDelegateNode::ClassDelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
@@ -155,7 +160,12 @@ std::string ClassDelegateNode::Name() const
 
 void ClassDelegateNode::Accept(Visitor& visitor)
 {
-    visitor.Visit(*this);
+    visitor.BeginVisit(*this);
+    for (const std::unique_ptr<ParameterNode>& parameter : parameters)
+    {
+        parameter->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 } } // namespace Cm::Ast

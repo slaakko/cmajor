@@ -25,6 +25,13 @@ public:
     void BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void Visit(Cm::Ast::EnumConstantNode& enumConstantNode) override;
+    void BeginVisit(Cm::Ast::FunctionNode& functionNode) override;
+    void EndVisit(Cm::Ast::FunctionNode& functionNode) override;
+    void BeginVisit(Cm::Ast::DelegateNode& delegateNode) override;
+    void EndVisit(Cm::Ast::DelegateNode& delegateNode) override;
+    void BeginVisit(Cm::Ast::ClassDelegateNode& classDelegateNode) override;
+    void EndVisit(Cm::Ast::ClassDelegateNode& classDelegateNode) override;
+    void Visit(Cm::Ast::ConstantNode& constantNode) override;
 private:
     SymbolTable& symbolTable;
 };

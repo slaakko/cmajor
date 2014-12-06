@@ -11,6 +11,7 @@
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -48,6 +49,11 @@ void ParameterNode::Write(Writer& writer)
     }
 }
 
+void ParameterNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 std::string ParameterNode::ToString() const
 {
     std::string s = typeExpr->ToString();
@@ -78,6 +84,14 @@ void ParameterNodeList::Write(Writer& writer)
     for (uint32_t i = 0; i < n; ++i)
     {
         writer.Write(parameterNodes[i].get());
+    }
+}
+
+void ParameterNodeList::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<ParameterNode>& parameter : parameterNodes)
+    {
+        parameter->Accept(visitor);
     }
 }
 

@@ -71,6 +71,7 @@ public:
     virtual void AddParameter(ParameterNode* parameter);
     virtual void AddTemplateParameter(TemplateParameterNode* templateParameter);
     virtual void AddInitializer(InitializerNode* initializer);
+    virtual bool IsClassNode() const { return false; }
     virtual bool IsStatementNode() const { return false; }
     virtual bool IsCompoundStatementNode() const { return false; }
     virtual bool IsCondCompExprNode() const { return false; }

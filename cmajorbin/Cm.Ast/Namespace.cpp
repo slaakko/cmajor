@@ -43,6 +43,10 @@ void NamespaceNode::Read(Reader& reader)
 {
     id.reset(reader.ReadIdentifierNode());
     members.Read(reader);
+    for (const std::unique_ptr<Node>& member : members)
+    {
+        member->SetParent(this);
+    }
 }
 
 void NamespaceNode::Write(Writer& writer)

@@ -10,6 +10,9 @@
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/ClassSymbol.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/DelegateSymbol.hpp>
+#include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -96,6 +99,47 @@ void SymbolTable::EndEnumScope()
 void SymbolTable::AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode)
 {
     container->AddSymbol(new EnumConstantSymbol(enumConstantNode));
+}
+
+void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode)
+{
+    FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode);
+    container->AddFunctionSymbol(functionSymbol);
+    BeginContainer(functionSymbol);
+}
+
+void SymbolTable::EndFunctionScope()
+{
+    EndContainer();
+}
+
+void SymbolTable::BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode)
+{
+    DelegateSymbol* delegateSymbol = new DelegateSymbol(delegateNode);
+    container->AddSymbol(delegateSymbol);
+    BeginContainer(delegateSymbol);
+}
+
+void SymbolTable::EndDelegateScope()
+{
+    EndContainer();
+}
+
+void SymbolTable::BeginClassDelegateScope(Cm::Ast::ClassDelegateNode* classDelegateNode)
+{
+    ClassDelegateSymbol* classDelegateSymbol = new ClassDelegateSymbol(classDelegateNode);
+    container->AddSymbol(classDelegateSymbol);
+    BeginContainer(classDelegateSymbol);
+}
+
+void SymbolTable::EndClassDelegateScope()
+{
+    EndContainer();
+}
+
+void SymbolTable::AddConstant(Cm::Ast::ConstantNode* constantNode)
+{
+    container->AddSymbol(new ConstantSymbol(constantNode));
 }
 
 } } // namespace Cm::Sym

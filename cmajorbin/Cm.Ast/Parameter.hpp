@@ -24,6 +24,7 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Accept(Visitor& visitor) override;
     std::string ToString() const override;
     Node* TypeExpr() const { return typeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }
@@ -45,6 +46,7 @@ public:
     void Add(ParameterNode* parameter) { parameterNodes.push_back(std::unique_ptr<ParameterNode>(parameter)); }
     void Read(Reader& reader);
     void Write(Writer& writer);
+    void Accept(Visitor& visitor);
     std::string ToString() const;
 private:
     std::vector<std::unique_ptr<ParameterNode>> parameterNodes;
