@@ -12,18 +12,22 @@
 
 namespace Cm { namespace Sym {
 
-ContainerSymbol::ContainerSymbol() : Symbol(), scope()
+ContainerSymbol::ContainerSymbol() : Symbol(), containerScope()
 {
-    scope.SetGlobal(&scope);
+    containerScope.SetContainer(this);
 }
 
-ContainerSymbol::ContainerSymbol(const std::string& name_) : Symbol(name_), scope()
+ContainerSymbol::ContainerSymbol(const std::string& name_) : Symbol(name_), containerScope()
 {
+    containerScope.SetContainer(this);
 }
 
 void ContainerSymbol::AddSymbol(Symbol* symbol)
 {
-    scope.Install(symbol);
+    if (!symbol->Name().empty())
+    {
+        containerScope.Install(symbol);
+    }
     symbols.push_back(std::unique_ptr<Symbol>(symbol));
     symbol->SetParent(this);
 }

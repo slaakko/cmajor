@@ -12,7 +12,9 @@
 #include <Cm.Parser/CompileUnit.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
+#include <Cm.Bind/BindingVisitor.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
+#include <iostream>
 
 namespace Cm { namespace Build {
 
@@ -36,6 +38,11 @@ void Build(const std::string& projectFilePath)
     Cm::Sym::SymbolTable symbolTable;
     Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
     project->VisitCompileUnits(declarationVisitor);
+    Cm::Bind::BindingVisitor bindingVisitor(symbolTable);
+    project->VisitCompileUnits(bindingVisitor);
+    std::cout << "enter" << std::endl;
+    char c;
+    std::cin >> c;
 }
 
 } } // namespace Bm::Build

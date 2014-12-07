@@ -19,47 +19,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DeclarationBlock.hpp" />
-    <ClInclude Include="ClassSymbol.hpp" />
-    <ClInclude Include="ConstantSymbol.hpp" />
-    <ClInclude Include="ContainerSymbol.hpp" />
-    <ClInclude Include="DeclarationVisitor.hpp" />
-    <ClInclude Include="DelegateSymbol.hpp" />
-    <ClInclude Include="EnumSymbol.hpp" />
+    <ClInclude Include="BindingVisitor.hpp" />
     <ClInclude Include="Exception.hpp" />
-    <ClInclude Include="FunctionSymbol.hpp" />
-    <ClInclude Include="LocalVariableSymbol.hpp" />
-    <ClInclude Include="MemberVariableSymbol.hpp" />
-    <ClInclude Include="NamespaceSymbol.hpp" />
-    <ClInclude Include="ParameterSymbol.hpp" />
-    <ClInclude Include="Scope.hpp" />
-    <ClInclude Include="Symbol.hpp" />
-    <ClInclude Include="SymbolTable.hpp" />
-    <ClInclude Include="TemplateParameterSymbol.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DeclarationBlock.cpp" />
-    <ClCompile Include="ClassSymbol.cpp" />
-    <ClCompile Include="ConstantSymbol.cpp" />
-    <ClCompile Include="ContainerSymbol.cpp" />
-    <ClCompile Include="DeclarationVisitor.cpp" />
-    <ClCompile Include="DelegateSymbol.cpp" />
-    <ClCompile Include="EnumSymbol.cpp" />
-    <ClCompile Include="Exception.cpp" />
-    <ClCompile Include="FunctionSymbol.cpp" />
-    <ClCompile Include="LocalVariableSymbol.cpp" />
-    <ClCompile Include="MemberVariableSymbol.cpp" />
-    <ClCompile Include="NamespaceSymbol.cpp" />
-    <ClCompile Include="ParameterSymbol.cpp" />
-    <ClCompile Include="Scope.cpp" />
-    <ClCompile Include="Symbol.cpp" />
-    <ClCompile Include="SymbolTable.cpp" />
-    <ClCompile Include="TemplateParameterSymbol.cpp" />
+    <ClCompile Include="BindingVisitor.cpp" />
+    <ClCompile Include="Excecption.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A12C2C5B-D12E-457A-8D1C-69A9E6759064}</ProjectGuid>
+    <ProjectGuid>{EB6A3011-60D0-415A-A4CE-262924F53AF0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>CmSym</RootNamespace>
+    <RootNamespace>CmBind</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

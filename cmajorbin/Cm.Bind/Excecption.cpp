@@ -7,16 +7,12 @@
 
 ========================================================================*/
 
-#include <Cm.Ast/Visitor.hpp>
+#include <Cm.Bind/Exception.hpp>
 
-namespace Cm { namespace Ast {
+namespace Cm { namespace Bind {
 
-Visitor::Visitor(bool visitExpressions_) : visitExpressions(visitExpressions_)
+Exception::Exception(const std::string& message_, Cm::Ast::Node* defNode_, Cm::Ast::Node* refNode_) : std::runtime_error(message_), defNode(defNode_), refNode(refNode_)
 {
 }
 
-Visitor::~Visitor()
-{
-}
-
-} } // namespace Cm::Ast
+} } // namespace Cm::Bind

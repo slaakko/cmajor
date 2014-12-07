@@ -39,6 +39,7 @@ public:
     FunctionNode(const Span& span_);
     FunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_);
     NodeType GetNodeType() const override { return NodeType::functionNode; }
+    bool IsFunctionNode() const override { return true; }
     void AddTemplateParameter(TemplateParameterNode* templateParameter) override;
     void AddParameter(ParameterNode* parameter) override;
     void SetConstraint(WhereConstraintNode* constraint_);

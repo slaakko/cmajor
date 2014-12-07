@@ -17,7 +17,7 @@ namespace Cm { namespace Sym {
 class ParameterSymbol : public Symbol
 {
 public:
-    ParameterSymbol(Cm::Ast::ParameterNode* parameterNode);
+    ParameterSymbol(Cm::Ast::ParameterNode* parameterNode, const std::string& parameterName);
 };
 
 } } // namespace Cm::Sym

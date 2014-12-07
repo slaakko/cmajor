@@ -20,11 +20,11 @@ class ContainerSymbol : public Symbol
 public:
     ContainerSymbol();
     ContainerSymbol(const std::string& name_);
-    virtual Scope* GetScope() { return &scope; }
+    ContainerScope* GetContainerScope() override { return &containerScope; }
     void AddSymbol(Symbol* symbol);
     void AddFunctionSymbol(FunctionSymbol* functionSymbol);
 private:
-    Scope scope;
+    ContainerScope containerScope;
     std::vector<std::unique_ptr<Symbol>> symbols;
 };
 

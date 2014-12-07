@@ -11,7 +11,7 @@
 
 namespace Cm { namespace Sym {
 
-ParameterSymbol::ParameterSymbol(Cm::Ast::ParameterNode* parameterNode) : Symbol(parameterNode->ToString())
+ParameterSymbol::ParameterSymbol(Cm::Ast::ParameterNode* parameterNode, const std::string& parameterName) : Symbol(parameterName)
 {
     SetNode(parameterNode);
 }

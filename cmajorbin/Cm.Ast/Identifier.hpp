@@ -22,6 +22,7 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Accept(Visitor& visitor) override;
     const std::string& Str() const { return identifier; }
     std::string ToString() const override;
 private:

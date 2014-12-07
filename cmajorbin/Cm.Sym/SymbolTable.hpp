@@ -16,6 +16,8 @@
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/Delegate.hpp>
 #include <Cm.Ast/Constant.hpp>
+#include <Cm.Ast/Parameter.hpp>
+#include <Cm.Ast/Statement.hpp>
 #include <stack>
 
 namespace Cm { namespace Sym {
@@ -38,10 +40,21 @@ public:
     void BeginClassDelegateScope(Cm::Ast::ClassDelegateNode* classDelegateNode);
     void EndClassDelegateScope();
     void AddConstant(Cm::Ast::ConstantNode* constantNode);
+    void AddTemplateParameter(Cm::Ast::TemplateParameterNode* templateParameterNode);
+    void AddParameter(Cm::Ast::ParameterNode* parameterNode, const std::string& parameterName);
+    void BeginDeclarationScope(Cm::Ast::StatementNode* statementNode);
+    void EndDeclarationcope();
+    void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
+    void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
+    ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
+    ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
     std::stack<ContainerSymbol*> containerStack;
+    typedef std::unordered_map<Cm::Ast::Node*, ContainerScope*> NodeScopeMap;
+    typedef NodeScopeMap::const_iterator NodeScopeMapIt;
+    NodeScopeMap nodeScopeMap;
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
 };
