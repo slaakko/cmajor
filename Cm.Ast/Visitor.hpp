@@ -25,6 +25,7 @@ class ClassNode;
 class DelegateNode;
 class ClassDelegateNode;
 class ParameterNode;
+class TemplateParameterNode;
 
 class EquivalenceNode;
 class ImplicationNode;
@@ -161,7 +162,7 @@ class ConceptNode;
 class Visitor
 {
 public:
-    Visitor(bool visitBodies_, bool visitExpressions_);
+    Visitor(bool visitExpressions_);
     virtual ~Visitor();
 
     virtual void BeginVisit(CompileUnitNode& compileUnitNode) {}
@@ -184,6 +185,7 @@ public:
     virtual void BeginVisit(ClassDelegateNode& classDelegateNode) {}
     virtual void EndVisit(ClassDelegateNode& classDelegateNode) {}
     virtual void Visit(ParameterNode& parameterNode) {}
+    virtual void Visit(TemplateParameterNode& templateparameterNode) {}
 
     virtual void BeginVisit(EquivalenceNode& equivalenceNode) {}
     virtual void EndVisit(EquivalenceNode& equivalenceNode) {}
@@ -382,10 +384,8 @@ public:
     virtual void BeginVisit(AxiomNode& axiomNode) {}
     virtual void EndVisit(AxiomNode& axiomNode) {}
     virtual void Visit(ConceptIdNode& conceptIdNode) {}
-    bool VisitBodies() const { return visitBodies; }
     bool VisitExpressions() const { return visitExpressions; }
 private:
-    bool visitBodies;
     bool visitExpressions;
 };
 

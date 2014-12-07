@@ -10,6 +10,7 @@
 #include <Cm.Ast/Node.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Function.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -100,6 +101,26 @@ std::string Node::FullName() const
 void Node::Accept(Visitor& visitor)
 {
     throw std::runtime_error("member function not applicable");
+}
+
+FunctionNode* Node::GetFunction() const
+{
+    if (IsFunctionNode())
+    {
+        return const_cast<FunctionNode*>(static_cast<const FunctionNode*>(this));
+    }
+    else
+    {
+        Node* parent = Parent();
+        if (parent)
+        {
+            return parent->GetFunction();
+        }
+        else
+        {
+            throw std::runtime_error("node not found");
+        }
+    }
 }
 
 UnaryNode::UnaryNode(const Span& span_): Node(span_)

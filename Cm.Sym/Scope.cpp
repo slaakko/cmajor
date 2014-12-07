@@ -10,15 +10,21 @@
 #include <Cm.Sym/Scope.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
+#include <Cm.Ast/Identifier.hpp>
 #include <Cm.Util/TextUtils.hpp>
+#include <unordered_set>
 
 namespace Cm { namespace Sym {
 
-Scope::Scope() : base(nullptr), parent(nullptr), global(nullptr), ns(nullptr)
+Scope::~Scope()
 {
 }
 
-void Scope::Install(Symbol* symbol)
+ContainerScope::ContainerScope() : base(nullptr), parent(nullptr), container(nullptr)
+{
+}
+
+void ContainerScope::Install(Symbol* symbol)
 {
     SymbolMapIt i = symbolMap.find(symbol->Name());
     if (i != symbolMap.end())
@@ -34,42 +40,47 @@ void Scope::Install(Symbol* symbol)
     }
 }
 
-Symbol* Scope::Lookup(const std::string& name) const
+Symbol* ContainerScope::LookupQualified(const std::vector<std::string>& components, ScopeLookup lookup) const
+{
+    const ContainerScope* scope = this;
+    Symbol* s = nullptr;
+    for (const std::string& component : components)
+    {
+        if (scope)
+        {
+            s = scope->Lookup(component, ScopeLookup::this_);
+            if (s)
+            {
+                scope = s->GetContainerScope();
+            }
+        }
+        else if ((lookup & ScopeLookup::parent) != ScopeLookup::none)
+        {
+            if (parent)
+            {
+                return parent->LookupQualified(components, lookup);
+            }
+            else
+            {
+                return nullptr;
+            }
+        }
+    }
+    return s;
+}
+
+Symbol* ContainerScope::Lookup(const std::string& name) const
 {
     return Lookup(name, ScopeLookup::this_);
 }
 
-Symbol* Scope::Lookup(const std::string& name, ScopeLookup lookup) const
+Symbol* ContainerScope::Lookup(const std::string& name, ScopeLookup lookup) const
 {
     std::string::size_type dotPos = name.find('.');
     if (dotPos != std::string::npos)
     {
-        if (global)
-        {
-            const Scope* scope = global;
-            Symbol* s = nullptr;
-            std::vector<std::string> components = Cm::Util::Split(name, '.');
-            for (const std::string& component : components)
-            {
-                if (scope)
-                {
-                    s = scope->Lookup(component, ScopeLookup::this_);
-                    if (s)
-                    {
-                        scope = s->GetScope();
-                    }
-                }
-                else
-                {
-                    return nullptr;
-                }
-            }
-            return s;
-        }
-        else
-        {
-            return nullptr;
-        }
+        std::vector<std::string> components = Cm::Util::Split(name, '.');
+        return LookupQualified(components, lookup);
     }
     else
     {
@@ -104,9 +115,19 @@ Symbol* Scope::Lookup(const std::string& name, ScopeLookup lookup) const
     }
 }
 
-NamespaceSymbol* Scope::CreateNamespace(const std::string& qualifiedNsName, Cm::Ast::Node* node)
+NamespaceSymbol* ContainerScope::Ns() const
 {
-    Scope* scope = this;
+    return container->Ns();
+}
+
+ClassSymbol* ContainerScope::Class() const
+{
+    return container->Class();
+}
+
+NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsName, Cm::Ast::Node* node)
+{
+    ContainerScope* scope = this;
     NamespaceSymbol* parentNs = scope->Ns();
     std::vector<std::string> components = Cm::Util::Split(qualifiedNsName, '.');
     for (const std::string& component : components)
@@ -116,7 +137,7 @@ NamespaceSymbol* Scope::CreateNamespace(const std::string& qualifiedNsName, Cm::
         {
             if (s->IsNamespaceSymbol())
             {
-                scope = s->GetScope();
+                scope = s->GetContainerScope();
                 parentNs = scope->Ns();
             }
             else
@@ -128,21 +149,121 @@ NamespaceSymbol* Scope::CreateNamespace(const std::string& qualifiedNsName, Cm::
         {
             NamespaceSymbol* newNs = new NamespaceSymbol(component);
             newNs->SetNode(node);
-            scope = newNs->GetScope();
-            scope->SetParent(parentNs->GetScope());
+            scope = newNs->GetContainerScope();
+            scope->SetParent(parentNs->GetContainerScope());
             parentNs->AddSymbol(newNs);
-            if (parentNs->IsGlobalNamespace())
-            {
-                scope->SetGlobal(parentNs->GetScope());
-            }
-            else
-            {
-                scope->SetGlobal(parentNs->GetScope()->Global());
-            }
             parentNs = newNs;
         }
     }
     return parentNs;
+}
+
+void FileScope::InstallAlias(ContainerScope* currenContainerScope, Cm::Ast::AliasNode* aliasNode)
+{
+    if (currenContainerScope)
+    {
+        Symbol* symbol = currenContainerScope->Lookup(aliasNode->Qid()->Str(), ScopeLookup::this_and_parent);
+        if (symbol)
+        {
+            aliasSymbolMap[aliasNode->Id()->Str()] = symbol;
+        }
+        else
+        {
+            throw Exception("referred symbol '" + aliasNode->Qid()->Str() + "' not found", aliasNode->Qid(), nullptr);
+        }
+    }
+    else
+    {
+        throw std::runtime_error("current container scope is null");
+    }
+}
+
+void FileScope::InstallNamespaceImport(ContainerScope* currentContainerScope, Cm::Ast::NamespaceImportNode* namespaceImportNode)
+{
+    if (currentContainerScope)
+    {
+        Symbol* symbol = currentContainerScope->Lookup(namespaceImportNode->Ns()->Str(), ScopeLookup::this_and_parent);
+        if (symbol)
+        {
+            if (symbol->IsNamespaceSymbol())
+            {
+                ContainerScope* containerScope = symbol->GetContainerScope();
+                if (std::find(containerScopes.begin(), containerScopes.end(), containerScope) == containerScopes.end())
+                {
+                    containerScopes.push_back(containerScope);
+                }
+            }
+            else
+            {
+                throw Exception("'" + namespaceImportNode->Ns()->Str() + "' does not denote a namespace", namespaceImportNode->Ns(), nullptr);
+            }
+        }
+        else
+        {
+            throw Exception("referred namespace symbol '" + namespaceImportNode->Ns()->Str() + "' not found", namespaceImportNode->Ns(), nullptr);
+        }
+    }
+    else
+    {
+        throw std::runtime_error("current container scope is null");
+    }
+}
+
+Symbol* FileScope::Lookup(const std::string& name) const
+{
+    return Lookup(name, ScopeLookup::this_);
+}
+
+Symbol* FileScope::Lookup(const std::string& name, ScopeLookup lookup) const
+{
+    if (lookup != ScopeLookup::this_)
+    {
+        throw std::runtime_error("file scope supports only this scope lookup");
+    }
+    std::unordered_set<Symbol*> foundSymbols;
+    AliasSymbolMapIt i = aliasSymbolMap.find(name);
+    if (i != aliasSymbolMap.end())
+    {
+        Symbol* symbol = i->second;
+        foundSymbols.insert(symbol);
+    }
+    else
+    {
+        for (ContainerScope* containerScope : containerScopes)
+        {
+            Symbol* symbol = containerScope->Lookup(name, ScopeLookup::this_);
+            if (symbol)
+            {
+                foundSymbols.insert(symbol);
+            }
+        }
+    }
+    if (foundSymbols.empty())
+    {
+        return nullptr;
+    }
+    else if (foundSymbols.size() > 1)
+    {
+        std::string message("reference to object '" + name + "' is ambiguous: ");
+        bool first = true;
+        for (Symbol* symbol : foundSymbols)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                message.append(" or ");
+            }
+            message.append(symbol->FullName());
+        }
+        throw Exception(message, nullptr, nullptr);
+    }
+    else
+    {
+        return *foundSymbols.begin();
+    }
 }
 
 } } // namespace Cm::Sym

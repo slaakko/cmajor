@@ -10,6 +10,7 @@
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -34,6 +35,11 @@ void IdentifierNode::Read(Reader& reader)
 void IdentifierNode::Write(Writer& writer) 
 {
     writer.Write(identifier);
+}
+
+void IdentifierNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 std::string IdentifierNode::ToString() const

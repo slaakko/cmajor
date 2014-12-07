@@ -7,16 +7,15 @@
 
 ========================================================================*/
 
-#include <Cm.Ast/Visitor.hpp>
+#include <Cm.Parser/FileRegistry.hpp>
 
-namespace Cm { namespace Ast {
+namespace Cm { namespace Parser {
 
-Visitor::Visitor(bool visitExpressions_) : visitExpressions(visitExpressions_)
+int FileRegistry::RegisterParsedFile(const std::string& filePath)
 {
+    int fileIndex = int(parsedFiles.size());
+    parsedFiles.push_back(filePath);
+    return fileIndex;
 }
 
-Visitor::~Visitor()
-{
-}
-
-} } // namespace Cm::Ast
+} } // namespace Cm::Parser

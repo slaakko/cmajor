@@ -185,7 +185,7 @@ void FunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     parameters.Accept(visitor);
-    if (body && visitor.VisitBodies())
+    if (body)
     {
         body->Accept(visitor);
     }

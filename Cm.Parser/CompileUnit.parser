@@ -66,8 +66,8 @@ namespace Cm.Parser
             |   UsingNamespaceDirective{ ns->AddMember(UsingNamespaceDirective); }
             ;
 
-        UsingAliasDirective: Cm::Ast::AliasNode*
-            ::= (keyword("using") Identifier '=' QualifiedId! ';'!){ value = new AliasNode(span, Identifier, QualifiedId); }
+        UsingAliasDirective(var std::unique_ptr<IdentifierNode> id): Cm::Ast::AliasNode*
+            ::= (keyword("using") Identifier{ id.reset(Identifier); } '=' QualifiedId! ';'!){ value = new AliasNode(span, id.release(), QualifiedId); }
             ;
 
         UsingNamespaceDirective: Cm::Ast::NamespaceImportNode*

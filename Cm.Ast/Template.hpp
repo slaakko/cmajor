@@ -29,6 +29,7 @@ public:
     void Read(Reader& reader);
     void Write(Writer& writer);
     std::string ToString() const;
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<TemplateParameterNode>> templateParameterNodes;
 };
@@ -42,7 +43,9 @@ public:
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Accept(Visitor& visitor) override;
     std::string ToString() const override;
+    IdentifierNode* Id() const { return id.get(); }
 private:
     std::unique_ptr<IdentifierNode> id;
     std::unique_ptr<Node> defaultTemplateArgument;

@@ -7,20 +7,21 @@
 
 ========================================================================*/
 
-#ifndef CM_SYM_CLASS_SYMBOL_INCLUDED
-#define CM_SYM_CLASS_SYMBOL_INCLUDED
-#include <Cm.Sym/ContainerSymbol.hpp>
-#include <Cm.Ast/Class.hpp>
+#ifndef CM_PARSER_FILE_REGISTRY
+#define CM_PARSER_FILE_REGISTRY
+#include <string>
+#include <vector>
 
-namespace Cm { namespace Sym {
+namespace Cm { namespace Parser {
 
-class ClassSymbol : public ContainerSymbol
+class FileRegistry
 {
 public:
-    ClassSymbol(Cm::Ast::ClassNode* classNode);
-    bool IsClassSymbol() const override { return true; }
+    int RegisterParsedFile(const std::string& filePath);
+private:
+    std::vector<std::string> parsedFiles;
 };
 
-} } // namespace Cm::Sym
+} } // namespace Cm::Parser
 
-#endif // CM_SYM_CLASS_SYMBOL_INCLUDED
+#endif // CM_PARSER_FILE_REGISTRY

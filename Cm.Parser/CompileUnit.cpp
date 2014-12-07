@@ -320,6 +320,7 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         SetValueTypeName("Cm::Ast::AliasNode*");
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -339,6 +340,8 @@ public:
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<UsingAliasDirectiveRule>(this, &UsingAliasDirectiveRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<UsingAliasDirectiveRule>(this, &UsingAliasDirectiveRule::A1Action));
         Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<UsingAliasDirectiveRule>(this, &UsingAliasDirectiveRule::PostIdentifier));
         Cm::Parsing::NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
@@ -346,7 +349,11 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new AliasNode(span, context.fromIdentifier, context.fromQualifiedId);
+        context.value = new AliasNode(span, context.id.release(), context.fromQualifiedId);
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.id.reset(context.fromIdentifier);
     }
     void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -369,8 +376,9 @@ public:
 private:
     struct Context
     {
-        Context(): value(), fromIdentifier(), fromQualifiedId() {}
+        Context(): value(), id(), fromIdentifier(), fromQualifiedId() {}
         Cm::Ast::AliasNode* value;
+        std::unique_ptr<IdentifierNode> id;
         Cm::Ast::IdentifierNode* fromIdentifier;
         Cm::Ast::IdentifierNode* fromQualifiedId;
     };
@@ -1324,22 +1332,22 @@ private:
 void CompileUnitGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.ClassGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar0 = Cm::Parser::ClassGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.DelegateGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::DelegateGrammar::Create(pd);
+        grammar1 = Cm::Parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parsing::stdlib::Create(pd);
+        grammar2 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
     Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ConstantGrammar");
@@ -1348,22 +1356,22 @@ void CompileUnitGrammar::GetReferencedGrammars()
         grammar3 = Cm::Parser::ConstantGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::EnumerationGrammar::Create(pd);
+        grammar4 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::FunctionGrammar::Create(pd);
+        grammar5 = Cm::Parser::EnumerationGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
-    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
+    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.DelegateGrammar");
     if (!grammar6)
     {
-        grammar6 = Cm::Parser::ConceptGrammar::Create(pd);
+        grammar6 = Cm::Parser::DelegateGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
     Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parser.TypedefGrammar");
@@ -1372,25 +1380,25 @@ void CompileUnitGrammar::GetReferencedGrammars()
         grammar7 = Cm::Parser::TypedefGrammar::Create(pd);
     }
     AddGrammarReference(grammar7);
-    Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("Cm.Parser.ClassGrammar");
+    Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
     if (!grammar8)
     {
-        grammar8 = Cm::Parser::ClassGrammar::Create(pd);
+        grammar8 = Cm::Parser::ConceptGrammar::Create(pd);
     }
     AddGrammarReference(grammar8);
 }
 
 void CompileUnitGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Function", this, "FunctionGrammar.Function"));
-    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
     AddRuleLink(new Cm::Parsing::RuleLink("Class", this, "ClassGrammar.Class"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Function", this, "FunctionGrammar.Function"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
+    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
     AddRuleLink(new Cm::Parsing::RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
     AddRuleLink(new Cm::Parsing::RuleLink("Concept", this, "ConceptGrammar.Concept"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new CompileUnitRule("CompileUnit", GetScope(),
@@ -1418,7 +1426,8 @@ void CompileUnitGrammar::CreateRules()
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::SequenceParser(
                             new Cm::Parsing::KeywordParser("using"),
-                            new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)),
+                            new Cm::Parsing::ActionParser("A1",
+                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
                         new Cm::Parsing::CharParser('=')),
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::NonterminalParser("QualifiedId", "QualifiedId", 0))),

@@ -11,6 +11,7 @@
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -62,6 +63,14 @@ std::string TemplateParameterNodeList::ToString() const
     return s;
 }
 
+void TemplateParameterNodeList::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<TemplateParameterNode>& templateParam : templateParameterNodes)
+    {
+        templateParam->Accept(visitor);
+    }
+}
+
 TemplateParameterNode::TemplateParameterNode(const Span& span_) : Node(span_)
 {
 }
@@ -94,6 +103,11 @@ void TemplateParameterNode::Write(Writer& writer)
     {
         writer.Write(defaultTemplateArgument.get());
     }
+}
+
+void TemplateParameterNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 std::string TemplateParameterNode::ToString() const

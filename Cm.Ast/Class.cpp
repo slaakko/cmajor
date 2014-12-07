@@ -153,6 +153,7 @@ std::string ClassNode::Name() const
 void ClassNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
+    templateParameters.Accept(visitor);
     members.Accept(visitor);
     visitor.EndVisit(*this);
 }
@@ -390,7 +391,7 @@ void StaticConstructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     initializers.Accept(visitor);
-    if (Body() && visitor.VisitBodies())
+    if (Body())
     {
         Body()->Accept(visitor);
     }
@@ -482,7 +483,7 @@ void ConstructorNode::Accept(Visitor& visitor)
     visitor.BeginVisit(*this);
     initializers.Accept(visitor);
     const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
-    if (Body() && visitor.VisitBodies())
+    if (Body())
     {
         Body()->Accept(visitor);
     }
@@ -557,7 +558,7 @@ void DestructorNode::Print(CodeFormatter& formatter)
 void DestructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (Body() && visitor.VisitBodies())
+    if (Body())
     {
         Body()->Accept(visitor);
     }
@@ -636,7 +637,7 @@ void MemberFunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
-    if (Body() && visitor.VisitBodies())
+    if (Body())
     {
         Body()->Accept(visitor);
     }
@@ -710,7 +711,7 @@ void ConversionFunctionNode::Print(CodeFormatter& formatter)
 void ConversionFunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (Body() && visitor.VisitBodies())
+    if (Body())
     {
         Body()->Accept(visitor);
     }

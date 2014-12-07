@@ -18,7 +18,7 @@ class NamespaceSymbol : public ContainerSymbol
 public:
     NamespaceSymbol();
     NamespaceSymbol(const std::string& name_);
-    virtual bool IsNamespaceSymbol() const { return true; }
+    bool IsNamespaceSymbol() const override { return true; }
     bool IsGlobalNamespace() const { return Name().empty(); }
 };
 

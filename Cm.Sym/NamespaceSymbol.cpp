@@ -13,12 +13,10 @@ namespace Cm { namespace Sym {
 
 NamespaceSymbol::NamespaceSymbol() : ContainerSymbol()
 {
-    GetScope()->SetNs(this);
 }
 
 NamespaceSymbol::NamespaceSymbol(const std::string& name_) : ContainerSymbol(name_)
 {
-    GetScope()->SetNs(this);
 }
 
 } } // namespace Cm::Sym

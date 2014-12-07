@@ -56,7 +56,7 @@ namespace Cm.Parser
         NamespaceContent(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns);
         UsingDirectives(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns);
         UsingDirective(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns);
-        UsingAliasDirective: Cm::Ast::AliasNode*;
+        UsingAliasDirective(var std::unique_ptr<IdentifierNode> id): Cm::Ast::AliasNode*;
         UsingNamespaceDirective: Cm::Ast::NamespaceImportNode*;
         Definitions(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns);
         Definition(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns): Cm::Ast::Node*;

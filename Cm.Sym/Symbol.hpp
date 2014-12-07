@@ -13,7 +13,9 @@
 
 namespace Cm { namespace Sym {
 
-class Scope;
+class ContainerScope;
+class NamespaceSymbol;
+class ClassSymbol;
 
 class Symbol
 {
@@ -22,12 +24,16 @@ public:
     Symbol(const std::string& name_);
     virtual ~Symbol();
     const std::string& Name() const { return name; }
+    std::string FullName() const;
     Symbol* Parent() const { return parent; }
     void SetParent(Symbol* parent_) { parent = parent_; }
     Cm::Ast::Node* GetNode() const { return node; }
     void SetNode(Cm::Ast::Node* node_) { node = node_; }
-    virtual Scope* GetScope() { return nullptr; }
+    virtual ContainerScope* GetContainerScope() { return nullptr; }
     virtual bool IsNamespaceSymbol() const { return false; }
+    virtual bool IsClassSymbol() const { return false; }
+    NamespaceSymbol* Ns() const;
+    ClassSymbol* Class() const;
 private:
     std::string name;
     Symbol* parent;

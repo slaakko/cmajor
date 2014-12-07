@@ -51,6 +51,7 @@ class IdentifierNode;
 class ParameterNode;
 class TemplateParameterNode;
 class InitializerNode;
+class FunctionNode;
 class Visitor;
 
 class Node
@@ -74,6 +75,7 @@ public:
     virtual bool IsClassNode() const { return false; }
     virtual bool IsStatementNode() const { return false; }
     virtual bool IsCompoundStatementNode() const { return false; }
+    virtual bool IsFunctionNode() const { return false; }
     virtual bool IsCondCompExprNode() const { return false; }
     virtual bool IsCondCompSymbolNode() const { return false; }
     virtual bool IsCondCompPartNode() const { return false; }
@@ -87,6 +89,7 @@ public:
     virtual std::string Name() const;
     std::string FullName() const;
     virtual void Accept(Visitor& visitor);
+    virtual FunctionNode* GetFunction() const;
 private:
     Span span;
 };
