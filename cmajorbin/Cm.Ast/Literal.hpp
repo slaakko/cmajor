@@ -24,6 +24,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    bool Value() const { return value; }
 private:
     bool value;
 };
@@ -39,6 +40,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    int8_t Value() const { return value; }
 private:
     int8_t value;
 };
@@ -54,6 +56,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    uint8_t Value() const { return value; }
 private:
     uint8_t value;
 };
@@ -69,6 +72,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    int16_t Value() const { return value; }
 private:
     int16_t value;
 };
@@ -84,6 +88,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    uint16_t Value() const { return value; }
 private:
     uint16_t value;
 };
@@ -99,6 +104,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    int32_t Value() const { return value; }
 private:
     int32_t value;
 };
@@ -114,6 +120,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    uint32_t Value() const { return value; }
 private:
     uint32_t value;
 };
@@ -129,6 +136,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    int64_t Value() const { return value; }
 private:
     int64_t value;
 };
@@ -144,6 +152,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    uint64_t Value() const { return value; }
 private:
     uint64_t value;
 };
@@ -161,6 +170,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    float Value() const { return value; }
 private:
     float value;
 };
@@ -176,6 +186,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    double Value() const { return value; }
 private:
     double value;
 };
@@ -193,6 +204,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    char Value() const { return value; }
 private:
     char value;
 };
@@ -208,6 +220,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+    const std::string& Value() const { return value; }
 private:
     std::string value;
 };

@@ -90,6 +90,7 @@ class FloatNode;
 class DoubleNode;
 class CharNode;
 class VoidNode;
+class DerivedTypeExprNode;
 
 class SizeOfNode;
 class CastNode;
@@ -271,7 +272,7 @@ public:
     virtual void Visit(UIntLiteralNode& uintLiteralNode) {}
     virtual void Visit(LongLiteralNode& longLiteralNode) {}
     virtual void Visit(ULongLiteralNode& ulongLiteralNode) {}
-    virtual void Visit(FloatLiteralNode& floatLitealNode) {}
+    virtual void Visit(FloatLiteralNode& floatLiteralNode) {}
     virtual void Visit(DoubleLiteralNode& doubleLiteralNode) {}
     virtual void Visit(CharLiteralNode& charLiteralNode) {}
     virtual void Visit(StringLiteralNode& stringLiteralNode) {}
@@ -290,6 +291,7 @@ public:
     virtual void Visit(DoubleNode& doubleNode) {}
     virtual void Visit(CharNode& charNode) {}
     virtual void Visit(VoidNode& voidNode) {}
+    virtual void Visit(DerivedTypeExprNode& derivedTypeExprNode) {}
 
     virtual void BeginVisit(CompoundStatementNode& compoundStatementNode) {}
     virtual void EndVisit(CompoundStatementNode& compoundStatementNode) {}

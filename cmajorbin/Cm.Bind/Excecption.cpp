@@ -8,10 +8,37 @@
 ========================================================================*/
 
 #include <Cm.Bind/Exception.hpp>
+#include <Cm.Parser/FileRegistry.hpp>
 
 namespace Cm { namespace Bind {
 
-Exception::Exception(const std::string& message_, Cm::Ast::Node* defNode_, Cm::Ast::Node* refNode_) : std::runtime_error(message_), defNode(defNode_), refNode(refNode_)
+std::string Expand(const std::string& errorMessage, const Span& span)
+{
+    std::string expandedMessage = "Error: " + errorMessage;
+    if (span.Valid())
+    {
+        Cm::Parser::FileRegistry* currentFileRegistry = Cm::Parser::GetCurrentFileRegistry();
+        if (currentFileRegistry)
+        {
+            const std::string& fileName = currentFileRegistry->GetParsedFileName(span.FileIndex());
+            if (!fileName.empty())
+            {
+                expandedMessage.append(" (file '" + fileName + "' line " + std::to_string(span.LineNumber()) + ")");
+            }
+        }
+    }
+    return expandedMessage;
+}
+
+Exception::Exception(const std::string& message_) : std::runtime_error(message_), defined(), referenced()
+{
+}
+
+Exception::Exception(const std::string& message_, const Span& defined_) : std::runtime_error(Expand(message_, defined_)), defined(defined_), referenced()
+{
+}
+
+Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced_) : std::runtime_error(Expand(message_, defined_)), defined(defined_), referenced(referenced_)
 {
 }
 

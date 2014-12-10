@@ -12,14 +12,12 @@
 
 namespace Cm { namespace Sym {
 
-DelegateSymbol::DelegateSymbol(Cm::Ast::DelegateNode* delegateNode) : ContainerSymbol(delegateNode->Id()->Str())
+DelegateSymbol::DelegateSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
 {
-    SetNode(delegateNode);
 }
 
-ClassDelegateSymbol::ClassDelegateSymbol(Cm::Ast::ClassDelegateNode* classDelegateNode) : ContainerSymbol(classDelegateNode->Id()->Str())
+ClassDelegateSymbol::ClassDelegateSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
 {
-    SetNode(classDelegateNode);
 }
 
 } } // namespace Cm::Sym

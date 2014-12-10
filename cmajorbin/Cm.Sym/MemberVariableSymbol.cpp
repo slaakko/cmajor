@@ -8,12 +8,22 @@
 ========================================================================*/
 
 #include <Cm.Sym/MemberVariableSymbol.hpp>
-#include <Cm.Ast/Identifier.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
-MemberVariableSymbol::MemberVariableSymbol(Cm::Ast::MemberVariableNode* memberVariableNode) : Symbol(memberVariableNode->Id()->Str())
+MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_)
 {
+}
+
+TypeSymbol* MemberVariableSymbol::GetType() const
+{
+    return type.get();
+}
+
+void MemberVariableSymbol::SetType(TypeSymbol* type_)
+{
+    type.reset(type_);
 }
 
 } } // namespace Cm::Sym

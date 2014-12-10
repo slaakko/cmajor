@@ -29,10 +29,10 @@ void ContainerScope::Install(Symbol* symbol)
     SymbolMapIt i = symbolMap.find(symbol->Name());
     if (i != symbolMap.end())
     {
-        Cm::Ast::Node* defNode = symbol->GetNode();
+        const Span& defined = symbol->GetSpan();
         Symbol* prev = i->second;
-        Cm::Ast::Node* refNode = prev->GetNode();
-        throw Exception("symbol '" + symbol->Name() + "' already defined", defNode, refNode);
+        const Span& referenced = prev->GetSpan();
+        throw Exception("symbol '" + symbol->Name() + "' already defined", defined, referenced);
     }
     else
     {
@@ -142,13 +142,12 @@ NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsN
             }
             else
             {
-                throw Exception("symbol '" + s->Name() + "' does not denote a namespace", s->GetNode(), nullptr);
+                throw Exception("symbol '" + s->Name() + "' does not denote a namespace", s->GetSpan());
             }
         }
         else
         {
-            NamespaceSymbol* newNs = new NamespaceSymbol(component);
-            newNs->SetNode(node);
+            NamespaceSymbol* newNs = new NamespaceSymbol(node->GetSpan(), component);
             scope = newNs->GetContainerScope();
             scope->SetParent(parentNs->GetContainerScope());
             parentNs->AddSymbol(newNs);
@@ -169,7 +168,7 @@ void FileScope::InstallAlias(ContainerScope* currenContainerScope, Cm::Ast::Alia
         }
         else
         {
-            throw Exception("referred symbol '" + aliasNode->Qid()->Str() + "' not found", aliasNode->Qid(), nullptr);
+            throw Exception("referred symbol '" + aliasNode->Qid()->Str() + "' not found", aliasNode->Qid()->GetSpan());
         }
     }
     else
@@ -195,12 +194,12 @@ void FileScope::InstallNamespaceImport(ContainerScope* currentContainerScope, Cm
             }
             else
             {
-                throw Exception("'" + namespaceImportNode->Ns()->Str() + "' does not denote a namespace", namespaceImportNode->Ns(), nullptr);
+                throw Exception("'" + namespaceImportNode->Ns()->Str() + "' does not denote a namespace", namespaceImportNode->Ns()->GetSpan());
             }
         }
         else
         {
-            throw Exception("referred namespace symbol '" + namespaceImportNode->Ns()->Str() + "' not found", namespaceImportNode->Ns(), nullptr);
+            throw Exception("referred namespace symbol '" + namespaceImportNode->Ns()->Str() + "' not found", namespaceImportNode->Ns()->GetSpan());
         }
     }
     else
@@ -258,7 +257,7 @@ Symbol* FileScope::Lookup(const std::string& name, ScopeLookup lookup) const
             }
             message.append(symbol->FullName());
         }
-        throw Exception(message, nullptr, nullptr);
+        throw Exception(message, Span());
     }
     else
     {

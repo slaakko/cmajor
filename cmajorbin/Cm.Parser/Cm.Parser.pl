@@ -42,6 +42,7 @@ namespace Cm.Parser
     grammar EnumerationGrammar
     {
         EnumType(ParsingContext* ctx): Cm::Ast::EnumTypeNode*;
+        UnderlyingType(ParsingContext* ctx): Cm::Ast::Node*;
         EnumConstants(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType);
         EnumConstant(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType, var Span s): Cm::Ast::Node*;
     }

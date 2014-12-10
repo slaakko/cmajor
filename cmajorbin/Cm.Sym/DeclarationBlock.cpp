@@ -11,9 +11,8 @@
 
 namespace Cm { namespace Sym {
 
-DeclarationBlock::DeclarationBlock(Cm::Ast::StatementNode* statementNode) : ContainerSymbol()
+DeclarationBlock::DeclarationBlock(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_)
 {
-    SetNode(statementNode);
 }
 
 } } // namespace Cm::Sym

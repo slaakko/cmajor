@@ -7,23 +7,16 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/LocalVariableSymbol.hpp>
+#ifndef CM_BIND_TYPE_RESOLVER_INCLUDED
+#define CM_BIND_TYPE_RESOLVER_INCLUDED
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
-namespace Cm { namespace Sym {
+namespace Cm { namespace Bind {
 
-LocalVariableSymbol::LocalVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_)
-{
-}
+Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::ContainerScope* currentContainerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::Node* typeExpr);
 
-TypeSymbol* LocalVariableSymbol::GetType() const
-{
-    return type.get();
-}
+} } // namespace Cm::Bind
 
-void LocalVariableSymbol::SetType(TypeSymbol* type_)
-{
-    type.reset(type_);
-}
-
-} } // namespace Cm::Sym
+#endif // CM_BIND_TYPE_RESOLVER_INCLUDED

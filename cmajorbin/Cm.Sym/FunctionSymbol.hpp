@@ -17,7 +17,8 @@ namespace Cm { namespace Sym {
 class FunctionSymbol : public ContainerSymbol
 {
 public:
-    FunctionSymbol(Cm::Ast::FunctionNode* functionNode);
+    FunctionSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::functionSymbol; }
 };
 
 } } // namespace Cm::Sym

@@ -10,6 +10,7 @@
 #include <Cm.Ast/TypeExpr.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
+#include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -41,6 +42,17 @@ void DerivationList::Add(Derivation derivation)
     derivations[numDerivations++] = derivation;
 }
 
+bool operator==(const DerivationList& left, const DerivationList& right)
+{
+    uint8_t n = left.NumDerivations();
+    if (n != right.NumDerivations()) return false;
+    for (uint8_t i = 0; i < n; ++i)
+    {
+        if (left[i] != right[i]) return false;
+    }
+    return true;
+}
+
 DerivedTypeExprNode::DerivedTypeExprNode(const Span& span_): Node(span_)
 {
 }
@@ -64,6 +76,11 @@ void DerivedTypeExprNode::Write(Writer& writer)
 {
     writer.Write(derivations);
     writer.Write(baseTypeExprNode.get());
+}
+
+void DerivedTypeExprNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 std::string DerivedTypeExprNode::ToString() const

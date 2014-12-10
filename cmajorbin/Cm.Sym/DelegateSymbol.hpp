@@ -9,21 +9,23 @@
 
 #ifndef CM_SYM_DELEGATE_SYMBOL_INCLUDED
 #define CM_SYM_DELEGATE_SYMBOL_INCLUDED
-#include <Cm.Sym/ContainerSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Ast/Delegate.hpp>
 
 namespace Cm { namespace Sym {
 
-class DelegateSymbol : public ContainerSymbol
+class DelegateSymbol : public TypeSymbol
 {
 public:
-    DelegateSymbol(Cm::Ast::DelegateNode* delegateNode);
+    DelegateSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::delegateSymbol; }
 };
 
-class ClassDelegateSymbol : public ContainerSymbol
+class ClassDelegateSymbol : public TypeSymbol
 {
 public:
-    ClassDelegateSymbol(Cm::Ast::ClassDelegateNode* classDelegateNode);
+    ClassDelegateSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::classDelegateSymbol; }
 };
 
 } } // namespace Cm::Sym

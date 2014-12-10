@@ -1,5 +1,5 @@
-#ifndef Enumeration_hpp_5728
-#define Enumeration_hpp_5728
+#ifndef Enumeration_hpp_6538
+#define Enumeration_hpp_6538
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -19,10 +19,11 @@ private:
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class EnumTypeRule;
+    class UnderlyingTypeRule;
     class EnumConstantsRule;
     class EnumConstantRule;
 };
 
 } } // namespace Cm.Parser
 
-#endif // Enumeration_hpp_5728
+#endif // Enumeration_hpp_6538

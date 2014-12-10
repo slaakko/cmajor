@@ -17,7 +17,8 @@ namespace Cm { namespace Sym {
 class DeclarationBlock : public ContainerSymbol
 {
 public:
-    DeclarationBlock(Cm::Ast::StatementNode* statementNode);
+    DeclarationBlock(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::declarationBlock; }
 };
 
 } } // namespace Cm::Sym

@@ -24,7 +24,7 @@
 
 namespace Cm { namespace Sym {
 
-SymbolTable::SymbolTable() : globalNs(), container(&globalNs)
+SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs)
 {
 }
 
@@ -44,9 +44,9 @@ void SymbolTable::BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode)
 {
     if (namespaceNode->IsGlobalNamespaceNode())
     {
-        if (!globalNs.GetNode())
+        if (!globalNs.GetSpan().Valid())
         {
-            globalNs.SetNode(namespaceNode);
+            globalNs.SetSpan(namespaceNode->GetSpan());
         }
         BeginContainer(&globalNs);
         nodeScopeMap[namespaceNode] = globalNs.GetContainerScope();
@@ -60,10 +60,11 @@ void SymbolTable::BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode)
             {
                 BeginContainer(static_cast<ContainerSymbol*>(symbol));
                 nodeScopeMap[namespaceNode] = symbol->GetContainerScope();
+                symbolNodeMap[symbol] = namespaceNode;
             }
             else
             {
-                throw Exception("symbol '" + symbol->Name() + "' does not denote a namespace", symbol->GetNode(), nullptr);
+                throw Exception("symbol '" + symbol->Name() + "' does not denote a namespace", symbol->GetSpan());
             }
         }
         else
@@ -71,6 +72,7 @@ void SymbolTable::BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode)
             NamespaceSymbol* namespaceSymbol = container->GetContainerScope()->CreateNamespace(namespaceNode->Id()->Str(), namespaceNode);
             BeginContainer(namespaceSymbol);
             nodeScopeMap[namespaceNode] = namespaceSymbol->GetContainerScope();
+            symbolNodeMap[namespaceSymbol] = namespaceNode;
         }
     }
 }
@@ -82,9 +84,11 @@ void SymbolTable::EndNamespaceScope()
 
 void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
 {
-    ClassSymbol* classSymbol = new ClassSymbol(classNode);
+    Cm::Ast::IdentifierNode* classId = classNode->Id();
+    ClassSymbol* classSymbol = new ClassSymbol(classId->GetSpan(), classId->Str());
     ContainerScope* classScope = classSymbol->GetContainerScope();
     nodeScopeMap[classNode] = classScope;
+    symbolNodeMap[classSymbol] = classNode;
     ContainerScope* containerScope = container->GetContainerScope();
     classScope->SetParent(containerScope);
     container->AddSymbol(classSymbol);
@@ -98,9 +102,11 @@ void SymbolTable::EndClassScope()
 
 void SymbolTable::BeginEnumScope(Cm::Ast::EnumTypeNode* enumTypeNode)
 {
-    EnumTypeSymbol* enumTypeSymbol = new EnumTypeSymbol(enumTypeNode);
+    Cm::Ast::IdentifierNode* enumTypeId = enumTypeNode->Id();
+    EnumTypeSymbol* enumTypeSymbol = new EnumTypeSymbol(enumTypeId->GetSpan(), enumTypeId->Str());
     ContainerScope* enumScope = enumTypeSymbol->GetContainerScope();
     nodeScopeMap[enumTypeNode] = enumScope;
+    symbolNodeMap[enumTypeSymbol] = enumTypeNode;
     ContainerScope* containerScope = container->GetContainerScope();
     enumScope->SetParent(containerScope);
     container->AddSymbol(enumTypeSymbol);
@@ -114,14 +120,16 @@ void SymbolTable::EndEnumScope()
 
 void SymbolTable::AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode)
 {
-    container->AddSymbol(new EnumConstantSymbol(enumConstantNode));
+    Cm::Ast::IdentifierNode* enumConstantId = enumConstantNode->Id();
+    container->AddSymbol(new EnumConstantSymbol(enumConstantId->GetSpan(), enumConstantId->Str()));
 }
 
 void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode)
 {
-    FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode);
+    FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
     ContainerScope* functionScope = functionSymbol->GetContainerScope();
     nodeScopeMap[functionNode] = functionScope;
+    symbolNodeMap[functionSymbol] = functionNode;
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
     container->AddFunctionSymbol(functionSymbol);
@@ -135,9 +143,11 @@ void SymbolTable::EndFunctionScope()
 
 void SymbolTable::BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode)
 {
-    DelegateSymbol* delegateSymbol = new DelegateSymbol(delegateNode);
+    Cm::Ast::IdentifierNode* delegateId = delegateNode->Id();
+    DelegateSymbol* delegateSymbol = new DelegateSymbol(delegateId->GetSpan(), delegateId->Str());
     ContainerScope* delegateScope = delegateSymbol->GetContainerScope();
     nodeScopeMap[delegateNode] = delegateScope;
+    symbolNodeMap[delegateSymbol] = delegateNode;
     ContainerScope* containerScope = container->GetContainerScope();
     delegateScope->SetParent(containerScope);
     container->AddSymbol(delegateSymbol);
@@ -151,9 +161,11 @@ void SymbolTable::EndDelegateScope()
 
 void SymbolTable::BeginClassDelegateScope(Cm::Ast::ClassDelegateNode* classDelegateNode)
 {
-    ClassDelegateSymbol* classDelegateSymbol = new ClassDelegateSymbol(classDelegateNode);
+    Cm::Ast::IdentifierNode* classDelegateId = classDelegateNode->Id();
+    ClassDelegateSymbol* classDelegateSymbol = new ClassDelegateSymbol(classDelegateId->GetSpan(), classDelegateId->Str());
     ContainerScope* classDelegateScope = classDelegateSymbol->GetContainerScope();
     nodeScopeMap[classDelegateNode] = classDelegateScope;
+    symbolNodeMap[classDelegateSymbol] = classDelegateNode;
     ContainerScope* containerScope = container->GetContainerScope();
     classDelegateScope->SetParent(containerScope);
     container->AddSymbol(classDelegateSymbol);
@@ -167,22 +179,30 @@ void SymbolTable::EndClassDelegateScope()
 
 void SymbolTable::AddConstant(Cm::Ast::ConstantNode* constantNode)
 {
-    container->AddSymbol(new ConstantSymbol(constantNode));
+    Cm::Ast::IdentifierNode* constantId = constantNode->Id();
+    ConstantSymbol* constantSymbol = new ConstantSymbol(constantId->GetSpan(), constantId->Str());
+    container->AddSymbol(constantSymbol);
+    symbolNodeMap[constantSymbol] = constantNode;
 }
 
 void SymbolTable::AddParameter(Cm::Ast::ParameterNode* parameterNode, const std::string& parameterName)
 {
-    container->AddSymbol(new ParameterSymbol(parameterNode, parameterName));
+    ParameterSymbol* parameterSymbol = new ParameterSymbol(parameterNode->GetSpan(), parameterName);
+    container->AddSymbol(parameterSymbol);
+    symbolNodeMap[parameterSymbol] = parameterNode;
 }
 
 void SymbolTable::AddTemplateParameter(Cm::Ast::TemplateParameterNode* templateParameterNode)
 {
-    container->AddSymbol(new TemplateParameterSymbol(templateParameterNode));
+    Cm::Ast::IdentifierNode* templateParameterId = templateParameterNode->Id();
+    TemplateParameterSymbol* templateParameterSymbol = new TemplateParameterSymbol(templateParameterId->GetSpan(), templateParameterId->Str());
+    container->AddSymbol(templateParameterSymbol);
+    symbolNodeMap[templateParameterSymbol] = templateParameterNode;
 }
 
 void SymbolTable::BeginDeclarationScope(Cm::Ast::StatementNode* statementNode)
 {
-    DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode);
+    DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode->GetSpan(), "");
     ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
     nodeScopeMap[statementNode] = declarationBlockScope;
     ContainerScope* containerScope = container->GetContainerScope();
@@ -198,12 +218,18 @@ void SymbolTable::EndDeclarationcope()
 
 void SymbolTable::AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode)
 {
-    container->AddSymbol(new LocalVariableSymbol(constructionStatementNode));
+    Cm::Ast::IdentifierNode* localVariableId = constructionStatementNode->Id();
+    LocalVariableSymbol* localVariableSymbol = new LocalVariableSymbol(localVariableId->GetSpan(), localVariableId->Str());
+    container->AddSymbol(localVariableSymbol);
+    symbolNodeMap[localVariableSymbol] = constructionStatementNode;
 }
 
 void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode)
 {
-    container->AddSymbol(new MemberVariableSymbol(memberVariableNode));
+    Cm::Ast::IdentifierNode* memberVariableId = memberVariableNode->Id();
+    MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableId->GetSpan(), memberVariableId->Str());
+    container->AddSymbol(memberVariableSymbol);
+    symbolNodeMap[memberVariableSymbol] = memberVariableNode;
 }
 
 ContainerScope* SymbolTable::GetContainerScope(Cm::Ast::Node* node) const
@@ -216,6 +242,19 @@ ContainerScope* SymbolTable::GetContainerScope(Cm::Ast::Node* node) const
     else
     {
         throw std::runtime_error("container scope not found");
+    }
+}
+
+Cm::Ast::Node* SymbolTable::GetNode(Symbol* symbol) const
+{
+    SymbolNodeMapIt i = symbolNodeMap.find(symbol);
+    if (i != symbolNodeMap.end())
+    {
+        return i->second;
+    }
+    else
+    {
+        throw std::runtime_error("node for symbol not found");
     }
 }
 

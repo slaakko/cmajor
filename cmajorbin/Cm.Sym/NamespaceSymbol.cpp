@@ -11,11 +11,7 @@
 
 namespace Cm { namespace Sym {
 
-NamespaceSymbol::NamespaceSymbol() : ContainerSymbol()
-{
-}
-
-NamespaceSymbol::NamespaceSymbol(const std::string& name_) : ContainerSymbol(name_)
+NamespaceSymbol::NamespaceSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_)
 {
 }
 

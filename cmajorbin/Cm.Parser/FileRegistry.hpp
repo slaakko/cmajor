@@ -18,9 +18,13 @@ class FileRegistry
 {
 public:
     int RegisterParsedFile(const std::string& filePath);
+    const std::string& GetParsedFileName(int parsedFileIndex) const;
 private:
     std::vector<std::string> parsedFiles;
 };
+
+FileRegistry* GetCurrentFileRegistry();
+void SetCurrentFileRegistry(FileRegistry* fileRegistry);
 
 } } // namespace Cm::Parser
 

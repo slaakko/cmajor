@@ -13,11 +13,7 @@
 
 namespace Cm { namespace Sym {
 
-Symbol::Symbol(): parent(nullptr), node(nullptr)
-{
-}
-
-Symbol::Symbol(const std::string& name_): name(name_), parent(nullptr), node(nullptr)
+Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), parent(nullptr)
 {
 }
 

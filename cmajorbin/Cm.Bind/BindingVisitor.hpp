@@ -37,6 +37,8 @@ public:
     void EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode) override;
     void BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
+    void Visit(Cm::Ast::EnumConstantNode& enumConstantNode) override;
+    void Visit(Cm::Ast::ConstantNode& constantNode) override;
 
     void BeginVisit(Cm::Ast::FunctionNode& functionNode) override;
     void EndVisit(Cm::Ast::FunctionNode& functionNode) override;

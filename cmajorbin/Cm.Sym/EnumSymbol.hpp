@@ -9,21 +9,38 @@
 
 #ifndef CM_SYM_ENUM_SYMBOL_INCLUDED
 #define CM_SYM_ENUM_SYMBOL_INCLUDED
-#include <Cm.Sym/ContainerSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/Value.hpp>
 #include <Cm.Ast/Enumeration.hpp>
 
 namespace Cm { namespace Sym {
 
-class EnumTypeSymbol : public ContainerSymbol
+class EnumTypeSymbol : public TypeSymbol
 {
 public:
-    EnumTypeSymbol(Cm::Ast::EnumTypeNode* enumTypeNode);
+    EnumTypeSymbol(const Span& span_, const std::string& name_);
+    bool IsEnumTypeSymbol() const override { return true; }
+    SymbolType GetSymbolType() const override { return SymbolType::enumTypeSymbol; }
+    TypeSymbol* GetUnderlyingType() const override { return underlyingType.get(); }
+    void SetUnderlyingType(TypeSymbol* underlyingType_);
+private:
+    std::unique_ptr<TypeSymbol> underlyingType;
 };
 
 class EnumConstantSymbol : public Symbol
 {
 public:
-    EnumConstantSymbol(Cm::Ast::EnumConstantNode* enumConstantNode);
+    EnumConstantSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::enumConstantSymbol; }
+    bool IsEnumConstantSymbol() const override { return true; }
+    void SetValue(Value* value_);
+    Value* GetValue() const { return value.get(); }
+    bool Evaluating() const { return evaluating; }
+    void SetEvaluating() { evaluating = true; }
+    void ResetEvaluating() { evaluating = false; }
+private:
+    std::unique_ptr<Value> value;
+    bool evaluating;
 };
 
 } } // namespace Cm::Sym
