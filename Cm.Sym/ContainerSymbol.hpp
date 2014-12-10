@@ -18,8 +18,7 @@ class FunctionSymbol;
 class ContainerSymbol : public Symbol
 {
 public:
-    ContainerSymbol();
-    ContainerSymbol(const std::string& name_);
+    ContainerSymbol(const Span& span_, const std::string& name_);
     ContainerScope* GetContainerScope() override { return &containerScope; }
     void AddSymbol(Symbol* symbol);
     void AddFunctionSymbol(FunctionSymbol* functionSymbol);

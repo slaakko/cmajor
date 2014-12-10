@@ -10,6 +10,7 @@
 [hpp]#include <Cm.Parser/ParsingContext.hpp>
 [hpp]#include <Cm.Ast/Enumeration.hpp>
 [cpp]#include <Cm.Parser/Expression.hpp>
+[cpp]#include <Cm.Parser/TypeExpr.hpp>
 [cpp]#include <Cm.Parser/Identifier.hpp>
 [cpp]#include <Cm.Parser/Specifier.hpp>
 
@@ -21,12 +22,18 @@ namespace Cm.Parser
     {
         using IdentifierGrammar.Identifier;
         using ExpressionGrammar.Expression;
+        using TypeExprGrammar.TypeExpr;
         using SpecifierGrammar.Specifiers;
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
 
         EnumType(ParsingContext* ctx): Cm::Ast::EnumTypeNode*
-            ::= (Specifiers keyword("enum") Identifier:enumTypeId!){ value = new EnumTypeNode(span, Specifiers, enumTypeId); } '{'! EnumConstants(ctx, value) '}'!{ value->GetSpan().SetEnd(span.End()); }
+            ::= (Specifiers keyword("enum") Identifier:enumTypeId!){ value = new EnumTypeNode(span, Specifiers, enumTypeId); } (UnderlyingType(ctx){ value->SetUnderlyingType(UnderlyingType); })?
+            '{'! EnumConstants(ctx, value) '}'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        UnderlyingType(ParsingContext* ctx): Cm::Ast::Node*
+            ::= ':' TypeExpr(ctx){ value = TypeExpr; }
             ;
 
         EnumConstants(ParsingContext* ctx, Cm::Ast::EnumTypeNode* enumType)

@@ -8,12 +8,22 @@
 ========================================================================*/
 
 #include <Cm.Sym/ParameterSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
-ParameterSymbol::ParameterSymbol(Cm::Ast::ParameterNode* parameterNode, const std::string& parameterName) : Symbol(parameterName)
+ParameterSymbol::ParameterSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_)
 {
-    SetNode(parameterNode);
+}
+
+TypeSymbol* ParameterSymbol::GetType() const
+{
+    return type.get();
+}
+
+void ParameterSymbol::SetType(TypeSymbol* type_)
+{
+    type.reset(type_);
 }
 
 } } // namespace Cm::Sym

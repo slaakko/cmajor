@@ -23,6 +23,8 @@ public:
     EnumTypeNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::enumTypeNode; }
     Node* Clone() const override;
+    void SetUnderlyingType(Node* underlyingType_);
+    Node* GetUnderlyingType() const { return underlyingType.get(); }
     void AddConstant(Node* constant);
     Node* GetLastConstant();
     void Read(Reader& reader) override;
@@ -37,6 +39,7 @@ public:
 private:
     Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;
+    std::unique_ptr<Node> underlyingType;
     NodeList constants;
     Node* parent;
 };
@@ -47,6 +50,7 @@ public:
     EnumConstantNode(const Span& span_);
     EnumConstantNode(const Span& span_, IdentifierNode* id_, Node* value_);
     NodeType GetNodeType() const override { return NodeType::enumConstantNode; }
+    bool IsEnumConstantNode() const override { return true; }
     Node* Clone() const override;
     Node* GetValue() const override { return value.get(); }
     void Read(Reader& reader) override;

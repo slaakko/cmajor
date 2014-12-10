@@ -34,6 +34,11 @@ Node* EnumTypeNode::Clone() const
     return clone;
 }
 
+void EnumTypeNode::SetUnderlyingType(Node* underlyingType_)
+{
+    underlyingType.reset(underlyingType_);
+}
+
 void EnumTypeNode::AddConstant(Node* constant)
 {
     constant->SetParent(this);

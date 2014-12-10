@@ -14,10 +14,17 @@
 
 namespace Cm { namespace Sym {
 
+class TypeSymbol;
+
 class LocalVariableSymbol : public Symbol
 {
 public:
-    LocalVariableSymbol(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
+    LocalVariableSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
+    TypeSymbol* GetType() const;
+    void SetType(TypeSymbol* type_);
+private:
+    std::unique_ptr<TypeSymbol> type;
 };
 
 } } // namespace Cm::Sym

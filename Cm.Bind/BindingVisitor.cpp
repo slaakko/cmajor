@@ -8,8 +8,8 @@
 ========================================================================*/
 
 #include <Cm.Bind/BindingVisitor.hpp>
-#include <Cm.Bind/Exception.hpp>
-#include <Cm.Ast/Identifier.hpp>
+#include <Cm.Bind/Constant.hpp>
+#include <Cm.Bind/Enumeration.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -113,12 +113,23 @@ void BindingVisitor::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctio
 
 void BindingVisitor::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
 {
+    BindEnumType(symbolTable, currentContainerScope, currentFileScope.get(), &enumTypeNode);
     BeginContainerScope(symbolTable.GetContainerScope(&enumTypeNode));
+}
+
+void BindingVisitor::Visit(Cm::Ast::EnumConstantNode& enumConstantNode)
+{
+    BindEnumConstant(symbolTable, currentContainerScope, currentFileScope.get(), &enumConstantNode);
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
 {
     EndContainerScope();
+}
+
+void BindingVisitor::Visit(Cm::Ast::ConstantNode& constantNode)
+{
+    BindConstant(symbolTable, currentContainerScope, currentFileScope.get(), &constantNode);
 }
 
 void BindingVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)

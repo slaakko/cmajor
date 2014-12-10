@@ -8,18 +8,28 @@
 ========================================================================*/
 
 #include <Cm.Sym/EnumSymbol.hpp>
+#include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
 
-EnumTypeSymbol::EnumTypeSymbol(Cm::Ast::EnumTypeNode* enumTypeNode) : ContainerSymbol(enumTypeNode->Id()->Str())
+EnumTypeSymbol::EnumTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
 {
-    SetNode(enumTypeNode);
+    underlyingType.reset(new IntTypeSymbol());
 }
 
-EnumConstantSymbol::EnumConstantSymbol(Cm::Ast::EnumConstantNode* enumConstantNode) : Symbol(enumConstantNode->Id()->Str())
+void EnumTypeSymbol::SetUnderlyingType(TypeSymbol* underlyingType_)
 {
-    SetNode(enumConstantNode);
+    underlyingType.reset(underlyingType_);
+}
+
+EnumConstantSymbol::EnumConstantSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), evaluating(false)
+{
+}
+
+void EnumConstantSymbol::SetValue(Value* value_)
+{
+    value.reset(value_);
 }
 
 } } // namespace Cm::Sym

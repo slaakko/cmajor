@@ -9,18 +9,22 @@
 
 #ifndef CM_BIND_EXCEPTION_INCLUDED
 #define CM_BIND_EXCEPTION_INCLUDED
-#include <Cm.Ast/Node.hpp>
+#include <Cm.Parsing/Scanner.hpp>
 #include <stdexcept>
 
 namespace Cm { namespace Bind {
 
+using Cm::Parsing::Span;
+
 class Exception : public std::runtime_error
 {
 public:
-    Exception(const std::string& message_, Cm::Ast::Node* defNode_, Cm::Ast::Node* refNode_);
+    Exception(const std::string& message_);
+    Exception(const std::string& message_, const Span& defined_);
+    Exception(const std::string& message_, const Span& defined_, const Span& referenced_);
 private:
-    Cm::Ast::Node* defNode;
-    Cm::Ast::Node* refNode;
+    Span defined;
+    Span referenced;
 };
 
 } } // namespace Cm::Bind

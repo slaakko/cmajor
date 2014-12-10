@@ -34,6 +34,7 @@ public:
     IdentifierNode* Id() const { return id.get(); }
     Node* Value() const { return value.get(); }
     void Accept(Visitor& visitor) override;
+    bool IsConstantNode() const override { return true; }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> typeExpr;

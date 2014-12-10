@@ -9,6 +9,7 @@
 #include <Cm.Parsing/StdLib.hpp>
 #include <Cm.Parsing/XmlLog.hpp>
 #include <Cm.Parser/Expression.hpp>
+#include <Cm.Parser/TypeExpr.hpp>
 #include <Cm.Parser/Identifier.hpp>
 #include <Cm.Parser/Specifier.hpp>
 
@@ -104,10 +105,15 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<EnumTypeRule>(this, &EnumTypeRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<EnumTypeRule>(this, &EnumTypeRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<EnumTypeRule>(this, &EnumTypeRule::A2Action));
         Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
         specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<EnumTypeRule>(this, &EnumTypeRule::PostSpecifiers));
         Cm::Parsing::NonterminalParser* enumTypeIdNonterminalParser = GetNonterminal("enumTypeId");
         enumTypeIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<EnumTypeRule>(this, &EnumTypeRule::PostenumTypeId));
+        Cm::Parsing::NonterminalParser* underlyingTypeNonterminalParser = GetNonterminal("UnderlyingType");
+        underlyingTypeNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<EnumTypeRule>(this, &EnumTypeRule::PreUnderlyingType));
+        underlyingTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<EnumTypeRule>(this, &EnumTypeRule::PostUnderlyingType));
         Cm::Parsing::NonterminalParser* enumConstantsNonterminalParser = GetNonterminal("EnumConstants");
         enumConstantsNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<EnumTypeRule>(this, &EnumTypeRule::PreEnumConstants));
     }
@@ -116,6 +122,10 @@ public:
         context.value = new EnumTypeNode(span, context.fromSpecifiers, context.fromenumTypeId);
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value->SetUnderlyingType(context.fromUnderlyingType);
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value->GetSpan().SetEnd(span.End());
     }
@@ -137,6 +147,19 @@ public:
             stack.pop();
         }
     }
+    void PreUnderlyingType(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostUnderlyingType(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromUnderlyingType_value = std::move(stack.top());
+            context.fromUnderlyingType = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromUnderlyingType_value.get());
+            stack.pop();
+        }
+    }
     void PreEnumConstants(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
@@ -145,11 +168,75 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromSpecifiers(), fromenumTypeId() {}
+        Context(): ctx(), value(), fromSpecifiers(), fromenumTypeId(), fromUnderlyingType() {}
         ParsingContext* ctx;
         Cm::Ast::EnumTypeNode* value;
         Cm::Ast::Specifiers fromSpecifiers;
         Cm::Ast::IdentifierNode* fromenumTypeId;
+        Cm::Ast::Node* fromUnderlyingType;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class EnumerationGrammar::UnderlyingTypeRule : public Cm::Parsing::Rule
+{
+public:
+    UnderlyingTypeRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("Cm::Ast::Node*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Node*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<UnderlyingTypeRule>(this, &UnderlyingTypeRule::A0Action));
+        Cm::Parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        typeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<UnderlyingTypeRule>(this, &UnderlyingTypeRule::PreTypeExpr));
+        typeExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<UnderlyingTypeRule>(this, &UnderlyingTypeRule::PostTypeExpr));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromTypeExpr;
+    }
+    void PreTypeExpr(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostTypeExpr(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromTypeExpr_value = std::move(stack.top());
+            context.fromTypeExpr = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromTypeExpr_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromTypeExpr() {}
+        ParsingContext* ctx;
+        Cm::Ast::Node* value;
+        Cm::Ast::Node* fromTypeExpr;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -317,55 +404,71 @@ private:
 void EnumerationGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar0 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::stdlib::Create(pd);
+        grammar1 = Cm::Parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::ExpressionGrammar::Create(pd);
+        grammar2 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar3 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar3);
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    if (!grammar4)
+    {
+        grammar4 = Cm::Parser::SpecifierGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar4);
 }
 
 void EnumerationGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
     AddRule(new EnumTypeRule("EnumType", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
                 new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::ActionParser("A0",
-                        new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::ActionParser("A0",
                             new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
-                                new Cm::Parsing::KeywordParser("enum")),
-                            new Cm::Parsing::ExpectationParser(
-                                new Cm::Parsing::NonterminalParser("enumTypeId", "Identifier", 0)))),
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
+                                    new Cm::Parsing::KeywordParser("enum")),
+                                new Cm::Parsing::ExpectationParser(
+                                    new Cm::Parsing::NonterminalParser("enumTypeId", "Identifier", 0)))),
+                        new Cm::Parsing::OptionalParser(
+                            new Cm::Parsing::ActionParser("A1",
+                                new Cm::Parsing::NonterminalParser("UnderlyingType", "UnderlyingType", 1)))),
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::CharParser('{'))),
                 new Cm::Parsing::NonterminalParser("EnumConstants", "EnumConstants", 2)),
-            new Cm::Parsing::ActionParser("A1",
+            new Cm::Parsing::ActionParser("A2",
                 new Cm::Parsing::ExpectationParser(
                     new Cm::Parsing::CharParser('}'))))));
+    AddRule(new UnderlyingTypeRule("UnderlyingType", GetScope(),
+        new Cm::Parsing::SequenceParser(
+            new Cm::Parsing::CharParser(':'),
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)))));
     AddRule(new EnumConstantsRule("EnumConstants", GetScope(),
         new Cm::Parsing::ListParser(
             new Cm::Parsing::ActionParser("A0",

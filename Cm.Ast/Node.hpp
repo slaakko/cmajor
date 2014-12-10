@@ -81,6 +81,8 @@ public:
     virtual bool IsCondCompPartNode() const { return false; }
     virtual bool IsConstraintNode() const { return false; }
     virtual bool IsInitializerNode() const { return false; }
+    virtual bool IsConstantNode() const { return false; }
+    virtual bool IsEnumConstantNode() const { return false; }
     virtual Rank GetRank() const { return Rank::primary; }
     virtual std::string ToString() const { return std::string(); }
     virtual std::string GetOpStr() const { return std::string(); }

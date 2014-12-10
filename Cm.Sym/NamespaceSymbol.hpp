@@ -16,8 +16,8 @@ namespace Cm { namespace Sym {
 class NamespaceSymbol : public ContainerSymbol
 {
 public:
-    NamespaceSymbol();
-    NamespaceSymbol(const std::string& name_);
+    NamespaceSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::namespaceSymbol; }
     bool IsNamespaceSymbol() const override { return true; }
     bool IsGlobalNamespace() const { return Name().empty(); }
 };

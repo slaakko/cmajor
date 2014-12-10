@@ -12,9 +12,8 @@
 
 namespace Cm { namespace Sym {
 
-ClassSymbol::ClassSymbol(Cm::Ast::ClassNode* classNode) : ContainerSymbol(classNode->Id()->Str())
+ClassSymbol::ClassSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, Cm::Util::Uuid())
 {
-    SetNode(classNode);
 }
 
 } } // namespace Cm::Sym

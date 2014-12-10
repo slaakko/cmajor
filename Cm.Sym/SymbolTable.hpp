@@ -48,6 +48,7 @@ public:
     void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
     ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
+    Cm::Ast::Node* GetNode(Symbol* symbol) const;
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
@@ -55,6 +56,9 @@ private:
     typedef std::unordered_map<Cm::Ast::Node*, ContainerScope*> NodeScopeMap;
     typedef NodeScopeMap::const_iterator NodeScopeMapIt;
     NodeScopeMap nodeScopeMap;
+    typedef std::unordered_map<Symbol*, Cm::Ast::Node*> SymbolNodeMap;
+    typedef SymbolNodeMap::const_iterator SymbolNodeMapIt;
+    SymbolNodeMap symbolNodeMap;
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
 };

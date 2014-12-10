@@ -7,20 +7,16 @@
 
 ========================================================================*/
 
-#ifndef CM_SYM_TEMPLATE_PARAMETER_SYMBOL_INCLUDED
-#define CM_SYM_TEMPLATE_PARAMETER_SYMBOL_INCLUDED
 #include <Cm.Sym/TypeSymbol.hpp>
-#include <Cm.Ast/Template.hpp>
 
 namespace Cm { namespace Sym {
-    
-class TemplateParameterSymbol : public TypeSymbol
+
+TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_)
 {
-public:
-    TemplateParameterSymbol(const Span& span_, const std::string& name_);
-    SymbolType GetSymbolType() const override { return SymbolType::templateParameterSymbol; }
-};
+}
+
+TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_, const Cm::Util::Uuid& id_) : ContainerSymbol(span_, name_), id(id_)
+{
+}
 
 } } // namespace Cm::Sym
-
-#endif // CM_SYM_TEMPLATE_PARAMETER_SYMBOL_INCLUDED

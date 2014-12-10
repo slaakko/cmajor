@@ -12,12 +12,7 @@
 
 namespace Cm { namespace Sym {
 
-ContainerSymbol::ContainerSymbol() : Symbol(), containerScope()
-{
-    containerScope.SetContainer(this);
-}
-
-ContainerSymbol::ContainerSymbol(const std::string& name_) : Symbol(name_), containerScope()
+ContainerSymbol::ContainerSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), containerScope()
 {
     containerScope.SetContainer(this);
 }

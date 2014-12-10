@@ -7,23 +7,22 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/ConstantSymbol.hpp>
-#include <Cm.Ast/Identifier.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
-ConstantSymbol::ConstantSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), evaluating(false)
+TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
 {
 }
 
-void ConstantSymbol::SetType(TypeSymbol* type_)
+void TemplateTypeSymbol::SetSubjectType(TypeSymbol* subjectType_)
 {
-    type.reset(type_);
+    subjectType.reset(subjectType_);
 }
 
-void ConstantSymbol::SetValue(Value* value_)
+void TemplateTypeSymbol::AddTypeArgument(TypeSymbol* typeArgument)
 {
-    value.reset(value_);
+    typeArguments.push_back(std::unique_ptr<TypeSymbol>(typeArgument));
 }
 
 } } // namespace Cm::Sym

@@ -12,9 +12,8 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 
 namespace Cm { namespace Sym {
 
-TemplateParameterSymbol::TemplateParameterSymbol(Cm::Ast::TemplateParameterNode* templateParameterNode) : Symbol(templateParameterNode->Id()->Str())
+TemplateParameterSymbol::TemplateParameterSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
 {
-    SetNode(templateParameterNode);
 }
 
 } } // namespace Cm::Sym

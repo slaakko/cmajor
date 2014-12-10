@@ -19,12 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BasicTypeSymbol.hpp" />
     <ClInclude Include="DeclarationBlock.hpp" />
     <ClInclude Include="ClassSymbol.hpp" />
     <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="ContainerSymbol.hpp" />
     <ClInclude Include="DeclarationVisitor.hpp" />
     <ClInclude Include="DelegateSymbol.hpp" />
+    <ClInclude Include="DerivedTypeSymbol.hpp" />
     <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="Exception.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
@@ -36,14 +38,19 @@
     <ClInclude Include="Symbol.hpp" />
     <ClInclude Include="SymbolTable.hpp" />
     <ClInclude Include="TemplateParameterSymbol.hpp" />
+    <ClInclude Include="TemplateTypeSymbol.hpp" />
+    <ClInclude Include="TypeSymbol.hpp" />
+    <ClInclude Include="Value.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BasicTypeSymbol.cpp" />
     <ClCompile Include="DeclarationBlock.cpp" />
     <ClCompile Include="ClassSymbol.cpp" />
     <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="ContainerSymbol.cpp" />
     <ClCompile Include="DeclarationVisitor.cpp" />
     <ClCompile Include="DelegateSymbol.cpp" />
+    <ClCompile Include="DerivedTypeSymbol.cpp" />
     <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
@@ -55,6 +62,9 @@
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="TemplateParameterSymbol.cpp" />
+    <ClCompile Include="TemplateTypeSymbol.cpp" />
+    <ClCompile Include="TypeSymbol.cpp" />
+    <ClCompile Include="Value.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A12C2C5B-D12E-457A-8D1C-69A9E6759064}</ProjectGuid>
@@ -113,7 +123,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996;4146;4800;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -128,7 +138,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996;4146;4800;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -145,7 +155,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996;4146;4800;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -164,7 +174,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4456;4458;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4458;4996;4146;4800;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -12,9 +12,8 @@
 
 namespace Cm { namespace Sym {
 
-FunctionSymbol::FunctionSymbol(Cm::Ast::FunctionNode* functionNode) : ContainerSymbol(functionNode->Name())
+FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_)
 {
-    SetNode(functionNode);
 }
 
 } } // namespace Cm::Sym

@@ -22,6 +22,7 @@ void Build(const std::string& projectFilePath)
 {
     Cm::Util::MappedInputFile projectFile(projectFilePath);
     Cm::Parser::FileRegistry fileRegistry;
+    Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
     Cm::Parser::ProjectGrammar* projectGrammar = Cm::Parser::ProjectGrammar::Create();
     Cm::Parser::CompileUnitGrammar* compileUnitGrammar = Cm::Parser::CompileUnitGrammar::Create();
     int projectFileIndex = fileRegistry.RegisterParsedFile(projectFilePath);
@@ -43,6 +44,7 @@ void Build(const std::string& projectFilePath)
     std::cout << "enter" << std::endl;
     char c;
     std::cin >> c;
+    Cm::Parser::SetCurrentFileRegistry(nullptr);
 }
 
 } } // namespace Bm::Build
