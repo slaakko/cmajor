@@ -19,6 +19,7 @@ class DelegateSymbol : public TypeSymbol
 public:
     DelegateSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::delegateSymbol; }
+    bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     bool IsDelegateTypeSymbol() const override { return true; }
 
 };
@@ -28,6 +29,7 @@ class ClassDelegateSymbol : public TypeSymbol
 public:
     ClassDelegateSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::classDelegateSymbol; }
+    bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     bool IsClassDelegateTypeSymbol() const override { return true; }
 };
 

@@ -21,10 +21,16 @@ public:
     TypeId(const Cm::Util::Uuid& baseTypeId_);
     TypeId(const Cm::Util::Uuid& baseTypeId_, const Cm::Ast::DerivationList& derivations_);
     const Cm::Util::Uuid& BaseTypeId() const { return baseTypeId; }
+    Cm::Util::Uuid& BaseTypeId() { return baseTypeId; }
     const Cm::Ast::DerivationList& Derivations() const { return derivations; }
+    void SetDerivations(const Cm::Ast::DerivationList& derivations_) { derivations = derivations_; hashCodeValid = false; }
+    size_t GetHashCode() const { if (!hashCodeValid) ComputeHashCode(); return hashCode; }
 private:
     Cm::Util::Uuid baseTypeId;
     Cm::Ast::DerivationList derivations;
+    mutable bool hashCodeValid;
+    mutable size_t hashCode;
+    void ComputeHashCode() const;
 };
 
 bool operator==(const TypeId& left, const TypeId& right);
@@ -52,34 +58,9 @@ inline bool operator<=(const TypeId& left, const TypeId& right)
 
 struct TypeIdHash
 {
-#if defined(_WIN64)
-    static_assert(sizeof(size_t) == 8, "This code is for 64-bit size_t.");
-    const size_t offset_basis = 14695981039346656037ULL;
-    const size_t prime = 1099511628211ULL;
-#else /* defined(_WIN64) */
-    static_assert(sizeof(size_t) == 4, "This code is for 32-bit size_t.");
-    const size_t offset_basis = 2166136261U;
-    const size_t prime = 16777619U;
-#endif /* defined(_WIN64) */
     size_t operator()(const TypeId& typeId) const
     {
-        size_t hashValue = offset_basis;
-        int n = int(typeId.BaseTypeId().Tag().size());
-        for (int i = 0; i < n; ++i)
-        {
-            hashValue ^= static_cast<size_t>(typeId.BaseTypeId().Tag().data[i]);
-            hashValue *= prime;
-        }
-        int nd = typeId.Derivations().NumDerivations();
-        if (nd > 0)
-        {
-            for (int i = 0; i < nd; ++i)
-            {
-                hashValue ^= static_cast<size_t>(typeId.Derivations()[i]);
-                hashValue *= prime;
-            }
-        }
-        return hashValue;
+        return typeId.GetHashCode();
     }
 };
 

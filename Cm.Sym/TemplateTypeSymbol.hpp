@@ -18,10 +18,12 @@ class TemplateTypeSymbol : public TypeSymbol
 public:
     TemplateTypeSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::templateTypeSymbol; }
+    bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetSubjectType(TypeSymbol* subjectType_);
     void AddTypeArgument(TypeSymbol* typeArgument);
+    void SetType(TypeSymbol* type, int index) override;
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;

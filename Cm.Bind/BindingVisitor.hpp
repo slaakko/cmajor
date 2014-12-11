@@ -35,6 +35,7 @@ public:
     void EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode) override;
     void BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode) override;
     void EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode) override;
+    void Visit(Cm::Ast::MemberVariableNode& memberVariableNode) override;
     void BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void Visit(Cm::Ast::EnumConstantNode& enumConstantNode) override;
@@ -113,6 +114,7 @@ private:
     std::unique_ptr<Cm::Sym::FileScope> currentFileScope;
     Cm::Ast::StatementNode* currentStatement;
     std::stack<Cm::Ast::StatementNode*> statementStack;
+    int parameterIndex;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
     void BeginStatement(Cm::Ast::StatementNode* statement);

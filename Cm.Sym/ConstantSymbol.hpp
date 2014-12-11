@@ -20,9 +20,11 @@ class ConstantSymbol : public Symbol
 public:
     ConstantSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::constantSymbol; }
+    bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
-    void SetType(TypeSymbol* type_);
+    void SetType(TypeSymbol* type_) { type = type_; }
+    void SetType(TypeSymbol* type_, int index) override;
     TypeSymbol* GetType() const { return type; }
     virtual bool IsConstantSymbol() const { return true; }
     void SetValue(Value* value_);

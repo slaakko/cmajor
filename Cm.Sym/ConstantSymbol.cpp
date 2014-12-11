@@ -9,6 +9,7 @@
 
 #include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
@@ -19,16 +20,19 @@ ConstantSymbol::ConstantSymbol(const Span& span_, const std::string& name_) : Sy
 
 void ConstantSymbol::Write(Writer& writer)
 {
+    Symbol::Write(writer);
     writer.Write(type->Id());
-    value->Write(writer.GetBinaryWriter());
+    writer.Write(value.get());
 }
 
 void ConstantSymbol::Read(Reader& reader)
 {
-    // todo
+    Symbol::Read(reader);
+    reader.FetchTypeFor(this, 0);
+    value.reset(reader.ReadValue());
 }
 
-void ConstantSymbol::SetType(TypeSymbol* type_)
+void ConstantSymbol::SetType(TypeSymbol* type_, int index)
 {
     type = type_;
 }

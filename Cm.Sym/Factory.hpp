@@ -50,11 +50,15 @@ public:
     static void Done();
     static SymbolFactory& Instance();
     void Register(SymbolType symbolType, SymbolCreator* creator);
+    Symbol* CreateBasicTypeSymbol(SymbolType basicTypeSymbolType);
     Symbol* CreateSymbol(SymbolType symbolType, const Span& span, const std::string& name);
 private:
     static std::unique_ptr<SymbolFactory> instance;
     std::vector<std::unique_ptr<SymbolCreator>> creators;
 };
+
+void InitFactory();
+void DoneFactory();
 
 } } // namespace Cm::Sym
 

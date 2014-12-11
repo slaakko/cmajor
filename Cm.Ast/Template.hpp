@@ -61,7 +61,10 @@ public:
     void AddTemplateArgument(Node* templateArgument);
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
+    void Accept(Visitor& visitor) override;
     std::string ToString() const override;
+    Node* Subject() const { return subject.get(); }
+    const NodeList& TemplateArguments() const { return templateArguments; }
 private:
     std::unique_ptr<Node> subject;
     NodeList templateArguments;

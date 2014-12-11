@@ -10,6 +10,7 @@
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -19,12 +20,14 @@ LocalVariableSymbol::LocalVariableSymbol(const Span& span_, const std::string& n
 
 void LocalVariableSymbol::Write(Writer& writer)
 {
+    Symbol::Write(writer);
     writer.Write(type->Id());
 }
 
 void LocalVariableSymbol::Read(Reader& reader)
 {
-    // todo
+    Symbol::Read(reader);
+    reader.FetchTypeFor(this, 0);
 }
 
 TypeSymbol* LocalVariableSymbol::GetType() const
@@ -32,7 +35,7 @@ TypeSymbol* LocalVariableSymbol::GetType() const
     return type;
 }
 
-void LocalVariableSymbol::SetType(TypeSymbol* type_)
+void LocalVariableSymbol::SetType(TypeSymbol* type_, int index)
 {
     type = type_;
 }

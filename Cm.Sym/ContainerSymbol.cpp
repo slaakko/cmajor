@@ -9,6 +9,10 @@
 
 #include <Cm.Sym/ContainerSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/NamespaceSymbol.hpp>
+#include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -19,19 +23,32 @@ ContainerSymbol::ContainerSymbol(const Span& span_, const std::string& name_) : 
 
 void ContainerSymbol::Write(Writer& writer)
 {
+    Symbol::Write(writer);
+    std::vector<Symbol*> exportSymbols;
     for (const std::unique_ptr<Symbol>& symbol : symbols)
     {
-        if (symbol->IsFunctionSymbol()) continue;
-        if (!symbol->IsTypeSymbol() && symbol->Source() == SymbolSource::project)
+        if (symbol->IsExportSymbol())
         {
-            symbol->Write(writer);
+            exportSymbols.push_back(symbol.get());
         }
+    }
+    int32_t n = int32_t(exportSymbols.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        writer.Write(exportSymbols[i]);
     }
 }
 
 void ContainerSymbol::Read(Reader& reader)
 {
-    // todo
+    Symbol::Read(reader);
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Symbol* symbol = reader.ReadSymbol();
+        AddSymbol(symbol);
+    }
 }
 
 void ContainerSymbol::AddSymbol(Symbol* symbol)
@@ -48,6 +65,12 @@ void ContainerSymbol::AddFunctionSymbol(FunctionSymbol* functionSymbol)
 {
     symbols.push_back(std::unique_ptr<Symbol>(functionSymbol));
     functionSymbol->SetParent(this);
+}
+
+void ContainerSymbol::AddTemplateTypeSymbol(TemplateTypeSymbol* templateTypeSymbol)
+{
+    symbols.push_back(std::unique_ptr<Symbol>(templateTypeSymbol));
+    templateTypeSymbol->SetParent(this);
 }
 
 } } // namespace Cm::Sym

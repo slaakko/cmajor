@@ -120,12 +120,12 @@ NamespaceSymbol* ContainerScope::Ns() const
     return container->Ns();
 }
 
-ClassSymbol* ContainerScope::Class() const
+ClassTypeSymbol* ContainerScope::Class() const
 {
     return container->Class();
 }
 
-NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsName, Cm::Ast::Node* node)
+NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsName, const Span& span)
 {
     ContainerScope* scope = this;
     NamespaceSymbol* parentNs = scope->Ns();
@@ -147,7 +147,7 @@ NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsN
         }
         else
         {
-            NamespaceSymbol* newNs = new NamespaceSymbol(node->GetSpan(), component);
+            NamespaceSymbol* newNs = new NamespaceSymbol(span, component);
             scope = newNs->GetContainerScope();
             scope->SetParent(parentNs->GetContainerScope());
             parentNs->AddSymbol(newNs);

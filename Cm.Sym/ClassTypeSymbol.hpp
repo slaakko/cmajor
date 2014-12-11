@@ -7,22 +7,24 @@
 
 ========================================================================*/
 
-#ifndef CM_SYM_FUNCTION_SYMBOL_INCLUDED
-#define CM_SYM_FUNCTION_SYMBOL_INCLUDED
-#include <Cm.Sym/ContainerSymbol.hpp>
-#include <Cm.Ast/Function.hpp>
+#ifndef CM_SYM_CLASS_SYMBOL_INCLUDED
+#define CM_SYM_CLASS_SYMBOL_INCLUDED
+#include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Ast/Class.hpp>
 
 namespace Cm { namespace Sym {
 
-class FunctionSymbol : public ContainerSymbol
+class ClassTypeSymbol : public TypeSymbol
 {
 public:
-    FunctionSymbol(const Span& span_, const std::string& name_);
-    SymbolType GetSymbolType() const override { return SymbolType::functionSymbol; }
+    ClassTypeSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
     bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
-    bool IsFunctionSymbol() const override { return true; }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
+    bool IsClassSymbol() const override { return true; }
 };
 
 } } // namespace Cm::Sym
 
-#endif // CM_SYM_FUNCTION_SYMBOL_INCLUDED
+#endif // CM_SYM_CLASS_SYMBOL_INCLUDED

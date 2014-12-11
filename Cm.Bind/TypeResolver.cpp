@@ -12,6 +12,7 @@
 #include <Cm.Bind/Typedef.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Bind {
@@ -46,7 +47,7 @@ private:
 };
 
 TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_) : 
-    Cm::Ast::Visitor(true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_)
+    Cm::Ast::Visitor(true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_), typeSymbol(nullptr)
 {
 }
 
@@ -123,7 +124,22 @@ void TypeResolver::Visit(Cm::Ast::DoubleNode& doubleNode)
 
 void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 {
-    // todo
+    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, currentContainerScope, fileScope, templateIdNode.Subject());
+    Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = new Cm::Sym::TemplateTypeSymbol(templateIdNode.GetSpan(), subjectType->Name());
+    templateTypeSymbol->SetSubjectType(subjectType);
+    Cm::Sym::ContainerScope* scope = subjectType->GetContainerScope();
+    for (const std::unique_ptr<Cm::Ast::Node>& templateArgNode : templateIdNode.TemplateArguments())
+    {
+        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, scope, fileScope, templateArgNode.get());
+        templateTypeSymbol->AddTypeArgument(argumentType);
+    }
+    Cm::Sym::Symbol* parent = scope->Container()->Parent();
+    if (parent->IsContainerSymbol())
+    {
+        Cm::Sym::ContainerSymbol* container = static_cast<Cm::Sym::ContainerSymbol*>(parent);
+        container->AddTemplateTypeSymbol(templateTypeSymbol);
+    }
+    typeSymbol = templateTypeSymbol;
 }
 
 void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)

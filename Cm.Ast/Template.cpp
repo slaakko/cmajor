@@ -155,6 +155,11 @@ void TemplateIdNode::Write(Writer& writer)
     templateArguments.Write(writer);
 }
 
+void TemplateIdNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 std::string TemplateIdNode::ToString() const
 {
     std::string s = subject->ToString();

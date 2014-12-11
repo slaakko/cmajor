@@ -9,6 +9,7 @@
 
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -29,8 +30,30 @@ void TemplateTypeSymbol::Write(Writer& writer)
 
 void TemplateTypeSymbol::Read(Reader& reader)
 {
-    // todo
+    reader.FetchTypeFor(this, -1);
+    uint8_t n = reader.GetBinaryReader().ReadByte();
+    for (int i = 0; i < int(n); ++i)
+    {
+        reader.FetchTypeFor(this, i);
+    }
 }
+
+void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
+{
+    if (index == -1)
+    {
+        SetSubjectType(type);
+    }
+    else
+    {
+        if (index != int(typeArguments.size()))
+        {
+            throw std::runtime_error("invalid type argument index");
+        }
+        AddTypeArgument(type);
+    }
+}
+
 
 void TemplateTypeSymbol::SetSubjectType(TypeSymbol* subjectType_)
 {

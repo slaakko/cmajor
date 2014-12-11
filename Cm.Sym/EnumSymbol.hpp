@@ -20,10 +20,12 @@ class EnumTypeSymbol : public TypeSymbol
 public:
     EnumTypeSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::enumTypeSymbol; }
+    bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     bool IsEnumTypeSymbol() const override { return true; }
     TypeSymbol* GetUnderlyingType() const { return underlyingType; }
+    void SetType(TypeSymbol* type, int index) override { SetUnderlyingType(type); }
     void SetUnderlyingType(TypeSymbol* underlyingType_);
 private:
     TypeSymbol* underlyingType;
@@ -34,6 +36,7 @@ class EnumConstantSymbol : public Symbol
 public:
     EnumConstantSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::enumConstantSymbol; }
+    bool IsExportSymbol() const override { return true; }
     bool IsEnumConstantSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;

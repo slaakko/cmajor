@@ -19,6 +19,7 @@ class TemplateParameterSymbol : public TypeSymbol
 public:
     TemplateParameterSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::templateParameterSymbol; }
+    bool IsExportSymbol() const override { return true; }
 };
 
 } } // namespace Cm::Sym

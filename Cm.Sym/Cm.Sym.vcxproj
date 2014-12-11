@@ -20,8 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicTypeSymbol.hpp" />
+    <ClInclude Include="ClassTypeSymbol.hpp" />
     <ClInclude Include="DeclarationBlock.hpp" />
-    <ClInclude Include="ClassSymbol.hpp" />
     <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="ContainerSymbol.hpp" />
     <ClInclude Include="DeclarationVisitor.hpp" />
@@ -30,10 +30,13 @@
     <ClInclude Include="Exception.hpp" />
     <ClInclude Include="Factory.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
+    <ClInclude Include="InitDone.hpp" />
     <ClInclude Include="LocalVariableSymbol.hpp" />
     <ClInclude Include="MemberVariableSymbol.hpp" />
+    <ClInclude Include="Module.hpp" />
     <ClInclude Include="NamespaceSymbol.hpp" />
     <ClInclude Include="ParameterSymbol.hpp" />
+    <ClInclude Include="Reader.hpp" />
     <ClInclude Include="Scope.hpp" />
     <ClInclude Include="Symbol.hpp" />
     <ClInclude Include="SymbolTable.hpp" />
@@ -47,8 +50,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicTypeSymbol.cpp" />
+    <ClCompile Include="ClassTypeSymbol.cpp" />
     <ClCompile Include="DeclarationBlock.cpp" />
-    <ClCompile Include="ClassSymbol.cpp" />
     <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="ContainerSymbol.cpp" />
     <ClCompile Include="DeclarationVisitor.cpp" />
@@ -57,10 +60,13 @@
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
+    <ClCompile Include="InitDone.cpp" />
     <ClCompile Include="LocalVariableSymbol.cpp" />
     <ClCompile Include="MemberVariableSymbol.cpp" />
+    <ClCompile Include="Module.cpp" />
     <ClCompile Include="NamespaceSymbol.cpp" />
     <ClCompile Include="ParameterSymbol.cpp" />
+    <ClCompile Include="Reader.cpp" />
     <ClCompile Include="Scope.cpp" />
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="SymbolTable.cpp" />

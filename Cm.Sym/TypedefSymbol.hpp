@@ -20,10 +20,12 @@ class TypedefSymbol : public Symbol
 public:
     TypedefSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::typedefSymbol; }
+    bool IsExportSymbol() const override;
     bool IsTypedefSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
-    void SetType(TypeSymbol* type_) { type = type_;  }
+    void SetType(TypeSymbol* type_) { type = type_; }
+    void SetType(TypeSymbol* type_, int index) override;
     TypeSymbol* GetType() const { return type; }
     bool Evaluating() const { return evaluating; }
     void SetEvaluating() { evaluating = true; }

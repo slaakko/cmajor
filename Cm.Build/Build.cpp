@@ -13,6 +13,8 @@
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/Module.hpp>
 #include <Cm.Bind/BindingVisitor.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
 #include <iostream>
@@ -38,12 +40,27 @@ void Build(const std::string& projectFilePath)
         project->AddCompileUnit(compileUnit);
     }
     Cm::Sym::SymbolTable symbolTable;
+    boost::filesystem::path projectBase = project->BasePath();
+    for (const std::string& referenceFilePath : project->ReferenceFilePaths())
+    {
+        boost::filesystem::path lrp = referenceFilePath;
+        boost::filesystem::path libParent = lrp.parent_path();
+        boost::filesystem::path libDir = boost::filesystem::absolute(libParent, projectBase);
+        libDir /= "debug";
+        libDir /= "llvm";
+        boost::filesystem::path rfp = boost::filesystem::absolute(lrp.filename(), libDir);
+        rfp.replace_extension(".mc");
+        Cm::Sym::Module module(rfp.generic_string());
+        module.ImportTo(symbolTable);
+    }
     Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
     project->VisitCompileUnits(declarationVisitor);
     Cm::Bind::BindingVisitor bindingVisitor(symbolTable);
     project->VisitCompileUnits(bindingVisitor);
-    Cm::Sym::Writer writer("C:\\Temp\\os.mc");
-    symbolTable.Write(writer);
+    boost::filesystem::path moduleFilePath = project->OutputBasePath();
+    boost::filesystem::path mcFilePath = moduleFilePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".mc");
+    Cm::Sym::Module projectModule(mcFilePath.generic_string());
+    projectModule.Export(symbolTable);
     std::cout << "enter" << std::endl;
     char c;
     std::cin >> c;

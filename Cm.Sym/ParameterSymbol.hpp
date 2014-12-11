@@ -21,11 +21,13 @@ class ParameterSymbol : public Symbol
 public:
     ParameterSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::parameterSymbol; }
+    bool IsExportSymbol() const override { return true; }
     bool IsParameterSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;
-    void SetType(TypeSymbol* type_);
+    void SetType(TypeSymbol* type_) { type = type_; }
+    void SetType(TypeSymbol* type_, int index) override;
 private:
     TypeSymbol* type;
 };

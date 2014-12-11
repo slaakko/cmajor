@@ -30,6 +30,7 @@ class SymbolTable
 public:
     SymbolTable();
     void BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode);
+    void BeginNamespaceScope(const std::string& namespaceName, const Span& span);
     void EndNamespaceScope();
     void BeginClassScope(Cm::Ast::ClassNode* classNode);
     void EndClassScope();
@@ -52,11 +53,14 @@ public:
     void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
     void AddType(TypeSymbol* type);
+    TypeSymbol* GetTypeNothrow(const TypeId& typeId) const;
     TypeSymbol* GetType(const TypeId& typeId) const;
     TypeSymbol* GetDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span);
     ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
     Cm::Ast::Node* GetNode(Symbol* symbol) const;
-    void Write(Writer& writer);
+    void Export(Writer& writer);
+    void Import(Reader& reader);
+    ContainerSymbol* Container() const { return container; }
 private:
     NamespaceSymbol globalNs;
     typedef std::unordered_map<TypeId, TypeSymbol*, TypeIdHash> TypeSymbolMap;
@@ -73,7 +77,6 @@ private:
     std::vector<std::unique_ptr<TypeSymbol>> derivedTypes;
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
-    void WriteTypes(Writer& writer);
 };
 
 } } // namespace Cm::Sym

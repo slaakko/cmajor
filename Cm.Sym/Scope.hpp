@@ -33,7 +33,7 @@ inline ScopeLookup operator&(ScopeLookup left, ScopeLookup right)
 
 class ContainerSymbol;
 class NamespaceSymbol;
-class ClassSymbol;
+class ClassTypeSymbol;
 
 class Scope
 {
@@ -57,8 +57,8 @@ public:
     ContainerSymbol* Container() { return container; }
     void SetContainer(ContainerSymbol* container_) { container = container_; }
     NamespaceSymbol* Ns() const;
-    ClassSymbol* Class() const;
-    NamespaceSymbol* CreateNamespace(const std::string& qualifiedNsName, Cm::Ast::Node* node);
+    ClassTypeSymbol* Class() const;
+    NamespaceSymbol* CreateNamespace(const std::string& qualifiedNsName, const Span& span);
 private:
     typedef std::unordered_map<std::string, Symbol*> SymbolMap;
     typedef SymbolMap::const_iterator SymbolMapIt;

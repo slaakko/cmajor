@@ -17,6 +17,7 @@ namespace Cm { namespace Sym {
 
 using Cm::Ser::BinaryWriter;
 class Symbol;
+class Value;
 
 class Writer
 {
@@ -26,6 +27,7 @@ public:
     void Write(Cm::Ast::Derivation x);
     void Write(const Cm::Ast::DerivationList& derivationList);
     void Write(const TypeId& id);
+    void Write(Value* value);
     BinaryWriter& GetBinaryWriter() { return binaryWriter; }
 private:
     BinaryWriter binaryWriter;

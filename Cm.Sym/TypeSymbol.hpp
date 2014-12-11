@@ -20,11 +20,13 @@ public:
     TypeSymbol(const Span& span_, const std::string& name_);
     TypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::typeSymbol; }
+    bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     bool IsTypeSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     const TypeId& Id() const { return id; }
     void SetId(const TypeId& id_) { id = id_;  }
+    bool IsDerivedTypeSymbol() const { return id.Derivations().NumDerivations() > 0; }
     TypeSymbol* GetBaseType(const SymbolTable& symbolTable) const;
 private:
     TypeId id;

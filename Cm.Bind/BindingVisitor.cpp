@@ -12,6 +12,7 @@
 #include <Cm.Bind/Enumeration.hpp>
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.Bind/Typedef.hpp>
+#include <Cm.Bind/MemberVariable.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -76,6 +77,7 @@ void BindingVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
 void BindingVisitor::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
     BeginContainerScope(symbolTable.GetContainerScope(&constructorNode));
+    parameterIndex = 0;
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
@@ -86,6 +88,7 @@ void BindingVisitor::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
 void BindingVisitor::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
 {
     BeginContainerScope(symbolTable.GetContainerScope(&destructorNode));
+    parameterIndex = 0;
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
@@ -96,6 +99,7 @@ void BindingVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 void BindingVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
     BeginContainerScope(symbolTable.GetContainerScope(&memberFunctionNode));
+    parameterIndex = 0;
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
@@ -106,11 +110,17 @@ void BindingVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 void BindingVisitor::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
     BeginContainerScope(symbolTable.GetContainerScope(&conversionFunctionNode));
+    parameterIndex = 0;
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
     EndContainerScope();
+}
+
+void BindingVisitor::Visit(Cm::Ast::MemberVariableNode& memberVariableNode)
+{
+    BindMemberVariable(symbolTable, currentContainerScope, currentFileScope.get(), &memberVariableNode);
 }
 
 void BindingVisitor::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
@@ -141,12 +151,14 @@ void BindingVisitor::Visit(Cm::Ast::ConstantNode& constantNode)
 
 void BindingVisitor::Visit(Cm::Ast::ParameterNode& parameterNode)
 {
-    BindParameter(symbolTable, currentContainerScope, currentFileScope.get(), &parameterNode);
+    BindParameter(symbolTable, currentContainerScope, currentFileScope.get(), &parameterNode, parameterIndex);
+    ++parameterIndex;
 }
 
 void BindingVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 {
     BeginContainerScope(symbolTable.GetContainerScope(&functionNode));
+    parameterIndex = 0;
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::FunctionNode& functionNode)
@@ -157,6 +169,7 @@ void BindingVisitor::EndVisit(Cm::Ast::FunctionNode& functionNode)
 void BindingVisitor::BeginVisit(Cm::Ast::DelegateNode& delegateNode)
 {
     BeginContainerScope(symbolTable.GetContainerScope(&delegateNode));
+    parameterIndex = 0;
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::DelegateNode& delegateNode)
@@ -167,6 +180,7 @@ void BindingVisitor::EndVisit(Cm::Ast::DelegateNode& delegateNode)
 void BindingVisitor::BeginVisit(Cm::Ast::ClassDelegateNode& classDelegateNode)
 {
     BeginContainerScope(symbolTable.GetContainerScope(&classDelegateNode));
+    parameterIndex = 0;
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::ClassDelegateNode& classDelegateNode)

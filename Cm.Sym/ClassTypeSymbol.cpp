@@ -12,7 +12,7 @@
 
 namespace Cm { namespace Sym {
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, Cm::Util::Uuid())
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId())
 {
 }
 
@@ -23,7 +23,7 @@ void ClassTypeSymbol::Write(Writer& writer)
 
 void ClassTypeSymbol::Read(Reader& reader)
 {
-    // todo
+    TypeSymbol::Read(reader);
 }
 
 

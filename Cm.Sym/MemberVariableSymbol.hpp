@@ -21,10 +21,13 @@ class MemberVariableSymbol : public Symbol
 public:
     MemberVariableSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
+    bool IsMemberVariableSymbol() const override { return true; }
+    bool IsExportSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;
-    void SetType(TypeSymbol* type_);
+    void SetType(TypeSymbol* type_) { type = type_; }
+    void SetType(TypeSymbol* type_, int index) override;
 private:
     TypeSymbol* type;
 };
