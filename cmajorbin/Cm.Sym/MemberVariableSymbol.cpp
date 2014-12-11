@@ -10,6 +10,7 @@
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -19,12 +20,14 @@ MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string&
 
 void MemberVariableSymbol::Write(Writer& writer)
 {
+    Symbol::Write(writer);
     writer.Write(type->Id());
 }
 
 void MemberVariableSymbol::Read(Reader& reader)
 {
-    // todo
+    Symbol::Read(reader);
+    reader.FetchTypeFor(this, 0);
 }
 
 TypeSymbol* MemberVariableSymbol::GetType() const
@@ -32,7 +35,7 @@ TypeSymbol* MemberVariableSymbol::GetType() const
     return type;
 }
 
-void MemberVariableSymbol::SetType(TypeSymbol* type_)
+void MemberVariableSymbol::SetType(TypeSymbol* type_, int index)
 {
     type = type_;
 }

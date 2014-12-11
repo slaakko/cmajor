@@ -10,6 +10,7 @@
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
@@ -26,7 +27,8 @@ void EnumTypeSymbol::Write(Writer& writer)
 
 void EnumTypeSymbol::Read(Reader& reader)
 {
-    // todo
+    TypeSymbol::Read(reader);
+    reader.FetchTypeFor(this, 0);
 }
 
 void EnumTypeSymbol::SetUnderlyingType(TypeSymbol* underlyingType_)
@@ -40,12 +42,14 @@ EnumConstantSymbol::EnumConstantSymbol(const Span& span_, const std::string& nam
 
 void EnumConstantSymbol::Write(Writer& writer)
 {
-    value->Write(writer.GetBinaryWriter());
+    Symbol::Write(writer);
+    writer.Write(value.get());
 }
 
 void EnumConstantSymbol::Read(Reader& reader)
 {
-    // todeo
+    Symbol::Read(reader);
+    value.reset(reader.ReadValue());
 }
 
 void EnumConstantSymbol::SetValue(Value* value_)

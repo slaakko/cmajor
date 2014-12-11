@@ -23,7 +23,7 @@ public:
     void AddSymbol(Symbol* symbol);
     bool IsGlobalNamespace() const { return Name().empty(); }
 private:
-    Scope scope;
+    ContainerScope scope;
     std::vector<std::unique_ptr<Symbol>> symbols;
 };
 

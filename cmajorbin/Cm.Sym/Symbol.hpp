@@ -17,7 +17,7 @@ using Cm::Parsing::Span;
 
 class ContainerScope;
 class NamespaceSymbol;
-class ClassSymbol;
+class ClassTypeSymbol;
 
 enum class SymbolType : uint8_t
 {
@@ -27,13 +27,45 @@ enum class SymbolType : uint8_t
     maxSymbol
 };
 
+inline bool IsBasicSymbolType(SymbolType st)
+{
+    return st >= SymbolType::boolSymbol && st <= SymbolType::doubleSymbol;
+}
+
 class Writer;
 class Reader;
+class TypeSymbol;
 
 enum class SymbolSource
 {
     project, library
 };
+
+enum class SymbolFlags : uint8_t
+{
+    none = 0,
+    public_ = 1 << 0,
+    protected_ = 1 << 1,
+    private_ = 1 << 2,
+    internal_ = 1 << 3,
+    export_ = 1 << 4,
+    projectSource = 1 << 5
+};
+
+inline SymbolFlags operator~(SymbolFlags flag)
+{
+    return SymbolFlags(~uint8_t(flag));
+}
+
+inline SymbolFlags operator|(SymbolFlags left, SymbolFlags right)
+{
+    return SymbolFlags(uint8_t(left) | uint8_t(right));
+}
+
+inline SymbolFlags operator&(SymbolFlags left, SymbolFlags right)
+{
+    return SymbolFlags(uint8_t(left) & uint8_t(right));
+}
 
 class Symbol
 {
@@ -47,12 +79,14 @@ public:
     std::string FullName() const;
     const Span& GetSpan() const { return span; }
     void SetSpan(const Span& span_) { span = span_; }
-    SymbolSource Source() const { return source; }
-    void SetSource(SymbolSource source_) { source = source_; }
+    SymbolSource Source() const { return GetFlag(SymbolFlags::projectSource) ? SymbolSource::project : SymbolSource::library; }
+    void SetSource(SymbolSource source) { if (source == SymbolSource::project) SetFlag(SymbolFlags::projectSource); else ResetFlag(SymbolFlags::projectSource); }
     Symbol* Parent() const { return parent; }
     void SetParent(Symbol* parent_) { parent = parent_; }
+    virtual void SetType(TypeSymbol* typeSymbol, int index);
     virtual ContainerScope* GetContainerScope() { return nullptr; }
     virtual bool IsNamespaceSymbol() const { return false; }
+    virtual bool IsContainerSymbol() const { return false; }
     virtual bool IsTypeSymbol() const { return false; }
     virtual bool IsClassSymbol() const { return false; }
     virtual bool IsConstantSymbol() const { return false; }
@@ -68,15 +102,21 @@ public:
     virtual bool IsEnumConstantSymbol() const { return false; }
     virtual bool IsFunctionSymbol() const { return false; }
     virtual bool IsParameterSymbol() const { return false; }
+    virtual bool IsMemberVariableSymbol() const { return false; }
     virtual bool IsTypedefSymbol() const { return false; }
+    virtual bool IsExportSymbol() const { return GetFlag(SymbolFlags::export_); }
+    void SetExportSymbol() { SetFlag(SymbolFlags::export_); }
     NamespaceSymbol* Ns() const;
-    ClassSymbol* Class() const;
+    ClassTypeSymbol* Class() const;
     bool Bound() const { return bound; }
     void SetBound() { bound = true; }
+    bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none;  }
+    void SetFlag(SymbolFlags flag) { flags = flags | flag; }
+    void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
 private:
-    std::string name;
     Span span;
-    SymbolSource source;
+    std::string name;
+    SymbolFlags flags;
     Symbol* parent;
     bool bound;
 };

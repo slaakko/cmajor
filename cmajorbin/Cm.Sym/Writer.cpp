@@ -9,6 +9,7 @@
 
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/Value.hpp>
 
 namespace Cm {  namespace Sym {
 
@@ -52,6 +53,13 @@ void Writer::Write(const TypeId& id)
 {
     binaryWriter.Write(&id.BaseTypeId(), sizeof(Cm::Util::Uuid));
     Write(id.Derivations());
+}
+
+void Writer::Write(Value* value)
+{
+    Cm::Sym::ValueType valueType = value->GetValueType();
+    binaryWriter.Write(uint8_t(valueType));
+    value->Write(binaryWriter);
 }
 
 } } // namespace Cm::Sym

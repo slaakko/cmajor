@@ -24,7 +24,7 @@ public:
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;
-    void SetType(TypeSymbol* type_);
+    void SetType(TypeSymbol* type_, int index) override;
 private:
     TypeSymbol* type;
 };

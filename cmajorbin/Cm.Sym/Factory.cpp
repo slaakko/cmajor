@@ -20,7 +20,7 @@
 #include <Cm.Sym/TemplateParameterSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
-#include <Cm.Sym/ClassSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
 
 namespace Cm { namespace Sym {
@@ -131,13 +131,33 @@ void SymbolFactory::Register(SymbolType symbolType, SymbolCreator* creator)
     creators[int(symbolType)] = std::unique_ptr<SymbolCreator>(creator);
 }
 
+Symbol* SymbolFactory::CreateBasicTypeSymbol(SymbolType basicTypeSymbolType)
+{
+    Symbol* value = creators[int(basicTypeSymbolType)]->CreateBasicTypeSymbol();
+    if (value)
+    {
+        return value;
+    }
+    else
+    {
+        throw std::runtime_error("could not create basic type symbol");
+    }
+}
+
 Symbol* SymbolFactory::CreateSymbol(SymbolType symbolType, const Span& span, const std::string& name)
 {
     Symbol* value = creators[int(symbolType)]->CreateSymbol(span, name);
-    return value;
+    if (value)
+    {
+        return value;
+    }
+    else
+    {
+        throw std::runtime_error("could not create symbol");
+    }
 }
 
-void InitFactories()
+void InitFactory()
 {
     ValueFactory::Init();
     ValueFactory::Instance().Register(ValueType::boolValue, new ConcreteValueCreator<BoolValue>());
@@ -166,7 +186,7 @@ void InitFactories()
     SymbolFactory::Instance().Register(SymbolType::ulongSymbol, new ConcreteBasicTypeSymbolCreator<ULongTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::floatSymbol, new ConcreteBasicTypeSymbolCreator<FloatTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::doubleSymbol, new ConcreteBasicTypeSymbolCreator<DoubleTypeSymbol>());
-    SymbolFactory::Instance().Register(SymbolType::classSymbol, new ConcreteSymbolCreator<ClassSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::classSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
     SymbolFactory::Instance().Register(SymbolType::delegateSymbol, new ConcreteSymbolCreator<DelegateSymbol>());
@@ -182,6 +202,12 @@ void InitFactories()
     SymbolFactory::Instance().Register(SymbolType::templateTypeSymbol, new ConcreteSymbolCreator<TemplateTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::typeSymbol, new ConcreteSymbolCreator<TypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::typedefSymbol, new ConcreteSymbolCreator<TypedefSymbol>());
+}
+
+void DoneFactory()
+{
+    SymbolFactory::Done();
+    ValueFactory::Done();
 }
 
 } } // namespace Cm::Sym

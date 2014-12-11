@@ -24,6 +24,7 @@
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Evaluator.hpp" />
     <ClInclude Include="Exception.hpp" />
+    <ClInclude Include="MemberVariable.hpp" />
     <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
@@ -34,6 +35,7 @@
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="Excecption.cpp" />
+    <ClCompile Include="MemberVariable.cpp" />
     <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeResolver.cpp" />

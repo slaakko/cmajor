@@ -10,6 +10,7 @@
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -17,14 +18,26 @@ TypedefSymbol::TypedefSymbol(const Span& span_, const std::string& name_) : Symb
 {
 }
 
+bool TypedefSymbol::IsExportSymbol() const 
+{ 
+    return Source() == SymbolSource::project && type->IsExportSymbol(); 
+}
+
 void TypedefSymbol::Write(Writer& writer)
 {
+    Symbol::Write(writer);
     writer.Write(type->Id());
 }
 
 void TypedefSymbol::Read(Reader& reader)
 {
-    // todo
+    Symbol::Read(reader);
+    reader.FetchTypeFor(this, 0);
+}
+
+void TypedefSymbol::SetType(TypeSymbol* type_, int index)
+{
+    type = type_; 
 }
 
 } } // namespace Cm::Sym

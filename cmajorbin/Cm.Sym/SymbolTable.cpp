@@ -9,7 +9,7 @@
 
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/Exception.hpp>
-#include <Cm.Sym/ClassSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/DelegateSymbol.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
@@ -21,6 +21,8 @@
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
+#include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -110,7 +112,7 @@ void SymbolTable::BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode)
         }
         else
         {
-            NamespaceSymbol* namespaceSymbol = container->GetContainerScope()->CreateNamespace(namespaceNode->Id()->Str(), namespaceNode);
+            NamespaceSymbol* namespaceSymbol = container->GetContainerScope()->CreateNamespace(namespaceNode->Id()->Str(), namespaceNode->GetSpan());
             BeginContainer(namespaceSymbol);
             nodeScopeMap[namespaceNode] = namespaceSymbol->GetContainerScope();
             symbolNodeMap[namespaceSymbol] = namespaceNode;
@@ -123,10 +125,42 @@ void SymbolTable::EndNamespaceScope()
     EndContainer();
 }
 
+void SymbolTable::BeginNamespaceScope(const std::string& namespaceName, const Span& span)
+{
+    if (namespaceName.empty())
+    {
+        if (!globalNs.GetSpan().Valid())
+        {
+            globalNs.SetSpan(span);
+        }
+        BeginContainer(&globalNs);
+    }
+    else
+    {
+        Symbol* symbol = container->GetContainerScope()->Lookup(namespaceName);
+        if (symbol)
+        {
+            if (symbol->IsNamespaceSymbol())
+            {
+                BeginContainer(static_cast<ContainerSymbol*>(symbol));
+            }
+            else
+            {
+                throw Exception("symbol '" + symbol->Name() + "' does not denote a namespace", symbol->GetSpan());
+            }
+        }
+        else
+        {
+            NamespaceSymbol* namespaceSymbol = container->GetContainerScope()->CreateNamespace(namespaceName, span);
+            BeginContainer(namespaceSymbol);
+        }
+    }
+}
+
 void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
 {
     Cm::Ast::IdentifierNode* classId = classNode->Id();
-    ClassSymbol* classSymbol = new ClassSymbol(classId->GetSpan(), classId->Str());
+    ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str());
     AddType(classSymbol);
     ContainerScope* classScope = classSymbol->GetContainerScope();
     nodeScopeMap[classNode] = classScope;
@@ -288,7 +322,7 @@ void SymbolTable::AddType(TypeSymbol* type)
     typeSymbolMap[type->Id()] = type;
 }
 
-TypeSymbol* SymbolTable::GetType(const TypeId& typeId) const
+TypeSymbol* SymbolTable::GetTypeNothrow(const TypeId& typeId) const
 {
     TypeSymbolMapIt i = typeSymbolMap.find(typeId);
     if (i != typeSymbolMap.end())
@@ -297,10 +331,22 @@ TypeSymbol* SymbolTable::GetType(const TypeId& typeId) const
     }
     else
     {
-        throw std::runtime_error("type symbol not found");
+        return nullptr;
     }
 }
 
+TypeSymbol* SymbolTable::GetType(const TypeId& typeId) const
+{
+    TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
+    if (typeSymbol)
+    {
+        return typeSymbol;
+    }
+    else
+    {
+        throw std::runtime_error("type symbol not found");
+    }
+}
 
 std::string MakeDerivedTypeName(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType)
 {
@@ -310,12 +356,13 @@ std::string MakeDerivedTypeName(const Cm::Ast::DerivationList& derivations, Type
 TypeSymbol* SymbolTable::GetDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span)
 {
     TypeId typeId(baseType->Id().BaseTypeId(), derivations);
-    TypeSymbol* typeSymbol = GetType(typeId);
+    TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
     if (typeSymbol)
     {
         return typeSymbol;
     }
     TypeSymbol* derivedTypeSymbol = new TypeSymbol(span, MakeDerivedTypeName(derivations, baseType), typeId);
+    AddType(derivedTypeSymbol);
     derivedTypes.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol));
     return derivedTypeSymbol;
 }
@@ -346,22 +393,52 @@ Cm::Ast::Node* SymbolTable::GetNode(Symbol* symbol) const
     }
 }
 
-void SymbolTable::WriteTypes(Writer& writer)
+void SymbolTable::Export(Writer& writer)
 {
-    for (const std::pair<TypeId, TypeSymbol*>& p : typeSymbolMap)
+    writer.Write(&globalNs);
+    std::vector<TypeSymbol*> exportedDerivedTypes;
+    for (const std::unique_ptr<TypeSymbol>& derivedType : derivedTypes)
     {
-        TypeSymbol* type = p.second;
-        if (type->Source() == SymbolSource::project)
+        if (derivedType->IsExportSymbol())
         {
-            type->Write(writer);
+            exportedDerivedTypes.push_back(derivedType.get());
         }
+    }
+    int32_t n = int32_t(exportedDerivedTypes.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        TypeSymbol* type = exportedDerivedTypes[i];
+        writer.Write(type);
     }
 }
 
-void SymbolTable::Write(Writer& writer)
+void SymbolTable::Import(Reader& reader)
 {
-    WriteTypes(writer);
-    globalNs.Write(writer);
+    std::unique_ptr<Symbol> symbol(reader.ReadSymbol());
+    if (symbol->IsNamespaceSymbol())
+    {
+        NamespaceSymbol* ns = static_cast<NamespaceSymbol*>(symbol.get());
+        globalNs.Import(ns, *this);
+    }
+    else
+    {
+        throw std::runtime_error("namespace symbol expected");
+    }
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Symbol* symbol = reader.ReadSymbol();
+        if (symbol->IsTypeSymbol())
+        {
+            TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
+            derivedTypes.push_back(std::unique_ptr<TypeSymbol>(typeSymbol));
+        }
+        else
+        {
+            throw std::runtime_error("type symbol expected");
+        }
+    }
 }
 
 } } // namespace Cm::Sym

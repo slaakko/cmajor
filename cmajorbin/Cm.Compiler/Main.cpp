@@ -9,7 +9,7 @@
 
 #include <Cm.Build/Build.hpp>
 #include <Cm.Parsing/Exception.hpp>
-
+#include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <iostream>
@@ -28,9 +28,11 @@ struct InitDone
     {
         Cm::Parsing::Init();
         Cm::Ast::Init();
+        Cm::Sym::Init();
     }
     ~InitDone()
     {
+        Cm::Sym::Done();
         Cm::Ast::Done();
         Cm::Parsing::Done();
     }

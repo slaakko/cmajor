@@ -9,12 +9,15 @@
 
 #include <Cm.Sym/Symbol.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
-#include <Cm.Sym/ClassSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 
 namespace Cm { namespace Sym {
 
-Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), source(SymbolSource::project), parent(nullptr), bound(false)
+Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), flags(), parent(nullptr), bound(false)
 {
+    SetSource(SymbolSource::project);
 }
 
 Symbol::~Symbol()
@@ -23,10 +26,12 @@ Symbol::~Symbol()
 
 void Symbol::Write(Writer& writer)
 {
+    writer.GetBinaryWriter().Write(uint8_t(flags & ~(SymbolFlags::projectSource | SymbolFlags::export_)));
 }
 
 void Symbol::Read(Reader& reader)
 {
+    flags = SymbolFlags(reader.GetBinaryReader().ReadByte());
 }
 
 std::string Symbol::FullName() const
@@ -44,6 +49,11 @@ std::string Symbol::FullName() const
     {
         return parentFullName + "." + Name();
     }
+}
+
+void Symbol::SetType(TypeSymbol* typeSymbol, int index)
+{
+    throw std::runtime_error("member function not applicable");
 }
 
 NamespaceSymbol* Symbol::Ns() const
@@ -65,11 +75,11 @@ NamespaceSymbol* Symbol::Ns() const
     }
 }
 
-ClassSymbol* Symbol::Class() const
+ClassTypeSymbol* Symbol::Class() const
 {
     if (IsClassSymbol())
     {
-        return const_cast<ClassSymbol*>(static_cast<const ClassSymbol*>(this));
+        return const_cast<ClassTypeSymbol*>(static_cast<const ClassTypeSymbol*>(this));
     }
     else
     {

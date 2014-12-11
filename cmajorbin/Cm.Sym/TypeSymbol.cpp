@@ -10,6 +10,7 @@
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -35,7 +36,9 @@ void TypeSymbol::Write(Writer& writer)
 
 void TypeSymbol::Read(Reader& reader)
 {
-//  todo
+    ContainerSymbol::Read(reader);
+    id = reader.ReadTypeId();
+    reader.BackpatchType(this);
 }
 
 } } // namespace Cm::Sym
