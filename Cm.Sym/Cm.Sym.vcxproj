@@ -26,9 +26,9 @@
     <ClInclude Include="ContainerSymbol.hpp" />
     <ClInclude Include="DeclarationVisitor.hpp" />
     <ClInclude Include="DelegateSymbol.hpp" />
-    <ClInclude Include="DerivedTypeSymbol.hpp" />
     <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="Exception.hpp" />
+    <ClInclude Include="Factory.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
     <ClInclude Include="LocalVariableSymbol.hpp" />
     <ClInclude Include="MemberVariableSymbol.hpp" />
@@ -39,8 +39,11 @@
     <ClInclude Include="SymbolTable.hpp" />
     <ClInclude Include="TemplateParameterSymbol.hpp" />
     <ClInclude Include="TemplateTypeSymbol.hpp" />
+    <ClInclude Include="TypedefSymbol.hpp" />
+    <ClInclude Include="TypeId.hpp" />
     <ClInclude Include="TypeSymbol.hpp" />
     <ClInclude Include="Value.hpp" />
+    <ClInclude Include="Writer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicTypeSymbol.cpp" />
@@ -50,9 +53,9 @@
     <ClCompile Include="ContainerSymbol.cpp" />
     <ClCompile Include="DeclarationVisitor.cpp" />
     <ClCompile Include="DelegateSymbol.cpp" />
-    <ClCompile Include="DerivedTypeSymbol.cpp" />
     <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="Exception.cpp" />
+    <ClCompile Include="Factory.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
     <ClCompile Include="LocalVariableSymbol.cpp" />
     <ClCompile Include="MemberVariableSymbol.cpp" />
@@ -63,8 +66,11 @@
     <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="TemplateParameterSymbol.cpp" />
     <ClCompile Include="TemplateTypeSymbol.cpp" />
+    <ClCompile Include="TypedefSymbol.cpp" />
+    <ClCompile Include="TypeId.cpp" />
     <ClCompile Include="TypeSymbol.cpp" />
     <ClCompile Include="Value.cpp" />
+    <ClCompile Include="Writer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A12C2C5B-D12E-457A-8D1C-69A9E6759064}</ProjectGuid>

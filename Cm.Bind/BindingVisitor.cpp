@@ -10,6 +10,8 @@
 #include <Cm.Bind/BindingVisitor.hpp>
 #include <Cm.Bind/Constant.hpp>
 #include <Cm.Bind/Enumeration.hpp>
+#include <Cm.Bind/Parameter.hpp>
+#include <Cm.Bind/Typedef.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -117,6 +119,11 @@ void BindingVisitor::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
     BeginContainerScope(symbolTable.GetContainerScope(&enumTypeNode));
 }
 
+void BindingVisitor::Visit(Cm::Ast::TypedefNode& typedefNode)
+{
+    BindTypedef(symbolTable, currentContainerScope, currentFileScope.get(), &typedefNode);
+}
+
 void BindingVisitor::Visit(Cm::Ast::EnumConstantNode& enumConstantNode)
 {
     BindEnumConstant(symbolTable, currentContainerScope, currentFileScope.get(), &enumConstantNode);
@@ -130,6 +137,11 @@ void BindingVisitor::EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
 void BindingVisitor::Visit(Cm::Ast::ConstantNode& constantNode)
 {
     BindConstant(symbolTable, currentContainerScope, currentFileScope.get(), &constantNode);
+}
+
+void BindingVisitor::Visit(Cm::Ast::ParameterNode& parameterNode)
+{
+    BindParameter(symbolTable, currentContainerScope, currentFileScope.get(), &parameterNode);
 }
 
 void BindingVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)

@@ -13,11 +13,19 @@
 
 namespace Cm { namespace Sym {
 
-Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), parent(nullptr)
+Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), source(SymbolSource::project), parent(nullptr), bound(false)
 {
 }
 
 Symbol::~Symbol()
+{
+}
+
+void Symbol::Write(Writer& writer)
+{
+}
+
+void Symbol::Read(Reader& reader)
 {
 }
 

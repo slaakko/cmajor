@@ -747,7 +747,7 @@ void Evaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void Evaluator::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(currentContainerScope, fileScope, targetTypeExpr));
+    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScope, targetTypeExpr));
     Cm::Sym::SymbolType symbolType = type->GetSymbolType();
     Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
     stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScope));
@@ -771,46 +771,57 @@ void Evaluator::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 void Evaluator::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
     Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
-    if (symbol->IsConstantSymbol())
+    if (!symbol)
     {
-        Cm::Sym::ConstantSymbol* constantSymbol = static_cast<Cm::Sym::ConstantSymbol*>(symbol);
-        if (!constantSymbol->GetValue())
-        {
-            Cm::Ast::Node* node = symbolTable.GetNode(constantSymbol);
-            if (node->IsConstantNode())
-            {
-                Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
-                BindConstant(symbolTable, currentContainerScope, fileScope, constantNode);
-            }
-            else
-            {
-                throw std::runtime_error("node is not constant node");
-            }
-        }
-        stack.Push(constantSymbol->GetValue()->Clone());
+        symbol = fileScope->Lookup(identifierNode.Str());
     }
-    else if (symbol->IsEnumConstantSymbol())
+    if (symbol)
     {
-        Cm::Sym::EnumConstantSymbol* enumConstantSymbol = static_cast<Cm::Sym::EnumConstantSymbol*>(symbol);
-        if (!enumConstantSymbol->GetValue())
+        if (symbol->IsConstantSymbol())
         {
-            Cm::Ast::Node* node = symbolTable.GetNode(enumConstantSymbol);
-            if (node->IsEnumConstantNode())
+            Cm::Sym::ConstantSymbol* constantSymbol = static_cast<Cm::Sym::ConstantSymbol*>(symbol);
+            if (!constantSymbol->GetValue())
             {
-                Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
-                Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
-                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScope, enumConstantNode);
+                Cm::Ast::Node* node = symbolTable.GetNode(constantSymbol);
+                if (node->IsConstantNode())
+                {
+                    Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
+                    BindConstant(symbolTable, currentContainerScope, fileScope, constantNode);
+                }
+                else
+                {
+                    throw std::runtime_error("node is not constant node");
+                }
             }
-            else
-            {
-                throw std::runtime_error("node is not enumeration constant node");
-            }
+            stack.Push(constantSymbol->GetValue()->Clone());
         }
-        stack.Push(enumConstantSymbol->GetValue()->Clone());
+        else if (symbol->IsEnumConstantSymbol())
+        {
+            Cm::Sym::EnumConstantSymbol* enumConstantSymbol = static_cast<Cm::Sym::EnumConstantSymbol*>(symbol);
+            if (!enumConstantSymbol->GetValue())
+            {
+                Cm::Ast::Node* node = symbolTable.GetNode(enumConstantSymbol);
+                if (node->IsEnumConstantNode())
+                {
+                    Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
+                    Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
+                    BindEnumConstant(symbolTable, enumConstantContainerScope, fileScope, enumConstantNode);
+                }
+                else
+                {
+                    throw std::runtime_error("node is not enumeration constant node");
+                }
+            }
+            stack.Push(enumConstantSymbol->GetValue()->Clone());
+        }
+        else
+        {
+            throw Exception("cannot evaluate statically", identifierNode.GetSpan());
+        }
     }
     else
     {
-        throw Exception("cannot evaluate statically", identifierNode.GetSpan());
+        throw Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
 }
 

@@ -9,21 +9,32 @@
 
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/Writer.hpp>
 
 namespace Cm { namespace Sym {
 
-LocalVariableSymbol::LocalVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_)
+LocalVariableSymbol::LocalVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr)
 {
+}
+
+void LocalVariableSymbol::Write(Writer& writer)
+{
+    writer.Write(type->Id());
+}
+
+void LocalVariableSymbol::Read(Reader& reader)
+{
+    // todo
 }
 
 TypeSymbol* LocalVariableSymbol::GetType() const
 {
-    return type.get();
+    return type;
 }
 
 void LocalVariableSymbol::SetType(TypeSymbol* type_)
 {
-    type.reset(type_);
+    type = type_;
 }
 
 } } // namespace Cm::Sym

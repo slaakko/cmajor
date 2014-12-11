@@ -10,6 +10,7 @@
 #ifndef CM_SYM_SYMBOL_TABLE_INCLUDED
 #define CM_SYM_SYMBOL_TABLE_INCLUDED
 #include <Cm.Sym/NamespaceSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Class.hpp>
 #include <Cm.Ast/Enumeration.hpp>
@@ -18,6 +19,8 @@
 #include <Cm.Ast/Constant.hpp>
 #include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Statement.hpp>
+#include <Cm.Ast/Typedef.hpp>
+#include <Cm.Util/Uuid.hpp>
 #include <stack>
 
 namespace Cm { namespace Sym {
@@ -33,6 +36,7 @@ public:
     void BeginEnumScope(Cm::Ast::EnumTypeNode* enumTypeNode);
     void EndEnumScope();
     void AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode);
+    void AddTypedef(Cm::Ast::TypedefNode* typedefNode);
     void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode);
     void EndFunctionScope();
     void BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode);
@@ -47,10 +51,17 @@ public:
     void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
     void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
+    void AddType(TypeSymbol* type);
+    TypeSymbol* GetType(const TypeId& typeId) const;
+    TypeSymbol* GetDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span);
     ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
     Cm::Ast::Node* GetNode(Symbol* symbol) const;
+    void Write(Writer& writer);
 private:
     NamespaceSymbol globalNs;
+    typedef std::unordered_map<TypeId, TypeSymbol*, TypeIdHash> TypeSymbolMap;
+    typedef TypeSymbolMap::const_iterator TypeSymbolMapIt;
+    TypeSymbolMap typeSymbolMap;
     ContainerSymbol* container;
     std::stack<ContainerSymbol*> containerStack;
     typedef std::unordered_map<Cm::Ast::Node*, ContainerScope*> NodeScopeMap;
@@ -59,8 +70,10 @@ private:
     typedef std::unordered_map<Symbol*, Cm::Ast::Node*> SymbolNodeMap;
     typedef SymbolNodeMap::const_iterator SymbolNodeMapIt;
     SymbolNodeMap symbolNodeMap;
+    std::vector<std::unique_ptr<TypeSymbol>> derivedTypes;
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
+    void WriteTypes(Writer& writer);
 };
 
 } } // namespace Cm::Sym

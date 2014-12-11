@@ -19,12 +19,14 @@ class EnumTypeSymbol : public TypeSymbol
 {
 public:
     EnumTypeSymbol(const Span& span_, const std::string& name_);
-    bool IsEnumTypeSymbol() const override { return true; }
     SymbolType GetSymbolType() const override { return SymbolType::enumTypeSymbol; }
-    TypeSymbol* GetUnderlyingType() const override { return underlyingType.get(); }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
+    bool IsEnumTypeSymbol() const override { return true; }
+    TypeSymbol* GetUnderlyingType() const { return underlyingType; }
     void SetUnderlyingType(TypeSymbol* underlyingType_);
 private:
-    std::unique_ptr<TypeSymbol> underlyingType;
+    TypeSymbol* underlyingType;
 };
 
 class EnumConstantSymbol : public Symbol
@@ -33,6 +35,8 @@ public:
     EnumConstantSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::enumConstantSymbol; }
     bool IsEnumConstantSymbol() const override { return true; }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
     void SetValue(Value* value_);
     Value* GetValue() const { return value.get(); }
     bool Evaluating() const { return evaluating; }

@@ -10,7 +10,6 @@
 #ifndef CM_BIND_CONSTANT_INCLUDED
 #define CM_BIND_CONSTANT_INCLUDED
 #include <Cm.Sym/SymbolTable.hpp>
-#include <Cm.Sym/Scope.hpp>
 #include <Cm.Ast/Constant.hpp>
 
 namespace Cm { namespace Bind {

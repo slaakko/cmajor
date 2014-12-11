@@ -8,17 +8,29 @@
 ========================================================================*/
 
 #include <Cm.Sym/ConstantSymbol.hpp>
+#include <Cm.Sym/Writer.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
 
-ConstantSymbol::ConstantSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), evaluating(false)
+ConstantSymbol::ConstantSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr), evaluating(false)
 {
+}
+
+void ConstantSymbol::Write(Writer& writer)
+{
+    writer.Write(type->Id());
+    value->Write(writer.GetBinaryWriter());
+}
+
+void ConstantSymbol::Read(Reader& reader)
+{
+    // todo
 }
 
 void ConstantSymbol::SetType(TypeSymbol* type_)
 {
-    type.reset(type_);
+    type = type_;
 }
 
 void ConstantSymbol::SetValue(Value* value_)

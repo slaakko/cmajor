@@ -12,6 +12,8 @@
 #include <Cm.Bind/Evaluator.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
+#include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Ast/Enumeration.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -25,12 +27,29 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         if (symbol->IsEnumTypeSymbol())
         {
             Cm::Sym::EnumTypeSymbol* enumTypeSymbol = static_cast<Cm::Sym::EnumTypeSymbol*>(symbol);
+            if (enumTypeSymbol->Bound())
+            {
+                return;
+            }
             Cm::Ast::Node* underlyingTypeNode = enumTypeNode->GetUnderlyingType();
             if (underlyingTypeNode)
             {
-                Cm::Sym::TypeSymbol* underlyingType = ResolveType(containerScope, fileScope, underlyingTypeNode);
-                enumTypeSymbol->SetUnderlyingType(underlyingType);
+                Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(underlyingTypeNode);
+                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScope, underlyingTypeNode);
+                if (underlyingType->IsBasicTypeSymbol())
+                {
+                    enumTypeSymbol->SetUnderlyingType(underlyingType);
+                }
+                else
+                {
+                    throw Exception("underlying type for an enumerated type must be basic type", enumTypeSymbol->GetSpan());
+                }
             }
+            else
+            {
+                enumTypeSymbol->SetUnderlyingType(symbolTable.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
+            }
+            enumTypeSymbol->SetBound();
         }
         else
         {
@@ -55,9 +74,9 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
             {
                 throw Exception("cyclic enumeration constant definitions detected", enumConstantSymbol->GetSpan());
             }
-            if (enumConstantSymbol->GetValue())
+            if (enumConstantSymbol->Bound())
             {
-                return; // already bound
+                return; 
             }
             if (!containerScope->Container()->IsEnumTypeSymbol())
             {
@@ -71,6 +90,7 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
             Cm::Sym::Value* value = Evaluate(valueType, false, enumConstantNode->Value(), symbolTable, containerScope, fileScope);
             enumConstantSymbol->ResetEvaluating();
             enumConstantSymbol->SetValue(value);
+            enumConstantSymbol->SetBound();
         }
         else
         {

@@ -19,14 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChunkAllocator.hpp" />
     <ClInclude Include="CodeFormatter.hpp" />
     <ClInclude Include="MappedInputFile.hpp" />
     <ClInclude Include="TextUtils.hpp" />
     <ClInclude Include="Uuid.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChunkAllocator.cpp" />
     <ClCompile Include="CodeFormatter.cpp" />
     <ClCompile Include="MappedInputFile.cpp" />
     <ClCompile Include="TextUtils.cpp" />

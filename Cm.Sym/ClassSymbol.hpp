@@ -18,6 +18,8 @@ class ClassSymbol : public TypeSymbol
 {
 public:
     ClassSymbol(const Span& span_, const std::string& name_);
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
     SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
     bool IsClassSymbol() const override { return true; }
 };

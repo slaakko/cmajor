@@ -21,10 +21,12 @@ class LocalVariableSymbol : public Symbol
 public:
     LocalVariableSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
     TypeSymbol* GetType() const;
     void SetType(TypeSymbol* type_);
 private:
-    std::unique_ptr<TypeSymbol> type;
+    TypeSymbol* type;
 };
 
 } } // namespace Cm::Sym

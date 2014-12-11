@@ -14,7 +14,8 @@ namespace Cm { namespace Util {
 
 bool IsPredefined(const boost::uuids::uuid& id)
 {
-    for (int i = 1; i < id.size(); ++i)
+    int n = int(id.size());
+    for (int i = 1; i < n; ++i)
     {
         if (id.data[i] != 0)
         {

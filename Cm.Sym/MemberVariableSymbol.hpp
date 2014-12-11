@@ -21,10 +21,12 @@ class MemberVariableSymbol : public Symbol
 public:
     MemberVariableSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
     TypeSymbol* GetType() const;
     void SetType(TypeSymbol* type_);
 private:
-    std::unique_ptr<TypeSymbol> type;
+    TypeSymbol* type;
 };
 
 } } // namespace Cm::Sym

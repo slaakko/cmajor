@@ -17,6 +17,23 @@ ContainerSymbol::ContainerSymbol(const Span& span_, const std::string& name_) : 
     containerScope.SetContainer(this);
 }
 
+void ContainerSymbol::Write(Writer& writer)
+{
+    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    {
+        if (symbol->IsFunctionSymbol()) continue;
+        if (!symbol->IsTypeSymbol() && symbol->Source() == SymbolSource::project)
+        {
+            symbol->Write(writer);
+        }
+    }
+}
+
+void ContainerSymbol::Read(Reader& reader)
+{
+    // todo
+}
+
 void ContainerSymbol::AddSymbol(Symbol* symbol)
 {
     if (!symbol->Name().empty())

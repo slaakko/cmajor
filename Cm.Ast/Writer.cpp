@@ -24,7 +24,7 @@ void Writer::Write(NodeType nodeType)
 
 void Writer::Write(const Span& span)
 {
-    binaryWriter.Write(&span, sizeof(span));
+    binaryWriter.Write(&span, sizeof(Span));
 }
 
 void Writer::Write(Node* node)
@@ -42,6 +42,11 @@ void Writer::Write(const std::string& s)
 void Writer::Write(bool b)
 {
     binaryWriter.Write(b);
+}
+
+void Writer::Write(char x)
+{
+    binaryWriter.Write(x);
 }
 
 void Writer::Write(int8_t x)
@@ -90,11 +95,6 @@ void Writer::Write(float x)
 }
 
 void Writer::Write(double x)
-{
-    binaryWriter.Write(x);
-}
-
-void Writer::Write(char x)
 {
     binaryWriter.Write(x);
 }

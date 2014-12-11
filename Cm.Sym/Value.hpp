@@ -10,6 +10,8 @@
 #ifndef CM_BIND_VALUE_INCLUDED
 #define CM_BIND_VALUE_INCLUDED
 #include <Cm.Sym/Symbol.hpp>
+#include <Cm.Ser/BinaryReader.hpp>
+#include <Cm.Ser/BinaryWriter.hpp>
 #include <Cm.Parsing/Scanner.hpp>
 #include <stdint.h>
 
@@ -30,8 +32,10 @@ class Value
 {
 public:
     virtual ~Value();
-    virtual Value* Clone() const = 0;
     virtual ValueType GetValueType() const = 0;
+    virtual Value* Clone() const = 0;
+    virtual void Read(Cm::Ser::BinaryReader& reader) = 0;
+    virtual void Write(Cm::Ser::BinaryWriter& writer) = 0;
     virtual Value* As(ValueType targetType, bool cast, const Span& span) const = 0;
 };
 
@@ -39,9 +43,12 @@ class BoolValue : public Value
 {
 public:
     typedef bool OperandType;
+    BoolValue();
     BoolValue(bool value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::boolValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     bool Value() const { return value; }
 private:
@@ -52,9 +59,12 @@ class CharValue : public Value
 {
 public:
     typedef char OperandType;
+    CharValue();
     CharValue(char value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::charValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     char Value() const { return value; }
 private:
@@ -65,9 +75,12 @@ class SByteValue : public Value
 {
 public:
     typedef int8_t OperandType;
+    SByteValue();
     SByteValue(int8_t value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::sbyteValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     int8_t Value() const { return value; }
 private:
@@ -78,9 +91,12 @@ class ByteValue : public Value
 {
 public:
     typedef uint8_t OperandType;
+    ByteValue();
     ByteValue(uint8_t value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::byteValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     uint8_t Value() const { return value; }
 private:
@@ -91,9 +107,12 @@ class ShortValue : public Value
 {
 public:
     typedef int16_t OperandType;
+    ShortValue();
     ShortValue(int16_t value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::shortValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     int16_t Value() const { return value; }
 private:
@@ -104,9 +123,12 @@ class UShortValue : public Value
 {
 public:
     typedef uint16_t OperandType;
+    UShortValue();
     UShortValue(uint16_t value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::ushortValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     uint16_t Value() const { return value; }
 private:
@@ -117,9 +139,12 @@ class IntValue : public Value
 {
 public:
     typedef int32_t OperandType;
+    IntValue();
     IntValue(int32_t value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::intValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     int32_t Value() const { return value; }
 private:
@@ -130,9 +155,12 @@ class UIntValue : public Value
 {
 public:
     typedef uint32_t OperandType;
+    UIntValue();
     UIntValue(uint32_t value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::uintValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     uint32_t Value() const { return value; }
 private:
@@ -143,9 +171,12 @@ class LongValue : public Value
 {
 public:
     typedef int64_t OperandType;
+    LongValue();
     LongValue(int64_t value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::longValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     int64_t Value() const { return value; }
 private:
@@ -156,9 +187,12 @@ class ULongValue : public Value
 {
 public:
     typedef uint64_t OperandType;
+    ULongValue();
     ULongValue(uint64_t value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::ulongValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     uint64_t Value() const { return value; }
 private:
@@ -169,9 +203,12 @@ class FloatValue : public Value
 {
 public:
     typedef float OperandType;
+    FloatValue();
     FloatValue(float value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::floatValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     float Value() const { return value; }
 private:
@@ -182,9 +219,12 @@ class DoubleValue : public Value
 {
 public:
     typedef double OperandType;
+    DoubleValue();
     DoubleValue(double value_);
-    Value* Clone() const override;
     ValueType GetValueType() const override { return ValueType::doubleValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     double Value() const { return value; }
 private:

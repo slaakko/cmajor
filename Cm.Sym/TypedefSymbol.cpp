@@ -7,24 +7,24 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/ClassSymbol.hpp>
-#include <Cm.Ast/Identifier.hpp>
+#include <Cm.Sym/TypedefSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/Writer.hpp>
 
 namespace Cm { namespace Sym {
 
-ClassSymbol::ClassSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, Cm::Util::Uuid())
+TypedefSymbol::TypedefSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr), evaluating(false)
 {
 }
 
-void ClassSymbol::Write(Writer& writer)
+void TypedefSymbol::Write(Writer& writer)
 {
-    TypeSymbol::Write(writer);
+    writer.Write(type->Id());
 }
 
-void ClassSymbol::Read(Reader& reader)
+void TypedefSymbol::Read(Reader& reader)
 {
     // todo
 }
-
 
 } } // namespace Cm::Sym

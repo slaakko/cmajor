@@ -11,7 +11,9 @@
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Evaluator.hpp>
 #include <Cm.Bind/Exception.hpp>
+#include <Cm.Bind/Enumeration.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
+#include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Bind {
@@ -28,16 +30,27 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             {
                 throw Exception("cyclic constant definitions detected", constantSymbol->GetSpan());
             }
-            if (constantSymbol->GetType() && constantSymbol->GetValue())
+            if (constantSymbol->Bound())
             {
-                return; // already bound
+                return; 
             }
-            Cm::Sym::TypeSymbol* type = ResolveType(containerScope, fileScope, constantNode->TypeExpr());
+            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constantNode->TypeExpr());
             if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())
             {
                 if (type->IsEnumTypeSymbol())
                 {
-                    type = type->GetUnderlyingType();
+                    Cm::Sym::EnumTypeSymbol* enumTypeSymbol = static_cast<Cm::Sym::EnumTypeSymbol*>(type);
+                    if (!enumTypeSymbol->Bound())
+                    {
+                        Cm::Ast::Node* node = symbolTable.GetNode(enumTypeSymbol);
+                        if (node->IsEnumTypeNode())
+                        {
+                            Cm::Ast::EnumTypeNode* enumTypeNode = static_cast<Cm::Ast::EnumTypeNode*>(node);
+                            Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(enumTypeNode);
+                            BindEnumType(symbolTable, scope, fileScope, enumTypeNode);
+                        }
+                    }
+                    type = enumTypeSymbol->GetUnderlyingType();
                 }
                 constantSymbol->SetType(type);
                 Cm::Sym::SymbolType symbolType = type->GetSymbolType();
@@ -46,6 +59,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
                 Cm::Sym::Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScope);
                 constantSymbol->ResetEvaluating();
                 constantSymbol->SetValue(value);
+                constantSymbol->SetBound();
             }
             else
             {

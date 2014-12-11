@@ -24,6 +24,8 @@
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Evaluator.hpp" />
     <ClInclude Include="Exception.hpp" />
+    <ClInclude Include="Parameter.hpp" />
+    <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +34,8 @@
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="Excecption.cpp" />
+    <ClCompile Include="Parameter.cpp" />
+    <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeResolver.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

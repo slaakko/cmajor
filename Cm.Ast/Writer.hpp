@@ -29,6 +29,7 @@ public:
     void Write(Node* node);
     void Write(const std::string& s);
     void Write(bool b);
+    void Write(char x);
     void Write(int8_t x);
     void Write(uint8_t x);
     void Write(int16_t x);
@@ -39,7 +40,6 @@ public:
     void Write(uint64_t x);
     void Write(float x);
     void Write(double x);
-    void Write(char x);
     void Write(Derivation x);
     void Write(const DerivationList& derivationList);
     void Write(Specifiers x);
