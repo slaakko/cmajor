@@ -14,8 +14,9 @@ namespace Cm { namespace Sym {
 
 ValueType valueTypes[uint8_t(Cm::Sym::SymbolType::maxSymbol)] =
 {
-    ValueType::boolValue, ValueType::sbyteValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue,
-    ValueType::floatValue, ValueType::doubleValue, ValueType::charValue, ValueType::none,
+    ValueType::boolValue, ValueType::charValue, ValueType::none,
+    ValueType::sbyteValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue,
+    ValueType::floatValue, ValueType::doubleValue, ValueType::none,
     ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none,
     ValueType::none, ValueType::none, ValueType::none
 };
@@ -25,7 +26,7 @@ ValueType GetValueTypeFor(SymbolType symbolType)
     ValueType valueType = valueTypes[uint8_t(symbolType)];
     if (valueType == ValueType::none)
     {
-        throw std::runtime_error("invalid value type for symbol type");
+        throw std::runtime_error("invalid basic value type for symbol type");
     }
     return valueType;
 }
@@ -66,6 +67,10 @@ Value::~Value()
 {
 }
 
+BoolValue::BoolValue() : value(false)
+{
+}
+
 BoolValue::BoolValue(bool value_) : value(value_)
 {
 }
@@ -73,6 +78,16 @@ BoolValue::BoolValue(bool value_) : value(value_)
 Value* BoolValue::Clone() const
 {
     return new BoolValue(value);
+}
+
+void BoolValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadBool();
+}
+
+void BoolValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* BoolValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -200,6 +215,10 @@ Value* BoolValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+CharValue::CharValue() : value('\0')
+{
+}
+
 CharValue::CharValue(char value_) : value(value_)
 {
 }
@@ -207,6 +226,16 @@ CharValue::CharValue(char value_) : value(value_)
 Value* CharValue::Clone() const
 {
     return new CharValue(value);
+}
+
+void CharValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadChar();
+}
+
+void CharValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* CharValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -345,6 +374,10 @@ Value* CharValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+SByteValue::SByteValue() : value(0)
+{
+}
+
 SByteValue::SByteValue(int8_t value_) : value(value_)
 {
 }
@@ -352,6 +385,16 @@ SByteValue::SByteValue(int8_t value_) : value(value_)
 Value* SByteValue::Clone() const
 {
     return new SByteValue(value);
+}
+
+void SByteValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadSByte();
+}
+
+void SByteValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* SByteValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -455,6 +498,10 @@ Value* SByteValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+ByteValue::ByteValue() : value(0)
+{
+}
+
 ByteValue::ByteValue(uint8_t value_) : value(value_)
 {
 }
@@ -462,6 +509,16 @@ ByteValue::ByteValue(uint8_t value_) : value(value_)
 Value* ByteValue::Clone() const
 {
     return new ByteValue(value);
+}
+
+void ByteValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadByte();
+}
+
+void ByteValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* ByteValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -544,6 +601,10 @@ Value* ByteValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+ShortValue::ShortValue() : value(0)
+{
+}
+
 ShortValue::ShortValue(int16_t value_) : value(value_)
 {
 }
@@ -551,6 +612,16 @@ ShortValue::ShortValue(int16_t value_) : value(value_)
 Value* ShortValue::Clone() const
 {
     return new ShortValue(value);
+}
+
+void ShortValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadShort();
+}
+
+void ShortValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* ShortValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -661,6 +732,10 @@ Value* ShortValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+UShortValue::UShortValue() : value(0)
+{
+}
+
 UShortValue::UShortValue(uint16_t value_) : value(value_)
 {
 }
@@ -668,6 +743,16 @@ UShortValue::UShortValue(uint16_t value_) : value(value_)
 Value* UShortValue::Clone() const
 {
     return new UShortValue(value);
+}
+
+void UShortValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadUShort();
+}
+
+void UShortValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* UShortValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -764,6 +849,10 @@ Value* UShortValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+IntValue::IntValue() : value(0)
+{
+}
+
 IntValue::IntValue(int32_t value_) : value(value_)
 {
 }
@@ -771,6 +860,16 @@ IntValue::IntValue(int32_t value_) : value(value_)
 Value* IntValue::Clone() const
 {
     return new IntValue(value);
+}
+
+void IntValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadInt();
+}
+
+void IntValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* IntValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -888,6 +987,10 @@ Value* IntValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+UIntValue::UIntValue() : value(0)
+{
+}
+
 UIntValue::UIntValue(uint32_t value_) : value(value_)
 {
 }
@@ -895,6 +998,16 @@ UIntValue::UIntValue(uint32_t value_) : value(value_)
 Value* UIntValue::Clone() const
 {
     return new UIntValue(value);
+}
+
+void UIntValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadUInt();
+}
+
+void UIntValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* UIntValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -1005,6 +1118,10 @@ Value* UIntValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+LongValue::LongValue() : value(0)
+{
+}
+
 LongValue::LongValue(int64_t value_) : value(value_)
 {
 }
@@ -1012,6 +1129,16 @@ LongValue::LongValue(int64_t value_) : value(value_)
 Value* LongValue::Clone() const
 {
     return new LongValue(value);
+}
+
+void LongValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadLong();
+}
+
+void LongValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* LongValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -1136,6 +1263,10 @@ Value* LongValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+ULongValue::ULongValue() : value(0)
+{
+}
+
 ULongValue::ULongValue(uint64_t value_) : value(value_)
 {
 }
@@ -1143,6 +1274,16 @@ ULongValue::ULongValue(uint64_t value_) : value(value_)
 Value* ULongValue::Clone() const
 {
     return new ULongValue(value);
+}
+
+void ULongValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadULong();
+}
+
+void ULongValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* ULongValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -1267,6 +1408,10 @@ Value* ULongValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+FloatValue::FloatValue() : value(0.0f)
+{
+}
+
 FloatValue::FloatValue(float value_) : value(value_)
 {
 }
@@ -1274,6 +1419,16 @@ FloatValue::FloatValue(float value_) : value(value_)
 Value* FloatValue::Clone() const
 {
     return new FloatValue(value);
+}
+
+void FloatValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadFloat();
+}
+
+void FloatValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* FloatValue::As(ValueType targetType, bool cast, const Span& span) const
@@ -1405,6 +1560,10 @@ Value* FloatValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+DoubleValue::DoubleValue() : value(0.0)
+{
+}
+
 DoubleValue::DoubleValue(double value_) : value(value_)
 {
 }
@@ -1412,6 +1571,16 @@ DoubleValue::DoubleValue(double value_) : value(value_)
 Value* DoubleValue::Clone() const
 {
     return new DoubleValue(value);
+}
+
+void DoubleValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadDouble();
+}
+
+void DoubleValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
 }
 
 Value* DoubleValue::As(ValueType targetType, bool cast, const Span& span) const

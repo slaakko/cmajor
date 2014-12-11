@@ -249,6 +249,11 @@ bool Reader::ReadBool()
     return binaryReader.ReadBool();
 }
 
+char Reader::ReadChar()
+{
+    return binaryReader.ReadChar();
+}
+
 int8_t Reader::ReadSByte()
 {
     return binaryReader.ReadSByte();
@@ -297,11 +302,6 @@ float Reader::ReadFloat()
 double Reader::ReadDouble()
 {
     return binaryReader.ReadDouble();
-}
-
-char Reader::ReadChar()
-{
-    return binaryReader.ReadChar();
 }
 
 Derivation Reader::ReadDerivation()

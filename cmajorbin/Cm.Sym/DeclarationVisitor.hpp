@@ -33,6 +33,7 @@ public:
     void BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void Visit(Cm::Ast::EnumConstantNode& enumConstantNode) override;
+    void Visit(Cm::Ast::TypedefNode& typedefNode) override;
     void BeginVisit(Cm::Ast::FunctionNode& functionNode) override;
     void EndVisit(Cm::Ast::FunctionNode& functionNode) override;
     void BeginVisit(Cm::Ast::DelegateNode& delegateNode) override;

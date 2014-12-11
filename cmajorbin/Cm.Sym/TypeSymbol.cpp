@@ -8,6 +8,8 @@
 ========================================================================*/
 
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/Writer.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -15,8 +17,25 @@ TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_) : ContainerS
 {
 }
 
-TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_, const Cm::Util::Uuid& id_) : ContainerSymbol(span_, name_), id(id_)
+TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : ContainerSymbol(span_, name_), id(id_)
 {
+}
+
+TypeSymbol* TypeSymbol::GetBaseType(const SymbolTable& symbolTable) const
+{
+    TypeSymbol* baseType = symbolTable.GetType(Id().BaseTypeId());
+    return baseType;
+}
+
+void TypeSymbol::Write(Writer& writer)
+{
+    ContainerSymbol::Write(writer);
+    writer.Write(id);
+}
+
+void TypeSymbol::Read(Reader& reader)
+{
+//  todo
 }
 
 } } // namespace Cm::Sym

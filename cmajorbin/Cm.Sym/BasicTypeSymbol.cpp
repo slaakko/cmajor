@@ -11,59 +11,74 @@
 
 namespace Cm { namespace Sym {
 
-BasicTypeSymbol::BasicTypeSymbol(const std::string& name_, BasicTypeId id_) : TypeSymbol(Span(), name_, Cm::Util::Uuid(static_cast<uint8_t>(id_)))
+Cm::Util::Uuid basicTypeIds[uint8_t(ShortBasicTypeId::max)] =
+{
+    uint8_t(ShortBasicTypeId::boolId), uint8_t(ShortBasicTypeId::charId), uint8_t(ShortBasicTypeId::voidId), 
+    uint8_t(ShortBasicTypeId::sbyteId), uint8_t(ShortBasicTypeId::byteId), uint8_t(ShortBasicTypeId::shortId), uint8_t(ShortBasicTypeId::ushortId), 
+    uint8_t(ShortBasicTypeId::intId), uint8_t(ShortBasicTypeId::uintId), uint8_t(ShortBasicTypeId::longId), uint8_t(ShortBasicTypeId::ulongId), 
+    uint8_t(ShortBasicTypeId::floatId), uint8_t(ShortBasicTypeId::doubleId)
+};
+
+const Cm::Util::Uuid& GetBasicTypeId(ShortBasicTypeId shortId)
+{
+    return basicTypeIds[uint8_t(shortId)];
+}
+
+BasicTypeSymbol::BasicTypeSymbol(const std::string& name_, ShortBasicTypeId id_) : TypeSymbol(Span(), name_, GetBasicTypeId(id_))
+{
+    SetBound();
+    SetSource(SymbolSource::library);
+}
+
+BoolTypeSymbol::BoolTypeSymbol() : BasicTypeSymbol("bool", ShortBasicTypeId::boolId)
 {
 }
 
-BoolTypeSymbol::BoolTypeSymbol() : BasicTypeSymbol("bool", BasicTypeId::boolId)
+CharTypeSymbol::CharTypeSymbol() : BasicTypeSymbol("char", ShortBasicTypeId::charId)
 {
 }
 
-SByteTypeSymbol::SByteTypeSymbol() : BasicTypeSymbol("sbyte", BasicTypeId::sbyteId)
+VoidTypeSymbol::VoidTypeSymbol() : BasicTypeSymbol("void", ShortBasicTypeId::voidId)
 {
 }
 
-ByteTypeSymbol::ByteTypeSymbol() : BasicTypeSymbol("byte", BasicTypeId::byteId)
+SByteTypeSymbol::SByteTypeSymbol() : BasicTypeSymbol("sbyte", ShortBasicTypeId::sbyteId)
 {
 }
 
-ShortTypeSymbol::ShortTypeSymbol() : BasicTypeSymbol("short", BasicTypeId::shortId)
+ByteTypeSymbol::ByteTypeSymbol() : BasicTypeSymbol("byte", ShortBasicTypeId::byteId)
 {
 }
 
-UShortTypeSymbol::UShortTypeSymbol() : BasicTypeSymbol("ushort", BasicTypeId::ushortId)
+ShortTypeSymbol::ShortTypeSymbol() : BasicTypeSymbol("short", ShortBasicTypeId::shortId)
 {
 }
 
-IntTypeSymbol::IntTypeSymbol() : BasicTypeSymbol("int", BasicTypeId::intId)
+UShortTypeSymbol::UShortTypeSymbol() : BasicTypeSymbol("ushort", ShortBasicTypeId::ushortId)
 {
 }
 
-UIntTypeSymbol::UIntTypeSymbol() : BasicTypeSymbol("uint", BasicTypeId::uintId)
+IntTypeSymbol::IntTypeSymbol() : BasicTypeSymbol("int", ShortBasicTypeId::intId)
 {
 }
 
-LongTypeSymbol::LongTypeSymbol() : BasicTypeSymbol("long", BasicTypeId::longId)
+UIntTypeSymbol::UIntTypeSymbol() : BasicTypeSymbol("uint", ShortBasicTypeId::uintId)
 {
 }
 
-ULongTypeSymbol::ULongTypeSymbol() : BasicTypeSymbol("ulong", BasicTypeId::ulongId)
+LongTypeSymbol::LongTypeSymbol() : BasicTypeSymbol("long", ShortBasicTypeId::longId)
 {
 }
 
-FloatTypeSymbol::FloatTypeSymbol() : BasicTypeSymbol("float", BasicTypeId::floatId)
+ULongTypeSymbol::ULongTypeSymbol() : BasicTypeSymbol("ulong", ShortBasicTypeId::ulongId)
 {
 }
 
-DoubleTypeSymbol::DoubleTypeSymbol() : BasicTypeSymbol("double", BasicTypeId::doubleId)
+FloatTypeSymbol::FloatTypeSymbol() : BasicTypeSymbol("float", ShortBasicTypeId::floatId)
 {
 }
 
-CharTypeSymbol::CharTypeSymbol() : BasicTypeSymbol("char", BasicTypeId::charId)
-{
-}
-
-VoidTypeSymbol::VoidTypeSymbol() : BasicTypeSymbol("void", BasicTypeId::voidId)
+DoubleTypeSymbol::DoubleTypeSymbol() : BasicTypeSymbol("double", ShortBasicTypeId::doubleId)
 {
 }
 

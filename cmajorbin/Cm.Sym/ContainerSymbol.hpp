@@ -19,6 +19,8 @@ class ContainerSymbol : public Symbol
 {
 public:
     ContainerSymbol(const Span& span_, const std::string& name_);
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
     ContainerScope* GetContainerScope() override { return &containerScope; }
     void AddSymbol(Symbol* symbol);
     void AddFunctionSymbol(FunctionSymbol* functionSymbol);

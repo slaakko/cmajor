@@ -10,7 +10,7 @@
 #ifndef CM_SYM_TYPE_SYMBOL_INCLUDED
 #define CM_SYM_TYPE_SYMBOL_INCLUDED
 #include <Cm.Sym/ContainerSymbol.hpp>
-#include <Cm.Util/Uuid.hpp>
+#include <Cm.Sym/TypeId.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -18,25 +18,21 @@ class TypeSymbol : public ContainerSymbol
 {
 public:
     TypeSymbol(const Span& span_, const std::string& name_);
-    TypeSymbol(const Span& span_, const std::string& name_, const Cm::Util::Uuid& id_);
-    const Cm::Util::Uuid& Id() const { return id; }
-    void SetId(Cm::Util::Uuid& id_) { id = id_;  }
-    virtual TypeSymbol* GetBaseType() const { return const_cast<TypeSymbol*>(this); }
-    virtual bool Equals(TypeSymbol* that) const { return id == that->Id();  }
-    virtual bool IsBasicTypeSymbol() const { return false; }
-    virtual bool IsDerivedTypeSymbol() const { return false; }
-    virtual bool IsBoolTypeSymbol() const { return false; }
-    virtual bool IsIntegerTypeSymbol() const { return false; }
-    virtual bool IsFloatingPointTypeSymbol() const { return false; }
-    virtual bool IsCharTypeSymbol() const { return false; }
-    virtual TypeSymbol* GetUnderlyingType() const { return const_cast<TypeSymbol*>(this); }
+    TypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
+    SymbolType GetSymbolType() const override { return SymbolType::typeSymbol; }
+    bool IsTypeSymbol() const override { return true; }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
+    const TypeId& Id() const { return id; }
+    void SetId(const TypeId& id_) { id = id_;  }
+    TypeSymbol* GetBaseType(const SymbolTable& symbolTable) const;
 private:
-    Cm::Util::Uuid id;
+    TypeId id;
 };
 
 inline bool TypesEqual(TypeSymbol* left, TypeSymbol* right)
 { 
-    return left->Equals(right);
+    return left->Id() == right->Id();
 }
 
 } } // namespace Cm::Sym

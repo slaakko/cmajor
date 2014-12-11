@@ -22,6 +22,7 @@ public:
     EnumTypeNode(const Span& span_);
     EnumTypeNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::enumTypeNode; }
+    bool IsEnumTypeNode() const override { return true; }
     Node* Clone() const override;
     void SetUnderlyingType(Node* underlyingType_);
     Node* GetUnderlyingType() const { return underlyingType.get(); }

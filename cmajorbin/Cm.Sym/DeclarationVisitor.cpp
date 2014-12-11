@@ -96,6 +96,11 @@ void DeclarationVisitor::Visit(Cm::Ast::EnumConstantNode& enumConstantNode)
     symbolTable.AddEnumConstant(&enumConstantNode);
 }
 
+void DeclarationVisitor::Visit(Cm::Ast::TypedefNode& typedefNode)
+{
+    symbolTable.AddTypedef(&typedefNode);
+}
+
 void DeclarationVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 {
     symbolTable.BeginFunctionScope(&functionNode);

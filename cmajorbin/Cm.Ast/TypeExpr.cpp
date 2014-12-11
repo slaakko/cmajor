@@ -53,6 +53,35 @@ bool operator==(const DerivationList& left, const DerivationList& right)
     return true;
 }
 
+bool operator<(const DerivationList& left, const DerivationList& right)
+{
+    uint8_t n = left.NumDerivations();
+    uint8_t m = right.NumDerivations();
+    if (n < m)
+    {
+        return true;
+    }
+    else if (n > m)
+    {
+        return false;
+    }
+    else
+    {
+        for (uint8_t i = 0; i < n; ++i)
+        {
+            if (left[i] < right[i])
+            {
+                return true;
+            }
+            else if (left[i] > right[i])
+            {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
 DerivedTypeExprNode::DerivedTypeExprNode(const Span& span_): Node(span_)
 {
 }
@@ -83,7 +112,7 @@ void DerivedTypeExprNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-std::string DerivedTypeExprNode::ToString() const
+std::string MakeDerivedTypeName(const DerivationList& derivations, const std::string& baseTypeFullName)
 {
     std::string s;
     uint8_t derivationIndex = 0;
@@ -123,12 +152,17 @@ std::string DerivedTypeExprNode::ToString() const
     {
         s.append(1, ' ');
     }
-    s.append(baseTypeExprNode->ToString());
+    s.append(baseTypeFullName);
     for (uint8_t i = derivationIndex; i < n; ++i)
     {
         s.append(DerivationStr(derivations[i]));
     }
     return s;
+}
+
+std::string DerivedTypeExprNode::ToString() const
+{
+    return MakeDerivedTypeName(derivations, baseTypeExprNode->ToString());
 }
 
 void DerivedTypeExprNode::Add(Derivation derivation)

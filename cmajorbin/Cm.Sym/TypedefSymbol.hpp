@@ -7,35 +7,32 @@
 
 ========================================================================*/
 
-#ifndef CM_SYM_CONSTANT_SYMBOL_INCLUDED
-#define CM_SYM_CONSTANT_SYMBOL_INCLUDED
-#include <Cm.Sym/TypeSymbol.hpp>
-#include <Cm.Sym/Value.hpp>
-#include <Cm.Ast/Constant.hpp>
+#ifndef CM_SYM_TYPEDEF_SYMBOL_INCLUDED
+#define CM_SYM_TYPEDEF_SYMBOL_INCLUDED
+#include <Cm.Sym/Symbol.hpp>
 
 namespace Cm { namespace Sym {
 
-class ConstantSymbol : public Symbol
+class TypeSymbol;
+
+class TypedefSymbol : public Symbol
 {
 public:
-    ConstantSymbol(const Span& span_, const std::string& name_);
-    SymbolType GetSymbolType() const override { return SymbolType::constantSymbol; }
+    TypedefSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::typedefSymbol; }
+    bool IsTypedefSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
-    void SetType(TypeSymbol* type_);
+    void SetType(TypeSymbol* type_) { type = type_;  }
     TypeSymbol* GetType() const { return type; }
-    virtual bool IsConstantSymbol() const { return true; }
-    void SetValue(Value* value_);
-    Value* GetValue() const { return value.get(); }
     bool Evaluating() const { return evaluating; }
     void SetEvaluating() { evaluating = true; }
     void ResetEvaluating() { evaluating = false; }
 private:
     TypeSymbol* type;
-    std::unique_ptr<Value> value;
     bool evaluating;
 };
 
 } } // namespace Cm::Sym
 
-#endif // CM_SYM_CONSTANT_SYMBOL_INCLUDED
+#endif // CM_SYM_TYPEDEF_SYMBOL_INCLUDED

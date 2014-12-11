@@ -62,6 +62,7 @@ public:
     CompileUnitNode* ReadCompileUnitNode();
     std::string ReadString();
     bool ReadBool();
+    char ReadChar();
     int8_t ReadSByte();
     uint8_t ReadByte();
     int16_t ReadShort();
@@ -72,7 +73,6 @@ public:
     uint64_t ReadULong();
     float ReadFloat();
     double ReadDouble();
-    char ReadChar();
     Derivation ReadDerivation();
     DerivationList ReadDerivationList();
     Specifiers ReadSpecifiers();

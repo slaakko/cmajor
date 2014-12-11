@@ -41,7 +41,10 @@ private:
     Derivation derivations[maxDerivations];
 };
 
+std::string MakeDerivedTypeName(const DerivationList& derivations, const std::string& baseTypeFullName);
+
 bool operator==(const DerivationList& left, const DerivationList& right);
+bool operator<(const DerivationList& left, const DerivationList& right);
 
 class DerivedTypeExprNode : public Node
 {

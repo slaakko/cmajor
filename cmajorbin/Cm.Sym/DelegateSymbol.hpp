@@ -19,6 +19,8 @@ class DelegateSymbol : public TypeSymbol
 public:
     DelegateSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::delegateSymbol; }
+    bool IsDelegateTypeSymbol() const override { return true; }
+
 };
 
 class ClassDelegateSymbol : public TypeSymbol
@@ -26,6 +28,7 @@ class ClassDelegateSymbol : public TypeSymbol
 public:
     ClassDelegateSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::classDelegateSymbol; }
+    bool IsClassDelegateTypeSymbol() const override { return true; }
 };
 
 } } // namespace Cm::Sym

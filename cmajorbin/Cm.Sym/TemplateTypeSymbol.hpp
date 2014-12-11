@@ -17,11 +17,14 @@ class TemplateTypeSymbol : public TypeSymbol
 {
 public:
     TemplateTypeSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::templateTypeSymbol; }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
     void SetSubjectType(TypeSymbol* subjectType_);
     void AddTypeArgument(TypeSymbol* typeArgument);
 private:
-    std::unique_ptr<TypeSymbol> subjectType;
-    std::vector<std::unique_ptr<TypeSymbol>> typeArguments;
+    TypeSymbol* subjectType;
+    std::vector<TypeSymbol*> typeArguments;
 };
 
 } } // namespace Cm::Sym

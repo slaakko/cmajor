@@ -12,6 +12,7 @@
 #include <Cm.Parser/CompileUnit.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
+#include <Cm.Sym/Writer.hpp>
 #include <Cm.Bind/BindingVisitor.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
 #include <iostream>
@@ -41,6 +42,8 @@ void Build(const std::string& projectFilePath)
     project->VisitCompileUnits(declarationVisitor);
     Cm::Bind::BindingVisitor bindingVisitor(symbolTable);
     project->VisitCompileUnits(bindingVisitor);
+    Cm::Sym::Writer writer("C:\\Temp\\os.mc");
+    symbolTable.Write(writer);
     std::cout << "enter" << std::endl;
     char c;
     std::cin >> c;

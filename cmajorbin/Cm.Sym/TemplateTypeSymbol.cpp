@@ -8,21 +8,38 @@
 ========================================================================*/
 
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/Writer.hpp>
 
 namespace Cm { namespace Sym {
 
-TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
+TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), subjectType(nullptr)
 {
+}
+
+void TemplateTypeSymbol::Write(Writer& writer)
+{
+    writer.Write(subjectType->Id());
+    uint8_t n = uint8_t(typeArguments.size());
+    writer.GetBinaryWriter().Write(n);
+    for (uint8_t i = 0; i < n; ++i)
+    {
+        writer.Write(typeArguments[i]->Id());
+    }
+}
+
+void TemplateTypeSymbol::Read(Reader& reader)
+{
+    // todo
 }
 
 void TemplateTypeSymbol::SetSubjectType(TypeSymbol* subjectType_)
 {
-    subjectType.reset(subjectType_);
+    subjectType = subjectType_;
 }
 
 void TemplateTypeSymbol::AddTypeArgument(TypeSymbol* typeArgument)
 {
-    typeArguments.push_back(std::unique_ptr<TypeSymbol>(typeArgument));
+    typeArguments.push_back(typeArgument);
 }
 
 } } // namespace Cm::Sym

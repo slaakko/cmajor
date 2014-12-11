@@ -13,15 +13,17 @@
 
 namespace Cm { namespace Sym {
 
-enum class BasicTypeId : uint8_t
+enum class ShortBasicTypeId : uint8_t
 {
-    boolId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, charId, voidId
+    boolId, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, max
 };
+
+const Cm::Util::Uuid& GetBasicTypeId(ShortBasicTypeId shortId);
 
 class BasicTypeSymbol : public TypeSymbol
 {
 public:
-    BasicTypeSymbol(const std::string& name_, BasicTypeId id_);
+    BasicTypeSymbol(const std::string& name_, ShortBasicTypeId id_);
     bool IsBasicTypeSymbol() const override { return true; }
 };
 
@@ -31,6 +33,21 @@ public:
     BoolTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::boolSymbol; }
     bool IsBoolTypeSymbol() const override { return true; }
+};
+
+class CharTypeSymbol : public BasicTypeSymbol
+{
+public:
+    CharTypeSymbol();
+    SymbolType GetSymbolType() const override { return SymbolType::charSymbol; }
+    bool IsCharTypeSymbol() const override { return true; }
+};
+
+class VoidTypeSymbol : public BasicTypeSymbol
+{
+public:
+    VoidTypeSymbol();
+    SymbolType GetSymbolType() const override { return SymbolType::voidSymbol; }
 };
 
 class SByteTypeSymbol : public BasicTypeSymbol
@@ -111,21 +128,6 @@ public:
     DoubleTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::doubleSymbol; }
     bool IsFloatingPointTypeSymbol() const override { return true; }
-};
-
-class CharTypeSymbol : public BasicTypeSymbol
-{
-public:
-    CharTypeSymbol();
-    SymbolType GetSymbolType() const override { return SymbolType::charSymbol; }
-    bool IsCharTypeSymbol() const override { return true; }
-};
-
-class VoidTypeSymbol : public BasicTypeSymbol
-{
-public:
-    VoidTypeSymbol();
-    SymbolType GetSymbolType() const override { return SymbolType::voidSymbol; }
 };
 
 } } // namespace Cm::Sym

@@ -10,7 +10,6 @@
 #ifndef CM_BIND_ENUMERATION_INCLUDED
 #define CM_BIND_ENUMERATION_INCLUDED
 #include <Cm.Sym/SymbolTable.hpp>
-#include <Cm.Sym/Scope.hpp>
 
 namespace Cm { namespace Bind {
 
