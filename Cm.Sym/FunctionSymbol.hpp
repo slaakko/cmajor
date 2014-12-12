@@ -19,6 +19,7 @@ class FunctionSymbol : public ContainerSymbol
 public:
     FunctionSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::functionSymbol; }
+    std::string TypeString() const override { return "function"; };
     bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     bool IsFunctionSymbol() const override { return true; }
 };

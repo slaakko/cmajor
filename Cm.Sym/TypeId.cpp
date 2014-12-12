@@ -11,15 +11,11 @@
 
 namespace Cm { namespace Sym {
 
-TypeId::TypeId() : baseTypeId(), derivations(), hashCodeValid(false), hashCode(0)
+TypeId::TypeId() : rep(), hashCodeValid(false), hashCode(0)
 {
 }
 
-TypeId::TypeId(const Cm::Util::Uuid& baseTypeId_) : baseTypeId(baseTypeId_), derivations(), hashCodeValid(false), hashCode(0)
-{
-}
-
-TypeId::TypeId(const Cm::Util::Uuid& baseTypeId_, const Cm::Ast::DerivationList& derivations_) : baseTypeId(baseTypeId_), derivations(derivations_), hashCodeValid(false), hashCode(0)
+TypeId::TypeId(const Cm::Util::Uuid& rep_) : rep(rep_), hashCodeValid(false), hashCode(0)
 {
 }
 
@@ -35,20 +31,11 @@ void TypeId::ComputeHashCode() const
     const size_t prime = 16777619U;
 #endif /* defined(_WIN64) */
     size_t hashValue = offset_basis;
-    int n = int(baseTypeId.Tag().size());
+    int n = int(rep.Tag().size());
     for (int i = 0; i < n; ++i)
     {
-        hashValue ^= static_cast<size_t>(baseTypeId.Tag().data[i]);
+        hashValue ^= static_cast<size_t>(rep.Tag().data[i]);
         hashValue *= prime;
-    }
-    int nd = derivations.NumDerivations();
-    if (nd > 0)
-    {
-        for (int i = 0; i < nd; ++i)
-        {
-            hashValue ^= static_cast<size_t>(derivations[i]);
-            hashValue *= prime;
-        }
     }
     hashCode = hashValue;
     hashCodeValid = true;
@@ -56,23 +43,12 @@ void TypeId::ComputeHashCode() const
 
 bool operator==(const TypeId& left, const TypeId& right)
 {
-    return left.BaseTypeId() == right.BaseTypeId() && left.Derivations() == right.Derivations();
+    return left.Rep() == right.Rep();
 }
 
 bool operator<(const TypeId& left, const TypeId& right)
 {
-    if (left.BaseTypeId() < right.BaseTypeId())
-    {
-        return true;
-    }
-    else if (left.BaseTypeId() > right.BaseTypeId())
-    {
-        return false;
-    }
-    else
-    {
-        return left.Derivations() < right.Derivations();
-    }
+    return left.Rep() < right.Rep();
 }
 
 } } // namespace Cm::Sym

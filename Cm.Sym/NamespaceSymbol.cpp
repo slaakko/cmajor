@@ -9,6 +9,7 @@
 
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace Sym {

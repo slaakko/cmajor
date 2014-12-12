@@ -11,6 +11,7 @@
 #define CM_SYM_WRITER_INCLUDED
 #include <Cm.Sym/TypeId.hpp>
 #include <Cm.Ser/BinaryWriter.hpp>
+#include <Cm.Ast/TypeExpr.hpp>
 #include <Cm.Util/Uuid.hpp>
 
 namespace Cm { namespace Sym {

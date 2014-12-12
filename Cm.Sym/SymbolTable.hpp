@@ -10,7 +10,7 @@
 #ifndef CM_SYM_SYMBOL_TABLE_INCLUDED
 #define CM_SYM_SYMBOL_TABLE_INCLUDED
 #include <Cm.Sym/NamespaceSymbol.hpp>
-#include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Class.hpp>
 #include <Cm.Ast/Enumeration.hpp>
@@ -52,20 +52,14 @@ public:
     void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
     void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
-    void AddType(TypeSymbol* type);
-    TypeSymbol* GetTypeNothrow(const TypeId& typeId) const;
-    TypeSymbol* GetType(const TypeId& typeId) const;
-    TypeSymbol* GetDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span);
     ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
     Cm::Ast::Node* GetNode(Symbol* symbol) const;
     void Export(Writer& writer);
     void Import(Reader& reader);
     ContainerSymbol* Container() const { return container; }
+    TypeRepository& GetTypeRepository() { return typeRepository; }
 private:
     NamespaceSymbol globalNs;
-    typedef std::unordered_map<TypeId, TypeSymbol*, TypeIdHash> TypeSymbolMap;
-    typedef TypeSymbolMap::const_iterator TypeSymbolMapIt;
-    TypeSymbolMap typeSymbolMap;
     ContainerSymbol* container;
     std::stack<ContainerSymbol*> containerStack;
     typedef std::unordered_map<Cm::Ast::Node*, ContainerScope*> NodeScopeMap;
@@ -73,8 +67,8 @@ private:
     NodeScopeMap nodeScopeMap;
     typedef std::unordered_map<Symbol*, Cm::Ast::Node*> SymbolNodeMap;
     typedef SymbolNodeMap::const_iterator SymbolNodeMapIt;
+    TypeRepository typeRepository;
     SymbolNodeMap symbolNodeMap;
-    std::vector<std::unique_ptr<TypeSymbol>> derivedTypes;
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
 };

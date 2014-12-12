@@ -15,6 +15,68 @@
 
 namespace Cm { namespace Sym {
 
+const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
+{
+    "boolSymbol", "charSymbol", "voidSymbol", "sbyteSymbol", "byteSymbol", "shortSymbol", "ushortSymbol", "intSymbol", "uintSymbol", "longSymbol", "ulongSymbol", "floatSymbol", "doubleSymbol",
+    "classSymbol", "constantSymbol", "declarationBlock", "delegateSymbol", "classDelegateSymbol", "enumTypeSymbol", "enumConstantSymbol", "functionSymbol", "localVariableSymbol", "memberVariableSymbol",
+    "namespaceSymbol", "parameterSymbol", "templateParameterSymbol", "templateTypeSymbol", "typeSymbol", "derivedTypeSymbol", "typedefSymbol"
+};
+
+std::string SymbolTypeStr(SymbolType st)
+{
+    return symbolTypeStr[uint8_t(st)];
+}
+
+std::string SymbolFlagStr(SymbolFlags flags)
+{
+    std::string s;
+    if ((flags & SymbolFlags::public_) != SymbolFlags::none)
+    {
+        s.append("public");
+    }
+    if ((flags & SymbolFlags::protected_) != SymbolFlags::none)
+    {
+        if (s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("protected");
+    }
+    if ((flags & SymbolFlags::private_) != SymbolFlags::none)
+    {
+        if (s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("private");
+    }
+    if ((flags & SymbolFlags::internal_) != SymbolFlags::none)
+    {
+        if (s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("internal");
+    }
+    if ((flags & SymbolFlags::export_) != SymbolFlags::none)
+    {
+        if (s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("export");
+    }
+    if ((flags & SymbolFlags::projectSource) != SymbolFlags::none)
+    {
+        if (s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("project");
+    }
+    return s;
+}
+
 Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), flags(), parent(nullptr), bound(false)
 {
     SetSource(SymbolSource::project);
@@ -92,6 +154,16 @@ ClassTypeSymbol* Symbol::Class() const
             throw std::runtime_error("class not found");
         }
     }
+}
+
+void Symbol::Dump(CodeFormatter& formatter)
+{
+    std::string f = SymbolFlagStr(flags);
+    if (!f.empty())
+    {
+        f.append(1, ' ');
+    }
+    formatter.WriteLine(f + TypeString() + " " + Name());
 }
 
 } } // namespace Cm::Sym

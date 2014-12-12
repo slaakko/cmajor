@@ -70,19 +70,23 @@ private:
 };
 
 class SymbolTable;
+class TypeRepository;
 
 class FileScope : public Scope
 {
 public:
+    FileScope();
     void InstallAlias(ContainerScope* currenContainerScope, Cm::Ast::AliasNode* aliasNode);
     void InstallNamespaceImport(ContainerScope* currentContainerScope, Cm::Ast::NamespaceImportNode* namespaceImportNode);
     Symbol* Lookup(const std::string& name) const override;
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const override;
+    TypeRepository& GetTypeRepository();
 private:
     std::vector<ContainerScope*> containerScopes;
     typedef std::unordered_map<std::string, Symbol*> AliasSymbolMap;
     typedef AliasSymbolMap::const_iterator AliasSymbolMapIt;
     AliasSymbolMap aliasSymbolMap;
+    std::unique_ptr<TypeRepository> typeRepository;
 };
 
 } } // namespace Cm::Sym

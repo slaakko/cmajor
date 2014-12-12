@@ -28,6 +28,7 @@ public:
     void AddFunctionSymbol(FunctionSymbol* functionSymbol);
     void AddTemplateTypeSymbol(TemplateTypeSymbol* templateTypeSymbol);
     std::vector<std::unique_ptr<Symbol>>& Symbols() { return symbols; }
+    void Dump(CodeFormatter& formatter) override;
 private:
     ContainerScope containerScope;
     std::vector<std::unique_ptr<Symbol>> symbols;

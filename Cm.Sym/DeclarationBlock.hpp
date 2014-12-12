@@ -19,6 +19,7 @@ class DeclarationBlock : public ContainerSymbol
 public:
     DeclarationBlock(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::declarationBlock; }
+    std::string TypeString() const override { return "declaration block"; };
 };
 
 } } // namespace Cm::Sym

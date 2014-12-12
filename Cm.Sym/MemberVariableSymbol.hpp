@@ -21,6 +21,7 @@ class MemberVariableSymbol : public Symbol
 public:
     MemberVariableSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
+    std::string TypeString() const override { return "member variable"; };
     bool IsMemberVariableSymbol() const override { return true; }
     bool IsExportSymbol() const override { return true; }
     void Write(Writer& writer) override;

@@ -21,6 +21,7 @@ public:
     ConstantSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::constantSymbol; }
     bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
+    std::string TypeString() const override { return "constant"; };
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type_) { type = type_; }

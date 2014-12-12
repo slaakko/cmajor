@@ -38,4 +38,15 @@ Uuid::Uuid(uint8_t id): tag()
     tag.data[0] = id;
 }
 
+Uuid operator^(const Uuid& left, const Uuid& right)
+{
+    Uuid result = left;
+    int  n = int(right.Tag().size());
+    for (int i = 0; i < n; ++i)
+    {
+        result.Tag().data[i] ^= right.Tag().data[i];
+    }
+    return result;
+}
+
 } } // namespace Cm::Util
