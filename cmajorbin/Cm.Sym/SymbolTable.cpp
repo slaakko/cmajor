@@ -32,43 +32,43 @@ SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs)
 {
     BoolTypeSymbol* boolTypeSymbol = new BoolTypeSymbol();
     globalNs.AddSymbol(boolTypeSymbol);
-    AddType(boolTypeSymbol);
+    typeRepository.AddType(boolTypeSymbol);
     CharTypeSymbol* charTypeSymbol = new CharTypeSymbol();
     globalNs.AddSymbol(charTypeSymbol);
-    AddType(charTypeSymbol);
+    typeRepository.AddType(charTypeSymbol);
     VoidTypeSymbol* voidTypeSymbol = new VoidTypeSymbol();
     globalNs.AddSymbol(voidTypeSymbol);
-    AddType(voidTypeSymbol);
+    typeRepository.AddType(voidTypeSymbol);
     SByteTypeSymbol* sbyteTypeSymbol = new SByteTypeSymbol();
     globalNs.AddSymbol(sbyteTypeSymbol);
-    AddType(sbyteTypeSymbol);
+    typeRepository.AddType(sbyteTypeSymbol);
     ByteTypeSymbol* byteTypeSymbol = new ByteTypeSymbol();
     globalNs.AddSymbol(byteTypeSymbol);
-    AddType(byteTypeSymbol);
+    typeRepository.AddType(byteTypeSymbol);
     ShortTypeSymbol* shortTypeSymbol = new ShortTypeSymbol();
     globalNs.AddSymbol(shortTypeSymbol);
-    AddType(shortTypeSymbol);
+    typeRepository.AddType(shortTypeSymbol);
     UShortTypeSymbol* ushortTypeSymbol = new UShortTypeSymbol();
     globalNs.AddSymbol(ushortTypeSymbol);
-    AddType(ushortTypeSymbol);
+    typeRepository.AddType(ushortTypeSymbol);
     IntTypeSymbol* intTypeSymbol = new IntTypeSymbol();
     globalNs.AddSymbol(intTypeSymbol);
-    AddType(intTypeSymbol);
+    typeRepository.AddType(intTypeSymbol);
     UIntTypeSymbol* uintTypeSymbol = new UIntTypeSymbol();
     globalNs.AddSymbol(uintTypeSymbol);
-    AddType(uintTypeSymbol);
+    typeRepository.AddType(uintTypeSymbol);
     LongTypeSymbol* longTypeSymbol = new LongTypeSymbol();
     globalNs.AddSymbol(longTypeSymbol);
-    AddType(longTypeSymbol);
+    typeRepository.AddType(longTypeSymbol);
     ULongTypeSymbol* ulongTypeSymbol = new ULongTypeSymbol();
     globalNs.AddSymbol(ulongTypeSymbol);
-    AddType(ulongTypeSymbol);
+    typeRepository.AddType(ulongTypeSymbol);
     FloatTypeSymbol* floatTypeSymbol = new FloatTypeSymbol();
     globalNs.AddSymbol(floatTypeSymbol);
-    AddType(floatTypeSymbol);
+    typeRepository.AddType(floatTypeSymbol);
     DoubleTypeSymbol* doubleTypeSymbol = new DoubleTypeSymbol();
     globalNs.AddSymbol(doubleTypeSymbol);
-    AddType(doubleTypeSymbol);
+    typeRepository.AddType(doubleTypeSymbol);
 }
 
 void SymbolTable::BeginContainer(ContainerSymbol* container_)
@@ -161,7 +161,7 @@ void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
 {
     Cm::Ast::IdentifierNode* classId = classNode->Id();
     ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str());
-    AddType(classSymbol);
+    typeRepository.AddType(classSymbol);
     ContainerScope* classScope = classSymbol->GetContainerScope();
     nodeScopeMap[classNode] = classScope;
     symbolNodeMap[classSymbol] = classNode;
@@ -180,7 +180,7 @@ void SymbolTable::BeginEnumScope(Cm::Ast::EnumTypeNode* enumTypeNode)
 {
     Cm::Ast::IdentifierNode* enumTypeId = enumTypeNode->Id();
     EnumTypeSymbol* enumTypeSymbol = new EnumTypeSymbol(enumTypeId->GetSpan(), enumTypeId->Str());
-    AddType(enumTypeSymbol);
+    typeRepository.AddType(enumTypeSymbol);
     ContainerScope* enumScope = enumTypeSymbol->GetContainerScope();
     nodeScopeMap[enumTypeNode] = enumScope;
     symbolNodeMap[enumTypeSymbol] = enumTypeNode;
@@ -228,7 +228,7 @@ void SymbolTable::BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode)
 {
     Cm::Ast::IdentifierNode* delegateId = delegateNode->Id();
     DelegateSymbol* delegateSymbol = new DelegateSymbol(delegateId->GetSpan(), delegateId->Str());
-    AddType(delegateSymbol);
+    typeRepository.AddType(delegateSymbol);
     ContainerScope* delegateScope = delegateSymbol->GetContainerScope();
     nodeScopeMap[delegateNode] = delegateScope;
     symbolNodeMap[delegateSymbol] = delegateNode;
@@ -247,7 +247,7 @@ void SymbolTable::BeginClassDelegateScope(Cm::Ast::ClassDelegateNode* classDeleg
 {
     Cm::Ast::IdentifierNode* classDelegateId = classDelegateNode->Id();
     ClassDelegateSymbol* classDelegateSymbol = new ClassDelegateSymbol(classDelegateId->GetSpan(), classDelegateId->Str());
-    AddType(classDelegateSymbol);
+    typeRepository.AddType(classDelegateSymbol);
     ContainerScope* classDelegateScope = classDelegateSymbol->GetContainerScope();
     nodeScopeMap[classDelegateNode] = classDelegateScope;
     symbolNodeMap[classDelegateSymbol] = classDelegateNode;
@@ -317,55 +317,6 @@ void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableN
     symbolNodeMap[memberVariableSymbol] = memberVariableNode;
 }
 
-void SymbolTable::AddType(TypeSymbol* type)
-{
-    typeSymbolMap[type->Id()] = type;
-}
-
-TypeSymbol* SymbolTable::GetTypeNothrow(const TypeId& typeId) const
-{
-    TypeSymbolMapIt i = typeSymbolMap.find(typeId);
-    if (i != typeSymbolMap.end())
-    {
-        return i->second;
-    }
-    else
-    {
-        return nullptr;
-    }
-}
-
-TypeSymbol* SymbolTable::GetType(const TypeId& typeId) const
-{
-    TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
-    if (typeSymbol)
-    {
-        return typeSymbol;
-    }
-    else
-    {
-        throw std::runtime_error("type symbol not found");
-    }
-}
-
-std::string MakeDerivedTypeName(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType)
-{
-    return Cm::Ast::MakeDerivedTypeName(derivations, baseType->FullName());
-}
-
-TypeSymbol* SymbolTable::GetDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span)
-{
-    TypeId typeId(baseType->Id().BaseTypeId(), derivations);
-    TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
-    if (typeSymbol)
-    {
-        return typeSymbol;
-    }
-    TypeSymbol* derivedTypeSymbol = new TypeSymbol(span, MakeDerivedTypeName(derivations, baseType), typeId);
-    AddType(derivedTypeSymbol);
-    derivedTypes.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol));
-    return derivedTypeSymbol;
-}
 
 ContainerScope* SymbolTable::GetContainerScope(Cm::Ast::Node* node) const
 {
@@ -396,21 +347,7 @@ Cm::Ast::Node* SymbolTable::GetNode(Symbol* symbol) const
 void SymbolTable::Export(Writer& writer)
 {
     writer.Write(&globalNs);
-    std::vector<TypeSymbol*> exportedDerivedTypes;
-    for (const std::unique_ptr<TypeSymbol>& derivedType : derivedTypes)
-    {
-        if (derivedType->IsExportSymbol())
-        {
-            exportedDerivedTypes.push_back(derivedType.get());
-        }
-    }
-    int32_t n = int32_t(exportedDerivedTypes.size());
-    writer.GetBinaryWriter().Write(n);
-    for (int32_t i = 0; i < n; ++i)
-    {
-        TypeSymbol* type = exportedDerivedTypes[i];
-        writer.Write(type);
-    }
+    typeRepository.Export(writer);
 }
 
 void SymbolTable::Import(Reader& reader)
@@ -425,20 +362,7 @@ void SymbolTable::Import(Reader& reader)
     {
         throw std::runtime_error("namespace symbol expected");
     }
-    int32_t n = reader.GetBinaryReader().ReadInt();
-    for (int32_t i = 0; i < n; ++i)
-    {
-        Symbol* symbol = reader.ReadSymbol();
-        if (symbol->IsTypeSymbol())
-        {
-            TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
-            derivedTypes.push_back(std::unique_ptr<TypeSymbol>(typeSymbol));
-        }
-        else
-        {
-            throw std::runtime_error("type symbol expected");
-        }
-    }
+    typeRepository.Import(reader);
 }
 
 } } // namespace Cm::Sym

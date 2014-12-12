@@ -22,12 +22,6 @@ TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_, const TypeId
 {
 }
 
-TypeSymbol* TypeSymbol::GetBaseType(const SymbolTable& symbolTable) const
-{
-    TypeSymbol* baseType = symbolTable.GetType(Id().BaseTypeId());
-    return baseType;
-}
-
 void TypeSymbol::Write(Writer& writer)
 {
     ContainerSymbol::Write(writer);

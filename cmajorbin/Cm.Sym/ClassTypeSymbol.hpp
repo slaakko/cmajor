@@ -19,6 +19,7 @@ class ClassTypeSymbol : public TypeSymbol
 public:
     ClassTypeSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
+    std::string TypeString() const override { return "class"; };
     bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;

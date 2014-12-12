@@ -13,12 +13,45 @@
 
 namespace Cm { namespace Sym {
 
+std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments)
+{
+    std::string s = subjectType->Name();
+    s.append(1, '<');
+    int n = int(typeArguments.size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            s.append(", ");
+        }
+        s.append(typeArguments[i]->FullName());
+    }
+    s.append(1, '>');
+    return s;
+}
+
+TypeId ComputeTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments)
+{
+    TypeId id = subjectType->Id();
+    for (TypeSymbol* typeArgument : typeArguments)
+    {
+        id.Rep() = id.Rep() ^ typeArgument->Id().Rep();
+    }
+    return id;
+}
+
 TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), subjectType(nullptr)
+{
+}
+
+TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_) :
+    TypeSymbol(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_)
 {
 }
 
 void TemplateTypeSymbol::Write(Writer& writer)
 {
+    TypeSymbol::Write(writer);
     writer.Write(subjectType->Id());
     uint8_t n = uint8_t(typeArguments.size());
     writer.GetBinaryWriter().Write(n);
@@ -30,6 +63,7 @@ void TemplateTypeSymbol::Write(Writer& writer)
 
 void TemplateTypeSymbol::Read(Reader& reader)
 {
+    TypeSymbol::Read(reader);
     reader.FetchTypeFor(this, -1);
     uint8_t n = reader.GetBinaryReader().ReadByte();
     for (int i = 0; i < int(n); ++i)
@@ -53,7 +87,6 @@ void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
         AddTypeArgument(type);
     }
 }
-
 
 void TemplateTypeSymbol::SetSubjectType(TypeSymbol* subjectType_)
 {

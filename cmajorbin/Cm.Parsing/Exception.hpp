@@ -15,7 +15,7 @@
 namespace Cm { namespace Parsing {
 
 void SetFileInfo(const std::vector<std::string>& files_);
-std::string GetErrorLines(const char* start, const char* end, const char* pos);
+std::string GetErrorLines(const char* start, const char* end, const Span& span);
 void ThrowException(const std::string& message, const Span& span);
 
 class ParsingException : public std::runtime_error

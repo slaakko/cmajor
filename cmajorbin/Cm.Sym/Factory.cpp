@@ -9,6 +9,7 @@
 
 #include <Cm.Sym/Factory.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/DerivedTypeSymbol.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Sym/DeclarationBlock.hpp>
 #include <Cm.Sym/DelegateSymbol.hpp>
@@ -68,8 +69,16 @@ void ValueFactory::Register(ValueType valueType, ValueCreator* creator)
 
 Value* ValueFactory::CreateValue(ValueType valueType)
 {
-    Value* value = creators[int(valueType)]->CreateValue();
-    return value;
+    const std::unique_ptr<ValueCreator>& creator = creators[int(valueType)];
+    if (creator)
+    {
+        Value* value = creators[int(valueType)]->CreateValue();
+        return value;
+    }
+    else
+    {
+        throw std::runtime_error("no creator for value type '" + ValueTypeStr(valueType) + "'");
+    }
 }
 
 SymbolCreator::~SymbolCreator()
@@ -146,14 +155,22 @@ Symbol* SymbolFactory::CreateBasicTypeSymbol(SymbolType basicTypeSymbolType)
 
 Symbol* SymbolFactory::CreateSymbol(SymbolType symbolType, const Span& span, const std::string& name)
 {
-    Symbol* value = creators[int(symbolType)]->CreateSymbol(span, name);
-    if (value)
+    const std::unique_ptr<SymbolCreator>& creator = creators[int(symbolType)];
+    if (creator)
     {
-        return value;
+        Symbol* value = creator->CreateSymbol(span, name);
+        if (value)
+        {
+            return value;
+        }
+        else
+        {
+            throw std::runtime_error("could not create symbol");
+        }
     }
     else
     {
-        throw std::runtime_error("could not create symbol");
+        throw std::runtime_error("no creator for symbol type '" + SymbolTypeStr(symbolType) + "'");
     }
 }
 
@@ -201,6 +218,7 @@ void InitFactory()
     SymbolFactory::Instance().Register(SymbolType::templateParameterSymbol, new ConcreteSymbolCreator<TemplateParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::templateTypeSymbol, new ConcreteSymbolCreator<TemplateTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::typeSymbol, new ConcreteSymbolCreator<TypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::derivedTypeSymbol, new ConcreteSymbolCreator<DerivedTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::typedefSymbol, new ConcreteSymbolCreator<TypedefSymbol>());
 }
 

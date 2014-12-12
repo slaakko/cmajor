@@ -25,6 +25,7 @@ class BasicTypeSymbol : public TypeSymbol
 public:
     BasicTypeSymbol(const std::string& name_, ShortBasicTypeId id_);
     bool IsBasicTypeSymbol() const override { return true; }
+    std::string TypeString() const override { return "basic type"; };
 };
 
 class BoolTypeSymbol : public BasicTypeSymbol

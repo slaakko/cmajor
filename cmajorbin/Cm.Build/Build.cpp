@@ -17,12 +17,14 @@
 #include <Cm.Sym/Module.hpp>
 #include <Cm.Bind/BindingVisitor.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
+#include <chrono>
 #include <iostream>
 
 namespace Cm { namespace Build {
 
 void Build(const std::string& projectFilePath)
 {
+    auto start = std::chrono::system_clock::now();
     Cm::Util::MappedInputFile projectFile(projectFilePath);
     Cm::Parser::FileRegistry fileRegistry;
     Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
@@ -61,10 +63,11 @@ void Build(const std::string& projectFilePath)
     boost::filesystem::path mcFilePath = moduleFilePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".mc");
     Cm::Sym::Module projectModule(mcFilePath.generic_string());
     projectModule.Export(symbolTable);
-    std::cout << "enter" << std::endl;
-    char c;
-    std::cin >> c;
     Cm::Parser::SetCurrentFileRegistry(nullptr);
+    auto end = std::chrono::system_clock::now();
+    auto dur = end - start;
+    long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+    std::cout << ms << std::endl;
 }
 
 } } // namespace Bm::Build

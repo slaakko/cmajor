@@ -73,4 +73,17 @@ void ContainerSymbol::AddTemplateTypeSymbol(TemplateTypeSymbol* templateTypeSymb
     templateTypeSymbol->SetParent(this);
 }
 
+void ContainerSymbol::Dump(CodeFormatter& formatter)
+{
+    formatter.Write("begin "); 
+    Symbol::Dump(formatter);
+    formatter.IncIndent();
+    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    {
+        symbol->Dump(formatter);
+    }
+    formatter.DecIndent();
+    formatter.WriteLine("end " + Name());
+}
+
 } } // namespace Cm::Sym

@@ -50,6 +50,7 @@
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />
+    <ClCompile Include="Error.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="FileRegistry.cpp" />
     <ClCompile Include="Function.cpp" />
@@ -74,6 +75,7 @@
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
+    <ClInclude Include="Error.hpp" />
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="FileRegistry.hpp" />
     <ClInclude Include="Function.hpp" />

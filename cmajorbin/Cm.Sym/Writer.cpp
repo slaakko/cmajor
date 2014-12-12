@@ -51,8 +51,7 @@ void Writer::Write(const Cm::Ast::DerivationList& derivationList)
 
 void Writer::Write(const TypeId& id)
 {
-    binaryWriter.Write(&id.BaseTypeId(), sizeof(Cm::Util::Uuid));
-    Write(id.Derivations());
+    binaryWriter.Write(&id.Rep(), sizeof(Cm::Util::Uuid));
 }
 
 void Writer::Write(Value* value)

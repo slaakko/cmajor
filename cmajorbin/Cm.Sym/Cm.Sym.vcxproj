@@ -26,6 +26,7 @@
     <ClInclude Include="ContainerSymbol.hpp" />
     <ClInclude Include="DeclarationVisitor.hpp" />
     <ClInclude Include="DelegateSymbol.hpp" />
+    <ClInclude Include="DerivedTypeSymbol.hpp" />
     <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="Exception.hpp" />
     <ClInclude Include="Factory.hpp" />
@@ -44,6 +45,7 @@
     <ClInclude Include="TemplateTypeSymbol.hpp" />
     <ClInclude Include="TypedefSymbol.hpp" />
     <ClInclude Include="TypeId.hpp" />
+    <ClInclude Include="TypeRepository.hpp" />
     <ClInclude Include="TypeSymbol.hpp" />
     <ClInclude Include="Value.hpp" />
     <ClInclude Include="Writer.hpp" />
@@ -56,6 +58,7 @@
     <ClCompile Include="ContainerSymbol.cpp" />
     <ClCompile Include="DeclarationVisitor.cpp" />
     <ClCompile Include="DelegateSymbol.cpp" />
+    <ClCompile Include="DerivedTypeSymbol.cpp" />
     <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="Factory.cpp" />
@@ -74,6 +77,7 @@
     <ClCompile Include="TemplateTypeSymbol.cpp" />
     <ClCompile Include="TypedefSymbol.cpp" />
     <ClCompile Include="TypeId.cpp" />
+    <ClCompile Include="TypeRepository.cpp" />
     <ClCompile Include="TypeSymbol.cpp" />
     <ClCompile Include="Value.cpp" />
     <ClCompile Include="Writer.cpp" />

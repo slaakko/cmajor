@@ -20,6 +20,7 @@ class TypedefSymbol : public Symbol
 public:
     TypedefSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::typedefSymbol; }
+    std::string TypeString() const override { return "typedef"; };
     bool IsExportSymbol() const override;
     bool IsTypedefSymbol() const override { return true; }
     void Write(Writer& writer) override;

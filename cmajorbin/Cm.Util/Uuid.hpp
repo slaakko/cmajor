@@ -21,6 +21,7 @@ public:
     Uuid();             // construct a random uuid
     Uuid(uint8_t id);   // construct a predefined uuid (first byte is id, others are 0)
     const boost::uuids::uuid& Tag() const { return tag; }
+    boost::uuids::uuid& Tag() { return tag; }
 private:
     boost::uuids::uuid tag;
 };
@@ -54,6 +55,8 @@ inline bool operator<=(const Uuid& left, const Uuid& right)
 {
     return std::rel_ops::operator<=(left, right);
 }
+
+Uuid operator^(const Uuid& left, const Uuid& right);
 
 } } // namespace Cm::Util
 

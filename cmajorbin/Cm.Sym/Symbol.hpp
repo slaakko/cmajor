@@ -10,10 +10,12 @@
 #ifndef CM_SYM_SYMBOL_INCLUDED
 #define CM_SYM_SYMBOL_INCLUDED
 #include <Cm.Parsing/Scanner.hpp>
+#include <Cm.Util/CodeFormatter.hpp>
 
 namespace Cm { namespace Sym {
 
 using Cm::Parsing::Span;
+using Cm::Util::CodeFormatter;
 
 class ContainerScope;
 class NamespaceSymbol;
@@ -23,9 +25,11 @@ enum class SymbolType : uint8_t
 {
     boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol,
     classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, localVariableSymbol, memberVariableSymbol, namespaceSymbol, 
-    parameterSymbol, templateParameterSymbol, templateTypeSymbol, typeSymbol, typedefSymbol,
+    parameterSymbol, templateParameterSymbol, templateTypeSymbol, typeSymbol, derivedTypeSymbol, typedefSymbol,
     maxSymbol
 };
+
+std::string SymbolTypeStr(SymbolType st);
 
 inline bool IsBasicSymbolType(SymbolType st)
 {
@@ -52,6 +56,8 @@ enum class SymbolFlags : uint8_t
     projectSource = 1 << 5
 };
 
+std::string SymbolFlagStr(SymbolFlags flags);
+
 inline SymbolFlags operator~(SymbolFlags flag)
 {
     return SymbolFlags(~uint8_t(flag));
@@ -76,6 +82,7 @@ public:
     virtual void Write(Writer& writer);
     virtual void Read(Reader& reader);
     const std::string& Name() const { return name; }
+    void SetName(const std::string& name_) { name = name_; }
     std::string FullName() const;
     const Span& GetSpan() const { return span; }
     void SetSpan(const Span& span_) { span = span_; }
@@ -83,6 +90,7 @@ public:
     void SetSource(SymbolSource source) { if (source == SymbolSource::project) SetFlag(SymbolFlags::projectSource); else ResetFlag(SymbolFlags::projectSource); }
     Symbol* Parent() const { return parent; }
     void SetParent(Symbol* parent_) { parent = parent_; }
+    virtual std::string TypeString() const { return "symbol"; };
     virtual void SetType(TypeSymbol* typeSymbol, int index);
     virtual ContainerScope* GetContainerScope() { return nullptr; }
     virtual bool IsNamespaceSymbol() const { return false; }
@@ -113,6 +121,7 @@ public:
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none;  }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
+    virtual void Dump(CodeFormatter& formatter);
 private:
     Span span;
     std::string name;

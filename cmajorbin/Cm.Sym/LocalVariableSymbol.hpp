@@ -21,6 +21,7 @@ class LocalVariableSymbol : public Symbol
 public:
     LocalVariableSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
+    std::string TypeString() const override { return "local variable"; };
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;

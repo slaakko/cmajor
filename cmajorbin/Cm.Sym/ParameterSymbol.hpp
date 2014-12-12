@@ -21,6 +21,7 @@ class ParameterSymbol : public Symbol
 public:
     ParameterSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::parameterSymbol; }
+    std::string TypeString() const override { return "parameter"; };
     bool IsExportSymbol() const override { return true; }
     bool IsParameterSymbol() const override { return true; }
     void Write(Writer& writer) override;
