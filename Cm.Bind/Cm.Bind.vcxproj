@@ -24,8 +24,11 @@
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Evaluator.hpp" />
     <ClInclude Include="Exception.hpp" />
+    <ClInclude Include="Expression.hpp" />
+    <ClInclude Include="LocalVariable.hpp" />
     <ClInclude Include="MemberVariable.hpp" />
     <ClInclude Include="Parameter.hpp" />
+    <ClInclude Include="Statement.hpp" />
     <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
   </ItemGroup>
@@ -35,8 +38,11 @@
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="Excecption.cpp" />
+    <ClCompile Include="Expression.cpp" />
+    <ClCompile Include="LocalVariable.cpp" />
     <ClCompile Include="MemberVariable.cpp" />
     <ClCompile Include="Parameter.cpp" />
+    <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeResolver.cpp" />
   </ItemGroup>

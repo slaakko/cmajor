@@ -10,7 +10,6 @@
 #include <Cm.Sym/Scope.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
-#include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <unordered_set>
@@ -158,7 +157,7 @@ NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsN
     return parentNs;
 }
 
-FileScope::FileScope() : typeRepository(new TypeRepository())
+FileScope::FileScope()
 {
 }
 
@@ -268,11 +267,6 @@ Symbol* FileScope::Lookup(const std::string& name, ScopeLookup lookup) const
     {
         return *foundSymbols.begin();
     }
-}
-
-TypeRepository& FileScope::GetTypeRepository()
-{
-    return *typeRepository;
 }
 
 } } // namespace Cm::Sym

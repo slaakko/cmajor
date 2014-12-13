@@ -112,11 +112,12 @@ namespace Cm.Parser
                 CompoundStatement(ctx){ value->SetBody(CompoundStatement); }
             ;
 
-        Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::ConstructorNode*
-            ::= ((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&'))){ pass = id->Str() == cls->Id()->Str(); if (pass) value = new ConstructorNode(span, Specifiers); }
-                ParameterList(ctx, value)
-                InitializerList(ctx, value)? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
-                (CompoundStatement(ctx){ value->SetBody(CompoundStatement); } | ';')
+        Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId, var std::unique_ptr<ConstructorNode> ctor): Cm::Ast::ConstructorNode*
+            ::= (((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&'))){ pass = id->Str() == cls->Id()->Str(); if (pass) ctor.reset(new ConstructorNode(span, Specifiers)); }
+                ParameterList(ctx, ctor.get())
+                InitializerList(ctx, ctor.get())? (WhereConstraint(ctx){ ctor->SetConstraint(WhereConstraint); })?){ ctor->GetSpan().SetEnd(span.End()); }
+                (CompoundStatement(ctx){ ctor->SetBody(CompoundStatement); } | ';')){ value = ctor.release(); }
+
             ;
 
         Destructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var Span s): Cm::Ast::DestructorNode*

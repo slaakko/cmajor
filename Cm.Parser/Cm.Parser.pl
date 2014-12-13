@@ -23,7 +23,7 @@ namespace Cm.Parser
         BaseInitializer(ParsingContext* ctx): Cm::Ast::BaseInitializerNode*;
         ThisInitializer(ParsingContext* ctx): Cm::Ast::ThisInitializerNode*;
         StaticConstructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::StaticConstructorNode*;
-        Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::ConstructorNode*;
+        Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId, var std::unique_ptr<ConstructorNode> ctor): Cm::Ast::ConstructorNode*;
         Destructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var Span s): Cm::Ast::DestructorNode*;
         MemberFunction(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Cm::Ast::MemberFunctionNode*;
         ConversionFunction(ParsingContext* ctx, var bool setConst, var Span s): Cm::Ast::ConversionFunctionNode*;
@@ -73,7 +73,7 @@ namespace Cm.Parser
     }
     grammar ConstantGrammar
     {
-        Constant(ParsingContext* ctx): Cm::Ast::Node*;
+        Constant(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr, var std::unique_ptr<IdentifierNode> id): Cm::Ast::Node*;
     }
     grammar ConceptGrammar
     {
@@ -86,7 +86,7 @@ namespace Cm.Parser
         AxiomStatement(ParsingContext* ctx): Cm::Ast::AxiomStatementNode*;
         TypenameConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
         SignatureConstraint(ParsingContext* ctx, std::string firstTypeParameter): Cm::Ast::ConstraintNode*;
-        ConstructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*;
+        ConstructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstraintNode> ctorConstraint): Cm::Ast::ConstraintNode*;
         DestructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*;
         MemberFunctionConstraint(ParsingContext* ctx, var std::unique_ptr<Node> returnType, var std::unique_ptr<IdentifierNode> typeParam): Cm::Ast::ConstraintNode*;
         FunctionConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*;

@@ -42,6 +42,8 @@ public:
     Value* ReadValue();
     void FetchTypeFor(Symbol* symbol, int index);
     void BackpatchType(TypeSymbol* type);
+    void SetSpanFileIndexOffset(int spanFileIndexOffset_);
+    void MarkSymbolsBound();
 private:
     BinaryReader binaryReader;
     SymbolTable& symbolTable;
@@ -49,6 +51,8 @@ private:
     typedef std::unordered_map<TypeId, FetchTypeList, TypeIdHash> FetchTypeMap;
     typedef FetchTypeMap::iterator FetchTypeMapIt;
     FetchTypeMap fetchTypeMap;
+    int spanFileIndexOffset;
+    bool markSymbolsBound;
 };
 
 } } // namespace Cm::Sym

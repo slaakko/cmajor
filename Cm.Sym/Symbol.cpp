@@ -77,7 +77,7 @@ std::string SymbolFlagStr(SymbolFlags flags)
     return s;
 }
 
-Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), flags(), parent(nullptr), bound(false)
+Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), flags(), parent(nullptr)
 {
     SetSource(SymbolSource::project);
 }

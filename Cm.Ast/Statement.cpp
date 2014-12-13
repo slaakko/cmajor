@@ -19,6 +19,14 @@ StatementNodeList::StatementNodeList()
 {
 }
 
+void StatementNodeList::SetParent(Node* parent)
+{
+    for (const std::unique_ptr<StatementNode>& statementNode : statementNodes)
+    {
+        statementNode->SetParent(parent);
+    }
+}
+
 void StatementNodeList::Read(Reader& reader)
 {
     uint32_t n = reader.ReadUInt();
@@ -77,7 +85,7 @@ void LabelNode::Write(Writer& writer)
     writer.Write(label);
 }
 
-StatementNode::StatementNode(const Span& span_) : Node(span_), parent(nullptr)
+StatementNode::StatementNode(const Span& span_) : Node(span_)
 {
 }
 
@@ -87,6 +95,7 @@ void StatementNode::Read(Reader& reader)
     if (hasLabel)
     {
         labelNode.reset(reader.ReadLabelNode());
+        labelNode->SetParent(this);
     }
 }
 
@@ -113,6 +122,7 @@ void StatementNode::Print(CodeFormatter& formatter)
 void StatementNode::SetLabelNode(LabelNode* labelNode_)
 {
     labelNode.reset(labelNode_);
+    labelNode->SetParent(this);
 }
 
 void StatementNode::CloneLabelTo(StatementNode* clone) const
@@ -123,22 +133,16 @@ void StatementNode::CloneLabelTo(StatementNode* clone) const
     }
 }
 
-Node* StatementNode::Parent() const
-{
-    return parent;
-}
-
-void StatementNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 SimpleStatementNode::SimpleStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
 SimpleStatementNode::SimpleStatementNode(const Span& span_, Node* expr_) : StatementNode(span_), expr(expr_)
 {
+    if (expr)
+    {
+        expr->SetParent(this);
+    }
 }
 
 Node* SimpleStatementNode::Clone() const
@@ -160,6 +164,7 @@ void SimpleStatementNode::Read(Reader& reader)
     if (hasExpr)
     {
         expr.reset(reader.ReadNode());
+        expr->SetParent(this);
     }
 }
 
@@ -203,6 +208,10 @@ ReturnStatementNode::ReturnStatementNode(const Span& span_) : StatementNode(span
 
 ReturnStatementNode::ReturnStatementNode(const Span& span_, Node* expr_) : StatementNode(span_), expr(expr_)
 {
+    if (expr)
+    {
+        expr->SetParent(this);
+    }
 }
 
 Node* ReturnStatementNode::Clone() const
@@ -224,6 +233,7 @@ void ReturnStatementNode::Read(Reader& reader)
     if (hasExpr)
     {
         expr.reset(reader.ReadNode());
+        expr->SetParent(this);
     }
 }
 
@@ -269,6 +279,7 @@ ConditionalStatementNode::ConditionalStatementNode(const Span& span_) : Statemen
 ConditionalStatementNode::ConditionalStatementNode(const Span& span_, Node* condition_, StatementNode* thenS_, StatementNode* elseS_) :
     StatementNode(span_), condition(condition_), thenS(thenS_), elseS(elseS_)
 {
+    condition->SetParent(this);
     thenS->SetParent(this);
     if (elseS)
     {
@@ -292,11 +303,14 @@ void ConditionalStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     condition.reset(reader.ReadNode());
+    condition->SetParent(this);
     thenS.reset(reader.ReadStatementNode());
+    thenS->SetParent(this);
     bool hasElseS = reader.ReadBool();
     if (hasElseS)
     {
         elseS.reset(reader.ReadStatementNode());
+        elseS->SetParent(this);
     }
 }
 
@@ -364,6 +378,7 @@ SwitchStatementNode::SwitchStatementNode(const Span& span_) : StatementNode(span
 
 SwitchStatementNode::SwitchStatementNode(const Span& span_, Node* condition_) : StatementNode(span_), condition(condition_)
 {
+    condition->SetParent(this);
 }
 
 void SwitchStatementNode::AddCase(StatementNode* caseS)
@@ -401,11 +416,14 @@ void SwitchStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     condition.reset(reader.ReadNode());
+    condition->SetParent(this);
     caseStatements.Read(reader);
+    caseStatements.SetParent(this);
     bool hasDefaultS = reader.ReadBool();
     if (hasDefaultS)
     {
         defaultStatement.reset(reader.ReadStatementNode());
+        defaultStatement->SetParent(this);
     }
 }
 
@@ -458,6 +476,7 @@ CaseStatementNode::CaseStatementNode(const Span& span_) : StatementNode(span_)
 
 void CaseStatementNode::AddExpr(Node* expr)
 {
+    expr->SetParent(this);
     expressions.Add(expr);
 }
 
@@ -486,7 +505,9 @@ void CaseStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     expressions.Read(reader);
+    expressions.SetParent(this);
     statements.Read(reader);
+    statements.SetParent(this);
 }
 
 void CaseStatementNode::Write(Writer& writer)
@@ -546,6 +567,7 @@ void DefaultStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     statements.Read(reader);
+    statements.SetParent(this);
 }
 
 void DefaultStatementNode::Write(Writer& writer)
@@ -578,6 +600,7 @@ GotoCaseStatementNode::GotoCaseStatementNode(const Span& span_) : StatementNode(
 
 GotoCaseStatementNode::GotoCaseStatementNode(const Span& span_, Node* targetCaseExpr_) : StatementNode(span_), targetCaseExpr(targetCaseExpr_)
 {
+    targetCaseExpr->SetParent(this);
 }
 
 Node* GotoCaseStatementNode::Clone() const
@@ -591,6 +614,7 @@ void GotoCaseStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     targetCaseExpr.reset(reader.ReadNode());
+    targetCaseExpr->SetParent(this);
 }
 
 void GotoCaseStatementNode::Write(Writer& writer)
@@ -643,6 +667,7 @@ WhileStatementNode::WhileStatementNode(const Span& span_) : StatementNode(span_)
 
 WhileStatementNode::WhileStatementNode(const Span& span_, Node* condition_, StatementNode* statement_) : StatementNode(span_), condition(condition_), statement(statement_)
 {
+    condition->SetParent(this);
     statement->SetParent(this);
 }
 
@@ -657,7 +682,9 @@ void WhileStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     condition.reset(reader.ReadNode());
+    condition->SetParent(this);
     statement.reset(reader.ReadStatementNode());
+    statement->SetParent(this);
 }
 
 void WhileStatementNode::Write(Writer& writer)
@@ -701,6 +728,7 @@ DoStatementNode::DoStatementNode(const Span& span_) : StatementNode(span_)
 DoStatementNode::DoStatementNode(const Span& span_, StatementNode* statement_, Node* condition_) : StatementNode(span_), statement(statement_), condition(condition_)
 {
     statement->SetParent(this);
+    condition->SetParent(this);
 }
 
 Node* DoStatementNode::Clone() const
@@ -714,7 +742,9 @@ void DoStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     statement.reset(reader.ReadStatementNode());
+    statement->SetParent(this);
     condition.reset(reader.ReadNode());
+    condition->SetParent(this);
 }
 
 void DoStatementNode::Write(Writer& writer)
@@ -759,6 +789,9 @@ RangeForStatementNode::RangeForStatementNode(const Span& span_) : StatementNode(
 RangeForStatementNode::RangeForStatementNode(const Span& span_, Node* varTypeExpr_, IdentifierNode* varId_, Node* container_, StatementNode* action_) :
     StatementNode(span_), varTypeExpr(varTypeExpr_), varId(varId_), container(container_), action(action_)
 {
+    varTypeExpr->SetParent(this);
+    varId->SetParent(this);
+    container->SetParent(this);
     action->SetParent(this);
 }
 
@@ -773,9 +806,13 @@ void RangeForStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     varTypeExpr.reset(reader.ReadNode());
+    varTypeExpr->SetParent(this);
     varId.reset(reader.ReadIdentifierNode());
+    varId->SetParent(this);
     container.reset(reader.ReadNode());
+    container->SetParent(this);
     action.reset(reader.ReadStatementNode());
+    action->SetParent(this);
 }
 
 void RangeForStatementNode::Write(Writer& writer)
@@ -822,6 +859,14 @@ ForStatementNode::ForStatementNode(const Span& span_, StatementNode* init_, Node
     StatementNode(span_), init(init_), condition(condition_), increment(increment_), action(action_)
 {
     init->SetParent(this);
+    if (condition)
+    {
+        condition->SetParent(this);
+    }
+    if (increment)
+    {
+        increment->SetParent(this);
+    }
     action->SetParent(this);
 }
 
@@ -850,13 +895,16 @@ void ForStatementNode::Read(Reader& reader)
     if (hasCond)
     {
         condition.reset(reader.ReadNode());
+        condition->SetParent(this);
     }
     bool hasInc = reader.ReadBool();
     if (hasInc)
     {
         increment.reset(reader.ReadNode());
+        increment->SetParent(this);
     }
     action.reset(reader.ReadStatementNode());
+    action->SetParent(this);
 }
 
 void ForStatementNode::Write(Writer& writer)
@@ -951,6 +999,7 @@ void CompoundStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     statements.Read(reader);
+    statements.SetParent(this);
 }
 
 void CompoundStatementNode::Write(Writer& writer)
@@ -1026,6 +1075,7 @@ GotoStatementNode::GotoStatementNode(const Span& span_) : StatementNode(span_)
 
 GotoStatementNode::GotoStatementNode(const Span& span_, LabelNode* target_) : StatementNode(span_), target(target_)
 {
+    target->SetParent(this);
 }
 
 Node* GotoStatementNode::Clone() const
@@ -1039,6 +1089,7 @@ void GotoStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     target.reset(reader.ReadLabelNode());
+    target->SetParent(this);
 }
 
 void GotoStatementNode::Write(Writer& writer)
@@ -1064,6 +1115,8 @@ TypedefStatementNode::TypedefStatementNode(const Span& span_) : StatementNode(sp
 
 TypedefStatementNode::TypedefStatementNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_) : StatementNode(span_), typeExpr(typeExpr_), id(id_)
 {
+    typeExpr->SetParent(this);
+    id->SetParent(this);
 }
 
 Node* TypedefStatementNode::Clone() const
@@ -1077,7 +1130,9 @@ void TypedefStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
 }
 
 void TypedefStatementNode::Write(Writer& writer)
@@ -1104,6 +1159,8 @@ AssignmentStatementNode::AssignmentStatementNode(const Span& span_) : StatementN
 
 AssignmentStatementNode::AssignmentStatementNode(const Span& span_, Node* targetExpr_, Node* sourceExpr_) : StatementNode(span_), targetExpr(targetExpr_), sourceExpr(sourceExpr_)
 {
+    targetExpr->SetParent(this);
+    sourceExpr->SetParent(this);
 }
 
 Node* AssignmentStatementNode::Clone() const
@@ -1117,7 +1174,9 @@ void AssignmentStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     targetExpr.reset(reader.ReadNode());
+    targetExpr->SetParent(this);
     sourceExpr.reset(reader.ReadNode());
+    sourceExpr->SetParent(this);
 }
 
 void AssignmentStatementNode::Write(Writer& writer)
@@ -1150,10 +1209,13 @@ ConstructionStatementNode::ConstructionStatementNode(const Span& span_) : Statem
 
 ConstructionStatementNode::ConstructionStatementNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_) : StatementNode(span_), typeExpr(typeExpr_), id(id_)
 {
+    typeExpr->SetParent(this);
+    id->SetParent(this);
 }
 
 void ConstructionStatementNode::AddArgument(Node* argument)
 {
+    argument->SetParent(this);
     arguments.Add(argument);
 }
 
@@ -1172,8 +1234,11 @@ void ConstructionStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     arguments.Read(reader);
+    arguments.SetParent(this);
 }
 
 void ConstructionStatementNode::Write(Writer& writer)
@@ -1211,6 +1276,7 @@ DeleteStatementNode::DeleteStatementNode(const Span& span_) : StatementNode(span
 
 DeleteStatementNode::DeleteStatementNode(const Span& span_, Node* pointerExpr_) : StatementNode(span_), pointerExpr(pointerExpr_)
 {
+    pointerExpr->SetParent(this);
 }
 
 Node* DeleteStatementNode::Clone() const
@@ -1224,6 +1290,7 @@ void DeleteStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     pointerExpr.reset(reader.ReadNode());
+    pointerExpr->SetParent(this);
 }
 
 void DeleteStatementNode::Write(Writer& writer)
@@ -1254,6 +1321,7 @@ DestroyStatementNode::DestroyStatementNode(const Span& span_) : StatementNode(sp
 
 DestroyStatementNode::DestroyStatementNode(const Span& span_, Node* pointerExpr_) : StatementNode(span_), pointerExpr(pointerExpr_)
 {
+    pointerExpr->SetParent(this);
 }
 
 Node* DestroyStatementNode::Clone() const
@@ -1267,6 +1335,7 @@ void DestroyStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     pointerExpr.reset(reader.ReadNode());
+    pointerExpr->SetParent(this);
 }
 
 void DestroyStatementNode::Write(Writer& writer)
@@ -1297,6 +1366,7 @@ ThrowStatementNode::ThrowStatementNode(const Span& span_) : StatementNode(span_)
 
 ThrowStatementNode::ThrowStatementNode(const Span& span_, Node* exceptionExpr_) : StatementNode(span_), exceptionExpr(exceptionExpr_)
 {
+    exceptionExpr->SetParent(this);
 }
 
 Node* ThrowStatementNode::Clone() const
@@ -1310,6 +1380,7 @@ void ThrowStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     exceptionExpr.reset(reader.ReadNode());
+    exceptionExpr->SetParent(this);
 }
 
 void ThrowStatementNode::Write(Writer& writer)
@@ -1364,7 +1435,9 @@ void TryStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     tryBlock.reset(reader.ReadCompoundStatementNode());
+    tryBlock->SetParent(this);
     handlers.Read(reader);
+    handlers.SetParent(this);
 }
 
 void TryStatementNode::Write(Writer& writer)
@@ -1392,13 +1465,18 @@ void TryStatementNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-CatchNode::CatchNode(const Span& span_) : Node(span_), parent(nullptr)
+CatchNode::CatchNode(const Span& span_) : Node(span_)
 {
 }
 
 CatchNode::CatchNode(const Span& span_, Node* exceptionTypeExpr_, IdentifierNode* exceptionId_, CompoundStatementNode* catchBlock_) :
-    Node(span_), exceptionTypeExpr(exceptionTypeExpr_), exceptionId(exceptionId_), catchBlock(catchBlock_), parent(nullptr)
+    Node(span_), exceptionTypeExpr(exceptionTypeExpr_), exceptionId(exceptionId_), catchBlock(catchBlock_)
 {
+    exceptionTypeExpr->SetParent(this);
+    if (exceptionId)
+    {
+        exceptionId->SetParent(this);
+    }
     catchBlock->SetParent(this);
 }
 
@@ -1415,12 +1493,15 @@ Node* CatchNode::Clone() const
 void CatchNode::Read(Reader& reader)
 {
     exceptionTypeExpr.reset(reader.ReadNode());
+    exceptionTypeExpr->SetParent(this);
     bool hasId = reader.ReadBool();
     if (hasId)
     {
         exceptionId.reset(reader.ReadIdentifierNode());
+        exceptionId->SetParent(this);
     }
     catchBlock.reset(reader.ReadCompoundStatementNode());
+    catchBlock->SetParent(this);
 }
 
 void CatchNode::Write(Writer& writer) 
@@ -1441,16 +1522,6 @@ void CatchNode::Print(CodeFormatter& formatter)
     catchBlock->Print(formatter);
 }
 
-Node* CatchNode::Parent() const
-{
-    return parent;
-}
-
-void CatchNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 void CatchNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
@@ -1464,6 +1535,7 @@ AssertStatementNode::AssertStatementNode(const Span& span_) : StatementNode(span
 
 AssertStatementNode::AssertStatementNode(const Span& span_, Node* assertExpr_) : StatementNode(span_), assertExpr(assertExpr_)
 {
+    assertExpr->SetParent(this);
 }
 
 Node* AssertStatementNode::Clone() const
@@ -1477,6 +1549,7 @@ void AssertStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     assertExpr.reset(reader.ReadNode());
+    assertExpr->SetParent(this);
 }
 
 void AssertStatementNode::Write(Writer& writer)
@@ -1535,12 +1608,16 @@ CondCompBinExprNode::CondCompBinExprNode(const Span& span_) : CondCompExprNode(s
 
 CondCompBinExprNode::CondCompBinExprNode(const Span& span_, CondCompExprNode* left_, CondCompExprNode* right_) : CondCompExprNode(span_), left(left_), right(right_)
 {
+    left->SetParent(this);
+    right->SetParent(this);
 }
 
 void CondCompBinExprNode::Read(Reader& reader)
 {
     left.reset(reader.ReadCondCompExprNode());
+    left->SetParent(this);
     right.reset(reader.ReadCondCompExprNode());
+    right->SetParent(this);
 }
 
 void CondCompBinExprNode::Write(Writer& writer)
@@ -1625,6 +1702,7 @@ CondCompNotNode::CondCompNotNode(const Span& span_) : CondCompExprNode(span_)
 
 CondCompNotNode::CondCompNotNode(const Span& span_, CondCompExprNode* subject_) : CondCompExprNode(span_), subject(subject_)
 {
+    subject->SetParent(this);
 }
 
 Node* CondCompNotNode::Clone() const
@@ -1635,6 +1713,7 @@ Node* CondCompNotNode::Clone() const
 void CondCompNotNode::Read(Reader& reader)
 {
     subject.reset(reader.ReadCondCompExprNode());
+    subject->SetParent(this);
 }
 
 void CondCompNotNode::Write(Writer& writer)
@@ -1669,6 +1748,7 @@ CondCompPrimaryNode::CondCompPrimaryNode(const Span& span_) : CondCompExprNode(s
 
 CondCompPrimaryNode::CondCompPrimaryNode(const Span& span_, CondCompSymbolNode* symbolNode_) : CondCompExprNode(span_), symbolNode(symbolNode_)
 {
+    symbolNode->SetParent(this);
 }
 
 Node* CondCompPrimaryNode::Clone() const
@@ -1679,6 +1759,7 @@ Node* CondCompPrimaryNode::Clone() const
 void CondCompPrimaryNode::Read(Reader& reader)
 {
     symbolNode.reset(reader.ReadCondCompSymbolNode());
+    symbolNode->SetParent(this);
 }
 
 void CondCompPrimaryNode::Write(Writer& writer)
@@ -1696,12 +1777,16 @@ void CondCompPrimaryNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-CondCompilationPartNode::CondCompilationPartNode(const Span& span_) : Node(span_), parent(nullptr)
+CondCompilationPartNode::CondCompilationPartNode(const Span& span_) : Node(span_)
 {
 }
 
-CondCompilationPartNode::CondCompilationPartNode(const Span& span_, CondCompExprNode* expr_) : Node(span_), expr(expr_), parent(nullptr)
+CondCompilationPartNode::CondCompilationPartNode(const Span& span_, CondCompExprNode* expr_) : Node(span_), expr(expr_)
 {
+    if (expr)
+    {
+        expr->SetParent(this);
+    }
 }
 
 void CondCompilationPartNode::AddStatement(StatementNode* statement)
@@ -1726,8 +1811,10 @@ void CondCompilationPartNode::Read(Reader& reader)
     if (exprPresent)
     {
         expr.reset(reader.ReadCondCompExprNode());
+        expr->SetParent(this);
     }
     statements.Read(reader);
+    statements.SetParent(this);
 }
 
 void CondCompilationPartNode::Write(Writer& writer)
@@ -1747,16 +1834,6 @@ void CondCompilationPartNode::Print(CodeFormatter& formatter)
     formatter.IncIndent();
     statements.Print(formatter);
     formatter.DecIndent();
-}
-
-Node* CondCompilationPartNode::Parent() const
-{
-    return parent;
-}
-
-void CondCompilationPartNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 void CondCompilationPartNode::Accept(Visitor& visitor)
@@ -1798,6 +1875,14 @@ void CondCompilationPartNodeList::Accept(Visitor& visitor)
     }
 }
 
+void CondCompilationPartNodeList::SetParent(Node* parent)
+{
+    for (const std::unique_ptr<CondCompilationPartNode>& part : partNodes)
+    {
+        part->SetParent(parent);
+    }
+}
+
 CondCompStatementNode::CondCompStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
@@ -1830,11 +1915,14 @@ void CondCompStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     ifPart.reset(reader.ReadCondCompPartNode());
+    ifPart->SetParent(this);
     elifParts.Read(reader);
+    elifParts.SetParent(this);
     bool elsePartPresent = reader.ReadBool();
     if (elsePartPresent)
     {
         elsePart.reset(reader.ReadCondCompPartNode());
+        elsePart->SetParent(this);
     }
 }
 

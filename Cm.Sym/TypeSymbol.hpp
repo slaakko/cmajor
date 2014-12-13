@@ -21,7 +21,6 @@ public:
     TypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::typeSymbol; }
     std::string TypeString() const override { return "type"; };
-    bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     bool IsTypeSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;

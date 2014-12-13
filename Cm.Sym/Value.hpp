@@ -21,7 +21,7 @@ using Cm::Parsing::Span;
 
 enum class ValueType : uint8_t
 {
-    none, boolValue, charValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, max
+    none, boolValue, charValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, stringValue, max
 };
 
 std::string ValueTypeStr(ValueType valueType);
@@ -229,6 +229,21 @@ public:
     double Value() const { return value; }
 private:
     double value;
+};
+
+class StringValue : public Value
+{
+public:
+    StringValue();
+    StringValue(const std::string& value_);
+    ValueType GetValueType() const override { return ValueType::stringValue; }
+    Value* Clone() const override;
+    void Read(Cm::Ser::BinaryReader& reader) override;
+    void Write(Cm::Ser::BinaryWriter& writer) override;
+    Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    const std::string& Value() const { return value; }
+private:
+    std::string value;
 };
 
 } } // namespace Cm::Sym

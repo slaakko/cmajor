@@ -24,15 +24,12 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* Id() const { return id.get(); }
-    bool IsGlobalNamespaceNode() const { return parent == nullptr; }
+    bool IsGlobalNamespaceNode() const { return Parent() == nullptr; }
 private:
     std::unique_ptr<IdentifierNode> id;
     NodeList members;
-    Node* parent;
 };
 
 class AliasNode : public Node
@@ -45,15 +42,12 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* Id() const { return id.get(); }
     IdentifierNode* Qid() const { return qid.get(); }
 private:
     std::unique_ptr<IdentifierNode> id;
     std::unique_ptr<IdentifierNode> qid;
-    Node* parent;
 };
 
 class NamespaceImportNode : public Node
@@ -66,13 +60,10 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* Ns() const { return ns.get(); }
 private:
     std::unique_ptr<IdentifierNode> ns;
-    Node* parent;
 };
 
 } } // namespace Cm::Ast

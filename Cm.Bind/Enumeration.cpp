@@ -35,7 +35,7 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             if (underlyingTypeNode)
             {
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(underlyingTypeNode);
-                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScope, TypeResolverTarget::enumType, underlyingTypeNode);
+                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScope, underlyingTypeNode);
                 if (underlyingType->IsBasicTypeSymbol())
                 {
                     enumTypeSymbol->SetUnderlyingType(underlyingType);
@@ -50,6 +50,7 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
                 enumTypeSymbol->SetUnderlyingType(symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
             }
             enumTypeSymbol->SetBound();
+            enumTypeSymbol->SetExportSymbol();
         }
         else
         {
@@ -91,6 +92,7 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
             enumConstantSymbol->ResetEvaluating();
             enumConstantSymbol->SetValue(value);
             enumConstantSymbol->SetBound();
+            enumConstantSymbol->SetExportSymbol();
         }
         else
         {

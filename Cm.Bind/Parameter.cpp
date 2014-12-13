@@ -36,9 +36,11 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
             {
                 return;
             }
-            Cm::Sym::TypeSymbol* parameterType = ResolveType(symbolTable, containerScope, fileScope, TypeResolverTarget::parameter, parameterNode->TypeExpr());
+            Cm::Sym::TypeSymbol* parameterType = ResolveType(symbolTable, containerScope, fileScope, parameterNode->TypeExpr());
+            parameterType->SetExportSymbol();
             parameterSymbol->SetType(parameterType);
             parameterSymbol->SetBound();
+            parameterSymbol->SetExportSymbol();
         }
         else
         {

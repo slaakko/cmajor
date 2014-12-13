@@ -27,6 +27,7 @@ public:
     StatementNode* operator[](int index) const { return statementNodes[index].get(); }
     StatementNode* Back() const { return statementNodes.back().get(); }
     void Add(StatementNode* statement) { statementNodes.push_back(std::unique_ptr<StatementNode>(statement)); }
+    void SetParent(Node* parent);
     void Read(Reader& reader);
     void Write(Writer& writer);
     void Print(CodeFormatter& formatter);
@@ -60,12 +61,9 @@ public:
     void Print(CodeFormatter& formatter) override;
     void SetLabelNode(LabelNode* labelNode_);
     void CloneLabelTo(StatementNode* clone) const;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     LabelNode* Label() const { return labelNode.get(); }
 private:
     std::unique_ptr<LabelNode> labelNode;
-    Node* parent;
 };
 
 class SimpleStatementNode : public StatementNode
@@ -446,8 +444,6 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
     Node* ExceptionTypeExpr() const { return exceptionTypeExpr.get(); }
     IdentifierNode* ExceptionId() const { return exceptionId.get(); }
@@ -455,7 +451,6 @@ private:
     std::unique_ptr<Node> exceptionTypeExpr;
     std::unique_ptr<IdentifierNode> exceptionId;
     std::unique_ptr<CompoundStatementNode> catchBlock;
-    Node* parent;
 };
 
 class AssertStatementNode : public StatementNode
@@ -579,13 +574,10 @@ public:
     void AddStatement(StatementNode* statement);
     bool IsCondCompPartNode() const override { return true; }
     CondCompExprNode* Expr() const { return expr.get(); }
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<CondCompExprNode> expr;
     StatementNodeList statements;
-    Node* parent;
 };
 
 class CondCompilationPartNodeList
@@ -602,6 +594,7 @@ public:
     void Read(Reader& reader);
     void Write(Writer& writer);
     void Accept(Visitor& visitor);
+    void SetParent(Node* parent);
 private:
     std::vector<std::unique_ptr<CondCompilationPartNode>> partNodes;
 };

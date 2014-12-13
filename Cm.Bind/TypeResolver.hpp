@@ -15,12 +15,7 @@
 
 namespace Cm { namespace Bind {
 
-enum class TypeResolverTarget
-{
-    constant, enumType, memberVariable, parameter, typedef_
-};
-
-Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, Cm::Sym::FileScope* fileScope, TypeResolverTarget target, Cm::Ast::Node* typeExpr);
+Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::Node* typeExpr);
 
 } } // namespace Cm::Bind
 

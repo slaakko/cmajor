@@ -23,7 +23,6 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
     std::string TypeString() const override { return "member variable"; };
     bool IsMemberVariableSymbol() const override { return true; }
-    bool IsExportSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;

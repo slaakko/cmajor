@@ -19,6 +19,7 @@ class FileRegistry
 public:
     int RegisterParsedFile(const std::string& filePath);
     const std::string& GetParsedFileName(int parsedFileIndex) const;
+    int GetNumberOfParsedFiles() const { return int(parsedFiles.size()); }
 private:
     std::vector<std::string> parsedFiles;
 };

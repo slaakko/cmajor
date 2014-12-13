@@ -14,11 +14,11 @@
 
 namespace Cm { namespace Ast {
 
-Node::Node()
+Node::Node() : span(), parent(nullptr)
 {
 }
 
-Node::Node(const Span& span_): span(span_)
+Node::Node(const Span& span_): span(span_), parent(nullptr)
 {
 }
 
@@ -61,16 +61,6 @@ void Node::Write(Writer& writer)
 }
 
 void Node::Print(CodeFormatter& formatter)
-{
-    throw std::runtime_error("member function not applicable");
-}
-
-Node* Node::Parent() const
-{
-    throw std::runtime_error("member function not applicable");
-}
-
-void Node::SetParent(Node* parent_)
 {
     throw std::runtime_error("member function not applicable");
 }
@@ -129,11 +119,13 @@ UnaryNode::UnaryNode(const Span& span_): Node(span_)
 
 UnaryNode::UnaryNode(const Span& span_, Node* child_): Node(span_), child(child_)
 {
+    child->SetParent(this);
 }
 
 void UnaryNode::Read(Reader& reader)
 {
     child.reset(reader.ReadNode());
+    child->SetParent(this);
 }
 
 void UnaryNode::Write(Writer& writer) 
@@ -168,12 +160,16 @@ BinaryNode::BinaryNode(const Span& span_) : Node(span_)
 
 BinaryNode::BinaryNode(const Span& span_, Node* left_, Node* right_) : Node(span_), left(left_), right(right_)
 {
+    left->SetParent(this);
+    right->SetParent(this);
 }
 
 void BinaryNode::Read(Reader& reader)
 {
     left.reset(reader.ReadNode());
+    left->SetParent(this);
     right.reset(reader.ReadNode());
+    right->SetParent(this);
 }
 
 void BinaryNode::Write(Writer& writer)
@@ -215,6 +211,14 @@ void BinaryNode::Accept(Visitor& visitor)
 
 NodeList::NodeList()
 {
+}
+
+void NodeList::SetParent(Node* parent)
+{
+    for (const std::unique_ptr<Node>& node : nodes)
+    {
+        node->SetParent(parent);
+    }
 }
 
 void NodeList::Read(Reader& reader)

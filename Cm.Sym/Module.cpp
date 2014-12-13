@@ -11,13 +11,14 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
 #include <iostream>
 
 namespace Cm { namespace Sym {
 
 ModuleFileVersionMismatch::ModuleFileVersionMismatch(const std::string& readVersion_, const std::string& expectedVersion_) : 
-    std::runtime_error("module code file version mismatch: " + readVersion_ + " read " + expectedVersion_ + " expected."), readVersion(readVersion_), expectedVersion(expectedVersion_)
+    std::runtime_error("module code file version mismatch: " + readVersion_ + " read, " + expectedVersion_ + " expected."), readVersion(readVersion_), expectedVersion(expectedVersion_)
 {
 }
 
@@ -27,13 +28,34 @@ Module::Module(const std::string& filePath_) : filePath(filePath_)
 {
 }
 
-void Module::Export(SymbolTable& symbolTable)
+void Module::SetSourceFilePaths(const std::vector<std::string>& sourceFilePaths_)
 {
-    Writer writer(filePath);
+    sourceFilePaths = sourceFilePaths_;
+}
+
+void Module::WriteModuleFileId(Writer& writer)
+{
     for (int i = 0; i < 4; ++i)
     {
         writer.GetBinaryWriter().Write(moduleFileId[i]);
     }
+}
+
+void Module::WriteSourceFilePaths(Writer& writer)
+{
+    int32_t n = int32_t(sourceFilePaths.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        writer.GetBinaryWriter().Write(sourceFilePaths[i]);
+    }
+}
+
+void Module::Export(SymbolTable& symbolTable)
+{
+    Writer writer(filePath);
+    WriteModuleFileId(writer);
+    WriteSourceFilePaths(writer);
     symbolTable.Export(writer);
 }
 
@@ -65,10 +87,34 @@ void Module::CheckModuleFileId(Reader& reader)
     }
 }
 
+void Module::ReadSourceFilePaths(Reader& reader)
+{
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        std::string sourceFilePath = reader.GetBinaryReader().ReadString();
+        sourceFilePaths.push_back(sourceFilePath);
+    }
+}
+
 void Module::ImportTo(SymbolTable& symbolTable)
 {
     Reader reader(filePath, symbolTable);
     CheckModuleFileId(reader);
+    ReadSourceFilePaths(reader);
+    Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::GetCurrentFileRegistry();
+    int fileIndexOffset = 0;
+    if (fileRegistry)
+    {
+        fileIndexOffset = fileRegistry->GetNumberOfParsedFiles();
+        reader.SetSpanFileIndexOffset(fileIndexOffset);
+        int n = int(sourceFilePaths.size());
+        for (int i = 0; i < n; ++i)
+        {
+            fileRegistry->RegisterParsedFile(sourceFilePaths[i]);
+        }
+    }
+    reader.MarkSymbolsBound();
     symbolTable.Import(reader);
 }
 
@@ -95,6 +141,7 @@ void Module::Dump()
     Cm::Util::CodeFormatter formatter(std::cout);
     formatter.IndentSize() = 1;
     formatter.WriteLine("module code file '" + filePath + "' version " + readVersion + " (version " + expectedVersion + " expected).");
+    ReadSourceFilePaths(reader);
     std::unique_ptr<Symbol> symbol(reader.ReadSymbol());
     if (symbol->IsNamespaceSymbol())
     {

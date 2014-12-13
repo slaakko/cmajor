@@ -30,6 +30,7 @@ public:
     void Write(Writer& writer);
     std::string ToString() const;
     void Accept(Visitor& visitor);
+    void SetParent(Node* parent);
 private:
     std::vector<std::unique_ptr<TemplateParameterNode>> templateParameterNodes;
 };

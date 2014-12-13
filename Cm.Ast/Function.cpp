@@ -39,33 +39,48 @@ void FunctionGroupIdNode::Write(Writer& writer)
     writer.Write(functionGroupId);
 }
 
-FunctionNode::FunctionNode(const Span& span_) : Node(span_), parent(nullptr)
+FunctionNode::FunctionNode(const Span& span_) : Node(span_)
 {
 }
 
 FunctionNode::FunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_) :
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_), parent(nullptr)
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_)
 {
+    if (returnTypeExpr)
+    {
+        returnTypeExpr->SetParent(this);
+    }
+    groupId->SetParent(this);
 }
 
 void FunctionNode::AddTemplateParameter(TemplateParameterNode* templateParameter)
 {
+    templateParameter->SetParent(this);
     templateParameters.Add(templateParameter);
 }
 
 void FunctionNode::AddParameter(ParameterNode* parameter)
 {
+    parameter->SetParent(this);
     parameters.Add(parameter);
 }
 
 void FunctionNode::SetConstraint(WhereConstraintNode* constraint_)
 {
     constraint.reset(constraint_);
+    if (constraint)
+    {
+        constraint->SetParent(this);
+    }
 }
 
 void FunctionNode::SetBody(CompoundStatementNode* body_)
 {
     body.reset(body_);
+    if (body)
+    {
+        body->SetParent(this);
+    }
 }
 
 Node* FunctionNode::Clone() const
@@ -94,19 +109,25 @@ void FunctionNode::Read(Reader& reader)
     if (hasReturnTypeExpr)
     {
         returnTypeExpr.reset(reader.ReadNode());
+        returnTypeExpr->SetParent(this);
     }
     groupId.reset(reader.ReadFunctionGroupIdNode());
+    groupId->SetParent(this);
     templateParameters.Read(reader);
+    templateParameters.SetParent(this);
     parameters.Read(reader);
+    parameters.SetParent(this);
     bool hasConstraint = reader.ReadBool();
     if (hasConstraint)
     {
         constraint.reset(reader.ReadWhereConstraintNode());
+        constraint->SetParent(this);
     }
     bool hasBody = reader.ReadBool();
     if (hasBody)
     {
         body.reset(reader.ReadCompoundStatementNode());
+        body->SetParent(this);
     }
 }
 
@@ -164,16 +185,6 @@ void FunctionNode::Print(CodeFormatter& formatter)
     }
 }
 
-Node* FunctionNode::Parent() const
-{
-    return parent;
-}
-
-void FunctionNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 std::string FunctionNode::Name() const 
 {
     std::string name = groupId->Str();
@@ -184,10 +195,14 @@ std::string FunctionNode::Name() const
 void FunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    parameters.Accept(visitor);
-    if (body)
+    if (!visitor.SkipContent())
     {
-        body->Accept(visitor);
+        templateParameters.Accept(visitor);
+        parameters.Accept(visitor);
+        if (body)
+        {
+            body->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }

@@ -21,6 +21,11 @@ ParameterNode::ParameterNode(const Span& span_) : Node(span_)
 
 ParameterNode::ParameterNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_) : Node(span_), typeExpr(typeExpr_), id(id_)
 {
+    typeExpr->SetParent(this);
+    if (id)
+    {
+        id->SetParent(this);
+    }
 }
 
 Node* ParameterNode::Clone() const
@@ -31,10 +36,12 @@ Node* ParameterNode::Clone() const
 void ParameterNode::Read(Reader& reader)
 {
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     bool hasId = reader.ReadBool();
     if (hasId)
     {
         id.reset(reader.ReadIdentifierNode());
+        id->SetParent(this);
     }
 }
 
@@ -113,6 +120,14 @@ std::string ParameterNodeList::ToString() const
     }
     s.append(1, ')');
     return s;
+}
+
+void ParameterNodeList::SetParent(Node* parent)
+{
+    for (const std::unique_ptr<ParameterNode>& parameter : parameterNodes)
+    {
+        parameter->SetParent(parent);
+    }
 }
 
 } } // namespace Cm::Ast

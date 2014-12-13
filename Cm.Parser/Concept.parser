@@ -88,9 +88,11 @@ namespace Cm.Parser
             |   FunctionConstraint(ctx){ value = FunctionConstraint; }
             ;
 
-        ConstructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*
-            ::= (keyword("explicit")? Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; if (pass) value = new ConstructorConstraintNode(span); } ParameterList(ctx, value) ';'!)
+        ConstructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstraintNode> ctorConstraint): Cm::Ast::ConstraintNode*
+            ::= (keyword("explicit")? Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; if (pass) ctorConstraint.reset(new ConstructorConstraintNode(span)); } 
+                ParameterList(ctx, ctorConstraint.get()) ';'!)
                 { 
+                    value = ctorConstraint.release();
                     value->GetSpan().SetEnd(span.End());
                 }
             ;

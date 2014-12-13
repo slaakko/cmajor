@@ -198,13 +198,17 @@ void SymbolTable::EndEnumScope()
 void SymbolTable::AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode)
 {
     Cm::Ast::IdentifierNode* enumConstantId = enumConstantNode->Id();
-    container->AddSymbol(new EnumConstantSymbol(enumConstantId->GetSpan(), enumConstantId->Str()));
+    EnumConstantSymbol* enumConstantSymbol = new EnumConstantSymbol(enumConstantId->GetSpan(), enumConstantId->Str());
+    container->AddSymbol(enumConstantSymbol);
+    symbolNodeMap[enumConstantSymbol] = enumConstantNode;
 }
 
 void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
 {
     Cm::Ast::IdentifierNode* typedefId = typedefNode->Id();
-    container->AddSymbol(new TypedefSymbol(typedefId->GetSpan(), typedefId->Str()));
+    TypedefSymbol* typedefSymbol = new TypedefSymbol(typedefId->GetSpan(), typedefId->Str());
+    container->AddSymbol(typedefSymbol);
+    symbolNodeMap[typedefSymbol] = typedefNode;
 }
 
 void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode)
@@ -324,6 +328,10 @@ ContainerScope* SymbolTable::GetContainerScope(Cm::Ast::Node* node) const
     if (i != nodeScopeMap.end())
     {
         return i->second;
+    }
+    else if (node->Parent())
+    {
+        return GetContainerScope(node->Parent());
     }
     else
     {

@@ -55,7 +55,7 @@ ValueType GetCommonType(ValueType left, ValueType right)
 
 const char* valueTypeStr[uint8_t(ValueType::max)] =
 {
-    "", "bool", "char", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double"
+    "", "bool", "char", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "string"
 };
 
 std::string ValueTypeStr(ValueType valueType)
@@ -1717,6 +1717,35 @@ Value* DoubleValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+StringValue::StringValue() : value("")
+{
+}
+
+StringValue::StringValue(const std::string& value_) : value(value_)
+{
+}
+
+
+Value* StringValue::Clone() const 
+{
+    return new StringValue(value);
+}
+
+void StringValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    value = reader.ReadString();
+}
+
+void StringValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(value);
+}
+
+Value* StringValue::As(ValueType targetType, bool cast, const Span& span) const
+{
+    throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span);
 }
 
 } } // namespace Cm::Sym
