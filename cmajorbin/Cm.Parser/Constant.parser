@@ -28,8 +28,11 @@ namespace Cm.Parser
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
 
-        Constant(ParsingContext* ctx): Cm::Ast::Node*
-            ::= (Specifiers keyword("const") TypeExpr(ctx) Identifier '=' Expression(ctx)! ';'!){ value = new ConstantNode(span, Specifiers, TypeExpr, Identifier, Expression); }
+        Constant(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr, var std::unique_ptr<IdentifierNode> id): Cm::Ast::Node*
+            ::= (Specifiers keyword("const") TypeExpr(ctx){ typeExpr.reset(TypeExpr); } Identifier{ id.reset(Identifier); } '=' Expression(ctx)! ';'!)
+                { 
+                    value = new ConstantNode(span, Specifiers, typeExpr.release(), id.release(), Expression); 
+                }
             ;
     }
 }

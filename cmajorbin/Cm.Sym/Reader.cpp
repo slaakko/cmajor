@@ -15,20 +15,34 @@
 
 namespace Cm { namespace Sym {
 
-Reader::Reader(const std::string& fileName, SymbolTable& symbolTable_) : binaryReader(fileName), symbolTable(symbolTable_)
+Reader::Reader(const std::string& fileName, SymbolTable& symbolTable_) : binaryReader(fileName), symbolTable(symbolTable_), spanFileIndexOffset(0), markSymbolsBound(false)
 {
+}
+
+void Reader::SetSpanFileIndexOffset(int spanFileIndexOffset_)
+{
+    spanFileIndexOffset = spanFileIndexOffset_;
+}
+
+void Reader::MarkSymbolsBound()
+{
+    markSymbolsBound = true;
 }
 
 SymbolType Reader::ReadSymbolType()
 {
-    uint8_t st = binaryReader.ReadByte();
-    return SymbolType(st);
+uint8_t st = binaryReader.ReadByte();
+return SymbolType(st);
 }
 
 Span Reader::ReadSpan()
 {
     Span span;
     binaryReader.Read(&span, sizeof(span));
+    if (spanFileIndexOffset > 0)
+    {
+        span.SetFileIndex(span.FileIndex() + spanFileIndexOffset);
+    }
     return span;
 }
 
@@ -109,6 +123,10 @@ Symbol* Reader::ReadSymbol()
     if (IsBasicSymbolType(symbolType))
     {
         Symbol* symbol = SymbolFactory::Instance().CreateBasicTypeSymbol(symbolType);
+        if (markSymbolsBound)
+        {
+            symbol->SetBound();
+        }
         return symbol;
     }
     else
@@ -116,6 +134,10 @@ Symbol* Reader::ReadSymbol()
         Span span = ReadSpan();
         std::string name = binaryReader.ReadString();
         Symbol* symbol = SymbolFactory::Instance().CreateSymbol(symbolType, span, name);
+        if (markSymbolsBound)
+        {
+            symbol->SetBound();
+        }
         symbol->Read(*this);
         return symbol;
     }

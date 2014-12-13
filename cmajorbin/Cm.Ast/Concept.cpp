@@ -54,6 +54,14 @@ void AxiomStatementNodeList::Accept(Visitor& visitor)
     }
 }
 
+void AxiomStatementNodeList::SetParent(Node* parent)
+{
+    for (const std::unique_ptr<AxiomStatementNode>& axiomStatement : axiomStatementNodes)
+    {
+        axiomStatement->SetParent(parent);
+    }
+}
+
 ConstraintNode::ConstraintNode(const Span& span_) : Node(span_)
 {
 }
@@ -97,18 +105,30 @@ void ConstraintNodeList::Accept(Visitor& visitor)
     }
 }
 
+void ConstraintNodeList::SetParent(Node* parent)
+{
+    for (const std::unique_ptr<ConstraintNode>& constraint : constraintNodes)
+    {
+        constraint->SetParent(parent);
+    }
+}
+
 BinaryConstraintNode::BinaryConstraintNode(const Span& span_) : ConstraintNode(span_)
 {
 }
 
 BinaryConstraintNode::BinaryConstraintNode(const Span& span_, ConstraintNode* left_, ConstraintNode* right_) : ConstraintNode(span_), left(left_), right(right_)
 {
+    left->SetParent(this);
+    right->SetParent(this);
 }
 
 void BinaryConstraintNode::Read(Reader& reader)
 {
     left.reset(reader.ReadConstraintNode());
+    left->SetParent(this);
     right.reset(reader.ReadConstraintNode());
+    right->SetParent(this);
 }
 
 void BinaryConstraintNode::Write(Writer& writer)
@@ -175,6 +195,7 @@ WhereConstraintNode::WhereConstraintNode(const Span& span_) : ConstraintNode(spa
 
 WhereConstraintNode::WhereConstraintNode(const Span& span_, ConstraintNode* constraint_) : ConstraintNode(span_), constraint(constraint_)
 {
+    constraint->SetParent(this);
 }
 
 Node* WhereConstraintNode::Clone() const
@@ -185,6 +206,7 @@ Node* WhereConstraintNode::Clone() const
 void WhereConstraintNode::Read(Reader& reader)
 {
     constraint.reset(reader.ReadConstraintNode());
+    constraint->SetParent(this);
 }
 
 void WhereConstraintNode::Write(Writer& writer)
@@ -210,6 +232,8 @@ IsConstraintNode::IsConstraintNode(const Span& span_) : ConstraintNode(span_)
 
 IsConstraintNode::IsConstraintNode(const Span& span_, Node* typeExpr_, Node* conceptOrTypeName_) : ConstraintNode(span_), typeExpr(typeExpr_), conceptOrTypeName(conceptOrTypeName_)
 {
+    typeExpr->SetParent(this);
+    conceptOrTypeName->SetParent(this);
 }
 
 Node* IsConstraintNode::Clone() const
@@ -220,7 +244,9 @@ Node* IsConstraintNode::Clone() const
 void IsConstraintNode::Read(Reader& reader)
 {
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     conceptOrTypeName.reset(reader.ReadNode());
+    conceptOrTypeName->SetParent(this);
 }
 
 void IsConstraintNode::Write(Writer& writer)
@@ -245,10 +271,12 @@ MultiParamConstraintNode::MultiParamConstraintNode(const Span& span_) : Constrai
 
 MultiParamConstraintNode::MultiParamConstraintNode(const Span& span_, IdentifierNode* conceptId_) : ConstraintNode(span_), conceptId(conceptId_)
 {
+    conceptId->SetParent(this);
 }
 
 void MultiParamConstraintNode::AddTypeExpr(Node* typeExpr)
 {
+    typeExpr->SetParent(this);
     typeExprNodes.Add(typeExpr);
 }
 
@@ -265,7 +293,9 @@ Node* MultiParamConstraintNode::Clone() const
 void MultiParamConstraintNode::Read(Reader& reader)
 {
     conceptId.reset(reader.ReadIdentifierNode());
+    conceptId->SetParent(this);
     typeExprNodes.Read(reader);
+    typeExprNodes.SetParent(this);
 }
 
 void MultiParamConstraintNode::Write(Writer& writer)
@@ -306,6 +336,7 @@ TypenameConstraintNode::TypenameConstraintNode(const Span& span_) : ConstraintNo
 
 TypenameConstraintNode::TypenameConstraintNode(const Span& span_, IdentifierNode* typeId_) : ConstraintNode(span_), typeId(typeId_)
 {
+    typeId->SetParent(this);
 }
 
 Node* TypenameConstraintNode::Clone() const
@@ -316,6 +347,7 @@ Node* TypenameConstraintNode::Clone() const
 void TypenameConstraintNode::Read(Reader& reader)
 {
     typeId.reset(reader.ReadIdentifierNode());
+    typeId->SetParent(this);
 }
 
 void TypenameConstraintNode::Write(Writer& writer)
@@ -343,6 +375,7 @@ ConstructorConstraintNode::ConstructorConstraintNode(const Span& span_) : Signat
 
 void ConstructorConstraintNode::AddParameter(ParameterNode* parameter)
 {
+    parameter->SetParent(this);
     parameters.Add(parameter);
 }
 
@@ -359,6 +392,7 @@ Node* ConstructorConstraintNode::Clone() const
 void ConstructorConstraintNode::Read(Reader& reader)
 {
     parameters.Read(reader);
+    parameters.SetParent(this);
 }
 
 void ConstructorConstraintNode::Write(Writer& writer)
@@ -402,10 +436,14 @@ MemberFunctionConstraintNode::MemberFunctionConstraintNode(const Span& span_) : 
 MemberFunctionConstraintNode::MemberFunctionConstraintNode(const Span& span_, Node* returnTypeExpr_, IdentifierNode* typeParamId_, FunctionGroupIdNode* functionGroupId_) :
     SignatureConstraintNode(span_), returnTypeExpr(returnTypeExpr_), typeParamId(typeParamId_), functionGroupId(functionGroupId_)
 {
+    returnTypeExpr->SetParent(this);
+    typeParamId->SetParent(this);
+    functionGroupId->SetParent(this);
 }
 
 void MemberFunctionConstraintNode::AddParameter(ParameterNode* parameter) 
 {
+    parameter->SetParent(this);
     parameters.Add(parameter);
 }
 
@@ -423,9 +461,13 @@ Node* MemberFunctionConstraintNode::Clone() const
 void MemberFunctionConstraintNode::Read(Reader& reader)
 {
     returnTypeExpr.reset(reader.ReadNode());
+    returnTypeExpr->SetParent(this);
     typeParamId.reset(reader.ReadIdentifierNode());
+    typeParamId->SetParent(this);
     functionGroupId.reset(reader.ReadFunctionGroupIdNode());
+    functionGroupId->SetParent(this);
     parameters.Read(reader);
+    parameters.SetParent(this);
 }
 
 void MemberFunctionConstraintNode::Write(Writer& writer)
@@ -455,10 +497,13 @@ FunctionConstraintNode::FunctionConstraintNode(const Span& span_) : SignatureCon
 FunctionConstraintNode::FunctionConstraintNode(const Span& span_, Node* returnTypeExpr_, FunctionGroupIdNode* functionGroupId_) :
     SignatureConstraintNode(span_), returnTypeExpr(returnTypeExpr_), functionGroupId(functionGroupId_)
 {
+    returnTypeExpr->SetParent(this);
+    functionGroupId->SetParent(this);
 }
 
 void FunctionConstraintNode::AddParameter(ParameterNode* parameter)
 {
+    parameter->SetParent(this);
     parameters.Add(parameter);
 }
 
@@ -475,8 +520,11 @@ Node* FunctionConstraintNode::Clone() const
 void FunctionConstraintNode::Read(Reader& reader)
 {
     returnTypeExpr.reset(reader.ReadNode());
+    returnTypeExpr->SetParent(this);
     functionGroupId.reset(reader.ReadFunctionGroupIdNode());
+    functionGroupId->SetParent(this);
     parameters.Read(reader);
+    parameters.SetParent(this);
 }
 
 void FunctionConstraintNode::Write(Writer& writer)
@@ -504,6 +552,7 @@ AxiomStatementNode::AxiomStatementNode(const Span& span_) : Node(span_)
 
 AxiomStatementNode::AxiomStatementNode(const Span& span_, Node* expression_) : Node(span_), expression(expression_)
 {
+    expression->SetParent(this);
 }
 
 Node* AxiomStatementNode::Clone() const
@@ -521,7 +570,6 @@ void AxiomStatementNode::Write(Writer& writer)
     writer.Write(expression.get());
 }
 
-
 std::string AxiomStatementNode::ToString() const
 {
     return expression->ToString() + ";";
@@ -538,15 +586,21 @@ AxiomNode::AxiomNode(const Span& span_) : Node(span_)
 
 AxiomNode::AxiomNode(const Span& span_, IdentifierNode* id_) : Node(span_), id(id_) 
 {
+    if (id)
+    {
+        id->SetParent(this);
+    }
 }
 
 void AxiomNode::AddParameter(ParameterNode* parameter)
 {
+    parameter->SetParent(this);
     parameters.Add(parameter);
 }
 
 void AxiomNode::AddStatement(AxiomStatementNode* statement)
 {
+    statement->SetParent(this);
     axiomStatements.Add(statement);
 }
 
@@ -575,9 +629,12 @@ void AxiomNode::Read(Reader& reader)
     if (hasId)
     {
         id.reset(reader.ReadIdentifierNode());
+        id->SetParent(this);
     }
     parameters.Read(reader);
+    parameters.SetParent(this);
     axiomStatements.Read(reader);
+    axiomStatements.SetParent(this);
 }
 
 void AxiomNode::Write(Writer& writer)
@@ -621,10 +678,12 @@ ConceptIdNode::ConceptIdNode(const Span& span_) : Node(span_)
 
 ConceptIdNode::ConceptIdNode(const Span& span_, IdentifierNode* id_) : Node(span_), id(id_)
 {
+    id->SetParent(this);
 }
 
 void ConceptIdNode::AddTypeParameter(Node* typeParameter)
 {
+    typeParameter->SetParent(this);
     typeParameters.Add(typeParameter);
 }
 
@@ -641,7 +700,9 @@ Node* ConceptIdNode::Clone() const
 void ConceptIdNode::Read(Reader& reader)
 {
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     typeParameters.Read(reader);
+    typeParameters.SetParent(this);
 }
 
 void ConceptIdNode::Write(Writer& writer)
@@ -660,12 +721,13 @@ void ConceptIdNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-ConceptNode::ConceptNode(const Span& span_) : Node(span_), parent(nullptr)
+ConceptNode::ConceptNode(const Span& span_) : Node(span_)
 {
 }
 
-ConceptNode::ConceptNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_), parent(nullptr)
+ConceptNode::ConceptNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_)
 {
+    id->SetParent(this);
 }
 
 const std::string& ConceptNode::FirstTypeParameter() const
@@ -675,21 +737,28 @@ const std::string& ConceptNode::FirstTypeParameter() const
 
 void ConceptNode::AddTypeParameter(Node* typeParameter)
 {
+    typeParameter->SetParent(this);
     typeParameters.Add(typeParameter);
 }
 
 void ConceptNode::SetRefinement(ConceptIdNode* refinement_)
 {
+    if (refinement)
+    {
+        refinement->SetParent(this);
+    }
     refinement.reset(refinement_);
 }
 
 void ConceptNode::AddConstraint(ConstraintNode* constraint)
 {
+    constraint->SetParent(this);
     constraints.Add(constraint);
 }
 
 void ConceptNode::AddAxiom(AxiomNode* axiom)
 {
+    axiom->SetParent(this);
     axioms.Add(axiom);
 }
 
@@ -719,14 +788,19 @@ void ConceptNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     typeParameters.Read(reader);
+    typeParameters.SetParent(this);
     bool hasRefinement = reader.ReadBool();
     if (hasRefinement)
     {
         refinement.reset(reader.ReadConceptIdNode());
+        refinement->SetParent(this);
     }
     constraints.Read(reader);
+    constraints.SetParent(this);
     axioms.Read(reader);
+    axioms.SetParent(this);
 }
 
 void ConceptNode::Write(Writer& writer)
@@ -763,16 +837,6 @@ void ConceptNode::Print(CodeFormatter& formatter)
     axioms.Print(formatter);
     formatter.DecIndent();
     formatter.WriteLine("}");
-}
-
-Node* ConceptNode::Parent() const
-{
-    return parent;
-}
-
-void ConceptNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 std::string ConceptNode::Name() const

@@ -82,6 +82,8 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("Cm::Ast::Node*");
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "typeExpr"));
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -104,6 +106,10 @@ public:
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstantRule>(this, &ConstantRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstantRule>(this, &ConstantRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstantRule>(this, &ConstantRule::A2Action));
         Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
         specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ConstantRule>(this, &ConstantRule::PostSpecifiers));
         Cm::Parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
@@ -117,7 +123,15 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new ConstantNode(span, context.fromSpecifiers, context.fromTypeExpr, context.fromIdentifier, context.fromExpression);
+        context.value = new ConstantNode(span, context.fromSpecifiers, context.typeExpr.release(), context.id.release(), context.fromExpression);
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.typeExpr.reset(context.fromTypeExpr);
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.id.reset(context.fromIdentifier);
     }
     void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -166,9 +180,11 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromSpecifiers(), fromTypeExpr(), fromIdentifier(), fromExpression() {}
+        Context(): ctx(), value(), typeExpr(), id(), fromSpecifiers(), fromTypeExpr(), fromIdentifier(), fromExpression() {}
         ParsingContext* ctx;
         Cm::Ast::Node* value;
+        std::unique_ptr<Node> typeExpr;
+        std::unique_ptr<IdentifierNode> id;
         Cm::Ast::Specifiers fromSpecifiers;
         Cm::Ast::Node* fromTypeExpr;
         Cm::Ast::IdentifierNode* fromIdentifier;
@@ -181,28 +197,28 @@ private:
 void ConstantGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar0 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::ExpressionGrammar::Create(pd);
+        grammar1 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parsing::stdlib::Create(pd);
+        grammar2 = Cm::Parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar3 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
     Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
@@ -215,11 +231,11 @@ void ConstantGrammar::GetReferencedGrammars()
 
 void ConstantGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new ConstantRule("Constant", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -230,8 +246,10 @@ void ConstantGrammar::CreateRules()
                                 new Cm::Parsing::SequenceParser(
                                     new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
                                     new Cm::Parsing::KeywordParser("const")),
-                                new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
-                            new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)),
+                                new Cm::Parsing::ActionParser("A1",
+                                    new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1))),
+                            new Cm::Parsing::ActionParser("A2",
+                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
                         new Cm::Parsing::CharParser('=')),
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),

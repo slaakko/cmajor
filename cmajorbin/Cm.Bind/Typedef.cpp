@@ -18,6 +18,10 @@ namespace Cm { namespace Bind {
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::TypedefNode* typedefNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(typedefNode->Id()->Str());
+    if (!symbol)
+    {
+        symbol = fileScope->Lookup(typedefNode->Id()->Str());
+    }
     if (symbol)
     {
         if (symbol->IsTypedefSymbol())
@@ -32,10 +36,12 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
                 return;
             }
             typedefSymbol->SetEvaluating();
-            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, TypeResolverTarget::typedef_, typedefNode->TypeExpr());
+            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, typedefNode->TypeExpr());
+            type->SetExportSymbol();
             typedefSymbol->ResetEvaluating();
             typedefSymbol->SetType(type);
             typedefSymbol->SetBound();
+            typedefSymbol->SetExportSymbol();
         }
         else
         {

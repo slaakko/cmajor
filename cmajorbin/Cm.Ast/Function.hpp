@@ -48,8 +48,6 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     std::string Name() const override;
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
@@ -67,7 +65,6 @@ private:
     ParameterNodeList parameters;
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
-    Node* parent;
 };
 
 } } // namespace Cm::Ast

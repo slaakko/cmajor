@@ -9,12 +9,14 @@
 
 #ifndef CM_SYM_MODULE_INCLUDED
 #define CM_SYM_MODULE_INCLUDED
+#include <Cm.Ast/Project.hpp>
 #include <stdexcept>
 #include <string>
 
 namespace Cm { namespace Sym {
 
 class SymbolTable;
+class Writer;
 class Reader;
 
 class ModuleFileVersionMismatch : std::runtime_error
@@ -30,12 +32,17 @@ class Module
 {
 public:
     Module(const std::string& filePath_);
+    void SetSourceFilePaths(const std::vector<std::string>& sourceFilePaths_);
     void Export(SymbolTable& symbolTable);
     void ImportTo(SymbolTable& symbolTable);
     void Dump();
 private:
     std::string filePath;
+    std::vector<std::string> sourceFilePaths;
+    void WriteModuleFileId(Writer& writer);
+    void WriteSourceFilePaths(Writer& writer);
     void CheckModuleFileId(Reader& reader);
+    void ReadSourceFilePaths(Reader& reader);
 };
 
 } } // namespace Cm::Sym

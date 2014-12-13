@@ -88,6 +88,7 @@ DerivedTypeExprNode::DerivedTypeExprNode(const Span& span_): Node(span_)
 
 DerivedTypeExprNode::DerivedTypeExprNode(const Span& span_, const DerivationList& derivations_, Node* baseTypeExprNode_): Node(span_), derivations(derivations_), baseTypeExprNode(baseTypeExprNode_)
 {
+    baseTypeExprNode->SetParent(this);
 }
 
 Node* DerivedTypeExprNode::Clone() const
@@ -99,6 +100,7 @@ void DerivedTypeExprNode::Read(Reader& reader)
 {
     derivations = reader.ReadDerivationList();
     baseTypeExprNode.reset(reader.ReadNode());
+    baseTypeExprNode->SetParent(this);
 }
 
 void DerivedTypeExprNode::Write(Writer& writer)
@@ -173,6 +175,7 @@ void DerivedTypeExprNode::Add(Derivation derivation)
 void DerivedTypeExprNode::SetBaseTypeExpr(Node* baseTypeExprNode_)
 {
     baseTypeExprNode.reset(baseTypeExprNode_);
+    baseTypeExprNode->SetParent(this);
 }
 
 Node* MakeTypeExprNode(DerivedTypeExprNode* derivedTypeExprNode)

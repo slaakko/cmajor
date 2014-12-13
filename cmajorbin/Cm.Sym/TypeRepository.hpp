@@ -20,6 +20,8 @@ public:
     TypeSymbol* GetTypeNothrow(const TypeId& typeId) const;
     TypeSymbol* GetType(const TypeId& typeId) const;
     TypeSymbol* MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span);
+    TypeSymbol* MakeConstCharPtrType(const Span& span);
+    TypeSymbol* MakeGenericPtrType(const Span& span);
     TypeSymbol* MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
     void Export(Writer& writer);
     void Import(Reader& reader);

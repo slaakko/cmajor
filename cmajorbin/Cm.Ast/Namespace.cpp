@@ -15,12 +15,13 @@
 
 namespace Cm { namespace Ast {
 
-NamespaceNode::NamespaceNode(const Span& span_) : Node(span_), parent(nullptr)
+NamespaceNode::NamespaceNode(const Span& span_) : Node(span_)
 {
 }
 
-NamespaceNode::NamespaceNode(const Span& span_, IdentifierNode* id_) : Node(span_), id(id_), parent(nullptr)
+NamespaceNode::NamespaceNode(const Span& span_, IdentifierNode* id_) : Node(span_), id(id_)
 {
+    id->SetParent(this);
 }
 
 void NamespaceNode::AddMember(Node* member)
@@ -42,11 +43,9 @@ Node* NamespaceNode::Clone() const
 void NamespaceNode::Read(Reader& reader)
 {
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     members.Read(reader);
-    for (const std::unique_ptr<Node>& member : members)
-    {
-        member->SetParent(this);
-    }
+    members.SetParent(this);
 }
 
 void NamespaceNode::Write(Writer& writer)
@@ -65,16 +64,6 @@ void NamespaceNode::Print(CodeFormatter& formatter)
     formatter.WriteLine("}");
 }
 
-Node* NamespaceNode::Parent() const
-{
-    return parent;
-}
-
-void NamespaceNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 void NamespaceNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
@@ -82,12 +71,14 @@ void NamespaceNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-AliasNode::AliasNode(const Span& span_) : Node(span_), parent(nullptr)
+AliasNode::AliasNode(const Span& span_) : Node(span_)
 {
 }
 
-AliasNode::AliasNode(const Span& span_, IdentifierNode* id_, IdentifierNode* qid_) : Node(span_), id(id_), qid(qid_), parent(nullptr)
+AliasNode::AliasNode(const Span& span_, IdentifierNode* id_, IdentifierNode* qid_) : Node(span_), id(id_), qid(qid_)
 {
+    id->SetParent(this);
+    qid->SetParent(this);
 }
 
 Node* AliasNode::Clone() const
@@ -98,7 +89,9 @@ Node* AliasNode::Clone() const
 void AliasNode::Read(Reader& reader)
 {
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     qid.reset(reader.ReadIdentifierNode());
+    qid->SetParent(this);
 }
 
 void AliasNode::Write(Writer& writer)
@@ -112,27 +105,18 @@ void AliasNode::Print(CodeFormatter& formatter)
     formatter.WriteLine("using " + id->ToString() + " = " + qid->ToString() + ";");
 }
 
-Node* AliasNode::Parent() const
-{
-    return parent;
-}
-
-void AliasNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 void AliasNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }
 
-NamespaceImportNode::NamespaceImportNode(const Span& span_) : Node(span_), parent(nullptr)
+NamespaceImportNode::NamespaceImportNode(const Span& span_) : Node(span_)
 {
 }
 
-NamespaceImportNode::NamespaceImportNode(const Span& span_, IdentifierNode* ns_) : Node(span_), ns(ns_), parent(nullptr)
+NamespaceImportNode::NamespaceImportNode(const Span& span_, IdentifierNode* ns_) : Node(span_), ns(ns_)
 {
+    ns->SetParent(this);
 }
 
 Node* NamespaceImportNode::Clone() const
@@ -143,6 +127,7 @@ Node* NamespaceImportNode::Clone() const
 void NamespaceImportNode::Read(Reader& reader)
 {
     ns.reset(reader.ReadIdentifierNode());
+    ns->SetParent(this);
 }
 
 void NamespaceImportNode::Write(Writer& writer)
@@ -153,16 +138,6 @@ void NamespaceImportNode::Write(Writer& writer)
 void NamespaceImportNode::Print(CodeFormatter& formatter)
 {
     formatter.WriteLine("using " + ns->ToString() + ";");
-}
-
-Node* NamespaceImportNode::Parent() const
-{
-    return parent;
-}
-
-void NamespaceImportNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 void NamespaceImportNode::Accept(Visitor& visitor)

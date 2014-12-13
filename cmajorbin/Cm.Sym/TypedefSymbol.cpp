@@ -18,11 +18,6 @@ TypedefSymbol::TypedefSymbol(const Span& span_, const std::string& name_) : Symb
 {
 }
 
-bool TypedefSymbol::IsExportSymbol() const 
-{ 
-    return Source() == SymbolSource::project && type->IsExportSymbol(); 
-}
-
 void TypedefSymbol::Write(Writer& writer)
 {
     Symbol::Write(writer);

@@ -16,13 +16,15 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 
 namespace Cm { namespace Ast {
 
-DelegateNode::DelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
+DelegateNode::DelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
 {
 }
 
 DelegateNode::DelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_) : 
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_), parent(nullptr)
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_)
 {
+    returnTypeExpr->SetParent(this);
+    id->SetParent(this);
 }
 
 Node* DelegateNode::Clone() const
@@ -37,6 +39,7 @@ Node* DelegateNode::Clone() const
 
 void DelegateNode::AddParameter(ParameterNode* parameter)
 {
+    parameter->SetParent(this);
     parameters.Add(parameter);
 }
 
@@ -44,8 +47,11 @@ void DelegateNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
     returnTypeExpr.reset(reader.ReadNode());
+    returnTypeExpr->SetParent(this);
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     parameters.Read(reader);
+    parameters.SetParent(this);
 }
 
 void DelegateNode::Write(Writer& writer)
@@ -67,16 +73,6 @@ void DelegateNode::Print(CodeFormatter& formatter)
     formatter.WriteLine(s);
 }
 
-Node* DelegateNode::Parent() const
-{
-    return parent;
-}
-
-void DelegateNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 std::string DelegateNode::Name() const 
 { 
     return id->Str(); 
@@ -92,13 +88,15 @@ void DelegateNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-ClassDelegateNode::ClassDelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
+ClassDelegateNode::ClassDelegateNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
 {
 }
 
 ClassDelegateNode::ClassDelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_) : 
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_), parent(nullptr)
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_)
 {
+    returnTypeExpr->SetParent(this);
+    id->SetParent(this);
 }
 
 Node* ClassDelegateNode::Clone() const
@@ -113,6 +111,7 @@ Node* ClassDelegateNode::Clone() const
 
 void ClassDelegateNode::AddParameter(ParameterNode* parameter)
 {
+    parameter->SetParent(this);
     parameters.Add(parameter);
 }
 
@@ -120,8 +119,11 @@ void ClassDelegateNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
     returnTypeExpr.reset(reader.ReadNode());
+    returnTypeExpr->SetParent(this);
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     parameters.Read(reader);
+    parameters.SetParent(this);
 }
 
 void ClassDelegateNode::Write(Writer& writer)
@@ -141,16 +143,6 @@ void ClassDelegateNode::Print(CodeFormatter& formatter)
     }
     s.append("class delegate ").append(returnTypeExpr->ToString()).append(1, ' ').append(id->ToString()).append(parameters.ToString()).append(1, ';');
     formatter.WriteLine(s);
-}
-
-Node* ClassDelegateNode::Parent() const
-{
-    return parent;
-}
-
-void ClassDelegateNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 std::string ClassDelegateNode::Name() const 

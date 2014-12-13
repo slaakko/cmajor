@@ -88,14 +88,15 @@ public:
     virtual Rank GetRank() const { return Rank::primary; }
     virtual std::string ToString() const { return std::string(); }
     virtual std::string GetOpStr() const { return std::string(); }
-    virtual Node* Parent() const;
-    virtual void SetParent(Node* parent_);
+    Node* Parent() const { return parent; }
+    void SetParent(Node* parent_) { parent = parent_; }
     virtual std::string Name() const;
     std::string FullName() const;
     virtual void Accept(Visitor& visitor);
     virtual FunctionNode* GetFunction() const;
 private:
     Span span;
+    Node* parent;
 };
 
 class UnaryNode : public Node
@@ -140,6 +141,7 @@ public:
     Node* operator[](int index) const { return nodes[index].get(); }
     Node* Back() const { return nodes.back().get(); }
     void Add(Node* node) { nodes.push_back(std::unique_ptr<Node>(node)); }
+    void SetParent(Node* parent);
     void Read(Reader& reader);
     void Write(Writer& writer);
     void Print(CodeFormatter& formatter);

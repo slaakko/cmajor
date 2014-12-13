@@ -25,8 +25,6 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     std::string Name() const override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* TypeExpr() const { return typeExpr.get(); }
@@ -36,7 +34,6 @@ private:
     Specifiers specifiers;
     std::unique_ptr<Node> typeExpr;
     std::unique_ptr<IdentifierNode> id;
-    Node* parent;
 };
 
 } } // namespace Cm::Ast

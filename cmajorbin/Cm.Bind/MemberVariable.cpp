@@ -27,9 +27,10 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
             {
                 return;
             }
-            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, TypeResolverTarget::memberVariable, memberVariableNode->TypeExpr());
+            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, memberVariableNode->TypeExpr());
             memberVariableSymbol->SetType(type);
             memberVariableSymbol->SetBound();
+            memberVariableSymbol->SetExportSymbol();
         }
         else
         {

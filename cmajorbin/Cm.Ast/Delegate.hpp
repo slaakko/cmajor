@@ -27,8 +27,6 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     std::string Name() const override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
@@ -40,7 +38,6 @@ private:
     std::unique_ptr<Node> returnTypeExpr;
     std::unique_ptr<IdentifierNode> id;
     ParameterNodeList parameters;
-    Node* parent;
 };
 
 class ClassDelegateNode : public Node
@@ -54,8 +51,6 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     std::string Name() const override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
@@ -67,7 +62,6 @@ private:
     std::unique_ptr<Node> returnTypeExpr;
     std::unique_ptr<IdentifierNode> id;
     ParameterNodeList parameters;
-    Node* parent;
 };
 
 } } // namespace Cm::Ast

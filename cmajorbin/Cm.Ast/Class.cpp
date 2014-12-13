@@ -18,27 +18,37 @@
 
 namespace Cm { namespace Ast {
 
-ClassNode::ClassNode(const Span& span_) : Node(span_), parent(nullptr)
+ClassNode::ClassNode(const Span& span_) : Node(span_)
 {
 }
 
-ClassNode::ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_), parent(nullptr)
+ClassNode::ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_)
 {
+    id->SetParent(this);
 }
 
 void ClassNode::AddTemplateParameter(TemplateParameterNode* templateParameter)
 {
+    templateParameter->SetParent(this);
     templateParameters.Add(templateParameter);
 }
 
 void ClassNode::SetBaseClassTypeExpr(Node* baseClassTypeExpr_)
 {
     baseClassTypeExpr.reset(baseClassTypeExpr_);
+    if (baseClassTypeExpr)
+    {
+        baseClassTypeExpr->SetParent(this);
+    }
 }
 
 void ClassNode::SetConstraint(WhereConstraintNode* constraint_)
 {
     constraint.reset(constraint_);
+    if (constraint)
+    {
+        constraint->SetParent(this);
+    }
 }
 
 void ClassNode::AddMember(Node* member)
@@ -73,22 +83,23 @@ void ClassNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     templateParameters.Read(reader);
+    templateParameters.SetParent(this);
     bool hasBaseClass = reader.ReadBool();
     if (hasBaseClass)
     {
         baseClassTypeExpr.reset(reader.ReadNode());
+        baseClassTypeExpr->SetParent(this);
     }
     bool hasConstraint = reader.ReadBool();
     if (hasConstraint)
     {
         constraint.reset(reader.ReadWhereConstraintNode());
+        constraint->SetParent(this);
     }
     members.Read(reader);
-    for (const std::unique_ptr<Node>& member : members)
-    {
-        member->SetParent(this);
-    }
+    members.SetParent(this);
 }
 
 void ClassNode::Write(Writer& writer)
@@ -135,16 +146,6 @@ void ClassNode::Print(CodeFormatter& formatter)
     formatter.WriteLine("}");
 }
 
-Node* ClassNode::Parent() const
-{
-    return parent;
-}
-
-void ClassNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 std::string ClassNode::Name() const 
 {
     return id->Str(); 
@@ -153,8 +154,11 @@ std::string ClassNode::Name() const
 void ClassNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    templateParameters.Accept(visitor);
-    members.Accept(visitor);
+    if (!visitor.SkipContent())
+    {
+        templateParameters.Accept(visitor);
+        members.Accept(visitor);
+    }
     visitor.EndVisit(*this);
 }
 
@@ -164,12 +168,14 @@ InitializerNode::InitializerNode(const Span& span_) : Node(span_)
 
 void InitializerNode::AddArgument(Node* argument)
 {
+    argument->SetParent(this);
     arguments.Add(argument);
 }
 
 void InitializerNode::Read(Reader& reader)
 {
     arguments.Read(reader);
+    arguments.SetParent(this);
 }
 
 void InitializerNode::Write(Writer& writer)
@@ -183,6 +189,7 @@ MemberInitializerNode::MemberInitializerNode(const Span& span_) : InitializerNod
 
 MemberInitializerNode::MemberInitializerNode(const Span& span_, IdentifierNode* memberId_) : InitializerNode(span_), memberId(memberId_)
 {
+    memberId->SetParent(this);
 }
 
 Node* MemberInitializerNode::Clone() const
@@ -199,6 +206,7 @@ void MemberInitializerNode::Read(Reader& reader)
 {
     InitializerNode::Read(reader);
     memberId.reset(reader.ReadIdentifierNode());
+    memberId->SetParent(this);
 }
 
 void MemberInitializerNode::Write(Writer& writer)
@@ -316,6 +324,14 @@ void InitializerNodeList::Accept(Visitor& visitor)
     }
 }
 
+void InitializerNodeList::SetParent(Node* parent)
+{
+    for (const std::unique_ptr<InitializerNode>& initializer : initializerNodes)
+    {
+        initializer->SetParent(parent);
+    }
+}
+
 StaticConstructorNode::StaticConstructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
@@ -326,9 +342,9 @@ StaticConstructorNode::StaticConstructorNode(const Span& span_, Specifiers speci
 
 void StaticConstructorNode::AddInitializer(InitializerNode* initializer)
 {
+    initializer->SetParent(this);
     initializers.Add(initializer);
 }
-
 
 Node* StaticConstructorNode::Clone() const
 {
@@ -352,6 +368,7 @@ void StaticConstructorNode::Read(Reader& reader)
 {
     FunctionNode::Read(reader);
     initializers.Read(reader);
+    initializers.SetParent(this);
 }
 
 void StaticConstructorNode::Write(Writer& writer)
@@ -408,6 +425,7 @@ ConstructorNode::ConstructorNode(const Span& span_, Specifiers specifiers_) : Fu
 
 void ConstructorNode::AddInitializer(InitializerNode* initializer)
 {
+    initializer->SetParent(this);
     initializers.Add(initializer);
 }
 
@@ -437,6 +455,7 @@ void ConstructorNode::Read(Reader& reader)
 {
     FunctionNode::Read(reader);
     initializers.Read(reader);
+    initializers.SetParent(this);
 }
 
 void ConstructorNode::Write(Writer& writer)
@@ -718,13 +737,15 @@ void ConversionFunctionNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-MemberVariableNode::MemberVariableNode(const Span& span_) : Node(span_), parent(nullptr)
+MemberVariableNode::MemberVariableNode(const Span& span_) : Node(span_)
 {
 }
 
 MemberVariableNode::MemberVariableNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_) : 
-    Node(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_), parent(nullptr)
+    Node(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_)
 {
+    typeExpr->SetParent(this);
+    id->SetParent(this);
 }
 
 Node* MemberVariableNode::Clone() const
@@ -736,7 +757,9 @@ void MemberVariableNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
 }
 
 void MemberVariableNode::Write(Writer& writer)
@@ -755,16 +778,6 @@ void MemberVariableNode::Print(CodeFormatter& formatter)
     }
     s.append(typeExpr->ToString()).append(1, ' ').append(id->ToString()).append(1, ';');
     formatter.WriteLine(s);
-}
-
-Node* MemberVariableNode::Parent() const
-{
-    return parent;
-}
-
-void MemberVariableNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 void MemberVariableNode::Accept(Visitor& visitor)

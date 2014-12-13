@@ -434,6 +434,7 @@ Node* InvokeNode::Clone() const
 
 void InvokeNode::AddArgument(Node* argument)
 {
+    argument->SetParent(this);
     arguments.Add(argument);
 }
 
@@ -441,6 +442,7 @@ void InvokeNode::Read(Reader& reader)
 {
     UnaryNode::Read(reader);
     arguments.Read(reader);
+    arguments.SetParent(this);
 }
 
 void InvokeNode::Write(Writer& writer) 
@@ -471,6 +473,7 @@ IndexNode::IndexNode(const Span& span_): UnaryNode(span_)
 
 IndexNode::IndexNode(const Span& span_, Node* subject_, Node* index_) : UnaryNode(span_, subject_), index(index_)
 {
+    index->SetParent(this);
 }
 
 Node* IndexNode::Clone() const
@@ -482,6 +485,7 @@ void IndexNode::Read(Reader& reader)
 {
     UnaryNode::Read(reader);
     index.reset(reader.ReadNode());
+    index->SetParent(this);
 }
 
 void IndexNode::Write(Writer& writer)
@@ -517,6 +521,7 @@ DotNode::DotNode(const Span& span_) : UnaryNode(span_)
 
 DotNode::DotNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : UnaryNode(span_, subject_), memberId(memberId_)
 {
+    memberId->SetParent(this);
 }
 
 Node* DotNode::Clone() const
@@ -528,6 +533,7 @@ void DotNode::Read(Reader& reader)
 {
     UnaryNode::Read(reader);
     memberId.reset(reader.ReadIdentifierNode());
+    memberId->SetParent(this);
 }
 
 void DotNode::Write(Writer& writer)
@@ -563,6 +569,7 @@ ArrowNode::ArrowNode(const Span& span_) : UnaryNode(span_)
 
 ArrowNode::ArrowNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : UnaryNode(span_, subject_), memberId(memberId_)
 {
+    memberId->SetParent(this);
 }
 
 Node* ArrowNode::Clone() const
@@ -574,6 +581,7 @@ void ArrowNode::Read(Reader& reader)
 {
     UnaryNode::Read(reader);
     memberId.reset(reader.ReadIdentifierNode());
+    memberId->SetParent(this);
 }
 
 void ArrowNode::Write(Writer& writer)
@@ -869,6 +877,8 @@ CastNode::CastNode(const Span& span_) : Node(span_)
 
 CastNode::CastNode(const Span& span_, Node* targetTypeExpr_, Node* sourceExpr_) : Node(span_), targetTypeExpr(targetTypeExpr_), sourceExpr(sourceExpr_)
 {
+    targetTypeExpr->SetParent(this);
+    sourceExpr->SetParent(this);
 }
 
 Node* CastNode::Clone() const
@@ -879,7 +889,9 @@ Node* CastNode::Clone() const
 void CastNode::Read(Reader& reader)
 {
     targetTypeExpr.reset(reader.ReadNode());
+    targetTypeExpr->SetParent(this);
     sourceExpr.reset(reader.ReadNode());
+    sourceExpr->SetParent(this);
 }
 
 void CastNode::Write(Writer& writer)
@@ -909,6 +921,7 @@ NewNode::NewNode(const Span& span_) : Node(span_)
 
 NewNode::NewNode(const Span& span_, Node* typeExpr_) : Node(span_), typeExpr(typeExpr_)
 {
+    typeExpr->SetParent(this);
 }
 
 Node* NewNode::Clone() const
@@ -923,13 +936,16 @@ Node* NewNode::Clone() const
 
 void NewNode::AddArgument(Node* argument)
 {
+    argument->SetParent(this);
     arguments.Add(argument);
 }
 
 void NewNode::Read(Reader& reader)
 {
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     arguments.Read(reader);
+    arguments.SetParent(this);
 }
 
 void NewNode::Write(Writer& writer)
@@ -961,6 +977,7 @@ ConstructNode::ConstructNode(const Span& span_) : Node(span_)
 
 ConstructNode::ConstructNode(const Span& span_, Node* typeExpr_) : Node(span_), typeExpr(typeExpr_)
 {
+    typeExpr->SetParent(this);
 }
 
 Node* ConstructNode::Clone() const
@@ -975,13 +992,16 @@ Node* ConstructNode::Clone() const
 
 void ConstructNode::AddArgument(Node* argument)
 {
+    argument->SetParent(this);
     arguments.Add(argument);
 }
 
 void ConstructNode::Read(Reader& reader)
 {
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     arguments.Read(reader);
+    arguments.SetParent(this);
 }
 
 void ConstructNode::Write(Writer& writer)

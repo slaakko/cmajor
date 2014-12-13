@@ -11,12 +11,24 @@
 
 namespace Cm { namespace Ast {
 
-Visitor::Visitor(bool visitExpressions_) : visitExpressions(visitExpressions_)
+Visitor::Visitor(bool visitExpressions_) : visitExpressions(visitExpressions_), skipContent(false)
 {
 }
 
 Visitor::~Visitor()
 {
+}
+
+void Visitor::PushSkipContent()
+{
+    skipContentStack.push(skipContent);
+    skipContent = true;
+}
+
+void Visitor::PopSkipContent()
+{
+    skipContent = skipContentStack.top();
+    skipContentStack.pop();
 }
 
 } } // namespace Cm::Ast

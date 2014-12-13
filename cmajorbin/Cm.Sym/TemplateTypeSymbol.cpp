@@ -24,7 +24,7 @@ std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vecto
         {
             s.append(", ");
         }
-        s.append(typeArguments[i]->FullName());
+        s.append(typeArguments[i]->Name());
     }
     s.append(1, '>');
     return s;

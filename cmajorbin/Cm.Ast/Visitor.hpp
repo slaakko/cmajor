@@ -9,6 +9,7 @@
 
 #ifndef CM_AST_VISITOR_INCLUDED
 #define CM_AST_VISITOR_INCLUDED
+#include <stack>
 
 namespace Cm { namespace Ast {
 
@@ -387,8 +388,13 @@ public:
     virtual void EndVisit(AxiomNode& axiomNode) {}
     virtual void Visit(ConceptIdNode& conceptIdNode) {}
     bool VisitExpressions() const { return visitExpressions; }
+    void PushSkipContent();
+    void PopSkipContent();
+    bool SkipContent() const { return skipContent; }
 private:
     bool visitExpressions;
+    bool skipContent;
+    std::stack<bool> skipContentStack;
 };
 
 } } // namespace Cm::Ast

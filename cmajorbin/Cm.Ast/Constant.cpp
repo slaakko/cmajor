@@ -15,13 +15,16 @@
 
 namespace Cm { namespace Ast {
 
-ConstantNode::ConstantNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
+ConstantNode::ConstantNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
 {
 }
 
 ConstantNode::ConstantNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_, Node* value_): 
-    specifiers(specifiers_), typeExpr(typeExpr_), id(id_), value(value_), parent(nullptr)
+    specifiers(specifiers_), typeExpr(typeExpr_), id(id_), value(value_)
 {
+    typeExpr->SetParent(this);
+    id->SetParent(this);
+    value->SetParent(this);
 }
 
 Node* ConstantNode::Clone() const
@@ -33,8 +36,11 @@ void ConstantNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     value.reset(reader.ReadNode());
+    value->SetParent(this);
 }
 
 void ConstantNode::Write(Writer& writer)
@@ -54,16 +60,6 @@ void ConstantNode::Print(CodeFormatter& formatter)
     }
     s.append(typeExpr->ToString()).append(1, ' ').append(id->ToString()).append(" = ").append(value->ToString()).append(";");
     formatter.WriteLine(s);
-}
-
-Node* ConstantNode::Parent() const
-{
-    return parent;
-}
-
-void ConstantNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 std::string ConstantNode::Name() const 

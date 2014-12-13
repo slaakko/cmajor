@@ -1274,6 +1274,7 @@ public:
         SetValueTypeName("Cm::Ast::ConstructorNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "refId"));
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<ConstructorNode>", "ctor"));
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -1309,6 +1310,8 @@ public:
         a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A4Action));
         Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
         a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A5Action));
+        Cm::Parsing::ActionParser* a6ActionParser = GetAction("A6");
+        a6ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A6Action));
         Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
         specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostSpecifiers));
         Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
@@ -1328,28 +1331,32 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value->GetSpan().SetEnd(span.End());
+        context.value = context.ctor.release();
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        pass = context.id->Str() == context.cls->Id()->Str();
-        if (pass) context.value = new ConstructorNode(span, context.fromSpecifiers);
+        context.ctor->GetSpan().SetEnd(span.End());
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.id.reset(context.fromIdentifier);
+        pass = context.id->Str() == context.cls->Id()->Str();
+        if (pass) context.ctor.reset(new ConstructorNode(span, context.fromSpecifiers));
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.refId.reset(context.fromref);
+        context.id.reset(context.fromIdentifier);
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value->SetConstraint(context.fromWhereConstraint);
+        context.refId.reset(context.fromref);
     }
     void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value->SetBody(context.fromCompoundStatement);
+        context.ctor->SetConstraint(context.fromWhereConstraint);
+    }
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.ctor->SetBody(context.fromCompoundStatement);
     }
     void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -1381,12 +1388,12 @@ public:
     void PreParameterList(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Node*>(context.value)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Node*>(context.ctor.get())));
     }
     void PreInitializerList(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.ctor.get())));
     }
     void PreWhereConstraint(Cm::Parsing::ObjectStack& stack)
     {
@@ -1417,12 +1424,13 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), cls(), value(), id(), refId(), fromSpecifiers(), fromIdentifier(), fromref(), fromWhereConstraint(), fromCompoundStatement() {}
+        Context(): ctx(), cls(), value(), id(), refId(), ctor(), fromSpecifiers(), fromIdentifier(), fromref(), fromWhereConstraint(), fromCompoundStatement() {}
         ParsingContext* ctx;
         Cm::Ast::ClassNode* cls;
         Cm::Ast::ConstructorNode* value;
         std::unique_ptr<IdentifierNode> id;
         std::unique_ptr<IdentifierNode> refId;
+        std::unique_ptr<ConstructorNode> ctor;
         Cm::Ast::Specifiers fromSpecifiers;
         Cm::Ast::IdentifierNode* fromIdentifier;
         Cm::Ast::IdentifierNode* fromref;
@@ -1917,52 +1925,52 @@ private:
 void ClassGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.ConstantGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar0 = Cm::Parser::ConstantGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::TemplateGrammar::Create(pd);
+        grammar1 = Cm::Parser::EnumerationGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::ParameterGrammar::Create(pd);
+        grammar2 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.StatementGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::ConceptGrammar::Create(pd);
+        grammar3 = Cm::Parser::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar4 = Cm::Parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::EnumerationGrammar::Create(pd);
+        grammar5 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
-    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.StatementGrammar");
+    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
     if (!grammar6)
     {
-        grammar6 = Cm::Parser::StatementGrammar::Create(pd);
+        grammar6 = Cm::Parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
-    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parser.ConstantGrammar");
+    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
     if (!grammar7)
     {
-        grammar7 = Cm::Parser::ConstantGrammar::Create(pd);
+        grammar7 = Cm::Parser::ConceptGrammar::Create(pd);
     }
     AddGrammarReference(grammar7);
     Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("Cm.Parser.DelegateGrammar");
@@ -2005,15 +2013,15 @@ void ClassGrammar::GetReferencedGrammars()
 
 void ClassGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-    AddRuleLink(new Cm::Parsing::RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
     AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
     AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
     AddRuleLink(new Cm::Parsing::RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
     AddRuleLink(new Cm::Parsing::RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
@@ -2181,31 +2189,32 @@ void ClassGrammar::CreateRules()
             new Cm::Parsing::ActionParser("A5",
                 new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)))));
     AddRule(new ConstructorRule("Constructor", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::SequenceParser(
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::ActionParser("A1",
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::ActionParser("A1",
-                                new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
-                                    new Cm::Parsing::DifferenceParser(
-                                        new Cm::Parsing::ActionParser("A2",
-                                            new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)),
-                                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::ActionParser("A2",
+                                    new Cm::Parsing::SequenceParser(
+                                        new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
+                                        new Cm::Parsing::DifferenceParser(
                                             new Cm::Parsing::ActionParser("A3",
-                                                new Cm::Parsing::NonterminalParser("ref", "Identifier", 0)),
-                                            new Cm::Parsing::CharParser('&'))))),
-                            new Cm::Parsing::NonterminalParser("ParameterList", "ParameterList", 2)),
+                                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)),
+                                            new Cm::Parsing::SequenceParser(
+                                                new Cm::Parsing::ActionParser("A4",
+                                                    new Cm::Parsing::NonterminalParser("ref", "Identifier", 0)),
+                                                new Cm::Parsing::CharParser('&'))))),
+                                new Cm::Parsing::NonterminalParser("ParameterList", "ParameterList", 2)),
+                            new Cm::Parsing::OptionalParser(
+                                new Cm::Parsing::NonterminalParser("InitializerList", "InitializerList", 2))),
                         new Cm::Parsing::OptionalParser(
-                            new Cm::Parsing::NonterminalParser("InitializerList", "InitializerList", 2))),
-                    new Cm::Parsing::OptionalParser(
-                        new Cm::Parsing::ActionParser("A4",
-                            new Cm::Parsing::NonterminalParser("WhereConstraint", "WhereConstraint", 1))))),
-            new Cm::Parsing::AlternativeParser(
-                new Cm::Parsing::ActionParser("A5",
-                    new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
-                new Cm::Parsing::CharParser(';')))));
+                            new Cm::Parsing::ActionParser("A5",
+                                new Cm::Parsing::NonterminalParser("WhereConstraint", "WhereConstraint", 1))))),
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::ActionParser("A6",
+                        new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
+                    new Cm::Parsing::CharParser(';'))))));
     AddRule(new DestructorRule("Destructor", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",

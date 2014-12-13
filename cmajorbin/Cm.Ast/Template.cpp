@@ -71,12 +71,25 @@ void TemplateParameterNodeList::Accept(Visitor& visitor)
     }
 }
 
+void TemplateParameterNodeList::SetParent(Node* parent)
+{
+    for (const std::unique_ptr<TemplateParameterNode>& templateParam : templateParameterNodes)
+    {
+        templateParam->SetParent(parent);
+    }
+}
+
 TemplateParameterNode::TemplateParameterNode(const Span& span_) : Node(span_)
 {
 }
 
 TemplateParameterNode::TemplateParameterNode(const Span& span_, IdentifierNode* id_, Node* defaultTemplateArgument_) : Node(span_), id(id_), defaultTemplateArgument(defaultTemplateArgument_)
 {
+    id->SetParent(this);
+    if (defaultTemplateArgument)
+    {
+        defaultTemplateArgument->SetParent(this);
+    }
 }
 
 Node* TemplateParameterNode::Clone() const
@@ -87,10 +100,12 @@ Node* TemplateParameterNode::Clone() const
 void TemplateParameterNode::Read(Reader& reader)
 {
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     bool hasDefaultTemplateArgument = reader.ReadBool();
     if (hasDefaultTemplateArgument)
     {
         defaultTemplateArgument.reset(reader.ReadNode());
+        defaultTemplateArgument->SetParent(this);
     }
 }
 
@@ -126,6 +141,7 @@ TemplateIdNode::TemplateIdNode(const Span& span_): Node(span_)
 
 TemplateIdNode::TemplateIdNode(const Span& span_, Node* subject_): Node(span_), subject(subject_)
 {
+    subject->SetParent(this);
 }
 
 Node* TemplateIdNode::Clone() const
@@ -140,13 +156,16 @@ Node* TemplateIdNode::Clone() const
 
 void TemplateIdNode::AddTemplateArgument(Node* templateArgument)
 {
+    templateArgument->SetParent(this);
     templateArguments.Add(templateArgument);
 }
 
 void TemplateIdNode::Read(Reader& reader)
 {
     subject.reset(reader.ReadNode());
+    subject->SetParent(this);
     templateArguments.Read(reader);
+    templateArguments.SetParent(this);
 }
 
 void TemplateIdNode::Write(Writer& writer)

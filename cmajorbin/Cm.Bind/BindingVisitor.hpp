@@ -9,6 +9,7 @@
 
 #ifndef CM_BIND_BINDING_VISITOR_INCLUDED
 #define CM_BIND_BINDING_VISITOR_INCLUDED
+#include <Cm.BoundTree/Function.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Visitor.hpp>
 
@@ -112,13 +113,12 @@ private:
     Cm::Sym::ContainerScope* currentContainerScope;
     std::stack<Cm::Sym::ContainerScope*> containerScopeStack;
     std::unique_ptr<Cm::Sym::FileScope> currentFileScope;
-    Cm::Ast::StatementNode* currentStatement;
-    std::stack<Cm::Ast::StatementNode*> statementStack;
     int parameterIndex;
+    std::unique_ptr<Cm::BoundTree::BoundFunction> boundFunction;
+    Cm::BoundTree::BoundCompoundStatement* currentBlock;
+    std::stack<Cm::BoundTree::BoundCompoundStatement*> blockStack;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
-    void BeginStatement(Cm::Ast::StatementNode* statement);
-    void EndStatement();
 };
 
 } } // namespace Cm::Bind

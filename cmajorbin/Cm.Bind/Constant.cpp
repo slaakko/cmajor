@@ -34,7 +34,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             {
                 return; 
             }
-            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, TypeResolverTarget::constant, constantNode->TypeExpr());
+            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constantNode->TypeExpr());
             if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())
             {
                 if (type->IsEnumTypeSymbol())
@@ -60,6 +60,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
                 constantSymbol->ResetEvaluating();
                 constantSymbol->SetValue(value);
                 constantSymbol->SetBound();
+                constantSymbol->SetExportSymbol();
             }
             else
             {

@@ -32,8 +32,6 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     std::string Name() const override;
     Specifiers GetSpecifiers() const { return specifiers; }
     IdentifierNode* Id() const { return id.get(); }
@@ -47,7 +45,6 @@ private:
     std::unique_ptr<Node> baseClassTypeExpr;
     std::unique_ptr<WhereConstraintNode> constraint;
     NodeList members;
-    Node* parent;
 };
 
 class InitializerNode : public Node
@@ -113,6 +110,7 @@ public:
     void Write(Writer& writer);
     std::string ToString() const;
     void Accept(Visitor& visitor);
+    void SetParent(Node* parent);
 private:
     std::vector<std::unique_ptr<InitializerNode>> initializerNodes;
 };
@@ -202,8 +200,6 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* TypeExpr() const { return typeExpr.get(); }
@@ -212,7 +208,6 @@ private:
     Specifiers specifiers;
     std::unique_ptr<Node> typeExpr;
     std::unique_ptr<IdentifierNode> id;
-    Node* parent;
 };
 
 } } // namespace Cm::Ast

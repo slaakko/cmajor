@@ -15,12 +15,14 @@
 
 namespace Cm { namespace Ast {
 
-TypedefNode::TypedefNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
+TypedefNode::TypedefNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
 {
 }
 
-TypedefNode::TypedefNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_), parent(nullptr)
+TypedefNode::TypedefNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_)
 {
+    typeExpr->SetParent(this);
+    id->SetParent(this);
 }
 
 Node* TypedefNode::Clone() const
@@ -32,7 +34,9 @@ void TypedefNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
     typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
 }
 
 void TypedefNode::Write(Writer& writer)
@@ -51,16 +55,6 @@ void TypedefNode::Print(CodeFormatter& formatter)
     }
     s.append("typedef ").append(typeExpr->ToString()).append(1, ' ').append(id->ToString()).append(1, ';');
     formatter.WriteLine(s);
-}
-
-Node* TypedefNode::Parent() const
-{
-    return parent;
-}
-
-void TypedefNode::SetParent(Node* parent_)
-{
-    parent = parent_;
 }
 
 std::string TypedefNode::Name() const

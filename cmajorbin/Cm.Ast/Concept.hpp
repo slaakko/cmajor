@@ -30,6 +30,7 @@ public:
     void Write(Writer& writer);
     void Print(CodeFormatter& formatter);
     void Accept(Visitor& visitor);
+    void SetParent(Node* parent);
 private:
     std::vector<std::unique_ptr<AxiomStatementNode>> axiomStatementNodes;
 };
@@ -56,6 +57,7 @@ public:
     void Write(Writer& writer);
     void Print(CodeFormatter& formatter);
     void Accept(Visitor& visitor);
+    void SetParent(Node* parent);
 private:
     std::vector<std::unique_ptr<ConstraintNode>> constraintNodes;
 };
@@ -309,8 +311,6 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
-    Node* Parent() const override;
-    void SetParent(Node* parent_) override;
     std::string Name() const override;
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
@@ -324,7 +324,6 @@ private:
     std::unique_ptr<ConceptIdNode> refinement;
     ConstraintNodeList constraints;
     NodeList axioms;
-    Node* parent;
 };
 
 } } // namespace Cm::Ast

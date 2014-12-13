@@ -23,7 +23,6 @@ public:
     TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::templateTypeSymbol; }
     std::string TypeString() const override { return "template type"; };
-    bool IsExportSymbol() const override { return Source() == SymbolSource::project; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetSubjectType(TypeSymbol* subjectType_);

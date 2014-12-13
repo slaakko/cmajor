@@ -27,6 +27,7 @@ public:
     Span(int32_t fileIndex_, int32_t lineNumber_, int32_t start_): fileIndex(fileIndex_), lineNumber(lineNumber_), start(start_), end(start + 1) {}
     Span(int32_t fileIndex_, int32_t lineNumber_, int32_t start_, int32_t end_): fileIndex(fileIndex_), lineNumber(lineNumber_), start(start_), end(end_) {}
     int32_t FileIndex() const { return fileIndex; }
+    void SetFileIndex(int32_t fileIndex_) { fileIndex = fileIndex_; }
     int32_t LineNumber() const { return lineNumber; }
     int32_t Start() const { return start; }
     int32_t End() const { return end; }

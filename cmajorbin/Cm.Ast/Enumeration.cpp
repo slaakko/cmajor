@@ -16,12 +16,13 @@
 
 namespace Cm { namespace Ast {
 
-EnumTypeNode::EnumTypeNode(const Span& span_) : Node(span_), specifiers(Specifiers::none), parent(nullptr)
+EnumTypeNode::EnumTypeNode(const Span& span_) : Node(span_), specifiers(Specifiers::none)
 {
 }
 
-EnumTypeNode::EnumTypeNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_), parent(nullptr)
+EnumTypeNode::EnumTypeNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_)
 {
+    id->SetParent(this);
 }
 
 Node* EnumTypeNode::Clone() const
@@ -37,6 +38,7 @@ Node* EnumTypeNode::Clone() const
 void EnumTypeNode::SetUnderlyingType(Node* underlyingType_)
 {
     underlyingType.reset(underlyingType_);
+    underlyingType->SetParent(this);
 }
 
 void EnumTypeNode::AddConstant(Node* constant)
@@ -61,11 +63,9 @@ void EnumTypeNode::Read(Reader& reader)
 {
     specifiers = reader.ReadSpecifiers();
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     constants.Read(reader);
-    for (const std::unique_ptr<Node>& constant : constants)
-    {
-        constant->SetParent(this);
-    }
+    constants.SetParent(this);
 }
 
 void EnumTypeNode::Write(Writer& writer)
@@ -86,16 +86,6 @@ void EnumTypeNode::Print(CodeFormatter& formatter)
     formatter.WriteLine(s);
 }
 
-Node* EnumTypeNode::Parent() const
-{
-    return parent;
-}
-
-void EnumTypeNode::SetParent(Node* parent_)
-{
-    parent = parent_;
-}
-
 std::string EnumTypeNode::Name() const 
 {
     return id->Str(); 
@@ -108,12 +98,14 @@ void EnumTypeNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-EnumConstantNode::EnumConstantNode(const Span& span_) : Node(span_), parent(nullptr)
+EnumConstantNode::EnumConstantNode(const Span& span_) : Node(span_)
 {
 }
 
-EnumConstantNode::EnumConstantNode(const Span& span_, IdentifierNode* id_, Node* value_) : Node(span_), id(id_), value(value_), parent(nullptr)
+EnumConstantNode::EnumConstantNode(const Span& span_, IdentifierNode* id_, Node* value_) : Node(span_), id(id_), value(value_)
 {
+    id->SetParent(this);
+    value->SetParent(this);
 }
 
 Node* EnumConstantNode::Clone() const
@@ -124,7 +116,9 @@ Node* EnumConstantNode::Clone() const
 void EnumConstantNode::Read(Reader& reader)
 {
     id.reset(reader.ReadIdentifierNode());
+    id->SetParent(this);
     value.reset(reader.ReadNode());
+    value->SetParent(this);
 }
 
 void EnumConstantNode::Write(Writer& writer)
@@ -136,16 +130,6 @@ void EnumConstantNode::Write(Writer& writer)
 std::string EnumConstantNode::ToString() const
 {
     return id->ToString() + " = " + value->ToString();
-}
-
-Node* EnumConstantNode::Parent() const
-{
-    return parent;
-}
-
-void EnumConstantNode::SetParent(Node* parent_) 
-{
-    parent = parent_;
 }
 
 std::string EnumConstantNode::Name() const 

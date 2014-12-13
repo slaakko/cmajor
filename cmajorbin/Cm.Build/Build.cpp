@@ -59,9 +59,11 @@ void Build(const std::string& projectFilePath)
     project->VisitCompileUnits(declarationVisitor);
     Cm::Bind::BindingVisitor bindingVisitor(symbolTable);
     project->VisitCompileUnits(bindingVisitor);
+    boost::filesystem::create_directories(project->OutputBasePath());
     boost::filesystem::path moduleFilePath = project->OutputBasePath();
     boost::filesystem::path mcFilePath = moduleFilePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".mc");
     Cm::Sym::Module projectModule(mcFilePath.generic_string());
+    projectModule.SetSourceFilePaths(project->SourceFilePaths());
     projectModule.Export(symbolTable);
     Cm::Parser::SetCurrentFileRegistry(nullptr);
     auto end = std::chrono::system_clock::now();

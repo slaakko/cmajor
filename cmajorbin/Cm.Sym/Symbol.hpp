@@ -52,8 +52,9 @@ enum class SymbolFlags : uint8_t
     protected_ = 1 << 1,
     private_ = 1 << 2,
     internal_ = 1 << 3,
-    export_ = 1 << 4,
-    projectSource = 1 << 5
+    bound = 1 << 4,
+    export_ = 1 << 5,
+    projectSource = 1 << 6
 };
 
 std::string SymbolFlagStr(SymbolFlags flags);
@@ -111,13 +112,14 @@ public:
     virtual bool IsFunctionSymbol() const { return false; }
     virtual bool IsParameterSymbol() const { return false; }
     virtual bool IsMemberVariableSymbol() const { return false; }
+    virtual bool IsLocalVariableSymbol() const { return false; }
     virtual bool IsTypedefSymbol() const { return false; }
-    virtual bool IsExportSymbol() const { return GetFlag(SymbolFlags::export_); }
+    bool IsExportSymbol() const { return GetFlag(SymbolFlags::export_); }
     void SetExportSymbol() { SetFlag(SymbolFlags::export_); }
     NamespaceSymbol* Ns() const;
     ClassTypeSymbol* Class() const;
-    bool Bound() const { return bound; }
-    void SetBound() { bound = true; }
+    bool Bound() const { return GetFlag(SymbolFlags::bound); }
+    void SetBound() { SetFlag(SymbolFlags::bound); }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none;  }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
@@ -127,7 +129,6 @@ private:
     std::string name;
     SymbolFlags flags;
     Symbol* parent;
-    bool bound;
 };
 
 } } // namespace Cm::Sym

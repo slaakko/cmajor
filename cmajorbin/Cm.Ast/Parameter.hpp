@@ -48,6 +48,7 @@ public:
     void Write(Writer& writer);
     void Accept(Visitor& visitor);
     std::string ToString() const;
+    void SetParent(Node* parent);
 private:
     std::vector<std::unique_ptr<ParameterNode>> parameterNodes;
 };
