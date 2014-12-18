@@ -19,17 +19,24 @@ public:
     void AddType(TypeSymbol* type);
     TypeSymbol* GetTypeNothrow(const TypeId& typeId) const;
     TypeSymbol* GetType(const TypeId& typeId) const;
-    TypeSymbol* MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span);
+    TypeSymbol* MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span, bool requirePublic);
+    TypeSymbol* MakePointerType(TypeSymbol* baseType, const Span& span, bool requirePublic);
+    TypeSymbol* MakeRvalueRefType(TypeSymbol* baseType, const Span& span, bool requirePublic);
+    TypeSymbol* MakeConstPointerType(TypeSymbol* baseType, const Span& span, bool requirePublic);
     TypeSymbol* MakeConstCharPtrType(const Span& span);
     TypeSymbol* MakeGenericPtrType(const Span& span);
-    TypeSymbol* MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
+    TypeSymbol* MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span, bool requirePublic);
+    TypeSymbol* MakePlainType(TypeSymbol* type);
+    TypeSymbol* MakePlainTypeWithOnePointerRemoved(TypeSymbol* type);
     void Export(Writer& writer);
     void Import(Reader& reader);
+    void ClearInternalTypes();
 private:
     typedef std::unordered_map<TypeId, TypeSymbol*, TypeIdHash> TypeSymbolMap;
     typedef TypeSymbolMap::const_iterator TypeSymbolMapIt;
     TypeSymbolMap typeSymbolMap;
-    std::vector<std::unique_ptr<TypeSymbol>> types;
+    std::vector<std::unique_ptr<TypeSymbol>> publicTypes;
+    std::vector<std::unique_ptr<TypeSymbol>> internalTypes;
 };
 
 } } // namespace Cm::Sym

@@ -123,7 +123,6 @@ public:
     Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_);
     void AddDeclaration(ProjectDeclaration* declaration);
     void ResolveDeclarations();
-    void AddCompileUnit(CompileUnitNode* compileUnit);
     const std::string& Name() const { return name; }
     const std::string& FilePath() const { return filePath; }
     const boost::filesystem::path& BasePath() const { return basePath; }
@@ -137,8 +136,6 @@ public:
     const std::string& AssemblyFilePath() const { return assemblyFilePath; }
     const std::string& LibraryFilePath() const { return libraryFilePath; }
     const std::string& ExecutableFilePath() const { return executableFilePath; }
-    void Write(Writer& writer);
-    void VisitCompileUnits(Visitor& visitor);
 private:
     std::string name;
     std::string filePath;
@@ -156,7 +153,6 @@ private:
     std::string assemblyFilePath;
     std::string libraryFilePath;
     std::string executableFilePath;
-    std::vector<std::unique_ptr<CompileUnitNode>> compileUnits;
 };
 
 } } // namespace Cm::Ast

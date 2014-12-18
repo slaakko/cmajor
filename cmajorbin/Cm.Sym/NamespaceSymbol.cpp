@@ -31,15 +31,7 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
         else 
         {
             Symbol* symbol = ownedSymbol.release();
-            if (symbol->IsFunctionSymbol())
-            {
-                FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(symbol);
-                symbolTable.Container()->AddFunctionSymbol(functionSymbol);
-            }
-            else
-            {
-                symbolTable.Container()->AddSymbol(symbol);
-            }
+            symbolTable.Container()->AddSymbol(symbol);
         }
     }
     symbolTable.EndNamespaceScope();

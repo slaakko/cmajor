@@ -13,11 +13,6 @@
 
 namespace Cm { namespace BoundTree {
 
-enum class BoundNodeType
-{
-    
-};
-
 class BoundNode
 {
 public:

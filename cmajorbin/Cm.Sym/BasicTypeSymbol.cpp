@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -28,58 +29,84 @@ BasicTypeSymbol::BasicTypeSymbol(const std::string& name_, ShortBasicTypeId id_)
 {
     SetBound();
     SetSource(SymbolSource::library);
+    SetPublic();
 }
 
 BoolTypeSymbol::BoolTypeSymbol() : BasicTypeSymbol("bool", ShortBasicTypeId::boolId)
 {
+    SetIrType(Cm::IrIntf::I1());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 CharTypeSymbol::CharTypeSymbol() : BasicTypeSymbol("char", ShortBasicTypeId::charId)
 {
+    SetIrType(Cm::IrIntf::I8());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 VoidTypeSymbol::VoidTypeSymbol() : BasicTypeSymbol("void", ShortBasicTypeId::voidId)
 {
+    SetIrType(Cm::IrIntf::Void());
 }
 
 SByteTypeSymbol::SByteTypeSymbol() : BasicTypeSymbol("sbyte", ShortBasicTypeId::sbyteId)
 {
+    SetIrType(Cm::IrIntf::I8());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 ByteTypeSymbol::ByteTypeSymbol() : BasicTypeSymbol("byte", ShortBasicTypeId::byteId)
 {
+    SetIrType(Cm::IrIntf::UI8());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 ShortTypeSymbol::ShortTypeSymbol() : BasicTypeSymbol("short", ShortBasicTypeId::shortId)
 {
+    SetIrType(Cm::IrIntf::I16());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 UShortTypeSymbol::UShortTypeSymbol() : BasicTypeSymbol("ushort", ShortBasicTypeId::ushortId)
 {
+    SetIrType(Cm::IrIntf::UI16());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 IntTypeSymbol::IntTypeSymbol() : BasicTypeSymbol("int", ShortBasicTypeId::intId)
 {
+    SetIrType(Cm::IrIntf::I32());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 UIntTypeSymbol::UIntTypeSymbol() : BasicTypeSymbol("uint", ShortBasicTypeId::uintId)
 {
+    SetIrType(Cm::IrIntf::UI32());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 LongTypeSymbol::LongTypeSymbol() : BasicTypeSymbol("long", ShortBasicTypeId::longId)
 {
+    SetIrType(Cm::IrIntf::I64());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 ULongTypeSymbol::ULongTypeSymbol() : BasicTypeSymbol("ulong", ShortBasicTypeId::ulongId)
 {
+    SetIrType(Cm::IrIntf::UI64());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 FloatTypeSymbol::FloatTypeSymbol() : BasicTypeSymbol("float", ShortBasicTypeId::floatId)
 {
+    SetIrType(Cm::IrIntf::Float());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 DoubleTypeSymbol::DoubleTypeSymbol() : BasicTypeSymbol("double", ShortBasicTypeId::doubleId)
 {
+    SetIrType(Cm::IrIntf::Double());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
 } } // namespace Cm::Sym

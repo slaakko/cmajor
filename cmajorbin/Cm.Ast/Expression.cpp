@@ -560,7 +560,9 @@ std::string DotNode::ToString() const
 
 void DotNode::Accept(Visitor& visitor)
 {
-    visitor.Visit(*this);
+    visitor.BeginVisit(*this);
+    Subject()->Accept(visitor);
+    visitor.EndVisit(*this);
 }
 
 ArrowNode::ArrowNode(const Span& span_) : UnaryNode(span_)

@@ -10,6 +10,7 @@
 #ifndef CM_BOUND_TREE_STATEMENT_INCLUDED
 #define CM_BOUND_TREE_STATEMENT_INCLUDED
 #include <Cm.BoundTree/Expression.hpp>
+#include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -58,10 +59,16 @@ class BoundConstructionStatement : public BoundStatement
 public:
     BoundConstructionStatement(Cm::Ast::Node* syntaxNode_);
     void SetLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable_) { localVariable = localVariable_;  }
-    void AddArgument(BoundExpression* argument);
+    Cm::Sym::LocalVariableSymbol* LocalVariable() const { return localVariable; }
+    void SetArguments(BoundExpressionList&& arguments_);
+    void GetResolutionArguments(std::vector<Cm::Core::Argument>& resolutionArguments);
+    void SetConstructor(Cm::Sym::FunctionSymbol* ctor_) { ctor = ctor_; }
+    void InsertLocalVariableToArguments();
+    void ApplyConversions(const std::vector<Cm::Sym::FunctionSymbol*>& conversions);
 private:
     Cm::Sym::LocalVariableSymbol* localVariable;
     BoundExpressionList arguments;
+    Cm::Sym::FunctionSymbol* ctor;
 };
 
 class BoundThrowStatement : public BoundStatement

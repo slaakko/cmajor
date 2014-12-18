@@ -14,6 +14,7 @@
 namespace Cm { namespace Sym {
 
 class FunctionSymbol;
+class FunctionGroupSymbol;
 class TemplateTypeSymbol;
 
 class ContainerSymbol : public Symbol
@@ -24,9 +25,8 @@ public:
     void Read(Reader& reader) override;
     ContainerScope* GetContainerScope() override { return &containerScope; }
     bool IsContainerSymbol() const override { return true; }
-    void AddSymbol(Symbol* symbol);
-    void AddFunctionSymbol(FunctionSymbol* functionSymbol);
-    void AddTemplateTypeSymbol(TemplateTypeSymbol* templateTypeSymbol);
+    virtual void AddSymbol(Symbol* symbol);
+    FunctionGroupSymbol* MakeFunctionGroupSymbol(const std::string& groupName, const Span& span);
     std::vector<std::unique_ptr<Symbol>>& Symbols() { return symbols; }
     void Dump(CodeFormatter& formatter) override;
 private:

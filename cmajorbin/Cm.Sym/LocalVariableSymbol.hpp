@@ -22,7 +22,9 @@ public:
     LocalVariableSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
     bool IsLocalVariableSymbol() const override { return true; }
+    SymbolAccess DeclaredAccess() const override { return SymbolAccess::private_; }
     std::string TypeString() const override { return "local variable"; };
+    bool IsExportSymbol() const { return false; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;

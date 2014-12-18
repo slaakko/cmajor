@@ -11,6 +11,7 @@
 #include <Cm.Bind/Exception.hpp>
 #include <Cm.Bind/Evaluator.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/Access.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
@@ -31,11 +32,15 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             {
                 return;
             }
+            Cm::Ast::Specifiers specifiers = enumTypeNode->GetSpecifiers();
+            bool isClassMember = enumTypeNode->Parent()->IsClassNode();
+            SetAccess(enumTypeSymbol, specifiers, isClassMember);
             Cm::Ast::Node* underlyingTypeNode = enumTypeNode->GetUnderlyingType();
             if (underlyingTypeNode)
             {
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(underlyingTypeNode);
-                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScope, underlyingTypeNode);
+                bool willBeExported = enumTypeSymbol->WillBeExported();
+                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScope, underlyingTypeNode, willBeExported);
                 if (underlyingType->IsBasicTypeSymbol())
                 {
                     enumTypeSymbol->SetUnderlyingType(underlyingType);
@@ -50,7 +55,6 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
                 enumTypeSymbol->SetUnderlyingType(symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
             }
             enumTypeSymbol->SetBound();
-            enumTypeSymbol->SetExportSymbol();
         }
         else
         {
@@ -92,7 +96,6 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
             enumConstantSymbol->ResetEvaluating();
             enumConstantSymbol->SetValue(value);
             enumConstantSymbol->SetBound();
-            enumConstantSymbol->SetExportSymbol();
         }
         else
         {

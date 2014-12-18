@@ -10,11 +10,13 @@
 #ifndef CM_BIND_CONSTANT_INCLUDED
 #define CM_BIND_CONSTANT_INCLUDED
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Ast/Constant.hpp>
 
 namespace Cm { namespace Bind {
 
 void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ConstantNode* constantNode);
+void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ConstantNode* constantNode, Cm::Sym::ConstantSymbol* constantSymbol);
 
 } } // namespace Cm::Bind
 

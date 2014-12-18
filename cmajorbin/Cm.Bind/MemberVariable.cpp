@@ -10,6 +10,7 @@
 #include <Cm.Bind/MemberVariable.hpp>
 #include <Cm.Bind/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/Access.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -23,14 +24,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
         if (symbol->IsMemberVariableSymbol())
         {
             Cm::Sym::MemberVariableSymbol* memberVariableSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(symbol);
-            if (memberVariableSymbol->Bound())
-            {
-                return;
-            }
-            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, memberVariableNode->TypeExpr());
-            memberVariableSymbol->SetType(type);
-            memberVariableSymbol->SetBound();
-            memberVariableSymbol->SetExportSymbol();
+            BindMemberVariable(symbolTable, containerScope, fileScope, memberVariableNode, memberVariableSymbol);
         }
         else
         {
@@ -41,6 +35,26 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     {
         throw Exception("symbol '" + memberVariableNode->Id()->Str() + "' not found");
     }
+}
+
+void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::MemberVariableNode* memberVariableNode,
+    Cm::Sym::MemberVariableSymbol* memberVariableSymbol)
+{
+    if (memberVariableSymbol->Bound())
+    {
+        return;
+    }
+    Cm::Ast::Specifiers specifiers = memberVariableNode->GetSpecifiers();
+    bool isClassMember = true;
+    SetAccess(memberVariableSymbol, specifiers, isClassMember);
+    bool willBeExported = memberVariableSymbol->WillBeExported();
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, memberVariableNode->TypeExpr(), willBeExported);
+    if (type->Access() < memberVariableSymbol->Access())
+    {
+        throw Exception("type of a member variable must be at least as accessible as the member variable itself", type->GetSpan(), memberVariableSymbol->GetSpan());
+    }
+    memberVariableSymbol->SetType(type);
+    memberVariableSymbol->SetBound();
 }
 
 } } // namespace Cm::Bind

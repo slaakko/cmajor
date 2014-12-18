@@ -10,6 +10,7 @@
 #include <Cm.Sym/Scope.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
+#include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <unordered_set>
@@ -123,6 +124,38 @@ NamespaceSymbol* ContainerScope::Ns() const
 ClassTypeSymbol* ContainerScope::Class() const
 {
     return container->Class();
+}
+
+ContainerScope* ContainerScope::ClassOrNsScope() const
+{
+    return container->ClassOrNs()->GetContainerScope();
+}
+
+void ContainerScope::CollectViableFunctions(ScopeLookup lookup, const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions)
+{
+    if ((lookup & ScopeLookup::this_) != ScopeLookup::none)
+    {
+        Cm::Sym::Symbol* symbol = Lookup(groupName);
+        if (symbol && symbol->IsFunctionGroupSymbol())
+        {
+            FunctionGroupSymbol* functionGroupSymbol = static_cast<FunctionGroupSymbol*>(symbol);
+            functionGroupSymbol->CollectViableFunctions(arity, viableFunctions);
+        }
+    }
+    if ((lookup & ScopeLookup::base) != ScopeLookup::none)
+    {
+        if (base)
+        {
+            base->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+        }
+    }
+    if ((lookup & ScopeLookup::parent) != ScopeLookup::none)
+    {
+        if (parent)
+        {
+            parent->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+        }
+    }
 }
 
 NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsName, const Span& span)

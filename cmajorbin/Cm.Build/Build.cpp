@@ -8,6 +8,8 @@
 ========================================================================*/
 
 #include <Cm.Build/Build.hpp>
+#include <Cm.Core/InitSymbolTable.hpp>
+#include <Cm.Ast/SyntaxTree.hpp>
 #include <Cm.Parser/Project.hpp>
 #include <Cm.Parser/CompileUnit.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
@@ -16,34 +18,31 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Module.hpp>
 #include <Cm.Bind/BindingVisitor.hpp>
+#include <Cm.IrIntf/BackEnd.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
 #include <chrono>
 #include <iostream>
 
 namespace Cm { namespace Build {
 
-void Build(const std::string& projectFilePath)
+Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const std::vector<std::string>& sourceFilePaths)
 {
-    auto start = std::chrono::system_clock::now();
-    Cm::Util::MappedInputFile projectFile(projectFilePath);
-    Cm::Parser::FileRegistry fileRegistry;
-    Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
-    Cm::Parser::ProjectGrammar* projectGrammar = Cm::Parser::ProjectGrammar::Create();
     Cm::Parser::CompileUnitGrammar* compileUnitGrammar = Cm::Parser::CompileUnitGrammar::Create();
-    int projectFileIndex = fileRegistry.RegisterParsedFile(projectFilePath);
-    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), projectFileIndex, projectFilePath, "debug", "llvm"));
-    project->ResolveDeclarations();
-    for (const std::string& sourceFilePath : project->SourceFilePaths())
+    Cm::Ast::SyntaxTree syntaxTree;
+    for (const std::string& sourceFilePath : sourceFilePaths)
     {
         Cm::Util::MappedInputFile sourceFile(sourceFilePath);
         int sourceFileIndex = fileRegistry.RegisterParsedFile(sourceFilePath);
         Cm::Parser::ParsingContext ctx;
         Cm::Ast::CompileUnitNode* compileUnit = compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), sourceFileIndex, sourceFilePath, &ctx);
-        project->AddCompileUnit(compileUnit);
+        syntaxTree.AddCompileUnit(compileUnit);
     }
-    Cm::Sym::SymbolTable symbolTable;
-    boost::filesystem::path projectBase = project->BasePath();
-    for (const std::string& referenceFilePath : project->ReferenceFilePaths())
+    return syntaxTree;
+}
+
+void ImportModules(Cm::Sym::SymbolTable& symbolTable, const std::vector<std::string>& referenceFilePaths, boost::filesystem::path& projectBase)
+{
+    for (const std::string& referenceFilePath : referenceFilePaths)
     {
         boost::filesystem::path lrp = referenceFilePath;
         boost::filesystem::path libParent = lrp.parent_path();
@@ -55,9 +54,50 @@ void Build(const std::string& projectFilePath)
         Cm::Sym::Module module(rfp.generic_string());
         module.ImportTo(symbolTable);
     }
-    Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
-    project->VisitCompileUnits(declarationVisitor);
+}
+
+Cm::Sym::SymbolTable BuildSymbolTable(Cm::Ast::SyntaxTree& syntaxTree)
+{
+    Cm::Sym::SymbolTable symbolTable;
+    Cm::Core::InitSymbolTable(symbolTable);
+    for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+    {
+        Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
+        compileUnit->Accept(declarationVisitor);
+    }
+    return symbolTable;
+}
+
+Cm::BoundTree::BoundCompileUnit Bind(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::CompileUnitNode* compileUnit)
+{
     Cm::Bind::BindingVisitor bindingVisitor(symbolTable);
+    compileUnit->Accept(bindingVisitor);
+    return bindingVisitor.Result();
+}
+
+void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree)
+{
+    for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+    {
+        Cm::BoundTree::BoundCompileUnit boundCompileUnit = Bind(symbolTable, compileUnit.get());
+    }
+}
+
+void Build(const std::string& projectFilePath)
+{
+    auto start = std::chrono::system_clock::now();
+    Cm::IrIntf::SetBackEnd(Cm::IrIntf::BackEnd::llvm);
+    Cm::Util::MappedInputFile projectFile(projectFilePath);
+    Cm::Parser::FileRegistry fileRegistry;
+    Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
+    Cm::Parser::ProjectGrammar* projectGrammar = Cm::Parser::ProjectGrammar::Create();
+    int projectFileIndex = fileRegistry.RegisterParsedFile(projectFilePath);
+    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), projectFileIndex, projectFilePath, "debug", "llvm"));
+    project->ResolveDeclarations();
+    Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
+    Cm::Sym::SymbolTable symbolTable = BuildSymbolTable(syntaxTree);
+    boost::filesystem::path projectBase = project->BasePath();
+    ImportModules(symbolTable, project->ReferenceFilePaths(), projectBase);
     project->VisitCompileUnits(bindingVisitor);
     boost::filesystem::create_directories(project->OutputBasePath());
     boost::filesystem::path moduleFilePath = project->OutputBasePath();

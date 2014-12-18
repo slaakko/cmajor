@@ -11,7 +11,7 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_)
+BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : BoundNode(syntaxNode_), functionSymbol(functionSymbol_)
 {
 }
 

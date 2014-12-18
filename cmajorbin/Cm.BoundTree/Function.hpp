@@ -16,10 +16,12 @@ namespace Cm { namespace BoundTree {
 class BoundFunction : public BoundNode
 {
 public:
-    BoundFunction(Cm::Ast::Node* syntaxNode_);
+    BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_);
+    Cm::Sym::FunctionSymbol* GetFunctionSymbol() const { return functionSymbol; }
     void SetBody(BoundCompoundStatement* body_);
 private:
     std::unique_ptr<BoundCompoundStatement> body;
+    Cm::Sym::FunctionSymbol* functionSymbol;
 };
 
 } } // namespace Cm::BoundTree

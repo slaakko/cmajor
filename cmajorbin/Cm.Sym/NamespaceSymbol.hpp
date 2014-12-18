@@ -21,6 +21,8 @@ public:
     std::string TypeString() const override { return "namespace"; };
     bool IsNamespaceSymbol() const override { return true; }
     bool IsGlobalNamespace() const { return Name().empty(); }
+    bool IsExportSymbol() const override { return true; }
+    SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     void Import(NamespaceSymbol* that, SymbolTable& symbolTable);
 };
 

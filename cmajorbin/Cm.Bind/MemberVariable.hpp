@@ -10,10 +10,13 @@
 #ifndef CM_BIND_MEMBER_VARIABLE_INCLUDED
 #define CM_BIND_MEMBER_VARIABLE_INCLUDED
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/MemberVariableSymbol.hpp>
 
 namespace Cm { namespace Bind {
 
 void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::MemberVariableNode* memberVariableNode);
+void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::MemberVariableNode* memberVariableNode, 
+    Cm::Sym::MemberVariableSymbol* memberVariableSymbol);
 
 } } // namespace Cm::Bind
 

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="BasicTypeSymbol.hpp" />
     <ClInclude Include="ClassTypeSymbol.hpp" />
+    <ClInclude Include="ConversionTable.hpp" />
     <ClInclude Include="DeclarationBlock.hpp" />
     <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="ContainerSymbol.hpp" />
@@ -30,6 +31,7 @@
     <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="Exception.hpp" />
     <ClInclude Include="Factory.hpp" />
+    <ClInclude Include="FunctionGroupSymbol.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
     <ClInclude Include="InitDone.hpp" />
     <ClInclude Include="LocalVariableSymbol.hpp" />
@@ -53,6 +55,7 @@
   <ItemGroup>
     <ClCompile Include="BasicTypeSymbol.cpp" />
     <ClCompile Include="ClassTypeSymbol.cpp" />
+    <ClCompile Include="ConversionTable.cpp" />
     <ClCompile Include="DeclarationBlock.cpp" />
     <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="ContainerSymbol.cpp" />
@@ -62,6 +65,7 @@
     <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="Factory.cpp" />
+    <ClCompile Include="FunctionGroupSymbol.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
     <ClCompile Include="InitDone.cpp" />
     <ClCompile Include="LocalVariableSymbol.cpp" />

@@ -9,10 +9,12 @@
 
 #include <Cm.Sym/ContainerSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/Exception.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -53,24 +55,39 @@ void ContainerSymbol::Read(Reader& reader)
 
 void ContainerSymbol::AddSymbol(Symbol* symbol)
 {
-    if (!symbol->Name().empty())
+    if (!symbol->Name().empty() && !symbol->IsFunctionSymbol() && !symbol->IsTemplateTypeSymbol())
     {
         containerScope.Install(symbol);
+    }
+    if (symbol->IsFunctionSymbol())
+    {
+        FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(symbol);
+        FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
+        functionGroupSymbol->AddFunction(functionSymbol);
     }
     symbols.push_back(std::unique_ptr<Symbol>(symbol));
     symbol->SetParent(this);
 }
 
-void ContainerSymbol::AddFunctionSymbol(FunctionSymbol* functionSymbol)
+FunctionGroupSymbol* ContainerSymbol::MakeFunctionGroupSymbol(const std::string& groupName, const Span& span)
 {
-    symbols.push_back(std::unique_ptr<Symbol>(functionSymbol));
-    functionSymbol->SetParent(this);
-}
-
-void ContainerSymbol::AddTemplateTypeSymbol(TemplateTypeSymbol* templateTypeSymbol)
-{
-    symbols.push_back(std::unique_ptr<Symbol>(templateTypeSymbol));
-    templateTypeSymbol->SetParent(this);
+    Cm::Sym::Symbol* symbol = containerScope.Lookup(groupName);
+    if (!symbol)
+    {
+        FunctionGroupSymbol* functionGroupSymbol = new FunctionGroupSymbol(span, groupName);
+        functionGroupSymbol->SetPublic();
+        AddSymbol(functionGroupSymbol);
+        return functionGroupSymbol;
+    }
+    if (symbol->IsFunctionGroupSymbol())
+    {
+        FunctionGroupSymbol* functionGroupSymbol = static_cast<FunctionGroupSymbol*>(symbol);
+        return functionGroupSymbol;
+    }
+    else
+    {
+        throw Exception("name of symbol '" + symbol->FullName() + "' conflicts with a function group '" + groupName + "'", symbol->GetSpan(), span);
+    }
 }
 
 void ContainerSymbol::Dump(CodeFormatter& formatter)
