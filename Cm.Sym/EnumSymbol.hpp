@@ -41,6 +41,8 @@ public:
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetValue(Value* value_);
+    bool IsExportSymbol() const override { return true; }
+    SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     Value* GetValue() const { return value.get(); }
     bool Evaluating() const { return evaluating; }
     void SetEvaluating() { evaluating = true; }

@@ -36,6 +36,7 @@ public:
     Specifiers GetSpecifiers() const { return specifiers; }
     IdentifierNode* Id() const { return id.get(); }
     const TemplateParameterNodeList& TemplateParameters() const { return templateParameters; }
+    Node* BaseClassTypeExpr() const { return baseClassTypeExpr.get(); }
     WhereConstraintNode* Constraint() const { return constraint.get(); }
     void Accept(Visitor& visitor) override;
 private:
@@ -196,6 +197,7 @@ public:
     MemberVariableNode(const Span& span_);
     MemberVariableNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::memberVariableNode; }
+    bool IsMemberVariableNode() const override { return true; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;

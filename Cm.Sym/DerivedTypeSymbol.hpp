@@ -14,7 +14,14 @@
 
 namespace Cm { namespace Sym {
 
-TypeId ComputeTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations);
+TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations, bool makeInternal);
+bool HasPointertDerivation(const Cm::Ast::DerivationList& derivations);
+int CountPointers(const Cm::Ast::DerivationList& derivations);
+bool HasReferenceDerivation(const Cm::Ast::DerivationList& derivations);
+bool IsNonConstReferenceDerivationList(const Cm::Ast::DerivationList& derivations);
+bool HasConstDerivation(const Cm::Ast::DerivationList& derivations);
+bool HasRvalueRefDerivation(const Cm::Ast::DerivationList& derivations);
+DerivationCounts CountDerivations(const Cm::Ast::DerivationList& derivations);
 
 class DerivedTypeSymbol : public TypeSymbol
 {
@@ -24,9 +31,15 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::derivedTypeSymbol; }
     std::string TypeString() const override { return "derived type"; };
     const Cm::Ast::DerivationList& Derivations() const { return derivations; }
-    void SetDerivations(const Cm::Ast::DerivationList& derivations_);
     bool IsDerivedTypeSymbol() const override { return true; }
     TypeSymbol* GetBaseType() const override { return baseType; }
+    bool IsPointerType() const override { return HasPointertDerivation(derivations); }
+    int GetPointerCount() const override { return CountPointers(derivations); }
+    bool IsReferenceType() const { return HasReferenceDerivation(derivations); }
+    bool IsNonConstReferenceType() const override { return IsNonConstReferenceDerivationList(derivations); }
+    bool IsConstType() const override { return HasConstDerivation(derivations); }
+    bool IsRvalueRefType() const override { return HasRvalueRefDerivation(derivations); }
+    DerivationCounts GetDerivationCounts() const override { return CountDerivations(derivations); }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type, int index) override;

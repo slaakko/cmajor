@@ -433,6 +433,10 @@ public:
     void Visit(Cm::Ast::StringLiteralNode& stringLiteralNode) override;
     void Visit(Cm::Ast::NullLiteralNode& nullLiteralNode) override;
 
+    void BeginVisit(Cm::Ast::ClassNode& classNode) override;
+    void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
+    void BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
+
     void BeginVisit(Cm::Ast::EquivalenceNode& equivalenceNode) override;
     void BeginVisit(Cm::Ast::ImplicationNode& implicationNode) override;
     void EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode) override;
@@ -463,7 +467,7 @@ public:
     void Visit(Cm::Ast::DerefNode& derefNode) override;
     void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) override;
     void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) override;
-    void Visit(Cm::Ast::DotNode& dotNode) override;
+    void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::ArrowNode& arrowNode) override;
     void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
     void Visit(Cm::Ast::IndexNode& indexNode) override;
@@ -484,6 +488,7 @@ private:
     Cm::Sym::ContainerScope* currentContainerScope;
     Cm::Sym::FileScope* fileScope;
     EvaluationStack stack;
+    void EvaluateSymbol(Cm::Sym::Symbol* symbol);
 };
 
 Evaluator::Evaluator(Cm::Sym::ValueType targetType_, bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_) :
@@ -719,9 +724,61 @@ void Evaluator::Visit(Cm::Ast::PostfixDecNode& postfiDecNode)
     throw Exception("cannot evaluate statically", postfiDecNode.GetSpan());
 }
 
-void Evaluator::Visit(Cm::Ast::DotNode& dotNode)
+class ScopedValue : public Cm::Sym::Value
 {
-    throw Exception("cannot evaluate statically", dotNode.GetSpan());
+public:
+    ScopedValue(Cm::Sym::ContainerSymbol* containerSymbol_) : containerSymbol(containerSymbol_) {}
+    bool IsScopedValue() const override { return true; }
+    Cm::Sym::ContainerSymbol* ContainerSymbol() const { return containerSymbol; }
+    Cm::Sym::ValueType GetValueType() const override { throw std::runtime_error("member function not applicable"); }
+    Cm::Sym::Value* Clone() const override { throw std::runtime_error("member function not applicable"); }
+    void Read(Cm::Ser::BinaryReader& reader) override { throw std::runtime_error("member function not applicable"); }
+    void Write(Cm::Ser::BinaryWriter& writer) override { throw std::runtime_error("member function not applicable"); }
+    Cm::Sym::Value* As(Cm::Sym::ValueType targetType, bool cast, const Span& span) const override { throw std::runtime_error("member function not applicable"); }
+private:
+    Cm::Sym::ContainerSymbol* containerSymbol;
+};
+
+void Evaluator::BeginVisit(Cm::Ast::ClassNode& classNode)
+{
+    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&classNode);
+    stack.Push(new ScopedValue(scope->Container()));
+}
+
+void Evaluator::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
+{
+    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&namespaceNode);
+    stack.Push(new ScopedValue(scope->Container()));
+}
+
+void Evaluator::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
+{
+    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&enumTypeNode);
+    stack.Push(new ScopedValue(scope->Container()));
+}
+
+void Evaluator::EndVisit(Cm::Ast::DotNode& dotNode)
+{
+    std::unique_ptr<Cm::Sym::Value> value(stack.Pop());
+    if (value->IsScopedValue())
+    {
+        ScopedValue* scopedValue = static_cast<ScopedValue*>(value.get());
+        Cm::Sym::ContainerSymbol* containerSymbol = scopedValue->ContainerSymbol();
+        Cm::Sym::ContainerScope* scope = containerSymbol->GetContainerScope();
+        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str());
+        if (symbol)
+        {
+            EvaluateSymbol(symbol);
+        }
+        else
+        {
+            throw Exception("symbol '" + containerSymbol->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+        }
+    }
+    else
+    {
+        throw Exception("expression '" + dotNode.Subject()->FullName() + "' must denote a namespace, class type or enumerated type", dotNode.Subject()->GetSpan());
+    }
 }
 
 void Evaluator::Visit(Cm::Ast::ArrowNode& arrowNode)
@@ -747,7 +804,7 @@ void Evaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void Evaluator::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScope, targetTypeExpr));
+    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScope, targetTypeExpr, false));
     Cm::Sym::SymbolType symbolType = type->GetSymbolType();
     Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
     stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScope));
@@ -768,6 +825,56 @@ void Evaluator::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
     throw Exception("cannot evaluate statically", templateIdNode.GetSpan());
 }
 
+void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
+{
+    if (symbol->IsContainerSymbol())
+    {
+        Cm::Sym::ContainerSymbol* containerSymbol = static_cast<Cm::Sym::ContainerSymbol*>(symbol);
+        stack.Push(new ScopedValue(containerSymbol));
+    }
+    else if (symbol->IsConstantSymbol())
+    {
+        Cm::Sym::ConstantSymbol* constantSymbol = static_cast<Cm::Sym::ConstantSymbol*>(symbol);
+        if (!constantSymbol->GetValue())
+        {
+            Cm::Ast::Node* node = symbolTable.GetNode(constantSymbol);
+            if (node->IsConstantNode())
+            {
+                Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
+                BindConstant(symbolTable, currentContainerScope, fileScope, constantNode);
+            }
+            else
+            {
+                throw std::runtime_error("node is not constant node");
+            }
+        }
+        stack.Push(constantSymbol->GetValue()->Clone());
+    }
+    else if (symbol->IsEnumConstantSymbol())
+    {
+        Cm::Sym::EnumConstantSymbol* enumConstantSymbol = static_cast<Cm::Sym::EnumConstantSymbol*>(symbol);
+        if (!enumConstantSymbol->GetValue())
+        {
+            Cm::Ast::Node* node = symbolTable.GetNode(enumConstantSymbol);
+            if (node->IsEnumConstantNode())
+            {
+                Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
+                Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
+                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScope, enumConstantNode);
+            }
+            else
+            {
+                throw std::runtime_error("node is not enumeration constant node");
+            }
+        }
+        stack.Push(enumConstantSymbol->GetValue()->Clone());
+    }
+    else
+    {
+        throw Exception("cannot evaluate statically", symbol->GetSpan());
+    }
+}
+
 void Evaluator::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
     Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
@@ -777,47 +884,7 @@ void Evaluator::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     if (symbol)
     {
-        if (symbol->IsConstantSymbol())
-        {
-            Cm::Sym::ConstantSymbol* constantSymbol = static_cast<Cm::Sym::ConstantSymbol*>(symbol);
-            if (!constantSymbol->GetValue())
-            {
-                Cm::Ast::Node* node = symbolTable.GetNode(constantSymbol);
-                if (node->IsConstantNode())
-                {
-                    Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
-                    BindConstant(symbolTable, currentContainerScope, fileScope, constantNode);
-                }
-                else
-                {
-                    throw std::runtime_error("node is not constant node");
-                }
-            }
-            stack.Push(constantSymbol->GetValue()->Clone());
-        }
-        else if (symbol->IsEnumConstantSymbol())
-        {
-            Cm::Sym::EnumConstantSymbol* enumConstantSymbol = static_cast<Cm::Sym::EnumConstantSymbol*>(symbol);
-            if (!enumConstantSymbol->GetValue())
-            {
-                Cm::Ast::Node* node = symbolTable.GetNode(enumConstantSymbol);
-                if (node->IsEnumConstantNode())
-                {
-                    Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
-                    Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
-                    BindEnumConstant(symbolTable, enumConstantContainerScope, fileScope, enumConstantNode);
-                }
-                else
-                {
-                    throw std::runtime_error("node is not enumeration constant node");
-                }
-            }
-            stack.Push(enumConstantSymbol->GetValue()->Clone());
-        }
-        else
-        {
-            throw Exception("cannot evaluate statically", identifierNode.GetSpan());
-        }
+        EvaluateSymbol(symbol);
     }
     else
     {

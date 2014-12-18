@@ -246,7 +246,8 @@ public:
     virtual void Visit(PostfixIncNode& postfixIncNode) {}
     virtual void Visit(PostfixDecNode& postfixDecNode) {}
     virtual void EndVisit(PostfixDecNode& postfixDecNode) {}
-    virtual void Visit(DotNode& dotNode) {}
+    virtual void BeginVisit(DotNode& dotNode) {}
+    virtual void EndVisit(DotNode& dotNode) {}
     virtual void Visit(ArrowNode& arrowNode) {}
     virtual void BeginVisit(InvokeNode& invokeNode) {}
     virtual void EndVisit(InvokeNode& invokeNode) {}

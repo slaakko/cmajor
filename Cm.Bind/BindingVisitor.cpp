@@ -8,19 +8,20 @@
 ========================================================================*/
 
 #include <Cm.Bind/BindingVisitor.hpp>
+#include <Cm.Bind/Class.hpp>
+#include <Cm.Bind/Function.hpp>
 #include <Cm.Bind/Constant.hpp>
 #include <Cm.Bind/Enumeration.hpp>
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.Bind/Typedef.hpp>
 #include <Cm.Bind/MemberVariable.hpp>
 #include <Cm.Bind/LocalVariable.hpp>
-#include <Cm.Bind/Statement.hpp>
-#include <Cm.BoundTree/Statement.hpp>
+#include <Cm.Bind/StatementBinder.hpp>
 
 namespace Cm { namespace Bind {
 
-BindingVisitor::BindingVisitor(Cm::Sym::SymbolTable& symbolTable_) : 
-    Cm::Ast::Visitor(false), symbolTable(symbolTable_), currentContainerScope(nullptr), currentFileScope(nullptr), parameterIndex(0), currentBlock(nullptr)
+BindingVisitor::BindingVisitor(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) :
+    Cm::Ast::Visitor(false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentFileScope(nullptr), parameterIndex(0), currentBlock(nullptr)
 {
 }
 
@@ -43,14 +44,14 @@ void BindingVisitor::BeginVisit(Cm::Ast::CompileUnitNode& compileUnitNode)
 
 void BindingVisitor::EndVisit(Cm::Ast::CompileUnitNode& compileUnitNode)
 {
+    boundCompileUnit.SymbolTable().GetTypeRepository().ClearInternalTypes();
     currentFileScope.reset();
 }
 
 void BindingVisitor::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
 {
-    Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&namespaceNode);
+    Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&namespaceNode);
     Cm::Sym::ContainerSymbol* container = containerScope->Container();
-    container->SetExportSymbol();
     BeginContainerScope(containerScope);
 }
 
@@ -91,7 +92,8 @@ void BindingVisitor::BeginVisit(Cm::Ast::ClassNode& classNode)
     }
     else
     {
-        Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&classNode);
+        BindClass(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &classNode);
+        Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&classNode);
         BeginContainerScope(containerScope);
     }
 }
@@ -110,7 +112,7 @@ void BindingVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
 
 void BindingVisitor::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&constructorNode));
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&constructorNode));
     parameterIndex = 0;
 }
 
@@ -121,7 +123,7 @@ void BindingVisitor::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
 
 void BindingVisitor::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&destructorNode));
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&destructorNode));
     parameterIndex = 0;
 }
 
@@ -132,7 +134,7 @@ void BindingVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 
 void BindingVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&memberFunctionNode));
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&memberFunctionNode));
     parameterIndex = 0;
 }
 
@@ -143,7 +145,7 @@ void BindingVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 
 void BindingVisitor::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&conversionFunctionNode));
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&conversionFunctionNode));
     parameterIndex = 0;
 }
 
@@ -154,23 +156,23 @@ void BindingVisitor::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctio
 
 void BindingVisitor::Visit(Cm::Ast::MemberVariableNode& memberVariableNode)
 {
-    BindMemberVariable(symbolTable, currentContainerScope, currentFileScope.get(), &memberVariableNode);
+    BindMemberVariable(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &memberVariableNode);
 }
 
 void BindingVisitor::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
 {
-    BindEnumType(symbolTable, currentContainerScope, currentFileScope.get(), &enumTypeNode);
-    BeginContainerScope(symbolTable.GetContainerScope(&enumTypeNode));
+    BindEnumType(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &enumTypeNode);
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&enumTypeNode));
 }
 
 void BindingVisitor::Visit(Cm::Ast::TypedefNode& typedefNode)
 {
-    BindTypedef(symbolTable, currentContainerScope, currentFileScope.get(), &typedefNode);
+    BindTypedef(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &typedefNode);
 }
 
 void BindingVisitor::Visit(Cm::Ast::EnumConstantNode& enumConstantNode)
 {
-    BindEnumConstant(symbolTable, currentContainerScope, currentFileScope.get(), &enumConstantNode);
+    BindEnumConstant(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &enumConstantNode);
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
@@ -180,12 +182,12 @@ void BindingVisitor::EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
 
 void BindingVisitor::Visit(Cm::Ast::ConstantNode& constantNode)
 {
-    BindConstant(symbolTable, currentContainerScope, currentFileScope.get(), &constantNode);
+    BindConstant(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &constantNode);
 }
 
 void BindingVisitor::Visit(Cm::Ast::ParameterNode& parameterNode)
 {
-    BindParameter(symbolTable, currentContainerScope, currentFileScope.get(), &parameterNode, parameterIndex);
+    BindParameter(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &parameterNode, parameterIndex);
     ++parameterIndex;
 }
 
@@ -197,9 +199,10 @@ void BindingVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
     }
     else
     {
-        BeginContainerScope(symbolTable.GetContainerScope(&functionNode));
+        Cm::Sym::FunctionSymbol* functionSymbol = BindFunction(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &functionNode);
+        BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&functionNode));
         parameterIndex = 0;
-        boundFunction.reset(new Cm::BoundTree::BoundFunction(&functionNode));
+        boundFunction.reset(new Cm::BoundTree::BoundFunction(&functionNode, functionSymbol));
     }
 }
 
@@ -213,11 +216,13 @@ void BindingVisitor::EndVisit(Cm::Ast::FunctionNode& functionNode)
     {
         EndContainerScope();
     }
+    CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+    boundCompileUnit.AddBoundNode(boundFunction.release());
 }
 
 void BindingVisitor::BeginVisit(Cm::Ast::DelegateNode& delegateNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&delegateNode));
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&delegateNode));
     parameterIndex = 0;
 }
 
@@ -228,7 +233,7 @@ void BindingVisitor::EndVisit(Cm::Ast::DelegateNode& delegateNode)
 
 void BindingVisitor::BeginVisit(Cm::Ast::ClassDelegateNode& classDelegateNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&classDelegateNode));
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&classDelegateNode));
     parameterIndex = 0;
 }
 
@@ -239,9 +244,9 @@ void BindingVisitor::EndVisit(Cm::Ast::ClassDelegateNode& classDelegateNode)
 
 void BindingVisitor::BeginVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&compoundStatementNode));
-    blockStack.push(currentBlock);
-    currentBlock = new Cm::BoundTree::BoundCompoundStatement(&compoundStatementNode);
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&compoundStatementNode));
+    blockStack.push(currentBlock.release());
+    currentBlock.reset(new Cm::BoundTree::BoundCompoundStatement(&compoundStatementNode));
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
@@ -250,18 +255,18 @@ void BindingVisitor::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementN
     blockStack.pop();
     if (parent)
     {
-        parent->AddStatement(currentBlock);
+        parent->AddStatement(currentBlock.release());
     }
     else
     {
-        boundFunction->SetBody(currentBlock);
+        boundFunction->SetBody(currentBlock.release());
     }
     EndContainerScope();
 }
 
 void BindingVisitor::BeginVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&rangeForStatementNode));
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&rangeForStatementNode));
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
@@ -271,7 +276,7 @@ void BindingVisitor::EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementN
 
 void BindingVisitor::BeginVisit(Cm::Ast::ForStatementNode& forStatementNode)
 {
-    BeginContainerScope(symbolTable.GetContainerScope(&forStatementNode));
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&forStatementNode));
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
@@ -381,7 +386,8 @@ void BindingVisitor::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatem
 
 void BindingVisitor::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
-    ConstructionStatementBinder binder(symbolTable, currentContainerScope, currentFileScope.get());
+    ConstructionStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), 
+        currentContainerScope, currentFileScope.get(), boundFunction->GetFunctionSymbol());
     constructionStatementNode.Accept(binder);
     currentBlock->AddStatement(binder.Result());
 }

@@ -9,8 +9,9 @@
 
 #ifndef CM_BIND_BINDING_VISITOR_INCLUDED
 #define CM_BIND_BINDING_VISITOR_INCLUDED
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/Function.hpp>
-#include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.BoundTree/Statement.hpp>
 #include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Bind {
@@ -18,7 +19,7 @@ namespace Cm { namespace Bind {
 class BindingVisitor : public Cm::Ast::Visitor
 {
 public:
-    BindingVisitor(Cm::Sym::SymbolTable& symbolTable_);
+    BindingVisitor(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_);
     void BeginVisit(Cm::Ast::CompileUnitNode& compileUnitNode) override;
     void EndVisit(Cm::Ast::CompileUnitNode& compileUnitNode) override;
     void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
@@ -109,13 +110,13 @@ public:
     void BeginVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode) override;
     void EndVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode) override;
 private:
-    Cm::Sym::SymbolTable& symbolTable;
+    Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* currentContainerScope;
     std::stack<Cm::Sym::ContainerScope*> containerScopeStack;
     std::unique_ptr<Cm::Sym::FileScope> currentFileScope;
     int parameterIndex;
     std::unique_ptr<Cm::BoundTree::BoundFunction> boundFunction;
-    Cm::BoundTree::BoundCompoundStatement* currentBlock;
+    std::unique_ptr<Cm::BoundTree::BoundCompoundStatement> currentBlock;
     std::stack<Cm::BoundTree::BoundCompoundStatement*> blockStack;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();

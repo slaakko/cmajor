@@ -14,7 +14,7 @@
 namespace Cm { namespace Sym {
 
 std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments);
-TypeId ComputeTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments);
+TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, bool makeInternal);
 
 class TemplateTypeSymbol : public TypeSymbol
 {
@@ -22,6 +22,7 @@ public:
     TemplateTypeSymbol(const Span& span_, const std::string& name_);
     TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::templateTypeSymbol; }
+    bool IsTemplateTypeSymbol() const override { return true; }
     std::string TypeString() const override { return "template type"; };
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;

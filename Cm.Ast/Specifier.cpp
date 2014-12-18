@@ -32,14 +32,6 @@ std::string SpecifierStr(Specifiers s)
         }
         str.append("public");
     }
-    else if ((access & Specifiers::protected_internal) != Specifiers::none)
-    {
-        if (!str.empty())
-        {
-            str.append(1, ' ');
-        }
-        str.append("protect internal");
-    }
     else if ((access & Specifiers::protected_) != Specifiers::none)
     {
         if (!str.empty())

@@ -20,31 +20,39 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BindingVisitor.hpp" />
+    <ClInclude Include="Class.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Evaluator.hpp" />
     <ClInclude Include="Exception.hpp" />
-    <ClInclude Include="Expression.hpp" />
+    <ClInclude Include="ExpressionBinder.hpp" />
+    <ClInclude Include="Function.hpp" />
     <ClInclude Include="LocalVariable.hpp" />
     <ClInclude Include="MemberVariable.hpp" />
+    <ClInclude Include="OverloadResolution.hpp" />
     <ClInclude Include="Parameter.hpp" />
-    <ClInclude Include="Statement.hpp" />
+    <ClInclude Include="StatementBinder.hpp" />
     <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
+    <ClInclude Include="Access.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BindingVisitor.cpp" />
+    <ClCompile Include="Class.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="Excecption.cpp" />
-    <ClCompile Include="Expression.cpp" />
+    <ClCompile Include="ExpressionBinder.cpp" />
+    <ClCompile Include="Function.cpp" />
     <ClCompile Include="LocalVariable.cpp" />
     <ClCompile Include="MemberVariable.cpp" />
+    <ClCompile Include="OverloadResolution.cpp" />
     <ClCompile Include="Parameter.cpp" />
-    <ClCompile Include="Statement.cpp" />
+    <ClCompile Include="StatementBinder.cpp" />
     <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeResolver.cpp" />
+    <ClCompile Include="Access.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EB6A3011-60D0-415A-A4CE-262924F53AF0}</ProjectGuid>

@@ -22,7 +22,13 @@ public:
     std::string TypeString() const override { return "class"; };
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
-    bool IsClassSymbol() const override { return true; }
+    bool IsClassTypeSymbol() const override { return true; }
+    ClassTypeSymbol* BaseClass() const { return baseClass; }
+    void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
+    bool HasBaseClass(ClassTypeSymbol* cls) const;
+    bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
+private:
+    ClassTypeSymbol* baseClass;
 };
 
 } } // namespace Cm::Sym

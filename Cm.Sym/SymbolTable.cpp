@@ -28,47 +28,8 @@
 
 namespace Cm { namespace Sym {
 
-SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs)
+SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs), typeRepository(), standardConversionTable(typeRepository)
 {
-    BoolTypeSymbol* boolTypeSymbol = new BoolTypeSymbol();
-    globalNs.AddSymbol(boolTypeSymbol);
-    typeRepository.AddType(boolTypeSymbol);
-    CharTypeSymbol* charTypeSymbol = new CharTypeSymbol();
-    globalNs.AddSymbol(charTypeSymbol);
-    typeRepository.AddType(charTypeSymbol);
-    VoidTypeSymbol* voidTypeSymbol = new VoidTypeSymbol();
-    globalNs.AddSymbol(voidTypeSymbol);
-    typeRepository.AddType(voidTypeSymbol);
-    SByteTypeSymbol* sbyteTypeSymbol = new SByteTypeSymbol();
-    globalNs.AddSymbol(sbyteTypeSymbol);
-    typeRepository.AddType(sbyteTypeSymbol);
-    ByteTypeSymbol* byteTypeSymbol = new ByteTypeSymbol();
-    globalNs.AddSymbol(byteTypeSymbol);
-    typeRepository.AddType(byteTypeSymbol);
-    ShortTypeSymbol* shortTypeSymbol = new ShortTypeSymbol();
-    globalNs.AddSymbol(shortTypeSymbol);
-    typeRepository.AddType(shortTypeSymbol);
-    UShortTypeSymbol* ushortTypeSymbol = new UShortTypeSymbol();
-    globalNs.AddSymbol(ushortTypeSymbol);
-    typeRepository.AddType(ushortTypeSymbol);
-    IntTypeSymbol* intTypeSymbol = new IntTypeSymbol();
-    globalNs.AddSymbol(intTypeSymbol);
-    typeRepository.AddType(intTypeSymbol);
-    UIntTypeSymbol* uintTypeSymbol = new UIntTypeSymbol();
-    globalNs.AddSymbol(uintTypeSymbol);
-    typeRepository.AddType(uintTypeSymbol);
-    LongTypeSymbol* longTypeSymbol = new LongTypeSymbol();
-    globalNs.AddSymbol(longTypeSymbol);
-    typeRepository.AddType(longTypeSymbol);
-    ULongTypeSymbol* ulongTypeSymbol = new ULongTypeSymbol();
-    globalNs.AddSymbol(ulongTypeSymbol);
-    typeRepository.AddType(ulongTypeSymbol);
-    FloatTypeSymbol* floatTypeSymbol = new FloatTypeSymbol();
-    globalNs.AddSymbol(floatTypeSymbol);
-    typeRepository.AddType(floatTypeSymbol);
-    DoubleTypeSymbol* doubleTypeSymbol = new DoubleTypeSymbol();
-    globalNs.AddSymbol(doubleTypeSymbol);
-    typeRepository.AddType(doubleTypeSymbol);
 }
 
 void SymbolTable::BeginContainer(ContainerSymbol* container_)
@@ -214,12 +175,14 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
 void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
+    functionSymbolMap[functionNode] = functionSymbol;
+    functionSymbol->SetGroupName(functionNode->GroupId()->Str());
     ContainerScope* functionScope = functionSymbol->GetContainerScope();
     nodeScopeMap[functionNode] = functionScope;
     symbolNodeMap[functionSymbol] = functionNode;
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
-    container->AddFunctionSymbol(functionSymbol);
+    container->AddSymbol(functionSymbol);
     BeginContainer(functionSymbol);
 }
 
@@ -352,6 +315,19 @@ Cm::Ast::Node* SymbolTable::GetNode(Symbol* symbol) const
     }
 }
 
+FunctionSymbol* SymbolTable::GetFunctionSymbol(Cm::Ast::Node* functionNode) const
+{
+    NodeFunctionSymbolMapIt i = functionSymbolMap.find(functionNode);
+    if (i != functionSymbolMap.end())
+    {
+        return i->second;
+    }
+    else
+    {
+        throw std::runtime_error("function symbol for function node not found");
+    }
+}
+
 void SymbolTable::Export(Writer& writer)
 {
     writer.Write(&globalNs);
@@ -371,6 +347,19 @@ void SymbolTable::Import(Reader& reader)
         throw std::runtime_error("namespace symbol expected");
     }
     typeRepository.Import(reader);
+}
+
+void SymbolTable::AddPredefinedSymbolToGlobalScope(Symbol* symbol)
+{
+    symbol->SetBound();
+    symbol->SetSource(SymbolSource::library);
+    symbol->SetPublic();
+    globalNs.AddSymbol(symbol);
+    if (symbol->IsTypeSymbol())
+    {
+        TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
+        typeRepository.AddType(typeSymbol);
+    }
 }
 
 } } // namespace Cm::Sym

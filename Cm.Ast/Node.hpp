@@ -75,6 +75,7 @@ public:
     virtual bool IsClassNode() const { return false; }
     virtual bool IsStatementNode() const { return false; }
     virtual bool IsCompoundStatementNode() const { return false; }
+    virtual bool IsConstructionStatementNode() const { return false; }
     virtual bool IsFunctionNode() const { return false; }
     virtual bool IsCondCompExprNode() const { return false; }
     virtual bool IsCondCompSymbolNode() const { return false; }
@@ -82,6 +83,7 @@ public:
     virtual bool IsConstraintNode() const { return false; }
     virtual bool IsInitializerNode() const { return false; }
     virtual bool IsConstantNode() const { return false; }
+    virtual bool IsMemberVariableNode() const { return false; }
     virtual bool IsEnumTypeNode() const { return false; }
     virtual bool IsEnumConstantNode() const { return false; }
     virtual bool IsTypedefNode() const { return false; }

@@ -23,10 +23,11 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::parameterSymbol; }
     std::string TypeString() const override { return "parameter"; };
     bool IsParameterSymbol() const override { return true; }
+    bool IsExportSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;
-    void SetType(TypeSymbol* type_) { type = type_; }
+    void SetType(TypeSymbol* type_) { SetType(type_, 0); }
     void SetType(TypeSymbol* type_, int index) override;
 private:
     TypeSymbol* type;

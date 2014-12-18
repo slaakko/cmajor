@@ -356,6 +356,7 @@ public:
     ConstructionStatementNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_);
     void AddArgument(Node* argument) override;
     NodeType GetNodeType() const override { return NodeType::constructionStatementNode; }
+    bool IsConstructionStatementNode() const override { return true; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;

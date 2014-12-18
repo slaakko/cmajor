@@ -11,6 +11,7 @@
 #define CM_SYM_SYMBOL_TABLE_INCLUDED
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
+#include <Cm.Sym/ConversionTable.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Class.hpp>
 #include <Cm.Ast/Enumeration.hpp>
@@ -54,10 +55,13 @@ public:
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
     ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
     Cm::Ast::Node* GetNode(Symbol* symbol) const;
+    FunctionSymbol* GetFunctionSymbol(Cm::Ast::Node* functionNode) const;
     void Export(Writer& writer);
     void Import(Reader& reader);
     ContainerSymbol* Container() const { return container; }
     TypeRepository& GetTypeRepository() { return typeRepository; }
+    ConversionTable& GetStandardConversionTable() { return standardConversionTable; }
+    void AddPredefinedSymbolToGlobalScope(Symbol* symbol);
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
@@ -67,7 +71,11 @@ private:
     NodeScopeMap nodeScopeMap;
     typedef std::unordered_map<Symbol*, Cm::Ast::Node*> SymbolNodeMap;
     typedef SymbolNodeMap::const_iterator SymbolNodeMapIt;
+    typedef std::unordered_map<Cm::Ast::Node*, FunctionSymbol*> NodeFunctionSymbolMap;
+    typedef NodeFunctionSymbolMap::const_iterator NodeFunctionSymbolMapIt;
+    NodeFunctionSymbolMap functionSymbolMap;
     TypeRepository typeRepository;
+    ConversionTable standardConversionTable;
     SymbolNodeMap symbolNodeMap;
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();

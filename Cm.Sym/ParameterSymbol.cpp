@@ -38,10 +38,6 @@ TypeSymbol* ParameterSymbol::GetType() const
 void ParameterSymbol::SetType(TypeSymbol* type_, int index)
 {
     type = type_;
-    if (Source() == SymbolSource::project)
-    {
-        type->SetExportSymbol();
-    }
 }
 
 } } // namespace Cm::Sym

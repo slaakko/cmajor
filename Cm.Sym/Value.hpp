@@ -37,6 +37,7 @@ public:
     virtual void Read(Cm::Ser::BinaryReader& reader) = 0;
     virtual void Write(Cm::Ser::BinaryWriter& writer) = 0;
     virtual Value* As(ValueType targetType, bool cast, const Span& span) const = 0;
+    virtual bool IsScopedValue() const { return false; }
 };
 
 class BoolValue : public Value

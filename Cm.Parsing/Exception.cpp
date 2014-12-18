@@ -57,7 +57,7 @@ std::string GetErrorLines(const char* start, const char* end, const Span& span)
 
 void ThrowException(const std::string& message, const Span& span)
 {
-    if (span.FileIndex() >= 0 && span.FileIndex() < files.size())
+    if (span.FileIndex() >= 0 && span.FileIndex() < int(files.size()))
     {
         const std::string& filePath = files[span.FileIndex()];
         Cm::Util::MappedInputFile file(filePath);

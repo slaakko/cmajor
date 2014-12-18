@@ -42,6 +42,19 @@ void DerivationList::Add(Derivation derivation)
     derivations[numDerivations++] = derivation;
 }
 
+void DerivationList::RemoveLastPointer()
+{
+    for (uint8_t i = numDerivations - 1; i >= 0; --i)
+    {
+        if (derivations[i] == Derivation::pointer)
+        {
+            derivations[i] = Derivation::none;
+            --numDerivations;
+            return;
+        }
+    }
+}
+
 bool operator==(const DerivationList& left, const DerivationList& right)
 {
     uint8_t n = left.NumDerivations();

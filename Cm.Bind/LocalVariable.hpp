@@ -17,6 +17,9 @@ namespace Cm { namespace Bind {
 Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, 
     Cm::Ast::ConstructionStatementNode* constructionStatementNode);
 
+Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
+    Cm::Ast::ConstructionStatementNode* constructionStatementNode, Cm::Sym::LocalVariableSymbol* localVariableSymbol);
+
 } } // namespace Cm::Bind
 
 #endif // CM_BIND_LOCAL_VARIABLE_INCLUDED

@@ -33,9 +33,13 @@ class DerivationList
 {
 public:
     DerivationList();
+    typedef const Derivation* const_iterator;
     uint8_t NumDerivations() const { return numDerivations; }
     Derivation operator[](int index) const { return derivations[index];  }
     void Add(Derivation derivation);
+    const_iterator begin() const { return derivations; }
+    const_iterator end() const { return &derivations[numDerivations]; }
+    void RemoveLastPointer();
 private:
     uint8_t numDerivations;
     Derivation derivations[maxDerivations];

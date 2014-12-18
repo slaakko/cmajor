@@ -7,24 +7,12 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/ClassTypeSymbol.hpp>
-#include <Cm.Ast/Identifier.hpp>
+#include <Cm.Core/Argument.hpp>
 
-namespace Cm { namespace Sym {
+namespace Cm { namespace Core {
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, Cm::Util::Uuid())
+Argument::Argument(ArgumentCategory category_, Cm::Sym::TypeSymbol* type_) : category(category_), type(type_), bindToRvalueRef(false)
 {
 }
 
-void ClassTypeSymbol::Write(Writer& writer)
-{
-    TypeSymbol::Write(writer);
-}
-
-void ClassTypeSymbol::Read(Reader& reader)
-{
-    // todo
-}
-
-
-} } // namespace Cm::Sym
+} } // namespace Cm::Core

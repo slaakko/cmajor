@@ -19,12 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoundCompileUnit.hpp" />
     <ClInclude Include="BoundNode.hpp" />
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="Statement.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BoundCompileUnit.cpp" />
     <ClCompile Include="BoundNode.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Function.cpp" />

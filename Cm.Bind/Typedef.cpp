@@ -10,6 +10,7 @@
 #include <Cm.Bind/Typedef.hpp>
 #include <Cm.Bind/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/Access.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -27,21 +28,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
         if (symbol->IsTypedefSymbol())
         {
             Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
-            if (typedefSymbol->Evaluating())
-            {
-                throw Exception("cyclic typedef definitions detected", typedefSymbol->GetSpan());
-            }
-            if (typedefSymbol->Bound())
-            {
-                return;
-            }
-            typedefSymbol->SetEvaluating();
-            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, typedefNode->TypeExpr());
-            type->SetExportSymbol();
-            typedefSymbol->ResetEvaluating();
-            typedefSymbol->SetType(type);
-            typedefSymbol->SetBound();
-            typedefSymbol->SetExportSymbol();
+            BindTypedef(symbolTable, containerScope, fileScope, typedefNode, typedefSymbol);
         }
         else
         {
@@ -52,6 +39,27 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     {
         throw Exception("symbol '" + typedefNode->Id()->Str() + "' not found");
     }
+}
+
+void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol)
+{
+    if (typedefSymbol->Evaluating())
+    {
+        throw Exception("cyclic typedef definitions detected", typedefSymbol->GetSpan());
+    }
+    if (typedefSymbol->Bound())
+    {
+        return;
+    }
+    Cm::Ast::Specifiers specifiers = typedefNode->GetSpecifiers();
+    bool isClassMember = typedefNode->Parent()->IsClassNode();
+    SetAccess(typedefSymbol, specifiers, isClassMember);
+    typedefSymbol->SetEvaluating();
+    bool willBeExported = typedefSymbol->WillBeExported();
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, typedefNode->TypeExpr(), willBeExported);
+    typedefSymbol->ResetEvaluating();
+    typedefSymbol->SetType(type);
+    typedefSymbol->SetBound();
 }
 
 } } // namespace Cm::Bind

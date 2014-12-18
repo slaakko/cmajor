@@ -30,12 +30,19 @@ std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vecto
     return s;
 }
 
-TypeId ComputeTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments)
+TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, bool makeInternal)
 {
     TypeId id = subjectType->Id();
     for (TypeSymbol* typeArgument : typeArguments)
     {
         id.Rep() = id.Rep() ^ typeArgument->Id().Rep();
+    }
+    if (makeInternal)
+    {
+        for (uint8_t& dataByte : id.Rep().Tag().data)
+        {
+            dataByte ^= internalByte;
+        }
     }
     return id;
 }

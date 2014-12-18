@@ -21,7 +21,6 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::delegateSymbol; }
     std::string TypeString() const override { return "delegate"; };
     bool IsDelegateTypeSymbol() const override { return true; }
-
 };
 
 class ClassDelegateSymbol : public TypeSymbol

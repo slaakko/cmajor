@@ -47,6 +47,8 @@ std::string Expand(const std::string& errorMessage, const Span& span, const std:
                 if (!fileName.empty())
                 {
                     expandedMessage.append("\nsee reference to file '" + fileName + "', line " + std::to_string(referenceSpan.LineNumber()));
+                    Cm::Util::MappedInputFile file(fileName);
+                    expandedMessage.append(":\n").append(Cm::Parsing::GetErrorLines(file.Begin(), file.End(), referenceSpan));
                 }
             }
         }

@@ -20,7 +20,7 @@ namespace Cm { namespace Bind {
 class TypeResolver : public Cm::Ast::Visitor
 {
 public:
-    TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_);
+    TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_, bool requirePublic_);
     Cm::Sym::TypeSymbol* Resolve(Cm::Ast::Node* typeExpr);
     void Visit(Cm::Ast::BoolNode& boolNode) override;
     void Visit(Cm::Ast::SByteNode& sbyteNode) override;
@@ -38,16 +38,18 @@ public:
     void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) override;
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
-    void Visit(Cm::Ast::DotNode& dotNode) override;
+    void BeginVisit(Cm::Ast::DotNode& dotNode) override;
+    void EndVisit(Cm::Ast::DotNode& dotNode) override;
 private:
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ContainerScope* currentContainerScope;
     Cm::Sym::FileScope* fileScope;
     Cm::Sym::TypeSymbol* typeSymbol;
+    bool requirePublic;
 };
 
-TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_) :
-    Cm::Ast::Visitor(true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_), typeSymbol(nullptr)
+TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_, bool requirePublic_) :
+    Cm::Ast::Visitor(true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_), typeSymbol(nullptr), requirePublic(requirePublic_)
 {
 }
 
@@ -126,13 +128,13 @@ void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 {
     std::vector<Cm::Sym::TypeSymbol*> typeArguments;
     Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&templateIdNode);
-    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, scope, fileScope, templateIdNode.Subject());
+    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, scope, fileScope, templateIdNode.Subject(), requirePublic);
     for (const std::unique_ptr<Cm::Ast::Node>& templateArgNode : templateIdNode.TemplateArguments())
     {
-        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, scope, fileScope, templateArgNode.get());
+        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, scope, fileScope, templateArgNode.get(), requirePublic);
         typeArguments.push_back(argumentType);
     }
-    typeSymbol = symbolTable.GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
+    typeSymbol = symbolTable.GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan(), requirePublic);
 }
 
 void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
@@ -154,7 +156,7 @@ void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
                 {
                     Cm::Ast::TypedefNode* typedefNode = static_cast<Cm::Ast::TypedefNode*>(node);
                     Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(typedefNode);
-                    BindTypedef(symbolTable, scope, fileScope, typedefNode);
+                    BindTypedef(symbolTable, scope, fileScope, typedefNode, typedefSymbol);
                 }
                 else
                 {
@@ -178,7 +180,12 @@ void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
 }
 
-void TypeResolver::Visit(Cm::Ast::DotNode& dotNode)
+void TypeResolver::BeginVisit(Cm::Ast::DotNode& dotNode)
+{
+    // todo
+}
+
+void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
 {
     // todo
 }
@@ -186,13 +193,13 @@ void TypeResolver::Visit(Cm::Ast::DotNode& dotNode)
 void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
     Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&derivedTypeExprNode);
-    Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, scope, fileScope, derivedTypeExprNode.BaseTypeExprNode());
-    typeSymbol = symbolTable.GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan());
+    Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, scope, fileScope, derivedTypeExprNode.BaseTypeExprNode(), requirePublic);
+    typeSymbol = symbolTable.GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan(), requirePublic);
 }
 
-Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::Node* typeExpr)
+Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::Node* typeExpr, bool requirePublic)
 {
-    TypeResolver resolver(symbolTable, currentContainerScope, fileScope);
+    TypeResolver resolver(symbolTable, currentContainerScope, fileScope, requirePublic);
     return resolver.Resolve(typeExpr);
 }
 

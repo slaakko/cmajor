@@ -12,6 +12,7 @@
 #include <Cm.Sym/Symbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace Cm { namespace Sym {
 
@@ -31,9 +32,15 @@ inline ScopeLookup operator&(ScopeLookup left, ScopeLookup right)
     return ScopeLookup(uint8_t(left) & uint8_t(right));
 }
 
+inline ScopeLookup operator~(ScopeLookup subject)
+{
+    return ScopeLookup(~uint8_t(subject));
+}
+
 class ContainerSymbol;
 class NamespaceSymbol;
 class ClassTypeSymbol;
+class FunctionSymbol;
 
 class Scope
 {
@@ -54,10 +61,12 @@ public:
     void Install(Symbol* symbol);
     Symbol* Lookup(const std::string& name) const override;
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const override;
+    void CollectViableFunctions(ScopeLookup lookup, const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
     ContainerSymbol* Container() { return container; }
     void SetContainer(ContainerSymbol* container_) { container = container_; }
     NamespaceSymbol* Ns() const;
     ClassTypeSymbol* Class() const;
+    ContainerScope* ClassOrNsScope() const;
     NamespaceSymbol* CreateNamespace(const std::string& qualifiedNsName, const Span& span);
 private:
     typedef std::unordered_map<std::string, Symbol*> SymbolMap;

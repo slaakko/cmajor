@@ -12,7 +12,7 @@
 
 namespace Cm { namespace Sym {
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId())
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), baseClass(nullptr)
 {
 }
 
@@ -26,5 +26,18 @@ void ClassTypeSymbol::Read(Reader& reader)
     TypeSymbol::Read(reader);
 }
 
+bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls) const
+{
+    return baseClass == cls || baseClass && baseClass->HasBaseClass(cls);
+}
+
+bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls, int& distance) const
+{
+    if (!baseClass) return false;
+    ++distance;
+    if (baseClass == cls) return true;
+    return baseClass->HasBaseClass(cls, distance);
+
+}
 
 } } // namespace Cm::Sym

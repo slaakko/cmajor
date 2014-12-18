@@ -17,7 +17,7 @@ namespace Cm { namespace Ast {
 enum class Specifiers: uint16_t
 {
     none = 0,
-    public_ = 1, protected_ = 2, private_ = 4, internal_ = 8, protected_internal = protected_ | internal_,
+    public_ = 1, protected_ = 2, private_ = 4, internal_ = 8, 
     access = public_ | protected_ | private_ | internal_,
     static_ = 16,
     virtual_ = 32, override_ = 64, abstract_ = 128, virtuality = virtual_ | override_ | abstract_,

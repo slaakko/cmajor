@@ -23,14 +23,7 @@ Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTabl
         if (symbol->IsLocalVariableSymbol())
         {
             Cm::Sym::LocalVariableSymbol* localVariableSymbol = static_cast<Cm::Sym::LocalVariableSymbol*>(symbol);
-            if (localVariableSymbol->Bound())
-            {
-                return localVariableSymbol;
-            }
-            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constructionStatementNode->TypeExpr());
-            localVariableSymbol->SetType(type);
-            localVariableSymbol->SetBound();
-            return localVariableSymbol;
+            return BindLocalVariable(symbolTable, containerScope, fileScope, constructionStatementNode, localVariableSymbol);
         }
         else
         {
@@ -42,5 +35,19 @@ Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTabl
         throw Exception("symbol '" + constructionStatementNode->Id()->Str() + "' not found");
     }
 }
+
+Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
+    Cm::Ast::ConstructionStatementNode* constructionStatementNode, Cm::Sym::LocalVariableSymbol* localVariableSymbol)
+{
+    if (localVariableSymbol->Bound())
+    {
+        return localVariableSymbol;
+    }
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constructionStatementNode->TypeExpr(), false);
+    localVariableSymbol->SetType(type);
+    localVariableSymbol->SetBound();
+    return localVariableSymbol;
+}
+
 
 } } // namespace Cm::Bind
