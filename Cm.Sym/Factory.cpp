@@ -206,8 +206,8 @@ void InitFactory()
     SymbolFactory::Instance().Register(SymbolType::classSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
-    SymbolFactory::Instance().Register(SymbolType::delegateSymbol, new ConcreteSymbolCreator<DelegateSymbol>());
-    SymbolFactory::Instance().Register(SymbolType::classDelegateSymbol, new ConcreteSymbolCreator<ClassDelegateSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::delegateSymbol, new ConcreteSymbolCreator<DelegateTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::classDelegateSymbol, new ConcreteSymbolCreator<ClassDelegateTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::enumTypeSymbol, new ConcreteSymbolCreator<EnumTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::enumConstantSymbol, new ConcreteSymbolCreator<EnumConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
@@ -217,7 +217,6 @@ void InitFactory()
     SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::templateParameterSymbol, new ConcreteSymbolCreator<TemplateParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::templateTypeSymbol, new ConcreteSymbolCreator<TemplateTypeSymbol>());
-    SymbolFactory::Instance().Register(SymbolType::typeSymbol, new ConcreteSymbolCreator<TypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::derivedTypeSymbol, new ConcreteSymbolCreator<DerivedTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::typedefSymbol, new ConcreteSymbolCreator<TypedefSymbol>());
 }

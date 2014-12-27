@@ -53,6 +53,7 @@ public:
     void SetGroupName(const std::string& groupName_) { groupName = groupName_; }
     std::string TypeString() const override { return "function"; };
     bool IsFunctionSymbol() const override { return true; }
+    virtual bool IsBasicTypeOp() const { return false; }
     virtual bool IsConvertingConstructor() const { return false; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
@@ -62,6 +63,7 @@ public:
     int Arity() const { return int(parameters.size()); }
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void ComputeName();
+    virtual TypeSymbol* GetTargetType() const;
 private:
     std::string groupName;
     TypeSymbol* returnType;

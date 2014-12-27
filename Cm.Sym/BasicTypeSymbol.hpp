@@ -35,6 +35,7 @@ public:
     BoolTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::boolSymbol; }
     bool IsBoolTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "bo"; }
 };
 
 class CharTypeSymbol : public BasicTypeSymbol
@@ -43,6 +44,7 @@ public:
     CharTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::charSymbol; }
     bool IsCharTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "ch"; }
 };
 
 class VoidTypeSymbol : public BasicTypeSymbol
@@ -50,6 +52,7 @@ class VoidTypeSymbol : public BasicTypeSymbol
 public:
     VoidTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::voidSymbol; }
+    std::string GetMangleId() const override { return "vo"; }
 };
 
 class SByteTypeSymbol : public BasicTypeSymbol
@@ -58,6 +61,8 @@ public:
     SByteTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::sbyteSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    bool IsSignedType() const override { return true; }
+    std::string GetMangleId() const override { return "sb"; }
 };
 
 class ByteTypeSymbol : public BasicTypeSymbol
@@ -66,6 +71,7 @@ public:
     ByteTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::byteSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "by"; }
 };
 
 class ShortTypeSymbol : public BasicTypeSymbol
@@ -74,6 +80,8 @@ public:
     ShortTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::shortSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    bool IsSignedType() const override { return true; }
+    std::string GetMangleId() const override { return "sh"; }
 };
 
 class UShortTypeSymbol : public BasicTypeSymbol
@@ -82,6 +90,7 @@ public:
     UShortTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::ushortSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "us"; }
 };
 
 class IntTypeSymbol : public BasicTypeSymbol
@@ -90,6 +99,8 @@ public:
     IntTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::intSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    bool IsSignedType() const override { return true; }
+    std::string GetMangleId() const override { return "in"; }
 };
 
 class UIntTypeSymbol : public BasicTypeSymbol
@@ -98,6 +109,7 @@ public:
     UIntTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::uintSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "ui"; }
 };
 
 class LongTypeSymbol : public BasicTypeSymbol
@@ -106,6 +118,8 @@ public:
     LongTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::longSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    bool IsSignedType() const override { return true; }
+    std::string GetMangleId() const override { return "lo"; }
 };
 
 class ULongTypeSymbol : public BasicTypeSymbol
@@ -114,6 +128,7 @@ public:
     ULongTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::ulongSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "lo"; }
 };
 
 class FloatTypeSymbol : public BasicTypeSymbol
@@ -122,6 +137,7 @@ public:
     FloatTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::floatSymbol; }
     bool IsFloatingPointTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "fl"; }
 };
 
 class DoubleTypeSymbol : public BasicTypeSymbol
@@ -130,6 +146,7 @@ public:
     DoubleTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::doubleSymbol; }
     bool IsFloatingPointTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "do"; }
 };
 
 } } // namespace Cm::Sym

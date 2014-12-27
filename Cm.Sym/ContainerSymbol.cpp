@@ -74,7 +74,7 @@ FunctionGroupSymbol* ContainerSymbol::MakeFunctionGroupSymbol(const std::string&
     Cm::Sym::Symbol* symbol = containerScope.Lookup(groupName);
     if (!symbol)
     {
-        FunctionGroupSymbol* functionGroupSymbol = new FunctionGroupSymbol(span, groupName);
+        FunctionGroupSymbol* functionGroupSymbol = new FunctionGroupSymbol(span, groupName, &containerScope);
         functionGroupSymbol->SetPublic();
         AddSymbol(functionGroupSymbol);
         return functionGroupSymbol;

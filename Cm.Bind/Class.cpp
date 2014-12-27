@@ -17,7 +17,7 @@
 
 namespace Cm { namespace Bind {
 
-void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ClassNode* classNode)
+Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ClassNode* classNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(classNode->Id()->Str());
     if (symbol)
@@ -26,6 +26,7 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
         {
             Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(symbol);
             BindClass(symbolTable, containerScope, fileScope, classNode, classTypeSymbol);
+            return classTypeSymbol;
         }
         else
         {

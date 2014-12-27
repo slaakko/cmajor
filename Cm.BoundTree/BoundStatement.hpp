@@ -7,9 +7,9 @@
 
 ========================================================================*/
 
-#ifndef CM_BOUND_TREE_STATEMENT_INCLUDED
-#define CM_BOUND_TREE_STATEMENT_INCLUDED
-#include <Cm.BoundTree/Expression.hpp>
+#ifndef CM_BOUND_TREE_BOUND_STATEMENT_INCLUDED
+#define CM_BOUND_TREE_BOUND_STATEMENT_INCLUDED
+#include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 
@@ -27,6 +27,7 @@ class BoundStatementList
 public:
     BoundStatementList();
     void AddStatement(BoundStatement* statement);
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<BoundStatement>> statements;
 };
@@ -37,6 +38,7 @@ public:
     BoundCompoundStatement(Cm::Ast::Node* syntaxNode_);
     void AddStatement(BoundStatement* statement);
     bool IsBoundCompoundStatement() const override { return true; }
+    void Accept(Visitor& visitor) override;
 private:
     BoundStatementList statementList;
 };
@@ -50,6 +52,7 @@ class BoundReturnStatement : public BoundStatement
 {
 public:
     BoundReturnStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<BoundExpression> expression;
 };
@@ -63,12 +66,26 @@ public:
     void SetArguments(BoundExpressionList&& arguments_);
     void GetResolutionArguments(std::vector<Cm::Core::Argument>& resolutionArguments);
     void SetConstructor(Cm::Sym::FunctionSymbol* ctor_) { ctor = ctor_; }
+    Cm::Sym::FunctionSymbol* Constructor() const { return ctor; }
     void InsertLocalVariableToArguments();
     void ApplyConversions(const std::vector<Cm::Sym::FunctionSymbol*>& conversions);
+    void Accept(Visitor& visitor) override;
+    BoundExpressionList& Arguments() { return arguments; }
 private:
     Cm::Sym::LocalVariableSymbol* localVariable;
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* ctor;
+};
+
+class BoundAssignmentStatement : public BoundStatement
+{
+public:
+    BoundAssignmentStatement(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_, Cm::Sym::FunctionSymbol* assignment_);
+    void Accept(Visitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> left;
+    std::unique_ptr<BoundExpression> right;
+    Cm::Sym::FunctionSymbol* assignment;
 };
 
 class BoundThrowStatement : public BoundStatement
@@ -150,4 +167,4 @@ private:
 
 } } // namespace Cm::BoundTree
 
-#endif // CM_BOUND_TREE_STATEMENT_INCLUDED
+#endif // CM_BOUND_TREE_BOUND_STATEMENT_INCLUDED

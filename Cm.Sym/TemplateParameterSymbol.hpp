@@ -20,6 +20,7 @@ public:
     TemplateParameterSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::templateParameterSymbol; }
     std::string TypeString() const override { return "template parameter"; };
+    std::string GetMangleId() const { return Name(); }
     bool IsExportSymbol() const override { return false; }
 };
 

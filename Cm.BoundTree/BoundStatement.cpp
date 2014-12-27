@@ -7,7 +7,9 @@
 
 ========================================================================*/
 
-#include <Cm.BoundTree/Statement.hpp>
+#include <Cm.BoundTree/BoundStatement.hpp>
+#include <Cm.BoundTree/Visitor.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 
 namespace Cm { namespace BoundTree {
 
@@ -24,6 +26,14 @@ void BoundStatementList::AddStatement(BoundStatement* statement)
     statements.push_back(std::unique_ptr<BoundStatement>(statement));
 }
 
+void BoundStatementList::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<BoundStatement>& statement : statements)
+    {
+        statement->Accept(visitor);
+    }
+}
+
 BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -33,8 +43,20 @@ void BoundCompoundStatement::AddStatement(BoundStatement* statement)
     statementList.AddStatement(statement);
 }
 
+void BoundCompoundStatement::Accept(Visitor& visitor) 
+{
+    statementList.Accept(visitor);
+    visitor.Visit(*this);
+}
+
 BoundReturnStatement::BoundReturnStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
+}
+
+void BoundReturnStatement::Accept(Visitor& visitor)
+{
+    expression->Accept(visitor);
+    visitor.Visit(*this);
 }
 
 BoundConstructionStatement::BoundConstructionStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_), localVariable(nullptr), ctor(nullptr)
@@ -75,8 +97,27 @@ void BoundConstructionStatement::ApplyConversions(const std::vector<Cm::Sym::Fun
         {
             std::unique_ptr<BoundExpression>& argument = arguments[i];
             argument.reset(new Cm::BoundTree::BoundConversion(argument->SyntaxNode(), argument.release(), conversionFun));
+            argument->SetType(conversionFun->GetTargetType());
         }
     }
+}
+
+void BoundConstructionStatement::Accept(Visitor& visitor)
+{
+    arguments.Accept(visitor);
+    visitor.Visit(*this);
+}
+
+BoundAssignmentStatement::BoundAssignmentStatement(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_, Cm::Sym::FunctionSymbol* assignment_) : 
+    BoundStatement(syntaxNode_), left(left_), right(right_), assignment(assignment_)
+{
+}
+
+void BoundAssignmentStatement::Accept(Visitor& visitor)
+{
+    left->Accept(visitor);
+    right->Accept(visitor);
+    visitor.Visit(*this);
 }
 
 BoundSwitchStatement::BoundSwitchStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)

@@ -27,6 +27,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    const std::string& FilePath() const { return filePath; }
 private:
     std::string filePath;
     std::unique_ptr<NamespaceNode> globalNs;

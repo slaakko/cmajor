@@ -27,7 +27,7 @@ enum class SymbolType : uint8_t
 {
     boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol,
     classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, memberVariableSymbol, namespaceSymbol,
-    parameterSymbol, templateParameterSymbol, templateTypeSymbol, typeSymbol, derivedTypeSymbol, typedefSymbol,
+    parameterSymbol, templateParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol,
     maxSymbol
 };
 

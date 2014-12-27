@@ -37,6 +37,7 @@
     <ClInclude Include="LocalVariableSymbol.hpp" />
     <ClInclude Include="MemberVariableSymbol.hpp" />
     <ClInclude Include="Module.hpp" />
+    <ClInclude Include="NameMangling.hpp" />
     <ClInclude Include="NamespaceSymbol.hpp" />
     <ClInclude Include="ParameterSymbol.hpp" />
     <ClInclude Include="Reader.hpp" />
@@ -71,6 +72,7 @@
     <ClCompile Include="LocalVariableSymbol.cpp" />
     <ClCompile Include="MemberVariableSymbol.cpp" />
     <ClCompile Include="Module.cpp" />
+    <ClCompile Include="NameMangling.cpp" />
     <ClCompile Include="NamespaceSymbol.cpp" />
     <ClCompile Include="ParameterSymbol.cpp" />
     <ClCompile Include="Reader.cpp" />

@@ -97,4 +97,9 @@ void FunctionSymbol::ComputeName()
     SetName(s);
 }
 
+TypeSymbol* FunctionSymbol::GetTargetType() const
+{
+    throw std::runtime_error("member function not applicable");
+}
+
 } } // namespace Cm::Sym

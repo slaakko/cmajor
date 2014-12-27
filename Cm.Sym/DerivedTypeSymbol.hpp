@@ -30,6 +30,7 @@ public:
     DerivedTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* baseType_, const Cm::Ast::DerivationList& derivations_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::derivedTypeSymbol; }
     std::string TypeString() const override { return "derived type"; };
+    std::string GetMangleId() const override;
     const Cm::Ast::DerivationList& Derivations() const { return derivations; }
     bool IsDerivedTypeSymbol() const override { return true; }
     TypeSymbol* GetBaseType() const override { return baseType; }

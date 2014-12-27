@@ -17,11 +17,12 @@
 #include <Cm.Bind/MemberVariable.hpp>
 #include <Cm.Bind/LocalVariable.hpp>
 #include <Cm.Bind/StatementBinder.hpp>
+#include <Cm.BoundTree/BoundClass.hpp>
 
 namespace Cm { namespace Bind {
 
-BindingVisitor::BindingVisitor(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) :
-    Cm::Ast::Visitor(false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentFileScope(nullptr), parameterIndex(0), currentBlock(nullptr)
+BindingVisitor::BindingVisitor(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : Cm::Ast::Visitor(false), boundCompileUnit(boundCompileUnit_), 
+    currentContainerScope(nullptr), currentFileScope(nullptr), parameterIndex(0), currentBlock(nullptr)
 {
 }
 
@@ -92,7 +93,8 @@ void BindingVisitor::BeginVisit(Cm::Ast::ClassNode& classNode)
     }
     else
     {
-        BindClass(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &classNode);
+        Cm::Sym::ClassTypeSymbol* classTypeSymbol = BindClass(boundCompileUnit.SymbolTable(), currentContainerScope, currentFileScope.get(), &classNode);
+        boundCompileUnit.AddBoundNode(new Cm::BoundTree::BoundClass(classTypeSymbol, &classNode));
         Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&classNode);
         BeginContainerScope(containerScope);
     }
@@ -107,6 +109,7 @@ void BindingVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
     else
     {
         EndContainerScope();
+
     }
 }
 
@@ -378,6 +381,10 @@ void BindingVisitor::EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 
 void BindingVisitor::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
 {
+    AssignmentStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(),
+        currentContainerScope, currentFileScope.get(), boundFunction.get());
+    assignmentStatementNode.Accept(binder);
+    currentBlock->AddStatement(binder.Result());
 }
 
 void BindingVisitor::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
@@ -387,7 +394,7 @@ void BindingVisitor::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatem
 void BindingVisitor::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
     ConstructionStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), 
-        currentContainerScope, currentFileScope.get(), boundFunction->GetFunctionSymbol());
+        currentContainerScope, currentFileScope.get(), boundFunction.get());
     constructionStatementNode.Accept(binder);
     currentBlock->AddStatement(binder.Result());
 }

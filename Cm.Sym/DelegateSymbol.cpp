@@ -8,16 +8,27 @@
 ========================================================================*/
 
 #include <Cm.Sym/DelegateSymbol.hpp>
+#include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
 
-DelegateSymbol::DelegateSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
+DelegateTypeSymbol::DelegateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
 {
 }
 
-ClassDelegateSymbol::ClassDelegateSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
+std::string DelegateTypeSymbol::GetMangleId() const
 {
+    return MakeAssemblyName(FullName());
+}
+
+ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
+{
+}
+
+std::string ClassDelegateTypeSymbol::GetMangleId() const
+{
+    return MakeAssemblyName(FullName());
 }
 
 } } // namespace Cm::Sym

@@ -57,6 +57,8 @@ public:
     I8Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
+    Ir::Intf::Object* CreateMinusOne() const override;
+    Ir::Intf::Object* CreatePlusOne() const override;
 };
 
 Ir::Intf::Type* I8();
@@ -67,6 +69,8 @@ public:
     I16Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
+    Ir::Intf::Object* CreateMinusOne() const override;
+    Ir::Intf::Object* CreatePlusOne() const override;
 };
 
 Ir::Intf::Type* I16();
@@ -77,6 +81,8 @@ public:
     I32Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
+    Ir::Intf::Object* CreateMinusOne() const override;
+    Ir::Intf::Object* CreatePlusOne() const override;
 };
 
 Ir::Intf::Type* I32();
@@ -87,6 +93,8 @@ public:
     I64Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
+    Ir::Intf::Object* CreateMinusOne() const override;
+    Ir::Intf::Object* CreatePlusOne() const override;
 };
 
 Ir::Intf::Type* I64();
@@ -159,15 +167,16 @@ class PointerType : public Ir::Intf::Type
 {
 public:
     PointerType(Ir::Intf::Type* baseType_, uint8_t numPointers_);
-    Ir::Intf::Type* BaseType() const { return baseType.get(); }
+    Ir::Intf::Type* BaseType() const { return baseType; }
     bool IsPointerType() const override { return true; }
     bool IsFunctionPointerType() const override;
     bool IsFunctionPtrPtrType() const override;
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
-    uint8_t NumPointers() const { return numPointers; }
+    uint8_t NumPointers() const override { return numPointers; }
 private:
-    std::unique_ptr<Ir::Intf::Type> baseType;
+    Ir::Intf::Type* baseType;
+    std::unique_ptr<Ir::Intf::Type> ownedBaseType;
     uint8_t numPointers;
 };
 

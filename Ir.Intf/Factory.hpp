@@ -27,6 +27,7 @@ public:
     virtual Type* GetI64() = 0;
     virtual Type* GetFloat() = 0;
     virtual Type* GetDouble() = 0;
+    virtual Type* GetVoid() = 0;
 };
 
 void SetFactory(Factory* factory);

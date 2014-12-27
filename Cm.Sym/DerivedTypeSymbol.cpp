@@ -115,6 +115,25 @@ DerivationCounts CountDerivations(const Cm::Ast::DerivationList& derivations)
     return counts;
 }
 
+std::string MakeMangleId(const Cm::Ast::DerivationList& derivations)
+{
+    std::string mangleId;
+    uint8_t n = derivations.NumDerivations();
+    for (uint8_t i = 0; i < n; ++i)
+    {
+        switch (derivations[i])
+        {
+            case Cm::Ast::Derivation::const_: mangleId.append(1, 'C'); break;
+            case Cm::Ast::Derivation::reference: mangleId.append(1, 'R'); break;
+            case Cm::Ast::Derivation::rvalueRef: mangleId.append("RR"); break;
+            case Cm::Ast::Derivation::pointer: mangleId.append(1, 'P'); break;
+            case Cm::Ast::Derivation::leftParen: mangleId.append("l"); break;
+            case Cm::Ast::Derivation::rightParen: mangleId.append("r"); break;
+        }
+    }
+    return mangleId;
+}
+
 DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), baseType(nullptr)
 {
 }
@@ -122,6 +141,11 @@ DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_
 DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* baseType_, const Cm::Ast::DerivationList& derivations_, const TypeId& id_) : 
     TypeSymbol(span_, name_, id_), baseType(baseType_), derivations(derivations_)
 {
+}
+
+std::string DerivedTypeSymbol::GetMangleId() const
+{
+    return MakeMangleId(derivations) + baseType->GetMangleId();
 }
 
 void DerivedTypeSymbol::Write(Writer& writer)

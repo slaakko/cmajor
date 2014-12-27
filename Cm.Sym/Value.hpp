@@ -13,6 +13,7 @@
 #include <Cm.Ser/BinaryReader.hpp>
 #include <Cm.Ser/BinaryWriter.hpp>
 #include <Cm.Parsing/Scanner.hpp>
+#include <Ir.Intf/Object.hpp>
 #include <stdint.h>
 
 namespace Cm { namespace Sym {
@@ -37,6 +38,7 @@ public:
     virtual void Read(Cm::Ser::BinaryReader& reader) = 0;
     virtual void Write(Cm::Ser::BinaryWriter& writer) = 0;
     virtual Value* As(ValueType targetType, bool cast, const Span& span) const = 0;
+    virtual Ir::Intf::Object* CreateIrObject() const = 0;
     virtual bool IsScopedValue() const { return false; }
 };
 
@@ -51,6 +53,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     bool Value() const { return value; }
 private:
     bool value;
@@ -67,6 +70,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     char Value() const { return value; }
 private:
     char value;
@@ -83,6 +87,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     int8_t Value() const { return value; }
 private:
     int8_t value;
@@ -99,6 +104,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     uint8_t Value() const { return value; }
 private:
     uint8_t value;
@@ -115,6 +121,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     int16_t Value() const { return value; }
 private:
     int16_t value;
@@ -131,6 +138,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     uint16_t Value() const { return value; }
 private:
     uint16_t value;
@@ -147,6 +155,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     int32_t Value() const { return value; }
 private:
     int32_t value;
@@ -163,6 +172,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     uint32_t Value() const { return value; }
 private:
     uint32_t value;
@@ -179,6 +189,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     int64_t Value() const { return value; }
 private:
     int64_t value;
@@ -195,6 +206,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     uint64_t Value() const { return value; }
 private:
     uint64_t value;
@@ -211,6 +223,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     float Value() const { return value; }
 private:
     float value;
@@ -227,6 +240,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     double Value() const { return value; }
 private:
     double value;
@@ -242,6 +256,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader) override;
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
     const std::string& Value() const { return value; }
 private:
     std::string value;

@@ -10,6 +10,7 @@
 #include <Llvm.Ir/Instruction.hpp>
 #include <Llvm.Ir/Function.hpp>
 #include <Llvm.Ir/Metadata.hpp>
+#include <Ir.Intf/Factory.hpp>
 
 namespace Llvm { 
 
@@ -178,7 +179,7 @@ std::string RetInst::ToString() const
     }
     else
     {
-        ret.append(space).append(Void()->Name());
+        ret.append(space).append(Ir::Intf::GetFactory()->GetVoid()->Name());
     }
     return ret;
 }

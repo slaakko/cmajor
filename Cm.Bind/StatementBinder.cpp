@@ -15,14 +15,14 @@
 namespace Cm { namespace Bind {
 
 StatementBinder::StatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::Sym::FunctionSymbol* currentFunction_) :
+    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
     ExpressionBinder(symbolTable_, conversionTable_, classConversionTable_, containerScope_, fileScope_, currentFunction_), 
     symbolTable(symbolTable_), containerScope(containerScope_), fileScope(fileScope_), result(nullptr)
 {
 }
 
 ConstructionStatementBinder::ConstructionStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::Sym::FunctionSymbol* currentFunction_) :
+    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
     StatementBinder(symbolTable_, conversionTable_, classConversionTable_, containerScope_, fileScope_, currentFunction_), constructionStatement(nullptr)
 {
 }
@@ -30,7 +30,9 @@ ConstructionStatementBinder::ConstructionStatementBinder(Cm::Sym::SymbolTable& s
 void ConstructionStatementBinder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
     constructionStatement = new Cm::BoundTree::BoundConstructionStatement(&constructionStatementNode);
-    constructionStatement->SetLocalVariable(BindLocalVariable(SymbolTable(), ContainerScope(), FileScope(), &constructionStatementNode));
+    Cm::Sym::LocalVariableSymbol* localVariable = BindLocalVariable(SymbolTable(), ContainerScope(), FileScope(), &constructionStatementNode);
+    constructionStatement->SetLocalVariable(localVariable);
+    CurrentFunction()->AddLocalVariable(localVariable);
 }
 
 void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
@@ -42,13 +44,65 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     resolutionArguments.push_back(variableArgument);
     constructionStatement->GetResolutionArguments(resolutionArguments);
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* ctor = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), "@constructor", resolutionArguments, functionLookups, constructionStatementNode.GetSpan(), conversions);
+    Cm::Core::ConversionType conversionType = Cm::Core::ConversionType::implicit;
+    // todo explicit!
+    Cm::Sym::FunctionSymbol* ctor = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), "@constructor", resolutionArguments, functionLookups, constructionStatementNode.GetSpan(), conversionType, conversions);
     constructionStatement->SetConstructor(ctor);
     constructionStatement->InsertLocalVariableToArguments();
+    constructionStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
     constructionStatement->ApplyConversions(conversions);
     SetResult(constructionStatement);
+}
+
+AssignmentStatementBinder::AssignmentStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
+    StatementBinder(symbolTable_, conversionTable_, classConversionTable_, containerScope_, fileScope_, currentFunction_)
+{
+}
+
+void AssignmentStatementBinder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
+{
+}
+
+void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
+{
+    Cm::BoundTree::BoundExpression* right = Pop();
+    Cm::BoundTree::BoundExpression* left = Pop();
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    Cm::Core::Argument leftArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(left->GetType(), assignmentStatementNode.GetSpan(), false));
+    resolutionArguments.push_back(leftArgument);
+    Cm::Core::Argument rightArgument = Cm::Core::Argument(right->GetArgumentCategory(), right->GetType());
+/*
+    if (right->IsBoundToTemporary()) // todo
+    {
+        rightArgument.SetBindToRvalueRef(); 
+    }
+*/
+    resolutionArguments.push_back(rightArgument);
+    Cm::Sym::FunctionLookupSet functionLookups;
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, left->GetType()->GetContainerScope()->ClassOrNsScope()));
+    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    Cm::Sym::FunctionSymbol* assignment = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), "operator=", resolutionArguments, functionLookups, assignmentStatementNode.GetSpan(), conversions);
+    if (conversions.size() != 2)
+    {
+        throw std::runtime_error("wrong number of conversions");
+    }
+    Cm::Sym::FunctionSymbol* leftConversion = conversions[0];
+    if (leftConversion)
+    {
+        left = new Cm::BoundTree::BoundConversion(&assignmentStatementNode, left, leftConversion);
+        left->SetType(leftConversion->GetTargetType());
+    }
+    Cm::Sym::FunctionSymbol* rightConversion = conversions[1];
+    if (rightConversion)
+    {
+        right = new Cm::BoundTree::BoundConversion(&assignmentStatementNode, right, rightConversion);
+        right->SetType(rightConversion->GetTargetType());
+    }
+    Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(&assignmentStatementNode, left, right, assignment);
+    SetResult(assignmentStatement);
 }
 
 } } // namespace Cm::Bind

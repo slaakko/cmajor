@@ -10,15 +10,15 @@
 #ifndef CM_BIND_STATEMENT_INCLUDED
 #define CM_BIND_STATEMENT_INCLUDED
 #include <Cm.Bind/ExpressionBinder.hpp>
-#include <Cm.BoundTree/Statement.hpp>
+#include <Cm.BoundTree/BoundStatement.hpp>
 
 namespace Cm { namespace Bind {
 
-class StatementBinder : public Cm::Bind::ExpressionBinder
+class StatementBinder : public ExpressionBinder
 {
 public:
     StatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::Sym::FunctionSymbol* currentFunction_);
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     Cm::Sym::FileScope* FileScope() const { return fileScope; }
@@ -35,11 +35,20 @@ class ConstructionStatementBinder : public StatementBinder
 {
 public:
     ConstructionStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::Sym::FunctionSymbol* currentFunction_);
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
     void EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
 private:
     Cm::BoundTree::BoundConstructionStatement* constructionStatement;
+};
+
+class AssignmentStatementBinder : public StatementBinder
+{
+public:
+    AssignmentStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    void BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
+    void EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
 };
 
 } } // namespace Cm::Bind

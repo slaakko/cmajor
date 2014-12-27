@@ -7,9 +7,9 @@
 
 ========================================================================*/
 
-#ifndef CM_BOUND_TREE_FUNCTION_INCLUDED
-#define CM_BOUND_TREE_FUNCTION_INCLUDED
-#include <Cm.BoundTree/Statement.hpp>
+#ifndef CM_BOUND_TREE_BOUND_FUNCTION_INCLUDED
+#define CM_BOUND_TREE_BOUND_FUNCTION_INCLUDED
+#include <Cm.BoundTree/BoundStatement.hpp>
 
 namespace Cm { namespace BoundTree {
 
@@ -19,11 +19,15 @@ public:
     BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_);
     Cm::Sym::FunctionSymbol* GetFunctionSymbol() const { return functionSymbol; }
     void SetBody(BoundCompoundStatement* body_);
+    void AddLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable);
+    const std::vector<Cm::Sym::LocalVariableSymbol*>& LocalVariables() const { return localVariables; }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<BoundCompoundStatement> body;
     Cm::Sym::FunctionSymbol* functionSymbol;
+    std::vector<Cm::Sym::LocalVariableSymbol*> localVariables;
 };
 
 } } // namespace Cm::BoundTree
 
-#endif // CM_BOUND_TREE_FUNCTION_INCLUDED
+#endif // CM_BOUND_TREE_BOUND_FUNCTION_INCLUDED

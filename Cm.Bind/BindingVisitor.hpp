@@ -10,8 +10,8 @@
 #ifndef CM_BIND_BINDING_VISITOR_INCLUDED
 #define CM_BIND_BINDING_VISITOR_INCLUDED
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
-#include <Cm.BoundTree/Function.hpp>
-#include <Cm.BoundTree/Statement.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.BoundTree/BoundStatement.hpp>
 #include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Bind {

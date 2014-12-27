@@ -9,16 +9,19 @@
 
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Sym/Factory.hpp>
+#include <Cm.Sym/NameMangling.hpp>
 
 namespace Cm { namespace Sym {
 
 void Init()
 {
     InitFactory();
+    InitNameMangling();
 }
 
 void Done()
 {
+    DoneNameMangling();
     DoneFactory();
 }
 

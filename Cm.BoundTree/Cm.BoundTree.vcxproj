@@ -19,18 +19,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoundClass.hpp" />
     <ClInclude Include="BoundCompileUnit.hpp" />
+    <ClInclude Include="BoundExpression.hpp" />
+    <ClInclude Include="BoundFunction.hpp" />
     <ClInclude Include="BoundNode.hpp" />
-    <ClInclude Include="Expression.hpp" />
-    <ClInclude Include="Function.hpp" />
-    <ClInclude Include="Statement.hpp" />
+    <ClInclude Include="BoundStatement.hpp" />
+    <ClInclude Include="Visitor.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BoundClass.cpp" />
     <ClCompile Include="BoundCompileUnit.cpp" />
+    <ClCompile Include="BoundExpression.cpp" />
+    <ClCompile Include="BoundFunction.cpp" />
     <ClCompile Include="BoundNode.cpp" />
-    <ClCompile Include="Expression.cpp" />
-    <ClCompile Include="Function.cpp" />
-    <ClCompile Include="Statement.cpp" />
+    <ClCompile Include="BoundStatement.cpp" />
+    <ClCompile Include="Visitor.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E4821295-1936-4D22-A603-5E5530E3A4DC}</ProjectGuid>

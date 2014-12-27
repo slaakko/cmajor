@@ -22,6 +22,7 @@ std::string Replace(const std::string& s, const std::string& oldString, const st
 std::string HexEscape(char c);
 std::string CharStr(char c);
 std::string StringStr(const std::string& s);
+std::string QuotedPath(const std::string& path);
 
 } } // namespace Cm::Util
 

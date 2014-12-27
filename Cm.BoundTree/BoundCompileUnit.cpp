@@ -8,17 +8,28 @@
 ========================================================================*/
 
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
+#include <Cm.Util/Path.hpp>
+#include <boost/filesystem.hpp>
 
 namespace Cm { namespace BoundTree {
 
-BoundCompileUnit::BoundCompileUnit(Cm::Sym::SymbolTable& symbolTable_) : 
-    symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository())
+BoundCompileUnit::BoundCompileUnit(const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : irFilePath(irFilePath_), symbolTable(symbolTable_), 
+    conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), irFunctionRepository()
 {
+    objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
 }
 
 void BoundCompileUnit::AddBoundNode(BoundNode* boundNode)
 {
     boundNodes.push_back(std::unique_ptr<BoundNode>(boundNode));
+}
+
+void BoundCompileUnit::Accept(Visitor& visitor)
+{
+    for (const std::unique_ptr<BoundNode>& boundNode : boundNodes)
+    {
+        boundNode->Accept(visitor);
+    }
 }
 
 } } // namespace Cm::BoundTree

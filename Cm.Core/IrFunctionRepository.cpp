@@ -1,0 +1,69 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+#include <Cm.Core/IrFunctionRepository.hpp>
+#include <Cm.Sym/NameMangling.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/Namespace.hpp>
+#include <Cm.IrIntf/Rep.hpp>
+
+namespace Cm { namespace Core {
+
+Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymbol* function)
+{
+    IrFunctionMapIt i = irFunctionMap.find(function);
+    if (i != irFunctionMap.end())
+    {
+        return i->second;
+    }
+    Cm::Sym::TypeSymbol* returnType = function->GetReturnType();
+    Ir::Intf::Type* irReturnType = returnType ? returnType->GetIrType() : nullptr;
+    if (!irReturnType)
+    {
+        irReturnType = Cm::IrIntf::Void();
+        Own(irReturnType);
+    }
+    std::vector<Ir::Intf::Parameter*> irParameters;
+    for (Cm::Sym::ParameterSymbol* parameter : function->Parameters())
+    {
+        Ir::Intf::Type* irParameterType = parameter->GetType()->GetIrType();
+        Ir::Intf::Parameter* irParameter = Cm::IrIntf::CreateParameter(parameter->Name(), irParameterType);
+        Own(irParameter);
+        irParameters.push_back(irParameter);
+    }
+    std::string functionGroupName = function->GroupName();
+    if (functionGroupName == "main")
+    {
+        functionGroupName = "user" + Cm::IrIntf::GetPrivateSeparator() + "main";
+    }
+    Ir::Intf::Function* irFunction = Cm::IrIntf::CreateFunction(Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, std::vector<Cm::Sym::TypeSymbol*>(), function->Parameters()), irReturnType, irParameters);
+    ownedIrFunctions.push_back(std::unique_ptr<Ir::Intf::Function>(irFunction));
+    irFunctionMap[function] = irFunction;
+    return irFunction;
+}
+
+void IrFunctionRepository::Own(Ir::Intf::Type* type)
+{
+    if (!type->Owned())
+    {
+        type->SetOwned();
+        ownedIrTypes.push_back(std::unique_ptr<Ir::Intf::Type>(type));
+    }
+}
+
+void IrFunctionRepository::Own(Ir::Intf::Parameter* parameter)
+{
+    if (!parameter->Owned())
+    {
+        parameter->SetOwned();
+        ownedIrParameters.push_back(std::unique_ptr<Ir::Intf::Parameter>(parameter));
+    }
+}
+
+} } // namespace Cm::Core
