@@ -19,4 +19,19 @@ Type::~Type()
 {
 }
 
+Object* Type::CreateDefaultValue() const
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+Object* Type::CreateMinusOne() const
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+Object* Type::CreatePlusOne() const
+{
+    throw std::runtime_error("member function not applicable");
+}
+
 } } // namespace Ir::Intf

@@ -36,8 +36,6 @@ public:
     virtual Ir::Intf::Object* CreateAddr(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type);
 };
 
-typedef RegVar* RegVarPtr;
-
 Ir::Intf::RegVar* CreateRegVar(const std::string& name,  Ir::Intf::Type* type);
 Ir::Intf::RegVar* CreateTemporaryRegVar(Ir::Intf::Type* type);
 

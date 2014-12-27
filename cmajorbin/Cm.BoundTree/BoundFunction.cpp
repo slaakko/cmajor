@@ -7,7 +7,8 @@
 
 ========================================================================*/
 
-#include <Cm.BoundTree/Function.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.BoundTree/Visitor.hpp>
 
 namespace Cm { namespace BoundTree {
 
@@ -18,6 +19,21 @@ BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol
 void BoundFunction::SetBody(BoundCompoundStatement* body_)
 {
     body.reset(body_);
+}
+
+void BoundFunction::AddLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable)
+{
+    localVariables.push_back(localVariable);
+}
+
+void BoundFunction::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitFunctionBody())
+    {
+        body->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 } } // namespace Cm::BoundTree

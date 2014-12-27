@@ -35,7 +35,10 @@ public:
     virtual std::string Prefix() const { return Name() + " "; }
     virtual std::string Suffix() const { return std::string(); }
     virtual const std::string& GetTagName() const { return name; }
-    virtual Object* CreateDefaultValue() const { return nullptr; }
+    virtual Object* CreateDefaultValue() const;
+    virtual Object* CreateMinusOne() const;
+    virtual Object* CreatePlusOne() const;
+    virtual uint8_t NumPointers() const { return 0; }
     bool Owned() const { return owned; }
     void SetOwned() { owned = true; }
 private:

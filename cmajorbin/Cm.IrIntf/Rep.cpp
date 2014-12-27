@@ -46,7 +46,7 @@ Ir::Intf::LabelObject* CreateLandingPadLabel(int index)
     return GetBackEndImpl()->CreateLandingPadLabel(index);
 }
 
-Ir::Intf::RegVarPtr CreateTemporaryRegVar(Ir::Intf::Type* type)
+Ir::Intf::RegVar* CreateTemporaryRegVar(Ir::Intf::Type* type)
 {
     return GetBackEndImpl()->CreateTemporaryRegVar(type);
 }

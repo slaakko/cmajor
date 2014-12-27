@@ -80,6 +80,16 @@ Ir::Intf::Object* I8Type::CreateDefaultValue() const
     return CreateI8Constant(0);
 }
 
+Ir::Intf::Object* I8Type::CreateMinusOne() const
+{
+    return CreateI8Constant(int8_t(-1));
+}
+
+Ir::Intf::Object* I8Type::CreatePlusOne() const
+{
+    return CreateI8Constant(int8_t(1));
+}
+
 Ir::Intf::Type* I8()
 {
     return new I8Type();
@@ -97,6 +107,16 @@ Ir::Intf::Type* I16Type::Clone() const
 Ir::Intf::Object* I16Type::CreateDefaultValue() const
 {
     return CreateI16Constant(0);
+}
+
+Ir::Intf::Object* I16Type::CreateMinusOne() const
+{
+    return CreateI16Constant(int16_t(-1));
+}
+
+Ir::Intf::Object* I16Type::CreatePlusOne() const
+{
+    return CreateI16Constant(int16_t(1));
 }
 
 Ir::Intf::Type* I16()
@@ -118,6 +138,16 @@ Ir::Intf::Object* I32Type::CreateDefaultValue() const
     return CreateI32Constant(0);
 }
 
+Ir::Intf::Object* I32Type::CreateMinusOne() const
+{
+    return CreateI32Constant(int32_t(-1));
+}
+
+Ir::Intf::Object* I32Type::CreatePlusOne() const
+{
+    return CreateI32Constant(int32_t(1));
+}
+
 Ir::Intf::Type* I32()
 {
     return new I32Type();
@@ -135,6 +165,16 @@ Ir::Intf::Type* I64Type::Clone() const
 Ir::Intf::Object* I64Type::CreateDefaultValue() const
 {
     return CreateI64Constant(0);
+}
+
+Ir::Intf::Object* I64Type::CreateMinusOne() const
+{
+    return CreateI64Constant(int64_t(-1));
+}
+
+Ir::Intf::Object* I64Type::CreatePlusOne() const
+{
+    return CreateI64Constant(int64_t(1));
 }
 
 Ir::Intf::Type* I64()
@@ -257,6 +297,11 @@ Ir::Intf::Type* Structure(const std::vector<Ir::Intf::Type*>& elementTypes)
 
 PointerType::PointerType(Ir::Intf::Type* baseType_, uint8_t numPointers_) : Ir::Intf::Type(baseType_->Name() + std::string(numPointers_, '*')), baseType(baseType_), numPointers(numPointers_)
 {
+    if (!baseType->Owned())
+    {
+        baseType->SetOwned();
+        ownedBaseType.reset(baseType);
+    }
 }
 
 Ir::Intf::Type* PointerType::Clone() const

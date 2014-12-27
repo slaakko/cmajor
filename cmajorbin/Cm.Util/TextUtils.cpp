@@ -166,4 +166,13 @@ std::string StringStr(const std::string& s)
     return r;
 }
 
+std::string QuotedPath(const std::string& path)
+{
+    if (path.find(' ') != std::string::npos)
+    {
+        return std::string("\"") + path + "\"";
+    }
+    return path;
+}
+
 } } // namespace Cm::Util

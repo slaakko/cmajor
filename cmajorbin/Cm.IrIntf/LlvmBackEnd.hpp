@@ -23,7 +23,7 @@ public:
     Ir::Intf::LabelObject* CreateLabel() override;
     Ir::Intf::LabelObject* CreateLabel(const std::string& label) override;
     Ir::Intf::LabelObject* CreateLandingPadLabel(int index) override;
-    Ir::Intf::RegVarPtr CreateTemporaryRegVar(Ir::Intf::Type* type) override;
+    Ir::Intf::RegVar* CreateTemporaryRegVar(Ir::Intf::Type* type) override;
     Ir::Intf::Type* I1() override;
     Ir::Intf::Type* I8() override;
     Ir::Intf::Type* I16() override;

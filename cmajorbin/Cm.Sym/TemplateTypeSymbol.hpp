@@ -24,6 +24,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::templateTypeSymbol; }
     bool IsTemplateTypeSymbol() const override { return true; }
     std::string TypeString() const override { return "template type"; };
+    std::string GetMangleId() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetSubjectType(TypeSymbol* subjectType_);

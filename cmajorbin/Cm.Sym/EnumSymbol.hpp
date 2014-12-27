@@ -21,6 +21,7 @@ public:
     EnumTypeSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::enumTypeSymbol; }
     std::string TypeString() const override { return "enum type"; };
+    std::string GetMangleId() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     bool IsEnumTypeSymbol() const override { return true; }

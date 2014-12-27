@@ -8,12 +8,18 @@
 ========================================================================*/
 
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), baseClass(nullptr)
 {
+}
+
+std::string ClassTypeSymbol::GetMangleId() const
+{
+    return MakeAssemblyName(FullName());
 }
 
 void ClassTypeSymbol::Write(Writer& writer)

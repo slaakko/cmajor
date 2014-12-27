@@ -11,7 +11,7 @@
 
 namespace Cm { namespace Sym {
 
-FunctionGroupSymbol::FunctionGroupSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_)
+FunctionGroupSymbol::FunctionGroupSymbol(const Span& span_, const std::string& name_, ContainerScope* containerScope_) : Symbol(span_, name_), containerScope(containerScope_)
 {
 }
 

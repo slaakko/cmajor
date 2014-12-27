@@ -7,8 +7,8 @@
 
 ========================================================================*/
 
-#ifndef CM_BOUND_TREE_EXPRESSION_INCLUDED
-#define CM_BOUND_TREE_EXPRESSION_INCLUDED
+#ifndef CM_BOUND_TREE_BOUND_EXPRESSION_INCLUDED
+#define CM_BOUND_TREE_BOUND_EXPRESSION_INCLUDED
 #include <Cm.BoundTree/BoundNode.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
@@ -25,6 +25,7 @@ public:
     BoundExpression(Cm::Ast::Node* syntaxNode_);
     bool IsBoundExpressionNode() const override { return true; }
     virtual bool IsContainerExpression() const { return false; }
+    virtual bool IsBoundFunctionGroup() const { return false; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
     virtual Cm::Core::ArgumentCategory GetArgumentCategory() const { return Cm::Core::ArgumentCategory::rvalue; }
@@ -47,6 +48,8 @@ public:
     std::unique_ptr<BoundExpression>& operator[](int index) { return expressions[index]; }
     void InsertFront(BoundExpression* expr);
     BoundExpression* GetLast();
+    void Reverse();
+    void Accept(Visitor& visitor);
 private:
     std::vector<std::unique_ptr<BoundExpression>> expressions;
 };
@@ -56,6 +59,8 @@ class BoundLiteral : public BoundExpression
 public:
     BoundLiteral(Cm::Ast::Node* syntaxNode_);
     void SetValue(Cm::Sym::Value* value_) { value.reset(value_); }
+    Cm::Sym::Value* GetValue() const { return value.get(); }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Cm::Sym::Value> value;
 };
@@ -65,6 +70,7 @@ class BoundConstant : public BoundExpression
 public:
     BoundConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConstantSymbol* symbol_);
     Cm::Sym::ConstantSymbol* Symbol() const { return symbol; }
+    void Accept(Visitor& visitor) override;
 private:
     Cm::Sym::ConstantSymbol* symbol;
 };
@@ -74,6 +80,7 @@ class BoundLocalVariable : public BoundExpression
 public:
     BoundLocalVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::LocalVariableSymbol* symbol_);
     Cm::Sym::LocalVariableSymbol* Symbol() const { return symbol; }
+    void Accept(Visitor& visitor) override;
 private:
     Cm::Sym::LocalVariableSymbol* symbol;
 };
@@ -83,6 +90,7 @@ class BoundMemberVariable : public BoundExpression
 public:
     BoundMemberVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::MemberVariableSymbol* symbol_);
     Cm::Sym::MemberVariableSymbol* Symbol() const { return symbol; }
+    void Accept(Visitor& visitor) override;
 private:
     Cm::Sym::MemberVariableSymbol* symbol;
 };
@@ -93,6 +101,7 @@ public:
     BoundContainerExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::ContainerSymbol* containerSymbol_);
     Cm::Sym::ContainerSymbol* ContainerSymbol() const { return containerSymbol; }
     bool IsContainerExpression() const override { return true; }
+    void Accept(Visitor& visitor) override;
 private:
     Cm::Sym::ContainerSymbol* containerSymbol;
 };
@@ -101,6 +110,8 @@ class BoundConversion : public BoundExpression
 {
 public:
     BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_);
+    Cm::Sym::FunctionSymbol* ConversionFun() const { return conversionFun; }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* conversionFun;
@@ -110,6 +121,7 @@ class BoundCast : public BoundExpression
 {
 public:
     BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_);
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<BoundExpression> operand;
 };
@@ -118,7 +130,9 @@ class BoundUnaryOp : public BoundExpression
 {
 public:
     BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_);
-    void SetFuncion(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
+    void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
+    Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* fun;
@@ -128,10 +142,36 @@ class BoundBinaryOp : public BoundExpression
 {
 public:
     BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
-    void SetFuncion(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
+    void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
+    Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
+    void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<BoundExpression> left;
     std::unique_ptr<BoundExpression> right;
+    Cm::Sym::FunctionSymbol* fun;
+};
+
+class BoundFunctionGroup : public BoundExpression
+{
+public:
+    BoundFunctionGroup(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_);
+    Cm::Sym::FunctionGroupSymbol* GetFunctionGroupSymbol() const { return functionGroupSymbol; }
+    void Accept(Visitor& visitor) override;
+    bool IsBoundFunctionGroup() const override { return true; }
+private:
+    Cm::Sym::FunctionGroupSymbol* functionGroupSymbol;
+};
+
+class BoundFunctionCall : public BoundExpression
+{
+public:
+    BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_);
+    void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
+    Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
+    void Accept(Visitor& visitor) override;
+    BoundExpressionList& Arguments() { return arguments; }
+private:
+    BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* fun;
 };
 
@@ -150,14 +190,16 @@ class BoundDisjunction : public BoundBooleanBinaryExpression
 {
 public:    
     BoundDisjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
+    void Accept(Visitor& visitor) override;
 };
 
 class BoundConjunction : public BoundBooleanBinaryExpression
 {
 public:
     BoundConjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
+    void Accept(Visitor& visitor) override;
 };
 
 } } // namespace Cm::BoundTree
 
-#endif // CM_BOUND_TREE_EXPRESSION_INCLUDED
+#endif // CM_BOUND_TREE_BOUND_EXPRESSION_INCLUDED

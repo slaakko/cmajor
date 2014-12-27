@@ -9,6 +9,7 @@
 
 #include <Cm.Sym/Value.hpp>
 #include <Cm.Sym/Exception.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -215,6 +216,11 @@ Value* BoolValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Ir::Intf::Object* BoolValue::CreateIrObject() const
+{
+    return value ? Cm::IrIntf::True() : Cm::IrIntf::False();
+}
+
 CharValue::CharValue() : value('\0')
 {
 }
@@ -374,6 +380,11 @@ Value* CharValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Ir::Intf::Object* CharValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateCharConstant(value);
+}
+
 SByteValue::SByteValue() : value(0)
 {
 }
@@ -498,6 +509,11 @@ Value* SByteValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Ir::Intf::Object* SByteValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateI8Constant(value);
+}
+
 ByteValue::ByteValue() : value(0)
 {
 }
@@ -599,6 +615,11 @@ Value* ByteValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Ir::Intf::Object* ByteValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateUI8Constant(value);
 }
 
 ShortValue::ShortValue() : value(0)
@@ -732,6 +753,11 @@ Value* ShortValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Ir::Intf::Object* ShortValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateI16Constant(value);
+}
+
 UShortValue::UShortValue() : value(0)
 {
 }
@@ -847,6 +873,11 @@ Value* UShortValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Ir::Intf::Object* UShortValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateUI16Constant(value);
 }
 
 IntValue::IntValue() : value(0)
@@ -987,6 +1018,11 @@ Value* IntValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Ir::Intf::Object* IntValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateI32Constant(value);
+}
+
 UIntValue::UIntValue() : value(0)
 {
 }
@@ -1116,6 +1152,11 @@ Value* UIntValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Ir::Intf::Object* UIntValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateUI32Constant(value);
 }
 
 LongValue::LongValue() : value(0)
@@ -1263,6 +1304,11 @@ Value* LongValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Ir::Intf::Object* LongValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateI64Constant(value);
+}
+
 ULongValue::ULongValue() : value(0)
 {
 }
@@ -1406,6 +1452,11 @@ Value* ULongValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Ir::Intf::Object* ULongValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateUI64Constant(value);
 }
 
 FloatValue::FloatValue() : value(0.0f)
@@ -1558,6 +1609,11 @@ Value* FloatValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Ir::Intf::Object* FloatValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateFloatConstant(value);
 }
 
 DoubleValue::DoubleValue() : value(0.0)
@@ -1719,6 +1775,11 @@ Value* DoubleValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Ir::Intf::Object* DoubleValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateDoubleConstant(value);
+}
+
 StringValue::StringValue() : value("")
 {
 }
@@ -1746,6 +1807,11 @@ void StringValue::Write(Cm::Ser::BinaryWriter& writer)
 Value* StringValue::As(ValueType targetType, bool cast, const Span& span) const
 {
     throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span);
+}
+
+Ir::Intf::Object* StringValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateStringConstant(value);
 }
 
 } } // namespace Cm::Sym

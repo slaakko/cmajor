@@ -52,7 +52,7 @@ std::string LlvmBackEnd::CreateTempVarName(int tempVarCounter)
     return "$" + std::to_string(tempVarCounter);
 }
 
-Ir::Intf::RegVarPtr LlvmBackEnd::CreateTemporaryRegVar(Ir::Intf::Type* type)
+Ir::Intf::RegVar* LlvmBackEnd::CreateTemporaryRegVar(Ir::Intf::Type* type)
 {
     return Llvm::CreateTemporaryRegVar(type);
 }

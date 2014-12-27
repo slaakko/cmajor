@@ -13,6 +13,24 @@
 
 namespace Cm { namespace BoundTree {
 
+class Visitor;
+
+enum class BoundNodeFlags : uint8_t
+{
+    none = 0,
+    argByRef = 1
+};
+
+inline BoundNodeFlags operator|(BoundNodeFlags left, BoundNodeFlags right)
+{
+    return BoundNodeFlags(uint8_t(left) | uint8_t(right));
+}
+
+inline BoundNodeFlags operator&(BoundNodeFlags left, BoundNodeFlags right)
+{
+    return BoundNodeFlags(uint8_t(left) & uint8_t(right));
+}
+
 class BoundNode
 {
 public:
@@ -20,7 +38,11 @@ public:
     virtual ~BoundNode();
     Cm::Ast::Node* SyntaxNode() const { return syntaxNode; }
     virtual bool IsBoundExpressionNode() const { return false;  }
+    virtual void Accept(Visitor& visitor) = 0;
+    void SetFlag(BoundNodeFlags flag) { flags = flags | flag; }
+    bool GetFlag(BoundNodeFlags flag) const { return (flags & flag) != BoundNodeFlags::none; }
 private:
+    BoundNodeFlags flags;
     Cm::Ast::Node* syntaxNode;
 };
 

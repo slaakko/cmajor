@@ -9,7 +9,8 @@
 
 #ifndef CM_BIND_EXPRESSION_INCLUDED
 #define CM_BIND_EXPRESSION_INCLUDED
-#include <Cm.BoundTree/Expression.hpp>
+#include <Cm.BoundTree/BoundExpression.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
@@ -23,7 +24,9 @@ class BoundExpressionStack
 public:
     void Push(Cm::BoundTree::BoundExpression* expression) { expressions.Add(expression); }
     Cm::BoundTree::BoundExpression* Pop();
+    Cm::BoundTree::BoundExpressionList Pop(int numExpressions);
     Cm::BoundTree::BoundExpressionList GetExpressions() { return std::move(expressions); }
+    int ItemCount() const { return expressions.Count(); }
 private:
     Cm::BoundTree::BoundExpressionList expressions;
 };
@@ -32,13 +35,15 @@ class ExpressionBinder : public Cm::Ast::Visitor
 {
 public:
     ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::Sym::FunctionSymbol* currentFunction_);
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     Cm::Sym::FileScope* FileScope() const { return fileScope; }
+    Cm::BoundTree::BoundFunction* CurrentFunction() const { return currentFunction; }
     Cm::BoundTree::BoundExpressionList GetExpressions();
+    Cm::BoundTree::BoundExpression* Pop() { return boundExpressionStack.Pop(); }
     void EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode) override;
     void EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode) override;
     void EndVisit(Cm::Ast::BitOrNode& bitOrNode) override;
@@ -70,8 +75,8 @@ public:
     void EndVisit(Cm::Ast::PostfixDecNode& postfixDecNode) {}
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::ArrowNode& arrowNode) {}
-    void BeginVisit(Cm::Ast::InvokeNode& invokeNode) {}
-    void EndVisit(Cm::Ast::InvokeNode& invokeNode) {}
+    void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
+    void EndVisit(Cm::Ast::InvokeNode& invokeNode) override;
     void Visit(Cm::Ast::IndexNode& indexNode) {}
 
     void Visit(Cm::Ast::SizeOfNode& sizeOfNode) {}
@@ -122,7 +127,9 @@ private:
     Cm::Sym::ContainerScope* containerScope;
     Cm::Sym::FileScope* fileScope;
     BoundExpressionStack boundExpressionStack;
-    Cm::Sym::FunctionSymbol* currentFunction;
+    int expressionCount;
+    std::stack<int> expressionCountStack;
+    Cm::BoundTree::BoundFunction* currentFunction;
     void BindUnaryOp(Cm::Ast::Node* node, const std::string& opGroupName);
     void BindBinaryOp(Cm::Ast::Node* node, const std::string& opGroupName);
     void BindSymbol(Cm::Ast::Node* idNode, Cm::Sym::Symbol* symbol);
@@ -132,6 +139,7 @@ private:
     void BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol);
     void BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::NamespaceSymbol* namespaceSymbol);
     void BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTypeSymbol* enumTypeSymbol);
+    void BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol);
 };
 
 } } // namespace Cm::Bind

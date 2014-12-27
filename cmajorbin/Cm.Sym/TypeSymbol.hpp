@@ -32,16 +32,18 @@ class TypeSymbol : public ContainerSymbol
 public:
     TypeSymbol(const Span& span_, const std::string& name_);
     TypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
-    SymbolType GetSymbolType() const override { return SymbolType::typeSymbol; }
     std::string TypeString() const override { return "type"; };
     bool IsTypeSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     const TypeId& Id() const { return id; }
     void SetId(const TypeId& id_) { id = id_;  }
+    virtual std::string GetMangleId() const = 0;
     virtual bool IsDerivedTypeSymbol() const { return false; }
     virtual TypeSymbol* GetBaseType() const { return const_cast<TypeSymbol*>(this); }
+    virtual bool IsSignedType() const { return false; }
     virtual bool IsPointerType() const { return false; }
+    virtual bool IsFunctionType() const { return false; }
     virtual int GetPointerCount() const { return 0; }
     virtual bool IsReferenceType() const { return false; }
     virtual bool IsNonConstReferenceType() const { return false; }

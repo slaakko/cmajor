@@ -8,8 +8,10 @@
 ========================================================================*/
 
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -54,6 +56,17 @@ TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& nam
 TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_) :
     TypeSymbol(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_)
 {
+}
+
+std::string TemplateTypeSymbol::GetMangleId() const
+{
+    std::string mangleId = MakeAssemblyName(subjectType->FullName());
+    mangleId.append(Cm::IrIntf::GetPrivateSeparator());
+    for (TypeSymbol* typeArgument : typeArguments)
+    {
+        mangleId.append(MakeAssemblyName(typeArgument->FullName()));
+    }
+    return mangleId;
 }
 
 void TemplateTypeSymbol::Write(Writer& writer)

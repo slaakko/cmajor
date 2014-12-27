@@ -11,7 +11,7 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundNode::BoundNode(Cm::Ast::Node* syntaxNode_) : syntaxNode(syntaxNode_)
+BoundNode::BoundNode(Cm::Ast::Node* syntaxNode_) : flags(BoundNodeFlags::none), syntaxNode(syntaxNode_)
 {
 }
 

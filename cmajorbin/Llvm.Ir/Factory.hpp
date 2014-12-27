@@ -27,6 +27,7 @@ public:
     Ir::Intf::Type* GetI64() override;
     Ir::Intf::Type* GetFloat() override;
     Ir::Intf::Type* GetDouble() override;
+    Ir::Intf::Type* GetVoid() override;
 private:
     std::unique_ptr<Ir::Intf::Type> labelType;
     std::unique_ptr<Ir::Intf::Type> metadataType;
@@ -37,6 +38,7 @@ private:
     std::unique_ptr<Ir::Intf::Type> i64;
     std::unique_ptr<Ir::Intf::Type> float_;
     std::unique_ptr<Ir::Intf::Type> double_;
+    std::unique_ptr<Ir::Intf::Type> void_;
 };
 
 } // namespace Llvm

@@ -182,19 +182,20 @@ void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode)
     symbolNodeMap[functionSymbol] = functionNode;
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
-    container->AddSymbol(functionSymbol);
     BeginContainer(functionSymbol);
 }
 
 void SymbolTable::EndFunctionScope()
 {
+    FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(container);
     EndContainer();
+    container->AddSymbol(functionSymbol);
 }
 
 void SymbolTable::BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode)
 {
     Cm::Ast::IdentifierNode* delegateId = delegateNode->Id();
-    DelegateSymbol* delegateSymbol = new DelegateSymbol(delegateId->GetSpan(), delegateId->Str());
+    DelegateTypeSymbol* delegateSymbol = new DelegateTypeSymbol(delegateId->GetSpan(), delegateId->Str());
     typeRepository.AddType(delegateSymbol);
     ContainerScope* delegateScope = delegateSymbol->GetContainerScope();
     nodeScopeMap[delegateNode] = delegateScope;
@@ -213,7 +214,7 @@ void SymbolTable::EndDelegateScope()
 void SymbolTable::BeginClassDelegateScope(Cm::Ast::ClassDelegateNode* classDelegateNode)
 {
     Cm::Ast::IdentifierNode* classDelegateId = classDelegateNode->Id();
-    ClassDelegateSymbol* classDelegateSymbol = new ClassDelegateSymbol(classDelegateId->GetSpan(), classDelegateId->Str());
+    ClassDelegateTypeSymbol* classDelegateSymbol = new ClassDelegateTypeSymbol(classDelegateId->GetSpan(), classDelegateId->Str());
     typeRepository.AddType(classDelegateSymbol);
     ContainerScope* classDelegateScope = classDelegateSymbol->GetContainerScope();
     nodeScopeMap[classDelegateNode] = classDelegateScope;

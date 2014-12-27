@@ -11,12 +11,18 @@
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
 
 EnumTypeSymbol::EnumTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), underlyingType(nullptr)
 {
+}
+
+std::string EnumTypeSymbol::GetMangleId() const
+{
+    return MakeAssemblyName(FullName());
 }
 
 void EnumTypeSymbol::Write(Writer& writer)

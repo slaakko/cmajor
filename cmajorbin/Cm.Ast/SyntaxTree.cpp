@@ -12,6 +12,14 @@
 
 namespace Cm { namespace Ast {
 
+SyntaxTree::SyntaxTree()
+{
+}
+
+SyntaxTree::SyntaxTree(SyntaxTree&& that) : compileUnits(std::move(that.compileUnits))
+{
+}
+
 void SyntaxTree::AddCompileUnit(CompileUnitNode* compileUnit)
 {
     compileUnits.push_back(std::unique_ptr<CompileUnitNode>(compileUnit));

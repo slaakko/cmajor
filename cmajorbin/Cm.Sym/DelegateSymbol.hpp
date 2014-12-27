@@ -14,21 +14,23 @@
 
 namespace Cm { namespace Sym {
 
-class DelegateSymbol : public TypeSymbol
+class DelegateTypeSymbol : public TypeSymbol
 {
 public:
-    DelegateSymbol(const Span& span_, const std::string& name_);
+    DelegateTypeSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::delegateSymbol; }
     std::string TypeString() const override { return "delegate"; };
     bool IsDelegateTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override;
 };
 
-class ClassDelegateSymbol : public TypeSymbol
+class ClassDelegateTypeSymbol : public TypeSymbol
 {
 public:
-    ClassDelegateSymbol(const Span& span_, const std::string& name_);
+    ClassDelegateTypeSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::classDelegateSymbol; }
     std::string TypeString() const override { return "class delegate"; };
+    std::string GetMangleId() const override;
     bool IsClassDelegateTypeSymbol() const override { return true; }
 };
 

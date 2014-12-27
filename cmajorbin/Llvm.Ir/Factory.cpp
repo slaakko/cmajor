@@ -12,7 +12,7 @@
 
 namespace Llvm { 
 
-Factory::Factory(): labelType(Label()), metadataType(Metadata()), i1(I1()), i8(I8()), i16(I16()), i32(I32()), i64(I64()), float_(Float()), double_(Double())
+Factory::Factory(): labelType(Label()), metadataType(Metadata()), i1(I1()), i8(I8()), i16(I16()), i32(I32()), i64(I64()), float_(Float()), double_(Double()), void_(Void())
 {
     labelType->SetOwned();
     metadataType->SetOwned();
@@ -23,6 +23,7 @@ Factory::Factory(): labelType(Label()), metadataType(Metadata()), i1(I1()), i8(I
     i64->SetOwned();
     float_->SetOwned();
     double_->SetOwned();
+    void_->SetOwned();
 }
 
 Ir::Intf::Type* Factory::GetLabelType()
@@ -68,6 +69,11 @@ Ir::Intf::Type* Factory::GetFloat()
 Ir::Intf::Type* Factory::GetDouble()
 {
     return double_.get();
+}
+
+Ir::Intf::Type* Factory::GetVoid()
+{
+    return void_.get();
 }
 
 } // namespace Llvm

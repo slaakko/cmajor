@@ -18,8 +18,12 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Module.hpp>
 #include <Cm.Bind/BindingVisitor.hpp>
+#include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
+#include <Cm.Util/TextUtils.hpp>
+#include <Cm.Util/System.hpp>
+#include <Cm.Util/Path.hpp>
 #include <chrono>
 #include <iostream>
 
@@ -51,35 +55,55 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, const std::vector<std::str
         libDir /= "llvm";
         boost::filesystem::path rfp = boost::filesystem::absolute(lrp.filename(), libDir);
         rfp.replace_extension(".mc");
-        Cm::Sym::Module module(rfp.generic_string());
+        Cm::Sym::Module module(Cm::Util::GetFullPath(rfp.generic_string()));
         module.ImportTo(symbolTable);
     }
 }
 
-Cm::Sym::SymbolTable BuildSymbolTable(Cm::Ast::SyntaxTree& syntaxTree)
+void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project)
 {
-    Cm::Sym::SymbolTable symbolTable;
     Cm::Core::InitSymbolTable(symbolTable);
+    boost::filesystem::path projectBase = project->BasePath(); 
+    ImportModules(symbolTable, project->ReferenceFilePaths(), projectBase);
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
         Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
         compileUnit->Accept(declarationVisitor);
     }
-    return symbolTable;
 }
 
-Cm::BoundTree::BoundCompileUnit Bind(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::CompileUnitNode* compileUnit)
+void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    Cm::Bind::BindingVisitor bindingVisitor(symbolTable);
+    Cm::Bind::BindingVisitor bindingVisitor(boundCompileUnit);
     compileUnit->Accept(bindingVisitor);
-    return bindingVisitor.Result();
 }
 
-void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree)
+void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
+    Cm::Emit::EmittingVisitor emittingVisitor(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository());
+    boundCompileUnit.Accept(emittingVisitor);
+}
+
+void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
+{
+    std::string llErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".ll.error").generic_string());
+    std::string command = "llc";
+    command.append(" -O=").append("0");
+    command.append(" -filetype=obj").append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
+    Cm::Util::System(command, 2, llErrorFilePath);
+    boost::filesystem::remove(llErrorFilePath);
+}
+
+void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath)
+{
+    boost::filesystem::path outputBase(outputBasePath);
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
-        Cm::BoundTree::BoundCompileUnit boundCompileUnit = Bind(symbolTable, compileUnit.get());
+        std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
+        Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnitIrFilePath, symbolTable);
+        Bind(compileUnit.get(), boundCompileUnit);
+        Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
+        GenerateObjectCode(boundCompileUnit);
     }
 }
 
@@ -95,14 +119,13 @@ void Build(const std::string& projectFilePath)
     std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), projectFileIndex, projectFilePath, "debug", "llvm"));
     project->ResolveDeclarations();
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
-    Cm::Sym::SymbolTable symbolTable = BuildSymbolTable(syntaxTree);
-    boost::filesystem::path projectBase = project->BasePath();
-    ImportModules(symbolTable, project->ReferenceFilePaths(), projectBase);
-    project->VisitCompileUnits(bindingVisitor);
+    Cm::Sym::SymbolTable symbolTable;
+    BuildSymbolTable(symbolTable, syntaxTree, project.get());
     boost::filesystem::create_directories(project->OutputBasePath());
-    boost::filesystem::path moduleFilePath = project->OutputBasePath();
-    boost::filesystem::path mcFilePath = moduleFilePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".mc");
-    Cm::Sym::Module projectModule(mcFilePath.generic_string());
+    Compile(symbolTable, syntaxTree, project->OutputBasePath().generic_string());
+    boost::filesystem::path outputBasePath = project->OutputBasePath();
+    std::string mcFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".mc")).generic_string());
+    Cm::Sym::Module projectModule(mcFilePath);
     projectModule.SetSourceFilePaths(project->SourceFilePaths());
     projectModule.Export(symbolTable);
     Cm::Parser::SetCurrentFileRegistry(nullptr);

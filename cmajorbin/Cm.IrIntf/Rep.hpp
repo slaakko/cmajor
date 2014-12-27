@@ -20,7 +20,7 @@ Ir::Intf::LabelObject* CreateNextLocalLabel();
 Ir::Intf::LabelObject* CreateLabel();
 Ir::Intf::LabelObject* CreateLabel(const std::string& label);
 Ir::Intf::LabelObject* CreateLandingPadLabel(int index);
-Ir::Intf::RegVarPtr CreateTemporaryRegVar(Ir::Intf::Type* type);
+Ir::Intf::RegVar* CreateTemporaryRegVar(Ir::Intf::Type* type);
 Ir::Intf::Type* I1();
 Ir::Intf::Type* I8();
 Ir::Intf::Type* I16();

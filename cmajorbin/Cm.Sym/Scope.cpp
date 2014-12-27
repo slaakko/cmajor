@@ -25,6 +25,13 @@ ContainerScope::ContainerScope() : base(nullptr), parent(nullptr), container(nul
 {
 }
 
+ContainerScope::ContainerScope(ContainerScope&& that) : symbolMap(std::move(that.symbolMap)), base(that.base), parent(that.parent), container(that.container)
+{
+    that.base = nullptr;
+    that.parent = nullptr;
+    that.container = nullptr;
+}
+
 void ContainerScope::Install(Symbol* symbol)
 {
     SymbolMapIt i = symbolMap.find(symbol->Name());

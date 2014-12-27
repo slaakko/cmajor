@@ -9,192 +9,192 @@
 
 #ifndef CM_CORE_BASIC_TYPE_OP_INCLUDED
 #define CM_CORE_BASIC_TYPE_OP_INCLUDED
+#include <Cm.Core/GenData.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 
 namespace Cm { namespace Core {
 
-class DefaultCtor : public Cm::Sym::FunctionSymbol
+class BasicTypeOp : public Cm::Sym::FunctionSymbol
+{
+public:
+    BasicTypeOp(Cm::Sym::TypeSymbol* type_);
+    bool IsBasicTypeOp() const override { return true; }
+    Cm::Sym::TypeSymbol* Type() const { return type; }
+    virtual void Generate(Emitter& emitter, GenResult& result) = 0;
+    Ir::Intf::Type* GetIrType() const { return type->GetIrType(); }
+    Ir::Intf::Object* GetDefaultIrValue() const { return type->GetDefaultIrValue(); }
+private:
+    Cm::Sym::TypeSymbol* type;
+};
+
+class DefaultCtor : public BasicTypeOp
 {
 public:
     DefaultCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class CopyCtor : public Cm::Sym::FunctionSymbol
+class CopyCtor : public BasicTypeOp
 {
 public:
     CopyCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class CopyAssignment : public Cm::Sym::FunctionSymbol
+class CopyAssignment : public BasicTypeOp
 {
 public:
     CopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class MoveCtor : public Cm::Sym::FunctionSymbol
+class MoveCtor : public BasicTypeOp
 {
 public:
     MoveCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class MoveAssignment : public Cm::Sym::FunctionSymbol
+class MoveAssignment : public BasicTypeOp
 {
 public:
     MoveAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class OpEqual : public Cm::Sym::FunctionSymbol
+class OpEqual : public BasicTypeOp
 {
 public:
     OpEqual(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class OpLess : public Cm::Sym::FunctionSymbol
+class OpLess : public BasicTypeOp
 {
 public:
     OpLess(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class OpAdd : public Cm::Sym::FunctionSymbol
+class BinOp : public BasicTypeOp
+{
+public:
+    BinOp(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_, const std::string& groupName_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    virtual Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const = 0;
+};
+
+class OpAdd : public BinOp
 {
 public:
     OpAdd(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpSub : public Cm::Sym::FunctionSymbol
+class OpSub : public BinOp
 {
 public:
     OpSub(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpMul : public Cm::Sym::FunctionSymbol
+class OpMul : public BinOp
 {
 public:
     OpMul(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpDiv : public Cm::Sym::FunctionSymbol
+class OpDiv : public BinOp
 {
 public:
     OpDiv(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpRem : public Cm::Sym::FunctionSymbol
+class OpRem : public BinOp
 {
 public:
     OpRem(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpShl : public Cm::Sym::FunctionSymbol
+class OpShl : public BinOp
 {
 public:
     OpShl(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpShr : public Cm::Sym::FunctionSymbol
+class OpShr : public BinOp
 {
 public:
     OpShr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpBitAnd : public Cm::Sym::FunctionSymbol
+class OpBitAnd : public BinOp
 {
 public:
     OpBitAnd(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpBitOr : public Cm::Sym::FunctionSymbol
+class OpBitOr : public BinOp
 {
 public:
     OpBitOr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpBitXor : public Cm::Sym::FunctionSymbol
+class OpBitXor : public BinOp
 {
 public:
     OpBitXor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
 };
 
-class OpNot : public Cm::Sym::FunctionSymbol
+class OpNot : public BasicTypeOp
 {
 public:
     OpNot(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class OpUnaryPlus : public Cm::Sym::FunctionSymbol
+class OpUnaryPlus : public BasicTypeOp
 {
 public:
     OpUnaryPlus(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class OpUnaryMinus : public Cm::Sym::FunctionSymbol
+class OpUnaryMinus : public BasicTypeOp
 {
 public:
     OpUnaryMinus(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class OpComplement : public Cm::Sym::FunctionSymbol
+class OpComplement : public BasicTypeOp
 {
 public:
     OpComplement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class OpIncrement : public Cm::Sym::FunctionSymbol
+class OpIncrement : public BasicTypeOp
 {
 public:
     OpIncrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-class OpDecrement : public Cm::Sym::FunctionSymbol
+class OpDecrement : public BasicTypeOp
 {
 public:
     OpDecrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-private:
-    Cm::Sym::TypeSymbol* type;
+    void Generate(Emitter& emitter, GenResult& result) override;
 };
 
 enum class ConversionType
@@ -217,7 +217,7 @@ inline bool BetterConversionRank(ConversionRank left, ConversionRank right)
     return left < right;
 }
 
-class ConvertingCtor : public Cm::Sym::FunctionSymbol
+class ConvertingCtor : public BasicTypeOp
 {
 public:
     ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, ConversionType conversionType_, ConversionInst conversionInst_, 
@@ -226,6 +226,8 @@ public:
     ConversionRank GetConversionRank() const { return conversionRank; }
     int GetConversionDistance() const { return conversionDistance; }
     bool IsConvertingConstructor() const override { return true; }
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::TypeSymbol* GetTargetType() const override { return targetType; }
 private:
     Cm::Sym::TypeSymbol* targetType;
     Cm::Sym::TypeSymbol* sourceType;
