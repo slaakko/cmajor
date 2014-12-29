@@ -77,6 +77,15 @@ void BoundLocalVariable::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundParameter::BoundParameter(Cm::Ast::Node* syntaxNode_, Cm::Sym::ParameterSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
+{
+}
+
+void BoundParameter::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundMemberVariable::BoundMemberVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::MemberVariableSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }

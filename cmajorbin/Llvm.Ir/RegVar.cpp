@@ -38,7 +38,9 @@ void RegVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf
     }
     else
     {
-        emitter.Emit(Or(type, this, &constant, type->CreateDefaultValue())); 
+        Ir::Intf::Object* defaultValue = type->CreateDefaultValue();
+        emitter.Own(defaultValue);
+        emitter.Emit(Or(type, this, &constant, defaultValue)); 
     }
 }
 
@@ -135,7 +137,9 @@ void RegVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
     }
     else
     {
-        emitter.Emit(Or(type, this, &constant, type->CreateDefaultValue()));
+        Ir::Intf::Object* defaultValue = type->CreateDefaultValue();
+        emitter.Own(defaultValue);
+        emitter.Emit(Or(type, this, &constant, defaultValue));
     }
 }
 

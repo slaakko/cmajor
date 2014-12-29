@@ -54,15 +54,15 @@ namespace Cm.Parser
     grammar CompileUnitGrammar
     {
         CompileUnit(ParsingContext* ctx): Cm::Ast::CompileUnitNode*;
-        NamespaceContent(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns);
+        NamespaceContent(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns);
         UsingDirectives(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns);
         UsingDirective(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns);
         UsingAliasDirective(var std::unique_ptr<IdentifierNode> id): Cm::Ast::AliasNode*;
         UsingNamespaceDirective: Cm::Ast::NamespaceImportNode*;
-        Definitions(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns);
-        Definition(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns): Cm::Ast::Node*;
-        NamespaceDefinition(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns): Cm::Ast::NamespaceNode*;
-        FunctionDefinition(ParsingContext* ctx): Cm::Ast::Node*;
+        Definitions(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns);
+        Definition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns): Cm::Ast::Node*;
+        NamespaceDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns): Cm::Ast::NamespaceNode*;
+        FunctionDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::FunctionNode*;
         ConstantDefinition(ParsingContext* ctx): Cm::Ast::Node*;
         EnumerationDefinition(ParsingContext* ctx): Cm::Ast::Node*;
         TypedefDefinition(ParsingContext* ctx): Cm::Ast::Node*;

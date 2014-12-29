@@ -49,12 +49,12 @@ namespace Cm.Parser
 
         CompileUnit(ParsingContext* ctx): Cm::Ast::CompileUnitNode*
             ::= empty{ value = new CompileUnitNode(span, fileName); }
-                NamespaceContent(ctx, value->GlobalNs())
+                NamespaceContent(ctx, value, value->GlobalNs())
             ;
 
-        NamespaceContent(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns)
+        NamespaceContent(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns)
             ::= UsingDirectives(ctx, ns) 
-                Definitions(ctx, ns)
+                Definitions(ctx, compileUnit, ns)
             ;
 
         UsingDirectives(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns)
@@ -74,13 +74,13 @@ namespace Cm.Parser
             ::= (keyword("using") QualifiedId! ';'!){ value = new NamespaceImportNode(span, QualifiedId); }
             ;
 
-        Definitions(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns)
-            ::= (Definition(ctx, ns){ ns->AddMember(Definition); })*
+        Definitions(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns)
+            ::= (Definition(ctx, compileUnit, ns){ ns->AddMember(Definition); })*
             ;
 
-        Definition(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns): Cm::Ast::Node*
-            ::= NamespaceDefinition(ctx, ns){ value = NamespaceDefinition; }
-            |   FunctionDefinition(ctx){ value = FunctionDefinition; }
+        Definition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns): Cm::Ast::Node*
+            ::= NamespaceDefinition(ctx, compileUnit, ns){ value = NamespaceDefinition; }
+            |   FunctionDefinition(ctx, compileUnit){ value = FunctionDefinition; }
             |   ConstantDefinition(ctx){ value = ConstantDefinition; }
             |   EnumerationDefinition(ctx){ value = EnumerationDefinition; }
             |   TypedefDefinition(ctx){ value = TypedefDefinition; }
@@ -90,12 +90,12 @@ namespace Cm.Parser
             |   ConceptDefinition(ctx){ value = ConceptDefinition; }
             ;
 
-        NamespaceDefinition(ParsingContext* ctx, Cm::Ast::NamespaceNode* ns): Cm::Ast::NamespaceNode*
-            ::= (keyword("namespace") QualifiedId!){ value = new NamespaceNode(span, QualifiedId); } '{'! NamespaceContent(ctx, value)! '}'!
+        NamespaceDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns): Cm::Ast::NamespaceNode*
+            ::= (keyword("namespace") QualifiedId!){ value = new NamespaceNode(span, QualifiedId); } '{'! NamespaceContent(ctx, compileUnit, value)! '}'!
             ;
 
-        FunctionDefinition(ParsingContext* ctx): Cm::Ast::Node*
-            ::= Function(ctx){ value = Function; }
+        FunctionDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::FunctionNode*
+            ::= Function(ctx){ value = Function; value->SetCompileUnit(compileUnit); }
             ;
 
         ConstantDefinition(ParsingContext* ctx): Cm::Ast::Node*

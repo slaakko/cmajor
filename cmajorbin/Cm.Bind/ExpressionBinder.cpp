@@ -18,6 +18,7 @@
 #include <Cm.Bind/LocalVariable.hpp>
 #include <Cm.Bind/MemberVariable.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/Parameter.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
@@ -524,6 +525,12 @@ void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
             BindMemberVariableSymbol(node, memberVariableSymbol);
             break;
         }
+        case Cm::Sym::SymbolType::parameterSymbol:
+        {
+            Cm::Sym::ParameterSymbol* parameterSymbol = static_cast<Cm::Sym::ParameterSymbol*>(symbol);
+            BindParameterSymbol(node, parameterSymbol);
+            break;
+        }
         case Cm::Sym::SymbolType::classSymbol:
         {
             Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(symbol);
@@ -620,6 +627,14 @@ void ExpressionBinder::BindMemberVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::
     Cm::BoundTree::BoundMemberVariable* boundMemberVariable = new Cm::BoundTree::BoundMemberVariable(idNode, memberVariableSymbol);
     boundMemberVariable->SetType(memberVariableSymbol->GetType());
     boundExpressionStack.Push(boundMemberVariable);
+}
+
+void ExpressionBinder::BindParameterSymbol(Cm::Ast::Node* idNode, Cm::Sym::ParameterSymbol* parameterSymbol)
+{
+    CheckAccess(currentFunction->GetFunctionSymbol(), idNode->GetSpan(), parameterSymbol);
+    Cm::BoundTree::BoundParameter* boundParameter = new Cm::BoundTree::BoundParameter(idNode, parameterSymbol);
+    boundParameter->SetType(parameterSymbol->GetType());
+    boundExpressionStack.Push(boundParameter);
 }
 
 void ExpressionBinder::BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol)

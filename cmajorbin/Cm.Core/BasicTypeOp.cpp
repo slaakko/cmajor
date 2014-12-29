@@ -160,7 +160,6 @@ void OpEqual::Generate(Emitter& emitter, GenResult& result)
         emitter.Emit(Cm::IrIntf::Br(result.MainObject(), trueLabel, falseLabel));
         result.AddTrueTarget(trueLabel);
         result.AddFalseTarget(falseLabel);
-        result.SetJumpingBoolCodeGenerated();
     }
 }
 
@@ -219,7 +218,6 @@ void OpLess::Generate(Emitter& emitter, GenResult& result)
         emitter.Emit(Cm::IrIntf::Br(result.MainObject(), trueLabel, falseLabel));
         result.AddTrueTarget(trueLabel);
         result.AddFalseTarget(falseLabel);
-        result.SetJumpingBoolCodeGenerated();
     }
 }
 
@@ -416,10 +414,16 @@ void OpNot::Generate(Emitter& emitter, GenResult& result)
 {
     if (result.GenJumpingBoolCode())
     {
-        result.TrueTargets().clear();
-        result.MergeTargets(result.TrueTargets(), result.GetChild(0).FalseTargets());
-        result.FalseTargets().clear();
-        result.MergeTargets(result.FalseTargets(), result.GetChild(0).TrueTargets());
+        Ir::Intf::Object* true_ = Cm::IrIntf::True();
+        emitter.Own(true_);
+        emitter.Emit(Cm::IrIntf::Xor(result.MainObject()->GetType(), result.MainObject(), result.Arg1(), true_));
+        Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateLabel();
+        emitter.Own(trueLabel);
+        Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateLabel();
+        emitter.Own(falseLabel);
+        emitter.Emit(Cm::IrIntf::Br(result.MainObject(), trueLabel, falseLabel));
+        result.AddTrueTarget(trueLabel);
+        result.AddFalseTarget(falseLabel);
     }
     else
     {

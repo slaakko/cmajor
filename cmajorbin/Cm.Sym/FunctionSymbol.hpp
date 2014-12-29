@@ -12,6 +12,7 @@
 #include <Cm.Sym/ContainerSymbol.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Ast/Function.hpp>
+#include <Cm.Ast/CompileUnit.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -64,10 +65,13 @@ public:
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void ComputeName();
     virtual TypeSymbol* GetTargetType() const;
+    Cm::Ast::CompileUnitNode* CompileUnit() const { return compileUnit; }
+    void SetCompileUnit(Cm::Ast::CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
 private:
     std::string groupName;
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
+    Cm::Ast::CompileUnitNode* compileUnit;
 };
 
 } } // namespace Cm::Sym

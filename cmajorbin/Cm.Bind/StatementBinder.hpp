@@ -47,9 +47,45 @@ class AssignmentStatementBinder : public StatementBinder
 public:
     AssignmentStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
         Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
-    void BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
     void EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
 };
+
+class SimpleStatementBinder : public StatementBinder
+{
+public:
+    SimpleStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    void EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
+};
+
+class ReturnStatementBinder : public StatementBinder
+{
+public:
+    ReturnStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    void EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode) override;
+};
+
+class ConditionalStatementBinder : public StatementBinder
+{
+public:
+    ConditionalStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_);
+    void EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode) override;
+private:
+    Cm::BoundTree::BoundConditionalStatement* conditionalStatement;
+};
+
+class WhileStatementBinder : public StatementBinder
+{
+public:
+    WhileStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundWhileStatement* whileStatement__);
+    void EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode) override;
+private:
+    Cm::BoundTree::BoundWhileStatement* whileStatement;
+};
+
 
 } } // namespace Cm::Bind
 

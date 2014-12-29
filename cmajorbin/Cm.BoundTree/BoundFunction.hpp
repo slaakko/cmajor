@@ -19,6 +19,7 @@ public:
     BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_);
     Cm::Sym::FunctionSymbol* GetFunctionSymbol() const { return functionSymbol; }
     void SetBody(BoundCompoundStatement* body_);
+    BoundCompoundStatement* Body() const { return body.get(); }
     void AddLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable);
     const std::vector<Cm::Sym::LocalVariableSymbol*>& LocalVariables() const { return localVariables; }
     void Accept(Visitor& visitor) override;

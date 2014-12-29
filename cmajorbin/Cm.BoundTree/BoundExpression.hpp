@@ -16,6 +16,7 @@
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/Value.hpp>
+#include <Cm.Sym/ParameterSymbol.hpp>
 
 namespace Cm { namespace BoundTree {
 
@@ -26,6 +27,7 @@ public:
     bool IsBoundExpressionNode() const override { return true; }
     virtual bool IsContainerExpression() const { return false; }
     virtual bool IsBoundFunctionGroup() const { return false; }
+    virtual bool IsCast() const { return false; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
     virtual Cm::Core::ArgumentCategory GetArgumentCategory() const { return Cm::Core::ArgumentCategory::rvalue; }
@@ -85,6 +87,16 @@ private:
     Cm::Sym::LocalVariableSymbol* symbol;
 };
 
+class BoundParameter: public BoundExpression
+{
+public:
+    BoundParameter(Cm::Ast::Node* syntaxNode_, Cm::Sym::ParameterSymbol* symbol_);
+    Cm::Sym::ParameterSymbol* Symbol() const { return symbol; }
+    void Accept(Visitor& visitor) override;
+private:
+    Cm::Sym::ParameterSymbol* symbol;
+};
+
 class BoundMemberVariable : public BoundExpression
 {
 public:
@@ -122,6 +134,7 @@ class BoundCast : public BoundExpression
 public:
     BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_);
     void Accept(Visitor& visitor) override;
+    bool IsCast() const override { return true; }
 private:
     std::unique_ptr<BoundExpression> operand;
 };

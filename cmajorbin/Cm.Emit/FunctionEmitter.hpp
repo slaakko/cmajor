@@ -19,10 +19,10 @@ namespace Cm { namespace Emit {
 class LocalVariableIrObjectRepository
 {
 public:
-    Ir::Intf::Object* CreateLocalVariableIrObjectFor(Cm::Sym::LocalVariableSymbol *localVariable);
-    Ir::Intf::Object* GetLocalVariableIrObject(Cm::Sym::LocalVariableSymbol *localVariable);
+    Ir::Intf::Object* CreateLocalVariableIrObjectFor(Cm::Sym::Symbol *localVariableOrParameter);
+    Ir::Intf::Object* GetLocalVariableIrObject(Cm::Sym::Symbol *localVariableOrParameter);
 private:
-    typedef std::unordered_map<Cm::Sym::LocalVariableSymbol*, Ir::Intf::Object*>  LocalVariableObjectMap;
+    typedef std::unordered_map<Cm::Sym::Symbol*, Ir::Intf::Object*>  LocalVariableObjectMap;
     typedef LocalVariableObjectMap::const_iterator LocalVariableObjectMapIt;
     LocalVariableObjectMap localVariableObjectMap;
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;
@@ -40,27 +40,33 @@ public:
     void Visit(Cm::BoundTree::BoundLiteral& boundLiteral) override;
     void Visit(Cm::BoundTree::BoundConstant& boundConstant) override;
     void Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable) override;
+    void Visit(Cm::BoundTree::BoundParameter& boundParameter) override;
     void Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable) {}
     void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
     void Visit(Cm::BoundTree::BoundCast& boundCast) {}
-    void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) {}
+    void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;
     void Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction) {}
     void Visit(Cm::BoundTree::BoundConjunction& boundConjunction) {}
 
-    void Visit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) {}
-    void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) {}
+    void BeginVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
+    void EndVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
+    void Visit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
+    void Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveStatement) override;
+    void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
-    void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) {}
+    void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
     void Visit(Cm::BoundTree::BoundThrowStatement& boundThrowStatement) {}
-    void Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement) {}
+    void Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement) override;
     void Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStatement) {}
     void Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatement) {}
     void Visit(Cm::BoundTree::BoundContinueStatement& boundContinueStatement) {}
-    void Visit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) {}
+    void BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) override;
+    void EndVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) override;
+    void BeginVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement) override;
+    void EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement) override;
     void Visit(Cm::BoundTree::BoundDoStatement& boundDoStatement) {}
-    void Visit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement) {}
     void Visit(Cm::BoundTree::BoundForStatement& boundForStatement) {}
     void Visit(Cm::BoundTree::BoundTryStatement& boundTryStatement) {}
 private:
@@ -68,10 +74,14 @@ private:
     std::unique_ptr<Cm::Core::Emitter> emitter;
     Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::GenFlags genFlags;
+    Cm::Core::GenResult compoundResult;
     Cm::Core::GenResultStack resultStack;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
     LocalVariableIrObjectRepository localVariableIrObjectRepository;
+    Cm::Ast::CompileUnitNode* currentCompileUnit;
+    std::unordered_set<Ir::Intf::Function*> externalFunctions;
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
+    void GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
 };
 

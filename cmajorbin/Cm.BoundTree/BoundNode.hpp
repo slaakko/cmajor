@@ -18,7 +18,9 @@ class Visitor;
 enum class BoundNodeFlags : uint8_t
 {
     none = 0,
-    argByRef = 1
+    argByRef = 1 << 0,
+    lvalue = 1 << 1,
+    genJumpingBoolCode = 1 << 2
 };
 
 inline BoundNodeFlags operator|(BoundNodeFlags left, BoundNodeFlags right)

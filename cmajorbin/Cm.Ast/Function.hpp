@@ -32,6 +32,7 @@ private:
 
 class WhereConstraintNode;
 class CompoundStatementNode;
+class CompileUnitNode;
 
 class FunctionNode : public Node
 {
@@ -57,6 +58,8 @@ public:
     const ParameterNodeList& Parameters() const { return parameters; }
     WhereConstraintNode* Constraint() const { return constraint.get(); }
     CompoundStatementNode* Body() const { return body.get(); }
+    void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
+    CompileUnitNode* GetCompileUnit() const { return compileUnit; }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
@@ -65,6 +68,7 @@ private:
     ParameterNodeList parameters;
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
+    CompileUnitNode* compileUnit;
 };
 
 } } // namespace Cm::Ast

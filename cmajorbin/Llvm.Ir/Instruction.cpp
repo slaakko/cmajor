@@ -206,10 +206,10 @@ std::string BrInst::ToString() const
     std::string br(Name());
     std::string space(1, ' ');
     std::string comma(", ");
-    Ir::Intf::Type* labelType = Label();
+    Ir::Intf::Type* labelType = Ir::Intf::GetFactory()->GetLabelType();
     if (cond)
     {
-        br.append(space).append(I1()->Name()).append(space).append(cond->Name()).append(comma).append(labelType->Name()).append(space).append(
+        br.append(space).append(Ir::Intf::GetFactory()->GetI1()->Name()).append(space).append(cond->Name()).append(comma).append(labelType->Name()).append(space).append(
             trueLabel->Name()).append(comma).append(labelType->Name()).append(space).append(falseLabel->Name());
     }
     else

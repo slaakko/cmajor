@@ -77,6 +77,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool HasExpr() const { return expr != nullptr; }
 private:
     std::unique_ptr<Node> expr;
 };
@@ -92,6 +93,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool ReturnsValue() const { return expr != nullptr; }
 private:
     std::unique_ptr<Node> expr;
 };
@@ -107,6 +109,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool HasElseStatement() const { return elseS != nullptr; }
 private:
     std::unique_ptr<Node> condition;
     std::unique_ptr<StatementNode> thenS;

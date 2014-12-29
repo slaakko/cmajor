@@ -53,6 +53,7 @@ public:
     VoidTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::voidSymbol; }
     std::string GetMangleId() const override { return "vo"; }
+    bool IsVoidTypeSymbol() const override { return true; }
 };
 
 class SByteTypeSymbol : public BasicTypeSymbol

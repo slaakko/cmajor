@@ -215,7 +215,6 @@ public:
     BrInst(Ir::Intf::Object* cond_, Ir::Intf::LabelObject* trueLabel_, Ir::Intf::LabelObject* falseLabel_);
     virtual std::string ToString() const;
     virtual void AddTargetLabels(std::set<std::string>& targetLabels);
-    virtual Ir::Intf::Object* GetResult() const { return cond; }
     virtual bool IsTerminator() const { return true; }
     virtual Ir::Intf::LabelObject* GetTargetLabel() const { return dest; }
     virtual bool IsUnconditionalBr() const;

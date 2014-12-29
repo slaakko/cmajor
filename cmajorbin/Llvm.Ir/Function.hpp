@@ -26,8 +26,12 @@ public:
     virtual void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_);
     virtual void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_);
     virtual bool ContainsExceptionCodeParam() const;
+    bool IsDoNothingFunction() const override { return isDoNothingFunction; }
+    void SetDoNothingFunction() { isDoNothingFunction = true; }
 protected:
     virtual std::string ParameterListStr() const;
+private:
+    bool isDoNothingFunction;
 };
 
 Ir::Intf::Function* CreateDoNothingFunction();

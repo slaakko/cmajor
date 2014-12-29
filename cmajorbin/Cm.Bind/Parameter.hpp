@@ -9,11 +9,14 @@
 
 #ifndef CM_BIND_PARAMETER_INCLUDED
 #define CM_BIND_PARAMETER_INCLUDED
+#include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.Core/ClassConversionTable.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace Bind {
 
 void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ParameterNode* parameterNode, int parameterIndex);
+void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, Cm::BoundTree::BoundFunction* boundFunction);
 
 } } // namespace Cm::Bind
 

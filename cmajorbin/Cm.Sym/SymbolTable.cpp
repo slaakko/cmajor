@@ -175,6 +175,7 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
 void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
+    functionSymbol->SetCompileUnit(functionNode->GetCompileUnit());
     functionSymbolMap[functionNode] = functionSymbol;
     functionSymbol->SetGroupName(functionNode->GroupId()->Str());
     ContainerScope* functionScope = functionSymbol->GetContainerScope();
