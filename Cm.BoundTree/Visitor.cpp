@@ -19,4 +19,16 @@ Visitor::~Visitor()
 {
 }
 
+void Visitor::PushSkipContent()
+{
+    skipContentStack.push(skipContent);
+    skipContent = true;
+}
+
+void Visitor::PopSkipContent()
+{
+    skipContent = skipContentStack.top();
+    skipContentStack.pop();
+}
+
 } } // namespace Cm::BoundTree

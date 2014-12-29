@@ -364,10 +364,13 @@ void ConditionalStatementNode::Accept(Visitor& visitor)
     {
         condition->Accept(visitor);
     }
-    thenS->Accept(visitor);
-    if (elseS)
+    if (!visitor.SkipContent())
     {
-        elseS->Accept(visitor);
+        thenS->Accept(visitor);
+        if (elseS)
+        {
+            elseS->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }
@@ -717,7 +720,10 @@ void WhileStatementNode::Accept(Visitor& visitor)
     {
         condition->Accept(visitor);
     }
-    statement->Accept(visitor);
+    if (!visitor.SkipContent())
+    {
+        statement->Accept(visitor);
+    }
     visitor.EndVisit(*this);
 }
 

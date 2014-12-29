@@ -10,6 +10,8 @@
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.Bind/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/OverloadResolution.hpp>
+#include <Cm.BoundTree/BoundStatement.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -49,6 +51,29 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
     else
     {
         throw Exception("symbol '" + parameterNode->Id()->Str() + "' not found");
+    }
+}
+
+void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, Cm::BoundTree::BoundFunction* boundFunction)
+{
+    Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
+    int index = 0;
+    for (Cm::Sym::ParameterSymbol* parameterSymbol : functionSymbol->Parameters())
+    {
+        Cm::BoundTree::BoundReceiveStatement* boundReceiveStatement = new Cm::BoundTree::BoundReceiveStatement(parameterSymbol);
+        Cm::Sym::TypeSymbol* parameterType = parameterSymbol->GetType();
+        std::vector<Cm::Core::Argument> resolutionArguments;
+        Cm::Core::Argument targetArgument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(parameterType, parameterSymbol->GetSpan(), false));
+        resolutionArguments.push_back(targetArgument);
+        Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, symbolTable.GetTypeRepository().MakeConstReferenceType(parameterType, parameterSymbol->GetSpan(), false));
+        resolutionArguments.push_back(sourceArgument);
+        Cm::Sym::FunctionLookupSet functionLookups;
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
+        std::vector<Cm::Sym::FunctionSymbol*> conversions;
+        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(symbolTable, conversionTable, classConversionTable, "@constructor", resolutionArguments, functionLookups, parameterSymbol->GetSpan(), conversions);
+        boundReceiveStatement->SetConstructor(ctor);
+        boundFunction->Body()->InsertStatement(index, boundReceiveStatement);
+        ++index;
     }
 }
 

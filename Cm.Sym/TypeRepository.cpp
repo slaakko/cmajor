@@ -187,6 +187,14 @@ TypeSymbol* TypeRepository::MakeRvalueRefType(TypeSymbol* baseType, const Span& 
     return MakeDerivedType(derivations, baseType, span, requirePublic);
 }
 
+TypeSymbol* TypeRepository::MakeConstReferenceType(TypeSymbol* baseType, const Span& span, bool requirePublic)
+{
+    Cm::Ast::DerivationList derivations;
+    derivations.Add(Cm::Ast::Derivation::const_);
+    derivations.Add(Cm::Ast::Derivation::reference);
+    return MakeDerivedType(derivations, baseType, span, requirePublic);
+}
+
 TypeSymbol* TypeRepository::MakeConstPointerType(TypeSymbol* baseType, const Span& span, bool requirePublic)
 {
     Cm::Ast::DerivationList derivations;

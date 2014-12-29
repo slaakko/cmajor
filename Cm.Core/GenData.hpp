@@ -21,9 +21,8 @@ enum class GenFlags : uint8_t
     none = 0, 
     label = 1 << 0,
     genJumpingBoolCode = 1 << 1,
-    jumpingBoolCodeGenerated = 1 << 2,
-    addrArg = 1 << 3,
-    classTypeToPointerTypeConversion = 1 << 4
+    addrArg = 1 << 2,
+    classTypeToPointerTypeConversion = 1 << 3
 };
 
 inline GenFlags operator&(GenFlags left, GenFlags right)
@@ -59,9 +58,11 @@ inline void ResetFlag(GenFlags flag, GenFlags& flags)
 class LabelHolder
 {
 public:
-    LabelHolder() : label(nullptr) {}
-    Ir::Intf::LabelObject* GetLabel() const { return label; }
+    LabelHolder(): label(nullptr) {}
+    LabelHolder(LabelHolder&& that) : label(that.label) {}
+    LabelHolder& operator=(LabelHolder&& that) { std::swap(label, that.label); }
     void SetLabel(Ir::Intf::LabelObject* label_) { label = label_; }
+    Ir::Intf::LabelObject* GetLabel() const { return label; }
 private:
     Ir::Intf::LabelObject* label;
 };
@@ -89,8 +90,10 @@ public:
     void MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets);
     void MergeData(GenData& childData);
     Ir::Intf::LabelObject* GetLabel() const { return labelHolder->GetLabel(); }
-    void SetLabel(Ir::Intf::LabelObject* label_) { labelHolder->SetLabel(label_); }
     LabelHolder* GetLabelHolder() const { return labelHolder.get(); }
+    void BackpatchTrueTargets(Ir::Intf::LabelObject* label);
+    void BackpatchFalseTargets(Ir::Intf::LabelObject* label);
+    void BackpatchNextTargets(Ir::Intf::LabelObject* label);
 private:
     std::unique_ptr<LabelHolder> labelHolder;
     std::vector<Ir::Intf::Object*> objects;
@@ -105,7 +108,7 @@ public:
     Emitter(Ir::Intf::Function* irFunction_);
     Ir::Intf::Function* GetIrFunction() const { return irFunction; }
     void RequestLabelFor(GenData& genData);
-    void RemoveLabelRequestFor(GenData& genData);
+    void AddNextInstructionLabel(Ir::Intf::LabelObject* nextInstructionLabel) { nextInstructionLabels.insert(nextInstructionLabel); }
     void Emit(Ir::Intf::Instruction* instruction) override;
     void Own(Ir::Intf::Object* object) override;
     void Own(Ir::Intf::Type* type) override;
@@ -123,7 +126,6 @@ class GenResult
 {
 public:
     GenResult(Emitter* emitter_, GenFlags flags_);
-    ~GenResult();
     GenResult(const GenResult&) = delete;
     GenResult& operator=(const GenResult&) = delete;
     GenResult(GenResult&& that);
@@ -143,12 +145,16 @@ public:
     std::vector<Ir::Intf::LabelObject*>& TrueTargets() { return genData.TrueTargets(); }
     std::vector<Ir::Intf::LabelObject*>& FalseTargets() { return genData.FalseTargets(); }
     void MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets) { genData.MergeTargets(targets, fromTargets); }
+    void BackpatchTrueTargets(Ir::Intf::LabelObject* label) { genData.BackpatchTrueTargets(label); }
+    void BackpatchFalseTargets(Ir::Intf::LabelObject* label) { genData.BackpatchFalseTargets(label); }
+    void BackpatchNextTargets(Ir::Intf::LabelObject* label) { genData.BackpatchNextTargets(label); }
     bool GenJumpingBoolCode() const { return GetFlag(GenFlags::genJumpingBoolCode, flags); }
-    void SetJumpingBoolCodeGenerated() { SetFlag(GenFlags::jumpingBoolCodeGenerated, flags); }
+    void SetGenJumpingBoolCode() { SetFlag(GenFlags::genJumpingBoolCode, flags); }
     bool AddrArg() const { return GetFlag(GenFlags::addrArg, flags); }
     bool ClassTypeToPointerTypeConversion() const { return GetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
     GenData& GetChild(int index);
     void Merge(GenResult& child);
+    Ir::Intf::LabelObject* GetLabel() const { return genData.GetLabel(); }
 private:
     Emitter* emitter;
     GenFlags flags;

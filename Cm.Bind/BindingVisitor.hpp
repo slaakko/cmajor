@@ -116,8 +116,8 @@ private:
     std::unique_ptr<Cm::Sym::FileScope> currentFileScope;
     int parameterIndex;
     std::unique_ptr<Cm::BoundTree::BoundFunction> boundFunction;
-    std::unique_ptr<Cm::BoundTree::BoundCompoundStatement> currentBlock;
-    std::stack<Cm::BoundTree::BoundCompoundStatement*> blockStack;
+    std::unique_ptr<Cm::BoundTree::BoundParentStatement> currentParent;
+    std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
 };

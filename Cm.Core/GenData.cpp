@@ -13,12 +13,11 @@
 
 namespace Cm { namespace Core {
 
-GenData::GenData(): labelHolder(new LabelHolder())
+GenData::GenData() : labelHolder(new LabelHolder())
 {
 }
 
-GenData::GenData(GenData&& that) : labelHolder(std::move(that.labelHolder)), objects(std::move(that.objects)), 
-    nextTargets(std::move(that.nextTargets)), trueTargets(std::move(that.trueTargets)), falseTargets(std::move(that.falseTargets))
+GenData::GenData(GenData&& that) : labelHolder(std::move(that.labelHolder)), objects(std::move(that.objects)), nextTargets(std::move(that.nextTargets)), trueTargets(std::move(that.trueTargets)), falseTargets(std::move(that.falseTargets))
 {
 }
 
@@ -100,6 +99,10 @@ void GenData::MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::ve
 
 void GenData::MergeData(GenData& childData)
 {
+    if (!GetLabel() && childData.GetLabel())
+    {
+        labelHolder->SetLabel(childData.labelHolder->GetLabel());
+    }
     if (!childData.IsEmpty())
     {
         objects.push_back(childData.MainObject());
@@ -109,6 +112,36 @@ void GenData::MergeData(GenData& childData)
     Ir::Intf::Merge(falseTargets, childData.falseTargets);
 }
 
+void GenData::BackpatchTrueTargets(Ir::Intf::LabelObject* label)
+{
+    if (!label)
+    {
+        throw std::runtime_error("backpatch true targets got no label");
+    }
+    Ir::Intf::Backpatch(trueTargets, label);
+    trueTargets.clear();
+}
+
+void GenData::BackpatchFalseTargets(Ir::Intf::LabelObject* label)
+{
+    if (!label)
+    {
+        throw std::runtime_error("backpatch false targets got no label");
+    }
+    Ir::Intf::Backpatch(falseTargets, label);
+    falseTargets.clear();
+}
+
+void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label)
+{
+    if (!label)
+    {
+        throw std::runtime_error("backpatch next targets got no label");
+    }
+    Ir::Intf::Backpatch(nextTargets, label);
+    nextTargets.clear();
+}
+
 Emitter::Emitter(Ir::Intf::Function* irFunction_) : irFunction(irFunction_), gotoTargetLabel(nullptr)
 {
 }
@@ -116,11 +149,6 @@ Emitter::Emitter(Ir::Intf::Function* irFunction_) : irFunction(irFunction_), got
 void Emitter::RequestLabelFor(GenData& genData)
 {
     labelRequestSet.insert(genData.GetLabelHolder());
-}
-
-void Emitter::RemoveLabelRequestFor(GenData& genData)
-{
-    labelRequestSet.erase(genData.GetLabelHolder());
 }
 
 void Emitter::Emit(Ir::Intf::Instruction* instruction)
@@ -145,9 +173,9 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
             }
         }
         instruction->SetLabel(label);
-        for (LabelHolder* holder : labelRequestSet)
+        for (LabelHolder* labelHolder : labelRequestSet)
         {
-            holder->SetLabel(label);
+            labelHolder->SetLabel(label);
         }
         labelRequestSet.clear();
         nextInstructionLabels.clear();
@@ -202,18 +230,10 @@ GenResult::GenResult(Emitter* emitter_, GenFlags flags_) : emitter(emitter_), fl
 {
     if (GetFlag(GenFlags::label, flags))
     {
+        Ir::Intf::LabelObject* label = Cm::IrIntf::CreateNextLocalLabel();
+        emitter->Own(label);
+        genData.GetLabelHolder()->SetLabel(label);
         emitter->RequestLabelFor(genData);
-    }
-}
-
-GenResult::~GenResult()
-{
-    if (GetFlag(GenFlags::label, flags)) 
-    {
-        if (genData.GetLabelHolder())
-        {
-            emitter->RemoveLabelRequestFor(genData);
-        }
     }
 }
 

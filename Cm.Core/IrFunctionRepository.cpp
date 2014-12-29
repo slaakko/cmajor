@@ -15,6 +15,24 @@
 
 namespace Cm { namespace Core {
 
+Ir::Intf::Parameter* CreateIrParameter(Cm::Sym::ParameterSymbol* parameter)
+{
+    Ir::Intf::Type* irParameterType = parameter->GetType()->GetIrType();
+    std::string parameterName = parameter->Name();
+    parameterName.append(Cm::IrIntf::GetPrivateSeparator()).append("p");
+    Ir::Intf::Parameter* irParameter = Cm::IrIntf::CreateParameter(parameterName, irParameterType);
+    return irParameter;
+}
+
+Ir::Intf::Function* IrFunctionRepository::GetDoNothingFunction()
+{
+    if (!doNothingFunction)
+    {
+        doNothingFunction.reset(Cm::IrIntf::CreateDoNothingFunction());
+    }
+    return doNothingFunction.get();
+}
+
 Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymbol* function)
 {
     IrFunctionMapIt i = irFunctionMap.find(function);
@@ -32,8 +50,7 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     std::vector<Ir::Intf::Parameter*> irParameters;
     for (Cm::Sym::ParameterSymbol* parameter : function->Parameters())
     {
-        Ir::Intf::Type* irParameterType = parameter->GetType()->GetIrType();
-        Ir::Intf::Parameter* irParameter = Cm::IrIntf::CreateParameter(parameter->Name(), irParameterType);
+        Ir::Intf::Parameter* irParameter = CreateIrParameter(parameter);
         Own(irParameter);
         irParameters.push_back(irParameter);
     }

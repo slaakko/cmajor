@@ -9,6 +9,7 @@
 
 #ifndef CM_BIND_FUNCTION_INCLUDED
 #define CM_BIND_FUNCTION_INCLUDED
+#include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Function.hpp>
 

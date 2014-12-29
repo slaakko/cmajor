@@ -11,6 +11,7 @@
 #include <Cm.Bind/LocalVariable.hpp>
 #include <Cm.Bind/Exception.hpp>
 #include <Cm.Bind/OverloadResolution.hpp>
+#include <Cm.Bind/TypeResolver.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -62,14 +63,11 @@ AssignmentStatementBinder::AssignmentStatementBinder(Cm::Sym::SymbolTable& symbo
 {
 }
 
-void AssignmentStatementBinder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
-{
-}
-
 void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
 {
     Cm::BoundTree::BoundExpression* right = Pop();
     Cm::BoundTree::BoundExpression* left = Pop();
+    left->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Core::Argument leftArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(left->GetType(), assignmentStatementNode.GetSpan(), false));
     resolutionArguments.push_back(leftArgument);
@@ -104,5 +102,118 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(&assignmentStatementNode, left, right, assignment);
     SetResult(assignmentStatement);
 }
+
+SimpleStatementBinder::SimpleStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
+    StatementBinder(symbolTable_, conversionTable_, classConversionTable_, containerScope_, fileScope_, currentFunction_)
+{
+}
+
+void SimpleStatementBinder::EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
+{
+    Cm::BoundTree::BoundSimpleStatement* simpleStatement = new Cm::BoundTree::BoundSimpleStatement(&simpleStatementNode);
+    if (simpleStatementNode.HasExpr())
+    {
+        Cm::BoundTree::BoundExpression* expression = Pop();
+        simpleStatement->SetExpression(expression);
+    }
+    SetResult(simpleStatement);
+}
+
+ReturnStatementBinder::ReturnStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
+    StatementBinder(symbolTable_, conversionTable_, classConversionTable_, containerScope_, fileScope_, currentFunction_)
+{
+}
+
+void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
+{
+    Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(&returnStatementNode);
+    Cm::Ast::FunctionNode* functionNode = returnStatementNode.GetFunction();
+    Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
+    if (returnTypeExpr)
+    {
+        Cm::Sym::TypeSymbol* returnType = ResolveType(SymbolTable(), ContainerScope(), FileScope(), returnTypeExpr, false);
+        if (!returnType->IsVoidTypeSymbol())
+        {
+            if (returnStatementNode.ReturnsValue())
+            {
+                returnStatement->SetReturnType(returnType);
+                Cm::BoundTree::BoundExpression* returnValue = Pop();
+                std::vector<Cm::Core::Argument> resolutionArguments;
+                Cm::Core::Argument targetArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(returnType, returnStatementNode.GetSpan(), false));
+                resolutionArguments.push_back(targetArgument);
+                Cm::Core::Argument sourceArgument = Cm::Core::Argument(returnValue->GetArgumentCategory(), SymbolTable().GetTypeRepository().MakeConstReferenceType(returnValue->GetType(), returnStatementNode.GetSpan(), false));
+                resolutionArguments.push_back(sourceArgument);
+                // todo: bind to rvalue
+                Cm::Sym::FunctionLookupSet functionLookups;
+                functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, returnType->GetContainerScope()->ClassOrNsScope()));
+                std::vector<Cm::Sym::FunctionSymbol*> conversions;
+                Cm::Core::ConversionType conversionType = Cm::Core::ConversionType::implicit;
+                if (returnValue->IsCast())
+                {
+                    conversionType = Cm::Core::ConversionType::explicit_;
+                }
+                Cm::Sym::FunctionSymbol* ctor = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), "@constructor", resolutionArguments, functionLookups, returnStatementNode.GetSpan(), conversionType, conversions);
+                returnStatement->SetConstructor(ctor);
+                if (conversions.size() != 2)
+                {
+                    throw std::runtime_error("wrong number of conversions");
+                }
+                Cm::Sym::FunctionSymbol* conversionFun = conversions[1];
+                if (conversionFun)
+                {
+                    returnValue = new Cm::BoundTree::BoundConversion(&returnStatementNode, returnValue, conversionFun);
+                    returnValue->SetType(conversionFun->GetTargetType());
+                }
+                returnStatement->SetExpression(returnValue);
+            }
+            else
+            {
+                throw Exception("must return a value", returnStatementNode.GetSpan(), functionNode->GetSpan());
+            }
+        }
+        else if (returnStatementNode.ReturnsValue())
+        {
+            throw Exception("void function cannot return a value", returnStatementNode.GetSpan(), functionNode->GetSpan());
+        }
+    }
+    else if (returnStatementNode.ReturnsValue())
+    {
+        throw Exception("cannot return a value", returnStatementNode.GetSpan(), functionNode->GetSpan());
+    }
+    SetResult(returnStatement);
+}
+
+ConditionalStatementBinder::ConditionalStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_) :
+    StatementBinder(symbolTable_, conversionTable_, classConversionTable_, containerScope_, fileScope_, currentFunction_), conditionalStatement(conditionalStatement_)
+{
+    PushSkipContent();
+}
+
+void ConditionalStatementBinder::EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode)
+{
+    PopSkipContent();
+    Cm::BoundTree::BoundExpression* condition = Pop();
+    condition->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
+    conditionalStatement->SetCondition(condition);
+}
+
+WhileStatementBinder::WhileStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundWhileStatement* whileStatement_) :
+    StatementBinder(symbolTable_, conversionTable_, classConversionTable_, containerScope_, fileScope_, currentFunction_), whileStatement(whileStatement_)
+{
+    PushSkipContent();
+}
+
+void WhileStatementBinder::EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode) 
+{
+    PopSkipContent();
+    Cm::BoundTree::BoundExpression* condition = Pop();
+    condition->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
+    whileStatement->SetCondition(condition);
+}
+
 
 } } // namespace Cm::Bind

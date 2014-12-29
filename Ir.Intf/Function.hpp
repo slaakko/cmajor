@@ -43,6 +43,7 @@ public:
     void WriteInlineDefinition(CodeFormatter& formatter);
     virtual void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_) = 0;
     virtual bool ContainsExceptionCodeParam() const = 0;
+    virtual bool IsDoNothingFunction() const { return false; }
     bool LastInstructionIsRet() const;
     void SetComment(const std::string& comment_) { comment = comment_; }
     void Release();

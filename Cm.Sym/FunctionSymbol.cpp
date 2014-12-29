@@ -19,7 +19,7 @@ FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lo
 {
 }
 
-FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr)
+FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr)
 {
 }
 

@@ -115,6 +115,7 @@ public:
     virtual bool IsBoolTypeSymbol() const { return false; }
     virtual bool IsCharTypeSymbol() const { return false; }
     virtual bool IsEnumTypeSymbol() const { return false; }
+    virtual bool IsVoidTypeSymbol() const { return false; }
     virtual bool IsIntegerTypeSymbol() const { return false; }
     virtual bool IsFloatingPointTypeSymbol() const { return false; }
     virtual bool IsDerivedTypeSymbol() const { return false; }

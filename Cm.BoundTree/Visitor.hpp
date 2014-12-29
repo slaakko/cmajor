@@ -9,6 +9,7 @@
 
 #ifndef CM_BOUND_TREE_VISITOR_INCLUDED
 #define CM_BOUND_TREE_VISITOR_INCLUDED
+#include <stack>
 
 namespace Cm { namespace BoundTree {
 
@@ -16,6 +17,7 @@ class BoundLiteral;
 class BoundConstant;
 class BoundLocalVariable;
 class BoundMemberVariable;
+class BoundParameter;
 class BoundConversion;
 class BoundCast;
 class BoundUnaryOp;
@@ -24,7 +26,9 @@ class BoundFunctionCall;
 class BoundDisjunction;
 class BoundConjunction;
 
+class BoundStatement;
 class BoundCompoundStatement;
+class BoundReceiveStatement;
 class BoundReturnStatement;
 class BoundConstructionStatement;
 class BoundAssignmentStatement;
@@ -51,6 +55,7 @@ public:
     virtual void Visit(BoundConstant& boundConstant) {}
     virtual void Visit(BoundLocalVariable& boundLocalVariable) {}
     virtual void Visit(BoundMemberVariable& boundMemberVariable) {}
+    virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundCast& boundCast) {}
     virtual void Visit(BoundUnaryOp& boundUnaryOp) {}
@@ -59,7 +64,10 @@ public:
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
 
+    virtual void BeginVisitStatement(BoundStatement& statement) {}
+    virtual void EndVisitStatement(BoundStatement& statement) {}
     virtual void Visit(BoundCompoundStatement& boundCompoundStatement) {}
+    virtual void Visit(BoundReceiveStatement& boundReceiveStatement) {}
     virtual void Visit(BoundReturnStatement& boundReturnStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}
@@ -68,9 +76,11 @@ public:
     virtual void Visit(BoundSwitchStatement& boundSwitchStatement) {}
     virtual void Visit(BoundBreakStatement& boundBreakStatement) {}
     virtual void Visit(BoundContinueStatement& boundContinueStatement) {}
-    virtual void Visit(BoundConditionalStatement& boundConditionalStatement) {}
+    virtual void BeginVisit(BoundConditionalStatement& boundConditionalStatement) {}
+    virtual void EndVisit(BoundConditionalStatement& boundConditionalStatement) {}
     virtual void Visit(BoundDoStatement& boundDoStatement) {}
-    virtual void Visit(BoundWhileStatement& boundWhileStatement) {}
+    virtual void BeginVisit(BoundWhileStatement& boundWhileStatement) {}
+    virtual void EndVisit(BoundWhileStatement& boundWhileStatement) {}
     virtual void Visit(BoundForStatement& boundForStatement) {}
     virtual void Visit(BoundTryStatement& boundTryStatement) {}
 
@@ -80,8 +90,13 @@ public:
     virtual void Visit(BoundClass& boundClass) {}
 
     bool VisitFunctionBody() const { return visitFunctionBody; }
+    void PushSkipContent();
+    void PopSkipContent();
+    bool SkipContent() const { return skipContent; }
 private:
     bool visitFunctionBody;
+    bool skipContent;
+    std::stack<bool> skipContentStack;
 };
 
 } } // namespace Cm::BoundTree

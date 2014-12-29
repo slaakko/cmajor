@@ -19,7 +19,7 @@ namespace Llvm {
 const char* exceptionCodeParamName = "$ex$p";
 const char* classObjectResultParamName = "$cls$result$p";
 
-Function::Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_): Ir::Intf::Function(name_, returnType_, parameters_)
+Function::Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_): Ir::Intf::Function(name_, returnType_, parameters_), isDoNothingFunction(false)
 {
 }
 
@@ -137,7 +137,8 @@ void Function::WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inli
 
 Ir::Intf::Function* CreateDoNothingFunction()
 {
-    Ir::Intf::Function* doNothingFun(new Function("llvm.donothing", Void(), std::vector<Ir::Intf::Parameter*>()));
+    Function* doNothingFun(new Function("llvm.donothing", Ir::Intf::GetFactory()->GetVoid(), std::vector<Ir::Intf::Parameter*>()));
+    doNothingFun->SetDoNothingFunction();
     return doNothingFun;
 }
 
@@ -147,7 +148,7 @@ Ir::Intf::Function* CreateDbgDeclareFunction()
     Ir::Intf::Type* metadataType = Ir::Intf::GetFactory()->GetMetadataType();
     parameters.push_back(new Parameter("variable", metadataType));
     parameters.push_back(new Parameter("description", metadataType));
-    Ir::Intf::Function* dbgDeclareFun(new Function("llvm.dbg.declare", Void(), parameters));
+    Ir::Intf::Function* dbgDeclareFun(new Function("llvm.dbg.declare", Ir::Intf::GetFactory()->GetVoid(), parameters));
     return dbgDeclareFun;
 }
 

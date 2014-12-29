@@ -26,15 +26,26 @@ void BoundStatementList::AddStatement(BoundStatement* statement)
     statements.push_back(std::unique_ptr<BoundStatement>(statement));
 }
 
+void BoundStatementList::InsertStatement(int index, BoundStatement* statement)
+{
+    statements.insert(statements.begin() + index, std::unique_ptr<BoundStatement>(statement));
+}
+
 void BoundStatementList::Accept(Visitor& visitor)
 {
     for (const std::unique_ptr<BoundStatement>& statement : statements)
     {
+        visitor.BeginVisitStatement(*statement);
         statement->Accept(visitor);
+        visitor.EndVisitStatement(*statement);
     }
 }
 
-BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+BoundParentStatement::BoundParentStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
 
@@ -43,14 +54,33 @@ void BoundCompoundStatement::AddStatement(BoundStatement* statement)
     statementList.AddStatement(statement);
 }
 
+void BoundCompoundStatement::InsertStatement(int index, BoundStatement* statement)
+{
+    statementList.InsertStatement(index, statement);
+}
+
 void BoundCompoundStatement::Accept(Visitor& visitor) 
 {
     statementList.Accept(visitor);
     visitor.Visit(*this);
 }
 
-BoundReturnStatement::BoundReturnStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+BoundReceiveStatement::BoundReceiveStatement(Cm::Sym::ParameterSymbol* parameterSymbol_) : BoundStatement(nullptr), parameterSymbol(parameterSymbol_)
 {
+}
+
+void BoundReceiveStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundReturnStatement::BoundReturnStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_), ctor(nullptr), returnType(nullptr)
+{
+}
+
+void BoundReturnStatement::SetExpression(BoundExpression* expression_)
+{
+    expression.reset(expression_);
 }
 
 void BoundReturnStatement::Accept(Visitor& visitor)
@@ -120,12 +150,87 @@ void BoundAssignmentStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundSimpleStatement::BoundSimpleStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundSimpleStatement::SetExpression(BoundExpression* expression_)
+{
+    expression.reset(expression_);
+}
+
+void BoundSimpleStatement::Accept(Visitor& visitor)
+{
+    if (expression)
+    {
+        expression->Accept(visitor);
+    }
+    visitor.Visit(*this);
+}
+
 BoundSwitchStatement::BoundSwitchStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
 
-BoundConditionalStatement::BoundConditionalStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+BoundConditionalStatement::BoundConditionalStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
+}
+
+void BoundConditionalStatement::SetCondition(BoundExpression* condition_)
+{
+    condition.reset(condition_);
+}
+
+void BoundConditionalStatement::AddStatement(BoundStatement* statement)
+{
+    if (!thenS)
+    {
+        thenS.reset(statement);
+    }
+    else
+    {
+        elseS.reset(statement);
+    }
+}
+
+void BoundConditionalStatement::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    condition->Accept(visitor);
+    if (!visitor.SkipContent())
+    {
+        thenS->Accept(visitor);
+        if (elseS)
+        {
+            elseS->Accept(visitor);
+        }
+    }
+    visitor.EndVisit(*this);
+}
+
+BoundWhileStatement::BoundWhileStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
+{
+}
+
+void BoundWhileStatement::SetCondition(BoundExpression* condition_)
+{
+    condition.reset(condition_);
+}
+
+void BoundWhileStatement::AddStatement(BoundStatement* statement_)
+{
+    statement.reset(statement_);
+}
+
+void BoundWhileStatement::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    condition->Accept(visitor);
+    if (!visitor.SkipContent())
+    {
+        statement->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 BoundForStatement::BoundForStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
