@@ -198,7 +198,7 @@ void FunctionBinder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
 void FunctionBinder::BeginVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
 {
     ReturnStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-        currentContainerScope, &boundCompileUnit.GetFileScope(), boundFunction.get());
+        currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     returnStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -220,7 +220,7 @@ void FunctionBinder::EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStat
     {
         Cm::BoundTree::BoundConditionalStatement* conditionalStatement = static_cast<Cm::BoundTree::BoundConditionalStatement*>(cp);
         ConditionalStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-            currentContainerScope, &boundCompileUnit.GetFileScope(), boundFunction.get(), conditionalStatement);
+            currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), conditionalStatement);
         conditionalStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -289,7 +289,7 @@ void FunctionBinder::EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode)
     {
         Cm::BoundTree::BoundWhileStatement* whileStatement = static_cast<Cm::BoundTree::BoundWhileStatement*>(cp);
         WhileStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-            currentContainerScope, &boundCompileUnit.GetFileScope(), boundFunction.get(), whileStatement);
+            currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), whileStatement);
         whileStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -336,7 +336,7 @@ void FunctionBinder::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
 void FunctionBinder::BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 {
     SimpleStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-        currentContainerScope, &boundCompileUnit.GetFileScope(), boundFunction.get());
+        currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     simpleStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -348,7 +348,7 @@ void FunctionBinder::EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 void FunctionBinder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
 {
     AssignmentStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-        currentContainerScope, &boundCompileUnit.GetFileScope(), boundFunction.get());
+        currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     assignmentStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -360,7 +360,7 @@ void FunctionBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatem
 void FunctionBinder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
     ConstructionStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-        currentContainerScope, &boundCompileUnit.GetFileScope(), boundFunction.get());
+        currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     constructionStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }

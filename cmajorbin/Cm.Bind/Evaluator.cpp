@@ -492,7 +492,7 @@ private:
 };
 
 Evaluator::Evaluator(Cm::Sym::ValueType targetType_, bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_) :
-    Visitor(true), targetType(targetType_), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_)
+    Visitor(true, true), targetType(targetType_), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_)
 {
 }
 

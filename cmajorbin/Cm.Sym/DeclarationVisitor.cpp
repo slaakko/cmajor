@@ -13,7 +13,7 @@
 
 namespace Cm { namespace Sym {
 
-DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : Cm::Ast::Visitor(false), symbolTable(symbolTable_)
+DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : Cm::Ast::Visitor(true, false), symbolTable(symbolTable_)
 {
 }
 

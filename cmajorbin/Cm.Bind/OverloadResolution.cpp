@@ -245,8 +245,14 @@ bool FindConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable
                 continue;
             }
         }
-        pointerOpRepository.InsertPointerConversionsToConversionTable(conversionTable, plainArgumentType, span);
-        pointerOpRepository.InsertPointerConversionsToConversionTable(conversionTable, plainParameterType, span);
+        if (plainArgumentType->IsPointerType())
+        {
+            pointerOpRepository.InsertPointerConversionsToConversionTable(conversionTable, plainArgumentType, span);
+        }
+        if (plainParameterType->IsPointerType())
+        {
+            pointerOpRepository.InsertPointerConversionsToConversionTable(conversionTable, plainParameterType, span);
+        }
         conversion = conversionTable.GetConversion(plainArgumentType, plainParameterType);
         if (conversion)
         {

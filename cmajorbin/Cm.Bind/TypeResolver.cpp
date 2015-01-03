@@ -48,7 +48,7 @@ private:
 };
 
 TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_) :
-    Cm::Ast::Visitor(true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_), typeSymbol(nullptr)
+    Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_), typeSymbol(nullptr)
 {
 }
 

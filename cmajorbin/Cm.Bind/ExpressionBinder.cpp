@@ -51,7 +51,7 @@ Cm::BoundTree::BoundExpressionList BoundExpressionStack::Pop(int numExpressions)
 
 ExpressionBinder::ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
     Cm::Core::PointerOpRepository& pointerOpRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
-    Cm::Ast::Visitor(true), symbolTable(symbolTable_), conversionTable(conversionTable_), classConversionTable(classConversionTable_), pointerOpRepository(pointerOpRepository_),
+    Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), conversionTable(conversionTable_), classConversionTable(classConversionTable_), pointerOpRepository(pointerOpRepository_),
     containerScope(containerScope_), fileScope(fileScope_), currentFunction(currentFunction_), expressionCount(0)
 {
 }
