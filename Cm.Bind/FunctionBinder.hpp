@@ -20,8 +20,6 @@ class FunctionBinder: public Cm::Ast::Visitor
 {
 public:
     FunctionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_);
-    void BeginVisit(Cm::Ast::CompileUnitNode& compileUnitNode) override;
-    void EndVisit(Cm::Ast::CompileUnitNode& compileUnitNode) override;
     void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
     void EndVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
 

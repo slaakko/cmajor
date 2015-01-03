@@ -17,7 +17,8 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Module.hpp>
-#include <Cm.Bind/BindingVisitor.hpp>
+#include <Cm.Bind/Prebinder.hpp>
+#include <Cm.Bind/FunctionBinder.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
@@ -74,8 +75,8 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& sy
 
 void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    Cm::Bind::BindingVisitor bindingVisitor(boundCompileUnit);
-    compileUnit->Accept(bindingVisitor);
+    Cm::Bind::FunctionBinder functionBinder(boundCompileUnit);
+    compileUnit->Accept(functionBinder);
 }
 
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
@@ -97,16 +98,23 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath)
 {
     boost::filesystem::path outputBase(outputBasePath);
+    std::vector<Cm::Sym::FileScope*> fileScopes;
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
+        Cm::Bind::Prebinder prebinder(symbolTable);
+        compileUnit->Accept(prebinder);
+        fileScopes.push_back(prebinder.GetFileScope());
     }
+    int index = 0;
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
         Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnitIrFilePath, symbolTable);
+        boundCompileUnit.SetFileScope(fileScopes[index]);
         Bind(compileUnit.get(), boundCompileUnit);
         Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
         GenerateObjectCode(boundCompileUnit);
+        ++index;
     }
 }
 

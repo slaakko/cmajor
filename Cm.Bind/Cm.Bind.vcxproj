@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BindingVisitor.hpp" />
     <ClInclude Include="Class.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
@@ -33,13 +32,13 @@
     <ClInclude Include="MemberVariable.hpp" />
     <ClInclude Include="OverloadResolution.hpp" />
     <ClInclude Include="Parameter.hpp" />
+    <ClInclude Include="Prebinder.hpp" />
     <ClInclude Include="StatementBinder.hpp" />
     <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
     <ClInclude Include="Access.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BindingVisitor.cpp" />
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
@@ -53,6 +52,7 @@
     <ClCompile Include="MemberVariable.cpp" />
     <ClCompile Include="OverloadResolution.cpp" />
     <ClCompile Include="Parameter.cpp" />
+    <ClCompile Include="Prebinder.cpp" />
     <ClCompile Include="StatementBinder.cpp" />
     <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeResolver.cpp" />
