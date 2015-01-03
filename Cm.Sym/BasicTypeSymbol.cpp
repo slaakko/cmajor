@@ -17,7 +17,7 @@ Cm::Util::Uuid basicTypeIds[uint8_t(ShortBasicTypeId::max)] =
     uint8_t(ShortBasicTypeId::boolId), uint8_t(ShortBasicTypeId::charId), uint8_t(ShortBasicTypeId::voidId), 
     uint8_t(ShortBasicTypeId::sbyteId), uint8_t(ShortBasicTypeId::byteId), uint8_t(ShortBasicTypeId::shortId), uint8_t(ShortBasicTypeId::ushortId), 
     uint8_t(ShortBasicTypeId::intId), uint8_t(ShortBasicTypeId::uintId), uint8_t(ShortBasicTypeId::longId), uint8_t(ShortBasicTypeId::ulongId), 
-    uint8_t(ShortBasicTypeId::floatId), uint8_t(ShortBasicTypeId::doubleId)
+    uint8_t(ShortBasicTypeId::floatId), uint8_t(ShortBasicTypeId::doubleId), uint8_t(ShortBasicTypeId::nullPtrId)
 };
 
 const Cm::Util::Uuid& GetBasicTypeId(ShortBasicTypeId shortId)
@@ -106,6 +106,12 @@ FloatTypeSymbol::FloatTypeSymbol() : BasicTypeSymbol("float", ShortBasicTypeId::
 DoubleTypeSymbol::DoubleTypeSymbol() : BasicTypeSymbol("double", ShortBasicTypeId::doubleId)
 {
     SetIrType(Cm::IrIntf::Double());
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
+}
+
+NullPtrTypeSymbol::NullPtrTypeSymbol() : BasicTypeSymbol("@nullptrtype", ShortBasicTypeId::nullPtrId)
+{
+    SetIrType(Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 1));
     SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 

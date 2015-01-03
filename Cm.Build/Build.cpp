@@ -99,6 +99,9 @@ void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree,
     boost::filesystem::path outputBase(outputBasePath);
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
+    }
+    for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+    {
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
         Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnitIrFilePath, symbolTable);
         Bind(compileUnit.get(), boundCompileUnit);

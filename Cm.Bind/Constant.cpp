@@ -53,8 +53,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     Cm::Ast::Specifiers specifiers = constantNode->GetSpecifiers();
     bool isClassMember = constantNode->Parent()->IsClassNode();
     SetAccess(constantSymbol, specifiers, isClassMember);
-    bool willBeExported = constantSymbol->WillBeExported();
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constantNode->TypeExpr(), willBeExported);
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constantNode->TypeExpr());
     if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())
     {
         if (type->IsEnumTypeSymbol())

@@ -102,4 +102,19 @@ TypeSymbol* FunctionSymbol::GetTargetType() const
     throw std::runtime_error("member function not applicable");
 }
 
+void FunctionSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) 
+{
+    if (returnType)
+    {
+        if (returnType->IsDerivedTypeSymbol())
+        {
+            returnType->CollectExportedDerivedTypes(exportedDerivedTypes);
+        }
+    }
+    for (ParameterSymbol* parameter : parameters)
+    {
+        parameter->CollectExportedDerivedTypes(exportedDerivedTypes);
+    }
+}
+
 } } // namespace Cm::Sym

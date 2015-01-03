@@ -29,6 +29,7 @@ public:
     TypeSymbol* GetType() const;
     void SetType(TypeSymbol* type_) { SetType(type_, 0); }
     void SetType(TypeSymbol* type_, int index) override;
+    void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) override;
 private:
     TypeSymbol* type;
 };

@@ -20,8 +20,6 @@ public:
     virtual bool IsRegVar() const { return true; }
 };
 
-typedef RegVar* RegVarPtr;
-
 } } // namespace Ir::Intf
 
 #endif // IR_INTF_REGVAR_INCLUDED

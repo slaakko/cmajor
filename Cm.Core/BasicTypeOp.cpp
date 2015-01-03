@@ -18,13 +18,14 @@ using Cm::Parsing::Span;
 
 BasicTypeOp::BasicTypeOp(Cm::Sym::TypeSymbol* type_) : Cm::Sym::FunctionSymbol(Span(), "*basic_type_op*"), type(type_)
 { 
+    SetAccess(Cm::Sym::SymbolAccess::public_);
 }
 
 DefaultCtor::DefaultCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
-    thisParam->SetType(typeRepository.MakePointerType(Type(), Span(), true));
+    thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
     AddSymbol(thisParam);
     ComputeName();
 }
@@ -38,7 +39,7 @@ CopyCtor::CopyCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol*
 {
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
-    thisParam->SetType(typeRepository.MakePointerType(Type(), Span(), true));
+    thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(Type());
@@ -57,7 +58,7 @@ CopyAssignment::CopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     Cm::Sym::TypeSymbol* voidType = typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
     SetReturnType(voidType);
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
-    thisParam->SetType(typeRepository.MakePointerType(Type(), Span(), true));
+    thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(Type());
@@ -74,10 +75,10 @@ MoveCtor::MoveCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol*
 {
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
-    thisParam->SetType(typeRepository.MakePointerType(Type(), Span(), true));
+    thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
-    thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span(), true));
+    thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span()));
     AddSymbol(thatParam);
     ComputeName();
 }
@@ -93,10 +94,10 @@ MoveAssignment::MoveAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     Cm::Sym::TypeSymbol* voidType = typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
     SetReturnType(voidType);
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
-    thisParam->SetType(typeRepository.MakePointerType(Type(), Span(), true));
+    thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
-    thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span(), true));
+    thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span()));
     AddSymbol(thatParam);
     ComputeName();
 }
@@ -520,7 +521,9 @@ void OpIncrement::Generate(Emitter& emitter, GenResult& result)
     Ir::Intf::RegVar* arg1 = Cm::IrIntf::CreateTemporaryRegVar(result.Arg1()->GetType());
     emitter.Own(arg1);
     Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
-    emitter.Emit(Cm::IrIntf::Add(GetIrType(), result.MainObject(), arg1, GetIrType()->CreatePlusOne()));
+    Ir::Intf::Object* one = GetIrType()->CreatePlusOne();
+    emitter.Own(one);
+    emitter.Emit(Cm::IrIntf::Add(GetIrType(), result.MainObject(), arg1, one));
     Cm::IrIntf::Assign(emitter, GetIrType(), result.MainObject(), result.Arg1());
 }
 
@@ -539,7 +542,9 @@ void OpDecrement::Generate(Emitter& emitter, GenResult& result)
     Ir::Intf::RegVar* arg1 = Cm::IrIntf::CreateTemporaryRegVar(result.Arg1()->GetType());
     emitter.Own(arg1);
     Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
-    emitter.Emit(Cm::IrIntf::Sub(GetIrType(), result.MainObject(), arg1, GetIrType()->CreatePlusOne()));
+    Ir::Intf::Object* one = GetIrType()->CreatePlusOne();
+    emitter.Own(one);
+    emitter.Emit(Cm::IrIntf::Sub(GetIrType(), result.MainObject(), arg1, one));
     Cm::IrIntf::Assign(emitter, GetIrType(), result.MainObject(), result.Arg1());
 }
 
@@ -549,7 +554,7 @@ ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
 {
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
-    thisParam->SetType(typeRepository.MakePointerType(targetType, Span(), true));
+    thisParam->SetType(typeRepository.MakePointerType(targetType, Span()));
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(sourceType);

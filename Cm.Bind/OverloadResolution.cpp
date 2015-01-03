@@ -194,8 +194,9 @@ bool BaseClassDerivedClassRelationShip(Cm::Core::ClassConversionTable& classConv
     return false;
 }
 
-bool FindConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
-    const std::vector<Cm::Sym::ParameterSymbol*>& parameters, const std::vector<Cm::Core::Argument>& arguments, Cm::Core::ConversionType conversionType, FunctionMatch& functionMatch)
+bool FindConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, Cm::Core::PointerOpRepository& pointerOpRepository,
+    const std::vector<Cm::Sym::ParameterSymbol*>& parameters, const std::vector<Cm::Core::Argument>& arguments, Cm::Core::ConversionType conversionType, const Cm::Parsing::Span& span, 
+    FunctionMatch& functionMatch)
 {
     int arity = int(parameters.size());
     if (arity != int(arguments.size()))
@@ -244,6 +245,8 @@ bool FindConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable
                 continue;
             }
         }
+        pointerOpRepository.InsertPointerConversionsToConversionTable(conversionTable, plainArgumentType, span);
+        pointerOpRepository.InsertPointerConversionsToConversionTable(conversionTable, plainParameterType, span);
         conversion = conversionTable.GetConversion(plainArgumentType, plainParameterType);
         if (conversion)
         {
@@ -288,23 +291,28 @@ std::string MakeOverloadName(const std::string& groupName, const std::vector<Cm:
     return overloadName;
 }
 
-Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, const std::string& groupName,
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions)
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
+    Cm::Core::PointerOpRepository& pointerOpRepository, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, 
+    std::vector<Cm::Sym::FunctionSymbol*>& conversions)
 {
-    return ResolveOverload(symbolTable, conversionTable, classConversionTable, groupName, arguments, functionLookups, span, Cm::Core::ConversionType::implicit, conversions);
+    return ResolveOverload(symbolTable, conversionTable, classConversionTable, pointerOpRepository, groupName, arguments, functionLookups, span, Cm::Core::ConversionType::implicit, conversions);
 }
 
-Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, const std::string& groupName,
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, Cm::Core::ConversionType conversionType,
-    std::vector<Cm::Sym::FunctionSymbol*>& conversions)
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
+    Cm::Core::PointerOpRepository& pointerOpRepository, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, 
+    Cm::Core::ConversionType conversionType, std::vector<Cm::Sym::FunctionSymbol*>& conversions)
 {
     int arity = int(arguments.size());
     std::unordered_set<Cm::Sym::FunctionSymbol*> viableFunctions;
+    pointerOpRepository.CollectViableFunctions(groupName, arity, arguments, conversionTable, span, viableFunctions);
     for (const Cm::Sym::FunctionLookup& functionLookup : functionLookups)
     {
         Cm::Sym::ScopeLookup lookup = functionLookup.Lookup();
         Cm::Sym::ContainerScope* scope = functionLookup.Scope();
-        scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+        if (scope)
+        {
+            scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+        }
     }
     if (viableFunctions.empty())
     {
@@ -318,11 +326,18 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
             Cm::Core::ConvertingCtor* convertingCtor = static_cast<Cm::Core::ConvertingCtor*>(viableFunction);
             if (convertingCtor->GetConversionType() == Cm::Core::ConversionType::explicit_ && conversionType == Cm::Core::ConversionType::implicit)
             {
+                FunctionMatch functionMatch(viableFunction);
+                bool candidateFound = FindConversions(symbolTable, conversionTable, classConversionTable, pointerOpRepository, viableFunction->Parameters(), arguments, Cm::Core::ConversionType::explicit_, span, 
+                    functionMatch);
+                if (candidateFound)
+                {
+                    throw Exception("overload resolution failed: cannot convert '" + arguments[1].Type()->FullName() + "' to '" + convertingCtor->GetTargetType()->FullName() + "' without a cast", span);
+                }
                 continue;
             }
         }
         FunctionMatch functionMatch(viableFunction);
-        bool candidateFound = FindConversions(symbolTable, conversionTable, classConversionTable, viableFunction->Parameters(), arguments, conversionType, functionMatch);
+        bool candidateFound = FindConversions(symbolTable, conversionTable, classConversionTable, pointerOpRepository, viableFunction->Parameters(), arguments, conversionType, span, functionMatch);
         if (candidateFound)
         {
             functionMatches.push_back(functionMatch);
@@ -332,7 +347,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
     {
         std::string overloadName = MakeOverloadName(groupName, arguments);
         throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
-            std::to_string(viableFunctions.size()) + " viable functions examined.");
+            std::to_string(viableFunctions.size()) + " viable functions examined.", span);
     }
     else
     {
@@ -349,7 +364,21 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
             else
             {
                 std::string overloadName = MakeOverloadName(groupName, arguments);
-                throw Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n"); // todo
+                std::string matchedFunctionNames;
+                bool first = true;
+                for (const FunctionMatch& match : functionMatches)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    { 
+                        matchedFunctionNames.append(" or ");
+                    }
+                    matchedFunctionNames.append(match.function->FullName());
+                }
+                throw Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span); 
             }
         }
         else // single best

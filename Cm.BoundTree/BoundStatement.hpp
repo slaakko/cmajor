@@ -23,7 +23,8 @@ public:
     virtual bool IsBoundCompoundStatement() const { return false; }
     virtual bool IsBoundConditionalStatement() const { return false; }
     virtual bool IsBoundWhileStatement() const { return false; }
-    virtual bool RequiresLabel() const { return true; }
+    virtual bool IsBoundDoStatement() const { return false; }
+    virtual bool IsBoundForStatement() const { return false; }
 };
 
 class BoundStatementList
@@ -33,6 +34,7 @@ public:
     void AddStatement(BoundStatement* statement);
     void InsertStatement(int index, BoundStatement* statement);
     void Accept(Visitor& visitor);
+    bool IsEmpty() const { return statements.empty(); }
 private:
     std::vector<std::unique_ptr<BoundStatement>> statements;
 };
@@ -52,6 +54,7 @@ public:
     void InsertStatement(int index, BoundStatement* statement);
     bool IsBoundCompoundStatement() const override { return true; }
     void Accept(Visitor& visitor) override;
+    bool IsEmpty() const { return statementList.IsEmpty(); }
 private:
     BoundStatementList statementList;
 };
@@ -64,7 +67,6 @@ public:
     void SetConstructor(Cm::Sym::FunctionSymbol* ctor_) { ctor = ctor_; }
     Cm::Sym::FunctionSymbol* Constructor() const { return ctor; }
     void Accept(Visitor& visitor) override;
-    bool RequiresLabel() const override { return false; }
 private:
     Cm::Sym::ParameterSymbol* parameterSymbol;
     Cm::Sym::FunctionSymbol* ctor;
@@ -193,20 +195,36 @@ private:
     std::unique_ptr<BoundStatement> statement;
 };
 
-class BoundDoStatement : public BoundStatement
+class BoundDoStatement : public BoundParentStatement
 {
 public:
+    BoundDoStatement(Cm::Ast::Node* syntaxNode_);
     bool IsConditionStatement() const override { return true; }
+    void SetCondition(BoundExpression* condition_);
+    void AddStatement(BoundStatement* statement_) override;
+    bool IsBoundDoStatement() const override { return true; }
+    void Accept(Visitor& visitor) override;
+    BoundStatement* Statement() const { return statement.get(); }
+    BoundExpression* Condition() const { return condition.get(); }
 private:
     std::unique_ptr<BoundStatement> statement;
     std::unique_ptr<BoundExpression> condition;
 };
 
-class BoundForStatement : public BoundStatement
+class BoundForStatement : public BoundParentStatement
 {
 public:
     BoundForStatement(Cm::Ast::Node* syntaxNode_);
+    void SetCondition(BoundExpression* condition_);
+    void SetIncrement(BoundExpression* increment_);
+    void AddStatement(BoundStatement* statement_) override;
     bool IsConditionStatement() const override { return true; }
+    bool IsBoundForStatement() const override { return true; }
+    void Accept(Visitor& visitor) override;
+    BoundStatement* InitS() const { return initS.get(); }
+    BoundExpression* Condition() const { return condition.get(); }
+    BoundExpression* Increment() const { return increment.get(); }
+    BoundStatement* Action() const { return action.get(); }
 private:
     std::unique_ptr<BoundStatement> initS;
     std::unique_ptr<BoundExpression> condition;

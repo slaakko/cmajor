@@ -203,6 +203,7 @@ void InitFactory()
     SymbolFactory::Instance().Register(SymbolType::ulongSymbol, new ConcreteBasicTypeSymbolCreator<ULongTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::floatSymbol, new ConcreteBasicTypeSymbolCreator<FloatTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::doubleSymbol, new ConcreteBasicTypeSymbolCreator<DoubleTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::nullptrSymbol, new ConcreteBasicTypeSymbolCreator<NullPtrTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::classSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());

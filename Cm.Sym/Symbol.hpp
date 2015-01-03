@@ -11,6 +11,7 @@
 #define CM_SYM_SYMBOL_INCLUDED
 #include <Cm.Parsing/Scanner.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
+#include <Cm.Ast/Specifier.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -25,7 +26,7 @@ class ContainerSymbol;
 
 enum class SymbolType : uint8_t
 {
-    boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol,
+    boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
     classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, memberVariableSymbol, namespaceSymbol,
     parameterSymbol, templateParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol,
     maxSymbol
@@ -35,7 +36,7 @@ std::string SymbolTypeStr(SymbolType st);
 
 inline bool IsBasicSymbolType(SymbolType st)
 {
-    return st >= SymbolType::boolSymbol && st <= SymbolType::doubleSymbol;
+    return st >= SymbolType::boolSymbol && st <= SymbolType::nullptrSymbol;
 }
 
 class Writer;
@@ -59,7 +60,8 @@ enum class SymbolFlags : uint8_t
     none = 0,
     access = 1 << 0 | 1 << 1,
     bound = 1 << 2,
-    project = 1 << 3
+    project = 1 << 3,
+    external = 1 << 4
 };
 
 std::string SymbolFlagStr(SymbolFlags flags);
@@ -97,6 +99,8 @@ public:
     virtual SymbolAccess DeclaredAccess() const { return Access(); }
     bool IsPublic() const { return Access() == SymbolAccess::public_; }
     void SetPublic() { SetAccess(SymbolAccess::public_); }
+    bool IsExternal() const { return GetFlag(SymbolFlags::external); }
+    void SetExternal() { SetFlag(SymbolFlags::external); }
     SymbolSource Source() const { return GetFlag(SymbolFlags::project) ? SymbolSource::project : SymbolSource::library; }
     void SetSource(SymbolSource source) { if (source == SymbolSource::project) SetFlag(SymbolFlags::project); else ResetFlag(SymbolFlags::project); }
     Symbol* Parent() const { return parent; }
@@ -142,6 +146,7 @@ public:
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
     virtual void Dump(CodeFormatter& formatter);
+    virtual void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes);
 private:
     Span span;
     std::string name;

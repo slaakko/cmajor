@@ -43,7 +43,7 @@ Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTabl
     {
         return localVariableSymbol;
     }
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constructionStatementNode->TypeExpr(), false);
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constructionStatementNode->TypeExpr());
     localVariableSymbol->SetType(type);
     localVariableSymbol->SetBound();
     return localVariableSymbol;

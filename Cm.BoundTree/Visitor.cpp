@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.BoundTree/Visitor.hpp>
+#include <Cm.BoundTree/BoundStatement.hpp>
 
 namespace Cm { namespace BoundTree {
 
@@ -17,6 +18,13 @@ Visitor::Visitor(bool visitFunctionBody_) : visitFunctionBody(visitFunctionBody_
 
 Visitor::~Visitor()
 {
+}
+
+void Visitor::VisitStatement(BoundStatement& statement)
+{
+    BeginVisitStatement(statement);
+    statement.Accept(*this);
+    EndVisitStatement(statement);
 }
 
 void Visitor::PushSkipContent()

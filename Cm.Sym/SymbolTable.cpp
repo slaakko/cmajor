@@ -332,8 +332,13 @@ FunctionSymbol* SymbolTable::GetFunctionSymbol(Cm::Ast::Node* functionNode) cons
 
 void SymbolTable::Export(Writer& writer)
 {
+    std::vector<TypeSymbol*> exportedDerivedTypes;
+    globalNs.CollectExportedDerivedTypes(exportedDerivedTypes);
     writer.Write(&globalNs);
-    typeRepository.Export(writer);
+    for (TypeSymbol* exportedDerivedType : exportedDerivedTypes)
+    {
+        exportedDerivedType->Write(writer);
+    }
 }
 
 void SymbolTable::Import(Reader& reader)

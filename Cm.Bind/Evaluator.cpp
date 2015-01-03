@@ -805,7 +805,7 @@ void Evaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void Evaluator::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScope, targetTypeExpr, false));
+    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScope, targetTypeExpr));
     Cm::Sym::SymbolType symbolType = type->GetSymbolType();
     Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
     stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScope));

@@ -64,9 +64,11 @@ public:
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
 
+    void VisitStatement(BoundStatement& statement);
     virtual void BeginVisitStatement(BoundStatement& statement) {}
     virtual void EndVisitStatement(BoundStatement& statement) {}
-    virtual void Visit(BoundCompoundStatement& boundCompoundStatement) {}
+    virtual void BeginVisit(BoundCompoundStatement& boundCompoundStatement) {}
+    virtual void EndVisit(BoundCompoundStatement& boundCompoundStatement) {}
     virtual void Visit(BoundReceiveStatement& boundReceiveStatement) {}
     virtual void Visit(BoundReturnStatement& boundReturnStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
@@ -78,10 +80,12 @@ public:
     virtual void Visit(BoundContinueStatement& boundContinueStatement) {}
     virtual void BeginVisit(BoundConditionalStatement& boundConditionalStatement) {}
     virtual void EndVisit(BoundConditionalStatement& boundConditionalStatement) {}
-    virtual void Visit(BoundDoStatement& boundDoStatement) {}
     virtual void BeginVisit(BoundWhileStatement& boundWhileStatement) {}
     virtual void EndVisit(BoundWhileStatement& boundWhileStatement) {}
-    virtual void Visit(BoundForStatement& boundForStatement) {}
+    virtual void BeginVisit(BoundDoStatement& boundDoStatement) {}
+    virtual void EndVisit(BoundDoStatement& boundDoStatement) {}
+    virtual void BeginVisit(BoundForStatement& boundForStatement) {}
+    virtual void EndVisit(BoundForStatement& boundForStatement) {}
     virtual void Visit(BoundTryStatement& boundTryStatement) {}
 
     virtual void BeginVisit(BoundFunction& boundFunction) {}

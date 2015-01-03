@@ -67,6 +67,7 @@ public:
     virtual TypeSymbol* GetTargetType() const;
     Cm::Ast::CompileUnitNode* CompileUnit() const { return compileUnit; }
     void SetCompileUnit(Cm::Ast::CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
+    void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) override;
 private:
     std::string groupName;
     TypeSymbol* returnType;

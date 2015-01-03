@@ -49,6 +49,9 @@ public:
     virtual bool IsNonConstReferenceType() const { return false; }
     virtual bool IsConstType() const { return false; }
     virtual bool IsRvalueRefType() const { return false; }
+    virtual bool IsConstReferenceType() const { return false; }
+    virtual bool IsVoidPtrType() const { return false; }
+    virtual bool IsNullPtrType() const { return false; }
     virtual DerivationCounts GetDerivationCounts() const { return DerivationCounts(); }
     void SetIrType(Ir::Intf::Type* irType_);
     Ir::Intf::Type* GetIrType() const;

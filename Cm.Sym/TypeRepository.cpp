@@ -135,72 +135,96 @@ Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& 
     }
 }
 
-TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span, bool requirePublic)
+TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span)
 {
-    TypeId publicTypeId = ComputeDerivedTypeId(baseType, derivations, false);
-    TypeSymbol* publicTypeSymbol = GetTypeNothrow(publicTypeId);
-    if (publicTypeSymbol)
+    TypeId typeId = ComputeDerivedTypeId(baseType, derivations);
+    TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
+    if (typeSymbol)
     {
-        return publicTypeSymbol;
+        return typeSymbol;
     }
-    if (requirePublic && !baseType->IsPublic())
+    std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(derivations, baseType), baseType, derivations, typeId));
+    derivedTypeSymbol->SetAccess(baseType->Access());
+    if (baseType->IsVoidTypeSymbol())
     {
-        throw Exception("cannot make derived type public because the base type '" + baseType->FullName() + "' is not public", span, baseType->GetSpan());
-    }
-    TypeId internalTypeId = ComputeDerivedTypeId(baseType, derivations, true);
-    if (!requirePublic)
-    {
-        TypeSymbol* internalTypeSymbol = GetTypeNothrow(internalTypeId);
-        if (internalTypeSymbol)
-        {
-            return internalTypeSymbol;
-        }
-    }
-    std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(derivations, baseType), baseType, derivations, (requirePublic ? publicTypeId : internalTypeId)));
-    derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
-    derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
-    if (requirePublic)
-    {
-        derivedTypeSymbol->SetPublic();
-        publicTypes.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol.get()));
+        derivedTypeSymbol->SetIrType(MakeIrType(GetType(GetBasicTypeId(ShortBasicTypeId::byteId)), derivations, span));
     }
     else
     {
-        derivedTypeSymbol->SetAccess(SymbolAccess::internal_);
-        internalTypes.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol.get()));
+        derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
     }
+    derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
+    types.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol.get()));
     AddType(derivedTypeSymbol.get());
     return derivedTypeSymbol.release();
 }
 
-TypeSymbol* TypeRepository::MakePointerType(TypeSymbol* baseType, const Span& span, bool requirePublic)
+TypeSymbol* TypeRepository::MakePointerType(TypeSymbol* baseType, const Span& span)
 {
+    if (baseType->IsDerivedTypeSymbol())
+    {
+        DerivedTypeSymbol* derivedType = static_cast<DerivedTypeSymbol*>(baseType);
+        Cm::Ast::DerivationList derivations = derivedType->Derivations();
+        derivations.Add(Cm::Ast::Derivation::pointer);
+        return MakeDerivedType(derivations, derivedType->GetBaseType(), span);
+    }
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, baseType, span, requirePublic);
+    return MakeDerivedType(derivations, baseType, span);
 }
 
-TypeSymbol* TypeRepository::MakeRvalueRefType(TypeSymbol* baseType, const Span& span, bool requirePublic)
+TypeSymbol* TypeRepository::MakeRvalueRefType(TypeSymbol* baseType, const Span& span)
 {
+    if (baseType->IsRvalueRefType())
+    {
+        int x = 0;
+        return baseType;
+    }
+    if (baseType->IsDerivedTypeSymbol())
+    {
+        DerivedTypeSymbol* derivedType = static_cast<DerivedTypeSymbol*>(baseType);
+        Cm::Ast::DerivationList derivations = derivedType->Derivations();
+        derivations.Add(Cm::Ast::Derivation::rvalueRef);
+        return MakeDerivedType(derivations, derivedType->GetBaseType(), span);
+    }
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::rvalueRef);
-    return MakeDerivedType(derivations, baseType, span, requirePublic);
+    return MakeDerivedType(derivations, baseType, span);
 }
 
-TypeSymbol* TypeRepository::MakeConstReferenceType(TypeSymbol* baseType, const Span& span, bool requirePublic)
+TypeSymbol* TypeRepository::MakeConstReferenceType(TypeSymbol* baseType, const Span& span)
 {
+    if (baseType->IsConstReferenceType())
+    {
+        int x = 0;
+        return baseType;
+    }
+    if (baseType->IsDerivedTypeSymbol())
+    {
+        DerivedTypeSymbol* derivedType = static_cast<DerivedTypeSymbol*>(baseType);
+        Cm::Ast::DerivationList derivations = derivedType->Derivations();
+        if (!HasConstDerivation(derivations))
+        {
+            derivations.InsertFront(Cm::Ast::Derivation::const_);
+        }
+        if (!HasReferenceDerivation(derivations))
+        {
+            derivations.Add(Cm::Ast::Derivation::reference);
+        }
+        return MakeDerivedType(derivations, derivedType->GetBaseType(), span);
+    }
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::reference);
-    return MakeDerivedType(derivations, baseType, span, requirePublic);
+    return MakeDerivedType(derivations, baseType, span);
 }
 
-TypeSymbol* TypeRepository::MakeConstPointerType(TypeSymbol* baseType, const Span& span, bool requirePublic)
+TypeSymbol* TypeRepository::MakeConstPointerType(TypeSymbol* baseType, const Span& span)
 {
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, baseType, span, requirePublic);
+    return MakeDerivedType(derivations, baseType, span);
 }
 
 TypeSymbol* TypeRepository::MakeConstCharPtrType(const Span& span)
@@ -210,7 +234,7 @@ TypeSymbol* TypeRepository::MakeConstCharPtrType(const Span& span)
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, charType, span, true);
+    return MakeDerivedType(derivations, charType, span);
 }
 
 TypeSymbol* TypeRepository::MakeGenericPtrType(const Span& span)
@@ -219,44 +243,19 @@ TypeSymbol* TypeRepository::MakeGenericPtrType(const Span& span)
     TypeSymbol* voidType = GetType(voidTypeId);
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, voidType, span, true);
+    return MakeDerivedType(derivations, voidType, span);
 }
 
-void RequireTypeArgumentsPublic(const std::vector<TypeSymbol*>& typeArguments, const Span& span)
+TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span)
 {
-    for (TypeSymbol* typeArgument : typeArguments)
-    {
-        if (!typeArgument->IsPublic())
-        {
-            throw Exception("cannot make template type public because type argument '" + typeArgument->FullName() + "' is not public", span, typeArgument->GetSpan());
-        }
-    }
-}
-
-TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span, bool requirePublic)
-{
-    TypeId typeId = ComputeTemplateTypeId(subjectType, typeArguments, !requirePublic);
+    TypeId typeId = ComputeTemplateTypeId(subjectType, typeArguments);
     TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
     if (typeSymbol)
     {
         return typeSymbol;
     }
     std::unique_ptr<TemplateTypeSymbol> templateTypeSymbol(new TemplateTypeSymbol(span, MakeTemplateTypeSymbolName(subjectType, typeArguments), subjectType, typeArguments, typeId));
-    if (requirePublic)
-    {
-        if (!subjectType->IsPublic())
-        {
-            throw Exception("cannot make template type public because the subject type '" + subjectType->FullName() + "' is not public", span, subjectType->GetSpan());
-        }
-        RequireTypeArgumentsPublic(typeArguments, span);
-        templateTypeSymbol->SetPublic();
-        publicTypes.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol.get()));
-    }
-    else
-    {
-        templateTypeSymbol->SetAccess(SymbolAccess::internal_);
-        internalTypes.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol.get()));
-    }
+    types.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol.get()));
     AddType(templateTypeSymbol.get());
     return templateTypeSymbol.release();
 }
@@ -295,7 +294,7 @@ TypeSymbol* TypeRepository::MakePlainType(TypeSymbol* type)
         }
         else
         {
-            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan(), derivedType->IsPublic());
+            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan());
         }
     }
     else
@@ -317,31 +316,12 @@ TypeSymbol* TypeRepository::MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
         }
         else
         {
-            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan(), derivedType->IsPublic());
+            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan());
         }
     }
     else
     {
         return type;
-    }
-}
-
-void TypeRepository::Export(Writer& writer)
-{
-    std::vector<TypeSymbol*> exportedTypes;
-    for (const std::unique_ptr<TypeSymbol>& publicType : publicTypes)
-    {
-        if (publicType->IsExportSymbol())
-        {
-            exportedTypes.push_back(publicType.get());
-        }
-    }
-    int32_t n = int32_t(exportedTypes.size());
-    writer.GetBinaryWriter().Write(n);
-    for (int32_t i = 0; i < n; ++i)
-    {
-        TypeSymbol* type = exportedTypes[i];
-        writer.Write(type);
     }
 }
 
@@ -354,27 +334,13 @@ void TypeRepository::Import(Reader& reader)
         if (symbol->IsTypeSymbol())
         {
             TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
-            publicTypes.push_back(std::unique_ptr<TypeSymbol>(typeSymbol));
+            types.push_back(std::unique_ptr<TypeSymbol>(typeSymbol));
         }
         else
         {
             throw std::runtime_error("type symbol expected");
         }
     }
-}
-
-void TypeRepository::ClearInternalTypes()
-{
-    std::vector<TypeId> internalTypeIds;
-    for (const std::unique_ptr<TypeSymbol>& internalType : internalTypes)
-    {
-        internalTypeIds.push_back(internalType->Id());
-    }
-    for (const TypeId& internalTypeId : internalTypeIds)
-    {
-        typeSymbolMap.erase(internalTypeId);
-    }
-    internalTypes.clear();
 }
 
 } } // namespace Cm::Sym

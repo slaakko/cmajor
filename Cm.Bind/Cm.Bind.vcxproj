@@ -22,11 +22,13 @@
     <ClInclude Include="BindingVisitor.hpp" />
     <ClInclude Include="Class.hpp" />
     <ClInclude Include="Constant.hpp" />
+    <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Evaluator.hpp" />
     <ClInclude Include="Exception.hpp" />
     <ClInclude Include="ExpressionBinder.hpp" />
     <ClInclude Include="Function.hpp" />
+    <ClInclude Include="FunctionBinder.hpp" />
     <ClInclude Include="LocalVariable.hpp" />
     <ClInclude Include="MemberVariable.hpp" />
     <ClInclude Include="OverloadResolution.hpp" />
@@ -40,11 +42,13 @@
     <ClCompile Include="BindingVisitor.cpp" />
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="Constant.cpp" />
+    <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="Excecption.cpp" />
     <ClCompile Include="ExpressionBinder.cpp" />
     <ClCompile Include="Function.cpp" />
+    <ClCompile Include="FunctionBinder.cpp" />
     <ClCompile Include="LocalVariable.cpp" />
     <ClCompile Include="MemberVariable.cpp" />
     <ClCompile Include="OverloadResolution.cpp" />

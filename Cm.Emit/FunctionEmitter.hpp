@@ -43,7 +43,7 @@ public:
     void Visit(Cm::BoundTree::BoundParameter& boundParameter) override;
     void Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable) {}
     void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
-    void Visit(Cm::BoundTree::BoundCast& boundCast) {}
+    void Visit(Cm::BoundTree::BoundCast& boundCast) override;
     void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;
@@ -52,7 +52,8 @@ public:
 
     void BeginVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
     void EndVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
-    void Visit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
+    void BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
+    void EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
     void Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveStatement) override;
     void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
@@ -66,8 +67,10 @@ public:
     void EndVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) override;
     void BeginVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement) override;
     void EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement) override;
-    void Visit(Cm::BoundTree::BoundDoStatement& boundDoStatement) {}
-    void Visit(Cm::BoundTree::BoundForStatement& boundForStatement) {}
+    void BeginVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement) override;
+    void EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement) override;
+    void BeginVisit(Cm::BoundTree::BoundForStatement& boundForStatement) override;
+    void EndVisit(Cm::BoundTree::BoundForStatement& boundForStatement) override;
     void Visit(Cm::BoundTree::BoundTryStatement& boundTryStatement) {}
 private:
     Cm::Util::CodeFormatter& codeFormatter;

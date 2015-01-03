@@ -40,4 +40,12 @@ void ParameterSymbol::SetType(TypeSymbol* type_, int index)
     type = type_;
 }
 
+void ParameterSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+{
+    if (type->IsDerivedTypeSymbol())
+    {
+        type->CollectExportedDerivedTypes(exportedDerivedTypes);
+    }
+}
+
 } } // namespace Cm::Sym

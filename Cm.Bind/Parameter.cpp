@@ -38,8 +38,7 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
             {
                 return;
             }
-            bool willBeExported = parameterSymbol->WillBeExported();
-            Cm::Sym::TypeSymbol* parameterType = ResolveType(symbolTable, containerScope, fileScope, parameterNode->TypeExpr(), willBeExported);
+            Cm::Sym::TypeSymbol* parameterType = ResolveType(symbolTable, containerScope, fileScope, parameterNode->TypeExpr());
             parameterSymbol->SetType(parameterType);
             parameterSymbol->SetBound();
         }
@@ -54,23 +53,26 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
     }
 }
 
-void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, Cm::BoundTree::BoundFunction* boundFunction)
+void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, Cm::Core::PointerOpRepository& pointerOpRepository, 
+    Cm::BoundTree::BoundFunction* boundFunction)
 {
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
+    if (functionSymbol->IsExternal()) return;
     int index = 0;
     for (Cm::Sym::ParameterSymbol* parameterSymbol : functionSymbol->Parameters())
     {
         Cm::BoundTree::BoundReceiveStatement* boundReceiveStatement = new Cm::BoundTree::BoundReceiveStatement(parameterSymbol);
         Cm::Sym::TypeSymbol* parameterType = parameterSymbol->GetType();
         std::vector<Cm::Core::Argument> resolutionArguments;
-        Cm::Core::Argument targetArgument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(parameterType, parameterSymbol->GetSpan(), false));
+        Cm::Core::Argument targetArgument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(parameterType, parameterSymbol->GetSpan()));
         resolutionArguments.push_back(targetArgument);
-        Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, symbolTable.GetTypeRepository().MakeConstReferenceType(parameterType, parameterSymbol->GetSpan(), false));
+        Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, symbolTable.GetTypeRepository().MakeConstReferenceType(parameterType, parameterSymbol->GetSpan()));
         resolutionArguments.push_back(sourceArgument);
         Cm::Sym::FunctionLookupSet functionLookups;
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
-        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(symbolTable, conversionTable, classConversionTable, "@constructor", resolutionArguments, functionLookups, parameterSymbol->GetSpan(), conversions);
+        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(symbolTable, conversionTable, classConversionTable, pointerOpRepository, "@constructor", resolutionArguments, functionLookups, 
+            parameterSymbol->GetSpan(), conversions);
         boundReceiveStatement->SetConstructor(ctor);
         boundFunction->Body()->InsertStatement(index, boundReceiveStatement);
         ++index;

@@ -14,7 +14,7 @@
 namespace Cm { namespace Sym {
 
 std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments);
-TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, bool makeInternal);
+TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments);
 
 class TemplateTypeSymbol : public TypeSymbol
 {

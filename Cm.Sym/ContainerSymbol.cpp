@@ -103,4 +103,15 @@ void ContainerSymbol::Dump(CodeFormatter& formatter)
     formatter.WriteLine("end " + Name());
 }
 
+void ContainerSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+{
+    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    {
+        if (symbol->IsExportSymbol())
+        {
+            symbol->CollectExportedDerivedTypes(exportedDerivedTypes);
+        }
+    }
+}
+
 } } // namespace Cm::Sym

@@ -164,7 +164,7 @@ class ConceptNode;
 class Visitor
 {
 public:
-    Visitor(bool visitExpressions_);
+    Visitor(bool visitBodies_, bool visitExpressions_);
     virtual ~Visitor();
 
     virtual void BeginVisit(CompileUnitNode& compileUnitNode) {}
@@ -388,12 +388,14 @@ public:
     virtual void BeginVisit(AxiomNode& axiomNode) {}
     virtual void EndVisit(AxiomNode& axiomNode) {}
     virtual void Visit(ConceptIdNode& conceptIdNode) {}
+    bool VisitBodies() const { return visitBodies; }
     bool VisitExpressions() const { return visitExpressions; }
     void PushSkipContent();
     void PopSkipContent();
     bool SkipContent() const { return skipContent; }
 private:
     bool visitExpressions;
+    bool visitBodies;
     bool skipContent;
     std::stack<bool> skipContentStack;
 };

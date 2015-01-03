@@ -41,7 +41,7 @@ void StackVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
     }
     else
     {
-        Ir::Intf::RegVarPtr reg = CreateTemporaryRegVar(type);
+        Ir::Intf::RegVar* reg = CreateTemporaryRegVar(type);
         emitter.Own(reg);
         emitter.Emit(Load(type, reg, &global));
         emitter.Emit(Store(type, reg, this));
@@ -54,7 +54,7 @@ void StackVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
     emitter.Own(ptrType);
     if (TypesEqual(regVar.GetType(), ptrType))
     {
-        Ir::Intf::RegVarPtr reg = CreateTemporaryRegVar(type);
+        Ir::Intf::RegVar* reg = CreateTemporaryRegVar(type);
         emitter.Own(reg);
         emitter.Emit(Load(ptrType, reg, &regVar));
         emitter.Emit(Store(type, reg, this));
@@ -77,7 +77,7 @@ void StackVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
     {
         PointerType* ptrType = MakePointerType(type);
         emitter.Own(ptrType);
-        Ir::Intf::RegVarPtr reg = CreateTemporaryRegVar(type);
+        Ir::Intf::RegVar* reg = CreateTemporaryRegVar(type);
         emitter.Own(reg);
         emitter.Emit(Load(ptrType, reg, &stackVar));
         emitter.Emit(Store(type, reg, this));
@@ -88,10 +88,10 @@ void StackVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
 {
     PointerType* ptrType = MakePointerType(type);
     emitter.Own(ptrType);
-    Ir::Intf::RegVarPtr ptr = CreateTemporaryRegVar(ptrType);
+    Ir::Intf::RegVar* ptr = CreateTemporaryRegVar(ptrType);
     emitter.Own(ptr);
     emitter.Emit(GetElementPtr(memberVar.Ptr()->GetType(), ptr, memberVar.Ptr(), CreateI32Constant(0), CreateI32Constant(memberVar.Index())));
-    Ir::Intf::RegVarPtr value = CreateTemporaryRegVar(type);
+    Ir::Intf::RegVar* value = CreateTemporaryRegVar(type);
     emitter.Own(value);
     emitter.Emit(Load(ptrType, value, ptr));
     emitter.Emit(Store(type, value, this));
@@ -101,10 +101,10 @@ void StackVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
 {
     PointerType* ptrType = MakePointerType(type);
     emitter.Own(ptrType);
-    Ir::Intf::RegVarPtr refReg = CreateTemporaryRegVar(ptrType);
+    Ir::Intf::RegVar* refReg = CreateTemporaryRegVar(ptrType);
     emitter.Own(refReg);
     emitter.Emit(Load(ptrType, refReg, &refVar));
-    Ir::Intf::RegVarPtr reg = CreateTemporaryRegVar(type);
+    Ir::Intf::RegVar* reg = CreateTemporaryRegVar(type);
     emitter.Own(reg);
     emitter.Emit(Load(type, reg, refReg));
     emitter.Emit(Store(type, reg, this));
@@ -135,7 +135,7 @@ void StackVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::
     {
         PointerType* ptrType = MakePointerType(type);
         emitter.Own(ptrType);
-        Ir::Intf::RegVarPtr reg = CreateTemporaryRegVar(type);
+        Ir::Intf::RegVar* reg = CreateTemporaryRegVar(type);
         emitter.Own(reg);
         emitter.Emit(Load(ptrType, reg, &global));
         emitter.Emit(Store(type, reg, this));
@@ -159,7 +159,7 @@ void StackVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::
     {
         PointerType* ptrType = MakePointerType(type);
         emitter.Own(ptrType);
-        Ir::Intf::RegVarPtr reg = CreateTemporaryRegVar(type);
+        Ir::Intf::RegVar* reg = CreateTemporaryRegVar(type);
         emitter.Own(reg);
         emitter.Emit(Load(ptrType, reg, &stackVar));
         emitter.Emit(Store(type, reg, this));
@@ -170,10 +170,10 @@ void StackVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::
 {
     PointerType* ptrType = MakePointerType(type);
     emitter.Own(ptrType);
-    Ir::Intf::RegVarPtr ptr = CreateTemporaryRegVar(ptrType);
+    Ir::Intf::RegVar* ptr = CreateTemporaryRegVar(ptrType);
     emitter.Own(ptr);
     emitter.Emit(GetElementPtr(memberVar.Ptr()->GetType(), ptr, memberVar.Ptr(), CreateI32Constant(0), CreateI32Constant(memberVar.Index())));
-    Ir::Intf::RegVarPtr value = CreateTemporaryRegVar(type);
+    Ir::Intf::RegVar* value = CreateTemporaryRegVar(type);
     emitter.Own(value);
     emitter.Emit(Load(type, value, ptr));
     emitter.Emit(Store(type, value, this));
@@ -183,10 +183,10 @@ void StackVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::
 {
     PointerType* ptrType = MakePointerType(type);
     emitter.Own(ptrType);
-    Ir::Intf::RegVarPtr refReg = CreateTemporaryRegVar(ptrType);
+    Ir::Intf::RegVar* refReg = CreateTemporaryRegVar(ptrType);
     emitter.Own(refReg);
     emitter.Emit(Load(ptrType, refReg, &refVar));
-    Ir::Intf::RegVarPtr reg = CreateTemporaryRegVar(type);
+    Ir::Intf::RegVar* reg = CreateTemporaryRegVar(type);
     emitter.Own(reg);
     emitter.Emit(Load(type, reg, refReg));
     emitter.Emit(Store(type, reg, this));
