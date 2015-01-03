@@ -17,7 +17,7 @@ namespace Cm { namespace Bind {
 class StatementBinder : public ExpressionBinder
 {
 public:
-    StatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    StatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
         Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
@@ -34,7 +34,7 @@ private:
 class ConstructionStatementBinder : public StatementBinder
 {
 public:
-    ConstructionStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
+    ConstructionStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
         Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
     void EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
@@ -45,7 +45,7 @@ private:
 class AssignmentStatementBinder : public StatementBinder
 {
 public:
-    AssignmentStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    AssignmentStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
         Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
 };
@@ -53,7 +53,7 @@ public:
 class SimpleStatementBinder : public StatementBinder
 {
 public:
-    SimpleStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    SimpleStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
         Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
 };
@@ -61,7 +61,7 @@ public:
 class ReturnStatementBinder : public StatementBinder
 {
 public:
-    ReturnStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    ReturnStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
         Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode) override;
 };
@@ -69,7 +69,7 @@ public:
 class ConditionalStatementBinder : public StatementBinder
 {
 public:
-    ConditionalStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
+    ConditionalStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
         Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_);
     void EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode) override;
 private:
@@ -79,13 +79,32 @@ private:
 class WhileStatementBinder : public StatementBinder
 {
 public:
-    WhileStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundWhileStatement* whileStatement__);
+    WhileStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundWhileStatement* whileStatement_);
     void EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode) override;
 private:
     Cm::BoundTree::BoundWhileStatement* whileStatement;
 };
 
+class DoStatementBinder : public StatementBinder
+{
+public:
+    DoStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundDoStatement* doStatement_);
+    void EndVisit(Cm::Ast::DoStatementNode& doStatementNode) override;
+private:
+    Cm::BoundTree::BoundDoStatement* doStatement;
+};
+
+class ForStatementBinder : public StatementBinder
+{
+public:
+    ForStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
+        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundForStatement* forStatement_);
+    void EndVisit(Cm::Ast::ForStatementNode& forStatementNode) override;
+private:
+    Cm::BoundTree::BoundForStatement* forStatement;
+};
 
 } } // namespace Cm::Bind
 

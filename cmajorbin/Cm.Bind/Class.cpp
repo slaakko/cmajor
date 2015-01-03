@@ -45,11 +45,10 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     Cm::Ast::Specifiers specifiers = classNode->GetSpecifiers();
     bool isClassMember = classNode->Parent()->IsClassNode();
     SetAccess(classTypeSymbol, specifiers, isClassMember);
-    bool willBeExported = classTypeSymbol->WillBeExported();
     Cm::Ast::Node* baseClassTypeExpr = classNode->BaseClassTypeExpr();
     if (baseClassTypeExpr)
     {
-        Cm::Sym::TypeSymbol* baseTypeSymbol = ResolveType(symbolTable, containerScope, fileScope, baseClassTypeExpr, willBeExported);
+        Cm::Sym::TypeSymbol* baseTypeSymbol = ResolveType(symbolTable, containerScope, fileScope, baseClassTypeExpr);
         if (baseTypeSymbol)
         {
             if (baseTypeSymbol->IsClassTypeSymbol())

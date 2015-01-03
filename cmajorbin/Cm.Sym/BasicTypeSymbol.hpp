@@ -15,7 +15,7 @@ namespace Cm { namespace Sym {
 
 enum class ShortBasicTypeId : uint8_t
 {
-    boolId, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, max
+    boolId, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
 };
 
 const Cm::Util::Uuid& GetBasicTypeId(ShortBasicTypeId shortId);
@@ -148,6 +148,15 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::doubleSymbol; }
     bool IsFloatingPointTypeSymbol() const override { return true; }
     std::string GetMangleId() const override { return "do"; }
+};
+
+class NullPtrTypeSymbol : public BasicTypeSymbol
+{
+public:
+    NullPtrTypeSymbol();
+    SymbolType GetSymbolType() const override { return SymbolType::nullptrSymbol; }
+    std::string GetMangleId() const override { return "np"; }
+    bool IsNullPtrType() const override { return true; }
 };
 
 } } // namespace Cm::Sym

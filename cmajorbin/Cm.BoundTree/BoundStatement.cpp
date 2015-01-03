@@ -35,9 +35,7 @@ void BoundStatementList::Accept(Visitor& visitor)
 {
     for (const std::unique_ptr<BoundStatement>& statement : statements)
     {
-        visitor.BeginVisitStatement(*statement);
-        statement->Accept(visitor);
-        visitor.EndVisitStatement(*statement);
+        visitor.VisitStatement(*statement);
     }
 }
 
@@ -61,8 +59,9 @@ void BoundCompoundStatement::InsertStatement(int index, BoundStatement* statemen
 
 void BoundCompoundStatement::Accept(Visitor& visitor) 
 {
+    visitor.BeginVisit(*this);
     statementList.Accept(visitor);
-    visitor.Visit(*this);
+    visitor.EndVisit(*this);
 }
 
 BoundReceiveStatement::BoundReceiveStatement(Cm::Sym::ParameterSymbol* parameterSymbol_) : BoundStatement(nullptr), parameterSymbol(parameterSymbol_)
@@ -134,7 +133,6 @@ void BoundConstructionStatement::ApplyConversions(const std::vector<Cm::Sym::Fun
 
 void BoundConstructionStatement::Accept(Visitor& visitor)
 {
-    arguments.Accept(visitor);
     visitor.Visit(*this);
 }
 
@@ -233,8 +231,68 @@ void BoundWhileStatement::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-BoundForStatement::BoundForStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+BoundDoStatement::BoundDoStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
+}
+
+void BoundDoStatement::SetCondition(BoundExpression* condition_)
+{
+    condition.reset(condition_);
+}
+
+void BoundDoStatement::AddStatement(BoundStatement* statement_)
+{
+    statement.reset(statement_);
+}
+
+void BoundDoStatement::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (!visitor.SkipContent())
+    {
+        statement->Accept(visitor);
+        condition->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
+BoundForStatement::BoundForStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
+{
+}
+
+void BoundForStatement::SetCondition(BoundExpression* condition_)
+{
+    condition.reset(condition_);
+}
+
+void BoundForStatement::SetIncrement(BoundExpression* increment_)
+{
+    increment.reset(increment_);
+}
+
+void BoundForStatement::AddStatement(BoundStatement* statement_)
+{
+    if (!initS)
+    {
+        initS.reset(statement_);
+    }
+    else
+    {
+        action.reset(statement_);
+    }
+}
+
+void BoundForStatement::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (!visitor.SkipContent())
+    {
+        initS->Accept(visitor);
+        condition->Accept(visitor);
+        increment->Accept(visitor);
+        action->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
 }
 
 } } // namespace Cm::BoundTree

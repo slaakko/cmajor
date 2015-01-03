@@ -24,10 +24,13 @@ Cm::Sym::FunctionSymbol* BindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym
         Cm::Ast::Specifiers specifiers = functionNode->GetSpecifiers();
         bool isClassMember = functionNode->Parent()->IsClassNode();
         SetAccess(functionSymbol, specifiers, isClassMember);
+        if ((specifiers & Cm::Ast::Specifiers::external) != Cm::Ast::Specifiers::none)
+        {
+            functionSymbol->SetExternal();
+        }
         if (functionNode->ReturnTypeExpr())
         {
-            bool willBeExported = functionSymbol->WillBeExported();
-            Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScope, functionNode->ReturnTypeExpr(), willBeExported);
+            Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScope, functionNode->ReturnTypeExpr());
             functionSymbol->SetReturnType(returnType);
         }
     }
@@ -49,6 +52,7 @@ void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol)
         Cm::Sym::TypeSymbol* parameterType = param->GetType();
         if (parameterType->Access() < functionSymbol->Access())
         {
+            std::string accessStr = Cm::Sym::AccessStr(parameterType->Access());
             throw Exception("parameter type of a function must be at least as accessible as the function itself", parameterType->GetSpan(), functionSymbol->GetSpan());
         }
     }

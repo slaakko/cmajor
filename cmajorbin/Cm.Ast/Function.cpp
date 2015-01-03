@@ -199,9 +199,12 @@ void FunctionNode::Accept(Visitor& visitor)
     {
         templateParameters.Accept(visitor);
         parameters.Accept(visitor);
-        if (body)
+        if (visitor.VisitBodies())
         {
-            body->Accept(visitor);
+            if (body)
+            {
+                body->Accept(visitor);
+            }
         }
     }
     visitor.EndVisit(*this);

@@ -18,7 +18,7 @@ namespace Cm { namespace Sym {
 
 const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
 {
-    "boolSymbol", "charSymbol", "voidSymbol", "sbyteSymbol", "byteSymbol", "shortSymbol", "ushortSymbol", "intSymbol", "uintSymbol", "longSymbol", "ulongSymbol", "floatSymbol", "doubleSymbol",
+    "boolSymbol", "charSymbol", "voidSymbol", "sbyteSymbol", "byteSymbol", "shortSymbol", "ushortSymbol", "intSymbol", "uintSymbol", "longSymbol", "ulongSymbol", "floatSymbol", "doubleSymbol", "nullptrSymbol",
     "classSymbol", "constantSymbol", "declarationBlock", "delegateSymbol", "classDelegateSymbol", "enumTypeSymbol", "enumConstantSymbol", "functionSymbol", "functionGroupSymbol", "localVariableSymbol", "memberVariableSymbol",
     "namespaceSymbol", "parameterSymbol", "templateParameterSymbol", "templateTypeSymbol", "derivedTypeSymbol", "typedefSymbol"
 };
@@ -33,14 +33,14 @@ const char* accessStr[4] =
     "private", "protected", "internal", "public"
 };
 
-std::string Accesstr(SymbolAccess access)
+std::string AccessStr(SymbolAccess access)
 {
     return accessStr[uint8_t(access)];
 }
 
 std::string SymbolFlagStr(SymbolFlags flags)
 {
-    std::string s = Accesstr(SymbolAccess(flags & SymbolFlags::access));
+    std::string s = AccessStr(SymbolAccess(flags & SymbolFlags::access));
     if ((flags & SymbolFlags::project) != SymbolFlags::none)
     {
         if (s.empty())
@@ -218,7 +218,7 @@ ContainerSymbol* Symbol::ClassOrNs() const
         }
         else
         {
-            throw std::runtime_error("containing class or namespace symbol not found");
+            return nullptr;
         }
     }
 }
@@ -231,6 +231,10 @@ void Symbol::Dump(CodeFormatter& formatter)
         f.append(1, ' ');
     }
     formatter.WriteLine(f + TypeString() + " " + Name());
+}
+
+void Symbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+{
 }
 
 } } // namespace Cm::Sym

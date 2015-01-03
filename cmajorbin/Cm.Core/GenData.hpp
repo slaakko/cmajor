@@ -19,8 +19,8 @@ namespace Cm { namespace Core {
 enum class GenFlags : uint8_t
 {
     none = 0, 
-    label = 1 << 0,
-    genJumpingBoolCode = 1 << 1,
+    genJumpingBoolCode = 1 << 0,
+    lvalue = 1 << 1,
     addrArg = 1 << 2,
     classTypeToPointerTypeConversion = 1 << 3
 };
@@ -90,6 +90,7 @@ public:
     void MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets);
     void MergeData(GenData& childData);
     Ir::Intf::LabelObject* GetLabel() const { return labelHolder->GetLabel(); }
+    void SetLabel(Ir::Intf::LabelObject* label) { labelHolder->SetLabel(label); }
     LabelHolder* GetLabelHolder() const { return labelHolder.get(); }
     void BackpatchTrueTargets(Ir::Intf::LabelObject* label);
     void BackpatchFalseTargets(Ir::Intf::LabelObject* label);
@@ -108,6 +109,7 @@ public:
     Emitter(Ir::Intf::Function* irFunction_);
     Ir::Intf::Function* GetIrFunction() const { return irFunction; }
     void RequestLabelFor(GenData& genData);
+    void RemoveLabelRequestFor(GenData& genData);
     void AddNextInstructionLabel(Ir::Intf::LabelObject* nextInstructionLabel) { nextInstructionLabels.insert(nextInstructionLabel); }
     void Emit(Ir::Intf::Instruction* instruction) override;
     void Own(Ir::Intf::Object* object) override;
@@ -125,6 +127,8 @@ private:
 class GenResult
 {
 public:
+    GenResult();
+    ~GenResult();
     GenResult(Emitter* emitter_, GenFlags flags_);
     GenResult(const GenResult&) = delete;
     GenResult& operator=(const GenResult&) = delete;
@@ -150,11 +154,13 @@ public:
     void BackpatchNextTargets(Ir::Intf::LabelObject* label) { genData.BackpatchNextTargets(label); }
     bool GenJumpingBoolCode() const { return GetFlag(GenFlags::genJumpingBoolCode, flags); }
     void SetGenJumpingBoolCode() { SetFlag(GenFlags::genJumpingBoolCode, flags); }
+    void SetLvalue() { SetFlag(GenFlags::lvalue, flags); }
     bool AddrArg() const { return GetFlag(GenFlags::addrArg, flags); }
     bool ClassTypeToPointerTypeConversion() const { return GetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
     GenData& GetChild(int index);
     void Merge(GenResult& child);
     Ir::Intf::LabelObject* GetLabel() const { return genData.GetLabel(); }
+    void SetLabel(Ir::Intf::LabelObject* label) { genData.SetLabel(label); }
 private:
     Emitter* emitter;
     GenFlags flags;

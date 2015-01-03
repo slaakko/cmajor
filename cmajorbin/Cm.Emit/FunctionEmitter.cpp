@@ -54,16 +54,23 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
     {
         if (type->GetBaseType()->IsClassTypeSymbol())
         {
-            localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetIrType(), type->GetPointerCount() + 1));
+            localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 1));
         }
         else
         {
-            localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(type->GetIrType(), type->GetPointerCount() + 1));
+            localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 1));
         }
     }
     else
     {
-        localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetIrType(), type->GetPointerCount() + 1));
+        if (type->GetBaseType()->IsVoidTypeSymbol())
+        {
+            localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), type->GetPointerCount() + 1));
+        }
+        else
+        {
+            localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 1));
+        }
     }
     localVariableObjectMap[localVariableOrParameter] = localVariableObject;
     ownedIrObjects.push_back(std::unique_ptr<Ir::Intf::Object>(localVariableObject));
@@ -82,7 +89,7 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::GetLocalVariableIrObject(Cm::
 
 FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_) : 
     Cm::BoundTree::Visitor(true), codeFormatter(codeFormatter_), emitter(nullptr), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_), 
-    irFunctionRepository(irFunctionRepository_), compoundResult(emitter.get(), Cm::Core::GenFlags::none), currentCompileUnit(nullptr)
+    irFunctionRepository(irFunctionRepository_), compoundResult(), currentCompileUnit(nullptr)
 {
 }
 
@@ -214,41 +221,84 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
         result.SetGenJumpingBoolCode();
     }
     Cm::Core::GenResult operandResult = resultStack.Pop();
+    Ir::Intf::LabelObject* resultLabel = operandResult.GetLabel();
     result.Merge(operandResult);
     Cm::Sym::FunctionSymbol* conversionFun = boundConversion.ConversionFun();
     GenerateCall(conversionFun, result);
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundCast& boundCast)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    result.SetMainObject(boundCast.GetType());
+    if (boundCast.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
+    {
+        result.SetGenJumpingBoolCode();
+    }
+    Cm::Core::GenResult operandResult = resultStack.Pop();
+    Ir::Intf::LabelObject* resultLabel = operandResult.GetLabel();
+    result.Merge(operandResult);
+    Cm::Sym::FunctionSymbol* conversionFun = boundCast.ConversionFun();
+    GenerateCall(conversionFun, result);
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
     resultStack.Push(std::move(result));
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 {
-    Cm::Core::GenResult operandResult = resultStack.Pop();
     Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::Core::GenResult operandResult = resultStack.Pop();
     result.SetMainObject(boundUnaryOp.GetType());
     if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         result.SetGenJumpingBoolCode();
     }
+    if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
+    {
+        result.SetLvalue();
+    }
+    Ir::Intf::LabelObject* resultLabel = operandResult.GetLabel();
     result.Merge(operandResult);
     Cm::Sym::FunctionSymbol* op = boundUnaryOp.GetFunction();
     GenerateCall(op, result);
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
     resultStack.Push(std::move(result));
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 {
+    Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Core::GenResult right = resultStack.Pop();
     Cm::Core::GenResult left = resultStack.Pop();
-    Cm::Core::GenResult result(emitter.get(), genFlags);
     result.SetMainObject(boundBinaryOp.GetType());
     if (boundBinaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         result.SetGenJumpingBoolCode();
     }
+    Ir::Intf::LabelObject* resultLabel = left.GetLabel();
+    if (!resultLabel)
+    {
+        resultLabel = right.GetLabel();
+    }
     result.Merge(left);
     result.Merge(right);
     Cm::Sym::FunctionSymbol* op = boundBinaryOp.GetFunction();
     GenerateCall(op, result);
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
     resultStack.Push(std::move(result));
 }
 
@@ -273,14 +323,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 
 void FunctionEmitter::BeginVisitStatement(Cm::BoundTree::BoundStatement& statement)
 {
-    if (statement.RequiresLabel())
-    {
-        genFlags = Cm::Core::GenFlags::label;
-    }
-    else
-    {
-        genFlags = Cm::Core::GenFlags::none;
-    }
+    genFlags = Cm::Core::GenFlags::none;
 }
 
 void FunctionEmitter::EndVisitStatement(Cm::BoundTree::BoundStatement& statement)
@@ -293,10 +336,19 @@ void FunctionEmitter::EndVisitStatement(Cm::BoundTree::BoundStatement& statement
     compoundResult.Merge(statementResult);
 }
 
-void FunctionEmitter::Visit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
+void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
+{
+    compoundResult = Cm::Core::GenResult(emitter.get(), Cm::Core::GenFlags::none);
+    if (boundCompoundStatement.IsEmpty())
+    {
+        compoundResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+        GenerateCall(irFunctionRepository.GetDoNothingFunction(), compoundResult);
+    }
+}
+
+void FunctionEmitter::EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
 {
     resultStack.Push(std::move(compoundResult));
-    compoundResult = Cm::Core::GenResult(emitter.get(), Cm::Core::GenFlags::none);
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveStatement)
@@ -318,12 +370,16 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
     if (boundReturnStatement.ReturnsValue())
     {
         Cm::Sym::FunctionSymbol* ctor = boundReturnStatement.Constructor();
-        Cm::Core::GenResult result(emitter.get(), genFlags);
         result.SetMainObject(boundReturnStatement.GetReturnType());
         Cm::Core::GenResult retValResult = resultStack.Pop();
+        Ir::Intf::LabelObject* resultLabel = retValResult.GetLabel();
         result.Merge(retValResult);
         GenerateCall(ctor, result);
         emitter->Emit(Cm::IrIntf::Ret(result.MainObject()));
+        if (resultLabel)
+        {
+            result.SetLabel(resultLabel);
+        }
     }
     else
     {
@@ -334,21 +390,47 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement)
 {
-    Cm::Core::GenResult argResult = resultStack.Pop();
-    Cm::Core::GenResult result = resultStack.Pop();
-    result.Merge(argResult);
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    int n = boundConstructionStatement.Arguments().Count();
+    Ir::Intf::LabelObject* resultLabel = nullptr;
+    for (int i = 0; i < n; ++i)
+    {
+        const std::unique_ptr<Cm::BoundTree::BoundExpression>& arg = boundConstructionStatement.Arguments()[i];
+        arg->Accept(*this);
+        Cm::Core::GenResult argResult = resultStack.Pop();
+        if (!resultLabel)
+        {
+            resultLabel = argResult.GetLabel();
+        }
+        result.Merge(argResult);
+    }
     Cm::Sym::FunctionSymbol* ctor = boundConstructionStatement.Constructor();
     GenerateCall(ctor, result);
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
     resultStack.Push(std::move(result));
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement)
 {
+    Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Core::GenResult sourceResult = resultStack.Pop();
-    Cm::Core::GenResult result = resultStack.Pop(); // todo: lvalue genFlag
+    Cm::Core::GenResult targetResult = resultStack.Pop(); 
+    Ir::Intf::LabelObject* resultLabel = targetResult.GetLabel();
+    if (!resultLabel)
+    {
+        resultLabel = sourceResult.GetLabel();
+    }
+    result.Merge(targetResult);
     result.Merge(sourceResult);
     Cm::Sym::FunctionSymbol* assignment = boundAssignmentStatement.Assignment();
     GenerateCall(assignment, result);
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
     resultStack.Push(std::move(result));
 }
 
@@ -358,6 +440,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStat
     if (boundSimpleStatement.HasExpression())
     {
         Cm::Core::GenResult expressionResult = resultStack.Pop();
+        result.SetLabel(expressionResult.GetLabel());
         result.Merge(expressionResult);
     }
     else
@@ -379,6 +462,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Core::GenResult conditionResult = resultStack.Pop();
     Cm::BoundTree::BoundStatement* thenS = boundConditionalStatement.ThenS();
+    BeginVisitStatement(*thenS);
     thenS->Accept(*this);
     Cm::Core::GenResult thenResult = resultStack.Pop();
     conditionResult.BackpatchTrueTargets(thenResult.GetLabel());
@@ -386,6 +470,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     Cm::BoundTree::BoundStatement* elseS = boundConditionalStatement.ElseS();
     if (elseS)
     {
+        BeginVisitStatement(*elseS);
         elseS->Accept(*this);
         Cm::Core::GenResult elseResult = resultStack.Pop();
         conditionResult.BackpatchFalseTargets(elseResult.GetLabel());
@@ -410,14 +495,79 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileSta
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Core::GenResult conditionResult = resultStack.Pop();
     Cm::BoundTree::BoundStatement* statement = boundWhileStatement.Statement();
+    BeginVisitStatement(*statement);
     statement->Accept(*this);
     Cm::Core::GenResult statementResult = resultStack.Pop();
     emitter->Emit(Cm::IrIntf::Br(conditionResult.GetLabel()));
     conditionResult.BackpatchTrueTargets(statementResult.GetLabel());
     statementResult.BackpatchNextTargets(conditionResult.GetLabel());
     result.MergeTargets(result.NextTargets(), conditionResult.FalseTargets());
+    result.SetLabel(conditionResult.GetLabel());
+    result.Merge(conditionResult);
+    result.Merge(statementResult);
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement)
+{
+    PushSkipContent();
+}
+
+void FunctionEmitter::EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement)
+{
+    PopSkipContent();
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::BoundTree::BoundStatement* statement = boundDoStatement.Statement();
+    BeginVisitStatement(*statement);
+    statement->Accept(*this);
+    Cm::Core::GenResult statementResult = resultStack.Pop();
+    Cm::BoundTree::BoundExpression* condition = boundDoStatement.Condition();
+    condition->Accept(*this);
+    Cm::Core::GenResult conditionResult = resultStack.Pop();
+    statementResult.BackpatchNextTargets(conditionResult.GetLabel());
+    conditionResult.BackpatchTrueTargets(statementResult.GetLabel());
+    result.MergeTargets(result.NextTargets(), conditionResult.FalseTargets());
+    result.SetLabel(statementResult.GetLabel());
     result.Merge(statementResult);
     result.Merge(conditionResult);
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundForStatement& boundForStatement)
+{
+    PushSkipContent();
+}
+
+void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStatement)
+{
+    PopSkipContent();
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::BoundTree::BoundStatement* initS = boundForStatement.InitS();
+    BeginVisitStatement(*initS);
+    initS->Accept(*this);
+    Cm::Core::GenResult initResult = resultStack.Pop();
+    Ir::Intf::LabelObject* initLabel = initResult.GetLabel();
+    Cm::BoundTree::BoundExpression* condition = boundForStatement.Condition();
+    condition->Accept(*this);
+    Cm::Core::GenResult conditionResult = resultStack.Pop();
+    initResult.BackpatchNextTargets(conditionResult.GetLabel());
+    Cm::BoundTree::BoundStatement* action = boundForStatement.Action();
+    BeginVisitStatement(*action);
+    action->Accept(*this);
+    Cm::Core::GenResult actionResult = resultStack.Pop();
+    conditionResult.BackpatchTrueTargets(actionResult.GetLabel());
+    result.MergeTargets(result.NextTargets(), conditionResult.FalseTargets());
+    Cm::BoundTree::BoundExpression* increment = boundForStatement.Increment();
+    increment->Accept(*this);
+    Cm::Core::GenResult incrementResult = resultStack.Pop();
+    actionResult.BackpatchNextTargets(incrementResult.GetLabel());
+    incrementResult.BackpatchNextTargets(conditionResult.GetLabel());
+    emitter->Emit(Cm::IrIntf::Br(conditionResult.GetLabel()));
+    result.Merge(initResult);
+    result.Merge(conditionResult);
+    result.Merge(actionResult);
+    result.Merge(incrementResult);
+    result.SetLabel(initLabel);
     resultStack.Push(std::move(result));
 }
 

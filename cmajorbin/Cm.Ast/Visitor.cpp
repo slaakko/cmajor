@@ -11,7 +11,7 @@
 
 namespace Cm { namespace Ast {
 
-Visitor::Visitor(bool visitExpressions_) : visitExpressions(visitExpressions_), skipContent(false)
+Visitor::Visitor(bool visitBodies_, bool visitExpressions_) : visitBodies(visitBodies_), visitExpressions(visitExpressions_), skipContent(false)
 {
 }
 

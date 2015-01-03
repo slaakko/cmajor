@@ -25,6 +25,7 @@
     <ClInclude Include="GenData.hpp" />
     <ClInclude Include="InitSymbolTable.hpp" />
     <ClInclude Include="IrFunctionRepository.hpp" />
+    <ClInclude Include="PointerOpRepository.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Argument.cpp" />
@@ -33,6 +34,7 @@
     <ClCompile Include="GenData.cpp" />
     <ClCompile Include="InitSymbolTable.cpp" />
     <ClCompile Include="IrFunctionRepository.cpp" />
+    <ClCompile Include="PointerOpRepository.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{060E1B46-08FA-4407-A2A0-AD2A8DEF9A25}</ProjectGuid>

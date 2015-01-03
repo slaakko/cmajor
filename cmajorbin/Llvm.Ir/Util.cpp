@@ -12,6 +12,7 @@
 #include <Llvm.Ir/Type.hpp>
 #include <Llvm.Ir/Instruction.hpp>
 #include <Llvm.Ir/Constant.hpp>
+#include <Ir.Intf/Factory.hpp>
 
 namespace Llvm { 
 
@@ -31,10 +32,14 @@ Ir::Intf::Object* SizeOf(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type)
     emitter.Own(ptrType);
     Ir::Intf::Object* ptrSize(CreateTemporaryRegVar(ptrType));
     emitter.Own(ptrSize);
-    emitter.Emit(GetElementPtr(ptrType, ptrSize, Null(ptrType), CreateI64Constant(1)));
-    Ir::Intf::Object* size(CreateTemporaryRegVar(I64()));
+    Ir::Intf::Object* null = Null(ptrType);
+    emitter.Own(null);
+    Ir::Intf::Object* one = CreateI64Constant(1);
+    emitter.Own(one);
+    emitter.Emit(GetElementPtr(ptrType, ptrSize, null, one));
+    Ir::Intf::Object* size(CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI64()));
     emitter.Own(size);
-    emitter.Emit(Ptrtoint(ptrType, size, ptrSize, I64()));
+    emitter.Emit(Ptrtoint(ptrType, size, ptrSize, Ir::Intf::GetFactory()->GetI64()));
     return size;
 }
 

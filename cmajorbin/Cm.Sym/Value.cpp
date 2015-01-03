@@ -17,7 +17,7 @@ ValueType valueTypes[uint8_t(Cm::Sym::SymbolType::maxSymbol)] =
 {
     ValueType::boolValue, ValueType::charValue, ValueType::none,
     ValueType::sbyteValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue,
-    ValueType::floatValue, ValueType::doubleValue, ValueType::none,
+    ValueType::floatValue, ValueType::doubleValue, ValueType::nullValue, ValueType::none,
     ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none,
     ValueType::none, ValueType::none, ValueType::none
 };
@@ -34,19 +34,21 @@ ValueType GetValueTypeFor(SymbolType symbolType)
 
 ValueType commonType[uint8_t(Cm::Sym::ValueType::max)][uint8_t(Cm::Sym::ValueType::max)] = 
 {
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::boolValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::charValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::sbyteValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue},
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue},
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::doubleValue },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue }
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::boolValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::charValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::sbyteValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none }
 };
 
 ValueType GetCommonType(ValueType left, ValueType right)
@@ -56,7 +58,7 @@ ValueType GetCommonType(ValueType left, ValueType right)
 
 const char* valueTypeStr[uint8_t(ValueType::max)] =
 {
-    "", "bool", "char", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "string"
+    "", "bool", "char", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "@nullptrtype", "string"
 };
 
 std::string ValueTypeStr(ValueType valueType)
@@ -1778,6 +1780,35 @@ Value* DoubleValue::As(ValueType targetType, bool cast, const Span& span) const
 Ir::Intf::Object* DoubleValue::CreateIrObject() const
 {
     return Cm::IrIntf::CreateDoubleConstant(value);
+}
+
+NullValue::NullValue()
+{
+}
+
+Value* NullValue::Clone() const
+{
+    return new NullValue();
+}
+
+void NullValue::Read(Cm::Ser::BinaryReader& reader)
+{
+    reader.ReadByte();
+}
+
+void NullValue::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(uint8_t(0));
+}
+
+Value* NullValue::As(ValueType targetType, bool cast, const Span& span) const
+{
+    throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span);
+}
+
+Ir::Intf::Object* NullValue::CreateIrObject() const
+{
+    return Cm::IrIntf::Null(Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1));
 }
 
 StringValue::StringValue() : value("")

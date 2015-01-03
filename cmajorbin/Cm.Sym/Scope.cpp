@@ -135,7 +135,15 @@ ClassTypeSymbol* ContainerScope::Class() const
 
 ContainerScope* ContainerScope::ClassOrNsScope() const
 {
-    return container->ClassOrNs()->GetContainerScope();
+    Symbol* clasOrNsSymbol = container->ClassOrNs();
+    if (clasOrNsSymbol)
+    {
+        return clasOrNsSymbol->GetContainerScope();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 void ContainerScope::CollectViableFunctions(ScopeLookup lookup, const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions)

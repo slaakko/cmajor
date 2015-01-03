@@ -20,6 +20,7 @@ EmittingVisitor::EmittingVisitor(const std::string& irFilePath, Cm::Sym::TypeRep
 
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
+    if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
     FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository);
     boundFunction.Accept(functionEmitter);
 }

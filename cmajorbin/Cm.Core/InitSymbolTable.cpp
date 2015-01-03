@@ -276,6 +276,8 @@ void MakeBasicTypes(Cm::Sym::SymbolTable& symbolTable)
     symbolTable.AddPredefinedSymbolToGlobalScope(floatTypeSymbol);
     Cm::Sym::DoubleTypeSymbol* doubleTypeSymbol = new Cm::Sym::DoubleTypeSymbol();
     symbolTable.AddPredefinedSymbolToGlobalScope(doubleTypeSymbol);
+    Cm::Sym::NullPtrTypeSymbol* nullPtrTypeSymbol = new Cm::Sym::NullPtrTypeSymbol();
+    symbolTable.AddPredefinedSymbolToGlobalScope(nullPtrTypeSymbol);
 
     MakeBoolOps(symbolTable, boolTypeSymbol);
     for (Cm::Sym::BasicTypeSymbol* integerType : integerTypes)

@@ -55,8 +55,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     bool isClassMember = typedefNode->Parent()->IsClassNode();
     SetAccess(typedefSymbol, specifiers, isClassMember);
     typedefSymbol->SetEvaluating();
-    bool willBeExported = typedefSymbol->WillBeExported();
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, typedefNode->TypeExpr(), willBeExported);
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, typedefNode->TypeExpr());
     typedefSymbol->ResetEvaluating();
     typedefSymbol->SetType(type);
     typedefSymbol->SetBound();

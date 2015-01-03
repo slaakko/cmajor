@@ -13,8 +13,6 @@
 
 namespace Cm { namespace Sym {
 
-const uint8_t internalByte = 0xFF;
-
 class TypeId
 {
 public:

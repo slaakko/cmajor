@@ -408,9 +408,12 @@ void StaticConstructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     initializers.Accept(visitor);
-    if (Body())
+    if (visitor.VisitBodies())
     {
-        Body()->Accept(visitor);
+        if (Body())
+        {
+            Body()->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }
@@ -502,9 +505,12 @@ void ConstructorNode::Accept(Visitor& visitor)
     visitor.BeginVisit(*this);
     initializers.Accept(visitor);
     const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
-    if (Body())
+    if (visitor.VisitBodies())
     {
-        Body()->Accept(visitor);
+        if (Body())
+        {
+            Body()->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }
@@ -577,9 +583,12 @@ void DestructorNode::Print(CodeFormatter& formatter)
 void DestructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (Body())
+    if (visitor.VisitBodies())
     {
-        Body()->Accept(visitor);
+        if (Body())
+        {
+            Body()->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }
@@ -656,9 +665,12 @@ void MemberFunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
-    if (Body())
+    if (visitor.VisitBodies())
     {
-        Body()->Accept(visitor);
+        if (Body())
+        {
+            Body()->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }
@@ -730,9 +742,12 @@ void ConversionFunctionNode::Print(CodeFormatter& formatter)
 void ConversionFunctionNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (Body())
+    if (visitor.VisitBodies())
     {
-        Body()->Accept(visitor);
+        if (Body())
+        {
+            Body()->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }

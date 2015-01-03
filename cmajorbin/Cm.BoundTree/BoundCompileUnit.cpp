@@ -13,10 +13,15 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundCompileUnit::BoundCompileUnit(const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : irFilePath(irFilePath_), symbolTable(symbolTable_), 
-    conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), irFunctionRepository()
+BoundCompileUnit::BoundCompileUnit(const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : fileScope(), irFilePath(irFilePath_), symbolTable(symbolTable_),
+    conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), pointerOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository()
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
+}
+
+void BoundCompileUnit::SetFileScope(Cm::Sym::FileScope* fileScope_)
+{
+    fileScope.reset(fileScope_);
 }
 
 void BoundCompileUnit::AddBoundNode(BoundNode* boundNode)

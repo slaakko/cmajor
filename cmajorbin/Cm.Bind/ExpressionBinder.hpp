@@ -15,6 +15,7 @@
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
+#include <Cm.Core/PointerOpRepository.hpp>
 #include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Bind {
@@ -34,11 +35,12 @@ private:
 class ExpressionBinder : public Cm::Ast::Visitor
 {
 public:
-    ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
+    ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
         Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
+    Cm::Core::PointerOpRepository& PointerOpRepository() { return pointerOpRepository; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     Cm::Sym::FileScope* FileScope() const { return fileScope; }
     Cm::BoundTree::BoundFunction* CurrentFunction() const { return currentFunction; }
@@ -68,13 +70,13 @@ public:
     void EndVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode) override;
     void EndVisit(Cm::Ast::NotNode& notNode) override;
     void EndVisit(Cm::Ast::ComplementNode& complementNode) override;
-    void Visit(Cm::Ast::AddrOfNode& addrOfNode) {}
-    void Visit(Cm::Ast::DerefNode& derefNode) {}
+    void Visit(Cm::Ast::AddrOfNode& addrOfNode) override;
+    void Visit(Cm::Ast::DerefNode& derefNode) override;
     void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) {}
     void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) {}
     void EndVisit(Cm::Ast::PostfixDecNode& postfixDecNode) {}
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
-    void Visit(Cm::Ast::ArrowNode& arrowNode) {}
+    void Visit(Cm::Ast::ArrowNode& arrowNode) override;
     void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
     void EndVisit(Cm::Ast::InvokeNode& invokeNode) override;
     void Visit(Cm::Ast::IndexNode& indexNode) {}
@@ -120,10 +122,13 @@ public:
     void Visit(Cm::Ast::CharNode& charNode) {}
     void Visit(Cm::Ast::VoidNode& voidNode) {}
     void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) {}
+
+    void GenerateTrueExpression(Cm::Ast::Node* node);
 private:
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ConversionTable& conversionTable;
     Cm::Core::ClassConversionTable& classConversionTable;
+    Cm::Core::PointerOpRepository& pointerOpRepository;
     Cm::Sym::ContainerScope* containerScope;
     Cm::Sym::FileScope* fileScope;
     BoundExpressionStack boundExpressionStack;

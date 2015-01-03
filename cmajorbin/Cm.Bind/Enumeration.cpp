@@ -39,8 +39,7 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             if (underlyingTypeNode)
             {
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(underlyingTypeNode);
-                bool willBeExported = enumTypeSymbol->WillBeExported();
-                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScope, underlyingTypeNode, willBeExported);
+                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScope, underlyingTypeNode);
                 if (underlyingType->IsBasicTypeSymbol())
                 {
                     enumTypeSymbol->SetUnderlyingType(underlyingType);

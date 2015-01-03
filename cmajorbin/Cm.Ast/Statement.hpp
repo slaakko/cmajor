@@ -227,6 +227,26 @@ private:
     std::unique_ptr<Node> condition;
 };
 
+class ForStatementNode : public StatementNode
+{
+public:
+    ForStatementNode(const Span& span_);
+    ForStatementNode(const Span& span_, StatementNode* init_, Node* condition_, Node* increment_, StatementNode* action_);
+    NodeType GetNodeType() const override { return NodeType::forStatementNode; }
+    Node* Clone() const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    void Print(CodeFormatter& formatter) override;
+    void Accept(Visitor& visitor) override;
+    bool HasCondition() const { return condition != nullptr; }
+    bool HasIncrement() const { return increment != nullptr; }
+private:
+    std::unique_ptr<StatementNode> init;
+    std::unique_ptr<Node> condition;
+    std::unique_ptr<Node> increment;
+    std::unique_ptr<StatementNode> action;
+};
+
 class RangeForStatementNode : public StatementNode
 {
 public:
@@ -244,24 +264,6 @@ private:
     std::unique_ptr<Node> varTypeExpr;
     std::unique_ptr<IdentifierNode> varId;
     std::unique_ptr<Node> container;
-    std::unique_ptr<StatementNode> action;
-};
-
-class ForStatementNode : public StatementNode
-{
-public:
-    ForStatementNode(const Span& span_);
-    ForStatementNode(const Span& span_, StatementNode* init_, Node* condition_, Node* increment_, StatementNode* action_);
-    NodeType GetNodeType() const override { return NodeType::forStatementNode; }
-    Node* Clone() const override;
-    void Read(Reader& reader) override;
-    void Write(Writer& writer) override;
-    void Print(CodeFormatter& formatter) override;
-    void Accept(Visitor& visitor) override;
-private:
-    std::unique_ptr<StatementNode> init;
-    std::unique_ptr<Node> condition;
-    std::unique_ptr<Node> increment;
     std::unique_ptr<StatementNode> action;
 };
 

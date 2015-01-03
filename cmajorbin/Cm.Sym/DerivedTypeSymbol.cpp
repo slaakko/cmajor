@@ -13,24 +13,25 @@
 
 namespace Cm { namespace Sym {
 
-TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations, bool makeInternal)
+TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations)
 {
     TypeId id = baseType->Id();
     int m = derivations.NumDerivations();
     for (int k = 0; k < m; ++k)
     {
         uint8_t derivationCode = 1 << uint8_t(derivations[k]);
+        uint8_t positionCode = 1 << k;
         int n = int(id.Rep().Tag().size());
         for (int i = 0; i < n; ++i)
         {
-            id.Rep().Tag().data[i] ^= derivationCode;
-        }
-    }
-    if (makeInternal)
-    {
-        for (uint8_t& dataByte : id.Rep().Tag().data)
-        {
-            dataByte ^= internalByte;
+            if ((i & 1) == 0)
+            {
+                id.Rep().Tag().data[i] ^= derivationCode;
+            }
+            else
+            {
+                id.Rep().Tag().data[i] ^= positionCode;
+            }
         }
     }
     return id;
@@ -44,6 +45,18 @@ bool HasPointertDerivation(const Cm::Ast::DerivationList& derivations)
         if (derivations[i] == Cm::Ast::Derivation::pointer) return true;
     }
     return false;
+}
+
+bool HasVoidPtrDerivation(const Cm::Ast::DerivationList& derivations)
+{
+    int numPointers = 0;
+    uint8_t n = derivations.NumDerivations();
+    for (uint8_t i = 0; i < n; ++i)
+    {
+        if (derivations[i] == Cm::Ast::Derivation::pointer) ++numPointers;
+        else return false;
+    }
+    return numPointers == 1;
 }
 
 int CountPointers(const Cm::Ast::DerivationList& derivations)
@@ -86,6 +99,11 @@ bool HasConstDerivation(const Cm::Ast::DerivationList& derivations)
         if (derivations[i] == Cm::Ast::Derivation::const_) return true;
     }
     return false;
+}
+
+bool HasConstReferenceDerivation(const Cm::Ast::DerivationList& derivations)
+{
+    return HasConstDerivation(derivations) && HasReferenceDerivation(derivations);
 }
 
 bool HasRvalueRefDerivation(const Cm::Ast::DerivationList& derivations)
@@ -165,6 +183,15 @@ void DerivedTypeSymbol::Read(Reader& reader)
 void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
 {
     baseType = type;
+}
+
+void DerivedTypeSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+{
+    if (Source() == SymbolSource::project)
+    {
+        exportedDerivedTypes.push_back(this);
+        SetSource(SymbolSource::library);
+    }
 }
 
 } } // namespace Cm::Sym

@@ -42,6 +42,17 @@ void DerivationList::Add(Derivation derivation)
     derivations[numDerivations++] = derivation;
 }
 
+void DerivationList::InsertFront(Derivation derivation)
+{
+    if (numDerivations >= maxDerivations)
+    {
+        throw std::runtime_error("too many derivations");
+    }
+    std::copy_backward(&derivations[0], &derivations[numDerivations], &derivations[numDerivations + 1]);
+    derivations[0] = derivation;
+    ++numDerivations;
+}
+
 void DerivationList::RemoveLastPointer()
 {
     for (uint8_t i = numDerivations - 1; i >= 0; --i)

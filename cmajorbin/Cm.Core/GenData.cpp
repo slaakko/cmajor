@@ -99,10 +99,6 @@ void GenData::MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::ve
 
 void GenData::MergeData(GenData& childData)
 {
-    if (!GetLabel() && childData.GetLabel())
-    {
-        labelHolder->SetLabel(childData.labelHolder->GetLabel());
-    }
     if (!childData.IsEmpty())
     {
         objects.push_back(childData.MainObject());
@@ -149,6 +145,11 @@ Emitter::Emitter(Ir::Intf::Function* irFunction_) : irFunction(irFunction_), got
 void Emitter::RequestLabelFor(GenData& genData)
 {
     labelRequestSet.insert(genData.GetLabelHolder());
+}
+
+void Emitter::RemoveLabelRequestFor(GenData& genData)
+{
+    labelRequestSet.erase(genData.GetLabelHolder());
 }
 
 void Emitter::Emit(Ir::Intf::Instruction* instruction)
@@ -226,14 +227,20 @@ void Emitter::Own(Ir::Intf::Type* type)
     }
 }
 
+GenResult::GenResult() : emitter(nullptr), flags()
+{
+}
+
 GenResult::GenResult(Emitter* emitter_, GenFlags flags_) : emitter(emitter_), flags(flags_)
 {
-    if (GetFlag(GenFlags::label, flags))
+    emitter->RequestLabelFor(genData);
+} 
+
+GenResult::~GenResult()
+{
+    if (emitter)
     {
-        Ir::Intf::LabelObject* label = Cm::IrIntf::CreateNextLocalLabel();
-        emitter->Own(label);
-        genData.GetLabelHolder()->SetLabel(label);
-        emitter->RequestLabelFor(genData);
+        emitter->RemoveLabelRequestFor(genData);
     }
 }
 
@@ -280,7 +287,7 @@ void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type)
         {
             Ir::Intf::Type* rvalueRefType = Cm::IrIntf::RvalueRef(baseType->GetIrType());
             emitter->Own(rvalueRefType);
-            Ir::Intf::RegVarPtr temp = Cm::IrIntf::CreateTemporaryRegVar(rvalueRefType);
+            Ir::Intf::RegVar* temp = Cm::IrIntf::CreateTemporaryRegVar(rvalueRefType);
             emitter->Own(temp);
             genData.SetMainObject(temp);
             return;

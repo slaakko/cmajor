@@ -114,7 +114,7 @@ void BoundConversion::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_) : BoundExpression(syntaxNode_), operand(operand_)
+BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_) : BoundExpression(syntaxNode_), operand(operand_), conversionFun(conversionFun_)
 {
 }
 

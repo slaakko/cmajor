@@ -50,8 +50,8 @@ Cm::BoundTree::BoundExpressionList BoundExpressionStack::Pop(int numExpressions)
 }
 
 ExpressionBinder::ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-    Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
-    Cm::Ast::Visitor(true), symbolTable(symbolTable_), conversionTable(conversionTable_), classConversionTable(classConversionTable_), 
+    Cm::Core::PointerOpRepository& pointerOpRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
+    Cm::Ast::Visitor(true), symbolTable(symbolTable_), conversionTable(conversionTable_), classConversionTable(classConversionTable_), pointerOpRepository(pointerOpRepository_),
     containerScope(containerScope_), fileScope(fileScope_), currentFunction(currentFunction_), expressionCount(0)
 {
 }
@@ -70,7 +70,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope->ClassOrNsScope()));
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, operand->GetType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, opGroupName, arguments, functionLookups, node->GetSpan(), conversions);
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, pointerOpRepository, opGroupName, arguments, functionLookups, node->GetSpan(), conversions);
     CheckAccess(currentFunction->GetFunctionSymbol(), node->GetSpan(), fun);
     if (conversions.size() != 1)
     {
@@ -101,7 +101,7 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, left->GetType()->GetContainerScope()->ClassOrNsScope()));
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, right->GetType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, opGroupName, arguments, functionLookups, node->GetSpan(), conversions);
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, pointerOpRepository, opGroupName, arguments, functionLookups, node->GetSpan(), conversions);
     CheckAccess(currentFunction->GetFunctionSymbol(), node->GetSpan(), fun);
     if (conversions.size() != 2)
     {
@@ -258,11 +258,17 @@ void ExpressionBinder::EndVisit(Cm::Ast::RemNode& remNode)
 
 void ExpressionBinder::EndVisit(Cm::Ast::PrefixIncNode& prefixIncNode)
 {
+    Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
+    operand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+    boundExpressionStack.Push(operand);
     BindUnaryOp(&prefixIncNode, "operator++");
 }
 
 void ExpressionBinder::EndVisit(Cm::Ast::PrefixDecNode& prefixDecNode)
 {
+    Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
+    operand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+    boundExpressionStack.Push(operand);
     BindUnaryOp(&prefixDecNode, "operator--");
 }
 
@@ -284,6 +290,21 @@ void ExpressionBinder::EndVisit(Cm::Ast::NotNode& notNode)
 void ExpressionBinder::EndVisit(Cm::Ast::ComplementNode& complementNode) 
 {
     BindUnaryOp(&complementNode, "operator~");
+}
+
+void ExpressionBinder::Visit(Cm::Ast::AddrOfNode& addrOfNode)
+{
+    addrOfNode.Subject()->Accept(*this);
+    Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
+    operand->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+    boundExpressionStack.Push(operand);
+    BindUnaryOp(&addrOfNode, "operator&");
+}
+
+void ExpressionBinder::Visit(Cm::Ast::DerefNode& derefNode)
+{
+    derefNode.Subject()->Accept(*this);
+    BindUnaryOp(&derefNode, "operator*");
 }
 
 void ExpressionBinder::Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode)
@@ -418,10 +439,11 @@ void ExpressionBinder::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::NullLiteralNode& nullLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().MakeGenericPtrType(nullLiteralNode.GetSpan());
+    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::nullPtrId));
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&nullLiteralNode);
     literalNode->SetType(type);
-    literalNode->SetValue(nullptr);
+    Cm::Sym::Value* value = new Cm::Sym::NullValue();
+    literalNode->SetValue(value);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -447,6 +469,13 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
     {
         throw Exception("expression '" + expression->SyntaxNode()->FullName() + "' must denote a namespace, class type or enumerated type", dotNode.Subject()->GetSpan());
     }
+}
+
+void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
+{
+    arrowNode.Subject()->Accept(*this);
+    BindUnaryOp(&arrowNode, "operator->");
+    // todo
 }
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
@@ -480,7 +509,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::InvokeNode& invokeNode)
     }
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, functionGroupName, resolutionArguments, functionLookups, invokeNode.GetSpan(), conversions);
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, pointerOpRepository, functionGroupName, resolutionArguments, functionLookups, invokeNode.GetSpan(), conversions);
     CheckAccess(currentFunction->GetFunctionSymbol(), invokeNode.GetSpan(), fun);
     if (conversions.size() != numArgs)
     {
@@ -678,10 +707,18 @@ void ExpressionBinder::BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::Functio
 void ExpressionBinder::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    Cm::Sym::TypeSymbol* toType = ResolveType(symbolTable, containerScope, fileScope, targetTypeExpr, false);
+    Cm::Sym::TypeSymbol* toType = ResolveType(symbolTable, containerScope, fileScope, targetTypeExpr);
     castNode.SourceExpr()->Accept(*this);
     Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
-    Cm::BoundTree::BoundCast* cast = new Cm::BoundTree::BoundCast(&castNode, operand);
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(toType, castNode.GetSpan())));
+    resolutionArguments.push_back(Cm::Core::Argument(operand->GetArgumentCategory(), operand->GetType()));
+    Cm::Sym::FunctionLookupSet functionLookups;
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, toType->GetContainerScope()->ClassOrNsScope()));
+    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), PointerOpRepository(), "@constructor", resolutionArguments, functionLookups,
+        castNode.GetSpan(), Cm::Core::ConversionType::explicit_, conversions);
+    Cm::BoundTree::BoundCast* cast = new Cm::BoundTree::BoundCast(&castNode, operand, convertingCtor);
     cast->SetType(toType);
     boundExpressionStack.Push(cast);
 }
@@ -701,6 +738,22 @@ void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
     {
         throw Exception("symbol '" + identifierNode.Str() + "' not found");
     }
+}
+
+void ExpressionBinder::GenerateTrueExpression(Cm::Ast::Node* node)
+{
+    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+    Cm::Sym::Value* value1 = new Cm::Sym::BoolValue(true);
+    Cm::BoundTree::BoundLiteral* literalNode1 = new Cm::BoundTree::BoundLiteral(node);
+    literalNode1->SetType(type);
+    literalNode1->SetValue(value1);
+    boundExpressionStack.Push(literalNode1);
+    Cm::Sym::Value* value2 = new Cm::Sym::BoolValue(true);
+    Cm::BoundTree::BoundLiteral* literalNode2 = new Cm::BoundTree::BoundLiteral(node);
+    literalNode2->SetType(type);
+    literalNode2->SetValue(value2);
+    boundExpressionStack.Push(literalNode2);
+    BindBinaryOp(node, "operator==");
 }
 
 } } // namespace Cm::Bind

@@ -7,16 +7,15 @@
 
 ========================================================================*/
 
-#ifndef CM_BIND_TYPE_RESOLVER_INCLUDED
-#define CM_BIND_TYPE_RESOLVER_INCLUDED
+#ifndef CM_BIND_DELEGATE_INCLUDED
+#define CM_BIND_DELEGATE_INCLUDED
 #include <Cm.Sym/SymbolTable.hpp>
-#include <Cm.Sym/TypeSymbol.hpp>
-#include <Cm.Ast/Visitor.hpp>
+#include <Cm.Ast/Delegate.hpp>
 
 namespace Cm { namespace Bind {
 
-Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::Node* typeExpr);
+void BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::DelegateNode* delegateNode);
 
 } } // namespace Cm::Bind
 
-#endif // CM_BIND_TYPE_RESOLVER_INCLUDED
+#endif // CM_BIND_DELEGATE_INCLUDED

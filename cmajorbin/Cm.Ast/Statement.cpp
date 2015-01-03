@@ -780,80 +780,14 @@ void DoStatementNode::Print(CodeFormatter& formatter)
 void DoStatementNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    statement->Accept(visitor);
+    if (!visitor.SkipContent())
+    {
+        statement->Accept(visitor);
+    }
     if (visitor.VisitExpressions())
     {
         condition->Accept(visitor);
     }
-    visitor.EndVisit(*this);
-}
-
-RangeForStatementNode::RangeForStatementNode(const Span& span_) : StatementNode(span_)
-{
-}
-
-RangeForStatementNode::RangeForStatementNode(const Span& span_, Node* varTypeExpr_, IdentifierNode* varId_, Node* container_, StatementNode* action_) :
-    StatementNode(span_), varTypeExpr(varTypeExpr_), varId(varId_), container(container_), action(action_)
-{
-    varTypeExpr->SetParent(this);
-    varId->SetParent(this);
-    container->SetParent(this);
-    action->SetParent(this);
-}
-
-Node* RangeForStatementNode::Clone() const
-{
-    RangeForStatementNode* clone = new RangeForStatementNode(GetSpan(), varTypeExpr->Clone(), static_cast<IdentifierNode*>(varId->Clone()), container->Clone(), static_cast<StatementNode*>(action->Clone()));
-    CloneLabelTo(clone);
-    return clone;
-}
-
-void RangeForStatementNode::Read(Reader& reader)
-{
-    StatementNode::Read(reader);
-    varTypeExpr.reset(reader.ReadNode());
-    varTypeExpr->SetParent(this);
-    varId.reset(reader.ReadIdentifierNode());
-    varId->SetParent(this);
-    container.reset(reader.ReadNode());
-    container->SetParent(this);
-    action.reset(reader.ReadStatementNode());
-    action->SetParent(this);
-}
-
-void RangeForStatementNode::Write(Writer& writer)
-{
-    StatementNode::Write(writer);
-    writer.Write(varTypeExpr.get());
-    writer.Write(varId.get());
-    writer.Write(container.get());
-    writer.Write(action.get());
-}
-
-void RangeForStatementNode::Print(CodeFormatter& formatter)
-{
-    StatementNode::Print(formatter);
-    formatter.Write("for (" + varTypeExpr->ToString() + " " + varId->ToString() + " : " + container->ToString() + ")");
-    if (action->IsCompoundStatementNode())
-    {
-        formatter.WriteLine();
-        action->Print(formatter);
-    }
-    else
-    {
-        formatter.Write(" ");
-        action->Print(formatter);
-    }
-}
-
-void RangeForStatementNode::Accept(Visitor& visitor)
-{
-    visitor.BeginVisit(*this);
-    if (visitor.VisitExpressions())
-    {
-        container->Accept(visitor);
-    }
-    action->Accept(visitor);
     visitor.EndVisit(*this);
 }
 
@@ -964,7 +898,10 @@ void ForStatementNode::Print(CodeFormatter& formatter)
 void ForStatementNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    init->Accept(visitor);
+    if (!visitor.SkipContent())
+    {
+        init->Accept(visitor);
+    }
     if (visitor.VisitExpressions())
     {
         if (condition)
@@ -975,6 +912,78 @@ void ForStatementNode::Accept(Visitor& visitor)
         {
             increment->Accept(visitor);
         }
+    }
+    if (!visitor.SkipContent())
+    {
+        action->Accept(visitor);
+    }
+    visitor.EndVisit(*this);
+}
+
+RangeForStatementNode::RangeForStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+RangeForStatementNode::RangeForStatementNode(const Span& span_, Node* varTypeExpr_, IdentifierNode* varId_, Node* container_, StatementNode* action_) :
+    StatementNode(span_), varTypeExpr(varTypeExpr_), varId(varId_), container(container_), action(action_)
+{
+    varTypeExpr->SetParent(this);
+    varId->SetParent(this);
+    container->SetParent(this);
+    action->SetParent(this);
+}
+
+Node* RangeForStatementNode::Clone() const
+{
+    RangeForStatementNode* clone = new RangeForStatementNode(GetSpan(), varTypeExpr->Clone(), static_cast<IdentifierNode*>(varId->Clone()), container->Clone(), static_cast<StatementNode*>(action->Clone()));
+    CloneLabelTo(clone);
+    return clone;
+}
+
+void RangeForStatementNode::Read(Reader& reader)
+{
+    StatementNode::Read(reader);
+    varTypeExpr.reset(reader.ReadNode());
+    varTypeExpr->SetParent(this);
+    varId.reset(reader.ReadIdentifierNode());
+    varId->SetParent(this);
+    container.reset(reader.ReadNode());
+    container->SetParent(this);
+    action.reset(reader.ReadStatementNode());
+    action->SetParent(this);
+}
+
+void RangeForStatementNode::Write(Writer& writer)
+{
+    StatementNode::Write(writer);
+    writer.Write(varTypeExpr.get());
+    writer.Write(varId.get());
+    writer.Write(container.get());
+    writer.Write(action.get());
+}
+
+void RangeForStatementNode::Print(CodeFormatter& formatter)
+{
+    StatementNode::Print(formatter);
+    formatter.Write("for (" + varTypeExpr->ToString() + " " + varId->ToString() + " : " + container->ToString() + ")");
+    if (action->IsCompoundStatementNode())
+    {
+        formatter.WriteLine();
+        action->Print(formatter);
+    }
+    else
+    {
+        formatter.Write(" ");
+        action->Print(formatter);
+    }
+}
+
+void RangeForStatementNode::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    if (visitor.VisitExpressions())
+    {
+        container->Accept(visitor);
     }
     action->Accept(visitor);
     visitor.EndVisit(*this);

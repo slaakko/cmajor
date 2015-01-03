@@ -132,11 +132,13 @@ private:
 class BoundCast : public BoundExpression
 {
 public:
-    BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_);
+    BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_);
+    Cm::Sym::FunctionSymbol* ConversionFun() const { return conversionFun; }
     void Accept(Visitor& visitor) override;
     bool IsCast() const override { return true; }
 private:
     std::unique_ptr<BoundExpression> operand;
+    Cm::Sym::FunctionSymbol* conversionFun;
 };
 
 class BoundUnaryOp : public BoundExpression

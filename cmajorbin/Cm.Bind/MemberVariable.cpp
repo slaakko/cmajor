@@ -47,8 +47,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     Cm::Ast::Specifiers specifiers = memberVariableNode->GetSpecifiers();
     bool isClassMember = true;
     SetAccess(memberVariableSymbol, specifiers, isClassMember);
-    bool willBeExported = memberVariableSymbol->WillBeExported();
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, memberVariableNode->TypeExpr(), willBeExported);
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, memberVariableNode->TypeExpr());
     if (type->Access() < memberVariableSymbol->Access())
     {
         throw Exception("type of a member variable must be at least as accessible as the member variable itself", type->GetSpan(), memberVariableSymbol->GetSpan());
