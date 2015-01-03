@@ -62,12 +62,20 @@ void FunctionSymbol::Write(Writer& writer)
 {
     ContainerSymbol::Write(writer);
     writer.GetBinaryWriter().Write(groupName);
+    if (groupName == "pow")
+    {
+        int x = 0;
+    }
 }
 
 void FunctionSymbol::Read(Reader& reader)
 {
     ContainerSymbol::Read(reader);
     groupName = reader.GetBinaryReader().ReadString();
+    if (groupName == "pow")
+    {
+        int x = 0;
+    }
 }
 
 void FunctionSymbol::ComputeName()

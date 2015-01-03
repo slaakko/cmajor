@@ -20,6 +20,7 @@ class ParameterSymbol : public Symbol
 {
 public:
     ParameterSymbol(const Span& span_, const std::string& name_);
+    SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     SymbolType GetSymbolType() const override { return SymbolType::parameterSymbol; }
     std::string TypeString() const override { return "parameter"; };
     bool IsParameterSymbol() const override { return true; }

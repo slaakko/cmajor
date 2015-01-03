@@ -20,9 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Build.hpp" />
+    <ClInclude Include="Main.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Build.cpp" />
+    <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7AF774D1-562D-403E-93B4-B1AD3FA4DDCA}</ProjectGuid>

@@ -92,7 +92,6 @@ FunctionGroupSymbol* ContainerSymbol::MakeFunctionGroupSymbol(const std::string&
 
 void ContainerSymbol::Dump(CodeFormatter& formatter)
 {
-    formatter.Write("begin "); 
     Symbol::Dump(formatter);
     formatter.IncIndent();
     for (const std::unique_ptr<Symbol>& symbol : symbols)
@@ -100,7 +99,6 @@ void ContainerSymbol::Dump(CodeFormatter& formatter)
         symbol->Dump(formatter);
     }
     formatter.DecIndent();
-    formatter.WriteLine("end " + Name());
 }
 
 void ContainerSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)

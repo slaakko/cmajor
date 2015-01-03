@@ -28,6 +28,10 @@ Cm::Sym::FunctionSymbol* BindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym
         {
             functionSymbol->SetExternal();
         }
+        if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
+        {
+            functionSymbol->SetCDecl();
+        }
         if (functionNode->ReturnTypeExpr())
         {
             Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScope, functionNode->ReturnTypeExpr());

@@ -18,6 +18,7 @@ class FunctionGroupSymbol : public Symbol
 {
 public:
     FunctionGroupSymbol(const Span& span_, const std::string& name_, ContainerScope* containerScope_);
+    bool IsExportSymbol() const override { return false; }
     SymbolType GetSymbolType() const override { return SymbolType::functionGroupSymbol; }
     bool IsFunctionGroupSymbol() const override { return true; }
     std::string TypeString() const override { return "function group"; };
@@ -25,6 +26,7 @@ public:
     void CollectViableFunctions(int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     ContainerScope* GetContainerScope() override { return containerScope; }
+    void Dump(CodeFormatter& formatter) override;
 private:
     std::string name;
     typedef std::unordered_map<int, std::vector<FunctionSymbol*>> ArityFunctionListMap;

@@ -25,6 +25,7 @@ public:
     TypeSymbol* MakeConstReferenceType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeConstPointerType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeConstCharPtrType(const Span& span);
+    TypeSymbol* MakeConstCharPtrPtrType(const Span& span);
     TypeSymbol* MakeGenericPtrType(const Span& span);
     TypeSymbol* MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
     TypeSymbol* MakePlainType(TypeSymbol* type);

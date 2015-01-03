@@ -31,8 +31,8 @@ void Reader::MarkSymbolsBound()
 
 SymbolType Reader::ReadSymbolType()
 {
-uint8_t st = binaryReader.ReadByte();
-return SymbolType(st);
+    uint8_t st = binaryReader.ReadByte();
+    return SymbolType(st);
 }
 
 Span Reader::ReadSpan()
@@ -141,6 +141,20 @@ Symbol* Reader::ReadSymbol()
         symbol->Read(*this);
         return symbol;
     }
+}
+
+bool Reader::AllTypesFetched()
+{
+    FetchTypeMapIt e = fetchTypeMap.end();
+    for (FetchTypeMapIt i = fetchTypeMap.begin(); i != e; ++i)
+    {
+        FetchTypeList& ftl = i->second;
+        if (!ftl.empty())
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 } } // namespace Cm::Sym

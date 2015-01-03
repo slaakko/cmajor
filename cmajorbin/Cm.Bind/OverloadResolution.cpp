@@ -325,19 +325,20 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
         throw Exception("overload resolution failed: no overloads taking " + std::to_string(arity) + " arguments found in function group '" + groupName + "'", span);
     }
     std::vector<FunctionMatch> functionMatches;
+    Cm::Core::ConvertingCtor* convertingCtor = nullptr;
+    bool mustCast = false;
     for (Cm::Sym::FunctionSymbol* viableFunction : viableFunctions)
     {
         if (viableFunction->IsConvertingConstructor())
         {
-            Cm::Core::ConvertingCtor* convertingCtor = static_cast<Cm::Core::ConvertingCtor*>(viableFunction);
+            convertingCtor = static_cast<Cm::Core::ConvertingCtor*>(viableFunction);
             if (convertingCtor->GetConversionType() == Cm::Core::ConversionType::explicit_ && conversionType == Cm::Core::ConversionType::implicit)
             {
                 FunctionMatch functionMatch(viableFunction);
-                bool candidateFound = FindConversions(symbolTable, conversionTable, classConversionTable, pointerOpRepository, viableFunction->Parameters(), arguments, Cm::Core::ConversionType::explicit_, span, 
-                    functionMatch);
+                bool candidateFound = FindConversions(symbolTable, conversionTable, classConversionTable, pointerOpRepository, viableFunction->Parameters(), arguments, Cm::Core::ConversionType::explicit_, span, functionMatch);
                 if (candidateFound)
                 {
-                    throw Exception("overload resolution failed: cannot convert '" + arguments[1].Type()->FullName() + "' to '" + convertingCtor->GetTargetType()->FullName() + "' without a cast", span);
+                    mustCast = true;
                 }
                 continue;
             }
@@ -351,9 +352,16 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
     }
     if (functionMatches.empty())
     {
-        std::string overloadName = MakeOverloadName(groupName, arguments);
-        throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
-            std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+        if (mustCast)
+        {
+            throw Exception("overload resolution failed: cannot convert '" + arguments[1].Type()->FullName() + "' to '" + convertingCtor->GetTargetType()->FullName() + "' without a cast", span);
+        }
+        else
+        {
+            std::string overloadName = MakeOverloadName(groupName, arguments);
+            throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+        }
     }
     else
     {

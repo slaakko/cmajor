@@ -21,7 +21,8 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 
 namespace Cm { namespace Bind {
 
-Binder::Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : Cm::Ast::Visitor(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentParent(nullptr)
+Binder::Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : Cm::Ast::Visitor(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentParent(nullptr),
+    userMainFunction(nullptr)
 {
 }
 
@@ -126,6 +127,10 @@ void Binder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
         Cm::Sym::FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&functionNode);
         BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&functionNode));
         boundFunction.reset(new Cm::BoundTree::BoundFunction(&functionNode, functionSymbol));
+        if (functionSymbol->GroupName() == "main")
+        {
+            userMainFunction = functionSymbol;
+        }
     }
 }
 
@@ -178,6 +183,7 @@ void Binder::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
 void Binder::BeginVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
 {
     BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&rangeForStatementNode));
+    // todo
 }
 
 void Binder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
@@ -187,11 +193,36 @@ void Binder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::ForStatementNode& forStatementNode)
 {
+    parentStack.push(currentParent.release());
+    currentParent.reset(new Cm::BoundTree::BoundForStatement(&forStatementNode));
     BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&forStatementNode));
 }
 
 void Binder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
 {
+    Cm::BoundTree::BoundParentStatement* cp = currentParent.release();
+    if (cp->IsBoundForStatement())
+    {
+        Cm::BoundTree::BoundForStatement* forStatement = static_cast<Cm::BoundTree::BoundForStatement*>(cp);
+        ForStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
+            currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), forStatement);
+        forStatementNode.Accept(binder);
+        Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
+        parentStack.pop();
+        if (parent)
+        {
+            parent->AddStatement(forStatement);
+            currentParent.reset(parent);
+        }
+        else
+        {
+            throw std::runtime_error("no parent");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("not a for statement");
+    }
     EndContainerScope();
 }
 
@@ -201,10 +232,6 @@ void Binder::BeginVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
         currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     returnStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
-}
-
-void Binder::EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
-{
 }
 
 void Binder::BeginVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode)
@@ -311,10 +338,35 @@ void Binder::EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::DoStatementNode& doStatementNode)
 {
+    parentStack.push(currentParent.release());
+    currentParent.reset(new Cm::BoundTree::BoundDoStatement(&doStatementNode));
 }
 
 void Binder::EndVisit(Cm::Ast::DoStatementNode& doStatementNode)
 {
+    Cm::BoundTree::BoundParentStatement* cp = currentParent.release();
+    if (cp->IsBoundDoStatement())
+    {
+        Cm::BoundTree::BoundDoStatement* doStatement = static_cast<Cm::BoundTree::BoundDoStatement*>(cp);
+        DoStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
+            currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), doStatement);
+        doStatementNode.Accept(binder);
+        Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
+        parentStack.pop();
+        if (parent)
+        {
+            parent->AddStatement(doStatement);
+            currentParent.reset(parent);
+        }
+        else
+        {
+            throw std::runtime_error("no parent");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("not a do statement");
+    }
 }
 
 void Binder::Visit(Cm::Ast::BreakStatementNode& breakStatementNode)
@@ -353,20 +405,12 @@ void Binder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNod
     currentParent->AddStatement(binder.Result());
 }
 
-void Binder::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
-{
-}
-
 void Binder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
     ConstructionStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
         currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     constructionStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
-}
-
-void Binder::EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
-{
 }
 
 void Binder::BeginVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode)

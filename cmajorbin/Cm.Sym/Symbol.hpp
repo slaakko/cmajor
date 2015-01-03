@@ -61,10 +61,11 @@ enum class SymbolFlags : uint8_t
     access = 1 << 0 | 1 << 1,
     bound = 1 << 2,
     project = 1 << 3,
-    external = 1 << 4
+    external = 1 << 4,
+    cdecl_ = 1 << 5
 };
 
-std::string SymbolFlagStr(SymbolFlags flags);
+std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess);
 
 inline SymbolFlags operator~(SymbolFlags flag)
 {
@@ -101,6 +102,8 @@ public:
     void SetPublic() { SetAccess(SymbolAccess::public_); }
     bool IsExternal() const { return GetFlag(SymbolFlags::external); }
     void SetExternal() { SetFlag(SymbolFlags::external); }
+    bool IsCDecl() const { return GetFlag(SymbolFlags::cdecl_); }
+    void SetCDecl() { SetFlag(SymbolFlags::cdecl_); }
     SymbolSource Source() const { return GetFlag(SymbolFlags::project) ? SymbolSource::project : SymbolSource::library; }
     void SetSource(SymbolSource source) { if (source == SymbolSource::project) SetFlag(SymbolFlags::project); else ResetFlag(SymbolFlags::project); }
     Symbol* Parent() const { return parent; }

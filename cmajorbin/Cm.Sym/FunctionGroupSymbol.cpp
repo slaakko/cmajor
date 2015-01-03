@@ -39,4 +39,8 @@ void FunctionGroupSymbol::CollectViableFunctions(int arity, std::unordered_set<F
     }
 }
 
+void FunctionGroupSymbol::Dump(CodeFormatter& formatter)
+{
+}
+
 } } // namespace Cm::Sym

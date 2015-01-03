@@ -9,11 +9,13 @@
 
 #ifndef CM_BUILD_BUILD_INCLUDED
 #define CM_BUILD_BUILD_INCLUDED
-#include <string>
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 
 namespace Cm { namespace Build {
 
 void Build(const std::string& projectFilePath);
+void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
+void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 
 } } // namespace Bm::Build
 
