@@ -38,16 +38,45 @@ std::string AccessStr(SymbolAccess access)
     return accessStr[uint8_t(access)];
 }
 
-std::string SymbolFlagStr(SymbolFlags flags)
+std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess)
 {
-    std::string s = AccessStr(SymbolAccess(flags & SymbolFlags::access));
+    SymbolAccess access = SymbolAccess(flags & SymbolFlags::access);
+    if (access != declaredAccess)
+    {
+        access = declaredAccess;
+    }
+    std::string s = AccessStr(access);
+    if ((flags & SymbolFlags::bound) != SymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("bound");
+    }
     if ((flags & SymbolFlags::project) != SymbolFlags::none)
     {
-        if (s.empty())
+        if (!s.empty())
         {
             s.append(" ");
         }
         s.append("project");
+    }
+    if ((flags & SymbolFlags::external) != SymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("external");
+    }
+    if ((flags & SymbolFlags::cdecl_) != SymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("cdecl");
     }
     return s;
 }
@@ -225,7 +254,7 @@ ContainerSymbol* Symbol::ClassOrNs() const
 
 void Symbol::Dump(CodeFormatter& formatter)
 {
-    std::string f = SymbolFlagStr(flags);
+    std::string f = SymbolFlagStr(flags, DeclaredAccess());
     if (!f.empty())
     {
         f.append(1, ' ');

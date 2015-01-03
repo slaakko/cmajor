@@ -55,11 +55,20 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
         irParameters.push_back(irParameter);
     }
     std::string functionGroupName = function->GroupName();
-    if (functionGroupName == "main")
+    if (functionGroupName.empty())
+    {
+        functionGroupName = "main";
+    }
+    else if (functionGroupName == "main")
     {
         functionGroupName = "user" + Cm::IrIntf::GetPrivateSeparator() + "main";
     }
-    Ir::Intf::Function* irFunction = Cm::IrIntf::CreateFunction(Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, std::vector<Cm::Sym::TypeSymbol*>(), function->Parameters()), irReturnType, irParameters);
+    std::string functionName = functionGroupName;
+    if (!function->IsCDecl())
+    {
+        functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, std::vector<Cm::Sym::TypeSymbol*>(), function->Parameters());
+    }
+    Ir::Intf::Function* irFunction = Cm::IrIntf::CreateFunction(functionName, irReturnType, irParameters);
     ownedIrFunctions.push_back(std::unique_ptr<Ir::Intf::Function>(irFunction));
     irFunctionMap[function] = irFunction;
     return irFunction;

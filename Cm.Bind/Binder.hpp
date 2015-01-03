@@ -20,6 +20,8 @@ class Binder: public Cm::Ast::Visitor
 {
 public:
     Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_);
+    Cm::Sym::FunctionSymbol* GetUserMainFunction() const { return userMainFunction; }
+
     void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
     void EndVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
 
@@ -45,7 +47,6 @@ public:
     void EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode) override;
 
     void BeginVisit(Cm::Ast::ReturnStatementNode& returnStatementNode) override;
-    void EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode) override;
     void BeginVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode) override;
     void EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode) override;
     void BeginVisit(Cm::Ast::SwitchStatementNode& switchStatementNode) override;
@@ -68,9 +69,7 @@ public:
     void BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
     void EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
     void BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
-    void EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
-    void EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
     void BeginVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode) override;
     void EndVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode) override;
     void BeginVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode) override;
@@ -101,6 +100,7 @@ private:
     std::unique_ptr<Cm::BoundTree::BoundFunction> boundFunction;
     std::unique_ptr<Cm::BoundTree::BoundParentStatement> currentParent;
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
+    Cm::Sym::FunctionSymbol* userMainFunction;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
 };

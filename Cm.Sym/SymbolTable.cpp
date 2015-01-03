@@ -335,9 +335,10 @@ void SymbolTable::Export(Writer& writer)
     std::vector<TypeSymbol*> exportedDerivedTypes;
     globalNs.CollectExportedDerivedTypes(exportedDerivedTypes);
     writer.Write(&globalNs);
+    writer.GetBinaryWriter().Write(int(exportedDerivedTypes.size()));
     for (TypeSymbol* exportedDerivedType : exportedDerivedTypes)
     {
-        exportedDerivedType->Write(writer);
+        writer.Write(exportedDerivedType);
     }
 }
 

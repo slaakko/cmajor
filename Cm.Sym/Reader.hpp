@@ -44,6 +44,7 @@ public:
     void BackpatchType(TypeSymbol* type);
     void SetSpanFileIndexOffset(int spanFileIndexOffset_);
     void MarkSymbolsBound();
+    bool AllTypesFetched();
 private:
     BinaryReader binaryReader;
     SymbolTable& symbolTable;

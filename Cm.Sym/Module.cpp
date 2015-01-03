@@ -11,6 +11,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Core/InitSymbolTable.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
 #include <iostream>
@@ -121,6 +122,7 @@ void Module::ImportTo(SymbolTable& symbolTable)
 void Module::Dump()
 {
     SymbolTable symbolTable;
+    Cm::Core::InitSymbolTable(symbolTable);
     Reader reader(filePath, symbolTable);
     char readModuleFileId[4];
     try
@@ -168,6 +170,10 @@ void Module::Dump()
         }
     }
     formatter.WriteLine("end of module code file");
+    if (!reader.AllTypesFetched())
+    {
+        formatter.WriteLine("not all types fetched!");
+    }
 }
 
 } } // namespace Cm::Sym
