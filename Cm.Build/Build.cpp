@@ -18,7 +18,7 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Module.hpp>
 #include <Cm.Bind/Prebinder.hpp>
-#include <Cm.Bind/FunctionBinder.hpp>
+#include <Cm.Bind/Binder.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
@@ -75,8 +75,8 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& sy
 
 void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    Cm::Bind::FunctionBinder functionBinder(boundCompileUnit);
-    compileUnit->Accept(functionBinder);
+    Cm::Bind::Binder binder(boundCompileUnit);
+    compileUnit->Accept(binder);
 }
 
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
