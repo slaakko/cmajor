@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Binder.hpp" />
     <ClInclude Include="Class.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
@@ -27,7 +28,6 @@
     <ClInclude Include="Exception.hpp" />
     <ClInclude Include="ExpressionBinder.hpp" />
     <ClInclude Include="Function.hpp" />
-    <ClInclude Include="FunctionBinder.hpp" />
     <ClInclude Include="LocalVariable.hpp" />
     <ClInclude Include="MemberVariable.hpp" />
     <ClInclude Include="OverloadResolution.hpp" />
@@ -39,6 +39,7 @@
     <ClInclude Include="Access.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Binder.cpp" />
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
@@ -47,7 +48,6 @@
     <ClCompile Include="Excecption.cpp" />
     <ClCompile Include="ExpressionBinder.cpp" />
     <ClCompile Include="Function.cpp" />
-    <ClCompile Include="FunctionBinder.cpp" />
     <ClCompile Include="LocalVariable.cpp" />
     <ClCompile Include="MemberVariable.cpp" />
     <ClCompile Include="OverloadResolution.cpp" />
