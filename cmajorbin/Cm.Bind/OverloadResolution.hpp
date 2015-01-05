@@ -11,7 +11,7 @@
 #define CM_BIND_OVERLOAD_RESOLUTION_INCLUDED
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
-#include <Cm.Core/PointerOpRepository.hpp>
+#include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ConversionTable.hpp>
@@ -21,11 +21,11 @@ namespace Cm { namespace Bind {
 using Cm::Parsing::Span;
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
-    Cm::Core::PointerOpRepository &pointerOpRepository, const std::string& groupName,  const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, 
+    Cm::Core::DerivedTypeOpRepository &derivedTypeOpRepository, const std::string& groupName,  const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, 
     std::vector<Cm::Sym::FunctionSymbol*>& conversions);
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
-    Cm::Core::PointerOpRepository& pointerOpRepository, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, 
+    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, 
     Cm::Core::ConversionType conversionType, std::vector<Cm::Sym::FunctionSymbol*>& conversions);
 
 

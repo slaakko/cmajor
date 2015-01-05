@@ -27,9 +27,12 @@ public:
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;
     void SetType(TypeSymbol* type_) { type = type_; }
-    void SetType(TypeSymbol* type_, int index) override;
+    void SetType(TypeSymbol* type_, int index_) override;
+    int Index() const { return index; }
+    void SetIndex(int index_) { index = index_; }
 private:
     TypeSymbol* type;
+    int index;
 };
 
 } } // namespace Cm::Sym

@@ -90,7 +90,11 @@ void StackVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
     emitter.Own(ptrType);
     Ir::Intf::RegVar* ptr = CreateTemporaryRegVar(ptrType);
     emitter.Own(ptr);
-    emitter.Emit(GetElementPtr(memberVar.Ptr()->GetType(), ptr, memberVar.Ptr(), CreateI32Constant(0), CreateI32Constant(memberVar.Index())));
+    Ir::Intf::Object* zero = CreateI32Constant(0);
+    emitter.Own(zero);
+    Ir::Intf::Object* index = CreateI32Constant(memberVar.Index());
+    emitter.Own(index);
+    emitter.Emit(GetElementPtr(memberVar.Ptr()->GetType(), ptr, memberVar.Ptr(), zero, index));
     Ir::Intf::RegVar* value = CreateTemporaryRegVar(type);
     emitter.Own(value);
     emitter.Emit(Load(ptrType, value, ptr));
@@ -172,7 +176,11 @@ void StackVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::
     emitter.Own(ptrType);
     Ir::Intf::RegVar* ptr = CreateTemporaryRegVar(ptrType);
     emitter.Own(ptr);
-    emitter.Emit(GetElementPtr(memberVar.Ptr()->GetType(), ptr, memberVar.Ptr(), CreateI32Constant(0), CreateI32Constant(memberVar.Index())));
+    Ir::Intf::Object* zero = CreateI32Constant(0);
+    emitter.Own(zero);
+    Ir::Intf::Object* index = CreateI32Constant(memberVar.Index());
+    emitter.Own(index);
+    emitter.Emit(GetElementPtr(memberVar.Ptr()->GetType(), ptr, memberVar.Ptr(), zero, index));
     Ir::Intf::RegVar* value = CreateTemporaryRegVar(type);
     emitter.Own(value);
     emitter.Emit(Load(type, value, ptr));

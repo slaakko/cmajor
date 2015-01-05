@@ -61,6 +61,7 @@ void Binder::BeginVisit(Cm::Ast::ClassNode& classNode)
     {
         Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&classNode);
         Cm::Sym::ClassTypeSymbol* classTypeSymbol = containerScope->Class();
+        boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
         boundClass.reset(new Cm::BoundTree::BoundClass(classTypeSymbol, &classNode));
         BeginContainerScope(containerScope);
     }
@@ -89,7 +90,7 @@ void Binder::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 void Binder::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
     CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
-    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(), boundFunction.get());
+    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(), boundFunction.get());
     boundClass->AddBoundNode(boundFunction.release());
     EndContainerScope();
 }
@@ -104,7 +105,7 @@ void Binder::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
 void Binder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 {
     CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
-    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(), boundFunction.get());
+    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(), boundFunction.get());
     boundClass->AddBoundNode(boundFunction.release());
     EndContainerScope();
 }
@@ -119,7 +120,7 @@ void Binder::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 void Binder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
     CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
-    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(), boundFunction.get());
+    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(), boundFunction.get());
     boundClass->AddBoundNode(boundFunction.release());
     EndContainerScope();
 }
@@ -134,7 +135,7 @@ void Binder::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 void Binder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
     CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
-    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(), boundFunction.get());
+    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(), boundFunction.get());
     boundClass->AddBoundNode(boundFunction.release());
     EndContainerScope();
 }
@@ -175,7 +176,7 @@ void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
         EndContainerScope();
     }
     CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
-    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(), boundFunction.get());
+    GenerateReceives(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(), boundFunction.get());
     boundCompileUnit.AddBoundNode(boundFunction.release());
 }
 
@@ -234,8 +235,8 @@ void Binder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
     if (cp->IsBoundForStatement())
     {
         Cm::BoundTree::BoundForStatement* forStatement = static_cast<Cm::BoundTree::BoundForStatement*>(cp);
-        ForStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-            boundCompileUnit.StringRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), forStatement);
+        ForStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(),
+            boundCompileUnit.StringRepository(), boundCompileUnit.IrClassTypeRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), forStatement);
         forStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -258,8 +259,8 @@ void Binder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
 {
-    ReturnStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-        boundCompileUnit.StringRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    ReturnStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(),
+        boundCompileUnit.StringRepository(), boundCompileUnit.IrClassTypeRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     returnStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -276,8 +277,8 @@ void Binder::EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNod
     if (cp->IsBoundConditionalStatement())
     {
         Cm::BoundTree::BoundConditionalStatement* conditionalStatement = static_cast<Cm::BoundTree::BoundConditionalStatement*>(cp);
-        ConditionalStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-            boundCompileUnit.StringRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), conditionalStatement);
+        ConditionalStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(),
+            boundCompileUnit.StringRepository(), boundCompileUnit.IrClassTypeRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), conditionalStatement);
         conditionalStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -345,8 +346,8 @@ void Binder::EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode)
     if (cp->IsBoundWhileStatement())
     {
         Cm::BoundTree::BoundWhileStatement* whileStatement = static_cast<Cm::BoundTree::BoundWhileStatement*>(cp);
-        WhileStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-            boundCompileUnit.StringRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), whileStatement);
+        WhileStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(),
+            boundCompileUnit.StringRepository(), boundCompileUnit.IrClassTypeRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), whileStatement);
         whileStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -378,8 +379,8 @@ void Binder::EndVisit(Cm::Ast::DoStatementNode& doStatementNode)
     if (cp->IsBoundDoStatement())
     {
         Cm::BoundTree::BoundDoStatement* doStatement = static_cast<Cm::BoundTree::BoundDoStatement*>(cp);
-        DoStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-            boundCompileUnit.StringRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), doStatement);
+        DoStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(),
+            boundCompileUnit.StringRepository(), boundCompileUnit.IrClassTypeRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), doStatement);
         doStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -417,8 +418,8 @@ void Binder::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 {
-    SimpleStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-        boundCompileUnit.StringRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    SimpleStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(),
+        boundCompileUnit.StringRepository(), boundCompileUnit.IrClassTypeRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     simpleStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -429,16 +430,16 @@ void Binder::EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
 {
-    AssignmentStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-        boundCompileUnit.StringRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    AssignmentStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(),
+        boundCompileUnit.StringRepository(), boundCompileUnit.IrClassTypeRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     assignmentStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
 
 void Binder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
-    ConstructionStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.PointerOpRepository(),
-        boundCompileUnit.StringRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    ConstructionStatementBinder binder(boundCompileUnit.SymbolTable(), boundCompileUnit.ConversionTable(), boundCompileUnit.ClassConversionTable(), boundCompileUnit.DerivedTypeOpRepository(),
+        boundCompileUnit.StringRepository(), boundCompileUnit.IrClassTypeRepository(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     constructionStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }

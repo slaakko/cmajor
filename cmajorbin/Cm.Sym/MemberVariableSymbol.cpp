@@ -14,7 +14,7 @@
 
 namespace Cm { namespace Sym {
 
-MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr)
+MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr), index(0)
 {
 }
 

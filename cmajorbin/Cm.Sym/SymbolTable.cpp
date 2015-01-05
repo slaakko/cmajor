@@ -176,12 +176,12 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
     symbolNodeMap[typedefSymbol] = typedefNode;
 }
 
-void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, bool isMemberFunction)
+void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, bool isConstructorOrDestructor)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
-    if (isMemberFunction)
+    if (isConstructorOrDestructor)
     {
-        functionSymbol->SetMemberFunctionSymbol();
+        functionSymbol->SetConstructorOrDestructorSymbol();
     }
     functionSymbol->SetCompileUnit(functionNode->GetCompileUnit());
     functionSymbolMap[functionNode] = functionSymbol;
@@ -291,10 +291,11 @@ void SymbolTable::AddLocalVariable(Cm::Ast::ConstructionStatementNode* construct
     symbolNodeMap[localVariableSymbol] = constructionStatementNode;
 }
 
-void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode)
+void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode, int memberVariableIndex)
 {
     Cm::Ast::IdentifierNode* memberVariableId = memberVariableNode->Id();
     MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableId->GetSpan(), memberVariableId->Str());
+    memberVariableSymbol->SetIndex(memberVariableIndex);
     container->AddSymbol(memberVariableSymbol);
     symbolNodeMap[memberVariableSymbol] = memberVariableNode;
 }

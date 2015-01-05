@@ -15,8 +15,9 @@
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
-#include <Cm.Core/PointerOpRepository.hpp>
+#include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Core/StringRepository.hpp>
+#include <Cm.Core/IrClassTypeRepository.hpp>
 #include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Bind {
@@ -36,12 +37,13 @@ private:
 class ExpressionBinder : public Cm::Ast::Visitor
 {
 public:
-    ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::PointerOpRepository& pointerOpRepository_,
-        Cm::Core::StringRepository& stringRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_,
+        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+        Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
-    Cm::Core::PointerOpRepository& PointerOpRepository() { return pointerOpRepository; }
+    Cm::Core::DerivedTypeOpRepository& DerivedTypeOpRepository() { return derivedTypeOpRepository; }
     Cm::Core::StringRepository& StringRepository() { return stringRepository; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     Cm::Sym::FileScope* FileScope() const { return fileScope; }
@@ -126,12 +128,14 @@ public:
     void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) {}
 
     void GenerateTrueExpression(Cm::Ast::Node* node);
+    void PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span);
 private:
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ConversionTable& conversionTable;
     Cm::Core::ClassConversionTable& classConversionTable;
-    Cm::Core::PointerOpRepository& pointerOpRepository;
+    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository;
     Cm::Core::StringRepository& stringRepository;
+    Cm::Core::IrClassTypeRepository& irClassTypeRepository;
     Cm::Sym::ContainerScope* containerScope;
     Cm::Sym::FileScope* fileScope;
     BoundExpressionStack boundExpressionStack;

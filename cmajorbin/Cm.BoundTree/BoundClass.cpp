@@ -18,11 +18,12 @@ BoundClass::BoundClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol_, Cm::Ast::Clas
 
 void BoundClass::Accept(Visitor& visitor)
 {
+    visitor.BeginVisit(*this);
     for (const std::unique_ptr<BoundNode>& member : members)
     {
         member->Accept(visitor);
     }
-    visitor.Visit(*this);
+    visitor.EndVisit(*this);
 }
 
 void BoundClass::AddBoundNode(BoundNode* member)

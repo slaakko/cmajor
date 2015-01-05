@@ -25,8 +25,6 @@ private:
     int index;
 };
 
-typedef MemberVar* MemberVarPtr;
-
 } } // namespace Ir::Intf
 
 #endif // IR_INTF_MEMBERVAR_INCLUDED

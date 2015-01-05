@@ -104,6 +104,11 @@ void BoundMemberVariable::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+void BoundMemberVariable::SetClassObject(Cm::BoundTree::BoundExpression* classObject_)
+{
+    classObject.reset(classObject_);
+}
+
 BoundContainerExpression::BoundContainerExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::ContainerSymbol* containerSymbol_) : BoundExpression(syntaxNode_), containerSymbol(containerSymbol_)
 {
 }

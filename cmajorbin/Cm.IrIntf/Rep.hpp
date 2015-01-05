@@ -76,7 +76,7 @@ std::string MakeDestructionNodeName(const std::string& assemblyName);
 std::string GetDestructionNodeTypeName();
 std::string GetRegisterDestructorFunctionName();
 Ir::Intf::Type* CreateTypeName(const std::string& name, bool global);
-Ir::Intf::MemberVarPtr CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type);
+Ir::Intf::MemberVar* CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type);
 Ir::Intf::Object* CreateStackVar(const std::string& assemblyName, Ir::Intf::Type* type);
 Ir::Intf::Object* CreateRefVar(const std::string& assemblyName, Ir::Intf::Type* type);
 std::string GetVtblPtrVarName();

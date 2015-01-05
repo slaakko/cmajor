@@ -20,7 +20,8 @@ enum class BoundNodeFlags : uint8_t
     none = 0,
     argByRef = 1 << 0,
     lvalue = 1 << 1,
-    genJumpingBoolCode = 1 << 2
+    genJumpingBoolCode = 1 << 2,
+    classObjectArg = 1 << 3
 };
 
 inline BoundNodeFlags operator|(BoundNodeFlags left, BoundNodeFlags right)

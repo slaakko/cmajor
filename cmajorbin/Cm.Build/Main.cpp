@@ -1,0 +1,135 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+#include <Cm.Build/Main.hpp>
+#include <Cm.Build/Build.hpp>
+#include <Cm.Bind/Exception.hpp>
+#include <Cm.Bind/Binder.hpp>
+#include <Cm.Bind/Parameter.hpp>
+#include <Cm.Core/BasicTypeOp.hpp>
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Emit/EmittingVisitor.hpp>
+#include <Cm.Util/Path.hpp>
+#include <boost/filesystem.hpp>
+
+namespace Cm { namespace Build {
+
+void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, Cm::Sym::FunctionSymbol* userMainFunction, std::vector<std::string>& objectFilePaths)
+{
+    if (!userMainFunction)
+    {
+        throw Cm::Bind::Exception("program has no main() function");
+    }
+    boost::filesystem::path outputBase(outputBasePath);
+    std::string mainCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__main__.ll")).generic_string());
+    Cm::BoundTree::BoundCompileUnit mainCompileUnit(mainCompileUnitIrFilePath, symbolTable);
+    std::unique_ptr<Cm::Sym::FunctionSymbol> mainFunctionSymbol(new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "main"));
+    mainFunctionSymbol->SetCDecl();
+    Cm::Sym::TypeSymbol* intType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+    Cm::Sym::ParameterSymbol* argcParam = nullptr;
+    Cm::Sym::ParameterSymbol* argvParam = nullptr;
+    if (!userMainFunction->Parameters().empty())
+    {
+        if (userMainFunction->Parameters().size() != 2)
+        {
+            throw Cm::Bind::Exception("main() function must have either zero or two parameters", userMainFunction->GetSpan());
+        }
+        Cm::Sym::ParameterSymbol* firstParam = userMainFunction->Parameters()[0];
+        if (!Cm::Sym::TypesEqual(firstParam->GetType(), intType))
+        {
+            throw Cm::Bind::Exception("type of first parameter of main() function must be int", userMainFunction->GetSpan());
+        }
+        Cm::Sym::ParameterSymbol* secondParam = userMainFunction->Parameters()[1];
+        Cm::Sym::TypeSymbol* constCharPtrPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrPtrType(userMainFunction->GetSpan());
+        if (!Cm::Sym::TypesEqual(secondParam->GetType(), constCharPtrPtrType))
+        {
+            throw Cm::Bind::Exception("type of second parameter of main() function must be const char**", userMainFunction->GetSpan());
+        }
+        argcParam = new Cm::Sym::ParameterSymbol(userMainFunction->GetSpan(), "argc");
+        argcParam->SetType(intType);
+        mainFunctionSymbol->AddSymbol(argcParam);
+        argvParam = new Cm::Sym::ParameterSymbol(userMainFunction->GetSpan(), "argv");
+        argvParam->SetType(constCharPtrPtrType);
+        mainFunctionSymbol->AddSymbol(argvParam);
+    }
+    if (!userMainFunction->GetReturnType() || !userMainFunction->GetReturnType()->IsVoidTypeSymbol() && !Cm::Sym::TypesEqual(userMainFunction->GetReturnType(), intType))
+    {
+        throw Cm::Bind::Exception("return type of main() function must be void or int", userMainFunction->GetSpan());
+    }
+
+    mainFunctionSymbol->SetReturnType(intType);
+    Cm::BoundTree::BoundFunction* mainFunction = new Cm::BoundTree::BoundFunction(nullptr, mainFunctionSymbol.get());
+    Cm::BoundTree::BoundCompoundStatement* mainBody = new Cm::BoundTree::BoundCompoundStatement(nullptr);
+    mainFunction->SetBody(mainBody);
+    Cm::Bind::GenerateReceives(mainCompileUnit.SymbolTable(), mainCompileUnit.ConversionTable(), mainCompileUnit.ClassConversionTable(), mainCompileUnit.DerivedTypeOpRepository(), mainFunction);
+    Cm::Sym::LocalVariableSymbol* returnValueVariable = new Cm::Sym::LocalVariableSymbol(userMainFunction->GetSpan(), "returnValue");
+    returnValueVariable->SetType(intType);
+    mainFunctionSymbol->AddSymbol(returnValueVariable);
+    mainFunction->AddLocalVariable(returnValueVariable);
+    std::unique_ptr<Cm::Sym::FunctionSymbol> intAssignment;
+
+    if (userMainFunction->GetReturnType()->IsVoidTypeSymbol())
+    {
+        Cm::BoundTree::BoundExpressionList arguments;
+        if (argcParam && argvParam)
+        {
+            arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argcParam));
+            arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argvParam));
+        }
+        Cm::BoundTree::BoundFunctionCall* callUserMainExpr = new Cm::BoundTree::BoundFunctionCall(nullptr, std::move(arguments));
+        callUserMainExpr->SetFunction(userMainFunction);
+        callUserMainExpr->SetType(userMainFunction->GetReturnType());
+        Cm::BoundTree::BoundSimpleStatement* callUserMainStatement = new Cm::BoundTree::BoundSimpleStatement(nullptr);
+        callUserMainStatement->SetExpression(callUserMainExpr);
+        mainBody->AddStatement(callUserMainStatement);
+
+        Cm::BoundTree::BoundLiteral* zero = new Cm::BoundTree::BoundLiteral(nullptr);
+        zero->SetType(intType);
+        zero->SetValue(new Cm::Sym::IntValue(0));
+        Cm::BoundTree::BoundLocalVariable* returnValue = new Cm::BoundTree::BoundLocalVariable(nullptr, returnValueVariable);
+        returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+        intAssignment.reset(new Cm::Core::CopyAssignment(symbolTable.GetTypeRepository(), intType));
+        Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(nullptr, returnValue, zero, intAssignment.get());
+        mainBody->AddStatement(assignmentStatement);
+    }
+    else
+    {
+        Cm::BoundTree::BoundExpressionList arguments;
+        if (argcParam && argvParam)
+        {
+            arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argcParam));
+            arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argvParam));
+        }
+        Cm::BoundTree::BoundFunctionCall* callUserMainExpr = new Cm::BoundTree::BoundFunctionCall(nullptr, std::move(arguments));
+        callUserMainExpr->SetFunction(userMainFunction);
+        callUserMainExpr->SetType(userMainFunction->GetReturnType());
+        Cm::BoundTree::BoundLocalVariable* returnValue = new Cm::BoundTree::BoundLocalVariable(nullptr, returnValueVariable);
+        returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+        intAssignment.reset(new Cm::Core::CopyAssignment(symbolTable.GetTypeRepository(), intType));
+        Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(nullptr, returnValue, callUserMainExpr, intAssignment.get());
+        mainBody->AddStatement(assignmentStatement);
+    }
+
+    Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(nullptr);
+    std::unique_ptr<Cm::Sym::FunctionSymbol> intCopyCtor(new Cm::Core::CopyCtor(symbolTable.GetTypeRepository(), intType));
+    returnStatement->SetConstructor(intCopyCtor.get());
+    returnStatement->SetExpression(new Cm::BoundTree::BoundLocalVariable(nullptr, returnValueVariable));
+    returnStatement->SetReturnType(intType);
+    mainBody->AddStatement(returnStatement);
+
+    mainCompileUnit.AddBoundNode(mainFunction);
+    mainFunctionSymbol->SetParent(userMainFunction->Parent());
+    Emit(symbolTable.GetTypeRepository(), mainCompileUnit);
+    GenerateObjectCode(mainCompileUnit);
+    objectFilePaths.push_back(mainCompileUnit.ObjectFilePath());
+}
+
+} } // namespace Bm::Build

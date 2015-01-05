@@ -36,8 +36,6 @@ public:
     virtual Ir::Intf::Object* CreateAddr(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type); 
 };
 
-typedef MemberVar* MemberVarPtr;
-
 } // namespace Llvm
 
 #endif // LLVM_IR_MEMBERVAR_INCLUDED

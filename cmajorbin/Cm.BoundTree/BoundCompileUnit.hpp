@@ -11,7 +11,7 @@
 #define CM_BOUND_TREE_BOUND_COMPILE_UNIT_INCLUDED
 #include <Cm.BoundTree/BoundNode.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
-#include <Cm.Core/PointerOpRepository.hpp>
+#include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Core/StringRepository.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
 #include <Cm.Core/IrClassTypeRepository.hpp>
@@ -30,7 +30,7 @@ public:
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
-    Cm::Core::PointerOpRepository& PointerOpRepository() { return pointerOpRepository; }
+    Cm::Core::DerivedTypeOpRepository& DerivedTypeOpRepository() { return derivedTypeOpRepository; }
     Cm::Core::StringRepository& StringRepository() { return stringRepository; }
     Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
     Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
@@ -43,7 +43,7 @@ private:
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;
-    Cm::Core::PointerOpRepository pointerOpRepository;
+    Cm::Core::DerivedTypeOpRepository derivedTypeOpRepository;
     Cm::Core::StringRepository stringRepository;
     Cm::Core::IrFunctionRepository irFunctionRepository;
     Cm::Core::IrClassTypeRepository irClassTypeRepository;

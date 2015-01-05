@@ -15,7 +15,7 @@
 
 namespace Cm { namespace Sym {
 
-DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : Cm::Ast::Visitor(true, false), symbolTable(symbolTable_)
+DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), memberVariableIndex(0)
 {
 }
 
@@ -32,6 +32,7 @@ void DeclarationVisitor::EndVisit(Cm::Ast::NamespaceNode& namespaceNode)
 void DeclarationVisitor::BeginVisit(Cm::Ast::ClassNode& classNode)
 {
     symbolTable.BeginClassScope(&classNode);
+    memberVariableIndex = 0;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
@@ -75,7 +76,7 @@ void DeclarationVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
-    symbolTable.BeginFunctionScope(&memberFunctionNode, true);
+    symbolTable.BeginFunctionScope(&memberFunctionNode, false);
     parameterIndex = 0;
     ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
     if (memberFunctionNode.IsConst())
@@ -100,7 +101,7 @@ void DeclarationVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNod
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
-    symbolTable.BeginFunctionScope(&conversionFunctionNode, true);
+    symbolTable.BeginFunctionScope(&conversionFunctionNode, false);
     parameterIndex = 0;
     ParameterSymbol* thisParam = new ParameterSymbol(conversionFunctionNode.GetSpan(), "this");
     if (conversionFunctionNode.IsConst())
@@ -203,7 +204,7 @@ void DeclarationVisitor::Visit(Cm::Ast::ParameterNode& parameterNode)
 
 void DeclarationVisitor::Visit(Cm::Ast::MemberVariableNode& memberVariableNode) 
 {
-    symbolTable.AddMemberVariable(&memberVariableNode);
+    symbolTable.AddMemberVariable(&memberVariableNode, memberVariableIndex++);
 }
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)

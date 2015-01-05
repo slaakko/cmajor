@@ -53,7 +53,7 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
     }
 }
 
-void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, Cm::Core::PointerOpRepository& pointerOpRepository, 
+void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, 
     Cm::BoundTree::BoundFunction* boundFunction)
 {
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
@@ -71,7 +71,7 @@ void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTabl
         Cm::Sym::FunctionLookupSet functionLookups;
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
-        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(symbolTable, conversionTable, classConversionTable, pointerOpRepository, "@constructor", resolutionArguments, functionLookups, 
+        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, "@constructor", resolutionArguments, functionLookups, 
             parameterSymbol->GetSpan(), conversions);
         boundReceiveStatement->SetConstructor(ctor);
         boundFunction->Body()->InsertStatement(index, boundReceiveStatement);

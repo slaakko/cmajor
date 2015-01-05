@@ -8,8 +8,10 @@
 ========================================================================*/
 
 #include <Cm.Emit/FunctionEmitter.hpp>
+#include <Cm.Bind/Exception.hpp>
 #include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
@@ -87,10 +89,19 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::GetLocalVariableIrObject(Cm::
     throw std::runtime_error("local variable '" + localVariableOrParameter->Name() + "' not found");
 }
 
+Ir::Intf::Object* MemberVariableIrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr)
+{
+    Ir::Intf::MemberVar* memberVar = Cm::IrIntf::CreateMemberVar(boundMemberVariable->Symbol()->Name(), ptr, boundMemberVariable->Symbol()->Index(), boundMemberVariable->Symbol()->GetType()->GetIrType());
+    ownedMemberVariableObjects.push_back(std::unique_ptr<Ir::Intf::Object>(memberVar));
+    return memberVar;
+}
+
 FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_) : 
+    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
+    std::unordered_set<Ir::Intf::Function*>& externalFunctions_) :
     Cm::BoundTree::Visitor(true), codeFormatter(codeFormatter_), emitter(nullptr), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_), 
-    irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(nullptr)
+    irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(nullptr), 
+    currentClass(currentClass_), thisParam(nullptr), externalFunctions(externalFunctions_)
 {
 }
 
@@ -101,10 +112,16 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction);
     emitter.reset(new Cm::Core::Emitter(irFunction));
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
+    int parameterIndex = 0;
     for (Cm::Sym::ParameterSymbol* parameter : boundFunction.GetFunctionSymbol()->Parameters())
     {
         Ir::Intf::Object* localVariableIrObject = localVariableIrObjectRepository.CreateLocalVariableIrObjectFor(parameter);
         emitter->Emit(Cm::IrIntf::Alloca(parameter->GetType()->GetIrType(), localVariableIrObject));
+        if (currentClass && parameterIndex == 0)
+        {
+            thisParam = parameter;
+        }
+        ++parameterIndex;
     }
     for (Cm::Sym::LocalVariableSymbol* localVariable : boundFunction.LocalVariables())
     {
@@ -137,10 +154,6 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
     }
     irFunction->Clean();
     irFunction->WriteDefinition(codeFormatter, false, false);
-    for (Ir::Intf::Function* externalFunction : externalFunctions)
-    {
-        externalFunction->WriteDeclaration(codeFormatter, false, false);
-    }
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLiteral& boundLiteral)
@@ -223,6 +236,38 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundParameter& boundParameter)
         {
             GenJumpingBoolCode(result);
         }
+    }
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::BoundTree::BoundExpression* classObject = boundMemberVariable.GetClassObject();
+    if (classObject)
+    {
+        classObject->Accept(*this);
+    }
+    else
+    {
+        if (currentClass)
+        {
+            Cm::Sym::ClassTypeSymbol* classType = currentClass->Symbol();
+            std::unique_ptr<Cm::BoundTree::BoundParameter> boundParameter(new Cm::BoundTree::BoundParameter(nullptr, thisParam));
+            boundParameter->Accept(*this);
+        }
+        else
+        {
+            throw Cm::Bind::Exception("cannot use member variables in non-class context", boundMemberVariable.Symbol()->GetSpan());
+        }
+    }
+    Cm::Core::GenResult ptrResult = resultStack.Pop();
+    result.SetMainObject(memberVariableIrObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult.MainObject()));
+    result.Merge(ptrResult);
+    Cm::Sym::TypeSymbol* plainType = typeRepository.MakePlainType(boundMemberVariable.Symbol()->GetType());
+    if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
+    {
+        GenJumpingBoolCode(result);
     }
     resultStack.Push(std::move(result));
 }
@@ -586,9 +631,9 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     resultStack.Push(std::move(result));
 }
 
-void FunctionEmitter::GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool memberFunctionCall)
+void FunctionEmitter::GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall)
 {
-    if (memberFunctionCall)
+    if (constructorOrDestructorCall)
     {
         Cm::Core::GenResult memberFunctionResult(emitter.get(), result.Flags());
         memberFunctionResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
@@ -624,7 +669,7 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenRe
         {
             externalFunctions.insert(irFunction);
         }
-        GenerateCall(irFunction, result, fun->IsMemberFunctionSymbol());
+        GenerateCall(irFunction, result, fun->IsConstructorOrDestructorSymbo());
         bool boolResult = false;
         Cm::Sym::TypeSymbol* returnType = fun->GetReturnType();
         if (returnType)
