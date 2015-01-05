@@ -92,7 +92,6 @@ void Prebinder::EndVisit(Cm::Ast::ClassNode& classNode)
     else
     {
         EndContainerScope();
-
     }
 }
 

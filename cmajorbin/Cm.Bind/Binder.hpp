@@ -11,6 +11,7 @@
 #define CM_BIND_BINDER_INCLUDED
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.BoundTree/BoundStatement.hpp>
 #include <Cm.Ast/Visitor.hpp>
 
@@ -98,6 +99,7 @@ private:
     Cm::Sym::ContainerScope* currentContainerScope;
     std::stack<Cm::Sym::ContainerScope*> containerScopeStack;
     std::unique_ptr<Cm::BoundTree::BoundFunction> boundFunction;
+    std::unique_ptr<Cm::BoundTree::BoundClass> boundClass;
     std::unique_ptr<Cm::BoundTree::BoundParentStatement> currentParent;
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
     Cm::Sym::FunctionSymbol* userMainFunction;

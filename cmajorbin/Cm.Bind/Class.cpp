@@ -71,7 +71,10 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
             throw Exception("base class type expression does not denote a type", baseClassTypeExpr->GetSpan());
         }
     }
-    classTypeSymbol->SetIrType(Cm::IrIntf::CreateClassTypeName(classTypeSymbol->FullName()));
+    if (!classTypeSymbol->GetIrType())
+    {
+        classTypeSymbol->SetIrType(Cm::IrIntf::CreateClassTypeName(classTypeSymbol->FullName()));
+    }
     classTypeSymbol->SetBound();
 }
 

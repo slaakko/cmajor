@@ -12,6 +12,8 @@
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Core/GenData.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
+#include <Cm.Core/IrClassTypeRepository.hpp>
+#include <Cm.Core/StringRepository.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 
 namespace Cm { namespace Emit {
@@ -33,11 +35,13 @@ private:
 class FunctionEmitter : public Cm::BoundTree::Visitor
 {
 public:
-    FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_);
+    FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
+        Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
     void Visit(Cm::BoundTree::BoundLiteral& boundLiteral) override;
+    void Visit(Cm::BoundTree::BoundStringLiteral& boundStringLiteral) override;
     void Visit(Cm::BoundTree::BoundConstant& boundConstant) override;
     void Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable) override;
     void Visit(Cm::BoundTree::BoundParameter& boundParameter) override;
@@ -80,11 +84,13 @@ private:
     Cm::Core::GenResult compoundResult;
     Cm::Core::GenResultStack resultStack;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
+    Cm::Core::IrClassTypeRepository& irClassTypeRepository;
+    Cm::Core::StringRepository& stringRepository;
     LocalVariableIrObjectRepository localVariableIrObjectRepository;
     Cm::Ast::CompileUnitNode* currentCompileUnit;
     std::unordered_set<Ir::Intf::Function*> externalFunctions;
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
-    void GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result);
+    void GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool memberFunctionCall);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
 };
 

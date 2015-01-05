@@ -56,6 +56,16 @@ private:
     std::vector<std::unique_ptr<BoundExpression>> expressions;
 };
 
+class BoundStringLiteral : public BoundExpression
+{
+public:
+    BoundStringLiteral(Cm::Ast::Node* syntaxNode_, int id_);
+    int Id() const { return id; }
+    void Accept(Visitor& visitor) override;
+private:
+    int id;
+};
+
 class BoundLiteral : public BoundExpression
 {
 public:

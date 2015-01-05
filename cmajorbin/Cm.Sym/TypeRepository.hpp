@@ -13,6 +13,8 @@
 
 namespace Cm {  namespace Sym {
 
+Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations, const Span& span);
+
 class TypeRepository
 {
 public:

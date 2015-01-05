@@ -19,7 +19,7 @@ FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lo
 {
 }
 
-FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr)
+FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), isMemberFunctionSymbol(false)
 {
 }
 
@@ -62,9 +62,11 @@ void FunctionSymbol::Write(Writer& writer)
 {
     ContainerSymbol::Write(writer);
     writer.GetBinaryWriter().Write(groupName);
-    if (groupName == "pow")
+    bool hasReturnType = returnType != nullptr;
+    writer.GetBinaryWriter().Write(hasReturnType);
+    if (hasReturnType)
     {
-        int x = 0;
+        writer.Write(returnType->Id());
     }
 }
 
@@ -72,10 +74,16 @@ void FunctionSymbol::Read(Reader& reader)
 {
     ContainerSymbol::Read(reader);
     groupName = reader.GetBinaryReader().ReadString();
-    if (groupName == "pow")
+    bool hasReturnType = reader.GetBinaryReader().ReadBool();
+    if (hasReturnType)
     {
-        int x = 0;
+        reader.FetchTypeFor(this, 0);
     }
+}
+
+void FunctionSymbol::SetType(TypeSymbol* type_, int index)
+{
+    SetReturnType(type_);
 }
 
 void FunctionSymbol::ComputeName()

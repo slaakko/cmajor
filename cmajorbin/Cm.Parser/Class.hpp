@@ -1,10 +1,11 @@
-#ifndef Class_hpp_20447
-#define Class_hpp_20447
+#ifndef Class_hpp_30472
+#define Class_hpp_30472
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
 #include <Cm.Parser/ParsingContext.hpp>
 #include <Cm.Ast/Class.hpp>
+#include <Cm.Ast/CompileUnit.hpp>
 
 namespace Cm { namespace Parser {
 
@@ -13,7 +14,7 @@ class ClassGrammar : public Cm::Parsing::Grammar
 public:
     static ClassGrammar* Create();
     static ClassGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
-    Cm::Ast::ClassNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    Cm::Ast::ClassNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit);
 private:
     ClassGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -38,4 +39,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Class_hpp_20447
+#endif // Class_hpp_30472

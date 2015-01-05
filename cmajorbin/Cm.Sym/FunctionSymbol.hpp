@@ -56,9 +56,12 @@ public:
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
     virtual bool IsConvertingConstructor() const { return false; }
+    bool IsMemberFunctionSymbol() const { return isMemberFunctionSymbol; }
+    void SetMemberFunctionSymbol() { isMemberFunctionSymbol = true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void AddSymbol(Symbol* symbol) override;
+    void SetType(TypeSymbol* type_, int index) override;
     void SetReturnType(TypeSymbol* returnType_);
     TypeSymbol* GetReturnType() const { return returnType; }
     int Arity() const { return int(parameters.size()); }
@@ -73,6 +76,7 @@ private:
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
     Cm::Ast::CompileUnitNode* compileUnit;
+    bool isMemberFunctionSymbol;
 };
 
 } } // namespace Cm::Sym

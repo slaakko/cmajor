@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
+#include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
 
@@ -35,6 +36,7 @@ void BoundCompileUnit::Accept(Visitor& visitor)
     {
         boundNode->Accept(visitor);
     }
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::BoundTree

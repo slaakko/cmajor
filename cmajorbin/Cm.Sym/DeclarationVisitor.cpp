@@ -8,6 +8,8 @@
 ========================================================================*/
 
 #include <Cm.Sym/DeclarationVisitor.hpp>
+#include <Cm.Sym/ParameterSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -39,8 +41,14 @@ void DeclarationVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
-    symbolTable.BeginFunctionScope(&constructorNode);
+    symbolTable.BeginFunctionScope(&constructorNode, true);
     parameterIndex = 0;
+    ParameterSymbol* thisParam = new ParameterSymbol(constructorNode.GetSpan(), "this");
+    TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), constructorNode.GetSpan());
+    thisParam->SetType(thisParamType);
+    thisParam->SetBound();
+    symbolTable.AddParameter(thisParam);
+    ++parameterIndex;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::ConstructorNode& constructornNode)
@@ -50,8 +58,14 @@ void DeclarationVisitor::EndVisit(Cm::Ast::ConstructorNode& constructornNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
 {
-    symbolTable.BeginFunctionScope(&destructorNode);
+    symbolTable.BeginFunctionScope(&destructorNode, true);
     parameterIndex = 0;
+    ParameterSymbol* thisParam = new ParameterSymbol(destructorNode.GetSpan(), "this");
+    TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), destructorNode.GetSpan());
+    thisParam->SetType(thisParamType);
+    thisParam->SetBound();
+    symbolTable.AddParameter(thisParam);
+    ++parameterIndex;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
@@ -61,8 +75,22 @@ void DeclarationVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
-    symbolTable.BeginFunctionScope(&memberFunctionNode);
+    symbolTable.BeginFunctionScope(&memberFunctionNode, true);
     parameterIndex = 0;
+    ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
+    if (memberFunctionNode.IsConst())
+    {
+        TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakeConstPointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
+        thisParam->SetType(thisParamType);
+    }
+    else
+    {
+        TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
+        thisParam->SetType(thisParamType);
+    }
+    thisParam->SetBound();
+    symbolTable.AddParameter(thisParam);
+    ++parameterIndex;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode) 
@@ -72,8 +100,22 @@ void DeclarationVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNod
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
-    symbolTable.BeginFunctionScope(&conversionFunctionNode);
+    symbolTable.BeginFunctionScope(&conversionFunctionNode, true);
     parameterIndex = 0;
+    ParameterSymbol* thisParam = new ParameterSymbol(conversionFunctionNode.GetSpan(), "this");
+    if (conversionFunctionNode.IsConst())
+    {
+        TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakeConstPointerType(symbolTable.CurrentClass(), conversionFunctionNode.GetSpan());
+        thisParam->SetType(thisParamType);
+    }
+    else
+    {
+        TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), conversionFunctionNode.GetSpan());
+        thisParam->SetType(thisParamType);
+    }
+    thisParam->SetBound();
+    symbolTable.AddParameter(thisParam);
+    ++parameterIndex;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
@@ -103,7 +145,7 @@ void DeclarationVisitor::Visit(Cm::Ast::TypedefNode& typedefNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 {
-    symbolTable.BeginFunctionScope(&functionNode);
+    symbolTable.BeginFunctionScope(&functionNode, false);
     parameterIndex = 0;
 }
 

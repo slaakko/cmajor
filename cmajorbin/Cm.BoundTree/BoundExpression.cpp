@@ -50,6 +50,15 @@ void BoundExpressionList::Accept(Visitor& visitor)
     }
 }
 
+BoundStringLiteral::BoundStringLiteral(Cm::Ast::Node* syntaxNode_, int id_) : BoundExpression(syntaxNode_), id(id_)
+{
+}
+
+void BoundStringLiteral::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundLiteral::BoundLiteral(Cm::Ast::Node* syntaxNode_) : BoundExpression(syntaxNode_)
 {
 }

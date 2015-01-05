@@ -25,10 +25,11 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
 
-SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs), typeRepository(), standardConversionTable(typeRepository)
+SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs), currentClass(nullptr), typeRepository(), standardConversionTable(typeRepository)
 {
 }
 
@@ -130,10 +131,13 @@ void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
     classScope->SetParent(containerScope);
     container->AddSymbol(classSymbol);
     BeginContainer(classSymbol);
+    classSymbol->SetIrType(Cm::IrIntf::CreateClassTypeName(classSymbol->FullName()));
+    currentClass = classSymbol; 
 }
 
 void SymbolTable::EndClassScope()
 {
+    currentClass = nullptr;
     EndContainer();
 }
 
@@ -172,9 +176,13 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
     symbolNodeMap[typedefSymbol] = typedefNode;
 }
 
-void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode)
+void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, bool isMemberFunction)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
+    if (isMemberFunction)
+    {
+        functionSymbol->SetMemberFunctionSymbol();
+    }
     functionSymbol->SetCompileUnit(functionNode->GetCompileUnit());
     functionSymbolMap[functionNode] = functionSymbol;
     functionSymbol->SetGroupName(functionNode->GroupId()->Str());
@@ -237,6 +245,11 @@ void SymbolTable::AddConstant(Cm::Ast::ConstantNode* constantNode)
     ConstantSymbol* constantSymbol = new ConstantSymbol(constantId->GetSpan(), constantId->Str());
     container->AddSymbol(constantSymbol);
     symbolNodeMap[constantSymbol] = constantNode;
+}
+
+void SymbolTable::AddParameter(ParameterSymbol* parameterSymbol)
+{
+    container->AddSymbol(parameterSymbol);
 }
 
 void SymbolTable::AddParameter(Cm::Ast::ParameterNode* parameterNode, const std::string& parameterName)

@@ -9,6 +9,7 @@
 
 [hpp]#include <Cm.Parser/ParsingContext.hpp>
 [hpp]#include <Cm.Ast/Class.hpp>
+[hpp]#include <Cm.Ast/CompileUnit.hpp>
 [cpp]#include <Cm.Ast/Identifier.hpp>
 [cpp]#include <Cm.Parser/Specifier.hpp>
 [cpp]#include <Cm.Parser/Identifier.hpp>
@@ -49,9 +50,9 @@ namespace Cm.Parser
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
 
-        Class(ParsingContext* ctx): Cm::Ast::ClassNode*
+        Class(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::ClassNode*
             ::= (Specifiers keyword("class") Identifier){ value = new ClassNode(span, Specifiers, Identifier); } TemplateParameterList(ctx, value)? Inheritance(ctx, value)? 
-                (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? '{'! ClassContent(ctx, value)! '}'!
+                (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? '{'! ClassContent(ctx, value, compileUnit)! '}'!
             ;
 
         Inheritance(ParsingContext* ctx, Cm::Ast::ClassNode* cls)
@@ -64,20 +65,20 @@ namespace Cm.Parser
             |   QualifiedId{ value = QualifiedId; }
             ;
 
-        ClassContent(ParsingContext* ctx, Cm::Ast::ClassNode* cls)
-            ::= (ClassMember(ctx, cls){ cls->AddMember(ClassMember); })*
+        ClassContent(ParsingContext* ctx, Cm::Ast::ClassNode* cls, Cm::Ast::CompileUnitNode* compileUnit)
+            ::= (ClassMember(ctx, cls, compileUnit){ cls->AddMember(ClassMember); })*
             ;
 
-        ClassMember(ParsingContext* ctx, Cm::Ast::ClassNode* cls): Cm::Ast::Node*
-            ::= StaticConstructor(ctx, cls){ value = StaticConstructor; }
-            |   Constructor(ctx, cls){ value = Constructor; }
-            |   Destructor(ctx, cls){ value = Destructor; }
-            |   MemberFunction(ctx){ value = MemberFunction; }
-            |   ConversionFunction(ctx){ value = ConversionFunction; }
+        ClassMember(ParsingContext* ctx, Cm::Ast::ClassNode* cls, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::Node*
+            ::= StaticConstructor(ctx, cls, compileUnit){ value = StaticConstructor; }
+            |   Constructor(ctx, cls, compileUnit){ value = Constructor; }
+            |   Destructor(ctx, cls, compileUnit){ value = Destructor; }
+            |   MemberFunction(ctx, compileUnit){ value = MemberFunction; }
+            |   ConversionFunction(ctx, compileUnit){ value = ConversionFunction; }
             |   EnumType(ctx){ value = EnumType; }
             |   Constant(ctx){ value = Constant; }
             |   MemberVariable(ctx){ value = MemberVariable; }
-            |   Class(ctx){ value = Class; }
+            |   Class(ctx, compileUnit){ value = Class; }
             |   Delegate(ctx){ value = Delegate; }
             |   ClassDelegate(ctx){ value = ClassDelegate; }
             |   Typedef(ctx){ value = Typedef; }
@@ -105,40 +106,40 @@ namespace Cm.Parser
             ::= (keyword("this"){ value = new ThisInitializerNode(span); } '('! ArgumentList(ctx, value) ')'!){ value->GetSpan().SetEnd(span.End()); }
             ;
 
-        StaticConstructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::StaticConstructorNode*
+        StaticConstructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, Cm::Ast::CompileUnitNode* compileUnit, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId): Cm::Ast::StaticConstructorNode*
             ::= ((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&')) 
-                '(' ')'){ pass = id->Str() == cls->Id()->Str() && HasStaticSpecifier(Specifiers); if (pass) value = new StaticConstructorNode(span, Specifiers); }
+                '(' ')'){ pass = id->Str() == cls->Id()->Str() && HasStaticSpecifier(Specifiers); if (pass) { value = new StaticConstructorNode(span, Specifiers); value->SetCompileUnit(compileUnit); } }
                 InitializerList(ctx, value)? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
                 CompoundStatement(ctx){ value->SetBody(CompoundStatement); }
             ;
 
-        Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId, var std::unique_ptr<ConstructorNode> ctor): Cm::Ast::ConstructorNode*
+        Constructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, Cm::Ast::CompileUnitNode* compileUnit, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<IdentifierNode> refId, var std::unique_ptr<ConstructorNode> ctor): Cm::Ast::ConstructorNode*
             ::= (((Specifiers (Identifier{ id.reset(Identifier); } - (Identifier:ref{ refId.reset(ref); } '&'))){ pass = id->Str() == cls->Id()->Str(); if (pass) ctor.reset(new ConstructorNode(span, Specifiers)); }
                 ParameterList(ctx, ctor.get())
                 InitializerList(ctx, ctor.get())? (WhereConstraint(ctx){ ctor->SetConstraint(WhereConstraint); })?){ ctor->GetSpan().SetEnd(span.End()); }
-                (CompoundStatement(ctx){ ctor->SetBody(CompoundStatement); } | ';')){ value = ctor.release(); }
+                (CompoundStatement(ctx){ ctor->SetBody(CompoundStatement); } | ';')){ value = ctor.release(); value->SetCompileUnit(compileUnit); }
 
             ;
 
-        Destructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, var std::unique_ptr<IdentifierNode> id, var Span s): Cm::Ast::DestructorNode*
+        Destructor(ParsingContext* ctx, Cm::Ast::ClassNode* cls, Cm::Ast::CompileUnitNode* compileUnit, var std::unique_ptr<IdentifierNode> id, var Span s): Cm::Ast::DestructorNode*
             ::= (Specifiers '~' Identifier{ id.reset(Identifier); pass = id->Str() == cls->Id()->Str(); }  '('! ')'!){ s = span; } 
-                (CompoundStatement(ctx) | ';'){ value = new DestructorNode(s, Specifiers, CompoundStatement); }
+                (CompoundStatement(ctx) | ';'){ value = new DestructorNode(s, Specifiers, CompoundStatement); value->SetCompileUnit(compileUnit); }
             ;
 
-        MemberFunction(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Cm::Ast::MemberFunctionNode*
+        MemberFunction(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, var std::unique_ptr<MemberFunctionNode> memFun): Cm::Ast::MemberFunctionNode*
             ::= ((Specifiers TypeExpr(ctx) FunctionGroupId(ctx)){ memFun.reset(new MemberFunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } ParameterList(ctx, memFun.get()) 
                 (keyword("const"){ memFun->SetConst(); })?
                 (WhereConstraint(ctx){ memFun->SetConstraint(WhereConstraint); })?){ memFun->GetSpan().SetEnd(span.End()); }
-                (CompoundStatement(ctx) | ';'){ memFun->SetBody(CompoundStatement); value = memFun.release(); }
+                (CompoundStatement(ctx) | ';'){ memFun->SetBody(CompoundStatement); value = memFun.release(); value->SetCompileUnit(compileUnit); }
             ;
 
-        ConversionFunction(ParsingContext* ctx, var bool setConst, var Span s): Cm::Ast::ConversionFunctionNode*
+        ConversionFunction(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, var bool setConst, var Span s): Cm::Ast::ConversionFunctionNode*
             ::= (Specifiers keyword("operator") TypeExpr(ctx) '('! ')'! (keyword("const"){ setConst = true; })? WhereConstraint(ctx)?){ s = span; } CompoundStatement(ctx)
                 { 
-                    value = new ConversionFunctionNode(s, Specifiers, TypeExpr, setConst, WhereConstraint, CompoundStatement); 
+                    value = new ConversionFunctionNode(s, Specifiers, TypeExpr, setConst, WhereConstraint, CompoundStatement); value->SetCompileUnit(compileUnit);
                 }
             ;
-
+             
         MemberVariable(ParsingContext* ctx): Cm::Ast::MemberVariableNode*
             ::= (Specifiers TypeExpr(ctx) Identifier ';'){ value = new MemberVariableNode(span, Specifiers, TypeExpr, Identifier); }
             ;

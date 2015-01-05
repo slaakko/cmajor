@@ -13,7 +13,10 @@
 
 namespace Cm { namespace BoundTree {
 
+class BoundCompileUnit;
+
 class BoundLiteral;
+class BoundStringLiteral;
 class BoundConstant;
 class BoundLocalVariable;
 class BoundMemberVariable;
@@ -51,7 +54,11 @@ class Visitor
 public:
     Visitor(bool visitFunctionBody_);
     virtual ~Visitor();
+
+    virtual void Visit(BoundCompileUnit& compileUnit) {}
+
     virtual void Visit(BoundLiteral& boundLiteral) {}
+    virtual void Visit(BoundStringLiteral& boundStringLiteral) {}
     virtual void Visit(BoundConstant& boundConstant) {}
     virtual void Visit(BoundLocalVariable& boundLocalVariable) {}
     virtual void Visit(BoundMemberVariable& boundMemberVariable) {}
