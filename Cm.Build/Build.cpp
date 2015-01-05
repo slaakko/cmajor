@@ -105,15 +105,14 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
     if (project->Name() != "os")
     {
-        referenceFilePaths.push_back("os.cml");
+        referenceFilePaths.push_back("os.mc");
     }
     for (const std::string& referenceFilePath : referenceFilePaths)
     {
-        boost::filesystem::path rfp = ResolveLibraryReference(project->OutputBasePath(), "debug", libraryDirs, referenceFilePath);
-        rfp.replace_extension(".mc");
-        Cm::Sym::Module module(Cm::Util::GetFullPath(rfp.generic_string()));
+        std::string libraryReferencePath = ResolveLibraryReference(project->OutputBasePath(), "debug", libraryDirs, referenceFilePath);
+        Cm::Sym::Module module(libraryReferencePath);
         module.ImportTo(symbolTable);
-        boost::filesystem::path afp = rfp;
+        boost::filesystem::path afp = libraryReferencePath;
         afp.replace_extension(".cma");
         assemblyFilePaths.push_back(Cm::Util::GetFullPath(afp.generic_string()));
     }
@@ -150,7 +149,8 @@ void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit
 
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    Cm::Emit::EmittingVisitor emittingVisitor(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository());
+    Cm::Emit::EmittingVisitor emittingVisitor(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), 
+        boundCompileUnit.StringRepository());
     boundCompileUnit.Accept(emittingVisitor);
 }
 

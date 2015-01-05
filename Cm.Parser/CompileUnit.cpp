@@ -704,6 +704,7 @@ public:
     void PreClassDefinition(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostClassDefinition(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -1116,12 +1117,16 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
         SetValueTypeName("Cm::Ast::Node*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
@@ -1150,6 +1155,7 @@ public:
     void PreClass(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostClass(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -1163,8 +1169,9 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromClass() {}
+        Context(): ctx(), compileUnit(), value(), fromClass() {}
         ParsingContext* ctx;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::Node* value;
         Cm::Ast::ClassNode* fromClass;
     };
@@ -1364,22 +1371,22 @@ private:
 void CompileUnitGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::FunctionGrammar::Create(pd);
+        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TypedefGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::stdlib::Create(pd);
+        grammar1 = Cm::Parser::TypedefGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar2 = Cm::Parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
     Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
@@ -1394,16 +1401,16 @@ void CompileUnitGrammar::GetReferencedGrammars()
         grammar4 = Cm::Parser::DelegateGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.ClassGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::ClassGrammar::Create(pd);
+        grammar5 = Cm::Parser::EnumerationGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
-    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
+    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar6)
     {
-        grammar6 = Cm::Parser::EnumerationGrammar::Create(pd);
+        grammar6 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar6);
     Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parser.ConstantGrammar");
@@ -1412,26 +1419,26 @@ void CompileUnitGrammar::GetReferencedGrammars()
         grammar7 = Cm::Parser::ConstantGrammar::Create(pd);
     }
     AddGrammarReference(grammar7);
-    Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("Cm.Parser.TypedefGrammar");
+    Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("Cm.Parser.ClassGrammar");
     if (!grammar8)
     {
-        grammar8 = Cm::Parser::TypedefGrammar::Create(pd);
+        grammar8 = Cm::Parser::ClassGrammar::Create(pd);
     }
     AddGrammarReference(grammar8);
 }
 
 void CompileUnitGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Function", this, "FunctionGrammar.Function"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Concept", this, "ConceptGrammar.Concept"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Class", this, "ClassGrammar.Class"));
-    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
     AddRuleLink(new Cm::Parsing::RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
     AddRuleLink(new Cm::Parsing::RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
+    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Function", this, "FunctionGrammar.Function"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Class", this, "ClassGrammar.Class"));
     AddRuleLink(new Cm::Parsing::RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Concept", this, "ConceptGrammar.Concept"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new CompileUnitRule("CompileUnit", GetScope(),
         new Cm::Parsing::SequenceParser(
@@ -1498,7 +1505,7 @@ void CompileUnitGrammar::CreateRules()
                             new Cm::Parsing::ActionParser("A4",
                                 new Cm::Parsing::NonterminalParser("TypedefDefinition", "TypedefDefinition", 1))),
                         new Cm::Parsing::ActionParser("A5",
-                            new Cm::Parsing::NonterminalParser("ClassDefinition", "ClassDefinition", 1))),
+                            new Cm::Parsing::NonterminalParser("ClassDefinition", "ClassDefinition", 2))),
                     new Cm::Parsing::ActionParser("A6",
                         new Cm::Parsing::NonterminalParser("DelegateDefinition", "DelegateDefinition", 1))),
                 new Cm::Parsing::ActionParser("A7",
@@ -1534,7 +1541,7 @@ void CompileUnitGrammar::CreateRules()
             new Cm::Parsing::NonterminalParser("Typedef", "Typedef", 1))));
     AddRule(new ClassDefinitionRule("ClassDefinition", GetScope(),
         new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::NonterminalParser("Class", "Class", 1))));
+            new Cm::Parsing::NonterminalParser("Class", "Class", 2))));
     AddRule(new DelegateDefinitionRule("DelegateDefinition", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("Delegate", "Delegate", 1))));

@@ -25,6 +25,7 @@ public:
     void Accept(Visitor& visitor) override;
     const std::string& Str() const { return identifier; }
     std::string ToString() const override;
+    std::string Name() const override { return identifier; }
 private:
     std::string identifier;
 };

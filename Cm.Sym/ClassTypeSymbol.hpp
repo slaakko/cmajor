@@ -14,6 +14,8 @@
 
 namespace Cm { namespace Sym {
 
+class MemberVariableSymbol;
+
 class ClassTypeSymbol : public TypeSymbol
 {
 public:
@@ -28,8 +30,11 @@ public:
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
     bool HasBaseClass(ClassTypeSymbol* cls) const;
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
+    void AddSymbol(Symbol* symbol) override;
+    const std::vector<MemberVariableSymbol*>& MemberVariables() const { return memberVariables; }
 private:
     ClassTypeSymbol* baseClass;
+    std::vector<MemberVariableSymbol*> memberVariables;
 };
 
 } } // namespace Cm::Sym

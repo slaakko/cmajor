@@ -12,7 +12,9 @@
 #include <Cm.BoundTree/BoundNode.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
 #include <Cm.Core/PointerOpRepository.hpp>
+#include <Cm.Core/StringRepository.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
+#include <Cm.Core/IrClassTypeRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -29,7 +31,9 @@ public:
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
     Cm::Core::PointerOpRepository& PointerOpRepository() { return pointerOpRepository; }
+    Cm::Core::StringRepository& StringRepository() { return stringRepository; }
     Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
+    Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
     void AddBoundNode(BoundNode* boundNode);
     void Accept(Visitor& visitor);
 private:
@@ -40,7 +44,9 @@ private:
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;
     Cm::Core::PointerOpRepository pointerOpRepository;
+    Cm::Core::StringRepository stringRepository;
     Cm::Core::IrFunctionRepository irFunctionRepository;
+    Cm::Core::IrClassTypeRepository irClassTypeRepository;
     std::vector<std::unique_ptr<BoundNode>> boundNodes;
 };
 

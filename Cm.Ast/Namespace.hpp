@@ -26,6 +26,7 @@ public:
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* Id() const { return id.get(); }
+    std::string Name() const override;
     bool IsGlobalNamespaceNode() const { return Parent() == nullptr; }
 private:
     std::unique_ptr<IdentifierNode> id;

@@ -71,6 +71,11 @@ void NamespaceNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
+std::string NamespaceNode::Name() const
+{
+    return id->Str();
+}
+
 AliasNode::AliasNode(const Span& span_) : Node(span_)
 {
 }

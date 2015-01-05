@@ -50,9 +50,10 @@ Cm::BoundTree::BoundExpressionList BoundExpressionStack::Pop(int numExpressions)
 }
 
 ExpressionBinder::ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-    Cm::Core::PointerOpRepository& pointerOpRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) :
+    Cm::Core::PointerOpRepository& pointerOpRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+    Cm::BoundTree::BoundFunction* currentFunction_) : 
     Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), conversionTable(conversionTable_), classConversionTable(classConversionTable_), pointerOpRepository(pointerOpRepository_),
-    containerScope(containerScope_), fileScope(fileScope_), currentFunction(currentFunction_), expressionCount(0)
+    stringRepository(stringRepository_), containerScope(containerScope_), fileScope(fileScope_), currentFunction(currentFunction_), expressionCount(0)
 {
 }
 
@@ -430,10 +431,9 @@ void ExpressionBinder::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
 void ExpressionBinder::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
 {
     Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().MakeConstCharPtrType(stringLiteralNode.GetSpan());
-    Cm::Sym::Value* value = new Cm::Sym::StringValue(stringLiteralNode.Value());
-    Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&stringLiteralNode);
+    int id = stringRepository.Install(stringLiteralNode.Value());
+    Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(&stringLiteralNode, id);
     literalNode->SetType(type);
-    literalNode->SetValue(value);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -467,7 +467,25 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
     }
     else
     {
-        throw Exception("expression '" + expression->SyntaxNode()->FullName() + "' must denote a namespace, class type or enumerated type", dotNode.Subject()->GetSpan());
+        Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().MakePlainType(expression->GetType());
+        if (type->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
+            Cm::Sym::ContainerScope* containerScope = classType->GetContainerScope();
+            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str());
+            if (symbol)
+            {
+                BindSymbol(&dotNode, symbol);
+            }
+            else
+            {
+                throw Exception("class '" + classType->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+            }
+        }
+        else
+        {
+            throw Exception("expression '" + expression->SyntaxNode()->Name() + "' must denote a namespace, class type or enumerated type", dotNode.Subject()->GetSpan());
+        }
     }
 }
 

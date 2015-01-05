@@ -9,6 +9,7 @@
 
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/NameMangling.hpp>
+#include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
@@ -44,6 +45,16 @@ bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls, int& distance) const
     if (baseClass == cls) return true;
     return baseClass->HasBaseClass(cls, distance);
 
+}
+
+void ClassTypeSymbol::AddSymbol(Symbol* symbol)
+{
+    TypeSymbol::AddSymbol(symbol);
+    if (symbol->IsMemberVariableSymbol())
+    {
+        MemberVariableSymbol* memberVariableSymbol = static_cast<MemberVariableSymbol*>(symbol);
+        memberVariables.push_back(memberVariableSymbol);
+    }
 }
 
 } } // namespace Cm::Sym

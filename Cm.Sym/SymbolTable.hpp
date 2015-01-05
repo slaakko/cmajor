@@ -26,6 +26,8 @@
 
 namespace Cm { namespace Sym {
 
+class ParameterSymbol;
+
 class SymbolTable
 {
 public:
@@ -39,7 +41,7 @@ public:
     void EndEnumScope();
     void AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode);
     void AddTypedef(Cm::Ast::TypedefNode* typedefNode);
-    void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode);
+    void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, bool isMemberFunction);
     void EndFunctionScope();
     void BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode);
     void EndDelegateScope();
@@ -48,6 +50,7 @@ public:
     void AddConstant(Cm::Ast::ConstantNode* constantNode);
     void AddTemplateParameter(Cm::Ast::TemplateParameterNode* templateParameterNode);
     void AddParameter(Cm::Ast::ParameterNode* parameterNode, const std::string& parameterName);
+    void AddParameter(ParameterSymbol* parameterSymbol);
     void BeginDeclarationScope(Cm::Ast::StatementNode* statementNode);
     void EndDeclarationcope();
     void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
@@ -59,12 +62,14 @@ public:
     void Export(Writer& writer);
     void Import(Reader& reader);
     ContainerSymbol* Container() const { return container; }
+    ClassTypeSymbol* CurrentClass() const { return currentClass; }
     TypeRepository& GetTypeRepository() { return typeRepository; }
     ConversionTable& GetStandardConversionTable() { return standardConversionTable; }
     void AddPredefinedSymbolToGlobalScope(Symbol* symbol);
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
+    ClassTypeSymbol* currentClass;
     std::stack<ContainerSymbol*> containerStack;
     typedef std::unordered_map<Cm::Ast::Node*, ContainerScope*> NodeScopeMap;
     typedef NodeScopeMap::const_iterator NodeScopeMapIt;

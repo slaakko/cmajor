@@ -84,7 +84,7 @@ namespace Cm.Parser
             |   ConstantDefinition(ctx){ value = ConstantDefinition; }
             |   EnumerationDefinition(ctx){ value = EnumerationDefinition; }
             |   TypedefDefinition(ctx){ value = TypedefDefinition; }
-            |   ClassDefinition(ctx){ value = ClassDefinition; }
+            |   ClassDefinition(ctx, compileUnit){ value = ClassDefinition; }
             |   DelegateDefinition(ctx){ value = DelegateDefinition; }
             |   ClassDelegateDefinition(ctx){ value = ClassDelegateDefinition; }
             |   ConceptDefinition(ctx){ value = ConceptDefinition; }
@@ -106,12 +106,12 @@ namespace Cm.Parser
             ::= EnumType(ctx){ value = EnumType; }
             ;
 
-        TypedefDefinition(ParsingContext* ctx): Cm::Ast::Node*
+        TypedefDefinition(ParsingContext* ctx): Cm::Ast::Node* 
             ::= Typedef(ctx){ value = Typedef; }
             ;
 
-        ClassDefinition(ParsingContext* ctx): Cm::Ast::Node*
-            ::= Class(ctx){ value = Class; }
+        ClassDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::Node*
+            ::= Class(ctx, compileUnit){ value = Class; }
             ;
 
         DelegateDefinition(ParsingContext* ctx): Cm::Ast::Node*

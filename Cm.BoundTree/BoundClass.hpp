@@ -19,8 +19,11 @@ class BoundClass : public BoundNode
 public:
     BoundClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol_, Cm::Ast::ClassNode* classNode_);
     void Accept(Visitor& visitor) override;
+    void AddBoundNode(BoundNode* member);
+    Cm::Sym::ClassTypeSymbol* Symbol() const { return classTypeSymbol; }
 private:
     Cm::Sym::ClassTypeSymbol* classTypeSymbol;
+    std::vector<std::unique_ptr<BoundNode>> members;
 };
 
 } } // namespace Cm::BoundTree

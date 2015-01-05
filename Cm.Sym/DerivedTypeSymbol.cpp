@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Sym/DerivedTypeSymbol.hpp>
+#include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 
@@ -169,20 +170,21 @@ std::string DerivedTypeSymbol::GetMangleId() const
 void DerivedTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
-    writer.Write(baseType->Id());
     writer.Write(derivations);
+    writer.Write(baseType->Id());
 }
 
 void DerivedTypeSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
-    reader.FetchTypeFor(this, 0);
     derivations = reader.ReadDerivationList();
+    reader.FetchTypeFor(this, 0);
 }
 
 void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
 {
     baseType = type;
+    SetIrType(MakeIrType(baseType, derivations, Cm::Parsing::Span()));
 }
 
 void DerivedTypeSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)

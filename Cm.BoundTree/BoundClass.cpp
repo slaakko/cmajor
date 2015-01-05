@@ -18,7 +18,16 @@ BoundClass::BoundClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol_, Cm::Ast::Clas
 
 void BoundClass::Accept(Visitor& visitor)
 {
+    for (const std::unique_ptr<BoundNode>& member : members)
+    {
+        member->Accept(visitor);
+    }
     visitor.Visit(*this);
+}
+
+void BoundClass::AddBoundNode(BoundNode* member)
+{
+    members.push_back(std::unique_ptr<BoundNode>(member));
 }
 
 } } // namespace Cm::BoundTree

@@ -25,6 +25,11 @@ ContainerScope::ContainerScope() : base(nullptr), parent(nullptr), container(nul
 {
 }
 
+ContainerScope::~ContainerScope()
+{
+    int x = 0;
+}
+
 ContainerScope::ContainerScope(ContainerScope&& that) : symbolMap(std::move(that.symbolMap)), base(that.base), parent(that.parent), container(that.container)
 {
     that.base = nullptr;

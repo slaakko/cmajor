@@ -233,6 +233,11 @@ std::string MakeArrayTypeName(Ir::Intf::Type* itemType, int size)
 
 ArrayType::ArrayType(Ir::Intf::Type* itemType_, int size_): Type(MakeArrayTypeName(itemType_, size_)), itemType(itemType_), size(size_)
 {
+    if (itemType->Owned())
+    {
+        throw std::runtime_error("array item type already owned");
+    }
+    itemType->SetOwned();
 }
 
 Ir::Intf::Type* ArrayType::Clone() const
@@ -274,7 +279,12 @@ StructureType::StructureType(const std::vector<Ir::Intf::Type*>& elementTypes_) 
             s.append(", ");
         }
         s.append(elementType->Name());
+        if (elementType->Owned())
+        {
+            throw std::runtime_error("structure element type already owned");
+        }
         elementTypes.push_back(std::unique_ptr<Ir::Intf::Type>(elementType));
+        elementType->SetOwned();
     }
     s.append(" }");
     SetName(s);
@@ -365,6 +375,11 @@ Ir::Intf::Type* RvalueRef(Ir::Intf::Type* baseType)
 
 FunctionType::FunctionType(Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Type*>& parameterTypes_) : Ir::Intf::Type("*function*"), returnType(returnType_)
 {
+    if (returnType->Owned())
+    {
+        throw std::runtime_error("function return type already owned");
+    }
+    returnType->SetOwned();
     std::string s = returnType->Name();
     s.append(" (");
     bool first = true;
@@ -379,6 +394,11 @@ FunctionType::FunctionType(Ir::Intf::Type* returnType_, const std::vector<Ir::In
             s.append(", ");
         }
         s.append(parameterType->Name());
+        if (parameterType->Owned())
+        {
+            throw std::runtime_error("function parameter type already owned");
+        }
+        parameterType->SetOwned();
         parameterTypes.push_back(std::unique_ptr<Ir::Intf::Type>(parameterType));
     }
     s.append(" )");

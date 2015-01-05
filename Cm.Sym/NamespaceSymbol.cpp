@@ -30,8 +30,11 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
         }
         else 
         {
-            Symbol* symbol = ownedSymbol.release();
-            symbolTable.Container()->AddSymbol(symbol);
+            if (!ownedSymbol->IsFunctionGroupSymbol())
+            {
+                Symbol* symbol = ownedSymbol.release();
+                symbolTable.Container()->AddSymbol(symbol);
+            }
         }
     }
     symbolTable.EndNamespaceScope();

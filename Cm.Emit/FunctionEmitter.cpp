@@ -87,9 +87,10 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::GetLocalVariableIrObject(Cm::
     throw std::runtime_error("local variable '" + localVariableOrParameter->Name() + "' not found");
 }
 
-FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_) : 
+FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
+    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_) : 
     Cm::BoundTree::Visitor(true), codeFormatter(codeFormatter_), emitter(nullptr), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_), 
-    irFunctionRepository(irFunctionRepository_), compoundResult(), currentCompileUnit(nullptr)
+    irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(nullptr)
 {
 }
 
@@ -152,6 +153,20 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundLiteral& boundLiteral)
     {
         GenJumpingBoolCode(result);
     }
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundStringLiteral& boundStringLiteral)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    result.SetMainObject(boundStringLiteral.GetType());
+    Ir::Intf::Object* stringConstant = stringRepository.GetStringConstant(boundStringLiteral.Id());
+    Ir::Intf::Object* stringObject = stringRepository.GetStringObject(boundStringLiteral.Id());
+    Ir::Intf::Object* zero = Cm::IrIntf::CreateI32Constant(0);
+    emitter->Own(zero);
+    Ir::Intf::Type* s = Cm::IrIntf::Pointer(stringConstant->GetType(), 1);
+    emitter->Own(s);
+    emitter->Emit(Cm::IrIntf::GetElementPtr(s, result.MainObject(), stringObject, zero, zero));
     resultStack.Push(std::move(result));
 }
 
@@ -342,7 +357,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCom
     if (boundCompoundStatement.IsEmpty())
     {
         compoundResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
-        GenerateCall(irFunctionRepository.GetDoNothingFunction(), compoundResult);
+        GenerateCall(irFunctionRepository.GetDoNothingFunction(), compoundResult, false);
     }
 }
 
@@ -446,7 +461,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStat
     else
     {
         result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
-        GenerateCall(irFunctionRepository.GetDoNothingFunction(), result);
+        GenerateCall(irFunctionRepository.GetDoNothingFunction(), result, false);
     }
     resultStack.Push(std::move(result));
 }
@@ -571,10 +586,24 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     resultStack.Push(std::move(result));
 }
 
-void FunctionEmitter::GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result)
+void FunctionEmitter::GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool memberFunctionCall)
 {
-    Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(result.MainObject(), fun, result.Args());
-    emitter->Emit(callInst);
+    if (memberFunctionCall)
+    {
+        Cm::Core::GenResult memberFunctionResult(emitter.get(), result.Flags());
+        memberFunctionResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+        for (Ir::Intf::Object* object : result.Objects())
+        {
+            memberFunctionResult.AddObject(object);
+        }
+        Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(memberFunctionResult.MainObject(), fun, memberFunctionResult.Args());
+        emitter->Emit(callInst);
+    }
+    else
+    {
+        Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(result.MainObject(), fun, result.Args());
+        emitter->Emit(callInst);
+    }
     if (fun->IsDoNothingFunction())
     {
         externalFunctions.insert(fun);
@@ -595,7 +624,7 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenRe
         {
             externalFunctions.insert(irFunction);
         }
-        GenerateCall(irFunction, result);
+        GenerateCall(irFunction, result, fun->IsMemberFunctionSymbol());
         bool boolResult = false;
         Cm::Sym::TypeSymbol* returnType = fun->GetReturnType();
         if (returnType)

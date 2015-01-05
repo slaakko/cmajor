@@ -48,7 +48,7 @@ ClassGrammar::ClassGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::Pars
     SetOwner(0);
 }
 
-Cm::Ast::ClassNode* ClassGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx)
+Cm::Ast::ClassNode* ClassGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit)
 {
     Cm::Parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<Cm::Parsing::XmlLog> xmlLog;
@@ -60,6 +60,7 @@ Cm::Ast::ClassNode* ClassGrammar::Parse(const char* start, const char* end, int 
     }
     Cm::Parsing::ObjectStack stack;
     stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<ParsingContext*>(ctx)));
+    stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<Cm::Ast::CompileUnitNode*>(compileUnit)));
     Cm::Parsing::Match match = Cm::Parsing::Grammar::Parse(scanner, stack);
     Cm::Parsing::Span stop = scanner.GetSpan();
     if (Log())
@@ -90,12 +91,16 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
         SetValueTypeName("Cm::Ast::ClassNode*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
@@ -183,12 +188,14 @@ public:
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>(context.value)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromSpecifiers(), fromIdentifier(), fromWhereConstraint() {}
+        Context(): ctx(), compileUnit(), value(), fromSpecifiers(), fromIdentifier(), fromWhereConstraint() {}
         ParsingContext* ctx;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::ClassNode* value;
         Cm::Ast::Specifiers fromSpecifiers;
         Cm::Ast::IdentifierNode* fromIdentifier;
@@ -361,11 +368,15 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("Cm::Ast::ClassNode*", "cls"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> cls_value = std::move(stack.top());
         context.cls = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>*>(cls_value.get());
         stack.pop();
@@ -394,6 +405,7 @@ public:
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>(context.cls)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostClassMember(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -407,9 +419,10 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), cls(), fromClassMember() {}
+        Context(): ctx(), cls(), compileUnit(), fromClassMember() {}
         ParsingContext* ctx;
         Cm::Ast::ClassNode* cls;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::Node* fromClassMember;
     };
     std::stack<Context> contextStack;
@@ -424,12 +437,16 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("Cm::Ast::ClassNode*", "cls"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
         SetValueTypeName("Cm::Ast::Node*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> cls_value = std::move(stack.top());
         context.cls = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>*>(cls_value.get());
         stack.pop();
@@ -561,6 +578,7 @@ public:
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>(context.cls)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostStaticConstructor(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -575,6 +593,7 @@ public:
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>(context.cls)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostConstructor(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -589,6 +608,7 @@ public:
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>(context.cls)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostDestructor(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -602,6 +622,7 @@ public:
     void PreMemberFunction(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostMemberFunction(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -615,6 +636,7 @@ public:
     void PreConversionFunction(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostConversionFunction(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -667,6 +689,7 @@ public:
     void PreClass(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>(context.compileUnit)));
     }
     void PostClass(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -719,9 +742,10 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), cls(), value(), fromStaticConstructor(), fromConstructor(), fromDestructor(), fromMemberFunction(), fromConversionFunction(), fromEnumType(), fromConstant(), fromMemberVariable(), fromClass(), fromDelegate(), fromClassDelegate(), fromTypedef() {}
+        Context(): ctx(), cls(), compileUnit(), value(), fromStaticConstructor(), fromConstructor(), fromDestructor(), fromMemberFunction(), fromConversionFunction(), fromEnumType(), fromConstant(), fromMemberVariable(), fromClass(), fromDelegate(), fromClassDelegate(), fromTypedef() {}
         ParsingContext* ctx;
         Cm::Ast::ClassNode* cls;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::Node* value;
         Cm::Ast::StaticConstructorNode* fromStaticConstructor;
         Cm::Ast::ConstructorNode* fromConstructor;
@@ -1108,6 +1132,7 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("Cm::Ast::ClassNode*", "cls"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
         SetValueTypeName("Cm::Ast::StaticConstructorNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "refId"));
@@ -1116,6 +1141,9 @@ public:
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> cls_value = std::move(stack.top());
         context.cls = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>*>(cls_value.get());
         stack.pop();
@@ -1168,7 +1196,11 @@ public:
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         pass = context.id->Str() == context.cls->Id()->Str() && HasStaticSpecifier(context.fromSpecifiers);
-        if (pass) context.value = new StaticConstructorNode(span, context.fromSpecifiers);
+        if (pass)
+        {
+            context.value = new StaticConstructorNode(span, context.fromSpecifiers);
+            context.value->SetCompileUnit(context.compileUnit);
+        }
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -1247,9 +1279,10 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), cls(), value(), id(), refId(), fromSpecifiers(), fromIdentifier(), fromref(), fromWhereConstraint(), fromCompoundStatement() {}
+        Context(): ctx(), cls(), compileUnit(), value(), id(), refId(), fromSpecifiers(), fromIdentifier(), fromref(), fromWhereConstraint(), fromCompoundStatement() {}
         ParsingContext* ctx;
         Cm::Ast::ClassNode* cls;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::StaticConstructorNode* value;
         std::unique_ptr<IdentifierNode> id;
         std::unique_ptr<IdentifierNode> refId;
@@ -1271,6 +1304,7 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("Cm::Ast::ClassNode*", "cls"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
         SetValueTypeName("Cm::Ast::ConstructorNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "refId"));
@@ -1280,6 +1314,9 @@ public:
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> cls_value = std::move(stack.top());
         context.cls = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>*>(cls_value.get());
         stack.pop();
@@ -1332,6 +1369,7 @@ public:
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.ctor.release();
+        context.value->SetCompileUnit(context.compileUnit);
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -1424,9 +1462,10 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), cls(), value(), id(), refId(), ctor(), fromSpecifiers(), fromIdentifier(), fromref(), fromWhereConstraint(), fromCompoundStatement() {}
+        Context(): ctx(), cls(), compileUnit(), value(), id(), refId(), ctor(), fromSpecifiers(), fromIdentifier(), fromref(), fromWhereConstraint(), fromCompoundStatement() {}
         ParsingContext* ctx;
         Cm::Ast::ClassNode* cls;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::ConstructorNode* value;
         std::unique_ptr<IdentifierNode> id;
         std::unique_ptr<IdentifierNode> refId;
@@ -1449,6 +1488,7 @@ public:
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("Cm::Ast::ClassNode*", "cls"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
         SetValueTypeName("Cm::Ast::DestructorNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
         AddLocalVariable(AttrOrVariable("Span", "s"));
@@ -1457,6 +1497,9 @@ public:
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> cls_value = std::move(stack.top());
         context.cls = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>*>(cls_value.get());
         stack.pop();
@@ -1501,6 +1544,7 @@ public:
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = new DestructorNode(context.s, context.fromSpecifiers, context.fromCompoundStatement);
+        context.value->SetCompileUnit(context.compileUnit);
     }
     void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -1536,9 +1580,10 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), cls(), value(), id(), s(), fromSpecifiers(), fromIdentifier(), fromCompoundStatement() {}
+        Context(): ctx(), cls(), compileUnit(), value(), id(), s(), fromSpecifiers(), fromIdentifier(), fromCompoundStatement() {}
         ParsingContext* ctx;
         Cm::Ast::ClassNode* cls;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::DestructorNode* value;
         std::unique_ptr<IdentifierNode> id;
         Span s;
@@ -1557,6 +1602,7 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
         SetValueTypeName("Cm::Ast::MemberFunctionNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<MemberFunctionNode>", "memFun"));
     }
@@ -1564,6 +1610,9 @@ public:
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
@@ -1626,6 +1675,7 @@ public:
     {
         context.memFun->SetBody(context.fromCompoundStatement);
         context.value = context.memFun.release();
+        context.value->SetCompileUnit(context.compileUnit);
     }
     void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -1696,8 +1746,9 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), memFun(), fromSpecifiers(), fromTypeExpr(), fromFunctionGroupId(), fromWhereConstraint(), fromCompoundStatement() {}
+        Context(): ctx(), compileUnit(), value(), memFun(), fromSpecifiers(), fromTypeExpr(), fromFunctionGroupId(), fromWhereConstraint(), fromCompoundStatement() {}
         ParsingContext* ctx;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::MemberFunctionNode* value;
         std::unique_ptr<MemberFunctionNode> memFun;
         Cm::Ast::Specifiers fromSpecifiers;
@@ -1717,6 +1768,7 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::CompileUnitNode*", "compileUnit"));
         SetValueTypeName("Cm::Ast::ConversionFunctionNode*");
         AddLocalVariable(AttrOrVariable("bool", "setConst"));
         AddLocalVariable(AttrOrVariable("Span", "s"));
@@ -1725,6 +1777,9 @@ public:
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
@@ -1769,6 +1824,7 @@ public:
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = new ConversionFunctionNode(context.s, context.fromSpecifiers, context.fromTypeExpr, context.setConst, context.fromWhereConstraint, context.fromCompoundStatement);
+        context.value->SetCompileUnit(context.compileUnit);
     }
     void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -1821,8 +1877,9 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), setConst(), s(), fromSpecifiers(), fromTypeExpr(), fromWhereConstraint(), fromCompoundStatement() {}
+        Context(): ctx(), compileUnit(), value(), setConst(), s(), fromSpecifiers(), fromTypeExpr(), fromWhereConstraint(), fromCompoundStatement() {}
         ParsingContext* ctx;
+        Cm::Ast::CompileUnitNode* compileUnit;
         Cm::Ast::ConversionFunctionNode* value;
         bool setConst;
         Span s;
@@ -1925,34 +1982,34 @@ private:
 void ClassGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.ConstantGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::ConstantGrammar::Create(pd);
+        grammar0 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.ConstantGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::EnumerationGrammar::Create(pd);
+        grammar1 = Cm::Parser::ConstantGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar2 = Cm::Parser::EnumerationGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.StatementGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::StatementGrammar::Create(pd);
+        grammar3 = Cm::Parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.StatementGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::ParameterGrammar::Create(pd);
+        grammar4 = Cm::Parser::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
     Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
@@ -1961,16 +2018,16 @@ void ClassGrammar::GetReferencedGrammars()
         grammar5 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
-    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
     if (!grammar6)
     {
-        grammar6 = Cm::Parser::TemplateGrammar::Create(pd);
+        grammar6 = Cm::Parser::ConceptGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
-    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
+    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
     if (!grammar7)
     {
-        grammar7 = Cm::Parser::ConceptGrammar::Create(pd);
+        grammar7 = Cm::Parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar7);
     Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("Cm.Parser.DelegateGrammar");
@@ -2015,13 +2072,13 @@ void ClassGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
     AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
     AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
     AddRuleLink(new Cm::Parsing::RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
     AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
     AddRuleLink(new Cm::Parsing::RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
     AddRuleLink(new Cm::Parsing::RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
@@ -2053,7 +2110,7 @@ void ClassGrammar::CreateRules()
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::CharParser('{'))),
                 new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::NonterminalParser("ClassContent", "ClassContent", 2))),
+                    new Cm::Parsing::NonterminalParser("ClassContent", "ClassContent", 3))),
             new Cm::Parsing::ExpectationParser(
                 new Cm::Parsing::CharParser('}')))));
     AddRule(new InheritanceRule("Inheritance", GetScope(),
@@ -2072,7 +2129,7 @@ void ClassGrammar::CreateRules()
     AddRule(new ClassContentRule("ClassContent", GetScope(),
         new Cm::Parsing::KleeneStarParser(
             new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("ClassMember", "ClassMember", 2)))));
+                new Cm::Parsing::NonterminalParser("ClassMember", "ClassMember", 3)))));
     AddRule(new ClassMemberRule("ClassMember", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
@@ -2086,15 +2143,15 @@ void ClassGrammar::CreateRules()
                                             new Cm::Parsing::AlternativeParser(
                                                 new Cm::Parsing::AlternativeParser(
                                                     new Cm::Parsing::ActionParser("A0",
-                                                        new Cm::Parsing::NonterminalParser("StaticConstructor", "StaticConstructor", 2)),
+                                                        new Cm::Parsing::NonterminalParser("StaticConstructor", "StaticConstructor", 3)),
                                                     new Cm::Parsing::ActionParser("A1",
-                                                        new Cm::Parsing::NonterminalParser("Constructor", "Constructor", 2))),
+                                                        new Cm::Parsing::NonterminalParser("Constructor", "Constructor", 3))),
                                                 new Cm::Parsing::ActionParser("A2",
-                                                    new Cm::Parsing::NonterminalParser("Destructor", "Destructor", 2))),
+                                                    new Cm::Parsing::NonterminalParser("Destructor", "Destructor", 3))),
                                             new Cm::Parsing::ActionParser("A3",
-                                                new Cm::Parsing::NonterminalParser("MemberFunction", "MemberFunction", 1))),
+                                                new Cm::Parsing::NonterminalParser("MemberFunction", "MemberFunction", 2))),
                                         new Cm::Parsing::ActionParser("A4",
-                                            new Cm::Parsing::NonterminalParser("ConversionFunction", "ConversionFunction", 1))),
+                                            new Cm::Parsing::NonterminalParser("ConversionFunction", "ConversionFunction", 2))),
                                     new Cm::Parsing::ActionParser("A5",
                                         new Cm::Parsing::NonterminalParser("EnumType", "EnumType", 1))),
                                 new Cm::Parsing::ActionParser("A6",
@@ -2102,7 +2159,7 @@ void ClassGrammar::CreateRules()
                             new Cm::Parsing::ActionParser("A7",
                                 new Cm::Parsing::NonterminalParser("MemberVariable", "MemberVariable", 1))),
                         new Cm::Parsing::ActionParser("A8",
-                            new Cm::Parsing::NonterminalParser("Class", "Class", 1))),
+                            new Cm::Parsing::NonterminalParser("Class", "Class", 2))),
                     new Cm::Parsing::ActionParser("A9",
                         new Cm::Parsing::NonterminalParser("Delegate", "Delegate", 1))),
                 new Cm::Parsing::ActionParser("A10",

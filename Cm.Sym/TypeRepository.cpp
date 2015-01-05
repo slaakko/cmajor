@@ -105,7 +105,15 @@ void CountDerivations(const Cm::Ast::DerivationList& derivations, int& numPointe
 
 Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations, const Span& span)
 {
-    Ir::Intf::Type* baseIrType = baseType->GetIrType()->Clone();
+    Ir::Intf::Type* baseIrType = nullptr;
+    if (baseType->IsVoidTypeSymbol())
+    {
+        baseIrType = Ir::Intf::GetFactory()->GetI8();
+    }
+    else
+    {
+        baseIrType = baseType->GetIrType()->Clone();
+    }
     int numPointers = 0;
     bool ref = false;
     bool rvalueRef = false;
@@ -145,14 +153,7 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
     }
     std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(derivations, baseType), baseType, derivations, typeId));
     derivedTypeSymbol->SetAccess(baseType->Access());
-    if (baseType->IsVoidTypeSymbol())
-    {
-        derivedTypeSymbol->SetIrType(MakeIrType(GetType(GetBasicTypeId(ShortBasicTypeId::byteId)), derivations, span));
-    }
-    else
-    {
-        derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
-    }
+    derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
     derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
     types.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol.get()));
     AddType(derivedTypeSymbol.get());
@@ -196,7 +197,6 @@ TypeSymbol* TypeRepository::MakeConstReferenceType(TypeSymbol* baseType, const S
 {
     if (baseType->IsConstReferenceType())
     {
-        int x = 0;
         return baseType;
     }
     if (baseType->IsDerivedTypeSymbol())
@@ -351,6 +351,10 @@ void TypeRepository::Import(Reader& reader)
         {
             throw std::runtime_error("type symbol expected");
         }
+    }
+    if (!reader.AllTypesFetched())
+    {
+        throw std::runtime_error("not all types fetched!");
     }
 }
 
