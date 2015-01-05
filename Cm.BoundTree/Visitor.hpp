@@ -55,7 +55,8 @@ public:
     Visitor(bool visitFunctionBody_);
     virtual ~Visitor();
 
-    virtual void Visit(BoundCompileUnit& compileUnit) {}
+    virtual void BeginVisit(BoundCompileUnit& compileUnit) {}
+    virtual void EndVisit(BoundCompileUnit& compileUnit) {}
 
     virtual void Visit(BoundLiteral& boundLiteral) {}
     virtual void Visit(BoundStringLiteral& boundStringLiteral) {}
@@ -98,7 +99,8 @@ public:
     virtual void BeginVisit(BoundFunction& boundFunction) {}
     virtual void EndVisit(BoundFunction& boundFunction) {}
 
-    virtual void Visit(BoundClass& boundClass) {}
+    virtual void BeginVisit(BoundClass& boundClass) {}
+    virtual void EndVisit(BoundClass& boundClass) {}
 
     bool VisitFunctionBody() const { return visitFunctionBody; }
     void PushSkipContent();

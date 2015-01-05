@@ -17,26 +17,36 @@ namespace Cm { namespace Emit {
 EmittingVisitor::EmittingVisitor(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_) :
     Cm::BoundTree::Visitor(false), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), 
-    irFile(irFilePath), codeFormatter(irFile)
+    irFile(irFilePath), codeFormatter(irFile), currentClass(nullptr)
 {
     stringRepository.Write(codeFormatter);
 }
 
-void EmittingVisitor::Visit(Cm::BoundTree::BoundCompileUnit& compileUnit)
+void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     irClassTypeRepository.Write(codeFormatter);
+}
+
+void EmittingVisitor::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
+{
+    for (Ir::Intf::Function* externalFunction : externalFunctions)
+    {
+        externalFunction->WriteDeclaration(codeFormatter, false, false);
+    }
+}
+
+void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
+{
+    irClassTypeRepository.AddClassType(boundClass.Symbol());
+    currentClass = &boundClass;
 }
 
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
-    FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository);
+    FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions);
     boundFunction.Accept(functionEmitter);
 }
 
-void EmittingVisitor::Visit(Cm::BoundTree::BoundClass& boundClass)
-{
-    irClassTypeRepository.AddClassType(boundClass.Symbol());
-}
 
 } } // namespace Cm::Emit

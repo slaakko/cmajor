@@ -41,7 +41,7 @@ public:
     void EndEnumScope();
     void AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode);
     void AddTypedef(Cm::Ast::TypedefNode* typedefNode);
-    void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, bool isMemberFunction);
+    void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, bool isConstructorOrDestructor);
     void EndFunctionScope();
     void BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode);
     void EndDelegateScope();
@@ -54,7 +54,7 @@ public:
     void BeginDeclarationScope(Cm::Ast::StatementNode* statementNode);
     void EndDeclarationcope();
     void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
-    void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
+    void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode, int memberVariableIndex);
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
     ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
     Cm::Ast::Node* GetNode(Symbol* symbol) const;

@@ -22,22 +22,22 @@
     <ClInclude Include="Argument.hpp" />
     <ClInclude Include="BasicTypeOp.hpp" />
     <ClInclude Include="ClassConversionTable.hpp" />
+    <ClInclude Include="DerivedTypeOpRepository.hpp" />
     <ClInclude Include="GenData.hpp" />
     <ClInclude Include="InitSymbolTable.hpp" />
     <ClInclude Include="IrClassTypeRepository.hpp" />
     <ClInclude Include="IrFunctionRepository.hpp" />
-    <ClInclude Include="PointerOpRepository.hpp" />
     <ClInclude Include="StringRepository.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Argument.cpp" />
     <ClCompile Include="BasicTypeOp.cpp" />
     <ClCompile Include="ClassConversionTable.cpp" />
+    <ClCompile Include="DerivedTypeOpRepository.cpp" />
     <ClCompile Include="GenData.cpp" />
     <ClCompile Include="InitSymbolTable.cpp" />
     <ClCompile Include="IrClassTypeRepository.cpp" />
     <ClCompile Include="IrFunctionRepository.cpp" />
-    <ClCompile Include="PointerOpRepository.cpp" />
     <ClCompile Include="StringRepository.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

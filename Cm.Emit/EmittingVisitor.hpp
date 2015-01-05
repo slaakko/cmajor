@@ -21,9 +21,10 @@ class EmittingVisitor : public Cm::BoundTree::Visitor
 public:
     EmittingVisitor(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_, 
         Cm::Core::StringRepository& stringRepository_);
-    void Visit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
+    void BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
+    void EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
+    void BeginVisit(Cm::BoundTree::BoundClass& boundClass) override;
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
-    void Visit(Cm::BoundTree::BoundClass& boundClass) override;
 private:
     Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
@@ -31,6 +32,8 @@ private:
     Cm::Core::StringRepository& stringRepository;
     std::ofstream irFile;
     Cm::Util::CodeFormatter codeFormatter;
+    Cm::BoundTree::BoundClass* currentClass;
+    std::unordered_set<Ir::Intf::Function*> externalFunctions;
 };
 
 } } // namespace Cm::Emit

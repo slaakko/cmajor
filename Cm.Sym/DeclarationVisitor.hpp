@@ -54,6 +54,7 @@ public:
 private:
     SymbolTable& symbolTable;
     int parameterIndex;
+    int memberVariableIndex;
 };
 
 } } // namespace Cm::Sym

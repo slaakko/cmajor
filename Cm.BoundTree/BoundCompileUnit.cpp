@@ -15,7 +15,7 @@
 namespace Cm { namespace BoundTree {
 
 BoundCompileUnit::BoundCompileUnit(const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : fileScope(), irFilePath(irFilePath_), symbolTable(symbolTable_),
-    conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), pointerOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository()
+    conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), derivedTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository()
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
 }
@@ -32,11 +32,12 @@ void BoundCompileUnit::AddBoundNode(BoundNode* boundNode)
 
 void BoundCompileUnit::Accept(Visitor& visitor)
 {
+    visitor.BeginVisit(*this);
     for (const std::unique_ptr<BoundNode>& boundNode : boundNodes)
     {
         boundNode->Accept(visitor);
     }
-    visitor.Visit(*this);
+    visitor.EndVisit(*this);
 }
 
 } } // namespace Cm::BoundTree

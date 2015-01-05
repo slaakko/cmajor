@@ -485,9 +485,9 @@ Ir::Intf::Type* LlvmBackEnd::CreateTypeName(const std::string& name, bool global
     return Llvm::TypeName(name, global);
 }
 
-Ir::Intf::MemberVarPtr LlvmBackEnd::CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type)
+Ir::Intf::MemberVar* LlvmBackEnd::CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type)
 {
-    return Ir::Intf::MemberVarPtr(new Llvm::MemberVar(memberVarName, ptr, index, type));
+    return new Llvm::MemberVar(memberVarName, ptr, index, type);
 }
 
 Ir::Intf::Object* LlvmBackEnd::CreateStackVar(const std::string& assemblyName, Ir::Intf::Type* type)

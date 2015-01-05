@@ -90,7 +90,7 @@ public:
     virtual std::string GetDestructionNodeTypeName() = 0;
     virtual std::string GetRegisterDestructorFunctionName() = 0;
     virtual Ir::Intf::Type* CreateTypeName(const std::string& name, bool global) = 0;
-    virtual Ir::Intf::MemberVarPtr CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type) = 0;
+    virtual Ir::Intf::MemberVar* CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type) = 0;
     virtual Ir::Intf::Object* CreateStackVar(const std::string& assemblyName, Ir::Intf::Type* type) = 0;
     virtual Ir::Intf::Object* CreateRefVar(const std::string& assemblyName, Ir::Intf::Type* type) = 0;
     virtual std::string GetVtblPtrVarName() = 0;

@@ -448,7 +448,7 @@ Ir::Intf::Type* CreateTypeName(const std::string& name, bool global)
     return GetBackEndImpl()->CreateTypeName(name, global);
 }
 
-Ir::Intf::MemberVarPtr CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type)
+Ir::Intf::MemberVar* CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type)
 {
     return GetBackEndImpl()->CreateMemberVar(memberVarName, ptr, index, type);
 }

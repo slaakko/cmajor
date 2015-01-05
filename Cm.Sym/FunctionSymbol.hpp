@@ -56,8 +56,8 @@ public:
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
     virtual bool IsConvertingConstructor() const { return false; }
-    bool IsMemberFunctionSymbol() const { return isMemberFunctionSymbol; }
-    void SetMemberFunctionSymbol() { isMemberFunctionSymbol = true; }
+    bool IsConstructorOrDestructorSymbo() const { return isConstructorOrDestructorSymbol; }
+    void SetConstructorOrDestructorSymbol() { isConstructorOrDestructorSymbol = true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void AddSymbol(Symbol* symbol) override;
@@ -76,7 +76,7 @@ private:
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
     Cm::Ast::CompileUnitNode* compileUnit;
-    bool isMemberFunctionSymbol;
+    bool isConstructorOrDestructorSymbol;
 };
 
 } } // namespace Cm::Sym

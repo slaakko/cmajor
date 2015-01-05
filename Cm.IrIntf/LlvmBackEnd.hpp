@@ -78,7 +78,7 @@ public:
     std::string GetDestructionNodeTypeName() override;
     std::string GetRegisterDestructorFunctionName() override;
     Ir::Intf::Type* CreateTypeName(const std::string& name, bool global) override;
-    Ir::Intf::MemberVarPtr CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type) override;
+    Ir::Intf::MemberVar* CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type) override;
     Ir::Intf::Object* CreateStackVar(const std::string& assemblyName, Ir::Intf::Type* type) override;
     Ir::Intf::Object* CreateRefVar(const std::string& assemblyName, Ir::Intf::Type* type) override;
     std::string GetVtblPtrVarName() override;

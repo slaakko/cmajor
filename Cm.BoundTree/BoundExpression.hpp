@@ -27,6 +27,7 @@ public:
     bool IsBoundExpressionNode() const override { return true; }
     virtual bool IsContainerExpression() const { return false; }
     virtual bool IsBoundFunctionGroup() const { return false; }
+    virtual bool IsBoundMemberVariable() const { return false; }
     virtual bool IsCast() const { return false; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
@@ -111,9 +112,13 @@ class BoundMemberVariable : public BoundExpression
 {
 public:
     BoundMemberVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::MemberVariableSymbol* symbol_);
+    bool IsBoundMemberVariable() const override { return true; }
     Cm::Sym::MemberVariableSymbol* Symbol() const { return symbol; }
     void Accept(Visitor& visitor) override;
+    void SetClassObject(Cm::BoundTree::BoundExpression* classObject_);
+    Cm::BoundTree::BoundExpression* GetClassObject() const { return classObject.get(); }
 private:
+    std::unique_ptr<Cm::BoundTree::BoundExpression> classObject;
     Cm::Sym::MemberVariableSymbol* symbol;
 };
 
