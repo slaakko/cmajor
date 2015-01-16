@@ -19,7 +19,7 @@ FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lo
 {
 }
 
-FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), isConstructorOrDestructorSymbol(false)
+FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1)
 {
 }
 
@@ -58,10 +58,100 @@ void FunctionSymbol::SetReturnType(TypeSymbol* returnType_)
     returnType = returnType_;
 }
 
+bool FunctionSymbol::IsConstructor() const
+{
+    return groupName == "@constructor" && !IsStatic();
+}
+
+bool FunctionSymbol::IsDefaultConstructor() const
+{
+    return groupName == "@constructor" && !IsStatic() && parameters.size() == 1;
+}
+
+bool FunctionSymbol::IsCopyConstructor() const
+{
+    if (groupName == "@constructor" && !IsStatic() && parameters.size() == 2)
+    {
+        Cm::Sym::TypeSymbol* firstParamType = parameters[0]->GetType();
+        Cm::Sym::TypeSymbol* classType = firstParamType->GetBaseType();
+        Cm::Sym::TypeSymbol* secondParamType = parameters[1]->GetType();
+        if (secondParamType->IsConstReferenceType() && TypesEqual(secondParamType->GetBaseType(), classType))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FunctionSymbol::IsMoveConstructor() const
+{
+    if (groupName == "@constructor" && !IsStatic() && parameters.size() == 2)
+    {
+        Cm::Sym::TypeSymbol* firstParamType = parameters[0]->GetType();
+        Cm::Sym::TypeSymbol* classType = firstParamType->GetBaseType();
+        Cm::Sym::TypeSymbol* secondParamType = parameters[1]->GetType();
+        if (secondParamType->IsRvalueRefType() && TypesEqual(secondParamType->GetBaseType(), classType))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FunctionSymbol::IsStaticConstructor() const
+{
+    if (groupName == "@constructor" && IsStatic() && parameters.empty())
+    {
+        return true;
+    }
+    return false;
+}
+
+bool FunctionSymbol::IsCopyAssignment() const
+{
+    if (groupName == "operator=" && parameters.size() == 2)
+    {
+        Cm::Sym::TypeSymbol* firstParamType = parameters[0]->GetType();
+        Cm::Sym::TypeSymbol* classType = firstParamType->GetBaseType();
+        Cm::Sym::TypeSymbol* secondParamType = parameters[1]->GetType();
+        if (secondParamType->IsConstReferenceType() && TypesEqual(secondParamType->GetBaseType(), classType))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FunctionSymbol::IsMoveAssignment() const
+{
+    if (groupName == "operator=" && parameters.size() == 2)
+    {
+        Cm::Sym::TypeSymbol* firstParamType = parameters[0]->GetType();
+        Cm::Sym::TypeSymbol* classType = firstParamType->GetBaseType();
+        Cm::Sym::TypeSymbol* secondParamType = parameters[1]->GetType();
+        if (secondParamType->IsRvalueRefType() && TypesEqual(secondParamType->GetBaseType(), classType))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FunctionSymbol::IsDestructor() const
+{
+    if (groupName == "@destructor" && parameters.size() == 1)
+    {
+        return true;
+    }
+    return false;
+}
+
 void FunctionSymbol::Write(Writer& writer)
 {
     ContainerSymbol::Write(writer);
+    writer.GetBinaryWriter().Write(uint16_t(flags));
     writer.GetBinaryWriter().Write(groupName);
+    writer.GetBinaryWriter().Write(vtblIndex);
     bool hasReturnType = returnType != nullptr;
     writer.GetBinaryWriter().Write(hasReturnType);
     if (hasReturnType)
@@ -73,7 +163,9 @@ void FunctionSymbol::Write(Writer& writer)
 void FunctionSymbol::Read(Reader& reader)
 {
     ContainerSymbol::Read(reader);
+    flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUShort());
     groupName = reader.GetBinaryReader().ReadString();
+    vtblIndex = reader.GetBinaryReader().ReadShort();
     bool hasReturnType = reader.GetBinaryReader().ReadBool();
     if (hasReturnType)
     {

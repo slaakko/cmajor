@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/TypeResolver.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/Typedef.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
@@ -170,12 +170,12 @@ void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
         }
         else
         {
-            throw Exception("symbol '" + symbol->FullName() + "' does not denote a type", symbol->GetSpan());
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a type", symbol->GetSpan());
         }
     }
     else
     {
-        throw Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Cm::Core::Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
 }
 

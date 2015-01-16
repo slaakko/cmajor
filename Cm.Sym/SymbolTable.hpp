@@ -12,6 +12,7 @@
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/ConversionTable.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Class.hpp>
 #include <Cm.Ast/Enumeration.hpp>
@@ -41,7 +42,7 @@ public:
     void EndEnumScope();
     void AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode);
     void AddTypedef(Cm::Ast::TypedefNode* typedefNode);
-    void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, bool isConstructorOrDestructor);
+    void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, FunctionSymbolFlags flags);
     void EndFunctionScope();
     void BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode);
     void EndDelegateScope();
@@ -66,6 +67,7 @@ public:
     TypeRepository& GetTypeRepository() { return typeRepository; }
     ConversionTable& GetStandardConversionTable() { return standardConversionTable; }
     void AddPredefinedSymbolToGlobalScope(Symbol* symbol);
+    void InitVirtualFunctionTables();
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;

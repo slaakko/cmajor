@@ -15,6 +15,7 @@
 #include <Cm.Core/StringRepository.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
 #include <Cm.Core/IrClassTypeRepository.hpp>
+#include <Cm.Core/SynthesizedClassFunRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -22,7 +23,8 @@ namespace Cm { namespace BoundTree {
 class BoundCompileUnit
 {
 public:
-    BoundCompileUnit(const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_);
+    BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_);
+    Cm::Ast::CompileUnitNode* SyntaxUnit() const { return syntaxUnit; }
     void SetFileScope(Cm::Sym::FileScope* fileScope_);
     Cm::Sym::FileScope* GetFileScope() const { return fileScope.get(); }
     const std::string& IrFilePath() const { return irFilePath; }
@@ -34,9 +36,13 @@ public:
     Cm::Core::StringRepository& StringRepository() { return stringRepository; }
     Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
     Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
+    void SetSynthesizedClassFunRepository(Cm::Core::SynthesizedClassFunRepository* synthesizedClassFunRepository_);
+    Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return *synthesizedClassFunRepository; }
     void AddBoundNode(BoundNode* boundNode);
     void Accept(Visitor& visitor);
+    void Own(Cm::Sym::FunctionSymbol* functionSymbol);
 private:
+    Cm::Ast::CompileUnitNode* syntaxUnit;
     std::unique_ptr<Cm::Sym::FileScope> fileScope;
     std::string irFilePath;
     std::string objectFilePath;
@@ -47,7 +53,9 @@ private:
     Cm::Core::StringRepository stringRepository;
     Cm::Core::IrFunctionRepository irFunctionRepository;
     Cm::Core::IrClassTypeRepository irClassTypeRepository;
+    std::unique_ptr<Cm::Core::SynthesizedClassFunRepository> synthesizedClassFunRepository;
     std::vector<std::unique_ptr<BoundNode>> boundNodes;
+    std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionSymbols;
 };
 
 } } // namespace Cm::BoundTree

@@ -81,7 +81,7 @@ public:
     Ir::Intf::MemberVar* CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type) override;
     Ir::Intf::Object* CreateStackVar(const std::string& assemblyName, Ir::Intf::Type* type) override;
     Ir::Intf::Object* CreateRefVar(const std::string& assemblyName, Ir::Intf::Type* type) override;
-    std::string GetVtblPtrVarName() override;
+    std::string GetVPtrVarName() override;
     Ir::Intf::MetadataStringPtr CreateMetadataString(const std::string& s) override;
     Ir::Intf::MetadataNode* CreateMetadataNode(int id) override;
     Ir::Intf::Object* CreateMetadataNull() override;

@@ -32,12 +32,12 @@ private:
     std::string MakeUniqueAssemblyName(const std::string& name);
 };
 
-class MemberVariableIrObjectRepository
+class IrObjectRepository
 {
 public:
     Ir::Intf::Object* MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr);
 private:
-    std::vector<std::unique_ptr<Ir::Intf::Object>> ownedMemberVariableObjects;
+    std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;
 };
 
 class FunctionEmitter : public Cm::BoundTree::Visitor
@@ -68,6 +68,10 @@ public:
     void BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
     void EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
     void Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveStatement) override;
+    void Visit(Cm::BoundTree::BoundInitClassObjectStatement& boundInitClassObjectStatement) override;
+    void Visit(Cm::BoundTree::BoundInitVPtrStatement& boundInitVPtrStatement) override;
+    void Visit(Cm::BoundTree::BoundInitMemberVariableStatement& boundInitMemberVariableStatement) override;
+    void Visit(Cm::BoundTree::BoundFunctionCallStatement& boundFunctionCallStatement) override;
     void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
@@ -96,12 +100,13 @@ private:
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;
     Cm::Core::StringRepository& stringRepository;
     LocalVariableIrObjectRepository localVariableIrObjectRepository;
-    MemberVariableIrObjectRepository memberVariableIrObjectRepository;
+    IrObjectRepository irObjectRepository;
     Cm::Ast::CompileUnitNode* currentCompileUnit;
     Cm::BoundTree::BoundClass* currentClass;
     Cm::Sym::ParameterSymbol* thisParam;
     std::unordered_set<Ir::Intf::Function*>& externalFunctions;
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
+    void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
     void GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
 };

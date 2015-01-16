@@ -21,8 +21,10 @@
 #include <Cm.Sym/Module.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Bind/Prebinder.hpp>
+#include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/Binder.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Bind/SynthesizedClassFun.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
@@ -122,6 +124,7 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& sy
 {
     Cm::Core::InitSymbolTable(symbolTable);
     ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths);
+    symbolTable.InitVirtualFunctionTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
         Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
@@ -138,7 +141,7 @@ void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit
     {
         if (userMainFunction)
         {
-            throw Cm::Bind::Exception("already has main() function", boundUserMainFunction->GetSpan(), userMainFunction->GetSpan());
+            throw Cm::Core::Exception("already has main() function", boundUserMainFunction->GetSpan(), userMainFunction->GetSpan());
         }
         else
         {
@@ -167,19 +170,25 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, std::vector<std::string>& objectFilePaths)
 {
     boost::filesystem::path outputBase(outputBasePath);
-    std::vector<Cm::Sym::FileScope*> fileScopes;
+    std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
         Cm::Bind::Prebinder prebinder(symbolTable);
         compileUnit->Accept(prebinder);
-        fileScopes.push_back(prebinder.GetFileScope());
+        fileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.GetFileScope()));
+    }
+    for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+    {
+        Cm::Bind::VirtualBinder virtualBinder(symbolTable, compileUnit.get());
+        compileUnit->Accept(virtualBinder);
     }
     int index = 0;
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
-        Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnitIrFilePath, symbolTable);
-        boundCompileUnit.SetFileScope(fileScopes[index]);
+        Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable);
+        boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
+        boundCompileUnit.SetFileScope(fileScopes[index].release());
         Bind(compileUnit.get(), boundCompileUnit, userMainFunction);
         Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
         GenerateObjectCode(boundCompileUnit);
@@ -281,6 +290,7 @@ void Build(const std::string& projectFilePath)
     {
         GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
     }
+    boost::filesystem::remove(project->AssemblyFilePath());
     Archive(objectFilePaths, project->AssemblyFilePath());
     if (project->GetTarget() == Cm::Ast::Target::program)
     {

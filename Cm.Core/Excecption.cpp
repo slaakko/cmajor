@@ -7,10 +7,10 @@
 
 ========================================================================*/
 
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Parser/Error.hpp>
 
-namespace Cm { namespace Bind {
+namespace Cm { namespace Core {
 
 Exception::Exception(const std::string& message_) : std::runtime_error(message_), message(message_), defined(), referenced()
 {
@@ -24,4 +24,4 @@ Exception::Exception(const std::string& message_, const Span& defined_, const Sp
 {
 }
 
-} } // namespace Cm::Bind
+} } // namespace Cm::Core

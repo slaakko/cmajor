@@ -152,7 +152,7 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
         return typeSymbol;
     }
     std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(derivations, baseType), baseType, derivations, typeId));
-    derivedTypeSymbol->SetAccess(baseType->Access());
+    derivedTypeSymbol->SetAccess(SymbolAccess::public_);
     derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
     derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
     types.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol.get()));
@@ -190,6 +190,27 @@ TypeSymbol* TypeRepository::MakeRvalueRefType(TypeSymbol* baseType, const Span& 
     }
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::rvalueRef);
+    return MakeDerivedType(derivations, baseType, span);
+}
+
+TypeSymbol* TypeRepository::MakeReferenceType(TypeSymbol* baseType, const Span& span)
+{
+    if (baseType->IsNonConstReferenceType())
+    {
+        return baseType;
+    }
+    if (baseType->IsDerivedTypeSymbol())
+    {
+        DerivedTypeSymbol* derivedType = static_cast<DerivedTypeSymbol*>(baseType);
+        Cm::Ast::DerivationList derivations = derivedType->Derivations();
+        if (!HasReferenceDerivation(derivations))
+        {
+            derivations.Add(Cm::Ast::Derivation::reference);
+        }
+        return MakeDerivedType(derivations, derivedType->GetBaseType(), span);
+    }
+    Cm::Ast::DerivationList derivations;
+    derivations.Add(Cm::Ast::Derivation::reference);
     return MakeDerivedType(derivations, baseType, span);
 }
 

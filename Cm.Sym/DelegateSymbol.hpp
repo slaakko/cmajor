@@ -14,6 +14,23 @@
 
 namespace Cm { namespace Sym {
 
+enum class DelegateTypeSymbolFlags : uint8_t
+{
+    none = 0,
+    nothrow = 1 << 0,
+    throw_ = 1 << 1
+};
+
+inline DelegateTypeSymbolFlags operator&(DelegateTypeSymbolFlags left, DelegateTypeSymbolFlags right)
+{
+    return DelegateTypeSymbolFlags(uint8_t(left) & uint8_t(right));
+}
+
+inline DelegateTypeSymbolFlags operator|(DelegateTypeSymbolFlags left, DelegateTypeSymbolFlags right)
+{
+    return DelegateTypeSymbolFlags(uint8_t(left) | uint8_t(right));
+}
+
 class DelegateTypeSymbol : public TypeSymbol
 {
 public:
@@ -22,7 +39,50 @@ public:
     std::string TypeString() const override { return "delegate"; };
     bool IsDelegateTypeSymbol() const override { return true; }
     std::string GetMangleId() const override;
+    bool IsNothrow() const
+    {
+        return GetFlag(DelegateTypeSymbolFlags::nothrow);
+    }
+    void SetNothrow()
+    {
+        SetFlag(DelegateTypeSymbolFlags::nothrow);
+    }
+    bool IsThrow() const
+    {
+        return GetFlag(DelegateTypeSymbolFlags::throw_);
+    }
+    void SetThrow()
+    {
+        SetFlag(DelegateTypeSymbolFlags::throw_);
+    }
+private:
+    DelegateTypeSymbolFlags flags;
+    bool GetFlag(DelegateTypeSymbolFlags flag) const
+    {
+        return (flags & flag) != DelegateTypeSymbolFlags::none;
+    }
+    void SetFlag(DelegateTypeSymbolFlags flag)
+    {
+        flags = flags | flag;
+    }
 };
+
+enum class ClassDelegateTypeSymbolFlags : uint8_t
+{
+    none = 0,
+    nothrow = 1 << 0,
+    throw_ = 1 << 1
+};
+
+inline ClassDelegateTypeSymbolFlags operator&(ClassDelegateTypeSymbolFlags left, ClassDelegateTypeSymbolFlags right)
+{
+    return ClassDelegateTypeSymbolFlags(uint8_t(left) & uint8_t(right));
+}
+
+inline ClassDelegateTypeSymbolFlags operator|(ClassDelegateTypeSymbolFlags left, ClassDelegateTypeSymbolFlags right)
+{
+    return ClassDelegateTypeSymbolFlags(uint8_t(left) | uint8_t(right));
+}
 
 class ClassDelegateTypeSymbol : public TypeSymbol
 {
@@ -32,6 +92,32 @@ public:
     std::string TypeString() const override { return "class delegate"; };
     std::string GetMangleId() const override;
     bool IsClassDelegateTypeSymbol() const override { return true; }
+    bool IsNothrow() const
+    {
+        return GetFlag(ClassDelegateTypeSymbolFlags::nothrow);
+    }
+    void SetNothrow()
+    {
+        SetFlag(ClassDelegateTypeSymbolFlags::nothrow);
+    }
+    bool IsThrow() const
+    {
+        return GetFlag(ClassDelegateTypeSymbolFlags::throw_);
+    }
+    void SetThrow()
+    {
+        SetFlag(ClassDelegateTypeSymbolFlags::throw_);
+    }
+private:
+    ClassDelegateTypeSymbolFlags flags;
+    bool GetFlag(ClassDelegateTypeSymbolFlags flag) const
+    {
+        return (flags & flag) != ClassDelegateTypeSymbolFlags::none;
+    }
+    void SetFlag(ClassDelegateTypeSymbolFlags flag)
+    {
+        flags = flags | flag;
+    }
 };
 
 } } // namespace Cm::Sym

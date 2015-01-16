@@ -9,6 +9,7 @@
 
 #include <Cm.Core/ClassConversionTable.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 
 namespace Cm { namespace Core {
@@ -27,8 +28,13 @@ ClassConversionTable::ClassConversionTable(Cm::Sym::TypeRepository& typeReposito
 {
 }
 
-Cm::Sym::FunctionSymbol* ClassConversionTable::MakeBaseClassDerivedClassConversion(Cm::Sym::TypeSymbol* baseClassDerivedType, Cm::Sym::TypeSymbol* derivedClassDerivedType, int distance)
+Cm::Sym::FunctionSymbol* ClassConversionTable::MakeBaseClassDerivedClassConversion(Cm::Sym::TypeSymbol* baseClassDerivedType, Cm::Sym::TypeSymbol* derivedClassDerivedType, int distance, 
+    const Cm::Parsing::Span& span)
 {
+    if (derivedClassDerivedType->IsClassTypeSymbol())
+    {
+        derivedClassDerivedType = typeRepository.MakePointerType(derivedClassDerivedType, span);
+    }
     BaseDerivedPair key(baseClassDerivedType, derivedClassDerivedType);
     ClassConversionMapIt i = classConversionMap.find(key);
     if (i != classConversionMap.end())

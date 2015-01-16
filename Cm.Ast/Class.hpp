@@ -57,6 +57,7 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     const NodeList& Arguments() const { return arguments; }
+    NodeList& Arguments() { return arguments; }
 private:
     NodeList arguments;
 };
@@ -71,6 +72,7 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
+    const std::string& MemberVariableName() const;
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<IdentifierNode> memberId;
@@ -110,7 +112,6 @@ public:
     void Read(Reader& reader);
     void Write(Writer& writer);
     std::string ToString() const;
-    void Accept(Visitor& visitor);
     void SetParent(Node* parent);
 private:
     std::vector<std::unique_ptr<InitializerNode>> initializerNodes;
@@ -123,6 +124,7 @@ public:
     StaticConstructorNode(const Span& span_, Specifiers specifiers_);
     NodeType GetNodeType() const override { return NodeType::staticConstructorNode; }
     void AddInitializer(InitializerNode* initializer) override;
+    const InitializerNodeList& Initializers() const { return initializers; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
@@ -139,6 +141,7 @@ public:
     ConstructorNode(const Span& span_, Specifiers specifiers_);
     NodeType GetNodeType() const override { return NodeType::constructorNode; }
     void AddInitializer(InitializerNode* initializer) override;
+    const InitializerNodeList& Initializers() const { return initializers; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;

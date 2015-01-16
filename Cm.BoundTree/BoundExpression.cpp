@@ -90,6 +90,12 @@ BoundParameter::BoundParameter(Cm::Ast::Node* syntaxNode_, Cm::Sym::ParameterSym
 {
 }
 
+Cm::Core::ArgumentCategory BoundParameter::GetArgumentCategory() const
+{
+    if (GetType()->IsNonConstReferenceType()) return Cm::Core::ArgumentCategory::lvalue;
+    return Cm::Core::ArgumentCategory::rvalue;
+}
+
 void BoundParameter::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -168,7 +174,7 @@ void BoundFunctionGroup::Accept(Visitor& visitor)
     throw std::runtime_error("member function not applicable");
 }
 
-BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_))
+BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_)), fun(nullptr)
 {
 }
 

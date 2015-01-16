@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/LocalVariable.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -27,12 +27,12 @@ Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTabl
         }
         else
         {
-            throw Exception("symbol '" + symbol->FullName() + "' does not denote a local variable", symbol->GetSpan());
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a local variable", symbol->GetSpan());
         }
     }
     else
     {
-        throw Exception("symbol '" + constructionStatementNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("symbol '" + constructionStatementNode->Id()->Str() + "' not found");
     }
 }
 

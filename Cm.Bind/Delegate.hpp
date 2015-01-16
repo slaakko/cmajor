@@ -15,6 +15,7 @@
 namespace Cm { namespace Bind {
 
 void BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::DelegateNode* delegateNode);
+void BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ClassDelegateNode* classDelegateNode);
 
 } } // namespace Cm::Bind
 

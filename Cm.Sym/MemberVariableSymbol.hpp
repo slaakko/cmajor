@@ -28,11 +28,11 @@ public:
     TypeSymbol* GetType() const;
     void SetType(TypeSymbol* type_) { type = type_; }
     void SetType(TypeSymbol* type_, int index_) override;
-    int Index() const { return index; }
-    void SetIndex(int index_) { index = index_; }
+    int LayoutIndex() const { return layoutIndex; }
+    void SetLayoutIndex(int layoutIndex_) { layoutIndex = layoutIndex_; }
 private:
     TypeSymbol* type;
-    int index;
+    int layoutIndex;
 };
 
 } } // namespace Cm::Sym

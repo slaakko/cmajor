@@ -79,7 +79,7 @@ Ir::Intf::Type* CreateTypeName(const std::string& name, bool global);
 Ir::Intf::MemberVar* CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type);
 Ir::Intf::Object* CreateStackVar(const std::string& assemblyName, Ir::Intf::Type* type);
 Ir::Intf::Object* CreateRefVar(const std::string& assemblyName, Ir::Intf::Type* type);
-std::string GetVtblPtrVarName();
+std::string GetVPtrVarName();
 Ir::Intf::GlobalPtr CreateGlobal(const std::string& name, Ir::Intf::Type* type);
 Ir::Intf::Parameter* CreatePointerParameter(const std::string& name, Ir::Intf::Type* type);
 Ir::Intf::Parameter* CreateParameter(const std::string& parameterName, Ir::Intf::Type* parameterType);

@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/Evaluator.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Constant.hpp>
 #include <Cm.Bind/Enumeration.hpp>
@@ -19,6 +19,8 @@
 #include <functional>
 
 namespace Cm { namespace Bind {
+
+using Cm::Parsing::Span;
 
 typedef Cm::Sym::Value* (*BinaryOperatorFun)(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span);
 typedef Cm::Sym::Value* (*UnaryOperatorFun)(Cm::Sym::Value* subject, const Span& span);
@@ -50,12 +52,12 @@ Cm::Sym::Value* EvaluationStack::Pop()
 
 Cm::Sym::Value* NotSupported(Cm::Sym::Value* subject, const Span& span)
 {
-    throw Exception("operation not supported for type " + ValueTypeStr(subject->GetValueType()), span);
+    throw Cm::Core::Exception("operation not supported for type " + ValueTypeStr(subject->GetValueType()), span);
 }
 
 Cm::Sym::Value* NotSupported(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    throw Exception("operation not supported for types " + ValueTypeStr(left->GetValueType()) + " and " + ValueTypeStr(right->GetValueType()), span);
+    throw Cm::Core::Exception("operation not supported for types " + ValueTypeStr(left->GetValueType()) + " and " + ValueTypeStr(right->GetValueType()), span);
 }
 
 template<typename ValueT, typename Op>
@@ -566,22 +568,22 @@ void Evaluator::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
 
 void Evaluator::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
 {
-    throw Exception("cannot evaluate statically", stringLiteralNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", stringLiteralNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::NullLiteralNode& nullLiteralNode)
 {
-    throw Exception("cannot evaluate statically", nullLiteralNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", nullLiteralNode.GetSpan());
 }
 
 void Evaluator::BeginVisit(Cm::Ast::EquivalenceNode& equivalenceNode)
 {
-    throw Exception("operation not supported", equivalenceNode.GetSpan());
+    throw Cm::Core::Exception("operation not supported", equivalenceNode.GetSpan());
 }
 
 void Evaluator::BeginVisit(Cm::Ast::ImplicationNode& implicationNode)
 {
-    throw Exception("operation not supported", implicationNode.GetSpan());
+    throw Cm::Core::Exception("operation not supported", implicationNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode)
@@ -676,12 +678,12 @@ void Evaluator::EndVisit(Cm::Ast::RemNode& remNode)
 
 void Evaluator::BeginVisit(Cm::Ast::PrefixIncNode& prefixIncNode)
 {
-    throw Exception("cannot evaluate statically", prefixIncNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", prefixIncNode.GetSpan());
 }
 
 void Evaluator::BeginVisit(Cm::Ast::PrefixDecNode& prefixDecNode)
 {
-    throw Exception("cannot evaluate statically", prefixDecNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", prefixDecNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::UnaryPlusNode& unaryPlusNode)
@@ -706,22 +708,22 @@ void Evaluator::EndVisit(Cm::Ast::ComplementNode& complementNode)
 
 void Evaluator::Visit(Cm::Ast::AddrOfNode& addrOfNode)
 {
-    throw Exception("cannot evaluate statically", addrOfNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", addrOfNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::DerefNode& derefNode)
 {
-    throw Exception("cannot evaluate statically", derefNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", derefNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::PostfixIncNode& postfixIncNode)
 {
-    throw Exception("cannot evaluate statically", postfixIncNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", postfixIncNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::PostfixDecNode& postfiDecNode)
 {
-    throw Exception("cannot evaluate statically", postfiDecNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", postfiDecNode.GetSpan());
 }
 
 class ScopedValue : public Cm::Sym::Value
@@ -773,33 +775,33 @@ void Evaluator::EndVisit(Cm::Ast::DotNode& dotNode)
         }
         else
         {
-            throw Exception("symbol '" + containerSymbol->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+            throw Cm::Core::Exception("symbol '" + containerSymbol->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
         }
     }
     else
     {
-        throw Exception("expression '" + dotNode.Subject()->FullName() + "' must denote a namespace, class type or enumerated type", dotNode.Subject()->GetSpan());
+        throw Cm::Core::Exception("expression '" + dotNode.Subject()->FullName() + "' must denote a namespace, class type or enumerated type", dotNode.Subject()->GetSpan());
     }
 }
 
 void Evaluator::Visit(Cm::Ast::ArrowNode& arrowNode)
 {
-    throw Exception("cannot evaluate statically", arrowNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", arrowNode.GetSpan());
 }
 
 void Evaluator::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
 {
-    throw Exception("cannot evaluate statically", invokeNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", invokeNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::IndexNode& indexNode)
 {
-    throw Exception("cannot evaluate statically", indexNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", indexNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 {
-    throw Exception("not implemented yet", sizeOfNode.GetSpan());
+    throw Cm::Core::Exception("not implemented yet", sizeOfNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::CastNode& castNode)
@@ -813,17 +815,17 @@ void Evaluator::Visit(Cm::Ast::CastNode& castNode)
 
 void Evaluator::BeginVisit(Cm::Ast::ConstructNode& constructNode)
 {
-    throw Exception("cannot evaluate statically", constructNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", constructNode.GetSpan());
 }
 
 void Evaluator::BeginVisit(Cm::Ast::NewNode& newNode)
 {
-    throw Exception("cannot evaluate statically", newNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", newNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 {
-    throw Exception("cannot evaluate statically", templateIdNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", templateIdNode.GetSpan());
 }
 
 void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
@@ -872,7 +874,7 @@ void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
     }
     else
     {
-        throw Exception("cannot evaluate statically", symbol->GetSpan());
+        throw Cm::Core::Exception("cannot evaluate statically", symbol->GetSpan());
     }
 }
 
@@ -889,23 +891,23 @@ void Evaluator::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     else
     {
-        throw Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Cm::Core::Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
 }
 
 void Evaluator::Visit(Cm::Ast::ThisNode& thisNode)
 {
-    throw Exception("cannot evaluate statically", thisNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", thisNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::BaseNode& baseNode)
 {
-    throw Exception("cannot evaluate statically", baseNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", baseNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::TypeNameNode& typeNameNode)
 {
-    throw Exception("cannot evaluate statically", typeNameNode.GetSpan());
+    throw Cm::Core::Exception("cannot evaluate statically", typeNameNode.GetSpan());
 }
 
 Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, Cm::Sym::FileScope* fileScope)

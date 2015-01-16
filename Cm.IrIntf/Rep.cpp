@@ -303,9 +303,9 @@ Ir::Intf::Object* CreateMetadataNull()
     return GetBackEndImpl()->CreateMetadataNull();
 }
 
-std::string GetVtblPtrVarName()
+std::string GetVPtrVarName()
 {
-    return GetBackEndImpl()->GetVtblPtrVarName();
+    return GetBackEndImpl()->GetVPtrVarName();
 }
 
 bool TypesEqual(Ir::Intf::Type* left, Ir::Intf::Type* right)

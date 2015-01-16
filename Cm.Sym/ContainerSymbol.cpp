@@ -112,4 +112,12 @@ void ContainerSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& expo
     }
 }
 
+void ContainerSymbol::InitVirtualFunctionTables()
+{
+    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    {
+        symbol->InitVirtualFunctionTables();
+    }
+}
+
 } } // namespace Cm::Sym

@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/Parameter.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.BoundTree/BoundStatement.hpp>
@@ -44,17 +44,17 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
         }
         else
         {
-            throw Exception("symbol '" + symbol->FullName() + "' does not denote a parameter", symbol->GetSpan());
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a parameter", symbol->GetSpan());
         }
     }
     else
     {
-        throw Exception("symbol '" + parameterNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("symbol '" + parameterNode->Id()->Str() + "' not found");
     }
 }
 
-void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, 
-    Cm::BoundTree::BoundFunction* boundFunction)
+void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
+    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::BoundTree::BoundFunction* boundFunction)
 {
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
     if (functionSymbol->IsExternal()) return;
@@ -66,17 +66,26 @@ void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTabl
         std::vector<Cm::Core::Argument> resolutionArguments;
         Cm::Core::Argument targetArgument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(parameterType, parameterSymbol->GetSpan()));
         resolutionArguments.push_back(targetArgument);
-        Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, symbolTable.GetTypeRepository().MakeConstReferenceType(parameterType, parameterSymbol->GetSpan()));
-        resolutionArguments.push_back(sourceArgument);
+        if (parameterType->IsNonConstReferenceType())
+        {
+            Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, parameterType);
+            resolutionArguments.push_back(sourceArgument);
+        }
+        else
+        {
+            Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, symbolTable.GetTypeRepository().MakeConstReferenceType(parameterType, parameterSymbol->GetSpan()));
+            resolutionArguments.push_back(sourceArgument);
+        }
         Cm::Sym::FunctionLookupSet functionLookups;
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
-        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, "@constructor", resolutionArguments, functionLookups, 
-            parameterSymbol->GetSpan(), conversions);
+        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, "@constructor", resolutionArguments, 
+            functionLookups, parameterSymbol->GetSpan(), conversions);
         boundReceiveStatement->SetConstructor(ctor);
         boundFunction->Body()->InsertStatement(index, boundReceiveStatement);
         ++index;
     }
+    boundFunction->SetClassObjectLayoutFunIndex(index);
 }
 
 } } // namespace Cm::Bind

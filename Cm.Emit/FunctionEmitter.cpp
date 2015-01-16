@@ -8,11 +8,12 @@
 ========================================================================*/
 
 #include <Cm.Emit/FunctionEmitter.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
+#include <Cm.Core/GlobalFlags.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -56,11 +57,11 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
     {
         if (type->GetBaseType()->IsClassTypeSymbol())
         {
-            localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 1));
+            localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 2));
         }
         else
         {
-            localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 1));
+            localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 2));
         }
     }
     else
@@ -89,10 +90,10 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::GetLocalVariableIrObject(Cm::
     throw std::runtime_error("local variable '" + localVariableOrParameter->Name() + "' not found");
 }
 
-Ir::Intf::Object* MemberVariableIrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr)
+Ir::Intf::Object* IrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr)
 {
-    Ir::Intf::MemberVar* memberVar = Cm::IrIntf::CreateMemberVar(boundMemberVariable->Symbol()->Name(), ptr, boundMemberVariable->Symbol()->Index(), boundMemberVariable->Symbol()->GetType()->GetIrType());
-    ownedMemberVariableObjects.push_back(std::unique_ptr<Ir::Intf::Object>(memberVar));
+    Ir::Intf::MemberVar* memberVar = Cm::IrIntf::CreateMemberVar(boundMemberVariable->Symbol()->Name(), ptr, boundMemberVariable->Symbol()->LayoutIndex(), boundMemberVariable->Symbol()->GetType()->GetIrType());
+    ownedIrObjects.push_back(std::unique_ptr<Ir::Intf::Object>(memberVar));
     return memberVar;
 }
 
@@ -117,7 +118,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     {
         Ir::Intf::Object* localVariableIrObject = localVariableIrObjectRepository.CreateLocalVariableIrObjectFor(parameter);
         emitter->Emit(Cm::IrIntf::Alloca(parameter->GetType()->GetIrType(), localVariableIrObject));
-        if (currentClass && parameterIndex == 0)
+        if (currentFunction->IsMemberFunctionSymbol() && parameterIndex == 0)
         {
             thisParam = parameter;
         }
@@ -153,7 +154,10 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
         result.BackpatchNextTargets(retLabel);
     }
     irFunction->Clean();
-    irFunction->WriteDefinition(codeFormatter, false, false);
+    Cm::Sym::FunctionSymbol* functionSymbol = boundFunction.GetFunctionSymbol();
+    bool weakOdr = functionSymbol->IsReplicated();
+    bool inline_ = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::optimize) && functionSymbol->IsInline();
+    irFunction->WriteDefinition(codeFormatter, weakOdr, inline_);
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLiteral& boundLiteral)
@@ -199,7 +203,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConstant& boundConstant)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    if (boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
+    Cm::Sym::TypeSymbol* type = boundLocalVariable.Symbol()->GetType();
+    bool typeIsReferenceType = type->IsReferenceType() || type->IsRvalueRefType();
+    bool byRefOrClassType = boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || type->IsClassTypeSymbol();
+    if ((boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue)) && typeIsReferenceType)
+    {
+        byRefOrClassType = false; // already reference type
+    }
+    if (byRefOrClassType || boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable))
     {
         result.SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundLocalVariable.Symbol()));
     }
@@ -209,7 +220,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariabl
         result.SetMainObject(type);
         result.AddObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundLocalVariable.Symbol()));
         Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
-        Cm::Sym::TypeSymbol* plainType = typeRepository.MakePlainType(type);
         if (boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
         {
             GenJumpingBoolCode(result);
@@ -221,6 +231,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariabl
 void FunctionEmitter::Visit(Cm::BoundTree::BoundParameter& boundParameter)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::Sym::TypeSymbol* type = boundParameter.Symbol()->GetType();
     if (boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
     {
         result.SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundParameter.Symbol()));
@@ -231,8 +242,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundParameter& boundParameter)
         result.SetMainObject(type);
         result.AddObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundParameter.Symbol()));
         Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
-        Cm::Sym::TypeSymbol* plainType = typeRepository.MakePlainType(type);
-        if (boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode) && plainType->IsBoolTypeSymbol())
+        if (boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
         {
             GenJumpingBoolCode(result);
         }
@@ -258,13 +268,23 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
         }
         else
         {
-            throw Cm::Bind::Exception("cannot use member variables in non-class context", boundMemberVariable.Symbol()->GetSpan());
+            throw Cm::Core::Exception("cannot use member variables in non-class context", boundMemberVariable.Symbol()->GetSpan());
         }
     }
     Cm::Core::GenResult ptrResult = resultStack.Pop();
-    result.SetMainObject(memberVariableIrObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult.MainObject()));
+    Cm::Sym::TypeSymbol* type = boundMemberVariable.Symbol()->GetType();
+    Ir::Intf::Object* memberVariableIrObject = irObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult.MainObject());
+    if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
+    {
+        result.SetMainObject(memberVariableIrObject->CreateAddr(*emitter, type->GetIrType()));
+    }
+    else
+    {
+        result.SetMainObject(type);
+        result.AddObject(memberVariableIrObject);
+        Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
+    }
     result.Merge(ptrResult);
-    Cm::Sym::TypeSymbol* plainType = typeRepository.MakePlainType(boundMemberVariable.Symbol()->GetType());
     if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         GenJumpingBoolCode(result);
@@ -284,6 +304,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
     Ir::Intf::LabelObject* resultLabel = operandResult.GetLabel();
     result.Merge(operandResult);
     Cm::Sym::FunctionSymbol* conversionFun = boundConversion.ConversionFun();
+    if (boundConversion.Operand()->GetType()->IsClassTypeSymbol() && (boundConversion.GetType()->IsPointerType() || boundConversion.GetType()->IsReferenceType() || boundConversion.GetType()->IsRvalueRefType()))
+    {
+        result.SetClassTypeToPointerTypeConversion();
+    }
     GenerateCall(conversionFun, result);
     if (resultLabel)
     {
@@ -365,7 +389,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    result.SetMainObject(functionCall.GetType());
+    if (functionCall.GetType())
+    {
+        result.SetMainObject(functionCall.GetType());
+    }
     if (functionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         result.SetGenJumpingBoolCode();
@@ -377,6 +404,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
         result.Merge(argResult);
     }
     Cm::Sym::FunctionSymbol* fun = functionCall.GetFunction();
+    if (functionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall))
+    {
+        result.SetGenVirtualCall();
+    }
     GenerateCall(fun, result);
     resultStack.Push(std::move(result));
 }
@@ -421,6 +452,112 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveSt
     result.AddObject(irParameter);
     Cm::Sym::FunctionSymbol* ctor = boundReceiveStatement.Constructor();
     GenerateCall(ctor, result);
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundInitClassObjectStatement& boundInitClassObjectStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    boundInitClassObjectStatement.FunctionCall()->Accept(*this);
+    Cm::Core::GenResult callResult = resultStack.Pop();
+    result.Merge(callResult);
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundInitVPtrStatement& boundInitVPtrStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 1);
+    emitter->Own(i8Ptr);
+    Ir::Intf::Type* i8PtrPtr = Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 2);
+    emitter->Own(i8PtrPtr);
+    Cm::Sym::ClassTypeSymbol* classType = boundInitVPtrStatement.ClassType();
+    Cm::BoundTree::BoundParameter boundThisParam(nullptr, thisParam);
+    boundThisParam.Accept(*this);
+    Cm::Core::GenResult thisResult = resultStack.Pop();
+    int16_t vptrIndex = classType->VPtrIndex();
+    Ir::Intf::Object* vptrContainerPtr = thisResult.MainObject();
+    if (vptrIndex == -1)
+    {
+        Cm::Sym::ClassTypeSymbol* vptrContainingType = classType->VPtrContainerClass();
+        vptrIndex = vptrContainingType->VPtrIndex();
+        Ir::Intf::Type* vptrContainingTypeIrType = vptrContainingType->GetIrType();
+        Ir::Intf::Type* vptrContainingTypePtrType = Cm::IrIntf::Pointer(vptrContainingTypeIrType, 1);
+        emitter->Own(vptrContainingTypePtrType);
+        Ir::Intf::RegVar* containerPtr = Cm::IrIntf::CreateTemporaryRegVar(vptrContainingTypePtrType);
+        emitter->Own(containerPtr);
+        Ir::Intf::Type* classTypeIrType = classType->GetIrType();
+        Ir::Intf::Type* classTypePtrType = Cm::IrIntf::Pointer(classTypeIrType, 1);
+        emitter->Own(classTypePtrType);
+        emitter->Emit(Cm::IrIntf::Bitcast(classTypePtrType, containerPtr, thisResult.MainObject(), vptrContainingTypePtrType));
+        vptrContainerPtr = containerPtr;
+    }
+    Ir::Intf::MemberVar* vptr = Cm::IrIntf::CreateMemberVar(Cm::IrIntf::GetVPtrVarName(), vptrContainerPtr, vptrIndex, i8PtrPtr);
+    emitter->Own(vptr);
+    Ir::Intf::RegVar* vtblAddrAsI8PtrPtr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(vtblAddrAsI8PtrPtr);
+    Ir::Intf::Type* vtblAddrType = Cm::IrIntf::Pointer(Cm::IrIntf::Array(i8Ptr->Clone(), int(classType->Vtbl().size())), 1);
+    emitter->Own(vtblAddrType);
+    std::string vtblName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "vtbl");
+    Ir::Intf::Object* vtblObject = Cm::IrIntf::CreateGlobal(vtblName, vtblAddrType);
+    emitter->Own(vtblObject);
+    emitter->Emit(Cm::IrIntf::Bitcast(vtblAddrType, vtblAddrAsI8PtrPtr, vtblObject, i8PtrPtr));
+    Cm::IrIntf::Assign(*emitter, i8PtrPtr, vtblAddrAsI8PtrPtr, vptr);
+    result.Merge(thisResult);
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundInitMemberVariableStatement& boundInitMemberVariableStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    int n = boundInitMemberVariableStatement.Arguments().Count();
+    Ir::Intf::LabelObject* resultLabel = nullptr;
+    for (int i = 0; i < n; ++i)
+    {
+        const std::unique_ptr<Cm::BoundTree::BoundExpression>& arg = boundInitMemberVariableStatement.Arguments()[i];
+        arg->Accept(*this);
+        Cm::Core::GenResult argResult = resultStack.Pop();
+        if (!resultLabel)
+        {
+            resultLabel = argResult.GetLabel();
+        }
+        result.Merge(argResult);
+    }
+    Cm::Sym::FunctionSymbol* ctor = boundInitMemberVariableStatement.Constructor();
+    GenerateCall(ctor, result);
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCallStatement& boundFunctionCallStatement) 
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::Sym::FunctionSymbol* function = boundFunctionCallStatement.Function();
+    if (!function->IsBasicTypeOp() && !function->IsConstructorOrDestructorSymbol())
+    {
+        result.SetMainObject(function->GetReturnType());
+    }
+    int n = boundFunctionCallStatement.Arguments().Count();
+    Ir::Intf::LabelObject* resultLabel = nullptr;
+    for (int i = 0; i < n; ++i)
+    {
+        const std::unique_ptr<Cm::BoundTree::BoundExpression>& arg = boundFunctionCallStatement.Arguments()[i];
+        arg->Accept(*this);
+        Cm::Core::GenResult argResult = resultStack.Pop();
+        if (!resultLabel)
+        {
+            resultLabel = argResult.GetLabel();
+        }
+        result.Merge(argResult);
+    }
+    GenerateCall(function, result);
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
     resultStack.Push(std::move(result));
 }
 
@@ -476,6 +613,11 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundCons
 void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::Sym::FunctionSymbol* assignment = boundAssignmentStatement.Assignment();
+    if (!assignment->IsBasicTypeOp())
+    {
+        result.SetMainObject(assignment->GetReturnType());
+    }
     Cm::Core::GenResult sourceResult = resultStack.Pop();
     Cm::Core::GenResult targetResult = resultStack.Pop(); 
     Ir::Intf::LabelObject* resultLabel = targetResult.GetLabel();
@@ -485,7 +627,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
     }
     result.Merge(targetResult);
     result.Merge(sourceResult);
-    Cm::Sym::FunctionSymbol* assignment = boundAssignmentStatement.Assignment();
     GenerateCall(assignment, result);
     if (resultLabel)
     {
@@ -655,6 +796,58 @@ void FunctionEmitter::GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult&
     }
 }
 
+void FunctionEmitter::GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result)
+{
+    Cm::Core::GenResult memberFunctionResult(emitter.get(), result.Flags());
+    if (fun->IsConstructorOrDestructorSymbol())
+    {
+        memberFunctionResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+    }
+    for (Ir::Intf::Object* object : result.Objects())
+    {
+        memberFunctionResult.AddObject(object);
+    }
+    Ir::Intf::Object* objectPtr = memberFunctionResult.Arg1();
+    Cm::Sym::ClassTypeSymbol* classType = fun->Class();
+    Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 1);
+    emitter->Own(i8Ptr);
+    Ir::Intf::Type* i8PtrPtr = Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 2);
+    emitter->Own(i8PtrPtr);
+    Ir::Intf::Object* vptrContainerPtr = objectPtr;
+    int16_t vptrIndex = classType->VPtrIndex();
+    if (vptrIndex == -1)
+    {
+        Cm::Sym::ClassTypeSymbol* vptrContainingType = classType->VPtrContainerClass();
+        vptrIndex = vptrContainingType->VPtrIndex();
+        Ir::Intf::Type* vptrContainingPtrIrType = Cm::IrIntf::Pointer(vptrContainingType->GetIrType(), 1);
+        emitter->Own(vptrContainingPtrIrType);
+        Ir::Intf::RegVar* containerPtr = Cm::IrIntf::CreateTemporaryRegVar(vptrContainingPtrIrType);
+        emitter->Own(containerPtr);
+        Ir::Intf::Type* classTypePtrIrType = Cm::IrIntf::Pointer(classType->GetIrType(), 1);
+        emitter->Own(classTypePtrIrType);
+        emitter->Emit(Cm::IrIntf::Bitcast(classTypePtrIrType, containerPtr, objectPtr, vptrContainingPtrIrType));
+        vptrContainerPtr = containerPtr;
+    }
+    Ir::Intf::MemberVar* vptr = Cm::IrIntf::CreateMemberVar(Cm::IrIntf::GetVPtrVarName(), vptrContainerPtr, vptrIndex, i8PtrPtr);
+    emitter->Own(vptr);
+    Ir::Intf::RegVar* loadedVptr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(loadedVptr);
+    Cm::IrIntf::Assign(*emitter, i8PtrPtr, vptr, loadedVptr);
+    Ir::Intf::RegVar* functionI8PtrPtr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(functionI8PtrPtr);
+    Ir::Intf::Object* functionIndex = Cm::IrIntf::CreateI16Constant(fun->VtblIndex());
+    emitter->Own(functionIndex);
+    emitter->Emit(Cm::IrIntf::GetElementPtr(i8PtrPtr, functionI8PtrPtr, loadedVptr, functionIndex));
+    Ir::Intf::RegVar* loadedFunctionI8Ptr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(loadedFunctionI8Ptr);
+    Cm::IrIntf::Assign(*emitter, i8Ptr, functionI8PtrPtr, loadedFunctionI8Ptr);
+    Ir::Intf::Type* functionPtrType = irFunctionRepository.GetFunPtrIrType(fun);
+    Ir::Intf::RegVar* loadedFunctionPtr = Cm::IrIntf::CreateTemporaryRegVar(functionPtrType);
+    emitter->Own(loadedFunctionPtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, loadedFunctionPtr, loadedFunctionI8Ptr, functionPtrType));
+    emitter->Emit(Cm::IrIntf::IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args()));
+}
+
 void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result)
 {
     if (fun->IsBasicTypeOp())
@@ -664,12 +857,19 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenRe
     }
     else
     {
-        Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(fun);
-        if (fun->CompileUnit() != currentCompileUnit)
+        if (result.GenerateVirtualCall())
         {
-            externalFunctions.insert(irFunction);
+            GenerateVirtualCall(fun, result);
         }
-        GenerateCall(irFunction, result, fun->IsConstructorOrDestructorSymbo());
+        else
+        {
+            Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(fun);
+            if (fun->CompileUnit() != currentCompileUnit && !fun->IsReplicated())
+            {
+                externalFunctions.insert(irFunction);
+            }
+            GenerateCall(irFunction, result, fun->IsConstructorOrDestructorSymbol());
+        }
         bool boolResult = false;
         Cm::Sym::TypeSymbol* returnType = fun->GetReturnType();
         if (returnType)

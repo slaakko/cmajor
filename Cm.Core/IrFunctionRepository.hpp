@@ -21,10 +21,14 @@ class IrFunctionRepository
 public:
     Ir::Intf::Function* GetDoNothingFunction();
     Ir::Intf::Function* CreateIrFunction(Cm::Sym::FunctionSymbol* function);
+    Ir::Intf::Type* GetFunPtrIrType(Cm::Sym::FunctionSymbol* fun);
 private:
     typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Function*> IrFunctionMap;
     typedef IrFunctionMap::const_iterator IrFunctionMapIt;
+    typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Type*> IrFunPtrMap;
+    typedef IrFunPtrMap::const_iterator IrFunPtrMapIt;
     IrFunctionMap irFunctionMap;
+    IrFunPtrMap irFunPtrMap;
     std::unique_ptr<Ir::Intf::Function> doNothingFunction;
     std::vector<std::unique_ptr<Ir::Intf::Function>> ownedIrFunctions;
     std::vector<std::unique_ptr<Ir::Intf::Type>> ownedIrTypes;

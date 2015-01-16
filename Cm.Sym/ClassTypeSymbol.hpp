@@ -16,6 +16,48 @@ namespace Cm { namespace Sym {
 
 class MemberVariableSymbol;
 
+enum class ClassTypeSymbolFlags : uint32_t
+{
+    none = 0,
+    virtual_ = 1 << 0,
+    abstract_ = 1 << 1,
+    vtblInitialized = 1 << 2,
+    hasUserDefinedConstructor = 1 << 3,
+    hasUserDefinedDefaultConstructor = 1 << 4,
+    hasUserDefinedCopyConstructor = 1 << 5,
+    hasUserDefinedMoveConstructor = 1 << 6,
+    hasUserDefinedStaticConstructor = 1 << 7,
+    hasUserDefinedCopyAssignment = 1 << 8,
+    hasUserDefinedMoveAssignment = 1 << 9,
+    hasUserDefinedDestructor = 1 << 10,
+    hasSuppressedDefaultConstructor = 1 << 11,
+    hasSuppressedCopyConstructor = 1 << 12,
+    hasSuppressedMoveConstructor = 1 << 13,
+    hasSuppressedCopyAssignment = 1 << 14,
+    hasSuppressedMoveAssignment = 1 << 15,
+    generateDefaultConstructor = 1 << 16,
+    generateCopyConstructor = 1 << 17,
+    generateMoveConstructor = 1 << 18,
+    generateCopyAssignment = 1 << 19,
+    generateMoveAssignment = 1 << 20,
+    generateDestructor = 1 << 21
+};
+
+inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
+{
+    return ClassTypeSymbolFlags(uint32_t(left) & uint32_t(right));
+}
+
+inline ClassTypeSymbolFlags operator|(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
+{
+    return ClassTypeSymbolFlags(uint32_t(left) | uint32_t(right));
+}
+
+inline ClassTypeSymbolFlags operator~(ClassTypeSymbolFlags flag)
+{
+    return ClassTypeSymbolFlags(~uint32_t(flag));
+}
+
 class ClassTypeSymbol : public TypeSymbol
 {
 public:
@@ -30,11 +72,205 @@ public:
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
     bool HasBaseClass(ClassTypeSymbol* cls) const;
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
+    bool DoGenerateDestructor();
+    bool HasNonTrivialMemberDestructor() const;
     void AddSymbol(Symbol* symbol) override;
     const std::vector<MemberVariableSymbol*>& MemberVariables() const { return memberVariables; }
+    const std::vector<MemberVariableSymbol*>& StaticMemberVariables() const { return staticMemberVariables; }
+    bool IsVirtual() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::virtual_) || baseClass && baseClass->IsVirtual();
+    }
+    void SetVirtual()
+    {
+        SetFlag(ClassTypeSymbolFlags::virtual_);
+    }
+    bool IsAbstract() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::abstract_);
+    }
+    void SetAbstract()
+    {
+        SetFlag(ClassTypeSymbolFlags::abstract_);
+    }
+    bool HasUserDefinedConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedConstructor);
+    }
+    void SetHasUserDefinedConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedConstructor);
+    }
+    bool HasUserDefinedDefaultConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedDefaultConstructor);
+    }
+    void SetHasUserDefinedDefaultConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedDefaultConstructor);
+    }
+    bool HasUserDefinedCopyConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedCopyConstructor);
+    }
+    void SetHasUserDefinedCopyConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedCopyConstructor);
+    }
+    bool HasUserDefinedMoveConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedMoveConstructor);
+    }
+    void SetHasUserDefinedMoveConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedMoveConstructor);
+    }
+    bool HasUserDefinedStaticConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedStaticConstructor);
+    }
+    void SetHasUserDefinedStaticConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedStaticConstructor);
+    }
+    bool HasUserDefinedCopyAssignment() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedCopyAssignment);
+    }
+    void SetHasUserDefinedCopyAssignment()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedCopyAssignment);
+    }
+    bool HasUserDefinedMoveAssignment() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedMoveAssignment);
+    }
+    void SetHasUserDefinedMoveAssignment()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedMoveAssignment);
+    }
+    bool HasUserDefinedDestructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedDestructor);
+    }
+    void SetHasUserDefinedDestructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedDestructor);
+    }
+    bool HasSuppressedDefaultConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasSuppressedDefaultConstructor);
+    }
+    void SetHasSuppressedDefaultConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasSuppressedDefaultConstructor);
+    }
+    bool HasSuppressedCopyConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasSuppressedCopyConstructor);
+    }
+    void SetHasSuppressedCopyConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasSuppressedCopyConstructor);
+    }
+    bool HasSuppressedMoveConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasSuppressedMoveConstructor);
+    }
+    void SetHasSuppressedMoveConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasSuppressedMoveConstructor);
+    }
+    bool HasSuppressedCopyAssignment() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasSuppressedCopyAssignment);
+    }
+    void SetHasSuppressedCopyAssignment()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasSuppressedCopyAssignment);
+    }
+    bool HasSuppressedMoveAssignment() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasSuppressedMoveAssignment);
+    }
+    void SetHasSuppressedMoveAssignment()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasSuppressedMoveAssignment);
+    }
+    bool GenerateDefaultConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::generateDefaultConstructor);
+    }
+    void SetGenerateDefaultConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::generateDefaultConstructor);
+    }
+    bool GenerateCopyConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::generateCopyConstructor);
+    }
+    void SetGenerateCopyConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::generateCopyConstructor);
+    }
+    bool GenerateMoveConstructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::generateMoveConstructor);
+    }
+    void SetGenerateMoveConstructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::generateMoveConstructor);
+    }
+    bool GenerateCopyAssignment() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::generateCopyAssignment);
+    }
+    void SetGenerateCopyAssignment()
+    {
+        SetFlag(ClassTypeSymbolFlags::generateCopyAssignment);
+    }
+    bool GenerateMoveAssignment() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::generateMoveAssignment);
+    }
+    void SetGenerateMoveAssignment()
+    {
+        SetFlag(ClassTypeSymbolFlags::generateMoveAssignment);
+    }
+    bool GenerateDestructor() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::generateDestructor);
+    }
+    void SetGenerateDestructor()
+    {
+        SetFlag(ClassTypeSymbolFlags::generateDestructor);
+    }
+    FunctionSymbol* Destructor() const { return destructor; }
+    void SetDestructor(FunctionSymbol* destructor_, bool own);
+    int16_t VPtrIndex() const { return vptrIndex; }
+    void SetVPtrIndex(int16_t vptrIndex_) { vptrIndex = vptrIndex_; }
+    ClassTypeSymbol* VPtrContainerClass() const;
+    void InitVtbl();
+    const std::vector<Cm::Sym::FunctionSymbol*>& Vtbl() const { return vtbl; }
+    void InitVirtualFunctionTables() override;
 private:
+    ClassTypeSymbolFlags flags;
     ClassTypeSymbol* baseClass;
     std::vector<MemberVariableSymbol*> memberVariables;
+    std::vector<MemberVariableSymbol*> staticMemberVariables;
+    FunctionSymbol* destructor;
+    std::unique_ptr<FunctionSymbol> ownedDestructorSymbol;
+    int16_t vptrIndex;
+    std::vector<Cm::Sym::FunctionSymbol*> vtbl;
+    bool GetFlag(ClassTypeSymbolFlags flag) const
+    {
+        return (flags & flag) != ClassTypeSymbolFlags::none;
+    }
+    void SetFlag(ClassTypeSymbolFlags flag)
+    {
+        flags = flags | flag;
+    }
+    void InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit);
 };
 
 } } // namespace Cm::Sym

@@ -176,13 +176,10 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
     symbolNodeMap[typedefSymbol] = typedefNode;
 }
 
-void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, bool isConstructorOrDestructor)
+void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, FunctionSymbolFlags flags)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
-    if (isConstructorOrDestructor)
-    {
-        functionSymbol->SetConstructorOrDestructorSymbol();
-    }
+    functionSymbol->SetFlags(flags);
     functionSymbol->SetCompileUnit(functionNode->GetCompileUnit());
     functionSymbolMap[functionNode] = functionSymbol;
     functionSymbol->SetGroupName(functionNode->GroupId()->Str());
@@ -295,11 +292,13 @@ void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableN
 {
     Cm::Ast::IdentifierNode* memberVariableId = memberVariableNode->Id();
     MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableId->GetSpan(), memberVariableId->Str());
-    memberVariableSymbol->SetIndex(memberVariableIndex);
+    if ((memberVariableNode->GetSpecifiers() & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
+    {
+        memberVariableSymbol->SetStatic();
+    }
     container->AddSymbol(memberVariableSymbol);
     symbolNodeMap[memberVariableSymbol] = memberVariableNode;
 }
-
 
 ContainerScope* SymbolTable::GetContainerScope(Cm::Ast::Node* node) const
 {
@@ -382,6 +381,11 @@ void SymbolTable::AddPredefinedSymbolToGlobalScope(Symbol* symbol)
         TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
         typeRepository.AddType(typeSymbol);
     }
+}
+
+void SymbolTable::InitVirtualFunctionTables()
+{
+    globalNs.InitVirtualFunctionTables();
 }
 
 } } // namespace Cm::Sym

@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/Typedef.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
@@ -32,12 +32,12 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
         }
         else
         {
-            throw Exception("symbol '" + symbol->FullName() + "' does not denote a typedef", symbol->GetSpan());
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a typedef", symbol->GetSpan());
         }
     }
     else
     {
-        throw Exception("symbol '" + typedefNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("symbol '" + typedefNode->Id()->Str() + "' not found");
     }
 }
 
@@ -45,7 +45,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
 {
     if (typedefSymbol->Evaluating())
     {
-        throw Exception("cyclic typedef definitions detected", typedefSymbol->GetSpan());
+        throw Cm::Core::Exception("cyclic typedef definitions detected", typedefSymbol->GetSpan());
     }
     if (typedefSymbol->Bound())
     {
@@ -54,6 +54,54 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     Cm::Ast::Specifiers specifiers = typedefNode->GetSpecifiers();
     bool isClassMember = typedefNode->Parent()->IsClassNode();
     SetAccess(typedefSymbol, specifiers, isClassMember);
+    if ((specifiers & Cm::Ast::Specifiers::abstract_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be abstract", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::virtual_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be virtual", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::override_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be override", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be static", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::explicit_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be explicit", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::external) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be external", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::suppress) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be suppressed", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::default_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be default", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be inline", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be cdecl", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::nothrow_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be nothrow", typedefSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be throw", typedefSymbol->GetSpan());
+    }
     typedefSymbol->SetEvaluating();
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, typedefNode->TypeExpr());
     typedefSymbol->ResetEvaluating();

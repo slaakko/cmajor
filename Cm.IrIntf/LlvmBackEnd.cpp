@@ -231,9 +231,9 @@ Ir::Intf::Type* LlvmBackEnd::CreateClassTypeName(const std::string& fullClassNam
     return Llvm::TypeName("class." + MakeAssemblyName(fullClassName), false);
 }
 
-std::string LlvmBackEnd::GetVtblPtrVarName()
+std::string LlvmBackEnd::GetVPtrVarName()
 {
-    return "$vtblptr";
+    return "$vptr";
 }
 
 Ir::Intf::MetadataStringPtr LlvmBackEnd::CreateMetadataString(const std::string& s)

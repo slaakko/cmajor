@@ -16,11 +16,14 @@
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
+#include <Cm.Core/SynthesizedClassFunRepository.hpp>
 #include <Cm.Core/StringRepository.hpp>
 #include <Cm.Core/IrClassTypeRepository.hpp>
 #include <Cm.Ast/Visitor.hpp>
 
 namespace Cm { namespace Bind {
+
+void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, Cm::Core::IrClassTypeRepository& irClassTypeRepository);
 
 class BoundExpressionStack
 {
@@ -37,14 +40,17 @@ private:
 class ExpressionBinder : public Cm::Ast::Visitor
 {
 public:
-    ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_,
+    ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
+        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository,
         Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
         Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
     Cm::Core::DerivedTypeOpRepository& DerivedTypeOpRepository() { return derivedTypeOpRepository; }
+    Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return synthesizedClassFunRepository; }
     Cm::Core::StringRepository& StringRepository() { return stringRepository; }
+    Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     Cm::Sym::FileScope* FileScope() const { return fileScope; }
     Cm::BoundTree::BoundFunction* CurrentFunction() const { return currentFunction; }
@@ -78,7 +84,6 @@ public:
     void Visit(Cm::Ast::DerefNode& derefNode) override;
     void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) {}
     void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) {}
-    void EndVisit(Cm::Ast::PostfixDecNode& postfixDecNode) {}
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::ArrowNode& arrowNode) override;
     void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
@@ -134,6 +139,7 @@ private:
     Cm::Sym::ConversionTable& conversionTable;
     Cm::Core::ClassConversionTable& classConversionTable;
     Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository;
+    Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository;
     Cm::Core::StringRepository& stringRepository;
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;
     Cm::Sym::ContainerScope* containerScope;

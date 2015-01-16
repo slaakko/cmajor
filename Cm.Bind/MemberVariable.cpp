@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/MemberVariable.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
@@ -28,12 +28,12 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
         }
         else
         {
-            throw Exception("symbol '" + symbol->FullName() + "' does not denote a member variable", symbol->GetSpan());
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a member variable", symbol->GetSpan());
         }
     }
     else
     {
-        throw Exception("symbol '" + memberVariableNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("symbol '" + memberVariableNode->Id()->Str() + "' not found");
     }
 }
 
@@ -47,10 +47,54 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     Cm::Ast::Specifiers specifiers = memberVariableNode->GetSpecifiers();
     bool isClassMember = true;
     SetAccess(memberVariableSymbol, specifiers, isClassMember);
+    if ((specifiers & Cm::Ast::Specifiers::abstract_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be abstract", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::virtual_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be virtual", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::override_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be override", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::explicit_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be explicit", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::external) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be external", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::suppress) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be suppressed", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::default_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be default", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be inline", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be cdecl", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::nothrow_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be nothrow", memberVariableSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be throw", memberVariableSymbol->GetSpan());
+    }
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, memberVariableNode->TypeExpr());
     if (type->Access() < memberVariableSymbol->Access())
     {
-        throw Exception("type of a member variable must be at least as accessible as the member variable itself", type->GetSpan(), memberVariableSymbol->GetSpan());
+        throw Cm::Core::Exception("type of a member variable must be at least as accessible as the member variable itself", type->GetSpan(), memberVariableSymbol->GetSpan());
     }
     memberVariableSymbol->SetType(type);
     memberVariableSymbol->SetBound();

@@ -10,6 +10,7 @@
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -42,7 +43,7 @@ void DeclarationVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
-    symbolTable.BeginFunctionScope(&constructorNode, true);
+    symbolTable.BeginFunctionScope(&constructorNode, FunctionSymbolFlags::constructorOrDestructorSymbol | FunctionSymbolFlags::memberFunctionSymbol);
     parameterIndex = 0;
     ParameterSymbol* thisParam = new ParameterSymbol(constructorNode.GetSpan(), "this");
     TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), constructorNode.GetSpan());
@@ -59,7 +60,7 @@ void DeclarationVisitor::EndVisit(Cm::Ast::ConstructorNode& constructornNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
 {
-    symbolTable.BeginFunctionScope(&destructorNode, true);
+    symbolTable.BeginFunctionScope(&destructorNode, FunctionSymbolFlags::constructorOrDestructorSymbol | FunctionSymbolFlags::memberFunctionSymbol);
     parameterIndex = 0;
     ParameterSymbol* thisParam = new ParameterSymbol(destructorNode.GetSpan(), "this");
     TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), destructorNode.GetSpan());
@@ -76,7 +77,7 @@ void DeclarationVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
-    symbolTable.BeginFunctionScope(&memberFunctionNode, false);
+    symbolTable.BeginFunctionScope(&memberFunctionNode, FunctionSymbolFlags::memberFunctionSymbol);
     parameterIndex = 0;
     ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
     if (memberFunctionNode.IsConst())
@@ -101,7 +102,7 @@ void DeclarationVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNod
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
-    symbolTable.BeginFunctionScope(&conversionFunctionNode, false);
+    symbolTable.BeginFunctionScope(&conversionFunctionNode, FunctionSymbolFlags::memberFunctionSymbol);
     parameterIndex = 0;
     ParameterSymbol* thisParam = new ParameterSymbol(conversionFunctionNode.GetSpan(), "this");
     if (conversionFunctionNode.IsConst())
@@ -146,7 +147,7 @@ void DeclarationVisitor::Visit(Cm::Ast::TypedefNode& typedefNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 {
-    symbolTable.BeginFunctionScope(&functionNode, false);
+    symbolTable.BeginFunctionScope(&functionNode, FunctionSymbolFlags::none);
     parameterIndex = 0;
 }
 
@@ -202,9 +203,14 @@ void DeclarationVisitor::Visit(Cm::Ast::ParameterNode& parameterNode)
     ++parameterIndex;
 }
 
-void DeclarationVisitor::Visit(Cm::Ast::MemberVariableNode& memberVariableNode) 
+void DeclarationVisitor::Visit(Cm::Ast::MemberVariableNode& memberVariableNode)
 {
-    symbolTable.AddMemberVariable(&memberVariableNode, memberVariableIndex++);
+    int index = -1;
+    if ((memberVariableNode.GetSpecifiers() & Cm::Ast::Specifiers::static_) == Cm::Ast::Specifiers::none)
+    {
+        index = memberVariableIndex++;
+    }
+    symbolTable.AddMemberVariable(&memberVariableNode, index);
 }
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)

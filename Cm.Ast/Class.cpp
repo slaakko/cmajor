@@ -220,6 +220,11 @@ std::string MemberInitializerNode::ToString() const
     return memberId->ToString() + "(" + Arguments().ToString() + ")";
 }
 
+const std::string& MemberInitializerNode::MemberVariableName() const
+{
+    return memberId->Str();
+}
+
 void MemberInitializerNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -316,14 +321,6 @@ std::string InitializerNodeList::ToString() const
     return s;
 }
 
-void InitializerNodeList::Accept(Visitor& visitor)
-{
-    for (const std::unique_ptr<InitializerNode>& initializer : initializerNodes)
-    {
-        initializer->Accept(visitor);
-    }
-}
-
 void InitializerNodeList::SetParent(Node* parent)
 {
     for (const std::unique_ptr<InitializerNode>& initializer : initializerNodes)
@@ -407,7 +404,6 @@ void StaticConstructorNode::Print(CodeFormatter& formatter)
 void StaticConstructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    initializers.Accept(visitor);
     if (visitor.VisitBodies())
     {
         if (Body())
@@ -503,7 +499,6 @@ void ConstructorNode::Print(CodeFormatter& formatter)
 void ConstructorNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    initializers.Accept(visitor);
     const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
     if (visitor.VisitBodies())
     {

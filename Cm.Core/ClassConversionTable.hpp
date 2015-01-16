@@ -37,7 +37,7 @@ class ClassConversionTable
 {
 public:
     ClassConversionTable(Cm::Sym::TypeRepository& typeRepository_);
-    Cm::Sym::FunctionSymbol* MakeBaseClassDerivedClassConversion(Cm::Sym::TypeSymbol* baseClassDerivedType, Cm::Sym::TypeSymbol* derivedClassDerivedType, int distance);
+    Cm::Sym::FunctionSymbol* MakeBaseClassDerivedClassConversion(Cm::Sym::TypeSymbol* baseClassDerivedType, Cm::Sym::TypeSymbol* derivedClassDerivedType, int distance, const Cm::Parsing::Span& span);
 private:
     Cm::Sym::TypeRepository& typeRepository;
     typedef std::unordered_map<BaseDerivedPair, Cm::Sym::FunctionSymbol*, BaseDerivedPairHash> ClassConversionMap;

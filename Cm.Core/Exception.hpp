@@ -7,12 +7,12 @@
 
 ========================================================================*/
 
-#ifndef CM_BIND_EXCEPTION_INCLUDED
-#define CM_BIND_EXCEPTION_INCLUDED
+#ifndef CM_CORE_EXCEPTION_INCLUDED
+#define CM_CORE_EXCEPTION_INCLUDED
 #include <Cm.Parsing/Scanner.hpp>
 #include <stdexcept>
 
-namespace Cm { namespace Bind {
+namespace Cm { namespace Core {
 
 using Cm::Parsing::Span;
 
@@ -31,6 +31,6 @@ private:
     Span referenced;
 };
 
-} } // namespace Cm::Bind
+} } // namespace Cm::Core
 
-#endif // CM_BIND_EXCEPTION_INCLUDED
+#endif // CM_CORE_EXCEPTION_INCLUDED

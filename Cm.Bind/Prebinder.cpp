@@ -22,7 +22,7 @@
 
 namespace Cm { namespace Bind {
 
-Prebinder::Prebinder(Cm::Sym::SymbolTable& symbolTable_) : Cm::Ast::Visitor(false, false), symbolTable(symbolTable_), currentContainerScope(nullptr), parameterIndex(0)
+Prebinder::Prebinder(Cm::Sym::SymbolTable& symbolTable_) : Cm::Ast::Visitor(false, false), symbolTable(symbolTable_), currentContainerScope(nullptr), parameterIndex(0), currentClass(nullptr)
 {
 }
 
@@ -78,6 +78,7 @@ void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
     else
     {
         Cm::Sym::ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, currentContainerScope, fileScope.get(), &classNode);
+        currentClass = classTypeSymbol;
         Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&classNode);
         BeginContainerScope(containerScope);
     }
@@ -93,49 +94,58 @@ void Prebinder::EndVisit(Cm::Ast::ClassNode& classNode)
     {
         EndContainerScope();
     }
+    currentClass = nullptr;
 }
 
 void Prebinder::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
+    currentFunction = BindFunction(symbolTable, currentContainerScope, fileScope.get(), &constructorNode, currentClass);
     BeginContainerScope(symbolTable.GetContainerScope(&constructorNode));
     parameterIndex = 0;
 }
 
 void Prebinder::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
+    CompleteBindFunction(symbolTable, currentContainerScope, fileScope.get(), &constructorNode, currentFunction, currentClass);
     EndContainerScope();
 }
 
 void Prebinder::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
 {
+    currentFunction = BindFunction(symbolTable, currentContainerScope, fileScope.get(), &destructorNode, currentClass);
     BeginContainerScope(symbolTable.GetContainerScope(&destructorNode));
     parameterIndex = 0;
 }
 
 void Prebinder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 {
+    CompleteBindFunction(symbolTable, currentContainerScope, fileScope.get(), &destructorNode, currentFunction, currentClass);
     EndContainerScope();
 }
 
 void Prebinder::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
+    currentFunction = BindFunction(symbolTable, currentContainerScope, fileScope.get(), &memberFunctionNode, currentClass);
     BeginContainerScope(symbolTable.GetContainerScope(&memberFunctionNode));
     parameterIndex = 0;
 }
 
 void Prebinder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
+    CompleteBindFunction(symbolTable, currentContainerScope, fileScope.get(), &memberFunctionNode, currentFunction, currentClass);
     EndContainerScope();
 }
 
 void Prebinder::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
+    currentFunction = BindFunction(symbolTable, currentContainerScope, fileScope.get(), &conversionFunctionNode, currentClass);
     BeginContainerScope(symbolTable.GetContainerScope(&conversionFunctionNode));
     parameterIndex = 0;
 }
 
 void Prebinder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
+    CompleteBindFunction(symbolTable, currentContainerScope, fileScope.get(), &conversionFunctionNode, currentFunction, currentClass);
     EndContainerScope();
 }
 
@@ -184,7 +194,7 @@ void Prebinder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
     }
     else
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = BindFunction(symbolTable, currentContainerScope, fileScope.get(), &functionNode);
+        currentFunction = BindFunction(symbolTable, currentContainerScope, fileScope.get(), &functionNode, nullptr);
         BeginContainerScope(symbolTable.GetContainerScope(&functionNode));
         parameterIndex = 0;
     }
@@ -192,6 +202,7 @@ void Prebinder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 
 void Prebinder::EndVisit(Cm::Ast::FunctionNode& functionNode)
 {
+    CompleteBindFunction(symbolTable, currentContainerScope, fileScope.get(), &functionNode, currentFunction, currentClass);
     if (functionNode.TemplateParameters().Count() > 0)
     {
         PopSkipContent();
@@ -216,6 +227,7 @@ void Prebinder::EndVisit(Cm::Ast::DelegateNode& delegateNode)
 
 void Prebinder::BeginVisit(Cm::Ast::ClassDelegateNode& classDelegateNode)
 {
+    BindClassDelegate(symbolTable, currentContainerScope, fileScope.get(), &classDelegateNode);
     BeginContainerScope(symbolTable.GetContainerScope(&classDelegateNode));
     parameterIndex = 0;
 }

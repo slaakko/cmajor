@@ -62,22 +62,6 @@ std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess)
         }
         s.append("project");
     }
-    if ((flags & SymbolFlags::external) != SymbolFlags::none)
-    {
-        if (!s.empty())
-        {
-            s.append(" ");
-        }
-        s.append("external");
-    }
-    if ((flags & SymbolFlags::cdecl_) != SymbolFlags::none)
-    {
-        if (!s.empty())
-        {
-            s.append(" ");
-        }
-        s.append("cdecl");
-    }
     return s;
 }
 
@@ -263,6 +247,10 @@ void Symbol::Dump(CodeFormatter& formatter)
 }
 
 void Symbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+{
+}
+
+void Symbol::InitVirtualFunctionTables()
 {
 }
 
