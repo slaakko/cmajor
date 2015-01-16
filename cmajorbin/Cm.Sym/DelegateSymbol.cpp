@@ -13,7 +13,7 @@
 
 namespace Cm { namespace Sym {
 
-DelegateTypeSymbol::DelegateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
+DelegateTypeSymbol::DelegateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), flags(DelegateTypeSymbolFlags::none)
 {
 }
 
@@ -22,7 +22,7 @@ std::string DelegateTypeSymbol::GetMangleId() const
     return MakeAssemblyName(FullName());
 }
 
-ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
+ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), flags(ClassDelegateTypeSymbolFlags::none)
 {
 }
 

@@ -15,7 +15,10 @@
 
 namespace Cm { namespace Bind {
 
-Cm::Sym::FunctionSymbol* BindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::FunctionNode* functionNode);
+Cm::Sym::FunctionSymbol* BindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::FunctionNode* functionNode, 
+    Cm::Sym::ClassTypeSymbol* currentClass);
+void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::FunctionNode* functionNode, 
+    Cm::Sym::FunctionSymbol* functionSymbol, Cm::Sym::ClassTypeSymbol* currentClass);
 void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol);
 
 } } // namespace Cm::Bind

@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/OverloadResolution.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
@@ -153,13 +153,14 @@ enum class ClassConversionType
 };
 
 bool BaseClassDerivedClassRelationShip(Cm::Core::ClassConversionTable& classConversionTable, ClassConversionType classConversionType, 
-    Cm::Sym::TypeSymbol* plainParameterType, Cm::Sym::TypeSymbol* plainArgumentType, Cm::Sym::TypeSymbol* parameterType, Cm::Sym::TypeSymbol* argumentType, int& distance, Cm::Sym::FunctionSymbol*& conversion)
+    Cm::Sym::TypeSymbol* plainParameterType, Cm::Sym::TypeSymbol* plainArgumentType, Cm::Sym::TypeSymbol* parameterType, Cm::Sym::TypeSymbol* argumentType, int& distance, Cm::Sym::FunctionSymbol*& conversion,
+    const Cm::Parsing::Span& span)
 {
     int numParameterPointers = plainParameterType->GetPointerCount();
     int numArgumentPointers = plainArgumentType->GetPointerCount();
     bool bothArePointerTypes = numParameterPointers > 0 && numArgumentPointers > 0;
-    bool bothAreReferenceTypes = parameterType->IsReferenceType() && argumentType->IsReferenceType();
-    if (bothArePointerTypes && numParameterPointers == numArgumentPointers || bothAreReferenceTypes)
+    bool parameterTypeIsReferenceType = parameterType->IsReferenceType();
+    if (bothArePointerTypes && numParameterPointers == numArgumentPointers || parameterTypeIsReferenceType)
     {
         Cm::Sym::TypeSymbol* parameterBaseType = plainParameterType->GetBaseType();
         Cm::Sym::TypeSymbol* argumentBaseType = plainArgumentType->GetBaseType();
@@ -174,7 +175,7 @@ bool BaseClassDerivedClassRelationShip(Cm::Core::ClassConversionTable& classConv
                 {
                     if (argumentClassType->HasBaseClass(parameterClassType, distance))
                     {
-                        conversion = classConversionTable.MakeBaseClassDerivedClassConversion(parameterType, argumentType, distance);
+                        conversion = classConversionTable.MakeBaseClassDerivedClassConversion(parameterType, argumentType, distance, span);
                         return true;
                     }
                     break;
@@ -183,7 +184,7 @@ bool BaseClassDerivedClassRelationShip(Cm::Core::ClassConversionTable& classConv
                 {
                     if (parameterClassType->HasBaseClass(argumentClassType, distance))
                     {
-                        conversion = classConversionTable.MakeBaseClassDerivedClassConversion(parameterType, argumentType, distance);
+                        conversion = classConversionTable.MakeBaseClassDerivedClassConversion(parameterType, argumentType, distance, span);
                         return true;
                     }
                     break;
@@ -226,7 +227,7 @@ bool FindConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable
         }
         int distance = 0;
         Cm::Sym::FunctionSymbol* conversion = nullptr;
-        if (BaseClassDerivedClassRelationShip(classConversionTable, ClassConversionType::derivedToBase, plainParameterType, plainArgumentType, parameterType, argumentType, distance, conversion))
+        if (BaseClassDerivedClassRelationShip(classConversionTable, ClassConversionType::derivedToBase, plainParameterType, plainArgumentType, parameterType, argumentType, distance, conversion, span))
         {
             functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Core::ConversionRank::conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
             functionMatch.conversions.push_back(conversion);
@@ -237,7 +238,7 @@ bool FindConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable
         {
             int distance = 0;
             Cm::Sym::FunctionSymbol* conversion = nullptr;
-            if (BaseClassDerivedClassRelationShip(classConversionTable, ClassConversionType::baseToDerived, plainParameterType, plainArgumentType, parameterType, argumentType, distance, conversion))
+            if (BaseClassDerivedClassRelationShip(classConversionTable, ClassConversionType::baseToDerived, plainParameterType, plainArgumentType, parameterType, argumentType, distance, conversion, span))
             {
                 functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Core::ConversionRank::conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
                 functionMatch.conversions.push_back(conversion);
@@ -298,31 +299,67 @@ std::string MakeOverloadName(const std::string& groupName, const std::vector<Cm:
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, 
+    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, const std::string& groupName, 
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span,
     std::vector<Cm::Sym::FunctionSymbol*>& conversions)
 {
-    return ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, groupName, arguments, functionLookups, span, Cm::Core::ConversionType::implicit, conversions);
+    return ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, groupName, arguments, functionLookups, span, conversions, 
+        Cm::Core::ConversionType::implicit, OverloadResolutionFlags::none);
+}
+
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
+    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, const std::string& groupName, 
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    OverloadResolutionFlags flags)
+{
+    return ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, groupName, arguments, functionLookups, span, conversions, 
+        Cm::Core::ConversionType::implicit, flags);
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, 
-    Cm::Core::ConversionType conversionType, std::vector<Cm::Sym::FunctionSymbol*>& conversions)
+    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, const std::string& groupName, 
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    Cm::Core::ConversionType conversionType, OverloadResolutionFlags flags)
 {
+    conversions.clear();
     int arity = int(arguments.size());
     std::unordered_set<Cm::Sym::FunctionSymbol*> viableFunctions;
     derivedTypeOpRepository.CollectViableFunctions(groupName, arity, arguments, conversionTable, span, viableFunctions);
-    for (const Cm::Sym::FunctionLookup& functionLookup : functionLookups)
+    std::unique_ptr<Cm::Core::Exception> ownedException = nullptr;
+    Cm::Core::Exception* exception = nullptr;
+    synthesizedClassFunRepository.CollectViableFunctions(groupName, arity, arguments, span, viableFunctions, exception);
+    if (exception)
     {
-        Cm::Sym::ScopeLookup lookup = functionLookup.Lookup();
-        Cm::Sym::ContainerScope* scope = functionLookup.Scope();
-        if (scope)
+        ownedException.reset(exception);
+    }
+    if (viableFunctions.empty())
+    {
+        for (const Cm::Sym::FunctionLookup& functionLookup : functionLookups)
         {
-            scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+            Cm::Sym::ScopeLookup lookup = functionLookup.Lookup();
+            Cm::Sym::ContainerScope* scope = functionLookup.Scope();
+            if (scope)
+            {
+                scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+            }
         }
     }
     if (viableFunctions.empty())
     {
-        throw Exception("overload resolution failed: no overloads taking " + std::to_string(arity) + " arguments found in function group '" + groupName + "'", span);
+        std::string overloadName = MakeOverloadName(groupName, arguments);
+        if (GetFlag(OverloadResolutionFlags::nothrow, flags))
+        {
+            return nullptr;
+        }
+        else if (exception)
+        {
+            Cm::Core::Exception copyOfEx = *exception;
+            throw copyOfEx;
+        }
+        else
+        {
+            throw Cm::Core::Exception("overload resolution failed: '" + overloadName + "' not found. No viable functions taking " + std::to_string(arity) + " arguments found in function group '" + groupName + "'.", span);
+        }
     }
     std::vector<FunctionMatch> functionMatches;
     Cm::Core::ConvertingCtor* convertingCtor = nullptr;
@@ -354,13 +391,27 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
     {
         if (mustCast)
         {
-            throw Exception("overload resolution failed: cannot convert '" + arguments[1].Type()->FullName() + "' to '" + convertingCtor->GetTargetType()->FullName() + "' without a cast", span);
+            if (GetFlag(OverloadResolutionFlags::nothrow, flags))
+            {
+                return nullptr;
+            }
+            else
+            {
+                throw Cm::Core::Exception("overload resolution failed: cannot convert '" + arguments[1].Type()->FullName() + "' to '" + convertingCtor->GetTargetType()->FullName() + "' without a cast", span);
+            }
         }
         else
         {
             std::string overloadName = MakeOverloadName(groupName, arguments);
-            throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
-                std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+            if (GetFlag(OverloadResolutionFlags::nothrow, flags))
+            {
+                return nullptr;
+            }
+            else
+            {
+                throw Cm::Core::Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                    std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+            }
         }
     }
     else
@@ -373,7 +424,12 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
             {
                 const FunctionMatch& bestMatch = functionMatches[0];
                 conversions = bestMatch.conversions;
-                return bestMatch.function;
+                Cm::Sym::FunctionSymbol* function = bestMatch.function;
+                if (function->IsSuppressed())
+                {
+                    throw Cm::Core::Exception("cannot call suppressed member function", span, function->GetSpan());
+                }
+                return function;
             }
             else
             {
@@ -392,14 +448,31 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
                     }
                     matchedFunctionNames.append(match.function->FullName());
                 }
-                throw Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span); 
+                if (GetFlag(OverloadResolutionFlags::nothrow, flags))
+                {
+                    return nullptr;
+                }
+                else
+                {
+                    throw Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span);
+                }
             }
         }
         else // single best
         {
             const FunctionMatch& bestMatch = functionMatches[0];
             conversions = bestMatch.conversions;
-            return bestMatch.function;
+            Cm::Sym::FunctionSymbol* function = bestMatch.function;
+            if (exception)
+            {
+                Cm::Core::Exception copyOfEx = *exception;
+                throw copyOfEx;
+            }
+            else if (function->IsSuppressed())
+            {
+                throw Cm::Core::Exception("cannot call suppressed member function", span, function->GetSpan());
+            }
+            return function;
         }
     }
 }

@@ -20,8 +20,10 @@ enum class BoundNodeFlags : uint8_t
     none = 0,
     argByRef = 1 << 0,
     lvalue = 1 << 1,
-    genJumpingBoolCode = 1 << 2,
-    classObjectArg = 1 << 3
+    constructVariable = 1 << 2,
+    genJumpingBoolCode = 1 << 3,
+    classObjectArg = 1 << 4,
+    genVirtualCall = 1 << 5
 };
 
 inline BoundNodeFlags operator|(BoundNodeFlags left, BoundNodeFlags right)
@@ -34,6 +36,11 @@ inline BoundNodeFlags operator&(BoundNodeFlags left, BoundNodeFlags right)
     return BoundNodeFlags(uint8_t(left) & uint8_t(right));
 }
 
+inline BoundNodeFlags operator~(BoundNodeFlags flag)
+{
+    return BoundNodeFlags(~uint8_t(flag));
+}
+
 class BoundNode
 {
 public:
@@ -44,6 +51,7 @@ public:
     virtual void Accept(Visitor& visitor) = 0;
     void SetFlag(BoundNodeFlags flag) { flags = flags | flag; }
     bool GetFlag(BoundNodeFlags flag) const { return (flags & flag) != BoundNodeFlags::none; }
+    void ResetFlag(BoundNodeFlags flag) { flags = flags & ~flag; }
 private:
     BoundNodeFlags flags;
     Cm::Ast::Node* syntaxNode;

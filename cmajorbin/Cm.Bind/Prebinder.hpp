@@ -7,8 +7,8 @@
 
 ========================================================================*/
 
-#ifndef CM_BIND_BINDING_VISITOR_INCLUDED
-#define CM_BIND_BINDING_VISITOR_INCLUDED
+#ifndef CM_BIND_PREBINDER_INCLUDED
+#define CM_BIND_PREBINDER_INCLUDED
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundStatement.hpp>
@@ -58,10 +58,12 @@ private:
     Cm::Sym::ContainerScope* currentContainerScope;
     std::stack<Cm::Sym::ContainerScope*> containerScopeStack;
     int parameterIndex;
+    Cm::Sym::ClassTypeSymbol* currentClass;
+    Cm::Sym::FunctionSymbol* currentFunction;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
 };
 
 } } // namespace Cm::Bind
 
-#endif // CM_BIND_BINDING_VISITOR_INCLUDED
+#endif // CM_BIND_PREBINDER_INCLUDED

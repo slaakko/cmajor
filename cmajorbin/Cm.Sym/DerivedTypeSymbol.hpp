@@ -37,6 +37,7 @@ public:
     bool IsDerivedTypeSymbol() const override { return true; }
     TypeSymbol* GetBaseType() const override { return baseType; }
     bool IsPointerType() const override { return HasPointertDerivation(derivations); }
+    bool IsPointerToClassType() const override { return GetPointerCount() == 1 && GetBaseType()->IsClassTypeSymbol(); }
     bool IsVoidPtrType() const override { return baseType->IsVoidTypeSymbol() && HasVoidPtrDerivation(derivations); }
     int GetPointerCount() const override { return CountPointers(derivations); }
     bool IsReferenceType() const { return HasReferenceDerivation(derivations); }

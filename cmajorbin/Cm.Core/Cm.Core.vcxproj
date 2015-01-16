@@ -23,22 +23,28 @@
     <ClInclude Include="BasicTypeOp.hpp" />
     <ClInclude Include="ClassConversionTable.hpp" />
     <ClInclude Include="DerivedTypeOpRepository.hpp" />
+    <ClInclude Include="Exception.hpp" />
     <ClInclude Include="GenData.hpp" />
+    <ClInclude Include="GlobalFlags.hpp" />
     <ClInclude Include="InitSymbolTable.hpp" />
     <ClInclude Include="IrClassTypeRepository.hpp" />
     <ClInclude Include="IrFunctionRepository.hpp" />
     <ClInclude Include="StringRepository.hpp" />
+    <ClInclude Include="SynthesizedClassFunRepository.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Argument.cpp" />
     <ClCompile Include="BasicTypeOp.cpp" />
     <ClCompile Include="ClassConversionTable.cpp" />
     <ClCompile Include="DerivedTypeOpRepository.cpp" />
+    <ClCompile Include="Excecption.cpp" />
     <ClCompile Include="GenData.cpp" />
+    <ClCompile Include="GlobalFlags.cpp" />
     <ClCompile Include="InitSymbolTable.cpp" />
     <ClCompile Include="IrClassTypeRepository.cpp" />
     <ClCompile Include="IrFunctionRepository.cpp" />
     <ClCompile Include="StringRepository.cpp" />
+    <ClCompile Include="SynthesizedClassFunRepository.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{060E1B46-08FA-4407-A2A0-AD2A8DEF9A25}</ProjectGuid>

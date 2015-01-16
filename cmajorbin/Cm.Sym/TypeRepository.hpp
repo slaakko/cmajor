@@ -24,6 +24,7 @@ public:
     TypeSymbol* MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakePointerType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeRvalueRefType(TypeSymbol* baseType, const Span& span);
+    TypeSymbol* MakeReferenceType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeConstReferenceType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeConstPointerType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeConstCharPtrType(const Span& span);

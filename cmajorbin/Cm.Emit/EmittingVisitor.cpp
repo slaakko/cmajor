@@ -24,7 +24,7 @@ EmittingVisitor::EmittingVisitor(const std::string& irFilePath, Cm::Sym::TypeRep
 
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
-    irClassTypeRepository.Write(codeFormatter);
+    irClassTypeRepository.Write(codeFormatter, compileUnit.SyntaxUnit(), externalFunctions, irFunctionRepository);
 }
 
 void EmittingVisitor::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
@@ -37,7 +37,6 @@ void EmittingVisitor::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 {
-    irClassTypeRepository.AddClassType(boundClass.Symbol());
     currentClass = &boundClass;
 }
 

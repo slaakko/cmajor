@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/Enumeration.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/Evaluator.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Access.hpp>
@@ -35,6 +35,54 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             Cm::Ast::Specifiers specifiers = enumTypeNode->GetSpecifiers();
             bool isClassMember = enumTypeNode->Parent()->IsClassNode();
             SetAccess(enumTypeSymbol, specifiers, isClassMember);
+            if ((specifiers & Cm::Ast::Specifiers::abstract_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be abstract", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::virtual_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be virtual", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::override_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be override", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be static", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::explicit_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be explicit", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::external) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be external", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::suppress) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be suppressed", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::default_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be default", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be inline", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be cdecl", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::nothrow_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be nothrow", enumTypeSymbol->GetSpan());
+            }
+            if ((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("enumerated type cannot be throw", enumTypeSymbol->GetSpan());
+            }
             Cm::Ast::Node* underlyingTypeNode = enumTypeNode->GetUnderlyingType();
             if (underlyingTypeNode)
             {
@@ -46,7 +94,7 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
                 }
                 else
                 {
-                    throw Exception("underlying type for an enumerated type must be basic type", enumTypeSymbol->GetSpan());
+                    throw Cm::Core::Exception("underlying type for an enumerated type must be basic type", enumTypeSymbol->GetSpan());
                 }
             }
             else
@@ -57,12 +105,12 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         }
         else
         {
-            throw Exception("symbol '" + symbol->FullName() + "' does not denote an enumerated type", symbol->GetSpan());
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote an enumerated type", symbol->GetSpan());
         }
     }
     else
     {
-        throw Exception("symbol '" + enumTypeNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("symbol '" + enumTypeNode->Id()->Str() + "' not found");
     }
 }
 
@@ -76,7 +124,7 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
             Cm::Sym::EnumConstantSymbol* enumConstantSymbol = static_cast<Cm::Sym::EnumConstantSymbol*>(symbol);
             if (enumConstantSymbol->Evaluating())
             {
-                throw Exception("cyclic enumeration constant definitions detected", enumConstantSymbol->GetSpan());
+                throw Cm::Core::Exception("cyclic enumeration constant definitions detected", enumConstantSymbol->GetSpan());
             }
             if (enumConstantSymbol->Bound())
             {
@@ -98,12 +146,12 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
         }
         else
         {
-            throw Exception("symbol '" + symbol->FullName() + "' does not denote an enumeration constant", symbol->GetSpan());
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote an enumeration constant", symbol->GetSpan());
         }
     }
     else
     {
-        throw Exception("symbol '" + enumConstantNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("symbol '" + enumConstantNode->Id()->Str() + "' not found");
     }
 }
 

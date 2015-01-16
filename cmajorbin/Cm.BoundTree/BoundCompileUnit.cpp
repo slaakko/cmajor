@@ -14,8 +14,9 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundCompileUnit::BoundCompileUnit(const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : fileScope(), irFilePath(irFilePath_), symbolTable(symbolTable_),
-    conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), derivedTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository()
+BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(syntaxUnit_),
+    fileScope(), irFilePath(irFilePath_), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), 
+    derivedTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository()
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
 }
@@ -30,6 +31,11 @@ void BoundCompileUnit::AddBoundNode(BoundNode* boundNode)
     boundNodes.push_back(std::unique_ptr<BoundNode>(boundNode));
 }
 
+void BoundCompileUnit::Own(Cm::Sym::FunctionSymbol* functionSymbol)
+{
+    ownedFunctionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
+}
+
 void BoundCompileUnit::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
@@ -38,6 +44,11 @@ void BoundCompileUnit::Accept(Visitor& visitor)
         boundNode->Accept(visitor);
     }
     visitor.EndVisit(*this);
+}
+
+void BoundCompileUnit::SetSynthesizedClassFunRepository(Cm::Core::SynthesizedClassFunRepository* synthesizedClassFunRepository_)
+{
+    synthesizedClassFunRepository.reset(synthesizedClassFunRepository_);
 }
 
 } } // namespace Cm::BoundTree

@@ -59,10 +59,9 @@ enum class SymbolFlags : uint8_t
 {
     none = 0,
     access = 1 << 0 | 1 << 1,
-    bound = 1 << 2,
-    project = 1 << 3,
-    external = 1 << 4,
-    cdecl_ = 1 << 5
+    static_ = 1 << 2,
+    bound = 1 << 3,
+    project = 1 << 4
 };
 
 std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess);
@@ -97,13 +96,11 @@ public:
     void SetSpan(const Span& span_) { span = span_; }
     SymbolAccess Access() const { return SymbolAccess(flags & SymbolFlags::access); }
     void SetAccess(SymbolAccess access_) { flags = flags | SymbolFlags(access_); }
+    bool IsStatic() const { return GetFlag(SymbolFlags::static_); }
+    void SetStatic() { SetFlag(SymbolFlags::static_); }
     virtual SymbolAccess DeclaredAccess() const { return Access(); }
     bool IsPublic() const { return Access() == SymbolAccess::public_; }
     void SetPublic() { SetAccess(SymbolAccess::public_); }
-    bool IsExternal() const { return GetFlag(SymbolFlags::external); }
-    void SetExternal() { SetFlag(SymbolFlags::external); }
-    bool IsCDecl() const { return GetFlag(SymbolFlags::cdecl_); }
-    void SetCDecl() { SetFlag(SymbolFlags::cdecl_); }
     SymbolSource Source() const { return GetFlag(SymbolFlags::project) ? SymbolSource::project : SymbolSource::library; }
     void SetSource(SymbolSource source) { if (source == SymbolSource::project) SetFlag(SymbolFlags::project); else ResetFlag(SymbolFlags::project); }
     Symbol* Parent() const { return parent; }
@@ -150,6 +147,7 @@ public:
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
     virtual void Dump(CodeFormatter& formatter);
     virtual void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes);
+    virtual void InitVirtualFunctionTables();
 private:
     Span span;
     std::string name;

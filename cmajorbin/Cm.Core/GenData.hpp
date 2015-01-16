@@ -22,7 +22,8 @@ enum class GenFlags : uint8_t
     genJumpingBoolCode = 1 << 0,
     lvalue = 1 << 1,
     addrArg = 1 << 2,
-    classTypeToPointerTypeConversion = 1 << 3
+    classTypeToPointerTypeConversion = 1 << 3,
+    virtualCall = 1 << 4
 };
 
 inline GenFlags operator&(GenFlags left, GenFlags right)
@@ -159,6 +160,9 @@ public:
     void SetLvalue() { SetFlag(GenFlags::lvalue, flags); }
     bool AddrArg() const { return GetFlag(GenFlags::addrArg, flags); }
     bool ClassTypeToPointerTypeConversion() const { return GetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
+    void SetClassTypeToPointerTypeConversion() { SetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
+    bool GenerateVirtualCall() const { return GetFlag(GenFlags::virtualCall, flags); }
+    void SetGenVirtualCall() { SetFlag(GenFlags::virtualCall, flags); }
     GenData& GetChild(int index);
     void Merge(GenResult& child);
     Ir::Intf::LabelObject* GetLabel() const { return genData.GetLabel(); }

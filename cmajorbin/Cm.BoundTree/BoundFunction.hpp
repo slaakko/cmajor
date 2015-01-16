@@ -22,11 +22,14 @@ public:
     BoundCompoundStatement* Body() const { return body.get(); }
     void AddLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable);
     const std::vector<Cm::Sym::LocalVariableSymbol*>& LocalVariables() const { return localVariables; }
+    void SetClassObjectLayoutFunIndex(int classObjectLayoutFunIndex_) { classObjectLayoutFunIndex = classObjectLayoutFunIndex_; }
+    int GetClassObjectLayoutFunIndex() const { return classObjectLayoutFunIndex; }
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<BoundCompoundStatement> body;
     Cm::Sym::FunctionSymbol* functionSymbol;
     std::vector<Cm::Sym::LocalVariableSymbol*> localVariables;
+    int classObjectLayoutFunIndex;
 };
 
 } } // namespace Cm::BoundTree

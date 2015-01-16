@@ -72,6 +72,50 @@ private:
     Cm::Sym::FunctionSymbol* ctor;
 };
 
+class BoundInitClassObjectStatement : public BoundStatement
+{
+public:
+    BoundInitClassObjectStatement(BoundFunctionCall* functionCall_);
+    BoundFunctionCall* FunctionCall() const { return functionCall.get(); }
+    void Accept(Visitor& visitor) override;
+private:
+    std::unique_ptr<BoundFunctionCall> functionCall;
+};
+
+class BoundInitVPtrStatement : public BoundStatement
+{
+public:
+    BoundInitVPtrStatement(Cm::Sym::ClassTypeSymbol* classType_);
+    Cm::Sym::ClassTypeSymbol* ClassType() const { return classType; }
+    void Accept(Visitor& visitor) override;
+private:
+    Cm::Sym::ClassTypeSymbol* classType;
+};
+
+class BoundInitMemberVariableStatement : public BoundStatement
+{
+public:
+    BoundInitMemberVariableStatement(Cm::Sym::FunctionSymbol* ctor_, BoundExpressionList&& arguments_);
+    Cm::Sym::FunctionSymbol* Constructor() const { return ctor; }
+    BoundExpressionList& Arguments() { return arguments; }
+    void Accept(Visitor& visitor) override;
+private:
+    Cm::Sym::FunctionSymbol* ctor;
+    BoundExpressionList arguments;
+};
+
+class BoundFunctionCallStatement : public BoundStatement
+{
+public:
+    BoundFunctionCallStatement(Cm::Sym::FunctionSymbol* function_, BoundExpressionList&& arguments_);
+    Cm::Sym::FunctionSymbol* Function() const { return function; }
+    BoundExpressionList& Arguments() { return arguments; }
+    void Accept(Visitor& visitor) override;
+private:
+    Cm::Sym::FunctionSymbol* function;
+    BoundExpressionList arguments;
+};
+
 class BoundReturnStatement : public BoundStatement
 {
 public:

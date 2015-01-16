@@ -93,6 +93,7 @@ class BoundLocalVariable : public BoundExpression
 public:
     BoundLocalVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::LocalVariableSymbol* symbol_);
     Cm::Sym::LocalVariableSymbol* Symbol() const { return symbol; }
+    Cm::Core::ArgumentCategory GetArgumentCategory() const override { return Cm::Core::ArgumentCategory::lvalue; }
     void Accept(Visitor& visitor) override;
 private:
     Cm::Sym::LocalVariableSymbol* symbol;
@@ -103,6 +104,7 @@ class BoundParameter: public BoundExpression
 public:
     BoundParameter(Cm::Ast::Node* syntaxNode_, Cm::Sym::ParameterSymbol* symbol_);
     Cm::Sym::ParameterSymbol* Symbol() const { return symbol; }
+    Cm::Core::ArgumentCategory GetArgumentCategory() const override;
     void Accept(Visitor& visitor) override;
 private:
     Cm::Sym::ParameterSymbol* symbol;
@@ -114,6 +116,7 @@ public:
     BoundMemberVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::MemberVariableSymbol* symbol_);
     bool IsBoundMemberVariable() const override { return true; }
     Cm::Sym::MemberVariableSymbol* Symbol() const { return symbol; }
+    Cm::Core::ArgumentCategory GetArgumentCategory() const override { return Cm::Core::ArgumentCategory::lvalue; }
     void Accept(Visitor& visitor) override;
     void SetClassObject(Cm::BoundTree::BoundExpression* classObject_);
     Cm::BoundTree::BoundExpression* GetClassObject() const { return classObject.get(); }
@@ -137,6 +140,7 @@ class BoundConversion : public BoundExpression
 {
 public:
     BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_);
+    BoundExpression* Operand() const { return operand.get(); }
     Cm::Sym::FunctionSymbol* ConversionFun() const { return conversionFun; }
     void Accept(Visitor& visitor) override;
 private:

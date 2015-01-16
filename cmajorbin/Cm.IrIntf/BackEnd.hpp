@@ -93,7 +93,7 @@ public:
     virtual Ir::Intf::MemberVar* CreateMemberVar(const std::string& memberVarName, Ir::Intf::Object* ptr, int index, Ir::Intf::Type* type) = 0;
     virtual Ir::Intf::Object* CreateStackVar(const std::string& assemblyName, Ir::Intf::Type* type) = 0;
     virtual Ir::Intf::Object* CreateRefVar(const std::string& assemblyName, Ir::Intf::Type* type) = 0;
-    virtual std::string GetVtblPtrVarName() = 0;
+    virtual std::string GetVPtrVarName() = 0;
     virtual Ir::Intf::MetadataStringPtr CreateMetadataString(const std::string& s) = 0;
     virtual Ir::Intf::MetadataNode* CreateMetadataNode(int id) = 0;
     virtual Ir::Intf::Object* CreateMetadataNull() = 0;

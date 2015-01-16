@@ -30,6 +30,7 @@ public:
     std::vector<std::unique_ptr<Symbol>>& Symbols() { return symbols; }
     void Dump(CodeFormatter& formatter) override;
     void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes);
+    void InitVirtualFunctionTables();
 private:
     ContainerScope containerScope;
     std::vector<std::unique_ptr<Symbol>> symbols;

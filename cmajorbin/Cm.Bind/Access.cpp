@@ -8,7 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Bind/Access.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 
 namespace Cm { namespace Bind {
@@ -29,7 +29,7 @@ void SetAccess(Cm::Sym::Symbol* symbol, Cm::Ast::Specifiers specifiers, bool isC
         }
         else
         {
-            throw Exception("only class members can have protected access", symbol->GetSpan());
+            throw Cm::Core::Exception("only class members can have protected access", symbol->GetSpan());
         }
     }
     else if (accessSpecifiers == Cm::Ast::Specifiers::internal_)
@@ -44,12 +44,12 @@ void SetAccess(Cm::Sym::Symbol* symbol, Cm::Ast::Specifiers specifiers, bool isC
         }
         else
         {
-            throw Exception("only class members can have private access", symbol->GetSpan());
+            throw Cm::Core::Exception("only class members can have private access", symbol->GetSpan());
         }
     }
     else if (accessSpecifiers != Cm::Ast::Specifiers::none)
     {
-        throw Exception("invalid combination of access specifiers: " + Cm::Ast::SpecifierStr(accessSpecifiers), symbol->GetSpan());
+        throw Cm::Core::Exception("invalid combination of access specifiers: " + Cm::Ast::SpecifierStr(accessSpecifiers), symbol->GetSpan());
     }
     symbol->SetAccess(access);
 }
@@ -111,7 +111,7 @@ void CheckAccess(Cm::Sym::Symbol* fromSymbol, const Span& fromSpan, Cm::Sym::Sym
         }
     }
     Span span = fromSpan.Valid() ? fromSpan : fromSymbol->GetSpan();
-    throw Exception(toSymbol->TypeString() + " '" + toSymbol->FullName() + "' is inaccessible due to its protection level", span, toSymbol->GetSpan());
+    throw Cm::Core::Exception(toSymbol->TypeString() + " '" + toSymbol->FullName() + "' is inaccessible due to its protection level", span, toSymbol->GetSpan());
 }
 
 } } // namespace Cm::Bind

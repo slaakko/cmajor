@@ -48,11 +48,13 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
         Own(irReturnType);
     }
     std::vector<Ir::Intf::Parameter*> irParameters;
+    std::vector<Ir::Intf::Type*> irParameterTypes;
     for (Cm::Sym::ParameterSymbol* parameter : function->Parameters())
     {
         Ir::Intf::Parameter* irParameter = CreateIrParameter(parameter);
         Own(irParameter);
         irParameters.push_back(irParameter);
+        irParameterTypes.push_back(irParameter->GetType()->Clone());
     }
     std::string functionGroupName = function->GroupName();
     if (functionGroupName.empty())
@@ -69,9 +71,24 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
         functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, std::vector<Cm::Sym::TypeSymbol*>(), function->Parameters());
     }
     Ir::Intf::Function* irFunction = Cm::IrIntf::CreateFunction(functionName, irReturnType, irParameters);
+    Ir::Intf::Type* irFunPtrType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(irReturnType->Clone(), irParameterTypes), 1);
     ownedIrFunctions.push_back(std::unique_ptr<Ir::Intf::Function>(irFunction));
+    ownedIrTypes.push_back(std::unique_ptr<Ir::Intf::Type>(irFunPtrType));
+    irFunPtrType->SetOwned();
     irFunctionMap[function] = irFunction;
+    irFunPtrMap[function] = irFunPtrType;
     return irFunction;
+}
+
+Ir::Intf::Type* IrFunctionRepository::GetFunPtrIrType(Cm::Sym::FunctionSymbol* fun)
+{
+    CreateIrFunction(fun);
+    IrFunPtrMapIt i = irFunPtrMap.find(fun);
+    if (i != irFunPtrMap.end())
+    {
+        return i->second;
+    }
+    throw std::runtime_error("ir function pointer type not created");
 }
 
 void IrFunctionRepository::Own(Ir::Intf::Type* type)

@@ -21,11 +21,11 @@
   <ItemGroup>
     <ClInclude Include="Binder.hpp" />
     <ClInclude Include="Class.hpp" />
+    <ClInclude Include="ClassObjectLayout.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Evaluator.hpp" />
-    <ClInclude Include="Exception.hpp" />
     <ClInclude Include="ExpressionBinder.hpp" />
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="LocalVariable.hpp" />
@@ -34,18 +34,20 @@
     <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="Prebinder.hpp" />
     <ClInclude Include="StatementBinder.hpp" />
+    <ClInclude Include="SynthesizedClassFun.hpp" />
     <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
     <ClInclude Include="Access.hpp" />
+    <ClInclude Include="VirtualBinder.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Binder.cpp" />
     <ClCompile Include="Class.cpp" />
+    <ClCompile Include="ClassObjectLayout.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Evaluator.cpp" />
-    <ClCompile Include="Excecption.cpp" />
     <ClCompile Include="ExpressionBinder.cpp" />
     <ClCompile Include="Function.cpp" />
     <ClCompile Include="LocalVariable.cpp" />
@@ -54,9 +56,11 @@
     <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="Prebinder.cpp" />
     <ClCompile Include="StatementBinder.cpp" />
+    <ClCompile Include="SynthesizedClassFun.cpp" />
     <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeResolver.cpp" />
     <ClCompile Include="Access.cpp" />
+    <ClCompile Include="VirtualBinder.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EB6A3011-60D0-415A-A4CE-262924F53AF0}</ProjectGuid>

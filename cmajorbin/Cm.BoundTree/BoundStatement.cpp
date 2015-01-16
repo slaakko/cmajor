@@ -73,6 +73,42 @@ void BoundReceiveStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundInitClassObjectStatement::BoundInitClassObjectStatement(BoundFunctionCall* functionCall_) : BoundStatement(nullptr), functionCall(functionCall_)
+{
+}
+
+void BoundInitClassObjectStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundInitVPtrStatement::BoundInitVPtrStatement(Cm::Sym::ClassTypeSymbol* classType_) : BoundStatement(nullptr), classType(classType_)
+{
+}
+
+void BoundInitVPtrStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::FunctionSymbol* ctor_, BoundExpressionList&& arguments_) : BoundStatement(nullptr), ctor(ctor_), arguments(std::move(arguments_))
+{
+}
+
+void BoundInitMemberVariableStatement::Accept(Visitor& visitor) 
+{
+    visitor.Visit(*this);
+}
+
+BoundFunctionCallStatement::BoundFunctionCallStatement(Cm::Sym::FunctionSymbol* function_, BoundExpressionList&& arguments_) : BoundStatement(nullptr), function(function_), arguments(std::move(arguments_))
+{
+}
+
+void BoundFunctionCallStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundReturnStatement::BoundReturnStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_), ctor(nullptr), returnType(nullptr)
 {
 }
@@ -125,7 +161,8 @@ void BoundConstructionStatement::ApplyConversions(const std::vector<Cm::Sym::Fun
         if (conversionFun)
         {
             std::unique_ptr<BoundExpression>& argument = arguments[i];
-            argument.reset(new Cm::BoundTree::BoundConversion(argument->SyntaxNode(), argument.release(), conversionFun));
+            BoundExpression* arg = argument.release();
+            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
             argument->SetType(conversionFun->GetTargetType());
         }
     }

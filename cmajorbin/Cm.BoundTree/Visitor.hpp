@@ -32,6 +32,10 @@ class BoundConjunction;
 class BoundStatement;
 class BoundCompoundStatement;
 class BoundReceiveStatement;
+class BoundInitClassObjectStatement;
+class BoundInitVPtrStatement;
+class BoundInitMemberVariableStatement;
+class BoundFunctionCallStatement;
 class BoundReturnStatement;
 class BoundConstructionStatement;
 class BoundAssignmentStatement;
@@ -78,6 +82,10 @@ public:
     virtual void BeginVisit(BoundCompoundStatement& boundCompoundStatement) {}
     virtual void EndVisit(BoundCompoundStatement& boundCompoundStatement) {}
     virtual void Visit(BoundReceiveStatement& boundReceiveStatement) {}
+    virtual void Visit(BoundInitClassObjectStatement& boundInitClassObjectStatement) {}
+    virtual void Visit(BoundInitVPtrStatement& boundInitVPtrStatement) {}
+    virtual void Visit(BoundInitMemberVariableStatement& boundInitMemberVariableStatement) {}
+    virtual void Visit(BoundFunctionCallStatement& boundFunctionCallStatement) {}
     virtual void Visit(BoundReturnStatement& boundReturnStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}

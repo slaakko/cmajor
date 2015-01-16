@@ -58,6 +58,7 @@ public:
     const ParameterNodeList& Parameters() const { return parameters; }
     WhereConstraintNode* Constraint() const { return constraint.get(); }
     CompoundStatementNode* Body() const { return body.get(); }
+    bool HasBody() const { return body != nullptr; }
     void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     CompileUnitNode* GetCompileUnit() const { return compileUnit; }
 private:

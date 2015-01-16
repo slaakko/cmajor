@@ -9,7 +9,7 @@
 
 #include <Cm.Build/Main.hpp>
 #include <Cm.Build/Build.hpp>
-#include <Cm.Bind/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
@@ -26,11 +26,11 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 {
     if (!userMainFunction)
     {
-        throw Cm::Bind::Exception("program has no main() function");
+        throw Cm::Core::Exception("program has no main() function");
     }
     boost::filesystem::path outputBase(outputBasePath);
     std::string mainCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__main__.ll")).generic_string());
-    Cm::BoundTree::BoundCompileUnit mainCompileUnit(mainCompileUnitIrFilePath, symbolTable);
+    Cm::BoundTree::BoundCompileUnit mainCompileUnit(nullptr, mainCompileUnitIrFilePath, symbolTable);
     std::unique_ptr<Cm::Sym::FunctionSymbol> mainFunctionSymbol(new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "main"));
     mainFunctionSymbol->SetCDecl();
     Cm::Sym::TypeSymbol* intType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
@@ -40,18 +40,18 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     {
         if (userMainFunction->Parameters().size() != 2)
         {
-            throw Cm::Bind::Exception("main() function must have either zero or two parameters", userMainFunction->GetSpan());
+            throw Cm::Core::Exception("main() function must have either zero or two parameters", userMainFunction->GetSpan());
         }
         Cm::Sym::ParameterSymbol* firstParam = userMainFunction->Parameters()[0];
         if (!Cm::Sym::TypesEqual(firstParam->GetType(), intType))
         {
-            throw Cm::Bind::Exception("type of first parameter of main() function must be int", userMainFunction->GetSpan());
+            throw Cm::Core::Exception("type of first parameter of main() function must be int", userMainFunction->GetSpan());
         }
         Cm::Sym::ParameterSymbol* secondParam = userMainFunction->Parameters()[1];
         Cm::Sym::TypeSymbol* constCharPtrPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrPtrType(userMainFunction->GetSpan());
         if (!Cm::Sym::TypesEqual(secondParam->GetType(), constCharPtrPtrType))
         {
-            throw Cm::Bind::Exception("type of second parameter of main() function must be const char**", userMainFunction->GetSpan());
+            throw Cm::Core::Exception("type of second parameter of main() function must be const char**", userMainFunction->GetSpan());
         }
         argcParam = new Cm::Sym::ParameterSymbol(userMainFunction->GetSpan(), "argc");
         argcParam->SetType(intType);
@@ -62,14 +62,15 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     }
     if (!userMainFunction->GetReturnType() || !userMainFunction->GetReturnType()->IsVoidTypeSymbol() && !Cm::Sym::TypesEqual(userMainFunction->GetReturnType(), intType))
     {
-        throw Cm::Bind::Exception("return type of main() function must be void or int", userMainFunction->GetSpan());
+        throw Cm::Core::Exception("return type of main() function must be void or int", userMainFunction->GetSpan());
     }
 
     mainFunctionSymbol->SetReturnType(intType);
     Cm::BoundTree::BoundFunction* mainFunction = new Cm::BoundTree::BoundFunction(nullptr, mainFunctionSymbol.get());
     Cm::BoundTree::BoundCompoundStatement* mainBody = new Cm::BoundTree::BoundCompoundStatement(nullptr);
     mainFunction->SetBody(mainBody);
-    Cm::Bind::GenerateReceives(mainCompileUnit.SymbolTable(), mainCompileUnit.ConversionTable(), mainCompileUnit.ClassConversionTable(), mainCompileUnit.DerivedTypeOpRepository(), mainFunction);
+    Cm::Bind::GenerateReceives(mainCompileUnit.SymbolTable(), mainCompileUnit.ConversionTable(), mainCompileUnit.ClassConversionTable(), mainCompileUnit.DerivedTypeOpRepository(), 
+        mainCompileUnit.SynthesizedClassFunRepository(), mainFunction);
     Cm::Sym::LocalVariableSymbol* returnValueVariable = new Cm::Sym::LocalVariableSymbol(userMainFunction->GetSpan(), "returnValue");
     returnValueVariable->SetType(intType);
     mainFunctionSymbol->AddSymbol(returnValueVariable);

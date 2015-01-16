@@ -45,19 +45,82 @@ private:
     std::vector<FunctionLookup> lookups;
 };
 
+enum class FunctionSymbolFlags: uint16_t
+{
+    none = 0,
+    constructorOrDestructorSymbol = 1 << 0,
+    memberFunctionSymbol = 1 << 1,
+    external = 1 << 2,
+    cdecl_ = 1 << 3,
+    virtual_ = 1 << 4,
+    abstract_ = 1 << 5,
+    override_ = 1 << 6,
+    virtuality = virtual_ | abstract_ | override_,
+    nothrow = 1 << 7,
+    inline_ = 1 << 8,
+    replicated = 1 << 9,
+    suppressed = 1 << 10,
+    default_ = 1 << 11,
+    explicit_ = 1 << 12
+};
+
+inline FunctionSymbolFlags operator|(FunctionSymbolFlags left, FunctionSymbolFlags right)
+{
+    return FunctionSymbolFlags(uint16_t(left) | uint16_t(right));
+}
+
+inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFlags right)
+{
+    return FunctionSymbolFlags(uint16_t(left) & uint16_t(right));
+}
+
 class FunctionSymbol : public ContainerSymbol
 {
 public:
     FunctionSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::functionSymbol; }
+    void SetFlags(FunctionSymbolFlags flags_) { flags = flags_; }
     const std::string& GroupName() const { return groupName; }
     void SetGroupName(const std::string& groupName_) { groupName = groupName_; }
     std::string TypeString() const override { return "function"; };
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
     virtual bool IsConvertingConstructor() const { return false; }
-    bool IsConstructorOrDestructorSymbo() const { return isConstructorOrDestructorSymbol; }
-    void SetConstructorOrDestructorSymbol() { isConstructorOrDestructorSymbol = true; }
+    bool IsConstructorOrDestructorSymbol() const { return GetFlag(FunctionSymbolFlags::constructorOrDestructorSymbol); }
+    void SetConstructorOrDestructorSymbol() { SetFlag(FunctionSymbolFlags::constructorOrDestructorSymbol); }
+    bool IsMemberFunctionSymbol() const { return GetFlag(FunctionSymbolFlags::memberFunctionSymbol); }
+    void SetMemberFunctionSymbol() { SetFlag(FunctionSymbolFlags::memberFunctionSymbol); }
+    bool IsExternal() const { return GetFlag(FunctionSymbolFlags::external); }
+    void SetExternal() { SetFlag(FunctionSymbolFlags::external); }
+    bool IsCDecl() const { return GetFlag(FunctionSymbolFlags::cdecl_); }
+    void SetCDecl() { SetFlag(FunctionSymbolFlags::cdecl_); }
+    bool IsAbstract() const { return GetFlag(FunctionSymbolFlags::abstract_); }
+    bool IsOverride() const { return GetFlag(FunctionSymbolFlags::override_); }
+    bool IsVirtualAbstractOrOverride() const { return GetFlag(FunctionSymbolFlags::virtuality); }
+    void SetAbstract() { SetFlag(FunctionSymbolFlags::abstract_); }
+    void SetVirtual() { SetFlag(FunctionSymbolFlags::virtual_);  }
+    bool IsVirtual() const { return GetFlag(FunctionSymbolFlags::virtual_); }
+    void SetOverride() { SetFlag(FunctionSymbolFlags::override_); }
+    bool IsNothrow() const { return GetFlag(FunctionSymbolFlags::nothrow); }
+    void SetNothrow() { SetFlag(FunctionSymbolFlags::nothrow); }
+    bool IsInline() const { return GetFlag(FunctionSymbolFlags::inline_); }
+    void SetInline() { SetFlag(FunctionSymbolFlags::inline_); }
+    bool IsReplicated() const { return GetFlag(FunctionSymbolFlags::replicated); }
+    void SetReplicated() { SetFlag(FunctionSymbolFlags::replicated); }
+    bool IsSuppressed() const { return GetFlag(FunctionSymbolFlags::suppressed); }
+    void SetSuppressed() { SetFlag(FunctionSymbolFlags::suppressed); }
+    bool IsDefault() const { return GetFlag(FunctionSymbolFlags::default_); }
+    void SetDefault() { SetFlag(FunctionSymbolFlags::default_); }
+    bool IsExplicit() const { return GetFlag(FunctionSymbolFlags::explicit_); }
+    void SetExplicit() { SetFlag(FunctionSymbolFlags::explicit_); }
+    bool IsConstructor() const;
+    bool IsDefaultConstructor() const;
+    bool IsCopyConstructor() const;
+    bool IsMoveConstructor() const;
+    bool IsStaticConstructor() const;
+    bool IsCopyAssignment() const;
+    bool IsMoveAssignment() const;
+    bool IsDestructor() const;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void AddSymbol(Symbol* symbol) override;
@@ -71,12 +134,23 @@ public:
     Cm::Ast::CompileUnitNode* CompileUnit() const { return compileUnit; }
     void SetCompileUnit(Cm::Ast::CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) override;
+    int16_t VtblIndex() const { return vtblIndex; }
+    void SetVtblIndex(int16_t vtblIndex_) { vtblIndex = vtblIndex_; }
 private:
+    FunctionSymbolFlags flags;
     std::string groupName;
+    int16_t vtblIndex;
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
     Cm::Ast::CompileUnitNode* compileUnit;
-    bool isConstructorOrDestructorSymbol;
+    bool GetFlag(FunctionSymbolFlags flag) const
+    {
+        return (flags & flag) != FunctionSymbolFlags::none;
+    }
+    void SetFlag(FunctionSymbolFlags flag)
+    {
+        flags = flags | flag;
+    }
 };
 
 } } // namespace Cm::Sym
