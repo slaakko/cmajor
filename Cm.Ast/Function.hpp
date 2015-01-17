@@ -25,6 +25,7 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     const std::string& Str() const { return functionGroupId; }
+    std::string Name() const override { return functionGroupId; }
     std::string ToString() const override { return functionGroupId; }
 private:
     std::string functionGroupId;

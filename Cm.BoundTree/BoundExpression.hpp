@@ -28,6 +28,7 @@ public:
     virtual bool IsContainerExpression() const { return false; }
     virtual bool IsBoundFunctionGroup() const { return false; }
     virtual bool IsBoundMemberVariable() const { return false; }
+    virtual bool IsBoundUnaryOp() const { return false; }
     virtual bool IsCast() const { return false; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
@@ -164,8 +165,10 @@ class BoundUnaryOp : public BoundExpression
 {
 public:
     BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_);
+    bool IsBoundUnaryOp() const override { return true; }
     void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
     Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
+    BoundExpression* ReleaseOperand() { return operand.release(); }
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<BoundExpression> operand;

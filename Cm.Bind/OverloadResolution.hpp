@@ -25,11 +25,17 @@ enum class OverloadResolutionFlags : uint8_t
 {
     none = 0,
     nothrow = 1 << 0,
+    bindOnlyMemberFunctions = 1 << 1
 };
 
 inline OverloadResolutionFlags operator&(OverloadResolutionFlags left, OverloadResolutionFlags right)
 {
     return OverloadResolutionFlags(uint8_t(left) & uint8_t(right));
+}
+
+inline OverloadResolutionFlags operator|(OverloadResolutionFlags left, OverloadResolutionFlags right)
+{
+    return OverloadResolutionFlags(uint8_t(left) | uint8_t(right));
 }
 
 inline bool GetFlag(OverloadResolutionFlags flag, OverloadResolutionFlags flags)

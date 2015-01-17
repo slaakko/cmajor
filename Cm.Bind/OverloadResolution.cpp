@@ -324,7 +324,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::SymbolTable& symbolTable, Cm::
     conversions.clear();
     int arity = int(arguments.size());
     std::unordered_set<Cm::Sym::FunctionSymbol*> viableFunctions;
-    derivedTypeOpRepository.CollectViableFunctions(groupName, arity, arguments, conversionTable, span, viableFunctions);
+    if ((flags & OverloadResolutionFlags::bindOnlyMemberFunctions) == OverloadResolutionFlags::none)
+    {
+        derivedTypeOpRepository.CollectViableFunctions(groupName, arity, arguments, conversionTable, span, viableFunctions);
+    }
     std::unique_ptr<Cm::Core::Exception> ownedException = nullptr;
     Cm::Core::Exception* exception = nullptr;
     synthesizedClassFunRepository.CollectViableFunctions(groupName, arity, arguments, span, viableFunctions, exception);
