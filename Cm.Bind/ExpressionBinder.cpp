@@ -127,9 +127,10 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionLookupSet memFunLookups;
-    memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, operand->GetType()->GetContainerScope()->ClassOrNsScope()));
+    Cm::Sym::TypeSymbol* plainOperandType = symbolTable.GetTypeRepository().MakePlainType(operand->GetType());
+    memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainOperandType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Core::Argument> memFunArguments;
-    memFunArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(operand->GetType(), node->GetSpan())));
+    memFunArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(plainOperandType, node->GetSpan())));
     Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, opGroupName, memFunArguments, memFunLookups,
         node->GetSpan(), conversions, OverloadResolutionFlags::nothrow | OverloadResolutionFlags::bindOnlyMemberFunctions);
     if (!fun)
@@ -580,10 +581,9 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
     }
 }
 
-void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
+void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberId)
 {
-    arrowNode.Subject()->Accept(*this);
-    BindUnaryOp(&arrowNode, "operator->");
+    BindUnaryOp(node, "operator->");
     std::unique_ptr<Cm::BoundTree::BoundExpression> boundUnaryOpExpr(boundExpressionStack.Pop());
     Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().MakePlainType(boundUnaryOpExpr->GetType());
     if (type->IsPointerToClassType() || type->IsClassTypeSymbol())
@@ -603,15 +603,16 @@ void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
                 if (function->IsMemberFunctionSymbol())
                 {
                     boundExpressionStack.Push(boundUnaryOpExpr.release());
+                    BindArrow(node, memberId);
                 }
                 else
                 {
                     Cm::BoundTree::BoundExpression* classObject = boundUnaryOp->ReleaseOperand();
                     Cm::Sym::ContainerScope* containerScope = classTypeSymbol->GetContainerScope();
-                    Cm::Sym::Symbol* symbol = containerScope->Lookup(arrowNode.MemberId()->Str());
+                    Cm::Sym::Symbol* symbol = containerScope->Lookup(memberId);
                     if (symbol)
                     {
-                        BindSymbol(&arrowNode, symbol);
+                        BindSymbol(node, symbol);
                         std::unique_ptr<Cm::BoundTree::BoundExpression> symbolExpr(boundExpressionStack.Pop());
                         if (symbolExpr->IsBoundFunctionGroup())
                         {
@@ -627,29 +628,35 @@ void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
                         }
                         else
                         {
-                            throw Cm::Core::Exception("symbol '" + symbolExpr->SyntaxNode()->Name() + "' does not denote a member variable or a function group", arrowNode.GetSpan(), symbolExpr->SyntaxNode()->GetSpan());
+                            throw Cm::Core::Exception("symbol '" + symbolExpr->SyntaxNode()->Name() + "' does not denote a member variable or a function group", node->GetSpan(), symbolExpr->SyntaxNode()->GetSpan());
                         }
                     }
                     else
                     {
-                        throw Cm::Core::Exception("class '" + classTypeSymbol->FullName() + "' does not have member '" + arrowNode.MemberId()->Str() + "'", arrowNode.GetSpan());
+                        throw Cm::Core::Exception("class '" + classTypeSymbol->FullName() + "' does not have member '" + memberId + "'", node->GetSpan());
                     }
                 }
             }
             else
             {
-                throw Cm::Core::Exception("operator->() not bound to unary operator", arrowNode.GetSpan());
+                throw Cm::Core::Exception("operator->() not bound to unary operator", node->GetSpan());
             }
         }
         else
         {
-            throw Cm::Core::Exception("operator->() must eventually return class type or pointer to class type", arrowNode.GetSpan());
+            throw Cm::Core::Exception("operator->() must eventually return class type or pointer to class type", node->GetSpan());
         }
     }
     else
     {
-        throw Cm::Core::Exception("operator->() must eventually return class type or pointer to class type", arrowNode.GetSpan());
+        throw Cm::Core::Exception("operator->() must eventually return class type or pointer to class type", node->GetSpan());
     }
+}
+
+void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
+{
+    arrowNode.Subject()->Accept(*this);
+    BindArrow(&arrowNode, arrowNode.MemberId()->Str());
 }
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
@@ -665,9 +672,14 @@ void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
     boundExpressionStack.Push(subject.release());
 }
 
-void ExpressionBinder::EndVisit(Cm::Ast::InvokeNode& invokeNode) 
+void ExpressionBinder::EndVisit(Cm::Ast::InvokeNode& invokeNode)
 {
     int numArgs = boundExpressionStack.ItemCount() - expressionCount;
+    BindInvoke(&invokeNode, numArgs);
+}
+
+void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
+{
     bool generateVirtualCall = false;
     expressionCount = expressionCountStack.top();
     expressionCountStack.pop();
@@ -686,86 +698,13 @@ void ExpressionBinder::EndVisit(Cm::Ast::InvokeNode& invokeNode)
     bool firstArgByRef = false;
     if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
     {
-        Cm::Sym::FunctionLookupSet memberFunLookups;
-        std::vector<Cm::Core::Argument> memberFunResolutionArguments;
-        Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
-        Cm::Sym::TypeSymbol* thisParamType = thisParam->GetType();
-        memberFunResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thisParamType));
-        memberFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, thisParamType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
-        bool first = true;
-        for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
-        {
-            if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
-            {
-                memberFunResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), 
-                    invokeNode.GetSpan())));
-                if (first)
-                {
-                    firstArgByRef = true;
-                }
-            }
-            else
-            {
-                memberFunResolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
-            }
-            if (first)
-            {
-                first = false;
-            }
-        }
-        fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, functionGroupName, memberFunResolutionArguments, memberFunLookups, 
-            invokeNode.GetSpan(), conversions, OverloadResolutionFlags::nothrow);
-        if (fun)
-        {
-            Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
-            boundThisParam->SetType(thisParam->GetType());
-            arguments.InsertFront(boundThisParam);
-            ++numArgs;
-            if (fun->IsVirtualAbstractOrOverride())
-            {
-                generateVirtualCall = true;
-            }
-        }
+        fun = BindInvokeMemFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupName, numArgs);
     }
     if (!fun)
     {
-        Cm::Sym::FunctionLookupSet functionLookups;
-        std::vector<Cm::Core::Argument> resolutionArguments;
-        bool first = true;
-        bool firstArgIsPointerOrReference = false;
-        for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
-        {
-            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, argument->GetType()->GetContainerScope()->ClassOrNsScope()));
-            if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
-            {
-                resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), invokeNode.GetSpan())));
-                if (first)
-                {
-                    firstArgByRef = true;
-                }
-            }
-            else
-            {
-                resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
-            }
-            if (first)
-            {
-                first = false;
-                if (argument->GetType()->IsReferenceType() || argument->GetType()->IsPointerType() || argument->GetType()->IsRvalueRefType())
-                {
-                    firstArgIsPointerOrReference = true;
-                }
-            }
-        }
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()->ClassOrNsScope()));
-        fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, functionGroupName, resolutionArguments, functionLookups, 
-            invokeNode.GetSpan(), conversions);
-        if (fun->IsVirtualAbstractOrOverride() && firstArgIsPointerOrReference)
-        {
-            generateVirtualCall = true;
-        }
+        fun = BindInvokeFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupSymbol);
     }
-    PrepareFunctionSymbol(fun, invokeNode.GetSpan());
+    PrepareFunctionSymbol(fun, node->GetSpan());
     if (conversions.size() != numArgs)
     {
         throw std::runtime_error("wrong number of conversions");
@@ -775,13 +714,13 @@ void ExpressionBinder::EndVisit(Cm::Ast::InvokeNode& invokeNode)
         Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
         if (conversionFun)
         {
-            Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(&invokeNode, arguments[i].release(), conversionFun);
+            Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, arguments[i].release(), conversionFun);
             conversion->SetType(conversionFun->GetTargetType());
             arguments[i].reset(conversion);
         }
     }
     PrepareFunctionArguments(fun, arguments, firstArgByRef && fun->IsMemberFunctionSymbol(), irClassTypeRepository);
-    Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(&invokeNode, std::move(arguments));
+    Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
     functionCall->SetFunction(fun);
     functionCall->SetType(fun->GetReturnType());
     if (generateVirtualCall)
@@ -789,6 +728,93 @@ void ExpressionBinder::EndVisit(Cm::Ast::InvokeNode& invokeNode)
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
     }
     boundExpressionStack.Push(functionCall);
+}
+
+Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, bool& firstArgByRef, 
+    bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs)
+{
+    Cm::Sym::FunctionLookupSet memberFunLookups;
+    std::vector<Cm::Core::Argument> memberFunResolutionArguments;
+    Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
+    Cm::Sym::TypeSymbol* thisParamType = thisParam->GetType();
+    memberFunResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thisParamType));
+    memberFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, thisParamType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+    bool first = true;
+    for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
+    {
+        if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
+        {
+            memberFunResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), 
+                node->GetSpan())));
+            if (first)
+            {
+                firstArgByRef = true;
+            }
+        }
+        else
+        {
+            memberFunResolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+        }
+        if (first)
+        {
+            first = false;
+        }
+    }
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, functionGroupName, 
+        memberFunResolutionArguments, memberFunLookups, node->GetSpan(), conversions, OverloadResolutionFlags::nothrow);
+    if (fun)
+    {
+        Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
+        boundThisParam->SetType(thisParam->GetType());
+        arguments.InsertFront(boundThisParam);
+        ++numArgs;
+        if (fun->IsVirtualAbstractOrOverride())
+        {
+            generateVirtualCall = true;
+        }
+    }
+    return fun;
+}
+
+Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
+    bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol)
+{
+    Cm::Sym::FunctionLookupSet functionLookups;
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    bool first = true;
+    bool firstArgIsPointerOrReference = false;
+    for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
+    {
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, argument->GetType()->GetContainerScope()->ClassOrNsScope()));
+        if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
+        {
+            resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), node->GetSpan())));
+            if (first)
+            {
+                firstArgByRef = true;
+            }
+        }
+        else
+        {
+            resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+        }
+        if (first)
+        {
+            first = false;
+            if (argument->GetType()->IsReferenceType() || argument->GetType()->IsPointerType() || argument->GetType()->IsRvalueRefType())
+            {
+                firstArgIsPointerOrReference = true;
+            }
+        }
+    }
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()->ClassOrNsScope()));
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, 
+        functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions);
+    if (fun->IsVirtualAbstractOrOverride() && firstArgIsPointerOrReference)
+    {
+        generateVirtualCall = true;
+    }
+    return fun;
 }
 
 void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)

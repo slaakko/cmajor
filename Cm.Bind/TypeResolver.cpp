@@ -14,6 +14,7 @@
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Expression.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -38,13 +39,14 @@ public:
     void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) override;
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
-    void BeginVisit(Cm::Ast::DotNode& dotNode) override;
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
 private:
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ContainerScope* currentContainerScope;
     Cm::Sym::FileScope* fileScope;
     Cm::Sym::TypeSymbol* typeSymbol;
+    std::unique_ptr<Cm::Sym::TypeSymbol> nsTypeSymbol;
+    void ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol);
 };
 
 TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_) :
@@ -136,6 +138,23 @@ void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
     typeSymbol = symbolTable.GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
 }
 
+class NamespaceTypeSymbol : public Cm::Sym::TypeSymbol
+{
+public:
+    NamespaceTypeSymbol(Cm::Sym::NamespaceSymbol* ns_) : Cm::Sym::TypeSymbol(ns_->GetSpan(), ns_->Name()), ns(ns_)
+    {
+    }
+    Cm::Sym::NamespaceSymbol* Ns() const
+    {
+        return ns;
+    }
+    bool IsNamespaceTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return std::string(); }
+    Cm::Sym::SymbolType GetSymbolType() const override { return Cm::Sym::SymbolType::namespaceSymbol; }
+private:
+    Cm::Sym::NamespaceSymbol* ns;
+};
+
 void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
     Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
@@ -145,33 +164,7 @@ void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     if (symbol)
     {
-        if (symbol->IsTypedefSymbol())
-        {
-            Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
-            if (!typedefSymbol->Bound())
-            {
-                Cm::Ast::Node* node = symbolTable.GetNode(typedefSymbol);
-                if (node->IsTypedefNode())
-                {
-                    Cm::Ast::TypedefNode* typedefNode = static_cast<Cm::Ast::TypedefNode*>(node);
-                    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(typedefNode);
-                    BindTypedef(symbolTable, scope, fileScope, typedefNode, typedefSymbol);
-                }
-                else
-                {
-                    throw std::runtime_error("node is not typedef node");
-                }
-            }
-            symbol = typedefSymbol->GetType();
-        }
-        if (symbol->IsTypeSymbol())
-        {
-            typeSymbol = static_cast<Cm::Sym::TypeSymbol*>(symbol);
-        }
-        else
-        {
-            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a type", symbol->GetSpan());
-        }
+        ResolveSymbol(&identifierNode, symbol);
     }
     else
     {
@@ -179,14 +172,64 @@ void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
 }
 
-void TypeResolver::BeginVisit(Cm::Ast::DotNode& dotNode)
+void TypeResolver::ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
 {
-    // todo
+    if (symbol->IsTypedefSymbol())
+    {
+        Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
+        if (!typedefSymbol->Bound())
+        {
+            Cm::Ast::Node* tn = symbolTable.GetNode(typedefSymbol);
+            if (tn->IsTypedefNode())
+            {
+                Cm::Ast::TypedefNode* typedefNode = static_cast<Cm::Ast::TypedefNode*>(tn);
+                Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(typedefNode);
+                BindTypedef(symbolTable, scope, fileScope, typedefNode, typedefSymbol);
+            }
+            else
+            {
+                throw std::runtime_error("node is not typedef node");
+            }
+        }
+        symbol = typedefSymbol->GetType();
+    }
+    if (symbol->IsTypeSymbol())
+    {
+        typeSymbol = static_cast<Cm::Sym::TypeSymbol*>(symbol);
+    }
+    else if (symbol->IsNamespaceSymbol())
+    {
+        nsTypeSymbol.reset(new NamespaceTypeSymbol(static_cast<Cm::Sym::NamespaceSymbol*>(symbol)));
+        typeSymbol = nsTypeSymbol.get();
+    }
+    else
+    {
+        throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a type", node->GetSpan(), symbol->GetSpan());
+    }
 }
 
 void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
 {
-    // todo
+    if (typeSymbol->IsClassTypeSymbol() || typeSymbol->IsNamespaceTypeSymbol())
+    {
+        Cm::Sym::Scope* containerScope = nullptr;
+        if (typeSymbol->IsClassTypeSymbol())
+        {
+            containerScope = typeSymbol->GetContainerScope();
+        }
+        else
+        {
+            NamespaceTypeSymbol* nsTypeSymbol = static_cast<NamespaceTypeSymbol*>(typeSymbol);
+            containerScope = nsTypeSymbol->Ns()->GetContainerScope();
+        }
+        const std::string& memberName = dotNode.MemberId()->Str();
+        Cm::Sym::Symbol* symbol = containerScope->Lookup(memberName);
+        ResolveSymbol(&dotNode, symbol);
+    }
+    else
+    {
+        throw Cm::Core::Exception("symbol '" + typeSymbol->FullName() + "' does not denote a class or a namespace", dotNode.GetSpan(), typeSymbol->GetSpan());
+    }
 }
 
 void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)

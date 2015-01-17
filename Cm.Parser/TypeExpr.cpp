@@ -335,8 +335,8 @@ public:
         Cm::Parsing::NonterminalParser* templateIdNonterminalParser = GetNonterminal("TemplateId");
         templateIdNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PreTemplateId));
         templateIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostTemplateId));
-        Cm::Parsing::NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
-        qualifiedIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostQualifiedId));
+        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostIdentifier));
         Cm::Parsing::NonterminalParser* prefixTypeExprNonterminalParser = GetNonterminal("PrefixTypeExpr");
         prefixTypeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PrePrefixTypeExpr));
     }
@@ -350,7 +350,7 @@ public:
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.node->SetBaseTypeExpr(context.fromQualifiedId);
+        context.node->SetBaseTypeExpr(context.fromIdentifier);
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -382,12 +382,12 @@ public:
             stack.pop();
         }
     }
-    void PostQualifiedId(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromQualifiedId_value = std::move(stack.top());
-            context.fromQualifiedId = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>*>(fromQualifiedId_value.get());
+            std::unique_ptr<Cm::Parsing::Object> fromIdentifier_value = std::move(stack.top());
+            context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
@@ -399,12 +399,12 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), node(), fromBasicType(), fromTemplateId(), fromQualifiedId() {}
+        Context(): ctx(), node(), fromBasicType(), fromTemplateId(), fromIdentifier() {}
         ParsingContext* ctx;
         Cm::Ast::DerivedTypeExprNode* node;
         Cm::Ast::Node* fromBasicType;
         Cm::Ast::Node* fromTemplateId;
-        Cm::Ast::IdentifierNode* fromQualifiedId;
+        Cm::Ast::IdentifierNode* fromIdentifier;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -480,7 +480,7 @@ void TypeExprGrammar::CreateRules()
                     new Cm::Parsing::ActionParser("A1",
                         new Cm::Parsing::NonterminalParser("TemplateId", "TemplateId", 1))),
                 new Cm::Parsing::ActionParser("A2",
-                    new Cm::Parsing::NonterminalParser("QualifiedId", "QualifiedId", 0))),
+                    new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
             new Cm::Parsing::SequenceParser(
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::ActionParser("A3",

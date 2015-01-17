@@ -159,6 +159,12 @@ private:
     void BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::NamespaceSymbol* namespaceSymbol);
     void BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTypeSymbol* enumTypeSymbol);
     void BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol);
+    void BindInvoke(Cm::Ast::Node* node, int numArgs);
+    Cm::Sym::FunctionSymbol* BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, 
+        bool& firstArgByRef, bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs);
+    Cm::Sym::FunctionSymbol* BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
+        bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol);
+    void BindArrow(Cm::Ast::Node* node, const std::string& memberId);
 };
 
 } } // namespace Cm::Bind

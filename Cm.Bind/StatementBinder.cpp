@@ -196,6 +196,10 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                     returnValue = new Cm::BoundTree::BoundConversion(&returnStatementNode, returnValue, conversionFun);
                     returnValue->SetType(conversionFun->GetTargetType());
                 }
+                if (returnValue->GetType()->IsClassTypeSymbol() && returnType->IsReferenceType())
+                {
+                    returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+                }
                 returnStatement->SetExpression(returnValue);
             }
             else

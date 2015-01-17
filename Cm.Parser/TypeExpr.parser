@@ -48,7 +48,7 @@
         PrimaryTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node)
             ::= BasicType{ node->SetBaseTypeExpr(BasicType); }
             |   TemplateId(ctx){ node->SetBaseTypeExpr(TemplateId); }
-            |   QualifiedId{ node->SetBaseTypeExpr(QualifiedId); }
+            |   Identifier{ node->SetBaseTypeExpr(Identifier); }
             |   '('{ node->AddLeftParen(); } PrefixTypeExpr(ctx, node)! ')'{ node->AddRightParen(); }
             ;
     }
