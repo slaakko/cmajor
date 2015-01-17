@@ -133,6 +133,7 @@ public:
     virtual bool IsMemberVariableSymbol() const { return false; }
     virtual bool IsLocalVariableSymbol() const { return false; }
     virtual bool IsTypedefSymbol() const { return false; }
+    virtual bool IsNamespaceTypeSymbol() const { return false; }
     NamespaceSymbol* Ns() const;
     ClassTypeSymbol* Class() const;
     ContainerSymbol* ClassOrNs() const;
