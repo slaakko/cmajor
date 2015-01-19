@@ -21,6 +21,7 @@ public:
     void SetBody(BoundCompoundStatement* body_);
     BoundCompoundStatement* Body() const { return body.get(); }
     void AddLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable);
+    Cm::Sym::LocalVariableSymbol* CreateTempLocalVariable(Cm::Sym::TypeSymbol* type);
     const std::vector<Cm::Sym::LocalVariableSymbol*>& LocalVariables() const { return localVariables; }
     void SetClassObjectLayoutFunIndex(int classObjectLayoutFunIndex_) { classObjectLayoutFunIndex = classObjectLayoutFunIndex_; }
     int GetClassObjectLayoutFunIndex() const { return classObjectLayoutFunIndex; }
@@ -30,6 +31,7 @@ private:
     Cm::Sym::FunctionSymbol* functionSymbol;
     std::vector<Cm::Sym::LocalVariableSymbol*> localVariables;
     int classObjectLayoutFunIndex;
+    std::vector<std::unique_ptr<Cm::Sym::LocalVariableSymbol>> temporaries;
 };
 
 } } // namespace Cm::BoundTree

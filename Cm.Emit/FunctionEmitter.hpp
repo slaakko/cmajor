@@ -60,9 +60,9 @@ public:
     void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;
-    void Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction) {}
-    void Visit(Cm::BoundTree::BoundConjunction& boundConjunction) {}
-
+    void Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction) override;
+    void Visit(Cm::BoundTree::BoundConjunction& boundConjunction) override;
+    void Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncExpr) override;
     void BeginVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
     void EndVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
     void BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
@@ -95,6 +95,7 @@ private:
     Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::GenFlags genFlags;
     Cm::Core::GenResult compoundResult;
+    Cm::Core::GenResultStack compoundResultStack;
     Cm::Core::GenResultStack resultStack;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;
@@ -105,6 +106,9 @@ private:
     Cm::BoundTree::BoundClass* currentClass;
     Cm::Sym::ParameterSymbol* thisParam;
     std::unordered_set<Ir::Intf::Function*>& externalFunctions;
+    std::vector<std::unique_ptr<Cm::BoundTree::BoundStatement>> postfixIncDecStatements;
+    bool executingPostfixIncDecStatements;
+    void ExecutePostfixIncDecStatements(Cm::Core::GenResult& result);
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
     void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
     void GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall);

@@ -20,6 +20,8 @@
 
 namespace Cm { namespace BoundTree {
 
+class BoundStatement;
+
 class BoundExpression : public BoundNode
 {
 public:
@@ -29,6 +31,7 @@ public:
     virtual bool IsBoundFunctionGroup() const { return false; }
     virtual bool IsBoundMemberVariable() const { return false; }
     virtual bool IsBoundUnaryOp() const { return false; }
+    virtual bool IsBoundPostfixIncDecExpr() const { return false; }
     virtual bool IsCast() const { return false; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
@@ -168,6 +171,7 @@ public:
     bool IsBoundUnaryOp() const override { return true; }
     void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
     Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
+    BoundExpression* Operand() const { return operand.get(); }
     BoundExpression* ReleaseOperand() { return operand.release(); }
     void Accept(Visitor& visitor) override;
 private:
@@ -179,6 +183,8 @@ class BoundBinaryOp : public BoundExpression
 {
 public:
     BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
+    BoundExpression* Left() const { return left.get(); }
+    BoundExpression* Right() const { return right.get(); }
     void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
     Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
     void Accept(Visitor& visitor) override;
@@ -186,6 +192,20 @@ private:
     std::unique_ptr<BoundExpression> left;
     std::unique_ptr<BoundExpression> right;
     Cm::Sym::FunctionSymbol* fun;
+};
+
+class BoundPostfixIncDecExpr : public BoundExpression
+{
+public:
+    BoundPostfixIncDecExpr(Cm::Ast::Node* syntaxNode_, BoundExpression* value_, BoundStatement* statement_);
+    BoundExpression* Value() const { return value.get(); }
+    BoundStatement* Statement() const { return statement.get(); }
+    BoundStatement* ReleaseStatement() { return statement.release(); }
+    void Accept(Visitor& visitor) override;
+    bool IsBoundPostfixIncDecExpr() const override { return true; }
+private:
+    std::unique_ptr<BoundExpression> value;
+    std::unique_ptr<BoundStatement> statement;
 };
 
 class BoundFunctionGroup : public BoundExpression
@@ -228,6 +248,10 @@ class BoundDisjunction : public BoundBooleanBinaryExpression
 public:    
     BoundDisjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
     void Accept(Visitor& visitor) override;
+    void SetResultVar(Cm::Sym::LocalVariableSymbol* resultVar_) { resultVar = resultVar_; }
+    Cm::Sym::LocalVariableSymbol* GetResultVar() const { return resultVar; }
+private:
+    Cm::Sym::LocalVariableSymbol* resultVar;
 };
 
 class BoundConjunction : public BoundBooleanBinaryExpression
@@ -235,6 +259,10 @@ class BoundConjunction : public BoundBooleanBinaryExpression
 public:
     BoundConjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
     void Accept(Visitor& visitor) override;
+    void SetResultVar(Cm::Sym::LocalVariableSymbol* resultVar_) { resultVar = resultVar_; }
+    Cm::Sym::LocalVariableSymbol* GetResultVar() const { return resultVar; }
+private:
+    Cm::Sym::LocalVariableSymbol* resultVar;
 };
 
 } } // namespace Cm::BoundTree

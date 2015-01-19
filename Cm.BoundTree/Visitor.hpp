@@ -28,6 +28,7 @@ class BoundBinaryOp;
 class BoundFunctionCall;
 class BoundDisjunction;
 class BoundConjunction;
+class BoundPostfixIncDecExpr;
 
 class BoundStatement;
 class BoundCompoundStatement;
@@ -75,6 +76,7 @@ public:
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
+    virtual void Visit(BoundPostfixIncDecExpr& boundPostfixIncExpr) {}
 
     void VisitStatement(BoundStatement& statement);
     virtual void BeginVisitStatement(BoundStatement& statement) {}

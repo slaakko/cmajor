@@ -214,7 +214,10 @@ void ExpressionBinder::EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode)
     }
     Cm::BoundTree::BoundDisjunction* disjunction = new Cm::BoundTree::BoundDisjunction(&disjunctionNode, left, right);
     disjunction->SetType(left->GetType());
+    Cm::Sym::LocalVariableSymbol* resultVar = currentFunction->CreateTempLocalVariable(disjunction->GetType());
+    disjunction->SetResultVar(resultVar);
     boundExpressionStack.Push(disjunction);
+
 }
 
 void ExpressionBinder::EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode)
@@ -231,6 +234,8 @@ void ExpressionBinder::EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode)
     }
     Cm::BoundTree::BoundConjunction* conjunction = new Cm::BoundTree::BoundConjunction(&conjunctionNode, left, right);
     conjunction->SetType(left->GetType());
+    Cm::Sym::LocalVariableSymbol* resultVar = currentFunction->CreateTempLocalVariable(conjunction->GetType());
+    conjunction->SetResultVar(resultVar);
     boundExpressionStack.Push(conjunction);
 }
 
@@ -376,8 +381,50 @@ void ExpressionBinder::Visit(Cm::Ast::AddrOfNode& addrOfNode)
 
 void ExpressionBinder::Visit(Cm::Ast::DerefNode& derefNode)
 {
+    bool isDerefThis = derefNode.Subject()->IsThisNode();   // '*this' is special
     derefNode.Subject()->Accept(*this);
     BindUnaryOp(&derefNode, "operator*");
+    if (isDerefThis)
+    {
+        Cm::BoundTree::BoundExpression* derefExpr = boundExpressionStack.Pop();
+        Cm::Sym::TypeSymbol* type = derefExpr->GetType();
+        derefExpr->SetType(symbolTable.GetTypeRepository().MakeReferenceType(type, derefNode.GetSpan()));
+        boundExpressionStack.Push(derefExpr);
+    }
+}
+
+void ExpressionBinder::Visit(Cm::Ast::PostfixIncNode& postfixIncNode)
+{
+    postfixIncNode.Subject()->Accept(*this);
+    Cm::BoundTree::BoundExpression* value = boundExpressionStack.Pop();
+    postfixIncNode.Subject()->Accept(*this);
+    Cm::BoundTree::BoundExpression* incOperand = boundExpressionStack.Pop();
+    incOperand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+    boundExpressionStack.Push(incOperand);
+    BindUnaryOp(&postfixIncNode, "operator++");
+    Cm::BoundTree::BoundExpression* incExpr = boundExpressionStack.Pop();
+    Cm::BoundTree::BoundSimpleStatement* increment = new Cm::BoundTree::BoundSimpleStatement(&postfixIncNode);
+    increment->SetExpression(incExpr);
+    Cm::BoundTree::BoundPostfixIncDecExpr* postfixIncExpr = new Cm::BoundTree::BoundPostfixIncDecExpr(&postfixIncNode, value, increment);
+    postfixIncExpr->SetType(value->GetType());
+    boundExpressionStack.Push(postfixIncExpr);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::PostfixDecNode& postfixDecNode)
+{
+    postfixDecNode.Subject()->Accept(*this);
+    Cm::BoundTree::BoundExpression* value = boundExpressionStack.Pop();
+    postfixDecNode.Subject()->Accept(*this);
+    Cm::BoundTree::BoundExpression* decOperand = boundExpressionStack.Pop();
+    decOperand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+    boundExpressionStack.Push(decOperand);
+    BindUnaryOp(&postfixDecNode, "operator--");
+    Cm::BoundTree::BoundExpression* decExpr = boundExpressionStack.Pop();
+    Cm::BoundTree::BoundSimpleStatement* decrement = new Cm::BoundTree::BoundSimpleStatement(&postfixDecNode);
+    decrement->SetExpression(decExpr);
+    Cm::BoundTree::BoundPostfixIncDecExpr* postfixDecExpr = new Cm::BoundTree::BoundPostfixIncDecExpr(&postfixDecNode, value, decrement);
+    postfixDecExpr->SetType(value->GetType());
+    boundExpressionStack.Push(postfixDecExpr);
 }
 
 void ExpressionBinder::Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode)
@@ -783,6 +830,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
     std::vector<Cm::Core::Argument> resolutionArguments;
     bool first = true;
     bool firstArgIsPointerOrReference = false;
+    bool firstArgIsThisOrBase = false;
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, argument->GetType()->GetContainerScope()->ClassOrNsScope()));
@@ -805,12 +853,16 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
             {
                 firstArgIsPointerOrReference = true;
             }
+            if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsThisOrBase))
+            {
+                firstArgIsThisOrBase = true;
+            }
         }
     }
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()->ClassOrNsScope()));
     Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, 
         functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions);
-    if (fun->IsVirtualAbstractOrOverride() && firstArgIsPointerOrReference)
+    if (fun->IsVirtualAbstractOrOverride() && firstArgIsPointerOrReference && !firstArgIsThisOrBase)
     {
         generateVirtualCall = true;
     }
@@ -1025,6 +1077,52 @@ void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
         throw Cm::Core::Exception("symbol '" + identifierNode.Str() + "' not found");
     }
 }
+
+void ExpressionBinder::Visit(Cm::Ast::ThisNode& thisNode)
+{
+    if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
+    {
+        Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
+        Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(&thisNode, thisParam);
+        boundThisParam->SetType(thisParam->GetType());
+        boundExpressionStack.Push(boundThisParam);
+        boundThisParam->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsThisOrBase);
+    }
+    else
+    {
+        throw Cm::Core::Exception("'this' can be used only in member function context", thisNode.GetSpan());
+    }
+}
+
+void ExpressionBinder::Visit(Cm::Ast::BaseNode& baseNode)
+{
+    if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
+    {
+        Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
+        Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(thisParam->GetType()->GetBaseType());
+        if (classType->BaseClass())
+        {
+            Cm::Sym::ClassTypeSymbol* baseClassType = classType->BaseClass();
+            Cm::Sym::TypeSymbol* baseClassPtrType = SymbolTable().GetTypeRepository().MakePointerType(baseClassType, baseNode.GetSpan());
+            Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(&baseNode, thisParam);
+            boundThisParam->SetType(thisParam->GetType());
+            Cm::Sym::FunctionSymbol* conversionFun = ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, baseNode.GetSpan());
+            Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(&baseNode, boundThisParam, conversionFun);
+            thisAsBase->SetType(baseClassPtrType);
+            thisAsBase->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsThisOrBase);
+            boundExpressionStack.Push(thisAsBase);
+        }
+        else
+        {
+            throw Cm::Core::Exception("class '" + classType->FullName() + "' does not have a base class", baseNode.GetSpan(), classType->GetSpan());
+        }
+    }
+    else
+    {
+        throw Cm::Core::Exception("'base' can be used only in member function context", baseNode.GetSpan());
+    }
+}
+
 
 void ExpressionBinder::GenerateTrueExpression(Cm::Ast::Node* node)
 {

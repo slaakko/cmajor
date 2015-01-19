@@ -26,6 +26,16 @@ void BoundFunction::AddLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable
     localVariables.push_back(localVariable);
 }
 
+Cm::Sym::LocalVariableSymbol* BoundFunction::CreateTempLocalVariable(Cm::Sym::TypeSymbol* type)
+{
+    std::string tempVarName = "__temp" + std::to_string(int(temporaries.size()));
+    Cm::Sym::LocalVariableSymbol* tempVar = new Cm::Sym::LocalVariableSymbol(Cm::Parsing::Span(), tempVarName);
+    tempVar->SetType(type);
+    temporaries.push_back(std::unique_ptr<Cm::Sym::LocalVariableSymbol>(tempVar));
+    AddLocalVariable(tempVar);
+    return tempVar;
+}
+
 void BoundFunction::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
