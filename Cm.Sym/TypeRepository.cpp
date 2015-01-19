@@ -10,6 +10,7 @@
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Exception.hpp>
@@ -106,6 +107,11 @@ void CountDerivations(const Cm::Ast::DerivationList& derivations, int& numPointe
 Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations, const Span& span)
 {
     Ir::Intf::Type* baseIrType = nullptr;
+    if (baseType->IsEnumTypeSymbol())
+    {
+        EnumTypeSymbol* enumType = static_cast<EnumTypeSymbol*>(baseType);
+        baseType = enumType->GetUnderlyingType();
+    }
     if (baseType->IsVoidTypeSymbol())
     {
         baseIrType = Ir::Intf::GetFactory()->GetI8();

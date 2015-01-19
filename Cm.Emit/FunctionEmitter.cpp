@@ -200,6 +200,15 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConstant& boundConstant)
     resultStack.Push(std::move(result));
 }
 
+void FunctionEmitter::Visit(Cm::BoundTree::BoundEnumConstant& boundEnumConstant) 
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    Ir::Intf::Object* enumConstantValue = boundEnumConstant.Symbol()->GetValue()->CreateIrObject();
+    emitter->Own(enumConstantValue);
+    result.SetMainObject(enumConstantValue);
+    resultStack.Push(std::move(result));
+}
+
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);

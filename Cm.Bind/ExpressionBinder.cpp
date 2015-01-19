@@ -20,6 +20,7 @@
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.Bind/Function.hpp>
+#include <Cm.Bind/Enumeration.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
@@ -725,6 +726,48 @@ void ExpressionBinder::EndVisit(Cm::Ast::InvokeNode& invokeNode)
     BindInvoke(&invokeNode, numArgs);
 }
 
+void ExpressionBinder::Visit(Cm::Ast::IndexNode& indexNode)
+{
+    indexNode.Subject()->Accept(*this);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
+    indexNode.Index()->Accept(*this);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> index(boundExpressionStack.Pop());
+    Cm::Sym::TypeSymbol* subjectType = subject->GetType();
+    Cm::Sym::TypeSymbol* plainSubjectType = symbolTable.GetTypeRepository().MakePlainType(subjectType);
+    if (plainSubjectType->IsPointerType())
+    {
+        BindIndexPointer(&indexNode, subject.release(), index.release());
+    }
+    else if (plainSubjectType->IsClassTypeSymbol())
+    {
+        BindIndexClass(&indexNode, subject.release(), index.release());
+    }
+    else
+    {
+        throw Cm::Core::Exception("subscript operator can be applied only to pointer or class type subject", indexNode.GetSpan());
+    }
+}
+
+void ExpressionBinder::BindIndexPointer(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index)
+{
+    boundExpressionStack.Push(subject);
+    boundExpressionStack.Push(index);
+    BindBinaryOp(indexNode, "operator+");
+    BindUnaryOp(indexNode, "operator*");
+}
+
+void ExpressionBinder::BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index)
+{
+    Cm::Sym::FunctionGroupSymbol subscriptFunctionGroup(indexNode->GetSpan(), "operator[]", symbolTable.GetContainerScope(indexNode));
+    Cm::BoundTree::BoundFunctionGroup* boundSubscriptFunctionGroup = new Cm::BoundTree::BoundFunctionGroup(indexNode, &subscriptFunctionGroup);
+    boundExpressionStack.Push(boundSubscriptFunctionGroup);
+    subject->SetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg | Cm::BoundTree::BoundNodeFlags::lvalue);
+    boundExpressionStack.Push(subject);
+    boundExpressionStack.Push(index);
+    expressionCountStack.push(0);
+    BindInvoke(indexNode, 2);
+}
+
 void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
 {
     bool generateVirtualCall = false;
@@ -916,6 +959,12 @@ void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
             BindEnumTypeSymbol(node, enumTypeSymbol);
             break;
         }
+        case Cm::Sym::SymbolType::enumConstantSymbol:
+        {
+            Cm::Sym::EnumConstantSymbol* enumConstantSymbol = static_cast<Cm::Sym::EnumConstantSymbol*>(symbol);
+            BindEnumConstantSymbol(node, enumConstantSymbol);
+            break;
+        }
         case Cm::Sym::SymbolType::functionGroupSymbol:
         {
             Cm::Sym::FunctionGroupSymbol* functionGroupSymbol = static_cast<Cm::Sym::FunctionGroupSymbol*>(symbol);
@@ -1034,6 +1083,26 @@ void ExpressionBinder::BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTy
 {
     Cm::BoundTree::BoundContainerExpression* boundContainer = new Cm::BoundTree::BoundContainerExpression(idNode, enumTypeSymbol);
     boundExpressionStack.Push(boundContainer);
+}
+
+void ExpressionBinder::BindEnumConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumConstantSymbol* enumConstantSymbol)
+{
+    Cm::Ast::Node* node = symbolTable.GetNode(enumConstantSymbol);
+    Cm::Sym::TypeSymbol* enumType = nullptr;
+    if (node->IsEnumConstantNode())
+    {
+        Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
+        Cm::Sym::ContainerScope* enumConstantScope = symbolTable.GetContainerScope(enumConstantNode);
+        enumType = static_cast<Cm::Sym::EnumTypeSymbol*>(containerScope->Container());
+        BindEnumConstant(symbolTable, enumConstantScope, fileScope, enumConstantNode);
+    }
+    else 
+    {
+        throw std::runtime_error("not enum constant node");
+    }
+    Cm::BoundTree::BoundEnumConstant* boundEnumConstant = new Cm::BoundTree::BoundEnumConstant(idNode, enumConstantSymbol);
+    boundEnumConstant->SetType(enumType);
+    boundExpressionStack.Push(boundEnumConstant);
 }
 
 void ExpressionBinder::BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol)
