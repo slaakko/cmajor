@@ -17,7 +17,8 @@ GenData::GenData() : labelHolder(new LabelHolder())
 {
 }
 
-GenData::GenData(GenData&& that) : labelHolder(std::move(that.labelHolder)), objects(std::move(that.objects)), nextTargets(std::move(that.nextTargets)), trueTargets(std::move(that.trueTargets)), falseTargets(std::move(that.falseTargets))
+GenData::GenData(GenData&& that) : labelHolder(std::move(that.labelHolder)), objects(std::move(that.objects)), nextTargets(std::move(that.nextTargets)), trueTargets(std::move(that.trueTargets)), 
+    falseTargets(std::move(that.falseTargets)), argNextTargets(std::move(that.argNextTargets))
 {
 }
 
@@ -28,6 +29,7 @@ GenData& GenData::operator=(GenData&& that)
     std::swap(nextTargets, that.nextTargets);
     std::swap(trueTargets, that.trueTargets);
     std::swap(falseTargets, that.falseTargets);
+    std::swap(argNextTargets, that.argNextTargets);
     return *this;
 }
 
@@ -91,6 +93,11 @@ void GenData::AddFalseTarget(Ir::Intf::LabelObject* falseTarget)
     Ir::Intf::Add(falseTargets, falseTarget);
 }
 
+void GenData::AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget)
+{
+    Ir::Intf::Add(argNextTargets, argNextTarget);
+}
+
 void GenData::MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets)
 {
     Ir::Intf::Merge(targets, fromTargets);
@@ -106,6 +113,16 @@ void GenData::MergeData(GenData& childData)
     Ir::Intf::Merge(nextTargets, childData.nextTargets);
     Ir::Intf::Merge(trueTargets, childData.trueTargets);
     Ir::Intf::Merge(falseTargets, childData.falseTargets);
+    Ir::Intf::Merge(argNextTargets, childData.argNextTargets);
+}
+
+Ir::Intf::LabelObject* GenData::GetLabel() const 
+{ 
+    if (labelHolder)
+    {
+        return labelHolder->GetLabel();
+    }
+    return nullptr;
 }
 
 void GenData::BackpatchTrueTargets(Ir::Intf::LabelObject* label)
@@ -136,6 +153,16 @@ void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label)
     }
     Ir::Intf::Backpatch(nextTargets, label);
     nextTargets.clear();
+}
+
+void GenData::BackpatchArgNextTargets(Ir::Intf::LabelObject* label)
+{
+    if (!label)
+    {
+        throw std::runtime_error("backpatch arg next targets got no label");
+    }
+    Ir::Intf::Backpatch(argNextTargets, label);
+    argNextTargets.clear();
 }
 
 Emitter::Emitter(Ir::Intf::Function* irFunction_) : irFunction(irFunction_), gotoTargetLabel(nullptr)
@@ -276,6 +303,24 @@ void GenResult::Merge(GenResult& child)
 {
     genData.MergeData(child.genData);
     AddChild(std::move(child.genData));
+}
+
+Ir::Intf::LabelObject* GenResult::GetLabel() const 
+{ 
+    Ir::Intf::LabelObject* label = genData.GetLabel();
+    if (label)
+    {
+        return label;
+    }
+    for (const GenData& child : children)
+    {
+        Ir::Intf::LabelObject* label = child.GetLabel();
+        if (label)
+        {
+            return label;
+        }
+    }
+    return nullptr;
 }
 
 void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type)

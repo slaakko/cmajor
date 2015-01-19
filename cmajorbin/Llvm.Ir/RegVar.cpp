@@ -17,6 +17,7 @@
 #include <Llvm.Ir/Temporary.hpp>
 #include <Llvm.Ir/Util.hpp>
 #include <Llvm.Ir/Instruction.hpp>
+#include <Ir.Intf/Factory.hpp>
 #include <stdexcept>
 
 namespace Llvm { 

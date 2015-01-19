@@ -159,6 +159,8 @@ class BoundAssignmentStatement : public BoundStatement
 public:
     BoundAssignmentStatement(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_, Cm::Sym::FunctionSymbol* assignment_);
     void Accept(Visitor& visitor) override;
+    Cm::BoundTree::BoundExpression* Left() const { return left.get(); }
+    Cm::BoundTree::BoundExpression* Right() const { return right.get(); }
     Cm::Sym::FunctionSymbol* Assignment() const { return assignment; }
 private:
     std::unique_ptr<BoundExpression> left;
@@ -178,6 +180,7 @@ class BoundSimpleStatement : public BoundStatement
 public:
     BoundSimpleStatement(Cm::Ast::Node* syntaxNode_);
     void SetExpression(BoundExpression* expression_);
+    BoundExpression* GetExpression() const { return expression.get(); }
     void Accept(Visitor& visitor) override;
     bool HasExpression() const { return expression != nullptr; }
 private:

@@ -533,6 +533,7 @@ class ThisNode : public Node
 public:
     ThisNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::thisNode; }
+    bool IsThisNode() const override { return true; }
     Node* Clone() const override;
     std::string ToString() const override { return "this"; }
     void Accept(Visitor& visitor) override;

@@ -23,7 +23,8 @@ enum class BoundNodeFlags : uint8_t
     constructVariable = 1 << 2,
     genJumpingBoolCode = 1 << 3,
     classObjectArg = 1 << 4,
-    genVirtualCall = 1 << 5
+    genVirtualCall = 1 << 5,
+    argIsThisOrBase = 1 << 6
 };
 
 inline BoundNodeFlags operator|(BoundNodeFlags left, BoundNodeFlags right)

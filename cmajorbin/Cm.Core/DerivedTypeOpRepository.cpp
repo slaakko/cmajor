@@ -496,7 +496,6 @@ Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetPlainRefCtor(Cm::Sym::TypeReposi
     return plainRefCtor.get();
 }
 */
-
 Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type)
 {
     if (!copyAssignment)
@@ -801,12 +800,22 @@ void EqualityOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::Co
 {
     if (arity != 2) return;
     Cm::Sym::TypeSymbol* leftType = arguments[0].Type();
-    if (leftType->IsPointerType())
+    if (leftType->IsPointerType() || leftType->IsNullPtrType())
     {
         Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
-        if (rightType->IsPointerType())
+        if (rightType->IsPointerType() || rightType->IsNullPtrType())
         {
             if (Cm::Sym::TypesEqual(leftType, rightType)) // operator==(ptr, ptr)
+            {
+                DerivedTypeOpCache& cache = derivedTypeOpCacheMap[leftType];
+                viableFunctions.insert(cache.GetOpEqual(typeRepository, leftType));
+            }
+            else if (leftType->IsNullPtrType()) // operator==(null, ptr)
+            {
+                DerivedTypeOpCache& cache = derivedTypeOpCacheMap[rightType];
+                viableFunctions.insert(cache.GetOpEqual(typeRepository, rightType));
+            }
+            else if (rightType->IsNullPtrType())    // operator==(ptr, null)
             {
                 DerivedTypeOpCache& cache = derivedTypeOpCacheMap[leftType];
                 viableFunctions.insert(cache.GetOpEqual(typeRepository, leftType));

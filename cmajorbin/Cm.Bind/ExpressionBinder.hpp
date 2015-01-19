@@ -82,8 +82,8 @@ public:
     void EndVisit(Cm::Ast::ComplementNode& complementNode) override;
     void Visit(Cm::Ast::AddrOfNode& addrOfNode) override;
     void Visit(Cm::Ast::DerefNode& derefNode) override;
-    void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) {}
-    void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) {}
+    void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) override;
+    void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) override;
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::ArrowNode& arrowNode) override;
     void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
@@ -98,8 +98,8 @@ public:
     void EndVisit(Cm::Ast::NewNode& newNode) {}
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) {}
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
-    void Visit(Cm::Ast::ThisNode& thisNode) {}
-    void Visit(Cm::Ast::BaseNode& baseNode) {}
+    void Visit(Cm::Ast::ThisNode& thisNode) override;
+    void Visit(Cm::Ast::BaseNode& baseNode) override;
     void Visit(Cm::Ast::TypeNameNode& typeNameNode) {}
 
     void Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode) override;

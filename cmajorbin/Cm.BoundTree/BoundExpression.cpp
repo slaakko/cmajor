@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.BoundTree/BoundExpression.hpp>
+#include <Cm.BoundTree/BoundStatement.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -165,6 +166,15 @@ void BoundBinaryOp::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundPostfixIncDecExpr::BoundPostfixIncDecExpr(Cm::Ast::Node* syntaxNode_, BoundExpression* value_, BoundStatement* statement_) : BoundExpression(syntaxNode_), value(value_), statement(statement_)
+{
+}
+
+void BoundPostfixIncDecExpr::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundFunctionGroup::BoundFunctionGroup(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_) : BoundExpression(syntaxNode_), functionGroupSymbol(functionGroupSymbol_)
 {
 }
@@ -187,25 +197,21 @@ BoundBooleanBinaryExpression::BoundBooleanBinaryExpression(Cm::Ast::Node* syntax
 {
 }
 
-BoundDisjunction::BoundDisjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(syntaxNode_, left_, right_)
+BoundDisjunction::BoundDisjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(syntaxNode_, left_, right_), resultVar(nullptr)
 {
 }
 
 void BoundDisjunction::Accept(Visitor& visitor)
 {
-    Left()->Accept(visitor);
-    Right()->Accept(visitor);
     visitor.Visit(*this);
 }
 
-BoundConjunction::BoundConjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(syntaxNode_, left_, right_)
+BoundConjunction::BoundConjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(syntaxNode_, left_, right_), resultVar(nullptr)
 {
 }
 
 void BoundConjunction::Accept(Visitor& visitor)
 {
-    Left()->Accept(visitor);
-    Right()->Accept(visitor);
     visitor.Visit(*this);
 }
 
