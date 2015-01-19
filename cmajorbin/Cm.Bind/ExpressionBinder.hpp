@@ -88,7 +88,7 @@ public:
     void Visit(Cm::Ast::ArrowNode& arrowNode) override;
     void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
     void EndVisit(Cm::Ast::InvokeNode& invokeNode) override;
-    void Visit(Cm::Ast::IndexNode& indexNode) {}
+    void Visit(Cm::Ast::IndexNode& indexNode) override;
 
     void Visit(Cm::Ast::SizeOfNode& sizeOfNode) {}
     void Visit(Cm::Ast::CastNode& castNode) override;
@@ -158,7 +158,10 @@ private:
     void BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol);
     void BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::NamespaceSymbol* namespaceSymbol);
     void BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTypeSymbol* enumTypeSymbol);
+    void BindEnumConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumConstantSymbol* enumConstantSymbol);
     void BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol);
+    void BindIndexPointer(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
+    void BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
     void BindInvoke(Cm::Ast::Node* node, int numArgs);
     Cm::Sym::FunctionSymbol* BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, 
         bool& firstArgByRef, bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs);

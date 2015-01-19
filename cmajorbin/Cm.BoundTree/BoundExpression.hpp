@@ -13,6 +13,7 @@
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
+#include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/Value.hpp>
@@ -90,6 +91,16 @@ public:
     void Accept(Visitor& visitor) override;
 private:
     Cm::Sym::ConstantSymbol* symbol;
+};
+
+class BoundEnumConstant : public BoundExpression
+{
+public:
+    BoundEnumConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::EnumConstantSymbol* symbol_);
+    Cm::Sym::EnumConstantSymbol* Symbol() const { return symbol; }
+    void Accept(Visitor& visitor) override;
+private:
+    Cm::Sym::EnumConstantSymbol* symbol;
 };
 
 class BoundLocalVariable : public BoundExpression

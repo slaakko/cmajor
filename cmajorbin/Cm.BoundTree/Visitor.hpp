@@ -18,6 +18,7 @@ class BoundCompileUnit;
 class BoundLiteral;
 class BoundStringLiteral;
 class BoundConstant;
+class BoundEnumConstant;
 class BoundLocalVariable;
 class BoundMemberVariable;
 class BoundParameter;
@@ -66,6 +67,7 @@ public:
     virtual void Visit(BoundLiteral& boundLiteral) {}
     virtual void Visit(BoundStringLiteral& boundStringLiteral) {}
     virtual void Visit(BoundConstant& boundConstant) {}
+    virtual void Visit(BoundEnumConstant& boundEnumConstant) {}
     virtual void Visit(BoundLocalVariable& boundLocalVariable) {}
     virtual void Visit(BoundMemberVariable& boundMemberVariable) {}
     virtual void Visit(BoundParameter& boundParameter) {}

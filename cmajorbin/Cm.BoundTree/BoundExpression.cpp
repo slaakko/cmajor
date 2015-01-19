@@ -78,6 +78,15 @@ void BoundConstant::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundEnumConstant::BoundEnumConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::EnumConstantSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
+{
+}
+
+void BoundEnumConstant::Accept(Visitor& visitor) 
+{
+    visitor.Visit(*this);
+}
+
 BoundLocalVariable::BoundLocalVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::LocalVariableSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }

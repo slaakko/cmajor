@@ -52,6 +52,7 @@ public:
     void Visit(Cm::BoundTree::BoundLiteral& boundLiteral) override;
     void Visit(Cm::BoundTree::BoundStringLiteral& boundStringLiteral) override;
     void Visit(Cm::BoundTree::BoundConstant& boundConstant) override;
+    void Visit(Cm::BoundTree::BoundEnumConstant& boundEnumConstant) override;
     void Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable) override;
     void Visit(Cm::BoundTree::BoundParameter& boundParameter) override;
     void Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable) override;
