@@ -12,6 +12,7 @@
 #include <Cm.BoundTree/BoundNode.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
+#include <Cm.Core/EnumTypeOpRepository.hpp>
 #include <Cm.Core/StringRepository.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
 #include <Cm.Core/IrClassTypeRepository.hpp>
@@ -33,6 +34,7 @@ public:
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
     Cm::Core::DerivedTypeOpRepository& DerivedTypeOpRepository() { return derivedTypeOpRepository; }
+    Cm::Core::EnumTypeOpRepository& EnumTypeOpRepository() {return enumTypeOpRepository; }
     Cm::Core::StringRepository& StringRepository() { return stringRepository; }
     Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
     Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
@@ -50,6 +52,7 @@ private:
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;
     Cm::Core::DerivedTypeOpRepository derivedTypeOpRepository;
+    Cm::Core::EnumTypeOpRepository enumTypeOpRepository;
     Cm::Core::StringRepository stringRepository;
     Cm::Core::IrFunctionRepository irFunctionRepository;
     Cm::Core::IrClassTypeRepository irClassTypeRepository;

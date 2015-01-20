@@ -14,27 +14,19 @@
 
 namespace Cm { namespace Bind {
 
-void GenerateClassInitStatement(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::Core::StringRepository& stringRepository, 
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction,
+void GenerateClassInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction,
     Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode, bool& callToThisInitializerGenerated);
 
 void GenerateInitVPtrStatement(Cm::Sym::ClassTypeSymbol* classType, Cm::BoundTree::BoundFunction* boundFunction);
 
-void GenerateMemberVariableInitStatements(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::Core::StringRepository& stringRepository, 
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction,
-    Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode);
+void GenerateMemberVariableInitStatements(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
+    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode);
 
-void GenerateMemberVariableDestructionStatements(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::Core::StringRepository& stringRepository,
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction,
-    Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode);
+void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
+    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode);
 
-void GenerateBaseClassDestructionStatement(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::Core::StringRepository& stringRepository,
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction,
-    Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode);
+void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
+    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode);
 
 } } // namespace Cm::Bind
 

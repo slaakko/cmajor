@@ -15,31 +15,33 @@ namespace Cm { namespace BoundTree {
 
 class Visitor;
 
-enum class BoundNodeFlags : uint8_t
+enum class BoundNodeFlags : uint16_t
 {
     none = 0,
     argByRef = 1 << 0,
     lvalue = 1 << 1,
-    constructVariable = 1 << 2,
-    genJumpingBoolCode = 1 << 3,
-    classObjectArg = 1 << 4,
-    genVirtualCall = 1 << 5,
-    argIsThisOrBase = 1 << 6
+    refByValue = 1 << 2,
+    constructVariable = 1 << 3,
+    genJumpingBoolCode = 1 << 4,
+    classObjectArg = 1 << 5,
+    genVirtualCall = 1 << 6,
+    argIsThisOrBase = 1 << 7,
+    argIsTemporary = 1 << 8
 };
 
 inline BoundNodeFlags operator|(BoundNodeFlags left, BoundNodeFlags right)
 {
-    return BoundNodeFlags(uint8_t(left) | uint8_t(right));
+    return BoundNodeFlags(uint16_t(left) | uint16_t(right));
 }
 
 inline BoundNodeFlags operator&(BoundNodeFlags left, BoundNodeFlags right)
 {
-    return BoundNodeFlags(uint8_t(left) & uint8_t(right));
+    return BoundNodeFlags(uint16_t(left) & uint16_t(right));
 }
 
 inline BoundNodeFlags operator~(BoundNodeFlags flag)
 {
-    return BoundNodeFlags(~uint8_t(flag));
+    return BoundNodeFlags(~uint16_t(flag));
 }
 
 class BoundNode

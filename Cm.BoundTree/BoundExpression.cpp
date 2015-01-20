@@ -125,11 +125,20 @@ void BoundMemberVariable::SetClassObject(Cm::BoundTree::BoundExpression* classOb
     classObject.reset(classObject_);
 }
 
-BoundContainerExpression::BoundContainerExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::ContainerSymbol* containerSymbol_) : BoundExpression(syntaxNode_), containerSymbol(containerSymbol_)
+BoundTypeExpression::BoundTypeExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* typeSymbol_) : BoundExpression(syntaxNode_), typeSymbol(typeSymbol_)
 {
 }
 
-void BoundContainerExpression::Accept(Visitor& visitor)
+void BoundTypeExpression::Accept(Visitor& visitor)
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+BoundNamespaceExpression::BoundNamespaceExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::NamespaceSymbol* namespaceSymbol_) : BoundExpression(syntaxNode_), namespaceSymbol(namespaceSymbol_)
+{
+}
+
+void BoundNamespaceExpression::Accept(Visitor& visitor)
 {
     throw std::runtime_error("member function not applicable");
 }

@@ -28,11 +28,12 @@ class BoundExpression : public BoundNode
 public:
     BoundExpression(Cm::Ast::Node* syntaxNode_);
     bool IsBoundExpressionNode() const override { return true; }
-    virtual bool IsContainerExpression() const { return false; }
+    virtual bool IsBoundNamespaceExpression() const { return false; }
     virtual bool IsBoundFunctionGroup() const { return false; }
     virtual bool IsBoundMemberVariable() const { return false; }
     virtual bool IsBoundUnaryOp() const { return false; }
     virtual bool IsBoundPostfixIncDecExpr() const { return false; }
+    virtual bool IsBoundTypeExpression() const { return false; }
     virtual bool IsCast() const { return false; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
@@ -140,15 +141,26 @@ private:
     Cm::Sym::MemberVariableSymbol* symbol;
 };
 
-class BoundContainerExpression : public BoundExpression
+class BoundTypeExpression : public BoundExpression
 {
 public:
-    BoundContainerExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::ContainerSymbol* containerSymbol_);
-    Cm::Sym::ContainerSymbol* ContainerSymbol() const { return containerSymbol; }
-    bool IsContainerExpression() const override { return true; }
+    BoundTypeExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* typeSymbol_);
+    bool IsBoundTypeExpression() const override { return true; }
+    Cm::Sym::TypeSymbol* Symbol() const { return typeSymbol; }
     void Accept(Visitor& visitor) override;
 private:
-    Cm::Sym::ContainerSymbol* containerSymbol;
+    Cm::Sym::TypeSymbol* typeSymbol;
+};
+
+class BoundNamespaceExpression : public BoundExpression
+{
+public:
+    BoundNamespaceExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::NamespaceSymbol* namespaceSymbol_);
+    Cm::Sym::NamespaceSymbol* NamespaceSymbol() const { return namespaceSymbol; }
+    bool IsBoundNamespaceExpression() const override { return true; }
+    void Accept(Visitor& visitor) override;
+private:
+    Cm::Sym::NamespaceSymbol* namespaceSymbol;
 };
 
 class BoundConversion : public BoundExpression

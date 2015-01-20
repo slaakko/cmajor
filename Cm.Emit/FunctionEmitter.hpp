@@ -63,7 +63,7 @@ public:
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;
     void Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction) override;
     void Visit(Cm::BoundTree::BoundConjunction& boundConjunction) override;
-    void Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncExpr) override;
+    void Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncDecExpr) override;
     void BeginVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
     void EndVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
     void BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
@@ -109,6 +109,7 @@ private:
     std::unordered_set<Ir::Intf::Function*>& externalFunctions;
     std::vector<std::unique_ptr<Cm::BoundTree::BoundStatement>> postfixIncDecStatements;
     bool executingPostfixIncDecStatements;
+    void MakePlainValueResult(Cm::Sym::TypeSymbol* plainType, Cm::Core::GenResult& result);
     void ExecutePostfixIncDecStatements(Cm::Core::GenResult& result);
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
     void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);

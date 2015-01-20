@@ -144,7 +144,12 @@ void BoundConstructionStatement::GetResolutionArguments(std::vector<Cm::Core::Ar
 {
     for (const std::unique_ptr<BoundExpression>& argument : arguments)
     {
-        resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+        Cm::Core::Argument arg(argument->GetArgumentCategory(), argument->GetType());
+        if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
+        {
+            arg.SetBindToRvalueRef();
+        }
+        resolutionArguments.push_back(arg);
     }
 }
 

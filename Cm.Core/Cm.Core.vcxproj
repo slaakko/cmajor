@@ -23,6 +23,7 @@
     <ClInclude Include="BasicTypeOp.hpp" />
     <ClInclude Include="ClassConversionTable.hpp" />
     <ClInclude Include="DerivedTypeOpRepository.hpp" />
+    <ClInclude Include="EnumTypeOpRepository.hpp" />
     <ClInclude Include="Exception.hpp" />
     <ClInclude Include="GenData.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
@@ -37,6 +38,7 @@
     <ClCompile Include="BasicTypeOp.cpp" />
     <ClCompile Include="ClassConversionTable.cpp" />
     <ClCompile Include="DerivedTypeOpRepository.cpp" />
+    <ClCompile Include="EnumTypeOpRepository.cpp" />
     <ClCompile Include="Excecption.cpp" />
     <ClCompile Include="GenData.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />

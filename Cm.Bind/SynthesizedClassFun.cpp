@@ -34,8 +34,7 @@ Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const 
     Cm::Sym::FunctionSymbol* baseClassCtor = nullptr;
     try
     {
-        baseClassCtor = ResolveOverload(compileUnit.SymbolTable(), compileUnit.ConversionTable(), compileUnit.ClassConversionTable(), compileUnit.DerivedTypeOpRepository(), 
-            compileUnit.SynthesizedClassFunRepository(), "@constructor", resolutionArguments, functionLookups, span, conversions);
+        baseClassCtor = ResolveOverload(compileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -93,8 +92,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableState
     Cm::Sym::FunctionSymbol* memberCtor = nullptr;
     try
     {
-        memberCtor = ResolveOverload(compileUnit.SymbolTable(), compileUnit.ConversionTable(), compileUnit.ClassConversionTable(), compileUnit.DerivedTypeOpRepository(), 
-            compileUnit.SynthesizedClassFunRepository(), "@constructor", resolutionArguments, functionLookups, span, conversions);
+        memberCtor = ResolveOverload(compileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -147,8 +145,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::
     Cm::Sym::FunctionSymbol* baseClassAssignment = nullptr;
     try
     {
-        baseClassAssignment = ResolveOverload(compileUnit.SymbolTable(), compileUnit.ConversionTable(), compileUnit.ClassConversionTable(), compileUnit.DerivedTypeOpRepository(),
-            compileUnit.SynthesizedClassFunRepository(), "operator=", resolutionArguments, functionLookups, span, conversions);
+        baseClassAssignment = ResolveOverload(compileUnit, "operator=", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -205,8 +202,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement
     Cm::Sym::FunctionSymbol* memberAssignment = nullptr;
     try
     {
-        memberAssignment = ResolveOverload(compileUnit.SymbolTable(), compileUnit.ConversionTable(), compileUnit.ClassConversionTable(), compileUnit.DerivedTypeOpRepository(),
-            compileUnit.SynthesizedClassFunRepository(), "operator=", resolutionArguments, functionLookups, span, conversions);
+        memberAssignment = ResolveOverload(compileUnit, "operator=", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -263,8 +259,7 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     if (!generateImplementation) return defaultConstructorSymbol;
     std::unique_ptr<Cm::BoundTree::BoundFunction> defaultConstructor(new Cm::BoundTree::BoundFunction(nullptr, defaultConstructorSymbol));
     defaultConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
-    GenerateReceives(compileUnit.SymbolTable(), compileUnit.ConversionTable(), compileUnit.ClassConversionTable(), compileUnit.DerivedTypeOpRepository(), compileUnit.SynthesizedClassFunRepository(),
-        defaultConstructor.get());
+    GenerateReceives(compileUnit, defaultConstructor.get());
     if (classTypeSymbol->BaseClass())
     {
         Cm::Sym::ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
@@ -327,8 +322,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
     if (!generateImplementation) return copyConstructorSymbol;
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyConstructor(new Cm::BoundTree::BoundFunction(nullptr, copyConstructorSymbol));
     copyConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
-    GenerateReceives(compileUnit.SymbolTable(), compileUnit.ConversionTable(), compileUnit.ClassConversionTable(), compileUnit.DerivedTypeOpRepository(), compileUnit.SynthesizedClassFunRepository(),
-        copyConstructor.get());
+    GenerateReceives(compileUnit, copyConstructor.get());
     if (classTypeSymbol->BaseClass())
     {
         Cm::Sym::ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
@@ -410,8 +404,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
     if (!generateImplementation) return copyAssignmentSymbol;
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyAssignment(new Cm::BoundTree::BoundFunction(nullptr, copyAssignmentSymbol));
     copyAssignment->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
-    GenerateReceives(compileUnit.SymbolTable(), compileUnit.ConversionTable(), compileUnit.ClassConversionTable(), compileUnit.DerivedTypeOpRepository(), compileUnit.SynthesizedClassFunRepository(),
-        copyAssignment.get());
+    GenerateReceives(compileUnit, copyAssignment.get());
     if (classTypeSymbol->BaseClass())
     {
         Cm::Sym::ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
@@ -497,8 +490,7 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     std::unique_ptr<Cm::BoundTree::BoundFunction> destructor(new Cm::BoundTree::BoundFunction(nullptr, destructorSymbol));
     destructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
-    GenerateReceives(compileUnit.SymbolTable(), compileUnit.ConversionTable(), compileUnit.ClassConversionTable(), compileUnit.DerivedTypeOpRepository(), compileUnit.SynthesizedClassFunRepository(),
-        destructor.get());
+    GenerateReceives(compileUnit, destructor.get());
     if (classTypeSymbol->IsVirtual())
     {
         destructor->Body()->AddStatement(new Cm::BoundTree::BoundInitVPtrStatement(classTypeSymbol));

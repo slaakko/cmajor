@@ -17,10 +17,7 @@ namespace Cm { namespace Bind {
 class StatementBinder : public ExpressionBinder
 {
 public:
-    StatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_,
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
-        Cm::BoundTree::BoundFunction* currentFunction_);
+    StatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     Cm::Sym::FileScope* FileScope() const { return fileScope; }
@@ -36,10 +33,8 @@ private:
 class ConstructionStatementBinder : public StatementBinder
 {
 public:
-    ConstructionStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, 
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    ConstructionStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+        Cm::BoundTree::BoundFunction* currentFunction_);
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
     void EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
 private:
@@ -49,40 +44,29 @@ private:
 class AssignmentStatementBinder : public StatementBinder
 {
 public:
-    AssignmentStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, 
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    AssignmentStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
 };
 
 class SimpleStatementBinder : public StatementBinder
 {
 public:
-    SimpleStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, 
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    SimpleStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
 };
 
 class ReturnStatementBinder : public StatementBinder
 {
 public:
-    ReturnStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, 
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    ReturnStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode) override;
 };
 
 class ConditionalStatementBinder : public StatementBinder
 {
 public:
-    ConditionalStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, 
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_);
+    ConditionalStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_);
     void EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode) override;
 private:
     Cm::BoundTree::BoundConditionalStatement* conditionalStatement;
@@ -91,10 +75,8 @@ private:
 class WhileStatementBinder : public StatementBinder
 {
 public:
-    WhileStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, 
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundWhileStatement* whileStatement_);
+    WhileStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, 
+        Cm::BoundTree::BoundWhileStatement* whileStatement_);
     void EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode) override;
 private:
     Cm::BoundTree::BoundWhileStatement* whileStatement;
@@ -103,10 +85,8 @@ private:
 class DoStatementBinder : public StatementBinder
 {
 public:
-    DoStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, 
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundDoStatement* doStatement_);
+    DoStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, 
+        Cm::BoundTree::BoundDoStatement* doStatement_);
     void EndVisit(Cm::Ast::DoStatementNode& doStatementNode) override;
 private:
     Cm::BoundTree::BoundDoStatement* doStatement;
@@ -115,10 +95,8 @@ private:
 class ForStatementBinder : public StatementBinder
 {
 public:
-    ForStatementBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, 
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundForStatement* forStatement_);
+    ForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, 
+        Cm::BoundTree::BoundForStatement* forStatement_);
     void EndVisit(Cm::Ast::ForStatementNode& forStatementNode) override;
 private:
     Cm::BoundTree::BoundForStatement* forStatement;

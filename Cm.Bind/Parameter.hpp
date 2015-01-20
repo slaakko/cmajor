@@ -10,16 +10,13 @@
 #ifndef CM_BIND_PARAMETER_INCLUDED
 #define CM_BIND_PARAMETER_INCLUDED
 #include <Cm.BoundTree/BoundFunction.hpp>
-#include <Cm.Core/ClassConversionTable.hpp>
-#include <Cm.Core/DerivedTypeOpRepository.hpp>
-#include <Cm.Core/SynthesizedClassFunRepository.hpp>
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace Bind {
 
 void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ParameterNode* parameterNode, int parameterIndex);
-void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::BoundTree::BoundFunction* boundFunction);
+void GenerateReceives(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* boundFunction);
 
 } } // namespace Cm::Bind
 
