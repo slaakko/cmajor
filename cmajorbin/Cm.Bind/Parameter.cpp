@@ -53,8 +53,7 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
     }
 }
 
-void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable, 
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::BoundTree::BoundFunction* boundFunction)
+void GenerateReceives(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* boundFunction)
 {
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
     if (functionSymbol->IsExternal()) return;
@@ -64,7 +63,7 @@ void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTabl
         Cm::BoundTree::BoundReceiveStatement* boundReceiveStatement = new Cm::BoundTree::BoundReceiveStatement(parameterSymbol);
         Cm::Sym::TypeSymbol* parameterType = parameterSymbol->GetType();
         std::vector<Cm::Core::Argument> resolutionArguments;
-        Cm::Core::Argument targetArgument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(parameterType, parameterSymbol->GetSpan()));
+        Cm::Core::Argument targetArgument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(parameterType, parameterSymbol->GetSpan()));
         resolutionArguments.push_back(targetArgument);
         if (parameterType->IsNonConstReferenceType())
         {
@@ -73,14 +72,13 @@ void GenerateReceives(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTabl
         }
         else
         {
-            Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, symbolTable.GetTypeRepository().MakeConstReferenceType(parameterType, parameterSymbol->GetSpan()));
+            Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(parameterType, parameterSymbol->GetSpan()));
             resolutionArguments.push_back(sourceArgument);
         }
         Cm::Sym::FunctionLookupSet functionLookups;
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
-        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, "@constructor", resolutionArguments, 
-            functionLookups, parameterSymbol->GetSpan(), conversions);
+        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(boundCompileUnit, "@constructor", resolutionArguments, functionLookups, parameterSymbol->GetSpan(), conversions);
         boundReceiveStatement->SetConstructor(ctor);
         boundFunction->Body()->InsertStatement(index, boundReceiveStatement);
         ++index;

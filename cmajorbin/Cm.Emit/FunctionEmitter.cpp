@@ -234,6 +234,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariabl
             GenJumpingBoolCode(result);
         }
     }
+    if (boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
+    {
+        MakePlainValueResult(typeRepository.MakePlainType(boundLocalVariable.GetType()), result);
+    }
     resultStack.Push(std::move(result));
 }
 
@@ -255,6 +259,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundParameter& boundParameter)
         {
             GenJumpingBoolCode(result);
         }
+    }
+    if (boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
+    {
+        MakePlainValueResult(typeRepository.MakePlainType(boundParameter.GetType()), result);
     }
     resultStack.Push(std::move(result));
 }
@@ -293,6 +301,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
         result.AddObject(memberVariableIrObject);
         Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
     }
+    if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
+    {
+        MakePlainValueResult(typeRepository.MakePlainType(boundMemberVariable.GetType()), result);
+    }
     result.Merge(ptrResult);
     if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
@@ -318,6 +330,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
         result.SetClassTypeToPointerTypeConversion();
     }
     GenerateCall(conversionFun, result);
+    if (boundConversion.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
+    {
+        MakePlainValueResult(typeRepository.MakePlainType(boundConversion.GetType()), result);
+    }
     if (resultLabel)
     {
         result.SetLabel(resultLabel);
@@ -338,6 +354,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCast& boundCast)
     result.Merge(operandResult);
     Cm::Sym::FunctionSymbol* conversionFun = boundCast.ConversionFun();
     GenerateCall(conversionFun, result);
+    if (boundCast.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
+    {
+        MakePlainValueResult(typeRepository.MakePlainType(boundCast.GetType()), result);
+    }
     if (resultLabel)
     {
         result.SetLabel(resultLabel);
@@ -348,8 +368,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCast& boundCast)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::Sym::FunctionSymbol* op = boundUnaryOp.GetFunction();
+    result.SetMainObject(op->GetReturnType());
     Cm::Core::GenResult operandResult = resultStack.Pop();
-    result.SetMainObject(boundUnaryOp.GetType());
     if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         result.SetGenJumpingBoolCode();
@@ -360,8 +381,11 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
     }
     Ir::Intf::LabelObject* resultLabel = operandResult.GetLabel();
     result.Merge(operandResult);
-    Cm::Sym::FunctionSymbol* op = boundUnaryOp.GetFunction();
     GenerateCall(op, result);
+    if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
+    {
+        MakePlainValueResult(typeRepository.MakePlainType(boundUnaryOp.GetType()), result);
+    }
     if (resultLabel)
     {
         result.SetLabel(resultLabel);
@@ -388,6 +412,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
     result.Merge(right);
     Cm::Sym::FunctionSymbol* op = boundBinaryOp.GetFunction();
     GenerateCall(op, result);
+    if (boundBinaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
+    {
+        MakePlainValueResult(typeRepository.MakePlainType(boundBinaryOp.GetType()), result);
+    }
     if (resultLabel)
     {
         result.SetLabel(resultLabel);
@@ -398,7 +426,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    if (functionCall.GetType())
+    if (!functionCall.GetFunction()->IsBasicTypeOp() && !functionCall.GetFunction()->IsConstructorOrDestructorSymbol())
     {
         result.SetMainObject(functionCall.GetType());
     }
@@ -418,6 +446,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
         result.SetGenVirtualCall();
     }
     GenerateCall(fun, result);
+    if (functionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
+    {
+        MakePlainValueResult(typeRepository.MakePlainType(functionCall.GetType()), result);
+    }
     resultStack.Push(std::move(result));
 }
 
@@ -525,10 +557,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConjunction& boundConjunction)
     resultStack.Push(std::move(result));
 }
 
-void FunctionEmitter::Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncExpr)
+void FunctionEmitter::Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncDecExpr)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    boundPostfixIncExpr.Value()->Accept(*this);
+    boundPostfixIncDecExpr.Value()->Accept(*this);
     Cm::Core::GenResult valueResult = resultStack.Pop();
     Ir::Intf::LabelObject* resultLabel = valueResult.GetLabel();;
     result.Merge(valueResult);
@@ -537,7 +569,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixI
         result.SetLabel(resultLabel);
     }
     resultStack.Push(std::move(result));
-    postfixIncDecStatements.push_back(std::unique_ptr<Cm::BoundTree::BoundStatement>(boundPostfixIncExpr.ReleaseStatement()));
+    postfixIncDecStatements.push_back(std::unique_ptr<Cm::BoundTree::BoundStatement>(boundPostfixIncDecExpr.ReleaseStatement()));
 }
 
 void FunctionEmitter::BeginVisitStatement(Cm::BoundTree::BoundStatement& statement)
@@ -915,6 +947,15 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     result.Merge(incrementResult);
     result.SetLabel(initLabel);
     resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::MakePlainValueResult(Cm::Sym::TypeSymbol* plainType, Cm::Core::GenResult& result)
+{
+    Ir::Intf::Type* plainIrType = plainType->GetIrType();
+    Ir::Intf::Object* plainObject = Cm::IrIntf::CreateTemporaryRegVar(plainIrType);
+    emitter->Own(plainObject);
+    Cm::IrIntf::Assign(*emitter, plainIrType, result.MainObject(), plainObject);
+    result.SetMainObject(plainObject);
 }
 
 void FunctionEmitter::ExecutePostfixIncDecStatements(Cm::Core::GenResult& result)

@@ -486,16 +486,6 @@ Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetNullPtrToPtrConversion(Cm::Sym::
     return nullPtrToPtrConversion.get();
 }
 
-/*
-Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetPlainRefCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType, Cm::Sym::TypeSymbol* sourceType)
-{
-    if (!plainRefCtor)
-    {
-        plainRefCtor.reset(new PlainRefCtor(typeRepository, targetType, sourceType));
-    }
-    return plainRefCtor.get();
-}
-*/
 Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type)
 {
     if (!copyAssignment)

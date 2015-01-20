@@ -101,6 +101,11 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             {
                 enumTypeSymbol->SetUnderlyingType(symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
             }
+            if (!enumTypeSymbol->GetIrType())
+            {
+                enumTypeSymbol->SetIrType(enumTypeSymbol->GetUnderlyingType()->GetIrType()->Clone());
+                enumTypeSymbol->SetDefaultIrValue(enumTypeSymbol->GetUnderlyingType()->GetIrType()->CreateDefaultValue());
+            }
             enumTypeSymbol->SetBound();
         }
         else

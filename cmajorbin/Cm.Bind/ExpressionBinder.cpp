@@ -29,6 +29,7 @@
 #include <Cm.Ast/Expression.hpp>
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/BasicType.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -85,9 +86,19 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::Bound
         {
             argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
         }
-        else if (paramType->IsClassTypeSymbol())
+        else 
         {
-            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+            if (paramType->IsClassTypeSymbol())
+            {
+                argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+            }
+            else
+            {
+                if (argument->GetType()->IsReferenceType())
+                {
+                    argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
+                }
+            }
         }
     }
 }
@@ -109,11 +120,9 @@ Cm::BoundTree::BoundExpressionList BoundExpressionStack::Pop(int numExpressions)
     return expressions;
 }
 
-ExpressionBinder::ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, Cm::Core::StringRepository& stringRepository_, 
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_) : 
-    Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), conversionTable(conversionTable_), classConversionTable(classConversionTable_), derivedTypeOpRepository(derivedTypeOpRepository_),
-    synthesizedClassFunRepository(synthesizedClassFunRepository_), stringRepository(stringRepository_), irClassTypeRepository(irClassTypeRepository_), containerScope(containerScope_), 
+ExpressionBinder::ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+    Cm::BoundTree::BoundFunction* currentFunction_) :
+    Cm::Ast::Visitor(true, true), boundCompileUnit(boundCompileUnit_), containerScope(containerScope_), 
     fileScope(fileScope_), currentFunction(currentFunction_), expressionCount(0)
 {
 }
@@ -128,12 +137,12 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionLookupSet memFunLookups;
-    Cm::Sym::TypeSymbol* plainOperandType = symbolTable.GetTypeRepository().MakePlainType(operand->GetType());
+    Cm::Sym::TypeSymbol* plainOperandType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(operand->GetType());
     memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainOperandType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Core::Argument> memFunArguments;
-    memFunArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(plainOperandType, node->GetSpan())));
-    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, opGroupName, memFunArguments, memFunLookups,
-        node->GetSpan(), conversions, OverloadResolutionFlags::nothrow | OverloadResolutionFlags::bindOnlyMemberFunctions);
+    memFunArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainOperandType, node->GetSpan())));
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(boundCompileUnit, opGroupName, memFunArguments, memFunLookups, node->GetSpan(), conversions, 
+        OverloadResolutionFlags::nothrow | OverloadResolutionFlags::bindOnlyMemberFunctions);
     if (!fun)
     {
         Cm::Sym::FunctionLookupSet freeFunLookups;
@@ -141,8 +150,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, operand->GetType()->GetContainerScope()->ClassOrNsScope()));
         std::vector<Cm::Core::Argument> freeFunArguments;
         freeFunArguments.push_back(Cm::Core::Argument(operand->GetArgumentCategory(), operand->GetType()));
-        fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, opGroupName, freeFunArguments, freeFunLookups, node->GetSpan(), 
-            conversions);
+        fun = ResolveOverload(boundCompileUnit, opGroupName, freeFunArguments, freeFunLookups, node->GetSpan(), conversions);
     }
     PrepareFunctionSymbol(fun, node->GetSpan());
     if (conversions.size() != 1)
@@ -174,8 +182,7 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, left->GetType()->GetContainerScope()->ClassOrNsScope()));
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, right->GetType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, opGroupName, arguments, functionLookups, 
-        node->GetSpan(), conversions);
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(boundCompileUnit, opGroupName, arguments, functionLookups, node->GetSpan(), conversions);
     PrepareFunctionSymbol(fun, node->GetSpan());
     if (conversions.size() != 2)
     {
@@ -389,7 +396,7 @@ void ExpressionBinder::Visit(Cm::Ast::DerefNode& derefNode)
     {
         Cm::BoundTree::BoundExpression* derefExpr = boundExpressionStack.Pop();
         Cm::Sym::TypeSymbol* type = derefExpr->GetType();
-        derefExpr->SetType(symbolTable.GetTypeRepository().MakeReferenceType(type, derefNode.GetSpan()));
+        derefExpr->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().MakeReferenceType(type, derefNode.GetSpan()));
         boundExpressionStack.Push(derefExpr);
     }
 }
@@ -430,7 +437,7 @@ void ExpressionBinder::Visit(Cm::Ast::PostfixDecNode& postfixDecNode)
 
 void ExpressionBinder::Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     Cm::Sym::Value* value = new Cm::Sym::BoolValue(booleanLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&booleanLiteralNode);
     literalNode->SetType(type);
@@ -440,7 +447,7 @@ void ExpressionBinder::Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::sbyteId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::sbyteId));
     Cm::Sym::Value* value = new Cm::Sym::SByteValue(sbyteLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&sbyteLiteralNode);
     literalNode->SetType(type);
@@ -450,7 +457,7 @@ void ExpressionBinder::Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::ByteLiteralNode& byteLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::byteId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::byteId));
     Cm::Sym::Value* value = new Cm::Sym::ByteValue(byteLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&byteLiteralNode);
     literalNode->SetType(type);
@@ -460,7 +467,7 @@ void ExpressionBinder::Visit(Cm::Ast::ByteLiteralNode& byteLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::ShortLiteralNode& shortLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
     Cm::Sym::Value* value = new Cm::Sym::ShortValue(shortLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&shortLiteralNode);
     literalNode->SetType(type);
@@ -470,7 +477,7 @@ void ExpressionBinder::Visit(Cm::Ast::ShortLiteralNode& shortLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::UShortLiteralNode& ushortLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
     Cm::Sym::Value* value = new Cm::Sym::UShortValue(ushortLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&ushortLiteralNode);
     literalNode->SetType(type);
@@ -480,7 +487,7 @@ void ExpressionBinder::Visit(Cm::Ast::UShortLiteralNode& ushortLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::IntLiteralNode& intLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
     Cm::Sym::Value* value = new Cm::Sym::IntValue(intLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&intLiteralNode);
     literalNode->SetType(type);
@@ -490,7 +497,7 @@ void ExpressionBinder::Visit(Cm::Ast::IntLiteralNode& intLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::UIntLiteralNode& uintLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
     Cm::Sym::Value* value = new Cm::Sym::UIntValue(uintLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&uintLiteralNode);
     literalNode->SetType(type);
@@ -500,7 +507,7 @@ void ExpressionBinder::Visit(Cm::Ast::UIntLiteralNode& uintLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::LongLiteralNode& longLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::longId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::longId));
     Cm::Sym::Value* value = new Cm::Sym::LongValue(longLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&longLiteralNode);
     literalNode->SetType(type);
@@ -510,7 +517,7 @@ void ExpressionBinder::Visit(Cm::Ast::LongLiteralNode& longLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::ULongLiteralNode& ulongLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
     Cm::Sym::Value* value = new Cm::Sym::ULongValue(ulongLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&ulongLiteralNode);
     literalNode->SetType(type);
@@ -520,7 +527,7 @@ void ExpressionBinder::Visit(Cm::Ast::ULongLiteralNode& ulongLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::FloatLiteralNode& floatLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::floatId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::floatId));
     Cm::Sym::Value* value = new Cm::Sym::FloatValue(floatLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&floatLiteralNode);
     literalNode->SetType(type);
@@ -530,7 +537,7 @@ void ExpressionBinder::Visit(Cm::Ast::FloatLiteralNode& floatLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::DoubleLiteralNode& doubleLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::doubleId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::doubleId));
     Cm::Sym::Value* value = new Cm::Sym::DoubleValue(doubleLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&doubleLiteralNode);
     literalNode->SetType(type);
@@ -540,7 +547,7 @@ void ExpressionBinder::Visit(Cm::Ast::DoubleLiteralNode& doubleLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::charId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::charId));
     Cm::Sym::Value* value = new Cm::Sym::CharValue(charLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&charLiteralNode);
     literalNode->SetType(type);
@@ -550,8 +557,8 @@ void ExpressionBinder::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().MakeConstCharPtrType(stringLiteralNode.GetSpan());
-    int id = stringRepository.Install(stringLiteralNode.Value());
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(stringLiteralNode.GetSpan());
+    int id = boundCompileUnit.StringRepository().Install(stringLiteralNode.Value());
     Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(&stringLiteralNode, id);
     literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
@@ -559,7 +566,7 @@ void ExpressionBinder::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::NullLiteralNode& nullLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::nullPtrId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::nullPtrId));
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&nullLiteralNode);
     literalNode->SetType(type);
     Cm::Sym::Value* value = new Cm::Sym::NullValue();
@@ -567,13 +574,126 @@ void ExpressionBinder::Visit(Cm::Ast::NullLiteralNode& nullLiteralNode)
     boundExpressionStack.Push(literalNode);
 }
 
+void ExpressionBinder::Visit(Cm::Ast::BoolNode& boolNode)
+{
+    Cm::Sym::TypeSymbol* boolTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&boolNode, boolTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::SByteNode& sbyteNode)
+{
+    Cm::Sym::TypeSymbol* sbyteTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::sbyteId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&sbyteNode, sbyteTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::ByteNode& byteNode)
+{
+    Cm::Sym::TypeSymbol* byteTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::byteId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&byteNode, byteTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::ShortNode& shortNode)
+{
+    Cm::Sym::TypeSymbol* shortTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&shortNode, shortTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::UShortNode& ushortNode)
+{
+    Cm::Sym::TypeSymbol* ushortTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&ushortNode, ushortTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::IntNode& inttNode)
+{
+    Cm::Sym::TypeSymbol* intTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&inttNode, intTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::UIntNode& uinttNode)
+{
+    Cm::Sym::TypeSymbol* uintTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&uinttNode, uintTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::LongNode& longNode)
+{
+    Cm::Sym::TypeSymbol* longTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::longId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&longNode, longTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::ULongNode& ulongNode)
+{
+    Cm::Sym::TypeSymbol* ulongTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&ulongNode, ulongTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::FloatNode& floatNode)
+{
+    Cm::Sym::TypeSymbol* floatTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::floatId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&floatNode, floatTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::DoubleNode& doubleNode)
+{
+    Cm::Sym::TypeSymbol* doubleTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::doubleId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&doubleNode, doubleTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::CharNode& charNode)
+{
+    Cm::Sym::TypeSymbol* charTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::charId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&charNode, charTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::VoidNode& voidNode)
+{
+    Cm::Sym::TypeSymbol* voidTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&voidNode, voidTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
+{
+    // todo
+}
+
 void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
 {
     std::unique_ptr<Cm::BoundTree::BoundExpression> expression(boundExpressionStack.Pop());
-    if (expression->IsContainerExpression())
+    if (expression->IsBoundNamespaceExpression() || expression->IsBoundTypeExpression())
     {
-        Cm::BoundTree::BoundContainerExpression* containerExpression = static_cast<Cm::BoundTree::BoundContainerExpression*>(expression.get());
-        Cm::Sym::ContainerSymbol* containerSymbol = containerExpression->ContainerSymbol();
+        Cm::Sym::ContainerSymbol* containerSymbol = nullptr;
+        if (expression->IsBoundNamespaceExpression())
+        {
+            Cm::BoundTree::BoundNamespaceExpression* namespaceExpression = static_cast<Cm::BoundTree::BoundNamespaceExpression*>(expression.get());
+            containerSymbol = namespaceExpression->NamespaceSymbol();
+        }
+        else
+        {
+            Cm::BoundTree::BoundTypeExpression* typeExpression = static_cast<Cm::BoundTree::BoundTypeExpression*>(expression.get());
+            Cm::Sym::TypeSymbol* typeSymbol = typeExpression->Symbol();
+            if (typeSymbol->IsClassTypeSymbol() || typeSymbol->IsEnumTypeSymbol())
+            {
+                containerSymbol = typeSymbol;
+            }
+            else
+            {
+                throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->Name() + "' must denote a namespace, class type, enumerated type, or a class type object", dotNode.Subject()->GetSpan());
+            }
+        }
         Cm::Sym::ContainerScope* containerScope = containerSymbol->GetContainerScope();
         Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str());
         if (symbol)
@@ -587,7 +707,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
     }
     else
     {
-        Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().MakePlainType(expression->GetType());
+        Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(expression->GetType());
         if (type->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
@@ -633,14 +753,14 @@ void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberI
 {
     BindUnaryOp(node, "operator->");
     std::unique_ptr<Cm::BoundTree::BoundExpression> boundUnaryOpExpr(boundExpressionStack.Pop());
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().MakePlainType(boundUnaryOpExpr->GetType());
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(boundUnaryOpExpr->GetType());
     if (type->IsPointerToClassType() || type->IsClassTypeSymbol())
     {
         if (type->IsPointerType())
         {
             type = type->GetBaseType();
         }
-        type = symbolTable.GetTypeRepository().MakePlainType(type);
+        type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(type);
         if (type->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
@@ -733,7 +853,7 @@ void ExpressionBinder::Visit(Cm::Ast::IndexNode& indexNode)
     indexNode.Index()->Accept(*this);
     std::unique_ptr<Cm::BoundTree::BoundExpression> index(boundExpressionStack.Pop());
     Cm::Sym::TypeSymbol* subjectType = subject->GetType();
-    Cm::Sym::TypeSymbol* plainSubjectType = symbolTable.GetTypeRepository().MakePlainType(subjectType);
+    Cm::Sym::TypeSymbol* plainSubjectType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(subjectType);
     if (plainSubjectType->IsPointerType())
     {
         BindIndexPointer(&indexNode, subject.release(), index.release());
@@ -758,7 +878,7 @@ void ExpressionBinder::BindIndexPointer(Cm::Ast::Node* indexNode, Cm::BoundTree:
 
 void ExpressionBinder::BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index)
 {
-    Cm::Sym::FunctionGroupSymbol subscriptFunctionGroup(indexNode->GetSpan(), "operator[]", symbolTable.GetContainerScope(indexNode));
+    Cm::Sym::FunctionGroupSymbol subscriptFunctionGroup(indexNode->GetSpan(), "operator[]", boundCompileUnit.SymbolTable().GetContainerScope(indexNode));
     Cm::BoundTree::BoundFunctionGroup* boundSubscriptFunctionGroup = new Cm::BoundTree::BoundFunctionGroup(indexNode, &subscriptFunctionGroup);
     boundExpressionStack.Push(boundSubscriptFunctionGroup);
     subject->SetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg | Cm::BoundTree::BoundNodeFlags::lvalue);
@@ -777,22 +897,41 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
     std::string functionGroupName;
     Cm::Sym::FunctionGroupSymbol* functionGroupSymbol = nullptr;
+    Cm::Sym::FunctionSymbol* fun = nullptr;
+    Cm::Sym::TypeSymbol* type = nullptr;
+    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    bool firstArgByRef = false;
+    bool constructTemporary = false;
     if (subject->IsBoundFunctionGroup())
     {
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
         functionGroupSymbol = functionGroup->GetFunctionGroupSymbol();
         functionGroupName = functionGroupSymbol->Name();
+        if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
+        {
+            fun = BindInvokeMemFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupName, numArgs);
+            if (fun)
+            {
+                type = fun->GetReturnType();
+            }
+        }
+        if (!fun)
+        {
+            fun = BindInvokeFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupSymbol);
+            type = fun->GetReturnType();
+        }
     }
-    Cm::Sym::FunctionSymbol* fun = nullptr;
-    std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    bool firstArgByRef = false;
-    if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
+    else if (subject->IsBoundTypeExpression())
     {
-        fun = BindInvokeMemFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupName, numArgs);
+        Cm::BoundTree::BoundTypeExpression* boundTypeExpression = static_cast<Cm::BoundTree::BoundTypeExpression*>(subject.get());
+        fun = BindInvokeConstructTemporary(node, conversions, arguments, boundTypeExpression->Symbol());
+        ++numArgs;
+        constructTemporary = true;
+        type = boundTypeExpression->Symbol();
     }
-    if (!fun)
+    else
     {
-        fun = BindInvokeFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupSymbol);
+        // todo
     }
     PrepareFunctionSymbol(fun, node->GetSpan());
     if (conversions.size() != numArgs)
@@ -809,15 +948,42 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
             arguments[i].reset(conversion);
         }
     }
-    PrepareFunctionArguments(fun, arguments, firstArgByRef && fun->IsMemberFunctionSymbol(), irClassTypeRepository);
+    if (!constructTemporary)
+    {
+        PrepareFunctionArguments(fun, arguments, firstArgByRef && fun->IsMemberFunctionSymbol(), boundCompileUnit.IrClassTypeRepository());
+    }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
     functionCall->SetFunction(fun);
-    functionCall->SetType(fun->GetReturnType());
+    functionCall->SetType(type);
     if (generateVirtualCall)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
     }
+    else if (constructTemporary)
+    {
+        functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
+    }
     boundExpressionStack.Push(functionCall);
+}
+
+Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
+    Cm::Sym::TypeSymbol* typeSymbol)
+{
+    Cm::Sym::FunctionLookupSet ctorLookups;
+    ctorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, typeSymbol->GetContainerScope()->ClassOrNsScope()));
+    std::vector<Cm::Core::Argument> ctorResolutionArguments;
+    Cm::Sym::LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(typeSymbol);
+    ctorResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(typeSymbol, node->GetSpan())));
+    for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
+    {
+        ctorResolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+    }
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(boundCompileUnit, "@constructor", ctorResolutionArguments, ctorLookups, node->GetSpan(), conversions);
+    Cm::BoundTree::BoundLocalVariable* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, temporary);
+    boundTemporary->SetType(typeSymbol);
+    arguments.InsertFront(boundTemporary);
+    PrepareFunctionArguments(fun, arguments, true, boundCompileUnit.IrClassTypeRepository());
+    return fun;
 }
 
 Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, bool& firstArgByRef, 
@@ -834,8 +1000,8 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node,
     {
         if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
         {
-            memberFunResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), 
-                node->GetSpan())));
+            memberFunResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, 
+                boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), node->GetSpan())));
             if (first)
             {
                 firstArgByRef = true;
@@ -850,8 +1016,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node,
             first = false;
         }
     }
-    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, functionGroupName, 
-        memberFunResolutionArguments, memberFunLookups, node->GetSpan(), conversions, OverloadResolutionFlags::nothrow);
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(boundCompileUnit, functionGroupName, memberFunResolutionArguments, memberFunLookups, node->GetSpan(), conversions, OverloadResolutionFlags::nothrow);
     if (fun)
     {
         Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
@@ -879,7 +1044,8 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, argument->GetType()->GetContainerScope()->ClassOrNsScope()));
         if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
         {
-            resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, symbolTable.GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), node->GetSpan())));
+            resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, 
+                boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), node->GetSpan())));
             if (first)
             {
                 firstArgByRef = true;
@@ -903,8 +1069,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         }
     }
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()->ClassOrNsScope()));
-    Cm::Sym::FunctionSymbol* fun = ResolveOverload(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, 
-        functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions);
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions);
     if (fun->IsVirtualAbstractOrOverride() && firstArgIsPointerOrReference && !firstArgIsThisOrBase)
     {
         generateVirtualCall = true;
@@ -983,12 +1148,12 @@ void ExpressionBinder::BindConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::Consta
 {
     if (!constantSymbol->Bound())
     {
-        Cm::Ast::Node* node = symbolTable.GetNode(constantSymbol);
+        Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(constantSymbol);
         if (node->IsConstantNode())
         {
             Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
-            Cm::Sym::ContainerScope* constantScope = symbolTable.GetContainerScope(constantNode);
-            BindConstant(symbolTable, constantScope, fileScope, constantNode, constantSymbol);
+            Cm::Sym::ContainerScope* constantScope = boundCompileUnit.SymbolTable().GetContainerScope(constantNode);
+            BindConstant(boundCompileUnit.SymbolTable(), constantScope, fileScope, constantNode, constantSymbol);
         }
         else
         {
@@ -1005,12 +1170,12 @@ void ExpressionBinder::BindLocalVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::L
 {
     if (!localVariableSymbol->Bound())
     {
-        Cm::Ast::Node* node = symbolTable.GetNode(localVariableSymbol);
+        Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(localVariableSymbol);
         if (node->IsConstructionStatementNode())
         {
             Cm::Ast::ConstructionStatementNode* constructionStatementNode = static_cast<Cm::Ast::ConstructionStatementNode*>(node);
-            Cm::Sym::ContainerScope* localVariableScope = symbolTable.GetContainerScope(constructionStatementNode);
-            BindLocalVariable(symbolTable, containerScope, fileScope, constructionStatementNode, localVariableSymbol);
+            Cm::Sym::ContainerScope* localVariableScope = boundCompileUnit.SymbolTable().GetContainerScope(constructionStatementNode);
+            BindLocalVariable(boundCompileUnit.SymbolTable(), containerScope, fileScope, constructionStatementNode, localVariableSymbol);
         }
         else
         {
@@ -1027,12 +1192,12 @@ void ExpressionBinder::BindMemberVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::
 {
     if (!memberVariableSymbol->Bound())
     {
-        Cm::Ast::Node* node = symbolTable.GetNode(memberVariableSymbol);
+        Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(memberVariableSymbol);
         if (node->IsMemberVariableNode())
         {
             Cm::Ast::MemberVariableNode* memberVariableNode = static_cast<Cm::Ast::MemberVariableNode*>(node);
-            Cm::Sym::ContainerScope* memberVariableScope = symbolTable.GetContainerScope(memberVariableNode);
-            BindMemberVariable(symbolTable, containerScope, fileScope, memberVariableNode, memberVariableSymbol);
+            Cm::Sym::ContainerScope* memberVariableScope = boundCompileUnit.SymbolTable().GetContainerScope(memberVariableNode);
+            BindMemberVariable(boundCompileUnit.SymbolTable(), containerScope, fileScope, memberVariableNode, memberVariableSymbol);
         }
         else
         {
@@ -1057,44 +1222,44 @@ void ExpressionBinder::BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::Class
 {
     if (!classTypeSymbol->Bound())
     {
-        Cm::Ast::Node* node = symbolTable.GetNode(classTypeSymbol);
+        Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(classTypeSymbol);
         if (node->IsClassNode())
         {
             Cm::Ast::ClassNode* classNode = static_cast<Cm::Ast::ClassNode*>(node);
-            Cm::Sym::ContainerScope* classScope = symbolTable.GetContainerScope(classNode);
-            BindClass(symbolTable, classScope, fileScope, classNode, classTypeSymbol);
+            Cm::Sym::ContainerScope* classScope = boundCompileUnit.SymbolTable().GetContainerScope(classNode);
+            BindClass(boundCompileUnit.SymbolTable(), classScope, fileScope, classNode, classTypeSymbol);
         }
         else
         {
             throw std::runtime_error("not class node");
         }
     }
-    Cm::BoundTree::BoundContainerExpression* boundContainer = new Cm::BoundTree::BoundContainerExpression(idNode, classTypeSymbol);
-    boundExpressionStack.Push(boundContainer);
+    Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, classTypeSymbol);
+    boundExpressionStack.Push(boundType);
 }
 
 void ExpressionBinder::BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::NamespaceSymbol* namespaceSymbol)
 {
-    Cm::BoundTree::BoundContainerExpression* boundContainer = new Cm::BoundTree::BoundContainerExpression(idNode, namespaceSymbol);
-    boundExpressionStack.Push(boundContainer);
+    Cm::BoundTree::BoundNamespaceExpression* boundNamespace = new Cm::BoundTree::BoundNamespaceExpression(idNode, namespaceSymbol);
+    boundExpressionStack.Push(boundNamespace);
 }
 
 void ExpressionBinder::BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTypeSymbol* enumTypeSymbol)
 {
-    Cm::BoundTree::BoundContainerExpression* boundContainer = new Cm::BoundTree::BoundContainerExpression(idNode, enumTypeSymbol);
-    boundExpressionStack.Push(boundContainer);
+    Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, enumTypeSymbol);
+    boundExpressionStack.Push(boundType);
 }
 
 void ExpressionBinder::BindEnumConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumConstantSymbol* enumConstantSymbol)
 {
-    Cm::Ast::Node* node = symbolTable.GetNode(enumConstantSymbol);
+    Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(enumConstantSymbol);
     Cm::Sym::TypeSymbol* enumType = nullptr;
     if (node->IsEnumConstantNode())
     {
         Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
-        Cm::Sym::ContainerScope* enumConstantScope = symbolTable.GetContainerScope(enumConstantNode);
-        enumType = static_cast<Cm::Sym::EnumTypeSymbol*>(containerScope->Container());
-        BindEnumConstant(symbolTable, enumConstantScope, fileScope, enumConstantNode);
+        Cm::Ast::EnumTypeNode* enumTypeNode = static_cast<Cm::Ast::EnumTypeNode*>(enumConstantNode->Parent());
+        Cm::Sym::ContainerScope* enumTypeScope = boundCompileUnit.SymbolTable().GetContainerScope(enumTypeNode);
+        enumType = static_cast<Cm::Sym::EnumTypeSymbol*>(enumTypeScope->Container());
     }
     else 
     {
@@ -1114,17 +1279,17 @@ void ExpressionBinder::BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::Functio
 void ExpressionBinder::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    Cm::Sym::TypeSymbol* toType = ResolveType(symbolTable, containerScope, fileScope, targetTypeExpr);
+    Cm::Sym::TypeSymbol* toType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScope, targetTypeExpr);
     castNode.SourceExpr()->Accept(*this);
     Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
     std::vector<Cm::Core::Argument> resolutionArguments;
-    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(toType, castNode.GetSpan())));
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(toType, castNode.GetSpan())));
     resolutionArguments.push_back(Cm::Core::Argument(operand->GetArgumentCategory(), operand->GetType()));
     Cm::Sym::FunctionLookupSet functionLookups;
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, toType->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), DerivedTypeOpRepository(), SynthesizedClassFunRepository(), "@constructor", 
-        resolutionArguments, functionLookups, castNode.GetSpan(), conversions, Cm::Core::ConversionType::explicit_, OverloadResolutionFlags::none);
+    Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(boundCompileUnit, "@constructor", resolutionArguments, functionLookups, castNode.GetSpan(), conversions, Cm::Core::ConversionType::explicit_, 
+        OverloadResolutionFlags::none);
     Cm::BoundTree::BoundCast* cast = new Cm::BoundTree::BoundCast(&castNode, operand, convertingCtor);
     cast->SetType(toType);
     boundExpressionStack.Push(cast);
@@ -1172,10 +1337,10 @@ void ExpressionBinder::Visit(Cm::Ast::BaseNode& baseNode)
         if (classType->BaseClass())
         {
             Cm::Sym::ClassTypeSymbol* baseClassType = classType->BaseClass();
-            Cm::Sym::TypeSymbol* baseClassPtrType = SymbolTable().GetTypeRepository().MakePointerType(baseClassType, baseNode.GetSpan());
+            Cm::Sym::TypeSymbol* baseClassPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, baseNode.GetSpan());
             Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(&baseNode, thisParam);
             boundThisParam->SetType(thisParam->GetType());
-            Cm::Sym::FunctionSymbol* conversionFun = ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, baseNode.GetSpan());
+            Cm::Sym::FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, baseNode.GetSpan());
             Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(&baseNode, boundThisParam, conversionFun);
             thisAsBase->SetType(baseClassPtrType);
             thisAsBase->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsThisOrBase);
@@ -1195,7 +1360,7 @@ void ExpressionBinder::Visit(Cm::Ast::BaseNode& baseNode)
 
 void ExpressionBinder::GenerateTrueExpression(Cm::Ast::Node* node)
 {
-    Cm::Sym::TypeSymbol* type = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     Cm::Sym::Value* value1 = new Cm::Sym::BoolValue(true);
     Cm::BoundTree::BoundLiteral* literalNode1 = new Cm::BoundTree::BoundLiteral(node);
     literalNode1->SetType(type);
@@ -1220,7 +1385,7 @@ void ExpressionBinder::PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const
             if (paramBaseType->IsClassTypeSymbol())
             {
                 Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(paramBaseType);
-                irClassTypeRepository.AddClassType(classTypeSymbol);
+                boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
             }
         }
     }

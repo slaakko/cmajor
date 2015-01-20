@@ -78,7 +78,7 @@ public:
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
-    virtual void Visit(BoundPostfixIncDecExpr& boundPostfixIncExpr) {}
+    virtual void Visit(BoundPostfixIncDecExpr& boundPostfixIncDecExpr) {}
 
     void VisitStatement(BoundStatement& statement);
     virtual void BeginVisitStatement(BoundStatement& statement) {}

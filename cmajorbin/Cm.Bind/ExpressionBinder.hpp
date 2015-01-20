@@ -9,6 +9,7 @@
 
 #ifndef CM_BIND_EXPRESSION_INCLUDED
 #define CM_BIND_EXPRESSION_INCLUDED
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
@@ -40,17 +41,9 @@ private:
 class ExpressionBinder : public Cm::Ast::Visitor
 {
 public:
-    ExpressionBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository,
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+    ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
         Cm::BoundTree::BoundFunction* currentFunction_);
-    Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
-    Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
-    Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
-    Cm::Core::DerivedTypeOpRepository& DerivedTypeOpRepository() { return derivedTypeOpRepository; }
-    Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return synthesizedClassFunRepository; }
-    Cm::Core::StringRepository& StringRepository() { return stringRepository; }
-    Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
+    Cm::BoundTree::BoundCompileUnit& BoundCompileUnit() { return boundCompileUnit; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     Cm::Sym::FileScope* FileScope() const { return fileScope; }
     Cm::BoundTree::BoundFunction* CurrentFunction() const { return currentFunction; }
@@ -117,31 +110,25 @@ public:
     void Visit(Cm::Ast::StringLiteralNode& stringLiteralNode) override;
     void Visit(Cm::Ast::NullLiteralNode& nullLiteralNode) override;
 
-    void Visit(Cm::Ast::BoolNode& boolNode) {}
-    void Visit(Cm::Ast::SByteNode& sbyteNode) {}
-    void Visit(Cm::Ast::ByteNode& byteNode) {}
-    void Visit(Cm::Ast::ShortNode& shortNode) {}
-    void Visit(Cm::Ast::UShortNode& shortNode) {}
-    void Visit(Cm::Ast::IntNode& intNode) {}
-    void Visit(Cm::Ast::UIntNode& uintNode) {}
-    void Visit(Cm::Ast::LongNode& longNode) {}
-    void Visit(Cm::Ast::ULongNode& ulongNode) {}
-    void Visit(Cm::Ast::FloatNode& floatNode) {}
-    void Visit(Cm::Ast::DoubleNode& doubleNode) {}
-    void Visit(Cm::Ast::CharNode& charNode) {}
-    void Visit(Cm::Ast::VoidNode& voidNode) {}
-    void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) {}
+    void Visit(Cm::Ast::BoolNode& boolNode) override;
+    void Visit(Cm::Ast::SByteNode& sbyteNode) override;
+    void Visit(Cm::Ast::ByteNode& byteNode) override;
+    void Visit(Cm::Ast::ShortNode& shortNode) override;
+    void Visit(Cm::Ast::UShortNode& shortNode) override;
+    void Visit(Cm::Ast::IntNode& intNode) override;
+    void Visit(Cm::Ast::UIntNode& uintNode) override;
+    void Visit(Cm::Ast::LongNode& longNode) override;
+    void Visit(Cm::Ast::ULongNode& ulongNode) override;
+    void Visit(Cm::Ast::FloatNode& floatNode) override;
+    void Visit(Cm::Ast::DoubleNode& doubleNode) override;
+    void Visit(Cm::Ast::CharNode& charNode) override;
+    void Visit(Cm::Ast::VoidNode& voidNode) override;
+    void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) override;
 
     void GenerateTrueExpression(Cm::Ast::Node* node);
     void PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span);
 private:
-    Cm::Sym::SymbolTable& symbolTable;
-    Cm::Sym::ConversionTable& conversionTable;
-    Cm::Core::ClassConversionTable& classConversionTable;
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository;
-    Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository;
-    Cm::Core::StringRepository& stringRepository;
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository;
+    Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* containerScope;
     Cm::Sym::FileScope* fileScope;
     BoundExpressionStack boundExpressionStack;
@@ -163,6 +150,8 @@ private:
     void BindIndexPointer(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
     void BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
     void BindInvoke(Cm::Ast::Node* node, int numArgs);
+    Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
+        Cm::Sym::TypeSymbol* typeSymbol);
     Cm::Sym::FunctionSymbol* BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, 
         bool& firstArgByRef, bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs);
     Cm::Sym::FunctionSymbol* BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,

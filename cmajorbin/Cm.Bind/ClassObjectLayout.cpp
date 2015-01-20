@@ -18,9 +18,7 @@ namespace Cm { namespace Bind {
 class ClassInitializerHandler : public ExpressionBinder
 {
 public:
-    ClassInitializerHandler(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_, 
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, Cm::Core::StringRepository& stringRepository_, 
-        Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, 
+    ClassInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_,
         Cm::Sym::ClassTypeSymbol* classType_);
     void GenerateBaseInitializer(Cm::BoundTree::BoundExpressionList& arguments, const Cm::Parsing::Span& span, Cm::Ast::Node* baseInitializerNode);
     void Visit(Cm::Ast::BaseInitializerNode& baseInitializerNode);
@@ -33,11 +31,9 @@ private:
     Cm::Ast::ThisInitializerNode* thisInitializer;
 };
 
-ClassInitializerHandler::ClassInitializerHandler(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, Cm::Core::StringRepository& stringRepository_, 
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, 
-    Cm::Sym::ClassTypeSymbol* classType_) :
-    ExpressionBinder(symbolTable_, conversionTable_, classConversionTable_, derivedTypeOpRepository_, synthesizedClassFunRepository_, stringRepository_, irClassTypeRepository_, containerScope_, 
+ClassInitializerHandler::ClassInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+    Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_) :
+    ExpressionBinder(boundCompileUnit_, containerScope_, 
     fileScope_, currentFunction_), classType(classType_), baseInitializer(nullptr), thisInitializer(nullptr)
 {
 }
@@ -45,9 +41,9 @@ ClassInitializerHandler::ClassInitializerHandler(Cm::Sym::SymbolTable& symbolTab
 void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpressionList& arguments, const Cm::Parsing::Span& span, Cm::Ast::Node* baseInitializerNode)
 {
     Cm::Sym::ClassTypeSymbol* baseClassType = classType->BaseClass();
-    IrClassTypeRepository().AddClassType(baseClassType);
+    BoundCompileUnit().IrClassTypeRepository().AddClassType(baseClassType);
     std::vector<Cm::Core::Argument> resolutionArguments;
-    Cm::Sym::TypeSymbol* baseClassPtrType = SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
+    Cm::Sym::TypeSymbol* baseClassPtrType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
     Cm::Core::Argument baseClassArg(Cm::Core::ArgumentCategory::lvalue, baseClassPtrType);
     resolutionArguments.push_back(baseClassArg);
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
@@ -60,8 +56,7 @@ void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpres
     Cm::Sym::FunctionSymbol* baseClassCtor = nullptr;
     try
     {
-        baseClassCtor = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), DerivedTypeOpRepository(), SynthesizedClassFunRepository(), "@constructor", resolutionArguments, 
-            functionLookups, span, conversions);
+        baseClassCtor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -70,11 +65,11 @@ void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpres
     Cm::Sym::ParameterSymbol* thisParam = CurrentFunction()->GetFunctionSymbol()->Parameters()[0];
     Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
     boundThisParam->SetType(thisParam->GetType());
-    Cm::Sym::FunctionSymbol* conversionFun = ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, span);
+    Cm::Sym::FunctionSymbol* conversionFun = BoundCompileUnit().ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, span);
     Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(nullptr, boundThisParam, conversionFun);
     thisAsBase->SetType(baseClassPtrType);
     arguments.InsertFront(thisAsBase); // insert 'this' to front
-    PrepareFunctionArguments(baseClassCtor, arguments, false, IrClassTypeRepository());
+    PrepareFunctionArguments(baseClassCtor, arguments, false, BoundCompileUnit().IrClassTypeRepository());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -148,8 +143,7 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
     Cm::Sym::FunctionSymbol* thisClassCtor = nullptr;
     try
     {
-        thisClassCtor = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), DerivedTypeOpRepository(), SynthesizedClassFunRepository(), "@constructor", resolutionArguments, 
-            functionLookups, thisInitializerNode.GetSpan(), conversions);
+        thisClassCtor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, thisInitializerNode.GetSpan(), conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -158,7 +152,7 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
     Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
     boundThisParam->SetType(thisParam->GetType());
     arguments.InsertFront(boundThisParam); // insert 'this' to front
-    PrepareFunctionArguments(thisClassCtor, arguments, false, IrClassTypeRepository());
+    PrepareFunctionArguments(thisClassCtor, arguments, false, BoundCompileUnit().IrClassTypeRepository());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -184,14 +178,11 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
     CurrentFunction()->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
 }
 
-void GenerateClassInitStatement(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::Core::StringRepository& stringRepository, 
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction, 
+void GenerateClassInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction, 
     Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode, bool& callToThisInitializerGenerated)
 {
     callToThisInitializerGenerated = false;
-    ClassInitializerHandler classInitializerHandler(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, stringRepository, irClassTypeRepository, 
-        containerScope, fileScope, currentFunction, classType);
+    ClassInitializerHandler classInitializerHandler(boundCompileUnit, containerScope, fileScope, currentFunction, classType);
     const Cm::Ast::InitializerNodeList& initializers = constructorNode->Initializers();
     for (const std::unique_ptr<Cm::Ast::InitializerNode>& initializerNode : initializers)
     {
@@ -223,10 +214,8 @@ void GenerateInitVPtrStatement(Cm::Sym::ClassTypeSymbol* classType, Cm::BoundTre
 class MemberVariableInitializerHandler : public ExpressionBinder
 {
 public:
-    MemberVariableInitializerHandler(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
-        Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, Cm::Core::StringRepository& stringRepository_, 
-        Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, 
-        Cm::Sym::ClassTypeSymbol* classType_);
+    MemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+        Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_);
     Cm::BoundTree::BoundInitMemberVariableStatement* GenerateMerberVariableInitializationStatement(Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments, 
         Cm::Ast::Node* node);
     void Visit(Cm::Ast::MemberInitializerNode& memberInitializerNode);
@@ -239,12 +228,8 @@ private:
     MemberVariableNameIndexMap memberVariableNameIndexMap;
 };
 
-MemberVariableInitializerHandler::MemberVariableInitializerHandler(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ConversionTable& conversionTable_, Cm::Core::ClassConversionTable& classConversionTable_,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository_, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository_, Cm::Core::StringRepository& stringRepository_, 
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_, 
-    Cm::Sym::ClassTypeSymbol* classType_) :
-    ExpressionBinder(symbolTable_, conversionTable_, classConversionTable_, derivedTypeOpRepository_, synthesizedClassFunRepository_, stringRepository_, irClassTypeRepository_, containerScope_, 
-    fileScope_, currentFunction_), classType(classType_)
+MemberVariableInitializerHandler::MemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+    Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_) : ExpressionBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), classType(classType_)
 {
     int n = int(classType->MemberVariables().size());
     initializationStatements.resize(n);
@@ -260,7 +245,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
 {
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
-    Cm::Core::Argument variableArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(memberVariableType, node->GetSpan()));
+    Cm::Core::Argument variableArgument(Cm::Core::ArgumentCategory::lvalue, BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(memberVariableType, node->GetSpan()));
     resolutionArguments.push_back(variableArgument);
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
@@ -271,14 +256,13 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     if (memberVariableType->IsClassTypeSymbol())
     {
         Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
-        IrClassTypeRepository().AddClassType(memberVarClassType);
+        BoundCompileUnit().IrClassTypeRepository().AddClassType(memberVarClassType);
     }
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* memberCtor = nullptr;
     try
     {
-        memberCtor = ResolveOverload(SymbolTable(), ConversionTable(), ClassConversionTable(), DerivedTypeOpRepository(), SynthesizedClassFunRepository(), "@constructor", resolutionArguments, 
-            functionLookups, node->GetSpan(), conversions);
+        memberCtor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -291,7 +275,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     boundThisParam->SetType(thisParam->GetType());
     boundMemberVariable->SetClassObject(boundThisParam);
     arguments.InsertFront(boundMemberVariable);
-    PrepareFunctionArguments(memberCtor, arguments, true, IrClassTypeRepository());
+    PrepareFunctionArguments(memberCtor, arguments, true, BoundCompileUnit().IrClassTypeRepository());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -363,13 +347,10 @@ void MemberVariableInitializerHandler::GenerateMemberVariableInitializationState
     }
 }
 
-void GenerateMemberVariableInitStatements(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::Core::StringRepository& stringRepository, 
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction,
-    Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode)
+void GenerateMemberVariableInitStatements(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, 
+    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode)
 {
-    MemberVariableInitializerHandler memberVariableInitializerHandler(symbolTable, conversionTable, classConversionTable, derivedTypeOpRepository, synthesizedClassFunRepository, stringRepository, 
-        irClassTypeRepository, containerScope, fileScope, currentFunction, classType);
+    MemberVariableInitializerHandler memberVariableInitializerHandler(boundCompileUnit, containerScope, fileScope, currentFunction, classType);
     const Cm::Ast::InitializerNodeList& initializers = constructorNode->Initializers();
     for (const std::unique_ptr<Cm::Ast::InitializerNode>& initializerNode : initializers)
     {
@@ -378,10 +359,8 @@ void GenerateMemberVariableInitStatements(Cm::Sym::SymbolTable& symbolTable, Cm:
     memberVariableInitializerHandler.GenerateMemberVariableInitializationStatements(constructorNode);
 }
 
-void GenerateMemberVariableDestructionStatements(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::Core::StringRepository& stringRepository,
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction,
-    Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode)
+void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, 
+    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode)
 {
     int n = int(classType->MemberVariables().size());
     for (int i = n - 1; i >= 0; --i)
@@ -400,31 +379,29 @@ void GenerateMemberVariableDestructionStatements(Cm::Sym::SymbolTable& symbolTab
         boundMemberVariable->SetClassObject(boundThisParam);
         Cm::BoundTree::BoundExpressionList arguments;
         arguments.Add(boundMemberVariable);
-        PrepareFunctionArguments(memberDtor, arguments, true, irClassTypeRepository);
+        PrepareFunctionArguments(memberDtor, arguments, true, boundCompileUnit.IrClassTypeRepository());
         Cm::BoundTree::BoundFunctionCallStatement* destroyMemberVariableStatement = new Cm::BoundTree::BoundFunctionCallStatement(memberDtor, std::move(arguments));
         currentFunction->Body()->AddStatement(destroyMemberVariableStatement);
     }
 }
 
-void GenerateBaseClassDestructionStatement(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ConversionTable& conversionTable, Cm::Core::ClassConversionTable& classConversionTable,
-    Cm::Core::DerivedTypeOpRepository& derivedTypeOpRepository, Cm::Core::SynthesizedClassFunRepository& synthesizedClassFunRepository, Cm::Core::StringRepository& stringRepository,
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction,
-    Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode)
+void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, 
+    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode)
 {
     if (!classType->BaseClass()) return;
     Cm::Sym::ClassTypeSymbol* baseClass = classType->BaseClass();
     if (!baseClass->Destructor()) return;
     Cm::Sym::FunctionSymbol* baseClassDtor = baseClass->Destructor();
-    Cm::Sym::TypeSymbol* baseClassPtrType = symbolTable.GetTypeRepository().MakePointerType(baseClass, destructorNode->GetSpan());
+    Cm::Sym::TypeSymbol* baseClassPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClass, destructorNode->GetSpan());
     Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
     Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
     boundThisParam->SetType(thisParam->GetType());
-    Cm::Sym::FunctionSymbol* conversionFun = classConversionTable.MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, destructorNode->GetSpan());
+    Cm::Sym::FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, destructorNode->GetSpan());
     Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(nullptr, boundThisParam, conversionFun);
     thisAsBase->SetType(baseClassPtrType);
     Cm::BoundTree::BoundExpressionList arguments;
     arguments.Add(thisAsBase); 
-    PrepareFunctionArguments(baseClassDtor, arguments, true, irClassTypeRepository);
+    PrepareFunctionArguments(baseClassDtor, arguments, true, boundCompileUnit.IrClassTypeRepository());
     Cm::BoundTree::BoundFunctionCallStatement* destroyBaseClassObjectStatement = new Cm::BoundTree::BoundFunctionCallStatement(baseClassDtor, std::move(arguments));
     currentFunction->Body()->AddStatement(destroyBaseClassObjectStatement);
 }
