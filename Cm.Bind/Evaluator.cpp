@@ -916,4 +916,531 @@ Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node
     return evaluator.DoEvaluate(value);
 }
 
+class BooleanEvaluator : public Cm::Ast::Visitor
+{
+public:
+    BooleanEvaluator(bool cast, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_);
+    bool DoEvaluate(Cm::Ast::Node* value);
+    void Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode) override;
+    void Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode) override;
+    void Visit(Cm::Ast::ByteLiteralNode& byteLiteralNode) override;
+    void Visit(Cm::Ast::ShortLiteralNode& shortLiteralNode) override;
+    void Visit(Cm::Ast::UShortLiteralNode& ushortLiteralNode) override;
+    void Visit(Cm::Ast::IntLiteralNode& intLiteralNode) override;
+    void Visit(Cm::Ast::UIntLiteralNode& uintLiteralNode) override;
+    void Visit(Cm::Ast::LongLiteralNode& longLiteralNode) override;
+    void Visit(Cm::Ast::ULongLiteralNode& ulongLiteralNode) override;
+    void Visit(Cm::Ast::FloatLiteralNode& floatLitealNode) override;
+    void Visit(Cm::Ast::DoubleLiteralNode& doubleLiteralNode) override;
+    void Visit(Cm::Ast::CharLiteralNode& charLiteralNode) override;
+    void Visit(Cm::Ast::StringLiteralNode& stringLiteralNode) override;
+    void Visit(Cm::Ast::NullLiteralNode& nullLiteralNode) override;
+
+    void BeginVisit(Cm::Ast::ClassNode& classNode) override;
+    void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
+    void BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
+
+    void BeginVisit(Cm::Ast::EquivalenceNode& equivalenceNode) override;
+    void BeginVisit(Cm::Ast::ImplicationNode& implicationNode) override;
+    void EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode) override;
+    void EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode) override;
+    void EndVisit(Cm::Ast::BitOrNode& bitOrNode) override;
+    void EndVisit(Cm::Ast::BitXorNode& bitXorNode) override;
+    void EndVisit(Cm::Ast::BitAndNode& bitAndNode) override;
+    void EndVisit(Cm::Ast::EqualNode& equalNode) override;
+    void EndVisit(Cm::Ast::NotEqualNode& notEqualNode) override;
+    void EndVisit(Cm::Ast::LessNode& lessNode) override;
+    void EndVisit(Cm::Ast::GreaterNode& greaterNode) override;
+    void EndVisit(Cm::Ast::LessOrEqualNode& lessOrEqualNode) override;
+    void EndVisit(Cm::Ast::GreaterOrEqualNode& greaterOrEqualNode) override;
+    void EndVisit(Cm::Ast::ShiftLeftNode& shiftLeftNode) override;
+    void EndVisit(Cm::Ast::ShiftRightNode& shiftRightNode) override;
+    void EndVisit(Cm::Ast::AddNode& addNode) override;
+    void EndVisit(Cm::Ast::SubNode& subNode) override;
+    void EndVisit(Cm::Ast::MulNode& mulNode) override;
+    void EndVisit(Cm::Ast::DivNode& divNode) override;
+    void EndVisit(Cm::Ast::RemNode& remNode) override;
+    void BeginVisit(Cm::Ast::PrefixIncNode& prefixIncNode) override;
+    void BeginVisit(Cm::Ast::PrefixDecNode& prefixDecNode) override;
+    void EndVisit(Cm::Ast::UnaryPlusNode& unaryPlusNode) override;
+    void EndVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode) override;
+    void EndVisit(Cm::Ast::NotNode& notNode) override;
+    void EndVisit(Cm::Ast::ComplementNode& complementNode) override;
+    void Visit(Cm::Ast::AddrOfNode& addrOfNode) override;
+    void Visit(Cm::Ast::DerefNode& derefNode) override;
+    void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) override;
+    void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) override;
+    void EndVisit(Cm::Ast::DotNode& dotNode) override;
+    void Visit(Cm::Ast::ArrowNode& arrowNode) override;
+    void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
+    void Visit(Cm::Ast::IndexNode& indexNode) override;
+
+    void Visit(Cm::Ast::SizeOfNode& sizeOfNode) override;
+    void Visit(Cm::Ast::CastNode& castNode) override;
+    void BeginVisit(Cm::Ast::ConstructNode& constructNode) override;
+    void BeginVisit(Cm::Ast::NewNode& newNode) override;
+    void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
+    void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
+    void Visit(Cm::Ast::ThisNode& thisNode) override;
+    void Visit(Cm::Ast::BaseNode& baseNode) override;
+    void Visit(Cm::Ast::TypeNameNode& typeNameNode) override;
+private:
+    Cm::Sym::ValueType targetType;
+    bool cast;
+    Cm::Sym::SymbolTable& symbolTable;
+    Cm::Sym::ContainerScope* currentContainerScope;
+    Cm::Sym::FileScope* fileScope;
+    EvaluationStack stack;
+    bool interrupted;
+    void EvaluateSymbol(Cm::Sym::Symbol* symbol);
+};
+
+BooleanEvaluator::BooleanEvaluator(bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, Cm::Sym::FileScope* fileScope_) :
+    Visitor(true, true), targetType(Cm::Sym::ValueType::boolValue), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScope(fileScope_), interrupted(false)
+{
+}
+
+bool BooleanEvaluator::DoEvaluate(Cm::Ast::Node* value)
+{
+    try
+    {
+        value->Accept(*this);
+        if (interrupted) return false;
+        std::unique_ptr<Cm::Sym::Value> result(stack.Pop());
+        if (result->GetValueType() == Cm::Sym::ValueType::boolValue)
+        {
+            Cm::Sym::BoolValue* boolValue = static_cast<Cm::Sym::BoolValue*>(result.get());
+            return boolValue->Value() == true;
+        }
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode)
+{
+    stack.Push(new Cm::Sym::BoolValue(booleanLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode)
+{
+    stack.Push(new Cm::Sym::SByteValue(sbyteLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::ByteLiteralNode& byteLiteralNode)
+{
+    stack.Push(new Cm::Sym::ByteValue(byteLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::ShortLiteralNode& shortLiteralNode)
+{
+    stack.Push(new Cm::Sym::ShortValue(shortLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::UShortLiteralNode& ushortLiteralNode)
+{
+    stack.Push(new Cm::Sym::UShortValue(ushortLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::IntLiteralNode& intLiteralNode)
+{
+    stack.Push(new Cm::Sym::IntValue(intLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::UIntLiteralNode& uintLiteralNode)
+{
+    stack.Push(new Cm::Sym::UIntValue(uintLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::LongLiteralNode& longLiteralNode)
+{
+    stack.Push(new Cm::Sym::LongValue(longLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::ULongLiteralNode& ulongLiteralNode)
+{
+    stack.Push(new Cm::Sym::ULongValue(ulongLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::FloatLiteralNode& floatLiteralNode)
+{
+    stack.Push(new Cm::Sym::FloatValue(floatLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::DoubleLiteralNode& doubleLiteralNode)
+{
+    stack.Push(new Cm::Sym::DoubleValue(doubleLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
+{
+    stack.Push(new Cm::Sym::CharValue(charLiteralNode.Value()));
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::NullLiteralNode& nullLiteralNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::EquivalenceNode& equivalenceNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::ImplicationNode& implicationNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, disjunction, disjunctionNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, conjunction, conjunctionNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::BitOrNode& bitOrNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, bitOr, bitOrNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::BitXorNode& bitXorNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, bitXor, bitXorNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::BitAndNode& bitAndNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, bitAnd, bitAndNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::EqualNode& equalNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, equal, equalNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::NotEqualNode& notEqualNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, notEqual, notEqualNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::LessNode& lessNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, less, lessNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::GreaterNode& greaterNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, greater, greaterNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::LessOrEqualNode& lessOrEqualNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, lessOrEqual, lessOrEqualNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::GreaterOrEqualNode& greaterOrEqualNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, greaterOrEqual, greaterOrEqualNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::ShiftLeftNode& shiftLeftNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, shiftLeft, shiftLeftNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::ShiftRightNode& shiftRightNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, shiftRight, shiftRightNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::AddNode& addNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, add, addNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::SubNode& subNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, sub, subNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::MulNode& mulNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, mul, mulNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::DivNode& divNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, div, divNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::RemNode& remNode)
+{
+    if (interrupted) return;
+    EvaluateBinOp(targetType, stack, rem, remNode.GetSpan());
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::PrefixIncNode& prefixIncNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::PrefixDecNode& prefixDecNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::UnaryPlusNode& unaryPlusNode)
+{
+    if (interrupted) return;
+    EvaluateUnaryOp(targetType, stack, unaryPlus, unaryPlusNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode)
+{
+    if (interrupted) return;
+    EvaluateUnaryOp(targetType, stack, negate, unaryMinusNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::NotNode& notNode)
+{
+    if (interrupted) return;
+    EvaluateUnaryOp(targetType, stack, not_, notNode.GetSpan());
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::ComplementNode& complementNode)
+{
+    if (interrupted) return;
+    EvaluateUnaryOp(targetType, stack, complement, complementNode.GetSpan());
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::AddrOfNode& addrOfNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::DerefNode& derefNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::PostfixIncNode& postfixIncNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::PostfixDecNode& postfiDecNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::ClassNode& classNode)
+{
+    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&classNode);
+    stack.Push(new ScopedValue(scope->Container()));
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
+{
+    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&namespaceNode);
+    stack.Push(new ScopedValue(scope->Container()));
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
+{
+    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&enumTypeNode);
+    stack.Push(new ScopedValue(scope->Container()));
+}
+
+void BooleanEvaluator::EndVisit(Cm::Ast::DotNode& dotNode)
+{
+    std::unique_ptr<Cm::Sym::Value> value(stack.Pop());
+    if (value->IsScopedValue())
+    {
+        ScopedValue* scopedValue = static_cast<ScopedValue*>(value.get());
+        Cm::Sym::ContainerSymbol* containerSymbol = scopedValue->ContainerSymbol();
+        Cm::Sym::ContainerScope* scope = containerSymbol->GetContainerScope();
+        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str());
+        if (symbol)
+        {
+            EvaluateSymbol(symbol);
+        }
+        else
+        {
+            interrupted = true;
+        }
+    }
+    else
+    {
+        interrupted = true;
+    }
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::ArrowNode& arrowNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::IndexNode& indexNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::CastNode& castNode)
+{
+    Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
+    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScope, targetTypeExpr));
+    Cm::Sym::SymbolType symbolType = type->GetSymbolType();
+    Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
+    stack.Push(IsAlwaysTrue(castNode.SourceExpr(), symbolTable, currentContainerScope, fileScope) ? new Cm::Sym::BoolValue(true) : new Cm::Sym::BoolValue(false));
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::ConstructNode& constructNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::BeginVisit(Cm::Ast::NewNode& newNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
+{
+    if (symbol->IsContainerSymbol())
+    {
+        Cm::Sym::ContainerSymbol* containerSymbol = static_cast<Cm::Sym::ContainerSymbol*>(symbol);
+        stack.Push(new ScopedValue(containerSymbol));
+    }
+    else if (symbol->IsConstantSymbol())
+    {
+        Cm::Sym::ConstantSymbol* constantSymbol = static_cast<Cm::Sym::ConstantSymbol*>(symbol);
+        if (!constantSymbol->GetValue())
+        {
+            Cm::Ast::Node* node = symbolTable.GetNode(constantSymbol);
+            if (node->IsConstantNode())
+            {
+                Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
+                BindConstant(symbolTable, currentContainerScope, fileScope, constantNode);
+            }
+            else
+            {
+                throw std::runtime_error("node is not constant node");
+            }
+        }
+        stack.Push(constantSymbol->GetValue()->Clone());
+    }
+    else if (symbol->IsEnumConstantSymbol())
+    {
+        Cm::Sym::EnumConstantSymbol* enumConstantSymbol = static_cast<Cm::Sym::EnumConstantSymbol*>(symbol);
+        if (!enumConstantSymbol->GetValue())
+        {
+            Cm::Ast::Node* node = symbolTable.GetNode(enumConstantSymbol);
+            if (node->IsEnumConstantNode())
+            {
+                Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
+                Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
+                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScope, enumConstantNode);
+            }
+            else
+            {
+                throw std::runtime_error("node is not enumeration constant node");
+            }
+        }
+        stack.Push(enumConstantSymbol->GetValue()->Clone());
+    }
+    else
+    {
+        interrupted = true;
+    }
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::IdentifierNode& identifierNode)
+{
+    Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
+    if (!symbol)
+    {
+        symbol = fileScope->Lookup(identifierNode.Str());
+    }
+    if (symbol)
+    {
+        EvaluateSymbol(symbol);
+    }
+    else
+    {
+        interrupted = true;
+    }
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::ThisNode& thisNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::BaseNode& baseNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::TypeNameNode& typeNameNode)
+{
+    interrupted = true;
+}
+
+bool IsAlwaysTrue(Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, Cm::Sym::FileScope* fileScope)
+{
+    try
+    {
+        BooleanEvaluator evaluator(false, symbolTable, currentContainerScope, fileScope);
+        return evaluator.DoEvaluate(value);
+    }
+    catch (...)
+    {
+    }
+    return false;
+}
+
 } } // namespace Cm::Bind

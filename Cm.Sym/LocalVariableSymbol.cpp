@@ -14,7 +14,7 @@
 
 namespace Cm { namespace Sym {
 
-LocalVariableSymbol::LocalVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr)
+LocalVariableSymbol::LocalVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr), used(false)
 {
 }
 
@@ -38,6 +38,11 @@ TypeSymbol* LocalVariableSymbol::GetType() const
 void LocalVariableSymbol::SetType(TypeSymbol* type_, int index)
 {
     type = type_;
+}
+
+void LocalVariableSymbol::SetUseSpan(const Cm::Parsing::Span& useSpan_)
+{
+    useSpan = useSpan_;
 }
 
 } } // namespace Cm::Sym

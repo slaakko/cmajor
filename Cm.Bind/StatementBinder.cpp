@@ -39,6 +39,11 @@ void ConstructionStatementBinder::BeginVisit(Cm::Ast::ConstructionStatementNode&
 
 void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
+    if (constructionStatement->LocalVariable()->Used())
+    { 
+        throw Cm::Core::Exception("local variable '" + constructionStatement->LocalVariable()->Name() + "' is used before it is defined", constructionStatement->LocalVariable()->GetUseSpan(), 
+            constructionStatementNode.GetSpan());
+    }
     constructionStatement->SetArguments(GetExpressions());
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* localVariableType = constructionStatement->LocalVariable()->GetType();
@@ -293,5 +298,115 @@ void ForStatementBinder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
     condition->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
     forStatement->SetCondition(condition);
 }
+
+SwitchStatementBinder::SwitchStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
+    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundSwitchStatement* switchStatement_): StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_),
+    switchStatement(switchStatement_)
+{
+}
+
+void SwitchStatementBinder::EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
+{
+    // todo
+}
+
+CaseStatementBinder::CaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
+    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundCaseStatement* caseStatement_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_),
+    caseStatement(caseStatement_)
+{
+}
+
+bool TerminatesCase(Cm::Ast::StatementNode* statementNode)
+{
+    if (statementNode->IsConditionalStatementNode())
+    {
+        Cm::Ast::ConditionalStatementNode* conditionalStatement = static_cast<Cm::Ast::ConditionalStatementNode*>(statementNode);
+        if (conditionalStatement->HasElseStatement())
+        {
+            if (TerminatesCase(conditionalStatement->ThenS()) && TerminatesCase(conditionalStatement->ElseS()))
+            {
+                return true;
+            }
+        }
+    }
+    else if (statementNode->IsCompoundStatementNode())
+    {
+        Cm::Ast::CompoundStatementNode* compoundStatement = static_cast<Cm::Ast::CompoundStatementNode*>(statementNode);
+        for (const std::unique_ptr<Cm::Ast::StatementNode>& statement : compoundStatement->Statements())
+        {
+            if (TerminatesCase(statement.get())) return true;
+        }
+    }
+    else
+    {
+        return statementNode->IsCaseTerminatingNode();
+    }
+    return false;
+}
+
+void CaseStatementBinder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
+{
+    for (const std::unique_ptr<Cm::Ast::StatementNode>& statement : caseStatementNode.Statements())
+    {
+        if (TerminatesCase(statement.get())) return;
+    }
+    throw Cm::Core::Exception("case must end in break, continue, return, throw, goto, goto case or goto default statement", caseStatementNode.GetSpan());
+}
+
+DefaultStatementBinder::DefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
+    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundDefaultStatement* defaultStatement_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_),
+    defaultStatement(defaultStatement_)
+{
+}
+
+void DefaultStatementBinder::EndVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode)
+{
+    for (const std::unique_ptr<Cm::Ast::StatementNode>& statement : defaultStatementNode.Statements())
+    {
+        if (TerminatesCase(statement.get())) return;
+    }
+    throw Cm::Core::Exception("default case must end in break, continue, return, throw goto, goto case or goto default statement", defaultStatementNode.GetSpan());
+}
+
+BreakStatementBinder::BreakStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
+    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+{
+}
+
+void BreakStatementBinder::Visit(Cm::Ast::BreakStatementNode& breakStatementNode)
+{
+    Cm::Ast::Node* parent = breakStatementNode.Parent();
+    while (parent && !parent->IsBreakEnclosingStatementNode())
+    {
+        parent = parent->Parent();
+    }
+    if (!parent)
+    {
+        throw Cm::Core::Exception("break statement must be enclosed in while, do, for or switch statement", breakStatementNode.GetSpan());
+    }
+    Cm::BoundTree::BoundBreakStatement* boundBreakStatement = new Cm::BoundTree::BoundBreakStatement(&breakStatementNode);
+    SetResult(boundBreakStatement);
+}
+
+ContinueStatementBinder::ContinueStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
+    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+{
+}
+
+void ContinueStatementBinder::Visit(Cm::Ast::ContinueStatementNode& continueStatementNode)
+{
+    Cm::Ast::Node* parent = continueStatementNode.Parent();
+    while (parent && !parent->IsContinueEnclosingStatementNode())
+    {
+        parent = parent->Parent();
+    }
+    if (!parent)
+    {
+        throw Cm::Core::Exception("continue statement must be enclosed in while, do, or for statement", continueStatementNode.GetSpan());
+    }
+    Cm::BoundTree::BoundContinueStatement* boundContinueStatement = new Cm::BoundTree::BoundContinueStatement(&continueStatementNode);
+    SetResult(boundContinueStatement);
+}
+
 
 } } // namespace Cm::Bind

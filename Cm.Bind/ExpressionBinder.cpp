@@ -1186,6 +1186,11 @@ void ExpressionBinder::BindLocalVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::L
     Cm::BoundTree::BoundLocalVariable* boundLocalVariable = new Cm::BoundTree::BoundLocalVariable(idNode, localVariableSymbol);
     boundLocalVariable->SetType(localVariableSymbol->GetType());
     boundExpressionStack.Push(boundLocalVariable);
+    if (!localVariableSymbol->Used())
+    {
+        localVariableSymbol->SetUsed();
+        localVariableSymbol->SetUseSpan(idNode->GetSpan());
+    }
 }
 
 void ExpressionBinder::BindMemberVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol)

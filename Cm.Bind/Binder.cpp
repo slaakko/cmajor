@@ -170,6 +170,7 @@ void Binder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
     }
     else if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::suppress) == Cm::Ast::Specifiers::none)
     {
+        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &memberFunctionNode);
         CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
         GenerateReceives(boundCompileUnit, boundFunction.get());
         boundClass->AddBoundNode(boundFunction.release());
@@ -186,6 +187,7 @@ void Binder::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 
 void Binder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
+    CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &conversionFunctionNode);
     CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
     GenerateReceives(boundCompileUnit, boundFunction.get());
     boundClass->AddBoundNode(boundFunction.release());
@@ -225,11 +227,12 @@ void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
     }
     else
     {
+        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &functionNode);
+        CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+        GenerateReceives(boundCompileUnit, boundFunction.get());
+        boundCompileUnit.AddBoundNode(boundFunction.release());
         EndContainerScope();
     }
-    CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
-    GenerateReceives(boundCompileUnit, boundFunction.get());
-    boundCompileUnit.AddBoundNode(boundFunction.release());
 }
 
 void Binder::BeginVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
@@ -349,26 +352,98 @@ void Binder::EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNod
 
 void Binder::BeginVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
 {
+    parentStack.push(currentParent.release());
+    currentParent.reset(new Cm::BoundTree::BoundSwitchStatement(&switchStatementNode));
 }
 
 void Binder::EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
 {
+    Cm::BoundTree::BoundParentStatement* cp = currentParent.release();
+    if (cp->IsBoundSwitchStatement())
+    {
+        Cm::BoundTree::BoundSwitchStatement* switchStatement = static_cast<Cm::BoundTree::BoundSwitchStatement*>(cp);
+        SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), switchStatement);
+        switchStatementNode.Accept(binder);
+        Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
+        parentStack.pop();
+        if (parent)
+        {
+            parent->AddStatement(switchStatement);
+            currentParent.reset(parent);
+        }
+        else
+        {
+            throw std::runtime_error("no parent");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("not a switch statement");
+    }
 }
 
 void Binder::BeginVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
 {
+    parentStack.push(currentParent.release());
+    currentParent.reset(new Cm::BoundTree::BoundCaseStatement(&caseStatementNode));
 }
 
 void Binder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
 {
+    Cm::BoundTree::BoundParentStatement* cp = currentParent.release();
+    if (cp->IsBoundCaseStatement())
+    {
+        Cm::BoundTree::BoundCaseStatement* caseStatement = static_cast<Cm::BoundTree::BoundCaseStatement*>(cp);
+        CaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), caseStatement);
+        caseStatementNode.Accept(binder);
+        Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
+        parentStack.pop();
+        if (parent)
+        {
+            parent->AddStatement(caseStatement);
+            currentParent.reset(parent);
+        }
+        else
+        {
+            throw std::runtime_error("no parent");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("not a case statement");
+    }
 }
 
 void Binder::BeginVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode)
 {
+    parentStack.push(currentParent.release());
+    currentParent.reset(new Cm::BoundTree::BoundDefaultStatement(&defaultStatementNode));
 }
 
 void Binder::EndVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode)
 {
+    Cm::BoundTree::BoundParentStatement* cp = currentParent.release();
+    if (cp->IsBoundDefaultStatement())
+    {
+        Cm::BoundTree::BoundDefaultStatement* defaultStatement = static_cast<Cm::BoundTree::BoundDefaultStatement*>(cp);
+        DefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), defaultStatement);
+        defaultStatementNode.Accept(binder);
+        Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
+        parentStack.pop();
+        if (parent)
+        {
+            parent->AddStatement(defaultStatement);
+            currentParent.reset(parent);
+        }
+        else
+        {
+            throw std::runtime_error("no parent");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("not a default statement");
+    }
 }
 
 void Binder::BeginVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode)
@@ -449,10 +524,16 @@ void Binder::EndVisit(Cm::Ast::DoStatementNode& doStatementNode)
 
 void Binder::Visit(Cm::Ast::BreakStatementNode& breakStatementNode)
 {
+    BreakStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    breakStatementNode.Accept(binder);
+    currentParent->AddStatement(binder.Result());
 }
 
 void Binder::Visit(Cm::Ast::ContinueStatementNode& continueStatementNode)
 {
+    ContinueStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    continueStatementNode.Accept(binder);
+    currentParent->AddStatement(binder.Result());
 }
 
 void Binder::Visit(Cm::Ast::GotoStatementNode& gotoStatementNode)

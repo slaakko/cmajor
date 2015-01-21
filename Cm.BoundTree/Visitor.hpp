@@ -44,6 +44,8 @@ class BoundAssignmentStatement;
 class BoundThrowStatement;
 class BoundSimpleStatement;
 class BoundSwitchStatement;
+class BoundCaseStatement;
+class BoundDefaultStatement;
 class BoundBreakStatement;
 class BoundContinueStatement;
 class BoundConditionalStatement;
@@ -96,6 +98,8 @@ public:
     virtual void Visit(BoundThrowStatement& boundThrowStatement) {}
     virtual void Visit(BoundSimpleStatement& boundSimpleStatement) {}
     virtual void Visit(BoundSwitchStatement& boundSwitchStatement) {}
+    virtual void Visit(BoundCaseStatement& boundCaseStatement) {}
+    virtual void Visit(BoundDefaultStatement& boundDefaultStatement) {}
     virtual void Visit(BoundBreakStatement& boundBreakStatement) {}
     virtual void Visit(BoundContinueStatement& boundContinueStatement) {}
     virtual void BeginVisit(BoundConditionalStatement& boundConditionalStatement) {}

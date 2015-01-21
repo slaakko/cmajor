@@ -30,8 +30,14 @@ public:
     TypeSymbol* GetType() const;
     void SetType(TypeSymbol* type_) { type = type_; }
     void SetType(TypeSymbol* type_, int index) override;
+    bool Used() const { return used; }
+    void SetUsed() { used = true; }
+    void SetUseSpan(const Cm::Parsing::Span& useSpan_);
+    const Cm::Parsing::Span& GetUseSpan() const { return useSpan; }
 private:
     TypeSymbol* type;
+    bool used;
+    Cm::Parsing::Span useSpan;
 };
 
 } } // namespace Cm::Sym
