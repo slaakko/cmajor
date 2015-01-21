@@ -62,6 +62,15 @@ public:
     void SetLabelNode(LabelNode* labelNode_);
     void CloneLabelTo(StatementNode* clone) const;
     LabelNode* Label() const { return labelNode.get(); }
+    virtual bool IsConditionalStatementNode() const { return false; }
+    virtual bool IsSwitchStatementNode() const { return false; }
+    virtual bool IsCaseStatementNode() const { return false; }
+    virtual bool IsDefaultStatementNode() const { return false; }
+    virtual bool IsCaseTerminatingNode() const { return false; }
+    virtual bool IsWhileStatementNode() const { return false; }
+    virtual bool IsDoStatementNode() const { return false; }
+    virtual bool IsForStatementNode() const { return false; }
+    virtual bool IsFunctionTerminatingNode() const { return false; }
 private:
     std::unique_ptr<LabelNode> labelNode;
 };
@@ -94,6 +103,8 @@ public:
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     bool ReturnsValue() const { return expr != nullptr; }
+    bool IsCaseTerminatingNode() const override { return true; }
+    bool IsFunctionTerminatingNode() const override { return true; }
 private:
     std::unique_ptr<Node> expr;
 };
@@ -109,6 +120,9 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool IsConditionalStatementNode() const override { return true; }
+    StatementNode* ThenS() const { return thenS.get(); }
+    StatementNode* ElseS() const { return elseS.get(); }
     bool HasElseStatement() const { return elseS != nullptr; }
 private:
     std::unique_ptr<Node> condition;
@@ -128,6 +142,10 @@ public:
     void SetDefault(StatementNode* defaultS);
     NodeType GetNodeType() const override { return NodeType::switchStatementNode; }
     Node* Clone() const override;
+    bool IsSwitchStatementNode() const override { return true; }
+    bool IsBreakEnclosingStatementNode() const override { return true; }
+    StatementNodeList& CaseStatements() { return caseStatements; }
+    StatementNode* DefaultStatement() const { return defaultStatement.get(); }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -143,8 +161,10 @@ class CaseStatementNode : public StatementNode
 public:
     CaseStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::caseStatementNode; }
+    bool IsCaseStatementNode() const override { return true; }
     void AddExpr(Node* expr);
     void AddStatement(StatementNode* statement);
+    StatementNodeList& Statements() { return statements; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
@@ -160,7 +180,9 @@ class DefaultStatementNode : public StatementNode
 public:
     DefaultStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::defaultStatementNode; }
+    bool IsDefaultStatementNode() const override { return true; }
     void AddStatement(StatementNode* statement);
+    StatementNodeList& Statements() { return statements; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
@@ -181,6 +203,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool IsCaseTerminatingNode() const override { return true; }
 private:
     std::unique_ptr<Node> targetCaseExpr;
 };
@@ -193,6 +216,7 @@ public:
     Node* Clone() const override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool IsCaseTerminatingNode() const override { return true; }
 };
 
 class WhileStatementNode : public StatementNode
@@ -202,10 +226,15 @@ public:
     WhileStatementNode(const Span& span_, Node* condition_, StatementNode* statement_);
     NodeType GetNodeType() const override { return NodeType::whileStatementNode; }
     Node* Clone() const override;
+    bool IsWhileStatementNode() const override { return true; }
+    bool IsBreakEnclosingStatementNode() const override { return true; }
+    bool IsContinueEnclosingStatementNode() const override { return true; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    Node* Condition() const { return condition.get(); }
+    StatementNode* Statement() const { return statement.get(); }
 private:
     std::unique_ptr<Node> condition;
     std::unique_ptr<StatementNode> statement;
@@ -218,10 +247,15 @@ public:
     DoStatementNode(const Span& span_, StatementNode* statement_, Node* condition_);
     NodeType GetNodeType() const override { return NodeType::doStatementNode; }
     Node* Clone() const override;
+    bool IsDoStatementNode() const override { return true; }
+    bool IsBreakEnclosingStatementNode() const override { return true; }
+    bool IsContinueEnclosingStatementNode() const override { return true; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    StatementNode* Statement() const { return statement.get(); }
+    Node* Condition() const { return condition.get(); }
 private:
     std::unique_ptr<StatementNode> statement;
     std::unique_ptr<Node> condition;
@@ -234,12 +268,17 @@ public:
     ForStatementNode(const Span& span_, StatementNode* init_, Node* condition_, Node* increment_, StatementNode* action_);
     NodeType GetNodeType() const override { return NodeType::forStatementNode; }
     Node* Clone() const override;
+    bool IsForStatementNode() const override { return true; }
+    bool IsBreakEnclosingStatementNode() const override { return true; }
+    bool IsContinueEnclosingStatementNode() const override { return true; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     bool HasCondition() const { return condition != nullptr; }
     bool HasIncrement() const { return increment != nullptr; }
+    Node* Condition() const { return condition.get(); }
+    StatementNode* Action() const { return action.get(); }
 private:
     std::unique_ptr<StatementNode> init;
     std::unique_ptr<Node> condition;
@@ -254,6 +293,8 @@ public:
     RangeForStatementNode(const Span& span_, Node* varTypeExpr_, IdentifierNode* varId_, Node* container_, StatementNode* action_);
     NodeType GetNodeType() const override { return NodeType::rangeForStatementNode; }
     Node* Clone() const override;
+    bool IsBreakEnclosingStatementNode() const override { return true; }
+    bool IsContinueEnclosingStatementNode() const override { return true; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -273,6 +314,7 @@ public:
     CompoundStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::compoundStatementNode; }
     void AddStatement(StatementNode* statement);
+    StatementNodeList& Statements() { return statements; }
     Node* Clone() const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
@@ -291,6 +333,7 @@ public:
     Node* Clone() const override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool IsCaseTerminatingNode() const override { return true; }
 };
 
 class ContinueStatementNode : public StatementNode
@@ -301,6 +344,7 @@ public:
     Node* Clone() const override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool IsCaseTerminatingNode() const override { return true; }
 };
 
 class GotoStatementNode : public StatementNode
@@ -315,6 +359,7 @@ public:
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     LabelNode* Target() const { return target.get(); }
+    bool IsCaseTerminatingNode() const override { return true; }
 private:
     std::unique_ptr<LabelNode> target;
 };
@@ -417,6 +462,8 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    bool IsCaseTerminatingNode() const override { return true; }
+    bool IsFunctionTerminatingNode() const override { return true; }
 private:
     std::unique_ptr<Node> exceptionExpr;
 };

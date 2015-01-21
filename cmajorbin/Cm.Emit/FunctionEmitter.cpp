@@ -102,7 +102,7 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     std::unordered_set<Ir::Intf::Function*>& externalFunctions_) :
     Cm::BoundTree::Visitor(true), codeFormatter(codeFormatter_), emitter(nullptr), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_), 
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(nullptr), 
-    currentClass(currentClass_), thisParam(nullptr), externalFunctions(externalFunctions_), executingPostfixIncDecStatements(false)
+    currentClass(currentClass_), thisParam(nullptr), externalFunctions(externalFunctions_), executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr)
 {
 }
 
@@ -829,6 +829,20 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStat
     resultStack.Push(std::move(result));
 }
 
+void FunctionEmitter::Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatement)
+{
+    Ir::Intf::LabelObject* breakTargetLabel = Cm::IrIntf::CreateNextLocalLabel();
+    breakTargetStatement->AddBreakTargetLabel(breakTargetLabel);
+    emitter->Emit(Cm::IrIntf::Br(breakTargetLabel));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundContinueStatement& boundContinueStatement) 
+{
+    Ir::Intf::LabelObject* continueTargetLabel = Cm::IrIntf::CreateNextLocalLabel();
+    continueTargetStatement->AddContinueTargetLabel(continueTargetLabel);
+    emitter->Emit(Cm::IrIntf::Br(continueTargetLabel));
+}
+
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement)
 {
     PushSkipContent();
@@ -839,6 +853,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     PopSkipContent();
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Core::GenResult conditionResult = resultStack.Pop();
+    Ir::Intf::LabelObject* resultLabel = conditionResult.GetLabel();
     Cm::BoundTree::BoundStatement* thenS = boundConditionalStatement.ThenS();
     BeginVisitStatement(*thenS);
     thenS->Accept(*this);
@@ -858,6 +873,10 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     {
         result.MergeTargets(result.NextTargets(), conditionResult.FalseTargets());
     }
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
     result.Merge(conditionResult);
     resultStack.Push(std::move(result));
 }
@@ -873,6 +892,8 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileSta
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Core::GenResult conditionResult = resultStack.Pop();
     Cm::BoundTree::BoundStatement* statement = boundWhileStatement.Statement();
+    PushBreakTargetStatement(&boundWhileStatement);
+    PushContinueTargetStatement(&boundWhileStatement);
     BeginVisitStatement(*statement);
     statement->Accept(*this);
     Cm::Core::GenResult statementResult = resultStack.Pop();
@@ -880,6 +901,10 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileSta
     conditionResult.BackpatchTrueTargets(statementResult.GetLabel());
     statementResult.BackpatchNextTargets(conditionResult.GetLabel());
     result.MergeTargets(result.NextTargets(), conditionResult.FalseTargets());
+    result.MergeTargets(result.NextTargets(), boundWhileStatement.BreakTargetLabels());
+    Ir::Intf::Backpatch(boundWhileStatement.ContinueTargetLabels(), conditionResult.GetLabel());
+    PopContinueTargetStatement();
+    PopBreakTargetStatement();
     result.SetLabel(conditionResult.GetLabel());
     result.Merge(conditionResult);
     result.Merge(statementResult);
@@ -896,6 +921,8 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement
     PopSkipContent();
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::BoundTree::BoundStatement* statement = boundDoStatement.Statement();
+    PushBreakTargetStatement(&boundDoStatement);
+    PushContinueTargetStatement(&boundDoStatement);
     BeginVisitStatement(*statement);
     statement->Accept(*this);
     Cm::Core::GenResult statementResult = resultStack.Pop();
@@ -905,6 +932,10 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement
     statementResult.BackpatchNextTargets(conditionResult.GetLabel());
     conditionResult.BackpatchTrueTargets(statementResult.GetLabel());
     result.MergeTargets(result.NextTargets(), conditionResult.FalseTargets());
+    result.MergeTargets(result.NextTargets(), boundDoStatement.BreakTargetLabels());
+    Ir::Intf::Backpatch(boundDoStatement.ContinueTargetLabels(), conditionResult.GetLabel());
+    PopContinueTargetStatement();
+    PopBreakTargetStatement();
     result.SetLabel(statementResult.GetLabel());
     result.Merge(statementResult);
     result.Merge(conditionResult);
@@ -920,6 +951,8 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
 {
     PopSkipContent();
     Cm::Core::GenResult result(emitter.get(), genFlags);
+    PushBreakTargetStatement(&boundForStatement);
+    PushContinueTargetStatement(&boundForStatement);
     Cm::BoundTree::BoundStatement* initS = boundForStatement.InitS();
     BeginVisitStatement(*initS);
     initS->Accept(*this);
@@ -941,12 +974,40 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     actionResult.BackpatchNextTargets(incrementResult.GetLabel());
     incrementResult.BackpatchNextTargets(conditionResult.GetLabel());
     emitter->Emit(Cm::IrIntf::Br(conditionResult.GetLabel()));
+    result.MergeTargets(result.NextTargets(), boundForStatement.BreakTargetLabels());
+    Ir::Intf::Backpatch(boundForStatement.ContinueTargetLabels(), conditionResult.GetLabel());
+    PopContinueTargetStatement();
+    PopBreakTargetStatement();
     result.Merge(initResult);
     result.Merge(conditionResult);
     result.Merge(actionResult);
     result.Merge(incrementResult);
     result.SetLabel(initLabel);
     resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement)
+{
+    breakTargetStatementStack.push(breakTargetStatement);
+    breakTargetStatement = statement;
+}
+
+void FunctionEmitter::PopBreakTargetStatement()
+{
+    breakTargetStatement = breakTargetStatementStack.top();
+    breakTargetStatementStack.pop();
+}
+
+void FunctionEmitter::PushContinueTargetStatement(Cm::BoundTree::BoundStatement* statement)
+{
+    continueTargetStatementStack.push(continueTargetStatement);
+    continueTargetStatement = statement;
+}
+
+void FunctionEmitter::PopContinueTargetStatement()
+{
+    continueTargetStatement = continueTargetStatementStack.top();
+    continueTargetStatementStack.pop();
 }
 
 void FunctionEmitter::MakePlainValueResult(Cm::Sym::TypeSymbol* plainType, Cm::Core::GenResult& result)

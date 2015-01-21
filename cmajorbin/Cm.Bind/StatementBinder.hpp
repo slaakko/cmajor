@@ -102,6 +102,50 @@ private:
     Cm::BoundTree::BoundForStatement* forStatement;
 };
 
+class SwitchStatementBinder : public StatementBinder
+{
+public:
+    SwitchStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_,
+        Cm::BoundTree::BoundSwitchStatement* switchStatement_);
+    void EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode) override;
+private:
+    Cm::BoundTree::BoundSwitchStatement* switchStatement;
+};
+
+class CaseStatementBinder : public StatementBinder
+{
+public:
+    CaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_,
+        Cm::BoundTree::BoundCaseStatement* caseStatement_);
+    void EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode) override;
+private:
+    Cm::BoundTree::BoundCaseStatement* caseStatement;
+};
+
+class DefaultStatementBinder : public StatementBinder
+{
+public:
+    DefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_,
+        Cm::BoundTree::BoundDefaultStatement* defaultStatement_);
+    void EndVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode) override;
+private:
+    Cm::BoundTree::BoundDefaultStatement* defaultStatement;
+};
+
+class BreakStatementBinder : public StatementBinder
+{
+public:
+    BreakStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    void Visit(Cm::Ast::BreakStatementNode& breakStatementNode) override;
+};
+
+class ContinueStatementBinder : public StatementBinder
+{
+public:
+    ContinueStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    void Visit(Cm::Ast::ContinueStatementNode& continueStatementNode) override;
+};
+
 } } // namespace Cm::Bind
 
 #endif CM_BIND_STATEMENT_INCLUDED

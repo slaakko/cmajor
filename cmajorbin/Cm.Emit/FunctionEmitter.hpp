@@ -79,8 +79,8 @@ public:
     void Visit(Cm::BoundTree::BoundThrowStatement& boundThrowStatement) {}
     void Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement) override;
     void Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStatement) {}
-    void Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatement) {}
-    void Visit(Cm::BoundTree::BoundContinueStatement& boundContinueStatement) {}
+    void Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatement) override;
+    void Visit(Cm::BoundTree::BoundContinueStatement& boundContinueStatement) override;
     void BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) override;
     void EndVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) override;
     void BeginVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement) override;
@@ -108,7 +108,15 @@ private:
     Cm::Sym::ParameterSymbol* thisParam;
     std::unordered_set<Ir::Intf::Function*>& externalFunctions;
     std::vector<std::unique_ptr<Cm::BoundTree::BoundStatement>> postfixIncDecStatements;
+    Cm::BoundTree::BoundStatement* continueTargetStatement;
+    std::stack<Cm::BoundTree::BoundStatement*> continueTargetStatementStack;
+    Cm::BoundTree::BoundStatement* breakTargetStatement;
+    std::stack<Cm::BoundTree::BoundStatement*> breakTargetStatementStack;
     bool executingPostfixIncDecStatements;
+    void PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement);
+    void PopBreakTargetStatement();
+    void PushContinueTargetStatement(Cm::BoundTree::BoundStatement* statement);
+    void PopContinueTargetStatement();
     void MakePlainValueResult(Cm::Sym::TypeSymbol* plainType, Cm::Core::GenResult& result);
     void ExecutePostfixIncDecStatements(Cm::Core::GenResult& result);
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);

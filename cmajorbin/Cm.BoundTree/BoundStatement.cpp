@@ -208,8 +208,76 @@ void BoundSimpleStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundSwitchStatement::BoundSwitchStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+BoundSwitchStatement::BoundSwitchStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
+}
+
+void BoundSwitchStatement::AddStatement(BoundStatement* statement_)
+{
+    if (statement_->IsBoundCaseStatement())
+    {
+        caseStatements.AddStatement(statement_);
+    }
+    else
+    {
+        defaultStatement.reset(statement_);
+    }
+}
+
+void BoundSwitchStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+void BoundSwitchStatement::AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel)
+{
+    breakTargetLabels.push_back(breakTargetLabel);
+}
+
+BoundCaseStatement::BoundCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
+{
+}
+
+void BoundCaseStatement::AddStatement(BoundStatement* statement_)
+{
+    statements.AddStatement(statement_);
+}
+
+void BoundCaseStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundDefaultStatement::BoundDefaultStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
+{
+}
+
+void BoundDefaultStatement::AddStatement(BoundStatement* statement_)
+{
+    statements.AddStatement(statement_);
+}
+
+void BoundDefaultStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundBreakStatement::BoundBreakStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundBreakStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundContinueStatement::BoundContinueStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundContinueStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 BoundConditionalStatement::BoundConditionalStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
@@ -273,6 +341,16 @@ void BoundWhileStatement::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
+void BoundWhileStatement::AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) 
+{
+    breakTargetLabels.push_back(breakTargetLabel);
+}
+
+void BoundWhileStatement::AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel)
+{
+    continueTargetLabels.push_back(continueTargetLabel);
+}
+
 BoundDoStatement::BoundDoStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
@@ -296,6 +374,16 @@ void BoundDoStatement::Accept(Visitor& visitor)
         condition->Accept(visitor);
     }
     visitor.EndVisit(*this);
+}
+
+void BoundDoStatement::AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) 
+{
+    breakTargetLabels.push_back(breakTargetLabel);
+}
+
+void BoundDoStatement::AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel)
+{
+    continueTargetLabels.push_back(continueTargetLabel);
 }
 
 BoundForStatement::BoundForStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
@@ -335,6 +423,16 @@ void BoundForStatement::Accept(Visitor& visitor)
         action->Accept(visitor);
     }
     visitor.EndVisit(*this);
+}
+
+void BoundForStatement::AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel)
+{
+    breakTargetLabels.push_back(breakTargetLabel);
+}
+
+void BoundForStatement::AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel)
+{
+    continueTargetLabels.push_back(continueTargetLabel);
 }
 
 } } // namespace Cm::BoundTree

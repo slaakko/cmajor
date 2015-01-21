@@ -12,6 +12,7 @@
 #include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
+#include <Ir.Intf/Label.hpp>
 
 namespace Cm { namespace BoundTree {
 
@@ -25,6 +26,11 @@ public:
     virtual bool IsBoundWhileStatement() const { return false; }
     virtual bool IsBoundDoStatement() const { return false; }
     virtual bool IsBoundForStatement() const { return false; }
+    virtual bool IsBoundSwitchStatement() const { return false; }
+    virtual bool IsBoundCaseStatement() const { return false; }
+    virtual bool IsBoundDefaultStatement() const { return false; }
+    virtual void AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) {}
+    virtual void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) {}
 };
 
 class BoundStatementList
@@ -187,27 +193,60 @@ private:
     std::unique_ptr<BoundExpression> expression;
 };
 
-class BoundSwitchStatement : public BoundStatement
+class BoundSwitchStatement : public BoundParentStatement
 {
 public:
     BoundSwitchStatement(Cm::Ast::Node* syntaxNode_);
+    BoundExpression* Condition() const { return condition.get(); }
     bool IsConditionStatement() const override { return true; }
+    bool IsBoundSwitchStatement() const override { return true; }
+    void AddStatement(BoundStatement* statement_) override;
+    BoundStatementList& CaseStatements() { return caseStatements; }
+    BoundStatement* DefaultStatement() { return defaultStatement.get(); }
+    void Accept(Visitor& visitor) override;
+    void AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) override;
+    std::vector<Ir::Intf::LabelObject*>& BreakTargetLabels() { return breakTargetLabels; }
 private:
     std::unique_ptr<BoundExpression> condition;
+    BoundStatementList caseStatements;
+    std::unique_ptr<BoundStatement> defaultStatement;
+    std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
+};
+
+class BoundCaseStatement : public BoundParentStatement
+{
+public:
+    BoundCaseStatement(Cm::Ast::Node* syntaxNode_);
+    bool IsBoundCaseStatement() const override { return true; }
+    void AddStatement(BoundStatement* statement_) override;
+    void Accept(Visitor& visitor) override;
+private:
+    BoundStatementList statements;
+};
+
+class BoundDefaultStatement : public BoundParentStatement
+{
+public:
+    BoundDefaultStatement(Cm::Ast::Node* syntaxNode_);
+    bool IsBoundDefaultStatement() const override { return true; }
+    void AddStatement(BoundStatement* statement_) override;
+    void Accept(Visitor& visitor) override;
+private:
+    BoundStatementList statements;
 };
 
 class BoundBreakStatement : public BoundStatement
 {
-
-private:
-    // target label
+public:
+    BoundBreakStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
 };
 
 class BoundContinueStatement : public BoundStatement
 {
-
-private:
-    // target label
+public:
+    BoundContinueStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
 };
 
 class BoundConditionalStatement : public BoundParentStatement
@@ -237,9 +276,15 @@ public:
     bool IsBoundWhileStatement() const override { return true; }
     void Accept(Visitor& visitor) override;
     BoundStatement* Statement() const { return statement.get(); }
+    void AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) override;
+    void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) override;
+    std::vector<Ir::Intf::LabelObject*>& BreakTargetLabels() { return breakTargetLabels; }
+    std::vector<Ir::Intf::LabelObject*>& ContinueTargetLabels() { return continueTargetLabels; }
 private:
     std::unique_ptr<BoundExpression> condition;
     std::unique_ptr<BoundStatement> statement;
+    std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
+    std::vector<Ir::Intf::LabelObject*> continueTargetLabels;
 };
 
 class BoundDoStatement : public BoundParentStatement
@@ -253,9 +298,15 @@ public:
     void Accept(Visitor& visitor) override;
     BoundStatement* Statement() const { return statement.get(); }
     BoundExpression* Condition() const { return condition.get(); }
+    void AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) override;
+    void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) override;
+    std::vector<Ir::Intf::LabelObject*>& BreakTargetLabels() { return breakTargetLabels; }
+    std::vector<Ir::Intf::LabelObject*>& ContinueTargetLabels() { return continueTargetLabels; }
 private:
     std::unique_ptr<BoundStatement> statement;
     std::unique_ptr<BoundExpression> condition;
+    std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
+    std::vector<Ir::Intf::LabelObject*> continueTargetLabels;
 };
 
 class BoundForStatement : public BoundParentStatement
@@ -272,11 +323,17 @@ public:
     BoundExpression* Condition() const { return condition.get(); }
     BoundExpression* Increment() const { return increment.get(); }
     BoundStatement* Action() const { return action.get(); }
+    void AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) override;
+    void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) override;
+    std::vector<Ir::Intf::LabelObject*>& BreakTargetLabels() { return breakTargetLabels; }
+    std::vector<Ir::Intf::LabelObject*>& ContinueTargetLabels() { return continueTargetLabels; }
 private:
     std::unique_ptr<BoundStatement> initS;
     std::unique_ptr<BoundExpression> condition;
     std::unique_ptr<BoundExpression> increment;
     std::unique_ptr<BoundStatement> action;
+    std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
+    std::vector<Ir::Intf::LabelObject*> continueTargetLabels;
 };
 
 class BoundTryStatement : public BoundStatement
