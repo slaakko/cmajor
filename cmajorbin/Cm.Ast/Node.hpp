@@ -75,6 +75,8 @@ public:
     virtual bool IsClassNode() const { return false; }
     virtual bool IsStatementNode() const { return false; }
     virtual bool IsCompoundStatementNode() const { return false; }
+    virtual bool IsCaseStatementNode() const { return false; }
+    virtual bool IsDefaultStatementNode() const { return false; }
     virtual bool IsConstructionStatementNode() const { return false; }
     virtual bool IsBreakEnclosingStatementNode() const { return false; }
     virtual bool IsContinueEnclosingStatementNode() const { return false; }
@@ -90,6 +92,7 @@ public:
     virtual bool IsEnumConstantNode() const { return false; }
     virtual bool IsTypedefNode() const { return false; }
     virtual bool IsThisNode() const { return false; }
+    virtual bool IsUnsignedTypeNode() const { return false; }
     virtual Rank GetRank() const { return Rank::primary; }
     virtual std::string ToString() const { return std::string(); }
     virtual std::string GetOpStr() const { return std::string(); }

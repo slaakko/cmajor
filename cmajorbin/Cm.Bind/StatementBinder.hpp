@@ -107,6 +107,7 @@ class SwitchStatementBinder : public StatementBinder
 public:
     SwitchStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_,
         Cm::BoundTree::BoundSwitchStatement* switchStatement_);
+    void BeginVisit(Cm::Ast::SwitchStatementNode& switchStatementNode) override;
     void EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode) override;
 private:
     Cm::BoundTree::BoundSwitchStatement* switchStatement;
@@ -116,10 +117,11 @@ class CaseStatementBinder : public StatementBinder
 {
 public:
     CaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_,
-        Cm::BoundTree::BoundCaseStatement* caseStatement_);
+        Cm::BoundTree::BoundCaseStatement* caseStatement_, Cm::BoundTree::BoundSwitchStatement* switchStatement_);
     void EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode) override;
 private:
     Cm::BoundTree::BoundCaseStatement* caseStatement;
+    Cm::BoundTree::BoundSwitchStatement* switchStatement;
 };
 
 class DefaultStatementBinder : public StatementBinder
@@ -144,6 +146,23 @@ class ContinueStatementBinder : public StatementBinder
 public:
     ContinueStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
     void Visit(Cm::Ast::ContinueStatementNode& continueStatementNode) override;
+};
+
+class GotoCaseStatementBinder : public StatementBinder
+{
+public:
+    GotoCaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_,
+        Cm::BoundTree::BoundSwitchStatement* switchStatement_);
+    void EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode) override;
+private:
+    Cm::BoundTree::BoundSwitchStatement* switchStatement;
+};
+
+class GotoDefaultStatementBinder : public StatementBinder
+{
+public:
+    GotoDefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_);
+    void Visit(Cm::Ast::GotoDefaultStatementNode& gotoDefaultStatementNode) override;
 };
 
 } } // namespace Cm::Bind

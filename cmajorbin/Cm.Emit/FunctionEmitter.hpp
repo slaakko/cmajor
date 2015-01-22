@@ -40,6 +40,11 @@ private:
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;
 };
 
+enum class SwitchEmitState
+{
+    none, createSwitchTargets, emitStatements
+};
+
 class FunctionEmitter : public Cm::BoundTree::Visitor
 {
 public:
@@ -78,7 +83,6 @@ public:
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
     void Visit(Cm::BoundTree::BoundThrowStatement& boundThrowStatement) {}
     void Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement) override;
-    void Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStatement) {}
     void Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatement) override;
     void Visit(Cm::BoundTree::BoundContinueStatement& boundContinueStatement) override;
     void BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) override;
@@ -89,6 +93,11 @@ public:
     void EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement) override;
     void BeginVisit(Cm::BoundTree::BoundForStatement& boundForStatement) override;
     void EndVisit(Cm::BoundTree::BoundForStatement& boundForStatement) override;
+    void Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStatement) override;
+    void Visit(Cm::BoundTree::BoundCaseStatement& boundCaseStatement) override;
+    void Visit(Cm::BoundTree::BoundDefaultStatement& boundDefaultStatement) override;
+    void Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCaseStatement) override;
+    void Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
     void Visit(Cm::BoundTree::BoundTryStatement& boundTryStatement) {}
 private:
     Cm::Util::CodeFormatter& codeFormatter;
@@ -113,6 +122,14 @@ private:
     Cm::BoundTree::BoundStatement* breakTargetStatement;
     std::stack<Cm::BoundTree::BoundStatement*> breakTargetStatementStack;
     bool executingPostfixIncDecStatements;
+    SwitchEmitState currentSwitchEmitState;
+    std::stack<SwitchEmitState> switchEmitStateStack;
+    typedef std::unordered_map<std::string, Ir::Intf::LabelObject*> SwitchCaseConstantMap;
+    typedef SwitchCaseConstantMap::const_iterator SwitchCaseConstantMapIt;
+    std::stack<SwitchCaseConstantMap*> switchCaseConstantMapStack;
+    SwitchCaseConstantMap* currentSwitchCaseConstantMap;
+    Ir::Intf::LabelObject* switchCaseLabel;
+    std::vector<Ir::Intf::Object*> switchCaseConstants;
     void PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement);
     void PopBreakTargetStatement();
     void PushContinueTargetStatement(Cm::BoundTree::BoundStatement* statement);

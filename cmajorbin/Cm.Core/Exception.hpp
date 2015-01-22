@@ -10,6 +10,7 @@
 #ifndef CM_CORE_EXCEPTION_INCLUDED
 #define CM_CORE_EXCEPTION_INCLUDED
 #include <Cm.Parsing/Scanner.hpp>
+#include <Cm.Util/ToolError.hpp>
 #include <stdexcept>
 
 namespace Cm { namespace Core {
@@ -29,6 +30,15 @@ private:
     std::string message;
     Span defined;
     Span referenced;
+};
+
+class ToolErrorExcecption
+{
+public:
+    ToolErrorExcecption(const Cm::Util::ToolError& toolError_);
+    const Cm::Util::ToolError& Error() const { return toolError; }
+private:
+    Cm::Util::ToolError toolError;
 };
 
 } } // namespace Cm::Core

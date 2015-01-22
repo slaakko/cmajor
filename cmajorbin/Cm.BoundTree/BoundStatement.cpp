@@ -212,6 +212,11 @@ BoundSwitchStatement::BoundSwitchStatement(Cm::Ast::Node* syntaxNode_) : BoundPa
 {
 }
 
+void BoundSwitchStatement::SetCondition(BoundExpression* condition_)
+{
+    condition.reset(condition_);
+}
+
 void BoundSwitchStatement::AddStatement(BoundStatement* statement_)
 {
     if (statement_->IsBoundCaseStatement())
@@ -248,6 +253,11 @@ void BoundCaseStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+void BoundCaseStatement::AddValue(Cm::Sym::Value* value)
+{
+    values.push_back(std::unique_ptr<Cm::Sym::Value>(value));
+}
+
 BoundDefaultStatement::BoundDefaultStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
@@ -276,6 +286,29 @@ BoundContinueStatement::BoundContinueStatement(Cm::Ast::Node* syntaxNode_) : Bou
 }
 
 void BoundContinueStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundGotoCaseStatement::BoundGotoCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundGotoCaseStatement::SetValue(Cm::Sym::Value* value_)
+{
+    value.reset(value_);
+}
+
+void BoundGotoCaseStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundGotoDefaultStatement::BoundGotoDefaultStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundGotoDefaultStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }

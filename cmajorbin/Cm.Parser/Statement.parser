@@ -84,6 +84,8 @@ namespace Cm.Parser
             |   CompoundStatement(ctx){ value = CompoundStatement; }
             |   BreakStatement(ctx){ value = BreakStatement; }
             |   ContinueStatement(ctx){ value = ContinueStatement; }
+            |   GotoCaseStatement(ctx){ value = GotoCaseStatement; }
+            |   GotoDefaultStatement(ctx){ value = GotoDefaultStatement; }
             |   GotoStatement(ctx){ value = GotoStatement; }
             ;
 
@@ -102,9 +104,8 @@ namespace Cm.Parser
 
         CaseStatement(ParsingContext* ctx, var std::unique_ptr<CaseStatementNode> caseS): Cm::Ast::CaseStatementNode*
             ::= (empty{ caseS.reset(new CaseStatementNode(span)); } CaseList(ctx, caseS.get()) 
-                    (   Label:gcl? GotoCaseStatement(ctx){ GotoCaseStatement->SetLabelNode(gcl); caseS->AddStatement(GotoCaseStatement); } 
-                    |   Label:gdl? GotoDefaultStatement(ctx){ GotoDefaultStatement->SetLabelNode(gdl); caseS->AddStatement(GotoDefaultStatement); } 
-                    |   Statement(ctx){ caseS->AddStatement(Statement); }
+                    (
+                        Statement(ctx){ caseS->AddStatement(Statement); }
                     )*
                 )
                 {
@@ -115,9 +116,9 @@ namespace Cm.Parser
 
         DefaultStatement(ParsingContext* ctx): Cm::Ast::DefaultStatementNode*
             ::= keyword("default") ':'!{ value = new DefaultStatementNode(span); }
-                    (   Label? GotoCaseStatement(ctx){ GotoCaseStatement->SetLabelNode(Label); value->AddStatement(GotoCaseStatement); }
-                    |   Statement(ctx){ value->AddStatement(Statement); }
-                    )*
+                (   
+                    Statement(ctx){ value->AddStatement(Statement); }
+                )*
             ;
 
         CaseList(ParsingContext* ctx, Cm::Ast::CaseStatementNode* caseS)

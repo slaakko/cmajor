@@ -102,7 +102,8 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     std::unordered_set<Ir::Intf::Function*>& externalFunctions_) :
     Cm::BoundTree::Visitor(true), codeFormatter(codeFormatter_), emitter(nullptr), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_), 
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(nullptr), 
-    currentClass(currentClass_), thisParam(nullptr), externalFunctions(externalFunctions_), executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr)
+    currentClass(currentClass_), thisParam(nullptr), externalFunctions(externalFunctions_), executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr),
+    currentSwitchEmitState(SwitchEmitState::none), currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr)
 {
 }
 
@@ -831,16 +832,22 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStat
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatement)
 {
+    Cm::Core::GenResult result(emitter.get(), genFlags);
     Ir::Intf::LabelObject* breakTargetLabel = Cm::IrIntf::CreateNextLocalLabel();
+    emitter->Own(breakTargetLabel);
     breakTargetStatement->AddBreakTargetLabel(breakTargetLabel);
     emitter->Emit(Cm::IrIntf::Br(breakTargetLabel));
+    resultStack.Push(std::move(result));
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundContinueStatement& boundContinueStatement) 
 {
+    Cm::Core::GenResult result(emitter.get(), genFlags);
     Ir::Intf::LabelObject* continueTargetLabel = Cm::IrIntf::CreateNextLocalLabel();
+    emitter->Own(continueTargetLabel);
     continueTargetStatement->AddContinueTargetLabel(continueTargetLabel);
     emitter->Emit(Cm::IrIntf::Br(continueTargetLabel));
+    resultStack.Push(std::move(result));
 }
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement)
@@ -986,6 +993,182 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     resultStack.Push(std::move(result));
 }
 
+void FunctionEmitter::Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    PushBreakTargetStatement(&boundSwitchStatement);
+    boundSwitchStatement.Condition()->Accept(*this);
+    Cm::Core::GenResult conditionResult = resultStack.Pop();
+    Ir::Intf::LabelObject* resultLabel = conditionResult.GetLabel();
+    result.Merge(conditionResult);
+    std::vector<Ir::Intf::LabelObject*> caseLabels;
+    std::unordered_map<std::string, Ir::Intf::LabelObject*> caseConstantMap;
+    std::vector<std::pair<Ir::Intf::Object*, Ir::Intf::LabelObject*>> destinations;
+    switchEmitStateStack.push(currentSwitchEmitState);
+    currentSwitchEmitState = SwitchEmitState::createSwitchTargets;
+    switchCaseConstantMapStack.push(currentSwitchCaseConstantMap);
+    currentSwitchCaseConstantMap = &caseConstantMap;
+    for (std::unique_ptr<Cm::BoundTree::BoundStatement>& caseStatement : boundSwitchStatement.CaseStatements())
+    {
+        switchCaseConstants.clear();
+        caseStatement->Accept(*this);
+        Ir::Intf::LabelObject* caseLabel = switchCaseLabel;
+        for (Ir::Intf::Object* caseConstant : switchCaseConstants)
+        {
+            destinations.push_back(std::make_pair(caseConstant, caseLabel));
+        }
+        caseLabels.push_back(caseLabel);
+    }
+    Ir::Intf::LabelObject* defaultDest = nullptr;
+    if (boundSwitchStatement.DefaultStatement())
+    {
+        boundSwitchStatement.DefaultStatement()->Accept(*this);
+        defaultDest = switchCaseLabel;
+    }
+    else
+    {
+        defaultDest = Cm::IrIntf::CreateNextLocalLabel();
+        emitter->Own(defaultDest);
+        result.AddNextTarget(defaultDest);
+    }
+    currentSwitchCaseConstantMap = switchCaseConstantMapStack.top();
+    switchCaseConstantMapStack.pop();
+    currentSwitchEmitState = switchEmitStateStack.top();
+    switchEmitStateStack.pop();
+    Ir::Intf::Instruction* switchInst = Cm::IrIntf::Switch(result.MainObject()->GetType(), result.MainObject(), defaultDest, destinations);
+    emitter->Emit(switchInst);
+    int index = 0;
+    for (std::unique_ptr<Cm::BoundTree::BoundStatement>& caseStatement : boundSwitchStatement.CaseStatements())
+    {
+        switchEmitStateStack.push(currentSwitchEmitState);
+        currentSwitchEmitState = SwitchEmitState::emitStatements;
+        switchCaseConstantMapStack.push(currentSwitchCaseConstantMap);
+        currentSwitchCaseConstantMap = &caseConstantMap;
+        switchCaseLabel = caseLabels[index];
+        caseStatement->Accept(*this);
+        currentSwitchCaseConstantMap = switchCaseConstantMapStack.top();
+        switchCaseConstantMapStack.pop();
+        currentSwitchEmitState = switchEmitStateStack.top();
+        switchEmitStateStack.pop();
+        Cm::Core::GenResult caseResult = resultStack.Pop();
+        result.Merge(caseResult);
+        ++index;
+    }
+    if (boundSwitchStatement.DefaultStatement())
+    {
+        switchEmitStateStack.push(currentSwitchEmitState);
+        currentSwitchEmitState = SwitchEmitState::emitStatements;
+        switchCaseConstantMapStack.push(currentSwitchCaseConstantMap);
+        currentSwitchCaseConstantMap = &caseConstantMap;
+        switchCaseLabel = defaultDest;
+        boundSwitchStatement.DefaultStatement()->Accept(*this);
+        currentSwitchCaseConstantMap = switchCaseConstantMapStack.top();
+        switchCaseConstantMapStack.pop();
+        currentSwitchEmitState = switchEmitStateStack.top();
+        switchEmitStateStack.pop();
+        Cm::Core::GenResult defaultResult = resultStack.Pop();
+        result.Merge(defaultResult);
+    }
+    result.MergeTargets(result.NextTargets(), boundSwitchStatement.BreakTargetLabels());
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
+    PopBreakTargetStatement();
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundCaseStatement& boundCaseStatement)
+{
+    if (currentSwitchEmitState == SwitchEmitState::createSwitchTargets)
+    {
+        Ir::Intf::LabelObject* label = Cm::IrIntf::CreateNextLocalLabel();
+        emitter->Own(label);
+        for (const std::unique_ptr<Cm::Sym::Value>& value : boundCaseStatement.Values())
+        {
+            Ir::Intf::Object* caseConstant = value->CreateIrObject();
+            emitter->Own(caseConstant);
+            if (currentSwitchCaseConstantMap->find(caseConstant->Name()) != currentSwitchCaseConstantMap->end())
+            {
+                throw Cm::Core::Exception("duplicate case constant '" + caseConstant->Name() + "'", boundCaseStatement.SyntaxNode()->GetSpan());
+            }
+            currentSwitchCaseConstantMap->insert(std::make_pair(caseConstant->Name(), label));
+            switchCaseConstants.push_back(caseConstant);
+        }
+        switchCaseLabel = label;
+    }
+    else if (currentSwitchEmitState == SwitchEmitState::emitStatements)
+    {
+        Cm::Core::GenResult result(emitter.get(), genFlags);
+        emitter->AddNextInstructionLabel(switchCaseLabel);
+        for (std::unique_ptr<Cm::BoundTree::BoundStatement>& statement : boundCaseStatement.Statements())
+        {
+            statement->Accept(*this);
+            Cm::Core::GenResult statementResult = resultStack.Pop();
+            result.Merge(statementResult);
+        }
+        resultStack.Push(std::move(result));
+    }
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundDefaultStatement& boundDefaultStatement)
+{
+    if (currentSwitchEmitState == SwitchEmitState::createSwitchTargets)
+    {
+        Ir::Intf::LabelObject* label = Cm::IrIntf::CreateNextLocalLabel();
+        emitter->Own(label);
+        switchCaseLabel = label;
+        currentSwitchCaseConstantMap->insert(std::make_pair("@default", label));
+    }
+    else if (currentSwitchEmitState == SwitchEmitState::emitStatements)
+    {
+        Cm::Core::GenResult result(emitter.get(), genFlags);
+        emitter->AddNextInstructionLabel(switchCaseLabel);
+        for (std::unique_ptr<Cm::BoundTree::BoundStatement>& statement : boundDefaultStatement.Statements())
+        {
+            statement->Accept(*this);
+            Cm::Core::GenResult statementResult = resultStack.Pop();
+            result.Merge(statementResult);
+        }
+        resultStack.Push(std::move(result));
+    }
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCaseStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::Sym::Value* value = boundGotoCaseStatement.Value();
+    Ir::Intf::Object* caseConstant = value->CreateIrObject();
+    emitter->Own(caseConstant);
+    SwitchCaseConstantMapIt i = currentSwitchCaseConstantMap->find(caseConstant->Name());
+    if (i != currentSwitchCaseConstantMap->end())
+    {
+        Ir::Intf::LabelObject* target = i->second;
+        emitter->Emit(Cm::IrIntf::Br(target));
+    }
+    else
+    {
+        throw Cm::Core::Exception("goto case statement target not found", boundGotoCaseStatement.SyntaxNode()->GetSpan());
+    }
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoDefaultStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    SwitchCaseConstantMapIt i = currentSwitchCaseConstantMap->find("@default");
+    if (i != currentSwitchCaseConstantMap->end())
+    {
+        Ir::Intf::LabelObject* target = i->second;
+        emitter->Emit(Cm::IrIntf::Br(target));
+    }
+    else
+    {
+        throw Cm::Core::Exception("goto default statement target not found", boundGotoDefaultStatement.SyntaxNode()->GetSpan());
+    }
+    resultStack.Push(std::move(result));
+}
+
 void FunctionEmitter::PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement)
 {
     breakTargetStatementStack.push(breakTargetStatement);
@@ -1035,7 +1218,6 @@ void FunctionEmitter::ExecutePostfixIncDecStatements(Cm::Core::GenResult& result
         executingPostfixIncDecStatements = false;
     }
 }
-
 
 void FunctionEmitter::GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall)
 {

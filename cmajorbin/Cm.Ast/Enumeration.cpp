@@ -151,6 +151,13 @@ Node* MakeNextEnumConstantValue(const Span& span, EnumTypeNode* enumType)
         if (lastValue)
         {
             Node* clonedValue = lastValue->Clone();
+            if (enumType->GetUnderlyingType())
+            {
+                if (enumType->GetUnderlyingType()->IsUnsignedTypeNode())
+                {
+                    return new AddNode(span, clonedValue, new ByteLiteralNode(span, 1));
+                }
+            }
             return new AddNode(span, clonedValue, new SByteLiteralNode(span, 1));
         }
         else
@@ -160,6 +167,13 @@ Node* MakeNextEnumConstantValue(const Span& span, EnumTypeNode* enumType)
     }
     else
     {
+        if (enumType->GetUnderlyingType())
+        {
+            if (enumType->GetUnderlyingType()->IsUnsignedTypeNode())
+            {
+                return new ByteLiteralNode(span, 0);
+            }
+        }
         return new SByteLiteralNode(span, 0);
     }
 }

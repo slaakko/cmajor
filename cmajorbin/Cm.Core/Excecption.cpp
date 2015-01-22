@@ -24,4 +24,8 @@ Exception::Exception(const std::string& message_, const Span& defined_, const Sp
 {
 }
 
+ToolErrorExcecption::ToolErrorExcecption(const Cm::Util::ToolError& toolError_) : toolError(toolError_)
+{
+}
+
 } } // namespace Cm::Core

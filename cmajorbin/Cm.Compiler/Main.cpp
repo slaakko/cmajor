@@ -44,7 +44,7 @@ int main(int argc, const char** argv)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;
     _CrtSetDbgFlag(dbgFlags);
-    //_CrtSetBreakAlloc(114627);
+    //_CrtSetBreakAlloc(121588);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     try
     {
@@ -67,6 +67,12 @@ int main(int argc, const char** argv)
         {
             std::cerr << exp.what() << std::endl;
         }
+        return 4;
+    }
+    catch (const Cm::Core::ToolErrorExcecption& ex)
+    {
+        const Cm::Util::ToolError& error = ex.Error();
+        std::cerr << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << std::endl;
         return 3;
     }
     catch (const std::exception& ex)

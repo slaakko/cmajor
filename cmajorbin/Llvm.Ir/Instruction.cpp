@@ -253,7 +253,7 @@ std::string SwitchInst::ToString() const
     std::string s(Name());
     std::string space(1, ' ');
     std::string comma(", ");
-    Ir::Intf::Type* labelType = Label();
+    Ir::Intf::Type* labelType = Ir::Intf::GetFactory()->GetLabelType();
     s.append(space).append(integerType->Name()).append(space).append(value->Name()).append(comma).append(labelType->Name()).append(space).append(defaultDest->Name()).append(space).append("[");
     for (const std::pair<Ir::Intf::Object*, Ir::Intf::LabelObject*>& dest : destinations)
     {
