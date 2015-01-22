@@ -1,0 +1,48 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Util/ToolError.hpp>
+
+namespace Cm.Parser
+{
+    grammar ToolErrorGrammar
+    {
+        using stdlib.int;
+        using stdlib.spaces;
+        skip spaces;
+
+        ToolError: Cm::Util::ToolError
+            ::= (ToolName ':' FilePath ':' Line ':' Column ':' Message){ value = Cm::Util::ToolError(ToolName, FilePath, Line, Column, Message); }
+            ;
+
+        ToolName: std::string
+            ::= token((anychar - ':')+){ value = std::string(matchBegin, matchEnd); }
+            ;
+
+        FilePath: std::string
+            ::= token(Drive? (anychar - ':')+){ value = std::string(matchBegin, matchEnd); }
+            ;
+
+        Drive
+            ::= letter ':'
+            ;
+
+        Line: int
+            ::= int:i{ value = i; }
+            ;
+
+        Column: int
+            ::= int:i{ value = i; }
+            ;
+
+        Message: std::string
+            ::= token(anychar*){ value = std::string(matchBegin, matchEnd); }
+            ;
+    }
+}

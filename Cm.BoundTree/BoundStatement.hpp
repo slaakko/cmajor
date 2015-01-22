@@ -37,6 +37,9 @@ class BoundStatementList
 {
 public:
     BoundStatementList();
+    typedef std::vector<std::unique_ptr<BoundStatement>>::iterator iterator;
+    iterator begin() { return statements.begin(); }
+    iterator end() { return statements.end(); }
     void AddStatement(BoundStatement* statement);
     void InsertStatement(int index, BoundStatement* statement);
     void Accept(Visitor& visitor);
@@ -197,6 +200,7 @@ class BoundSwitchStatement : public BoundParentStatement
 {
 public:
     BoundSwitchStatement(Cm::Ast::Node* syntaxNode_);
+    void SetCondition(BoundExpression* condition_);
     BoundExpression* Condition() const { return condition.get(); }
     bool IsConditionStatement() const override { return true; }
     bool IsBoundSwitchStatement() const override { return true; }
@@ -220,8 +224,12 @@ public:
     bool IsBoundCaseStatement() const override { return true; }
     void AddStatement(BoundStatement* statement_) override;
     void Accept(Visitor& visitor) override;
+    void AddValue(Cm::Sym::Value* value);
+    BoundStatementList& Statements() { return statements; }
+    const std::vector<std::unique_ptr<Cm::Sym::Value>>& Values() const { return values; }
 private:
     BoundStatementList statements;
+    std::vector<std::unique_ptr<Cm::Sym::Value>> values;
 };
 
 class BoundDefaultStatement : public BoundParentStatement
@@ -230,6 +238,7 @@ public:
     BoundDefaultStatement(Cm::Ast::Node* syntaxNode_);
     bool IsBoundDefaultStatement() const override { return true; }
     void AddStatement(BoundStatement* statement_) override;
+    BoundStatementList& Statements() { return statements; }
     void Accept(Visitor& visitor) override;
 private:
     BoundStatementList statements;
@@ -246,6 +255,24 @@ class BoundContinueStatement : public BoundStatement
 {
 public:
     BoundContinueStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
+};
+
+class BoundGotoCaseStatement : public BoundStatement
+{
+public:
+    BoundGotoCaseStatement(Cm::Ast::Node* syntaxNode_);
+    void SetValue(Cm::Sym::Value* value_);
+    void Accept(Visitor& visitor) override;
+    Cm::Sym::Value* Value() const { return value.get(); }
+private:
+    std::unique_ptr<Cm::Sym::Value> value;
+};
+
+class BoundGotoDefaultStatement : public BoundStatement
+{
+public:
+    BoundGotoDefaultStatement(Cm::Ast::Node* syntaxNode_);
     void Accept(Visitor& visitor) override;
 };
 

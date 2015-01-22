@@ -103,6 +103,7 @@ private:
     std::unique_ptr<Cm::BoundTree::BoundParentStatement> currentParent;
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
     Cm::Sym::FunctionSymbol* userMainFunction;
+    Cm::BoundTree::BoundSwitchStatement* switchStatement;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
 };

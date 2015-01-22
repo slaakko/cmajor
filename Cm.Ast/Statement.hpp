@@ -64,8 +64,6 @@ public:
     LabelNode* Label() const { return labelNode.get(); }
     virtual bool IsConditionalStatementNode() const { return false; }
     virtual bool IsSwitchStatementNode() const { return false; }
-    virtual bool IsCaseStatementNode() const { return false; }
-    virtual bool IsDefaultStatementNode() const { return false; }
     virtual bool IsCaseTerminatingNode() const { return false; }
     virtual bool IsWhileStatementNode() const { return false; }
     virtual bool IsDoStatementNode() const { return false; }
@@ -121,6 +119,7 @@ public:
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     bool IsConditionalStatementNode() const override { return true; }
+    Node* Condition() const { return condition.get(); }
     StatementNode* ThenS() const { return thenS.get(); }
     StatementNode* ElseS() const { return elseS.get(); }
     bool HasElseStatement() const { return elseS != nullptr; }
@@ -144,6 +143,7 @@ public:
     Node* Clone() const override;
     bool IsSwitchStatementNode() const override { return true; }
     bool IsBreakEnclosingStatementNode() const override { return true; }
+    Node* Condition() const { return condition.get(); }
     StatementNodeList& CaseStatements() { return caseStatements; }
     StatementNode* DefaultStatement() const { return defaultStatement.get(); }
     void Read(Reader& reader) override;
@@ -163,6 +163,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::caseStatementNode; }
     bool IsCaseStatementNode() const override { return true; }
     void AddExpr(Node* expr);
+    NodeList& Expressions() { return expressions; }
     void AddStatement(StatementNode* statement);
     StatementNodeList& Statements() { return statements; }
     Node* Clone() const override;
@@ -204,6 +205,7 @@ public:
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     bool IsCaseTerminatingNode() const override { return true; }
+    Node* TargetCaseExpr() const { return targetCaseExpr.get(); }
 private:
     std::unique_ptr<Node> targetCaseExpr;
 };

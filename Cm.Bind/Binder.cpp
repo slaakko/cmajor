@@ -25,7 +25,7 @@
 namespace Cm { namespace Bind {
 
 Binder::Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : Cm::Ast::Visitor(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentParent(nullptr),
-    userMainFunction(nullptr)
+    userMainFunction(nullptr), switchStatement(nullptr)
 {
 }
 
@@ -353,7 +353,10 @@ void Binder::EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNod
 void Binder::BeginVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
 {
     parentStack.push(currentParent.release());
-    currentParent.reset(new Cm::BoundTree::BoundSwitchStatement(&switchStatementNode));
+    switchStatement = new Cm::BoundTree::BoundSwitchStatement(&switchStatementNode);
+    SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), switchStatement);
+    switchStatementNode.Accept(binder);
+    currentParent.reset(switchStatement);
 }
 
 void Binder::EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
@@ -362,8 +365,6 @@ void Binder::EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
     if (cp->IsBoundSwitchStatement())
     {
         Cm::BoundTree::BoundSwitchStatement* switchStatement = static_cast<Cm::BoundTree::BoundSwitchStatement*>(cp);
-        SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), switchStatement);
-        switchStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
         if (parent)
@@ -380,21 +381,24 @@ void Binder::EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
     {
         throw std::runtime_error("not a switch statement");
     }
+    switchStatement = nullptr;
 }
 
 void Binder::BeginVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
 {
     parentStack.push(currentParent.release());
     currentParent.reset(new Cm::BoundTree::BoundCaseStatement(&caseStatementNode));
+    PushSkipContent();
 }
 
 void Binder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
 {
+    PopSkipContent();
     Cm::BoundTree::BoundParentStatement* cp = currentParent.release();
     if (cp->IsBoundCaseStatement())
     {
         Cm::BoundTree::BoundCaseStatement* caseStatement = static_cast<Cm::BoundTree::BoundCaseStatement*>(cp);
-        CaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), caseStatement);
+        CaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), caseStatement, switchStatement);
         caseStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -452,10 +456,16 @@ void Binder::BeginVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode)
 
 void Binder::EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode)
 {
+    GotoCaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), switchStatement);
+    gotoCaseStatementNode.Accept(binder);
+    currentParent->AddStatement(binder.Result());
 }
 
 void Binder::Visit(Cm::Ast::GotoDefaultStatementNode& gotoDefaultStatementNode)
 {
+    GotoDefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    gotoDefaultStatementNode.Accept(binder);
+    currentParent->AddStatement(binder.Result());
 }
 
 void Binder::BeginVisit(Cm::Ast::WhileStatementNode& whileStatementNode)

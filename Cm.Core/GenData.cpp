@@ -93,6 +93,11 @@ void GenData::AddFalseTarget(Ir::Intf::LabelObject* falseTarget)
     Ir::Intf::Add(falseTargets, falseTarget);
 }
 
+void GenData::AddNextTarget(Ir::Intf::LabelObject* nextTarget)
+{
+    Ir::Intf::Add(nextTargets, nextTarget);
+}
+
 void GenData::AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget)
 {
     Ir::Intf::Add(argNextTargets, argNextTarget);

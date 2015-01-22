@@ -88,13 +88,13 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             {
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(underlyingTypeNode);
                 Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScope, underlyingTypeNode);
-                if (underlyingType->IsBasicTypeSymbol())
+                if (underlyingType->IsIntegerTypeSymbol())
                 {
                     enumTypeSymbol->SetUnderlyingType(underlyingType);
                 }
                 else
                 {
-                    throw Cm::Core::Exception("underlying type for an enumerated type must be basic type", enumTypeSymbol->GetSpan());
+                    throw Cm::Core::Exception("underlying type for an enumerated type must be integer type", enumTypeSymbol->GetSpan());
                 }
             }
             else

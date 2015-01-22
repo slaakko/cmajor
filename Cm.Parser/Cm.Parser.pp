@@ -18,5 +18,6 @@ source <Solution.parser>;
 source <Specifier.parser>;
 source <Statement.parser>;
 source <Template.parser>;
+source <ToolError.parser>;
 source <Typedef.parser>;
 source <TypeExpr.parser>;

@@ -461,14 +461,17 @@ void SwitchStatementNode::Print(CodeFormatter& formatter)
 void SwitchStatementNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (visitor.VisitExpressions())
+    if (!visitor.SkipContent())
     {
-        condition->Accept(visitor);
-    }
-    caseStatements.Accept(visitor);
-    if (defaultStatement)
-    {
-        defaultStatement->Accept(visitor);
+        if (visitor.VisitExpressions())
+        {
+            condition->Accept(visitor);
+        }
+        caseStatements.Accept(visitor);
+        if (defaultStatement)
+        {
+            defaultStatement->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }
@@ -537,9 +540,12 @@ void CaseStatementNode::Print(CodeFormatter& formatter)
 void CaseStatementNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (visitor.VisitExpressions())
+    if (!visitor.SkipContent())
     {
-        expressions.Accept(visitor);
+        if (visitor.VisitExpressions())
+        {
+            expressions.Accept(visitor);
+        }
     }
     statements.Accept(visitor);
     visitor.EndVisit(*this);

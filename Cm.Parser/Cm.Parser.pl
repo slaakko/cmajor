@@ -223,6 +223,16 @@ namespace Cm.Parser
         TemplateParameter(ParsingContext* ctx): Cm::Ast::TemplateParameterNode*;
         TemplateParameterList(ParsingContext* ctx, Node* owner);
     }
+    grammar ToolErrorGrammar
+    {
+        ToolError: Cm::Util::ToolError;
+        ToolName: std::string;
+        FilePath: std::string;
+        Drive;
+        Line: int;
+        Column: int;
+        Message: std::string;
+    }
     grammar TypedefGrammar
     {
         Typedef(ParsingContext* ctx): Cm::Ast::Node*;

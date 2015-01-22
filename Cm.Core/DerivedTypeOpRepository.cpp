@@ -641,6 +641,7 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
             {
                 Cm::Sym::TypeSymbol* pointerType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
                 Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
+                Cm::Sym::TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
                 if (rightType->IsVoidPtrType()) // pointer type to void* conversion;
                 {
                     DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
@@ -655,7 +656,7 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
                 }
                 else if (rightType->IsPointerType())
                 {
-                    if (Cm::Sym::TypesEqual(pointerType, rightType)) // pointer copy constructor
+                    if (Cm::Sym::TypesEqual(pointerType, rightPlainType)) // pointer copy constructor
                     {
                         DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
                         viableFunctions.insert(cache.GetCopyCtor(typeRepository, pointerType));
@@ -663,7 +664,7 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
                     }
                 }
                 Cm::Sym::TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(pointerType, span);
-                if (Cm::Sym::TypesEqual(alternateRightType, rightType)) // pointer copy constructor
+                if (Cm::Sym::TypesEqual(alternateRightType, rightPlainType)) // pointer copy constructor
                 {
                     DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
                     viableFunctions.insert(cache.GetCopyCtor(typeRepository, pointerType));

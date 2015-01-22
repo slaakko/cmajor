@@ -41,6 +41,7 @@ public:
     Node* Clone() const override;
     std::string ToString() const override { return "byte"; }
     void Accept(Visitor& visitor) override;
+    bool IsUnsignedTypeNode() const override { return true; }
 };
 
 class ShortNode: public Node
@@ -61,6 +62,7 @@ public:
     Node* Clone() const override;
     std::string ToString() const override { return "ushort"; }
     void Accept(Visitor& visitor) override;
+    bool IsUnsignedTypeNode() const override { return true; }
 };
 
 class IntNode: public Node
@@ -81,6 +83,7 @@ public:
     Node* Clone() const override;
     std::string ToString() const override { return "uint"; }
     void Accept(Visitor& visitor) override;
+    bool IsUnsignedTypeNode() const override { return true; }
 };
 
 class LongNode: public Node
@@ -101,6 +104,7 @@ public:
     Node* Clone() const override;
     std::string ToString() const override { return "ulong"; }
     void Accept(Visitor& visitor) override;
+    bool IsUnsignedTypeNode() const override { return true; }
 };
 
 class FloatNode: public Node

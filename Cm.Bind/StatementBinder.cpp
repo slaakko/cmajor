@@ -9,11 +9,12 @@
 
 #include <Cm.Bind/StatementBinder.hpp>
 #include <Cm.Bind/LocalVariable.hpp>
-#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/Evaluator.hpp>
 #include <Cm.Bind/Function.hpp>
 #include <Cm.Bind/Access.hpp>
+#include <Cm.Core/Exception.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -240,6 +241,11 @@ void ConditionalStatementBinder::EndVisit(Cm::Ast::ConditionalStatementNode& con
 {
     PopSkipContent();
     Cm::BoundTree::BoundExpression* condition = Pop();
+    Cm::Sym::TypeSymbol* condType = SymbolTable().GetTypeRepository().MakePlainType(condition->GetType());
+    if (!condType->IsBoolTypeSymbol())
+    {
+        throw Cm::Core::Exception("if statement condition must be Boolean expression (now of type '" + condType->FullName() + "')", conditionalStatementNode.Condition()->GetSpan());
+    }
     condition->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
     conditionalStatement->SetCondition(condition);
 }
@@ -255,6 +261,11 @@ void WhileStatementBinder::EndVisit(Cm::Ast::WhileStatementNode& whileStatementN
 {
     PopSkipContent();
     Cm::BoundTree::BoundExpression* condition = Pop();
+    Cm::Sym::TypeSymbol* condType = SymbolTable().GetTypeRepository().MakePlainType(condition->GetType());
+    if (!condType->IsBoolTypeSymbol())
+    {
+        throw Cm::Core::Exception("while statement condition must be Boolean expression (now of type '" + condType->FullName() + "')", whileStatementNode.Condition()->GetSpan());
+    }
     condition->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
     whileStatement->SetCondition(condition);
 }
@@ -270,6 +281,11 @@ void DoStatementBinder::EndVisit(Cm::Ast::DoStatementNode& doStatementNode)
 {
     PopSkipContent();
     Cm::BoundTree::BoundExpression* condition = Pop();
+    Cm::Sym::TypeSymbol* condType = SymbolTable().GetTypeRepository().MakePlainType(condition->GetType());
+    if (!condType->IsBoolTypeSymbol())
+    {
+        throw Cm::Core::Exception("do statement condition must be Boolean expression (now of type '" + condType->FullName() + "')", doStatementNode.Condition()->GetSpan());
+    }
     condition->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
     doStatement->SetCondition(condition);
 }
@@ -295,6 +311,11 @@ void ForStatementBinder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
         GenerateTrueExpression(&forStatementNode);
     }
     Cm::BoundTree::BoundExpression* condition = Pop();
+    Cm::Sym::TypeSymbol* condType = SymbolTable().GetTypeRepository().MakePlainType(condition->GetType());
+    if (!condType->IsBoolTypeSymbol())
+    {
+        throw Cm::Core::Exception("for statement condition must be Boolean expression (now of type '" + condType->FullName() + "')", forStatementNode.Condition()->GetSpan());
+    }
     condition->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
     forStatement->SetCondition(condition);
 }
@@ -305,15 +326,33 @@ SwitchStatementBinder::SwitchStatementBinder(Cm::BoundTree::BoundCompileUnit& bo
 {
 }
 
+void SwitchStatementBinder::BeginVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
+{
+    PushSkipContent();
+    Cm::Ast::Node* conditionNode = switchStatementNode.Condition();
+    conditionNode->Accept(*this);
+    Cm::BoundTree::BoundExpression* condition = Pop();
+    Cm::Sym::TypeSymbol* condType = SymbolTable().GetTypeRepository().MakePlainType(condition->GetType());
+    if (condType->IsIntegerTypeSymbol() || condType->IsCharTypeSymbol() || condType->IsBoolTypeSymbol() || condType->IsEnumTypeSymbol())
+    {
+        switchStatement->SetCondition(condition);
+    }
+    else
+    {
+        throw Cm::Core::Exception("switch statement condition must be of integer, character, enumerated or Boolean type", conditionNode->GetSpan());
+    }
+}
+
 void SwitchStatementBinder::EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
 {
-    // todo
+    PopSkipContent();
 }
 
 CaseStatementBinder::CaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
-    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundCaseStatement* caseStatement_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_),
-    caseStatement(caseStatement_)
+    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundCaseStatement* caseStatement_, Cm::BoundTree::BoundSwitchStatement* switchStatement_) : 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), caseStatement(caseStatement_), switchStatement(switchStatement_)
 {
+    PushSkipContent();
 }
 
 bool TerminatesCase(Cm::Ast::StatementNode* statementNode)
@@ -346,6 +385,20 @@ bool TerminatesCase(Cm::Ast::StatementNode* statementNode)
 
 void CaseStatementBinder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
 {
+    PopSkipContent();
+    for (const std::unique_ptr<Cm::Ast::Node>& expr : caseStatementNode.Expressions())
+    {
+        Cm::Sym::TypeSymbol* condType = switchStatement->Condition()->GetType();
+        if (condType->IsEnumTypeSymbol())
+        {
+            Cm::Sym::EnumTypeSymbol* enumTypeSymbol = static_cast<Cm::Sym::EnumTypeSymbol*>(condType);
+            condType = enumTypeSymbol->GetUnderlyingType();
+        }
+        Cm::Sym::SymbolType symbolType = condType->GetSymbolType();
+        Cm::Sym::ValueType valueType = Cm::Sym::GetValueTypeFor(symbolType);
+        Cm::Sym::Value* value = Evaluate(valueType, false, expr.get(), SymbolTable(), ContainerScope(), FileScope());
+        caseStatement->AddValue(value);
+    }
     for (const std::unique_ptr<Cm::Ast::StatementNode>& statement : caseStatementNode.Statements())
     {
         if (TerminatesCase(statement.get())) return;
@@ -408,5 +461,55 @@ void ContinueStatementBinder::Visit(Cm::Ast::ContinueStatementNode& continueStat
     SetResult(boundContinueStatement);
 }
 
+GotoCaseStatementBinder::GotoCaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
+    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundSwitchStatement* switchStatement_) :
+    StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), switchStatement(switchStatement_)
+{
+}
+
+void GotoCaseStatementBinder::EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode)
+{
+    Cm::Ast::Node* parent = gotoCaseStatementNode.Parent();
+    while (parent && !parent->IsCaseStatementNode() && !parent->IsDefaultStatementNode())
+    {
+        parent = parent->Parent();
+    }
+    if (!parent)
+    {
+        throw Cm::Core::Exception("goto case statement must be enclosed in case or default statement", gotoCaseStatementNode.GetSpan());
+    }
+    Cm::Sym::TypeSymbol* condType = switchStatement->Condition()->GetType();
+    if (condType->IsEnumTypeSymbol())
+    {
+        Cm::Sym::EnumTypeSymbol* enumTypeSymbol = static_cast<Cm::Sym::EnumTypeSymbol*>(condType);
+        condType = enumTypeSymbol->GetUnderlyingType();
+    }
+    Cm::Sym::SymbolType symbolType = condType->GetSymbolType();
+    Cm::Sym::ValueType valueType = Cm::Sym::GetValueTypeFor(symbolType);
+    Cm::Sym::Value* value = Evaluate(valueType, false, gotoCaseStatementNode.TargetCaseExpr(), SymbolTable(), ContainerScope(), FileScope());
+    Cm::BoundTree::BoundGotoCaseStatement* boundGotoCasetatement = new Cm::BoundTree::BoundGotoCaseStatement(&gotoCaseStatementNode);
+    boundGotoCasetatement->SetValue(value);
+    SetResult(boundGotoCasetatement);
+}
+
+GotoDefaultStatementBinder::GotoDefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+{
+}
+
+void GotoDefaultStatementBinder::Visit(Cm::Ast::GotoDefaultStatementNode& gotoDefaultStatementNode)
+{
+    Cm::Ast::Node* parent = gotoDefaultStatementNode.Parent();
+    while (parent && !parent->IsCaseStatementNode())
+    {
+        parent = parent->Parent();
+    }
+    if (!parent)
+    {
+        throw Cm::Core::Exception("goto default statement must be enclosed in case statement", gotoDefaultStatementNode.GetSpan());
+    }
+    Cm::BoundTree::BoundGotoDefaultStatement* boundGotoDefaultStatement = new Cm::BoundTree::BoundGotoDefaultStatement(&gotoDefaultStatementNode);
+    SetResult(boundGotoDefaultStatement);
+}
 
 } } // namespace Cm::Bind

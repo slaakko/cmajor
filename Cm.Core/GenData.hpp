@@ -86,6 +86,7 @@ public:
     const std::vector<Ir::Intf::Object*>& Objects() const { return objects; }
     void AddTrueTarget(Ir::Intf::LabelObject* trueTarget);
     void AddFalseTarget(Ir::Intf::LabelObject* falseTarget);
+    void AddNextTarget(Ir::Intf::LabelObject* nextTarget);
     void AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget);
     std::vector<Ir::Intf::LabelObject*>& NextTargets() { return nextTargets; }
     std::vector<Ir::Intf::LabelObject*>& TrueTargets() { return trueTargets; }
@@ -152,6 +153,7 @@ public:
     const std::vector<Ir::Intf::Object*>& Objects() const { return genData.Objects(); }
     void AddTrueTarget(Ir::Intf::LabelObject* trueTarget) { genData.AddTrueTarget(trueTarget); }
     void AddFalseTarget(Ir::Intf::LabelObject* falseTarget) { genData.AddFalseTarget(falseTarget); }
+    void AddNextTarget(Ir::Intf::LabelObject* nextTarget) { genData.AddNextTarget(nextTarget);  }
     void AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget) { genData.AddArgNextTarget(argNextTarget); }
     std::vector<Ir::Intf::LabelObject*>& NextTargets() { return genData.NextTargets(); }
     std::vector<Ir::Intf::LabelObject*>& TrueTargets() { return genData.TrueTargets(); }

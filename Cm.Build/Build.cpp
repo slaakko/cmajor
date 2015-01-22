@@ -15,6 +15,7 @@
 #include <Cm.Parser/Project.hpp>
 #include <Cm.Parser/CompileUnit.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
+#include <Cm.Parser/ToolError.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
@@ -152,10 +153,11 @@ void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit
 
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    Cm::Emit::EmittingVisitor emittingVisitor(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), 
-        boundCompileUnit.StringRepository());
+    Cm::Emit::EmittingVisitor emittingVisitor(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), boundCompileUnit.StringRepository());
     boundCompileUnit.Accept(emittingVisitor);
 }
+
+Cm::Parser::ToolErrorGrammar* toolErrorGrammar = nullptr;
 
 void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
@@ -163,7 +165,31 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
     std::string command = "llc";
     command.append(" -O=").append("0");
     command.append(" -filetype=obj").append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
-    Cm::Util::System(command, 2, llErrorFilePath);
+    try
+    {
+        Cm::Util::System(command, 2, llErrorFilePath);
+    }
+    catch (const std::exception& ex)
+    {
+        try
+        {
+            Cm::Util::MappedInputFile file(llErrorFilePath);
+            try
+            {
+                Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
+                throw Cm::Core::ToolErrorExcecption(toolError);
+            }
+            catch (const std::exception&)
+            {
+                std::string errorText(file.Begin(), file.End());
+                throw std::runtime_error(errorText);
+            }
+        }
+        catch (const std::exception&)
+        {
+            throw ex;
+        }
+    }
     boost::filesystem::remove(llErrorFilePath);
 }
 
@@ -267,6 +293,7 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::string& 
 void Build(const std::string& projectFilePath)
 {
     auto start = std::chrono::system_clock::now();
+    toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
     Cm::IrIntf::SetBackEnd(Cm::IrIntf::BackEnd::llvm);
     Cm::Util::MappedInputFile projectFile(projectFilePath);
     Cm::Parser::FileRegistry fileRegistry;
