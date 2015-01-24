@@ -28,6 +28,7 @@ public:
     TypeSymbol* GetUnderlyingType() const { return underlyingType; }
     void SetType(TypeSymbol* type, int index) override { SetUnderlyingType(type); }
     void SetUnderlyingType(TypeSymbol* underlyingType_);
+    void MakeIrType() override;
 private:
     TypeSymbol* underlyingType;
 };

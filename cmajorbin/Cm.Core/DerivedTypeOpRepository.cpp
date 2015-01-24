@@ -630,7 +630,13 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
             if (leftType->IsPointerType() && leftType->GetPointerCount() == 2 && leftType->GetBaseType()->IsVoidTypeSymbol()) // void* 
             {
                 Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
-                if (rightType->IsPointerType()) // conversion from pointer type to void*
+                Cm::Sym::TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                if (rightPlainType->GetBaseType()->IsVoidTypeSymbol())  // void* copy constructor
+                {
+                    DerivedTypeOpCache& cache = derivedTypeOpCacheMap[rightPlainType];
+                    viableFunctions.insert(cache.GetCopyCtor(typeRepository, rightPlainType));
+                }
+                else if (rightType->IsPointerType()) // conversion from pointer type to void*
                 {
                     DerivedTypeOpCache& cache = derivedTypeOpCacheMap[rightType];
                     Cm::Sym::FunctionSymbol* ptrToVoidPtrConversion = cache.GetPtrToVoidPtrConversion(typeRepository, rightType, conversionTable, span);

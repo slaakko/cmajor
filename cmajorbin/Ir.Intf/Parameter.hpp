@@ -18,6 +18,7 @@ class Parameter: public Object
 {
 public:
     Parameter(const std::string& name_, Type* type_);
+    bool IsParameter() const override { return true; }
 };
 
 } } // namespace Ir::Intf

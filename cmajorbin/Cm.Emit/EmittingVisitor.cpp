@@ -33,17 +33,27 @@ void EmittingVisitor::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     {
         externalFunction->WriteDeclaration(codeFormatter, false, false);
     }
+    staticMemberVariableRepository.Write(codeFormatter);
 }
 
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 {
     currentClass = &boundClass;
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol = boundClass.Symbol();
+    for (Cm::Sym::MemberVariableSymbol* staticMemberVarSymbol : classTypeSymbol->StaticMemberVariables())
+    {
+        staticMemberVariableRepository.Add(staticMemberVarSymbol);
+    }
+    if (classTypeSymbol->InitializedVar())
+    {
+        staticMemberVariableRepository.Add(classTypeSymbol->InitializedVar());
+    }
 }
 
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
-    FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions);
+    FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions, staticMemberVariableRepository);
     boundFunction.Accept(functionEmitter);
 }
 

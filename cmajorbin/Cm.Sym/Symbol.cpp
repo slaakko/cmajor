@@ -254,4 +254,8 @@ void Symbol::InitVirtualFunctionTables()
 {
 }
 
+void Symbol::MakeIrType()
+{
+}
+
 } } // namespace Cm::Sym

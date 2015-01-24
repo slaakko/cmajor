@@ -17,7 +17,7 @@ class Constant: public Object
 {
 public:
     Constant(const std::string& valueName_, Type* type_);
-    virtual bool IsConstant() const { return true; }
+    bool IsConstant() const override { return true; }
 };
 
 } } // namespace Ir::Intf

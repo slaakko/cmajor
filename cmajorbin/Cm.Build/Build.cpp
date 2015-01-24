@@ -106,18 +106,33 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
 {
     boost::filesystem::path projectBase = project->BasePath();
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
+    /*
+    if (project->Name() != "system" && project->Name() != "support" && project->Name() != "os")
+    {
+        referenceFilePaths.insert(referenceFilePaths.begin(), "system.cml");
+    }
+    */
+    if (project->Name() != "support" && project->Name() != "os")
+    {
+        referenceFilePaths.insert(referenceFilePaths.begin(), "support.cml");
+    }
     if (project->Name() != "os")
     {
-        referenceFilePaths.push_back("os.mc");
+        referenceFilePaths.insert(referenceFilePaths.begin(), "os.cml");
     }
+    std::unordered_set<std::string> importedModules;
     for (const std::string& referenceFilePath : referenceFilePaths)
     {
         std::string libraryReferencePath = ResolveLibraryReference(project->OutputBasePath(), "debug", libraryDirs, referenceFilePath);
-        Cm::Sym::Module module(libraryReferencePath);
-        module.ImportTo(symbolTable);
-        boost::filesystem::path afp = libraryReferencePath;
-        afp.replace_extension(".cma");
-        assemblyFilePaths.push_back(Cm::Util::GetFullPath(afp.generic_string()));
+        if (importedModules.find(libraryReferencePath) == importedModules.end())
+        {
+            importedModules.insert(libraryReferencePath);
+            Cm::Sym::Module module(libraryReferencePath);
+            module.ImportTo(symbolTable);
+            boost::filesystem::path afp = libraryReferencePath;
+            afp.replace_extension(".cma");
+            assemblyFilePaths.push_back(Cm::Util::GetFullPath(afp.generic_string()));
+        }
     }
 }
 
@@ -169,14 +184,42 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
     {
         Cm::Util::System(command, 2, llErrorFilePath);
     }
-    catch (const std::exception& ex)
+    catch (const std::exception&)
     {
+        Cm::Util::MappedInputFile file(llErrorFilePath);
         try
         {
-            Cm::Util::MappedInputFile file(llErrorFilePath);
+            Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
+            throw Cm::Core::ToolErrorExcecption(toolError);
+        }
+        catch (const std::exception&)
+        {
+            std::string errorText(file.Begin(), file.End());
+            throw std::runtime_error(errorText);
+        }
+    }
+    boost::filesystem::remove(llErrorFilePath);
+}
+
+void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
+{
+    for (const std::string& cSourceFilePath : project->CSourceFilePaths())
+    {
+        std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cSourceFilePath).filename().replace_extension(".o")).generic_string());
+        std::string ccCommand = "gcc";
+        ccCommand.append(" -pthread -c ").append(Cm::Util::QuotedPath(cSourceFilePath)).append(" -o ").append(Cm::Util::QuotedPath(objectFilePath));
+        objectFilePaths.push_back(objectFilePath);
+        std::string ccErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(objectFilePath).replace_extension(".c.error").generic_string());
+        try
+        {
+            Cm::Util::System(ccCommand, 2, ccErrorFilePath);
+        }
+        catch (const std::exception&)
+        {
+            Cm::Util::MappedInputFile file(ccErrorFilePath);
             try
             {
-                Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
+                Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, ccErrorFilePath);
                 throw Cm::Core::ToolErrorExcecption(toolError);
             }
             catch (const std::exception&)
@@ -185,12 +228,8 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
                 throw std::runtime_error(errorText);
             }
         }
-        catch (const std::exception&)
-        {
-            throw ex;
-        }
+        boost::filesystem::remove(ccErrorFilePath);
     }
-    boost::filesystem::remove(llErrorFilePath);
 }
 
 void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, std::vector<std::string>& objectFilePaths)
@@ -232,7 +271,24 @@ void Archive(const std::vector<std::string>& objectFilePaths, const std::string&
     {
         command.append(1, ' ').append(objectFilePath);
     }
-    Cm::Util::System(command, 2, arErrorFilePath);
+    try
+    {
+        Cm::Util::System(command, 2, arErrorFilePath);
+    }
+    catch (const std::exception&)
+    {
+        Cm::Util::MappedInputFile file(arErrorFilePath);
+        try
+        {
+            Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, arErrorFilePath);
+            throw Cm::Core::ToolErrorExcecption(toolError);
+        }
+        catch (const std::exception&)
+        {
+            std::string errorText(file.Begin(), file.End());
+            throw std::runtime_error(errorText);
+        }
+    }
     boost::filesystem::remove(arErrorFilePath);
 }
 
@@ -280,7 +336,24 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::string& 
         std::cout << ccCommand << std::endl;
     }
 */
-    Cm::Util::System(ccCommand, 2, exeErrorFilePath);
+    try
+    {
+        Cm::Util::System(ccCommand, 2, exeErrorFilePath);
+    }
+    catch (const std::exception&)
+    {
+        Cm::Util::MappedInputFile file(exeErrorFilePath);
+        try
+        {
+            Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, exeErrorFilePath);
+            throw Cm::Core::ToolErrorExcecption(toolError);
+        }
+        catch (const std::exception&)
+        {
+            std::string errorText(file.Begin(), file.End());
+            throw std::runtime_error(errorText);
+        }
+    }
     boost::filesystem::remove(exeErrorFilePath);
 /*
     if (genOutput)
@@ -312,6 +385,7 @@ void Build(const std::string& projectFilePath)
     boost::filesystem::create_directories(project->OutputBasePath());
     Cm::Sym::FunctionSymbol* userMainFunction = nullptr;
     std::vector<std::string> objectFilePaths;
+    CompileCFiles(project.get(), objectFilePaths);
     Compile(symbolTable, syntaxTree, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
@@ -324,8 +398,8 @@ void Build(const std::string& projectFilePath)
         Link(assemblyFilePaths, project->ExecutableFilePath());
     }
     boost::filesystem::path outputBasePath = project->OutputBasePath();
-    std::string mcFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".mc")).generic_string());
-    Cm::Sym::Module projectModule(mcFilePath);
+    std::string cmlFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".cml")).generic_string());
+    Cm::Sym::Module projectModule(cmlFilePath);
     projectModule.SetSourceFilePaths(project->SourceFilePaths());
     projectModule.Export(symbolTable);
     Cm::Parser::SetCurrentFileRegistry(nullptr);

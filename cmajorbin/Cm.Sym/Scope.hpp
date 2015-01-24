@@ -54,7 +54,6 @@ class ContainerScope : public Scope
 {
 public:
     ContainerScope();
-    ~ContainerScope();
     ContainerScope(ContainerScope&& that);
     ContainerScope* Base() const { return base; }
     void SetBase(ContainerScope* base_) { base = base_; }

@@ -19,7 +19,13 @@ class SymbolTable;
 class Writer;
 class Reader;
 
-class ModuleFileVersionMismatch : std::runtime_error
+class ModuleFileFormatError : public std::runtime_error
+{
+public:
+    ModuleFileFormatError(const std::string& filePath_);
+};
+
+class ModuleFileVersionMismatch : public std::runtime_error
 {
 public:
     ModuleFileVersionMismatch(const std::string& readVersion_, const std::string& expectedVersion_);

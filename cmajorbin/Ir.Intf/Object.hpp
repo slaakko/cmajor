@@ -57,6 +57,7 @@ public:
     virtual bool IsRegVar() const { return false; }
     virtual bool IsStackVar() const { return false; }
     virtual bool IsGlobal() const { return false; }
+    virtual bool IsParameter() const { return false; }
     bool Owned() const { return owned; }
     void SetOwned() { owned = true; }
 private:

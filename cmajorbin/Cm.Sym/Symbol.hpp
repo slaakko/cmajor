@@ -149,6 +149,7 @@ public:
     virtual void Dump(CodeFormatter& formatter);
     virtual void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes);
     virtual void InitVirtualFunctionTables();
+    virtual void MakeIrType();
 private:
     Span span;
     std::string name;

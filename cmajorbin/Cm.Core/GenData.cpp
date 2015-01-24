@@ -328,6 +328,12 @@ Ir::Intf::LabelObject* GenResult::GetLabel() const
     return nullptr;
 }
 
+void GenResult::SetLabel(Ir::Intf::LabelObject* label) 
+{ 
+    emitter->RemoveLabelRequestFor(genData);
+    genData.SetLabel(label); 
+}
+
 void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type)
 {
     if (type->IsRvalueRefType())

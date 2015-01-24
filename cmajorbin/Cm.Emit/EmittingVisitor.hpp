@@ -12,6 +12,7 @@
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
+#include <Cm.Core/StaticMemberVariableRepository.hpp>
 #include <fstream>
 
 namespace Cm { namespace Emit {
@@ -34,6 +35,7 @@ private:
     Cm::Util::CodeFormatter codeFormatter;
     Cm::BoundTree::BoundClass* currentClass;
     std::unordered_set<Ir::Intf::Function*> externalFunctions;
+    Cm::Core::StaticMemberVariableRepository staticMemberVariableRepository;
 };
 
 } } // namespace Cm::Emit

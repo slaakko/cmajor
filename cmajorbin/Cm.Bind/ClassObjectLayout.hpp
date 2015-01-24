@@ -28,6 +28,9 @@ void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit
 void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
     Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode);
 
+void GenerateStaticInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
+    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::StaticConstructorNode* staticConstructorNode);
+
 } } // namespace Cm::Bind
 
 #endif // CM_BIND_CLASS_OBJECT_LAYOUT_INCLUDED

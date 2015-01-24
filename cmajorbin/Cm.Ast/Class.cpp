@@ -333,7 +333,7 @@ StaticConstructorNode::StaticConstructorNode(const Span& span_) : FunctionNode(s
 {
 }
 
-StaticConstructorNode::StaticConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, "@static_ctor"))
+StaticConstructorNode::StaticConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, "@static_constructor"))
 {
 }
 
@@ -387,7 +387,7 @@ void StaticConstructorNode::Print(CodeFormatter& formatter)
     }
     else
     {
-        s.append("@static_ctor()");
+        s.append("@static_constructor()");
     }
     s.append(initializers.ToString());
     if (Constraint())

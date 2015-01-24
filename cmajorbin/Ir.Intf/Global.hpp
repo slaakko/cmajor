@@ -17,7 +17,7 @@ class Global: public Object
 {
 public:
     Global(const std::string& name_, Type* type_);
-    virtual bool IsGlobal() const { return true; }
+    bool IsGlobal() const override { return true; }
 };
 
 typedef Global* GlobalPtr;

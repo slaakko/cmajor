@@ -247,12 +247,17 @@ public:
     }
     FunctionSymbol* Destructor() const { return destructor; }
     void SetDestructor(FunctionSymbol* destructor_, bool own);
+    FunctionSymbol* StaticConstructor() const { return staticConstructor; }
+    void SetStaticConstructor(FunctionSymbol* staticConstructor_, bool own);
+    MemberVariableSymbol* InitializedVar() const { return initializedVar.get(); }
+    void SetInitializedVar(MemberVariableSymbol* initializedVar_);
     int16_t VPtrIndex() const { return vptrIndex; }
     void SetVPtrIndex(int16_t vptrIndex_) { vptrIndex = vptrIndex_; }
     ClassTypeSymbol* VPtrContainerClass() const;
     void InitVtbl();
     const std::vector<Cm::Sym::FunctionSymbol*>& Vtbl() const { return vtbl; }
     void InitVirtualFunctionTables() override;
+    void MakeIrType() override;
 private:
     ClassTypeSymbolFlags flags;
     ClassTypeSymbol* baseClass;
@@ -260,6 +265,9 @@ private:
     std::vector<MemberVariableSymbol*> staticMemberVariables;
     FunctionSymbol* destructor;
     std::unique_ptr<FunctionSymbol> ownedDestructorSymbol;
+    FunctionSymbol* staticConstructor;
+    std::unique_ptr<MemberVariableSymbol> initializedVar;
+    std::unique_ptr<FunctionSymbol> ownedStaticConstructor;
     int16_t vptrIndex;
     std::vector<Cm::Sym::FunctionSymbol*> vtbl;
     bool GetFlag(ClassTypeSymbolFlags flag) const

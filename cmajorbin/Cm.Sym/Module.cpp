@@ -18,8 +18,12 @@
 
 namespace Cm { namespace Sym {
 
+ModuleFileFormatError::ModuleFileFormatError(const std::string& filePath_) : std::runtime_error("library file '" + filePath_ + "' format changed, please rebuild associated project")
+{
+}
+
 ModuleFileVersionMismatch::ModuleFileVersionMismatch(const std::string& readVersion_, const std::string& expectedVersion_) : 
-    std::runtime_error("module code file version mismatch: " + readVersion_ + " read, " + expectedVersion_ + " expected."), readVersion(readVersion_), expectedVersion(expectedVersion_)
+    std::runtime_error("library file version mismatch: " + readVersion_ + " read, " + expectedVersion_ + " expected."), readVersion(readVersion_), expectedVersion(expectedVersion_)
 {
 }
 
@@ -72,11 +76,11 @@ void Module::CheckModuleFileId(Reader& reader)
     }
     catch (...)
     {
-        throw std::runtime_error("corrupted module code file '" + filePath + "'");
+        throw ModuleFileFormatError(filePath);
     }
     if (readModuleFileId[0] != moduleFileId[0] || readModuleFileId[1] != moduleFileId[1])
     {
-        throw std::runtime_error("corrupted module code file '" + filePath + "'");
+        throw ModuleFileFormatError(filePath);
     }
     if (readModuleFileId[2] != moduleFileId[2] || readModuleFileId[3] != moduleFileId[3])
     {

@@ -15,11 +15,12 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), 
-    destructor(nullptr)
+    destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
 {
 }
 
@@ -71,6 +72,20 @@ void ClassTypeSymbol::SetDestructor(FunctionSymbol* destructor_, bool own)
     {
         ownedDestructorSymbol.reset(destructor);
     }
+}
+
+void ClassTypeSymbol::SetStaticConstructor(FunctionSymbol* staticConstructor_, bool own)
+{
+    staticConstructor = staticConstructor_;
+    if (own)
+    {
+        ownedStaticConstructor.reset(staticConstructor);
+    }
+}
+
+void ClassTypeSymbol::SetInitializedVar(MemberVariableSymbol* initializedVar_)
+{
+    initializedVar.reset(initializedVar_);
 }
 
 bool ClassTypeSymbol::HasNonTrivialMemberDestructor() const
@@ -237,6 +252,11 @@ void ClassTypeSymbol::AddSymbol(Symbol* symbol)
             destructor = functionSymbol;
         }
     }
+}
+
+void ClassTypeSymbol::MakeIrType()
+{
+    SetIrType(Cm::IrIntf::CreateClassTypeName(FullName()));
 }
 
 } } // namespace Cm::Sym

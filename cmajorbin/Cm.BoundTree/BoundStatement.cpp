@@ -120,7 +120,10 @@ void BoundReturnStatement::SetExpression(BoundExpression* expression_)
 
 void BoundReturnStatement::Accept(Visitor& visitor)
 {
-    expression->Accept(visitor);
+    if (expression)
+    {
+        expression->Accept(visitor);
+    }
     visitor.Visit(*this);
 }
 

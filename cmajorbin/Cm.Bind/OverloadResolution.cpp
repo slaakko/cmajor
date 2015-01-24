@@ -480,12 +480,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundC
             const FunctionMatch& bestMatch = functionMatches[0];
             conversions = bestMatch.conversions;
             Cm::Sym::FunctionSymbol* function = bestMatch.function;
-            if (exception)
-            {
-                Cm::Core::Exception copyOfEx = *exception;
-                throw copyOfEx;
-            }
-            else if (function->IsSuppressed())
+            if (function->IsSuppressed())
             {
                 throw Cm::Core::Exception("cannot call suppressed member function", span, function->GetSpan());
             }

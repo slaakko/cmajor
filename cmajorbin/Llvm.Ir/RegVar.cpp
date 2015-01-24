@@ -126,7 +126,9 @@ void RegVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf
 
 void RegVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf::Parameter& parameter)
 {
-    throw std::runtime_error("cannot init register variable from parameter");
+    PointerType* ptrType = MakePointerType(type);
+    emitter.Own(ptrType);
+    emitter.Emit(Load(ptrType, this, &parameter));
 }
 
 void RegVar::AssignTo(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf::Object* to)
@@ -215,7 +217,9 @@ void RegVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
 
 void RegVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf::Parameter& parameter)
 {
-    throw std::runtime_error("cannot assign register variable from parameter");
+    PointerType* ptrType = MakePointerType(type);
+    emitter.Own(ptrType);
+    emitter.Emit(Load(ptrType, this, &parameter));
 }
 
 Ir::Intf::Object* RegVar::CreateAddr(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type)

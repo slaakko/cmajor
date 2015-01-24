@@ -174,7 +174,7 @@ public:
     GenData& GetChild(int index);
     void Merge(GenResult& child);
     Ir::Intf::LabelObject* GetLabel() const;
-    void SetLabel(Ir::Intf::LabelObject* label) { genData.SetLabel(label); }
+    void SetLabel(Ir::Intf::LabelObject* label);
 private:
     Emitter* emitter;
     GenFlags flags;
