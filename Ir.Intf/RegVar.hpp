@@ -17,7 +17,7 @@ class RegVar: public Object
 {
 public:
     RegVar(const std::string& name_, Type* type_);
-    virtual bool IsRegVar() const { return true; }
+    bool IsRegVar() const override { return true; }
 };
 
 } } // namespace Ir::Intf

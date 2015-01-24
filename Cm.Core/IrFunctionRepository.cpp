@@ -10,6 +10,7 @@
 #include <Cm.Core/IrFunctionRepository.hpp>
 #include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/Namespace.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -40,43 +41,55 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     {
         return i->second;
     }
-    Cm::Sym::TypeSymbol* returnType = function->GetReturnType();
-    Ir::Intf::Type* irReturnType = returnType ? returnType->GetIrType() : nullptr;
-    if (!irReturnType)
+    std::string functionName;
+    std::string functionGroupName;
+    Ir::Intf::Type* irReturnType = nullptr;
+    std::vector<Ir::Intf::Parameter*> irParameters;
+    std::vector<Ir::Intf::Type*> irParameterTypes;
+    if (function->IsStaticConstructor())
     {
+        functionName = "__sc_" + function->Class()->GetMangleId();
         irReturnType = Cm::IrIntf::Void();
         Own(irReturnType);
     }
-    std::vector<Ir::Intf::Parameter*> irParameters;
-    std::vector<Ir::Intf::Type*> irParameterTypes;
-    for (Cm::Sym::ParameterSymbol* parameter : function->Parameters())
+    else
     {
-        Ir::Intf::Parameter* irParameter = CreateIrParameter(parameter);
-        Own(irParameter);
-        irParameters.push_back(irParameter);
-        irParameterTypes.push_back(irParameter->GetType()->Clone());
+        Cm::Sym::TypeSymbol* returnType = function->GetReturnType();
+        irReturnType = returnType ? returnType->GetIrType() : nullptr;
+        if (!irReturnType)
+        {
+            irReturnType = Cm::IrIntf::Void();
+            Own(irReturnType);
+        }
+        for (Cm::Sym::ParameterSymbol* parameter : function->Parameters())
+        {
+            Ir::Intf::Parameter* irParameter = CreateIrParameter(parameter);
+            Own(irParameter);
+            irParameters.push_back(irParameter);
+            irParameterTypes.push_back(irParameter->GetType()->Clone());
+        }
+        functionGroupName = function->GroupName();
+        if (functionGroupName.empty())
+        {
+            functionGroupName = "main";
+        }
+        else if (functionGroupName == "main")
+        {
+            functionGroupName = "user" + Cm::IrIntf::GetPrivateSeparator() + "main";
+        }
+        functionName = functionGroupName;
     }
-    std::string functionGroupName = function->GroupName();
-    if (functionGroupName.empty())
-    {
-        functionGroupName = "main";
-    }
-    else if (functionGroupName == "main")
-    {
-        functionGroupName = "user" + Cm::IrIntf::GetPrivateSeparator() + "main";
-    }
-    std::string functionName = functionGroupName;
-    if (!function->IsCDecl())
+    if (!function->IsCDecl() && !function->IsStaticConstructor())
     {
         functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, std::vector<Cm::Sym::TypeSymbol*>(), function->Parameters());
     }
     Ir::Intf::Function* irFunction = Cm::IrIntf::CreateFunction(functionName, irReturnType, irParameters);
-    Ir::Intf::Type* irFunPtrType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(irReturnType->Clone(), irParameterTypes), 1);
     ownedIrFunctions.push_back(std::unique_ptr<Ir::Intf::Function>(irFunction));
+    Ir::Intf::Type* irFunPtrType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(irReturnType->Clone(), irParameterTypes), 1);
     ownedIrTypes.push_back(std::unique_ptr<Ir::Intf::Type>(irFunPtrType));
     irFunPtrType->SetOwned();
-    irFunctionMap[function] = irFunction;
     irFunPtrMap[function] = irFunPtrType;
+    irFunctionMap[function] = irFunction;
     return irFunction;
 }
 

@@ -42,6 +42,12 @@ void EnumTypeSymbol::SetUnderlyingType(TypeSymbol* underlyingType_)
     underlyingType = underlyingType_;
 }
 
+void EnumTypeSymbol::MakeIrType()
+{
+    SetIrType(GetUnderlyingType()->GetIrType()->Clone());
+    SetDefaultIrValue(GetUnderlyingType()->GetIrType()->CreateDefaultValue());
+}
+
 EnumConstantSymbol::EnumConstantSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), evaluating(false)
 {
 }

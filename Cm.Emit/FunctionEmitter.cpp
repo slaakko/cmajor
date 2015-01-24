@@ -99,17 +99,19 @@ Ir::Intf::Object* IrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::
 
 FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
-    std::unordered_set<Ir::Intf::Function*>& externalFunctions_) :
+    std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_) :
     Cm::BoundTree::Visitor(true), codeFormatter(codeFormatter_), emitter(nullptr), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_), 
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(nullptr), 
-    currentClass(currentClass_), thisParam(nullptr), externalFunctions(externalFunctions_), executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr),
-    currentSwitchEmitState(SwitchEmitState::none), currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr)
+    currentClass(currentClass_), currentFunction(nullptr), thisParam(nullptr), externalFunctions(externalFunctions_), staticMemberVariableRepository(staticMemberVariableRepository_), 
+    executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), currentSwitchCaseConstantMap(nullptr), 
+    switchCaseLabel(nullptr)
 {
 }
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
-    Cm::Sym::FunctionSymbol* currentFunction = boundFunction.GetFunctionSymbol();
+    Cm::IrIntf::ResetLocalLabelCounter();
+    currentFunction = boundFunction.GetFunctionSymbol();
     currentCompileUnit = currentFunction->CompileUnit();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction);
     emitter.reset(new Cm::Core::Emitter(irFunction));
@@ -159,6 +161,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
     bool weakOdr = functionSymbol->IsReplicated();
     bool inline_ = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::optimize) && functionSymbol->IsInline();
     irFunction->WriteDefinition(codeFormatter, weakOdr, inline_);
+    currentFunction = nullptr;
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLiteral& boundLiteral)
@@ -271,42 +274,50 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundParameter& boundParameter)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    Cm::BoundTree::BoundExpression* classObject = boundMemberVariable.GetClassObject();
-    if (classObject)
+    if (boundMemberVariable.Symbol()->IsStatic())
     {
-        classObject->Accept(*this);
+        Ir::Intf::Object* irObject = staticMemberVariableRepository.GetStaticMemberVariableIrObject(boundMemberVariable.Symbol());
+        result.SetMainObject(irObject);
     }
     else
     {
-        if (currentClass)
+        Cm::BoundTree::BoundExpression* classObject = boundMemberVariable.GetClassObject();
+        if (classObject)
         {
-            Cm::Sym::ClassTypeSymbol* classType = currentClass->Symbol();
-            std::unique_ptr<Cm::BoundTree::BoundParameter> boundParameter(new Cm::BoundTree::BoundParameter(nullptr, thisParam));
-            boundParameter->Accept(*this);
+            classObject->Accept(*this);
         }
         else
         {
-            throw Cm::Core::Exception("cannot use member variables in non-class context", boundMemberVariable.Symbol()->GetSpan());
+            if (currentClass)
+            {
+                Cm::Sym::ClassTypeSymbol* classType = currentClass->Symbol();
+                std::unique_ptr<Cm::BoundTree::BoundParameter> boundParameter(new Cm::BoundTree::BoundParameter(nullptr, thisParam));
+                boundParameter->Accept(*this);
+            }
+            else
+            {
+                throw Cm::Core::Exception("cannot use member variables in non-class context", boundMemberVariable.Symbol()->GetSpan());
+            }
         }
-    }
-    Cm::Core::GenResult ptrResult = resultStack.Pop();
-    Cm::Sym::TypeSymbol* type = boundMemberVariable.Symbol()->GetType();
-    Ir::Intf::Object* memberVariableIrObject = irObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult.MainObject());
-    if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
-    {
-        result.SetMainObject(memberVariableIrObject->CreateAddr(*emitter, type->GetIrType()));
-    }
-    else
-    {
-        result.SetMainObject(type);
-        result.AddObject(memberVariableIrObject);
-        Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
+        Cm::Core::GenResult ptrResult = resultStack.Pop();
+        Cm::Sym::TypeSymbol* type = boundMemberVariable.Symbol()->GetType();
+        Ir::Intf::Object* memberVariableIrObject = irObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult.MainObject());
+        if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
+        {
+            result.SetMainObject(memberVariableIrObject->CreateAddr(*emitter, type->GetIrType()));
+        }
+        else
+        {
+            result.SetMainObject(type);
+            result.AddObject(memberVariableIrObject);
+            Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
+        }
+        result.Merge(ptrResult);
     }
     if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
     {
         MakePlainValueResult(typeRepository.MakePlainType(boundMemberVariable.GetType()), result);
     }
-    result.Merge(ptrResult);
     if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         GenJumpingBoolCode(result);
@@ -563,7 +574,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixI
     Cm::Core::GenResult result(emitter.get(), genFlags);
     boundPostfixIncDecExpr.Value()->Accept(*this);
     Cm::Core::GenResult valueResult = resultStack.Pop();
-    Ir::Intf::LabelObject* resultLabel = valueResult.GetLabel();;
+    Ir::Intf::LabelObject* resultLabel = valueResult.GetLabel();
     result.Merge(valueResult);
     if (resultLabel)
     {

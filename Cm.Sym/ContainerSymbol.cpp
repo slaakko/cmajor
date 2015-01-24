@@ -15,6 +15,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Exception.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -50,6 +51,7 @@ void ContainerSymbol::Read(Reader& reader)
     {
         Symbol* symbol = reader.ReadSymbol();
         AddSymbol(symbol);
+        symbol->MakeIrType();
     }
 }
 

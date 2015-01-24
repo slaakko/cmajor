@@ -94,7 +94,7 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::Bound
             }
             else
             {
-                if (argument->GetType()->IsReferenceType())
+                if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType())
                 {
                     argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
                 }
@@ -1313,7 +1313,7 @@ void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + identifierNode.Str() + "' not found");
+        throw Cm::Core::Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
 }
 

@@ -179,6 +179,10 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
 void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, FunctionSymbolFlags flags)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
+    if ((functionNode->GetSpecifiers() & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
+    {
+        functionSymbol->SetStatic();
+    }
     functionSymbol->SetFlags(flags);
     functionSymbol->SetCompileUnit(functionNode->GetCompileUnit());
     functionSymbolMap[functionNode] = functionSymbol;

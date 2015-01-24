@@ -30,6 +30,7 @@
     <ClInclude Include="InitSymbolTable.hpp" />
     <ClInclude Include="IrClassTypeRepository.hpp" />
     <ClInclude Include="IrFunctionRepository.hpp" />
+    <ClInclude Include="StaticMemberVariableRepository.hpp" />
     <ClInclude Include="StringRepository.hpp" />
     <ClInclude Include="SynthesizedClassFunRepository.hpp" />
   </ItemGroup>
@@ -45,6 +46,7 @@
     <ClCompile Include="InitSymbolTable.cpp" />
     <ClCompile Include="IrClassTypeRepository.cpp" />
     <ClCompile Include="IrFunctionRepository.cpp" />
+    <ClCompile Include="StaticMemberVariableRepository.cpp" />
     <ClCompile Include="StringRepository.cpp" />
     <ClCompile Include="SynthesizedClassFunRepository.cpp" />
   </ItemGroup>

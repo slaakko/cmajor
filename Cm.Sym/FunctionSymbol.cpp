@@ -100,7 +100,7 @@ bool FunctionSymbol::IsMoveConstructor() const
 
 bool FunctionSymbol::IsStaticConstructor() const
 {
-    if (groupName == "@constructor" && IsStatic() && parameters.empty())
+    if (groupName == "@static_constructor" && IsStatic() && parameters.empty())
     {
         return true;
     }

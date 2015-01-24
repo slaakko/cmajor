@@ -17,7 +17,7 @@ class StackVar: public Object
 {
 public:
     StackVar(const std::string& name_, Type* type_);
-    virtual bool IsStackVar() const { return true; }
+    bool IsStackVar() const override { return true; }
     virtual void SetTemporary() {}
 };
 

@@ -36,6 +36,8 @@ public:
     void EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode) override;
     void BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode) override;
     void EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode) override;
+    void BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode) override;
+    void EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode) override;
 
     void BeginVisit(Cm::Ast::FunctionNode& functionNode) override;
     void EndVisit(Cm::Ast::FunctionNode& functionNode) override;

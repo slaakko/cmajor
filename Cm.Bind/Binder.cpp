@@ -194,6 +194,20 @@ void Binder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
     EndContainerScope();
 }
 
+void Binder::BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
+{
+    Cm::Sym::FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&staticConstructorNode);
+    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&staticConstructorNode));
+    boundFunction.reset(new Cm::BoundTree::BoundFunction(&staticConstructorNode, functionSymbol));
+}
+
+void Binder::EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
+{
+    GenerateStaticInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), boundClass->Symbol(), &staticConstructorNode);
+    boundClass->AddBoundNode(boundFunction.release());
+    EndContainerScope();
+}
+
 void Binder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 {
     if (functionNode.TemplateParameters().Count() > 0)
@@ -574,6 +588,10 @@ void Binder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNod
 
 void Binder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
+    if (boundFunction->GetFunctionSymbol()->FullName().find("ToLower") != std::string::npos)
+    {
+        int x = 0;
+    }
     ConstructionStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     constructionStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());

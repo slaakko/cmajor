@@ -184,7 +184,7 @@ void DerivedTypeSymbol::Read(Reader& reader)
 void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
 {
     baseType = type;
-    SetIrType(MakeIrType(baseType, derivations, Cm::Parsing::Span()));
+    SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
 }
 
 void DerivedTypeSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)

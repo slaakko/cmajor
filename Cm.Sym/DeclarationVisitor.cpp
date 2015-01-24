@@ -50,7 +50,6 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
     thisParam->SetType(thisParamType);
     thisParam->SetBound();
     symbolTable.AddParameter(thisParam);
-    ++parameterIndex;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::ConstructorNode& constructornNode)
@@ -67,7 +66,6 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
     thisParam->SetType(thisParamType);
     thisParam->SetBound();
     symbolTable.AddParameter(thisParam);
-    ++parameterIndex;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
@@ -92,7 +90,6 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionN
     }
     thisParam->SetBound();
     symbolTable.AddParameter(thisParam);
-    ++parameterIndex;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode) 
@@ -117,10 +114,19 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionF
     }
     thisParam->SetBound();
     symbolTable.AddParameter(thisParam);
-    ++parameterIndex;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
+{
+    symbolTable.EndFunctionScope();
+}
+
+void DeclarationVisitor::BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
+{
+    symbolTable.BeginFunctionScope(&staticConstructorNode, FunctionSymbolFlags::constructorOrDestructorSymbol | FunctionSymbolFlags::memberFunctionSymbol);
+}
+
+void DeclarationVisitor::EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
 {
     symbolTable.EndFunctionScope();
 }

@@ -12,6 +12,7 @@
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Core/GenData.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
+#include <Cm.Core/StaticMemberVariableRepository.hpp>
 #include <Cm.Core/IrClassTypeRepository.hpp>
 #include <Cm.Core/StringRepository.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
@@ -50,7 +51,7 @@ class FunctionEmitter : public Cm::BoundTree::Visitor
 public:
     FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
         Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
-        std::unordered_set<Ir::Intf::Function*>& externalFunctions_);
+        std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
@@ -112,8 +113,10 @@ private:
     Cm::Core::StringRepository& stringRepository;
     LocalVariableIrObjectRepository localVariableIrObjectRepository;
     IrObjectRepository irObjectRepository;
+    Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository;
     Cm::Ast::CompileUnitNode* currentCompileUnit;
     Cm::BoundTree::BoundClass* currentClass;
+    Cm::Sym::FunctionSymbol* currentFunction;
     Cm::Sym::ParameterSymbol* thisParam;
     std::unordered_set<Ir::Intf::Function*>& externalFunctions;
     std::vector<std::unique_ptr<Cm::BoundTree::BoundStatement>> postfixIncDecStatements;

@@ -184,7 +184,6 @@ TypeSymbol* TypeRepository::MakeRvalueRefType(TypeSymbol* baseType, const Span& 
 {
     if (baseType->IsRvalueRefType())
     {
-        int x = 0;
         return baseType;
     }
     if (baseType->IsDerivedTypeSymbol())

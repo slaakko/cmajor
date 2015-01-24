@@ -463,6 +463,7 @@ void OpUnaryMinus::Generate(Emitter& emitter, GenResult& result)
 {
     Ir::Intf::Object* arg1 = result.Arg1();
     Ir::Intf::Type* ptrType = Cm::IrIntf::Pointer(GetIrType(), GetIrType()->NumPointers() + 1);
+    emitter.Own(ptrType);
     if (Cm::IrIntf::TypesEqual(arg1->GetType(), ptrType))
     {
         arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType());
