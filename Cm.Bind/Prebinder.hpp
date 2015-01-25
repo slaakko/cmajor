@@ -38,6 +38,8 @@ public:
     void EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode) override;
     void BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode) override;
     void EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode) override;
+    void BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode) override;
+    void EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode) override;
     void Visit(Cm::Ast::MemberVariableNode& memberVariableNode) override;
     void BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;

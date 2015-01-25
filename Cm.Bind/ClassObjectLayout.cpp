@@ -184,6 +184,15 @@ void GenerateClassInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUni
     Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode, bool& callToThisInitializerGenerated)
 {
     callToThisInitializerGenerated = false;
+    if (classType->StaticConstructor())
+    {
+        Cm::BoundTree::BoundExpressionList arguments;
+        Cm::BoundTree::BoundFunctionCallStatement* staticConstructorCallStatement = new Cm::BoundTree::BoundFunctionCallStatement(classType->StaticConstructor(), std::move(arguments));
+        int classObjectLayoutFunIndex = currentFunction->GetClassObjectLayoutFunIndex();
+        currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, staticConstructorCallStatement);
+        ++classObjectLayoutFunIndex;
+        currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
+    }
     ClassInitializerHandler classInitializerHandler(boundCompileUnit, containerScope, fileScope, currentFunction, classType);
     const Cm::Ast::InitializerNodeList& initializers = constructorNode->Initializers();
     for (const std::unique_ptr<Cm::Ast::InitializerNode>& initializerNode : initializers)

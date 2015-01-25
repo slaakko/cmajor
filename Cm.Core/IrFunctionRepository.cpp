@@ -54,8 +54,15 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     }
     else
     {
-        Cm::Sym::TypeSymbol* returnType = function->GetReturnType();
-        irReturnType = returnType ? returnType->GetIrType() : nullptr;
+        bool returnsClassObjectByValue = function->ReturnsClassObjectByValue();
+        if (!returnsClassObjectByValue)
+        {
+            Cm::Sym::TypeSymbol* returnType = function->GetReturnType();
+            if (returnType)
+            {
+                irReturnType = returnType->GetIrType();
+            }
+        }
         if (!irReturnType)
         {
             irReturnType = Cm::IrIntf::Void();
@@ -67,6 +74,16 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
             Own(irParameter);
             irParameters.push_back(irParameter);
             irParameterTypes.push_back(irParameter->GetType()->Clone());
+        }
+        if (returnsClassObjectByValue)
+        {
+            Ir::Intf::Type* classObjectResultParamType = Cm::IrIntf::Pointer(function->GetReturnType()->GetIrType(), 1);
+            Own(classObjectResultParamType);
+            Ir::Intf::Parameter* irClassObjectParameter = Cm::IrIntf::CreateParameter(Cm::IrIntf::GetClassObjectResultParamName(), classObjectResultParamType);
+            Own(irClassObjectParameter);
+            irParameters.push_back(irClassObjectParameter);
+            irParameterTypes.push_back(classObjectResultParamType->Clone());
+            function->SetClassObjectResultIrParam(irClassObjectParameter);
         }
         functionGroupName = function->GroupName();
         if (functionGroupName.empty())

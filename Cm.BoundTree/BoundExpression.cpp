@@ -202,7 +202,8 @@ void BoundFunctionGroup::Accept(Visitor& visitor)
     throw std::runtime_error("member function not applicable");
 }
 
-BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_)), fun(nullptr)
+BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_)), fun(nullptr), 
+    classObjectResultVar(nullptr)
 {
 }
 

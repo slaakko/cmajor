@@ -86,6 +86,13 @@ void Binder::EndVisit(Cm::Ast::ClassNode& classNode)
                 GenerateDestructorImplementation(classNode.GetSpan(), classTypeSymbol, boundCompileUnit);
             }
         }
+        if (!classTypeSymbol->HasUserDefinedStaticConstructor())
+        {
+            if (classTypeSymbol->StaticConstructor())
+            {
+                GenerateStaticConstructorImplementation(boundClass.get(), currentContainerScope, classNode.GetSpan(), classTypeSymbol, boundCompileUnit);
+            }
+        }
         boundCompileUnit.AddBoundNode(boundClass.release());
     }
 }

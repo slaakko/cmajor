@@ -104,7 +104,7 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(nullptr), 
     currentClass(currentClass_), currentFunction(nullptr), thisParam(nullptr), externalFunctions(externalFunctions_), staticMemberVariableRepository(staticMemberVariableRepository_), 
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), currentSwitchCaseConstantMap(nullptr), 
-    switchCaseLabel(nullptr)
+    switchCaseLabel(nullptr), firstStatementInCompound(false)
 {
 }
 
@@ -144,7 +144,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
         Ir::Intf::LabelObject* retLabel = Cm::IrIntf::CreateNextLocalLabel();
         emitter->Own(retLabel);
         emitter->AddNextInstructionLabel(retLabel);
-        if (!returnType || returnType->IsVoidTypeSymbol())
+        if (!returnType || returnType->IsVoidTypeSymbol() || boundFunction.GetFunctionSymbol()->ReturnsClassObjectByValue())
         {
             emitter->Emit(Cm::IrIntf::Ret());
         }
@@ -249,7 +249,13 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundParameter& boundParameter)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Sym::TypeSymbol* type = boundParameter.Symbol()->GetType();
-    if (boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
+    bool typeIsReferenceType = type->IsReferenceType() || type->IsRvalueRefType();
+    bool byRef = boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+    if ((boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue)) && typeIsReferenceType)
+    {
+        byRef = false; // already reference type
+    }
+    if (byRef)
     {
         result.SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundParameter.Symbol()));
     }
@@ -437,8 +443,17 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
+    if (currentFunction->Name() == "@constructor(char)")
+    {
+        int x = 0;
+    }
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    if (!functionCall.GetFunction()->IsBasicTypeOp() && !functionCall.GetFunction()->IsConstructorOrDestructorSymbol())
+    bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();
+    if (functionReturnsClassObjectByValue)
+    {
+        result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+    }
+    else if (!functionCall.GetFunction()->IsBasicTypeOp() && !functionCall.GetFunction()->IsConstructorOrDestructorSymbol())
     {
         result.SetMainObject(functionCall.GetType());
     }
@@ -446,10 +461,29 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
     {
         result.SetGenJumpingBoolCode();
     }
+    Ir::Intf::LabelObject* resultLabel = nullptr;
     for (std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : functionCall.Arguments())
     {
         argument->Accept(*this);
         Cm::Core::GenResult argResult = resultStack.Pop();
+        if (!resultLabel)
+        {
+            resultLabel = argResult.GetLabel();
+        }
+        result.Merge(argResult);
+    }
+    Ir::Intf::Object* classObjectResultValue = nullptr;
+    if (functionReturnsClassObjectByValue)
+    {
+        Cm::BoundTree::BoundLocalVariable classObjectResultVar(functionCall.SyntaxNode(), functionCall.GetClassObjectResultVar());
+        classObjectResultVar.SetType(classObjectResultVar.Symbol()->GetType());
+        classObjectResultVar.Accept(*this);
+        Cm::Core::GenResult argResult = resultStack.Pop();
+        if (!resultLabel)
+        {
+            resultLabel = argResult.GetLabel();;
+        }
+        classObjectResultValue = argResult.MainObject();
         result.Merge(argResult);
     }
     Cm::Sym::FunctionSymbol* fun = functionCall.GetFunction();
@@ -461,6 +495,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
     if (functionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
     {
         MakePlainValueResult(typeRepository.MakePlainType(functionCall.GetType()), result);
+    }
+    if (functionReturnsClassObjectByValue)
+    {
+        result.SetMainObject(classObjectResultValue);
+    }
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
     }
     resultStack.Push(std::move(result));
 }
@@ -597,21 +639,32 @@ void FunctionEmitter::EndVisitStatement(Cm::BoundTree::BoundStatement& statement
         compoundResult.BackpatchNextTargets(statementResult.GetLabel());
     }
     compoundResult.Merge(statementResult);
+    if (firstStatementInCompound)
+    {
+        if (statementResult.GetLabel())
+        {
+            compoundResult.SetLabel(statementResult.GetLabel());
+            firstStatementInCompound = false;
+        }
+    }
 }
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
 {
+    compoundResultStack.Push(std::move(compoundResult));
     compoundResult = Cm::Core::GenResult(emitter.get(), Cm::Core::GenFlags::none);
     if (boundCompoundStatement.IsEmpty())
     {
         compoundResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
         GenerateCall(irFunctionRepository.GetDoNothingFunction(), compoundResult, false);
     }
+    firstStatementInCompound = true;
 }
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
 {
     resultStack.Push(std::move(compoundResult));
+    compoundResult = std::move(compoundResultStack.Pop());
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveStatement)
@@ -740,7 +793,15 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
     if (boundReturnStatement.ReturnsValue())
     {
         Cm::Sym::FunctionSymbol* ctor = boundReturnStatement.Constructor();
-        result.SetMainObject(boundReturnStatement.GetReturnType());
+        bool returnsClassObjectByValue = currentFunction->ReturnsClassObjectByValue();
+        if (returnsClassObjectByValue)
+        {
+            result.SetMainObject(currentFunction->ClassObjectResultIrParam());
+        }
+        else
+        {
+            result.SetMainObject(boundReturnStatement.GetReturnType());
+        }
         Cm::Core::GenResult retValResult = resultStack.Pop();
         Ir::Intf::LabelObject* resultLabel = retValResult.GetLabel();
         result.Merge(retValResult);
@@ -750,7 +811,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
         GenerateCall(ctor, result);
         result.BackpatchArgNextTargets(exprNext);
         ExecutePostfixIncDecStatements(result);
-        emitter->Emit(Cm::IrIntf::Ret(result.MainObject()));
+        if (returnsClassObjectByValue)
+        {
+            emitter->Emit(Cm::IrIntf::Ret());
+        }
+        else
+        {
+            emitter->Emit(Cm::IrIntf::Ret(result.MainObject()));
+        }
         if (resultLabel)
         {
             result.SetLabel(resultLabel);
@@ -877,6 +945,10 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     thenS->Accept(*this);
     Cm::Core::GenResult thenResult = resultStack.Pop();
     conditionResult.BackpatchTrueTargets(thenResult.GetLabel());
+    Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+    emitter->Own(next);
+    result.AddNextTarget(next);
+    emitter->Emit(Cm::IrIntf::Br(next));
     result.Merge(thenResult);
     Cm::BoundTree::BoundStatement* elseS = boundConditionalStatement.ElseS();
     if (elseS)

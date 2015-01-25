@@ -34,6 +34,7 @@ public:
     virtual bool IsBoundUnaryOp() const { return false; }
     virtual bool IsBoundPostfixIncDecExpr() const { return false; }
     virtual bool IsBoundTypeExpression() const { return false; }
+    virtual bool IsBoundLocalVariable() const { return false; }
     virtual bool IsCast() const { return false; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
@@ -111,6 +112,7 @@ public:
     Cm::Sym::LocalVariableSymbol* Symbol() const { return symbol; }
     Cm::Core::ArgumentCategory GetArgumentCategory() const override { return Cm::Core::ArgumentCategory::lvalue; }
     void Accept(Visitor& visitor) override;
+    bool IsBoundLocalVariable() const override { return true; }
 private:
     Cm::Sym::LocalVariableSymbol* symbol;
 };
@@ -250,9 +252,12 @@ public:
     Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
     void Accept(Visitor& visitor) override;
     BoundExpressionList& Arguments() { return arguments; }
+    void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
+    Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
 private:
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* fun;
+    Cm::Sym::LocalVariableSymbol* classObjectResultVar;
 };
 
 class BoundBooleanBinaryExpression : public BoundExpression

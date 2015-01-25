@@ -180,7 +180,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                         }
                     }
                 }
-                if (returnValue->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
+                if (returnValue->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary) || returnValue->IsBoundLocalVariable())
                 {
                     Cm::Core::Argument& sourceArgument = resolutionArguments.front();
                     sourceArgument.SetBindToRvalueRef();

@@ -149,6 +149,19 @@ void Prebinder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode
     EndContainerScope();
 }
 
+void Prebinder::BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
+{
+    currentFunction = BindFunction(symbolTable, currentContainerScope, fileScope.get(), &staticConstructorNode, currentClass);
+    BeginContainerScope(symbolTable.GetContainerScope(&staticConstructorNode));
+    parameterIndex = 0;
+}
+
+void Prebinder::EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
+{
+    CompleteBindFunction(symbolTable, currentContainerScope, fileScope.get(), &staticConstructorNode, currentFunction, currentClass);
+    EndContainerScope();
+}
+
 void Prebinder::Visit(Cm::Ast::MemberVariableNode& memberVariableNode)
 {
     BindMemberVariable(symbolTable, currentContainerScope, fileScope.get(), &memberVariableNode);

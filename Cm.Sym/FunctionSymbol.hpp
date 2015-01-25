@@ -13,6 +13,7 @@
 #include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
+#include <Cm.IrIntf/Fwd.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -127,6 +128,7 @@ public:
     void SetType(TypeSymbol* type_, int index) override;
     void SetReturnType(TypeSymbol* returnType_);
     TypeSymbol* GetReturnType() const { return returnType; }
+    bool ReturnsClassObjectByValue() const;
     int Arity() const { return int(parameters.size()); }
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void ComputeName();
@@ -136,6 +138,8 @@ public:
     void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) override;
     int16_t VtblIndex() const { return vtblIndex; }
     void SetVtblIndex(int16_t vtblIndex_) { vtblIndex = vtblIndex_; }
+    Ir::Intf::Parameter* ClassObjectResultIrParam() const { return classObjectResultIrParam; }
+    void SetClassObjectResultIrParam(Ir::Intf::Parameter* classObjectResultIrParam_) { classObjectResultIrParam = classObjectResultIrParam_; }
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
@@ -143,6 +147,7 @@ private:
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
     Cm::Ast::CompileUnitNode* compileUnit;
+    Ir::Intf::Parameter* classObjectResultIrParam;
     bool GetFlag(FunctionSymbolFlags flag) const
     {
         return (flags & flag) != FunctionSymbolFlags::none;

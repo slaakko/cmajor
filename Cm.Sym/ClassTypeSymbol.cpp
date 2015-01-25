@@ -33,12 +33,28 @@ void ClassTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
     writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));
+    bool hasBaseClass = baseClass != nullptr;
+    writer.GetBinaryWriter().Write(hasBaseClass);
+    if (hasBaseClass)
+    {
+        writer.Write(baseClass->Id());
+    }
 }
 
 void ClassTypeSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
     flags = ClassTypeSymbolFlags(reader.GetBinaryReader().ReadUInt());
+    bool hasBaseClass = reader.GetBinaryReader().ReadBool();
+    if (hasBaseClass)
+    {
+        reader.FetchTypeFor(this, 0);
+    }
+}
+
+void ClassTypeSymbol::SetType(TypeSymbol* type, int index) 
+{
+    baseClass = static_cast<ClassTypeSymbol*>(type);
 }
 
 bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls) const
@@ -65,22 +81,11 @@ bool ClassTypeSymbol::DoGenerateDestructor()
     return false;                           // else don't generate
 }
 
-void ClassTypeSymbol::SetDestructor(FunctionSymbol* destructor_, bool own)
+bool ClassTypeSymbol::DoGenerateStaticConstructor()
 {
-    destructor = destructor_;
-    if (own)
-    {
-        ownedDestructorSymbol.reset(destructor);
-    }
-}
-
-void ClassTypeSymbol::SetStaticConstructor(FunctionSymbol* staticConstructor_, bool own)
-{
-    staticConstructor = staticConstructor_;
-    if (own)
-    {
-        ownedStaticConstructor.reset(staticConstructor);
-    }
+    if (staticConstructor) return false;    // already has one, don't generate
+    if (!staticMemberVariables.empty()) return true;    //  has static data => generate
+    return false;
 }
 
 void ClassTypeSymbol::SetInitializedVar(MemberVariableSymbol* initializedVar_)
@@ -250,6 +255,10 @@ void ClassTypeSymbol::AddSymbol(Symbol* symbol)
         if (functionSymbol->IsDestructor())
         {
             destructor = functionSymbol;
+        }
+        else if (functionSymbol->IsStaticConstructor())
+        {
+            staticConstructor = functionSymbol;
         }
     }
 }
