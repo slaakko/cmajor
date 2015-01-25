@@ -130,6 +130,15 @@ Ir::Intf::LabelObject* GenData::GetLabel() const
     return nullptr;
 }
 
+void GenData::SetLabel(Ir::Intf::LabelObject* label)
+{
+    if (!labelHolder)
+    {
+        labelHolder.reset(new LabelHolder());
+    }
+    labelHolder->SetLabel(label);
+}
+
 void GenData::BackpatchTrueTargets(Ir::Intf::LabelObject* label)
 {
     if (!label)
@@ -328,10 +337,13 @@ Ir::Intf::LabelObject* GenResult::GetLabel() const
     return nullptr;
 }
 
-void GenResult::SetLabel(Ir::Intf::LabelObject* label) 
-{ 
-    emitter->RemoveLabelRequestFor(genData);
-    genData.SetLabel(label); 
+void GenResult::SetLabel(Ir::Intf::LabelObject* label)
+{
+    if (emitter)
+    {
+        emitter->RemoveLabelRequestFor(genData);
+    }
+    genData.SetLabel(label);
 }
 
 void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type)

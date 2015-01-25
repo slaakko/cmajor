@@ -95,7 +95,7 @@ public:
     void MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets);
     void MergeData(GenData& childData);
     Ir::Intf::LabelObject* GetLabel() const;
-    void SetLabel(Ir::Intf::LabelObject* label) { labelHolder->SetLabel(label); }
+    void SetLabel(Ir::Intf::LabelObject* label);
     LabelHolder* GetLabelHolder() const { return labelHolder.get(); }
     void BackpatchTrueTargets(Ir::Intf::LabelObject* label);
     void BackpatchFalseTargets(Ir::Intf::LabelObject* label);

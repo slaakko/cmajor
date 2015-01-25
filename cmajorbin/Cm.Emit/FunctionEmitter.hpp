@@ -133,6 +133,7 @@ private:
     SwitchCaseConstantMap* currentSwitchCaseConstantMap;
     Ir::Intf::LabelObject* switchCaseLabel;
     std::vector<Ir::Intf::Object*> switchCaseConstants;
+    bool firstStatementInCompound;
     void PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement);
     void PopBreakTargetStatement();
     void PushContinueTargetStatement(Cm::BoundTree::BoundStatement* statement);

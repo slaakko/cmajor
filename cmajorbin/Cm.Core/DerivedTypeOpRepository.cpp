@@ -731,6 +731,12 @@ void AssignmentOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::
     {
         Cm::Sym::TypeSymbol* pointerType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
         Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
+        if (rightType->IsNullPtrType()) // pointer from nullptr type assignment
+        {
+            DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
+            viableFunctions.insert(cache.GetCopyAssignment(typeRepository, pointerType));
+            return;
+        }
         if (rightType->IsPointerType())
         {
             if (Cm::Sym::TypesEqual(pointerType, rightType)) // pointer copy assignment

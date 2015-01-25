@@ -349,7 +349,7 @@ PointerType* MakePointerType(Ir::Intf::Type* baseType, int numPointers)
     if (baseType->IsPointerType())
     {
         PointerType* basePtrType = static_cast<PointerType*>(baseType);
-        return new PointerType(baseType, basePtrType->NumPointers() + numPointers);
+        return new PointerType(basePtrType->BaseType(), basePtrType->NumPointers() + numPointers);
     }
     return new PointerType(baseType, numPointers);
 }

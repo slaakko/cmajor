@@ -907,13 +907,10 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
         functionGroupSymbol = functionGroup->GetFunctionGroupSymbol();
         functionGroupName = functionGroupSymbol->Name();
-        if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
+        fun = BindInvokeMemFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupName, numArgs);
+        if (fun)
         {
-            fun = BindInvokeMemFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupName, numArgs);
-            if (fun)
-            {
-                type = fun->GetReturnType();
-            }
+            type = fun->GetReturnType();
         }
         if (!fun)
         {
@@ -955,6 +952,11 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
     functionCall->SetFunction(fun);
     functionCall->SetType(type);
+    if (fun->ReturnsClassObjectByValue())
+    {
+        Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(type);
+        functionCall->SetClassObjectResultVar(classObjectResultVar);
+    }
     if (generateVirtualCall)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
@@ -989,6 +991,8 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
 Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, bool& firstArgByRef, 
     bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs)
 {
+    firstArgByRef = false;
+    generateVirtualCall = false;
     Cm::Sym::FunctionLookupSet memberFunLookups;
     std::vector<Cm::Core::Argument> memberFunResolutionArguments;
     Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
@@ -1039,9 +1043,13 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
     bool first = true;
     bool firstArgIsPointerOrReference = false;
     bool firstArgIsThisOrBase = false;
+    firstArgByRef = false;
+    generateVirtualCall = false;
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, argument->GetType()->GetContainerScope()->ClassOrNsScope()));
+        Cm::Sym::TypeSymbol* argumentType = argument->GetType();
+        Cm::Sym::TypeSymbol* plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(argumentType);
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, plainArgumentType->GetContainerScope()->ClassOrNsScope()));
         if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
         {
             resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, 

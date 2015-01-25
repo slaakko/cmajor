@@ -19,7 +19,8 @@ FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lo
 {
 }
 
-FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1)
+FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
+    classObjectResultIrParam(nullptr)
 {
 }
 
@@ -56,6 +57,11 @@ void FunctionSymbol::AddSymbol(Symbol* symbol)
 void FunctionSymbol::SetReturnType(TypeSymbol* returnType_)
 {
     returnType = returnType_;
+}
+
+bool FunctionSymbol::ReturnsClassObjectByValue() const
+{
+    return returnType && returnType->IsClassTypeSymbol();
 }
 
 bool FunctionSymbol::IsConstructor() const
