@@ -172,9 +172,12 @@ public:
     BoundExpression* Operand() const { return operand.get(); }
     Cm::Sym::FunctionSymbol* ConversionFun() const { return conversionFun; }
     void Accept(Visitor& visitor) override;
+    void SetBoundTemporary(Cm::BoundTree::BoundExpression* boundTemporary_);
+    Cm::BoundTree::BoundExpression* BoundTemporary() const { return boundTemporary.get(); }
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* conversionFun;
+    std::unique_ptr<Cm::BoundTree::BoundExpression> boundTemporary;
 };
 
 class BoundCast : public BoundExpression

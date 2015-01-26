@@ -34,6 +34,21 @@ inline bool operator==(const FunctionLookup& left, const FunctionLookup& right)
     return left.Lookup() == right.Lookup() && left.Scope() == right.Scope();
 }
 
+enum class ConversionType
+{
+    explicit_, implicit
+};
+
+enum class ConversionRank
+{
+    exactMatch, promotion, conversion
+};
+
+inline bool BetterConversionRank(ConversionRank left, ConversionRank right)
+{
+    return left < right;
+}
+
 class FunctionLookupSet
 {
 public:
@@ -62,7 +77,8 @@ enum class FunctionSymbolFlags: uint16_t
     replicated = 1 << 9,
     suppressed = 1 << 10,
     default_ = 1 << 11,
-    explicit_ = 1 << 12
+    explicit_ = 1 << 12,
+    conversion = 1 << 13
 };
 
 inline FunctionSymbolFlags operator|(FunctionSymbolFlags left, FunctionSymbolFlags right)
@@ -86,7 +102,12 @@ public:
     std::string TypeString() const override { return "function"; };
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
-    virtual bool IsConvertingConstructor() const { return false; }
+    virtual bool IsConvertingConstructor() const;
+    void SetConvertingConstructor();
+    bool CheckIfConvertingConstructor() const;
+    virtual ConversionType GetConversionType() const { return IsExplicit() ? Cm::Sym::ConversionType::explicit_ : Cm::Sym::ConversionType::implicit; }
+    virtual ConversionRank GetConversionRank() const { return IsConvertingConstructor() ? Cm::Sym::ConversionRank::conversion : Cm::Sym::ConversionRank::exactMatch; }
+    virtual int GetConversionDistance() const { return IsConvertingConstructor() ? 100 : 0; }
     bool IsConstructorOrDestructorSymbol() const { return GetFlag(FunctionSymbolFlags::constructorOrDestructorSymbol); }
     void SetConstructorOrDestructorSymbol() { SetFlag(FunctionSymbolFlags::constructorOrDestructorSymbol); }
     bool IsMemberFunctionSymbol() const { return GetFlag(FunctionSymbolFlags::memberFunctionSymbol); }

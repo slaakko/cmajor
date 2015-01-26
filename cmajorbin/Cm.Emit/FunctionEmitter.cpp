@@ -97,6 +97,30 @@ Ir::Intf::Object* IrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::
     return memberVar;
 }
 
+void CompoundDestructionStack::Push(Cm::BoundTree::BoundDestructionStatement* destructionStatement)
+{
+    destructionStatements.push_back(std::unique_ptr<Cm::BoundTree::BoundDestructionStatement>(destructionStatement));
+}
+
+std::unique_ptr<Cm::BoundTree::BoundDestructionStatement> CompoundDestructionStack::Pop()
+{
+    std::unique_ptr<Cm::BoundTree::BoundDestructionStatement> top = std::move(destructionStatements.back());
+    destructionStatements.pop_back();
+    return top;
+}
+
+void FunctionDestructionStack::Push(CompoundDestructionStack&& compoundDestructionStack)
+{
+    compoundDestructionStacks.push_back(std::move(compoundDestructionStack));
+}
+
+CompoundDestructionStack FunctionDestructionStack::Pop()
+{
+    CompoundDestructionStack top = std::move(compoundDestructionStacks.back());
+    compoundDestructionStacks.pop_back();
+    return top;
+}
+
 FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
     std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_) :
@@ -334,7 +358,28 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
 void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    result.SetMainObject(boundConversion.GetType());
+    Ir::Intf::Object* temporary = nullptr;
+    Cm::BoundTree::BoundExpression* boundTemporary = boundConversion.BoundTemporary();
+    if (boundTemporary)
+    {
+        Cm::Sym::TypeSymbol* temporaryType = boundTemporary->GetType();
+        boundTemporary->Accept(*this);
+        Cm::Core::GenResult temporaryResult = resultStack.Pop();
+        temporary = temporaryResult.MainObject();
+        result.Merge(temporaryResult);
+        if (temporaryType->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* temporaryClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(temporaryType);
+            if (temporaryClassType->Destructor())
+            {
+                currentCompoundDestructionStack.Push(new Cm::BoundTree::BoundDestructionStatement(boundConversion.SyntaxNode(), temporary, temporaryClassType->Destructor()));
+            }
+        }
+    }
+    else
+    {
+        result.SetMainObject(boundConversion.GetType());
+    }
     if (boundConversion.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         result.SetGenJumpingBoolCode();
@@ -351,6 +396,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
     if (boundConversion.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
     {
         MakePlainValueResult(typeRepository.MakePlainType(boundConversion.GetType()), result);
+    }
+    if (temporary)
+    {
+        result.SetMainObject(temporary);
     }
     if (resultLabel)
     {
@@ -511,13 +560,48 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction)
         boundDisjunction.Left()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         boundDisjunction.Left()->Accept(*this);
         Cm::Core::GenResult leftResult = resultStack.Pop();
+        if (!result.LabelSet())
+        {
+            result.SetLabelSet();
+            result.SetLabel(leftResult.GetLabel());
+        }
+
+        functionDestructionStack.Push(std::move(currentCompoundDestructionStack));
+        currentCompoundDestructionStack = CompoundDestructionStack();
         boundDisjunction.Right()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         boundDisjunction.Right()->Accept(*this);
         Cm::Core::GenResult rightResult = resultStack.Pop();
         leftResult.BackpatchFalseTargets(rightResult.GetLabel());
-        result.MergeTargets(result.FalseTargets(), rightResult.FalseTargets());
-        result.MergeTargets(result.TrueTargets(), leftResult.TrueTargets());
-        result.MergeTargets(result.TrueTargets(), rightResult.TrueTargets());
+        if (currentCompoundDestructionStack.IsEmpty())
+        {
+            result.MergeTargets(result.FalseTargets(), rightResult.FalseTargets());
+            result.MergeTargets(result.TrueTargets(), leftResult.TrueTargets());
+            result.MergeTargets(result.TrueTargets(), rightResult.TrueTargets());
+        }
+        else
+        {
+            bool trueFirst = true;
+            Cm::Core::GenResult trueResult(emitter.get(), genFlags);
+            ExitCompound(trueResult, currentCompoundDestructionStack, trueFirst);
+            rightResult.BackpatchTrueTargets(trueResult.GetLabel());
+            Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(trueLabel);
+            emitter->Emit(Cm::IrIntf::Br(trueLabel));
+            result.AddTrueTarget(trueLabel);
+
+            bool falseFirst = true;
+            Cm::Core::GenResult falseResult(emitter.get(), genFlags);
+            ExitCompound(falseResult, currentCompoundDestructionStack, falseFirst);
+            rightResult.BackpatchFalseTargets(falseResult.GetLabel());
+            Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(falseLabel);
+            emitter->Emit(Cm::IrIntf::Br(falseLabel));
+            result.AddFalseTarget(falseLabel);
+            result.MergeTargets(result.TrueTargets(), leftResult.TrueTargets());
+            result.Merge(trueResult);
+            result.Merge(falseResult);
+        }
+        currentCompoundDestructionStack = functionDestructionStack.Pop();
         result.Merge(leftResult);
         result.Merge(rightResult);
     }
@@ -526,30 +610,71 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction)
         boundDisjunction.Left()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         boundDisjunction.Left()->Accept(*this);
         Cm::Core::GenResult leftResult = resultStack.Pop();
+        if (!result.LabelSet())
+        {
+            result.SetLabelSet();
+            result.SetLabel(leftResult.GetLabel());
+        }
+
+        functionDestructionStack.Push(std::move(currentCompoundDestructionStack));
+        currentCompoundDestructionStack = CompoundDestructionStack();
         boundDisjunction.Right()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         boundDisjunction.Right()->Accept(*this);
         Cm::Core::GenResult rightResult = resultStack.Pop();
         leftResult.BackpatchFalseTargets(rightResult.GetLabel());
         result.SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundDisjunction.GetResultVar()));
-        Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
-        emitter->Own(falseLabel);
-        emitter->AddNextInstructionLabel(falseLabel);
-        Ir::Intf::Object* false_ = Cm::IrIntf::False();
-        emitter->Own(false_);
-        Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), false_, result.MainObject());
-        rightResult.BackpatchFalseTargets(falseLabel);
-        Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
-        emitter->Own(next);
-        emitter->Emit(Cm::IrIntf::Br(next));
-        result.AddArgNextTarget(next);
-        Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
-        emitter->Own(trueLabel);
-        emitter->AddNextInstructionLabel(trueLabel);
-        Ir::Intf::Object* true_ = Cm::IrIntf::True();
-        emitter->Own(true_);
-        Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), true_, result.MainObject());
-        leftResult.BackpatchTrueTargets(trueLabel);
-        rightResult.BackpatchTrueTargets(trueLabel);
+        if (currentCompoundDestructionStack.IsEmpty())
+        {
+            Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(falseLabel);
+            emitter->AddNextInstructionLabel(falseLabel);
+            Ir::Intf::Object* false_ = Cm::IrIntf::False();
+            emitter->Own(false_);
+            Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), false_, result.MainObject());
+            rightResult.BackpatchFalseTargets(falseLabel);
+            Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(next);
+            emitter->Emit(Cm::IrIntf::Br(next));
+            result.AddArgNextTarget(next);
+            Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(trueLabel);
+            emitter->AddNextInstructionLabel(trueLabel);
+            Ir::Intf::Object* true_ = Cm::IrIntf::True();
+            emitter->Own(true_);
+            Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), true_, result.MainObject());
+            leftResult.BackpatchTrueTargets(trueLabel);
+            rightResult.BackpatchTrueTargets(trueLabel);
+        }
+        else
+        {
+            bool falseFirst = true;
+            Cm::Core::GenResult falseResult(emitter.get(), genFlags);
+            ExitCompound(falseResult, currentCompoundDestructionStack, falseFirst);
+            rightResult.BackpatchFalseTargets(falseResult.GetLabel());
+            Ir::Intf::Object* false_ = Cm::IrIntf::False();
+            emitter->Own(false_);
+            Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), false_, result.MainObject());
+            Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(next);
+            emitter->Emit(Cm::IrIntf::Br(next));
+            result.AddArgNextTarget(next);
+
+            bool trueFirst = true;
+            Cm::Core::GenResult trueResult(emitter.get(), genFlags);
+            ExitCompound(trueResult, currentCompoundDestructionStack, trueFirst);
+            rightResult.BackpatchTrueTargets(trueResult.GetLabel());
+            Ir::Intf::LabelObject* assignTrueLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(assignTrueLabel);
+            emitter->AddNextInstructionLabel(assignTrueLabel);
+            Ir::Intf::Object* true_ = Cm::IrIntf::True();
+            emitter->Own(true_);
+            Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), true_, result.MainObject());
+            leftResult.BackpatchTrueTargets(assignTrueLabel);
+
+            result.Merge(falseResult);
+            result.Merge(trueResult);
+        }
+        currentCompoundDestructionStack = functionDestructionStack.Pop();
         result.Merge(leftResult);
         result.Merge(rightResult);
     }
@@ -564,43 +689,121 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConjunction& boundConjunction)
         boundConjunction.Left()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         boundConjunction.Left()->Accept(*this);
         Cm::Core::GenResult leftResult = resultStack.Pop();
+        if (!result.LabelSet())
+        {
+            result.SetLabelSet();
+            result.SetLabel(leftResult.GetLabel());
+        }
+
+        functionDestructionStack.Push(std::move(currentCompoundDestructionStack));
+        currentCompoundDestructionStack = CompoundDestructionStack();
         boundConjunction.Right()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         boundConjunction.Right()->Accept(*this);
         Cm::Core::GenResult rightResult = resultStack.Pop();
         leftResult.BackpatchTrueTargets(rightResult.GetLabel());
-        result.MergeTargets(result.TrueTargets(), rightResult.TrueTargets());
-        result.MergeTargets(result.FalseTargets(), leftResult.FalseTargets());
-        result.MergeTargets(result.FalseTargets(), rightResult.FalseTargets());
+        if (currentCompoundDestructionStack.IsEmpty())
+        {
+            result.MergeTargets(result.TrueTargets(), rightResult.TrueTargets());
+            result.MergeTargets(result.FalseTargets(), leftResult.FalseTargets());
+            result.MergeTargets(result.FalseTargets(), rightResult.FalseTargets());
+        }
+        else
+        {
+            bool trueFirst = true;
+            Cm::Core::GenResult trueResult(emitter.get(), genFlags);
+            ExitCompound(trueResult, currentCompoundDestructionStack, trueFirst);
+            rightResult.BackpatchTrueTargets(trueResult.GetLabel());
+            Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(trueLabel);
+            emitter->Emit(Cm::IrIntf::Br(trueLabel));
+            result.AddTrueTarget(trueLabel);
+
+            bool falseFirst = true;
+            Cm::Core::GenResult falseResult(emitter.get(), genFlags);
+            ExitCompound(falseResult, currentCompoundDestructionStack, falseFirst);
+            rightResult.BackpatchFalseTargets(falseResult.GetLabel());
+            Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(falseLabel);
+            emitter->Emit(Cm::IrIntf::Br(falseLabel));
+            result.AddFalseTarget(falseLabel);
+
+            result.MergeTargets(result.FalseTargets(), leftResult.FalseTargets());
+            result.Merge(trueResult);
+            result.Merge(falseResult);
+        }
+        currentCompoundDestructionStack = functionDestructionStack.Pop();
+        result.Merge(leftResult);
+        result.Merge(rightResult);
     }
     else
     {
         boundConjunction.Left()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         boundConjunction.Left()->Accept(*this);
         Cm::Core::GenResult leftResult = resultStack.Pop();
+        if (!result.LabelSet())
+        {
+            result.SetLabelSet();
+            result.SetLabel(leftResult.GetLabel());
+        }
+
+        functionDestructionStack.Push(std::move(currentCompoundDestructionStack));
+        currentCompoundDestructionStack = CompoundDestructionStack();
         boundConjunction.Right()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         boundConjunction.Right()->Accept(*this);
         Cm::Core::GenResult rightResult = resultStack.Pop();
         leftResult.BackpatchTrueTargets(rightResult.GetLabel());
         result.SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundConjunction.GetResultVar()));
-        Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
-        emitter->Own(trueLabel);
-        Ir::Intf::Object* true_ = Cm::IrIntf::True();
-        emitter->Own(true_);
-        emitter->AddNextInstructionLabel(trueLabel);
-        Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), true_, result.MainObject());
-        rightResult.BackpatchTrueTargets(trueLabel);
-        Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
-        emitter->Own(next);
-        emitter->Emit(Cm::IrIntf::Br(next));
-        result.AddArgNextTarget(next);
-        Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
-        emitter->Own(falseLabel);
-        emitter->AddNextInstructionLabel(falseLabel);
-        Ir::Intf::Object* false_ = Cm::IrIntf::False();
-        emitter->Own(false_);
-        Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), false_, result.MainObject());
-        leftResult.BackpatchFalseTargets(falseLabel);
-        rightResult.BackpatchFalseTargets(falseLabel);
+        if (currentCompoundDestructionStack.IsEmpty())
+        {
+            Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(trueLabel);
+            emitter->AddNextInstructionLabel(trueLabel);
+            Ir::Intf::Object* true_ = Cm::IrIntf::True();
+            emitter->Own(true_);
+            Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), true_, result.MainObject());
+            rightResult.BackpatchTrueTargets(trueLabel);
+            Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(next);
+            emitter->Emit(Cm::IrIntf::Br(next));
+            result.AddArgNextTarget(next);
+            Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(falseLabel);
+            emitter->AddNextInstructionLabel(falseLabel);
+            Ir::Intf::Object* false_ = Cm::IrIntf::False();
+            emitter->Own(false_);
+            Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), false_, result.MainObject());
+            leftResult.BackpatchFalseTargets(falseLabel);
+            rightResult.BackpatchFalseTargets(falseLabel);
+        }
+        else
+        {
+            bool trueFirst = true;
+            Cm::Core::GenResult trueResult(emitter.get(), genFlags);
+            ExitCompound(trueResult, currentCompoundDestructionStack, trueFirst);
+            rightResult.BackpatchTrueTargets(trueResult.GetLabel());
+            Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(next);
+            Ir::Intf::Object* true_ = Cm::IrIntf::True();
+            emitter->Own(true_);
+            Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), true_, result.MainObject());
+            emitter->Emit(Cm::IrIntf::Br(next));
+            result.AddArgNextTarget(next);
+
+            bool falseFirst = true;
+            Cm::Core::GenResult falseResult(emitter.get(), genFlags);
+            ExitCompound(falseResult, currentCompoundDestructionStack, falseFirst);
+            rightResult.BackpatchFalseTargets(falseResult.GetLabel());
+            Ir::Intf::LabelObject* assignFalseLabel = Cm::IrIntf::CreateNextLocalLabel();
+            emitter->Own(assignFalseLabel);
+            emitter->AddNextInstructionLabel(assignFalseLabel);
+            Ir::Intf::Object* false_ = Cm::IrIntf::False();
+            emitter->Own(false_);
+            Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), false_, result.MainObject());
+            leftResult.BackpatchFalseTargets(assignFalseLabel);
+            result.Merge(trueResult);
+            result.Merge(falseResult);
+        }
+        currentCompoundDestructionStack = functionDestructionStack.Pop();
         result.Merge(leftResult);
         result.Merge(rightResult);
     }
@@ -654,10 +857,14 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCom
         compoundResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
         GenerateCall(irFunctionRepository.GetDoNothingFunction(), compoundResult, false);
     }
+    functionDestructionStack.Push(std::move(currentCompoundDestructionStack));
+    currentCompoundDestructionStack = CompoundDestructionStack();
 }
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
 {
+    ClearCompoundDestructionStack(compoundResult);
+    currentCompoundDestructionStack = functionDestructionStack.Pop();
     resultStack.Push(std::move(compoundResult));
     compoundResult = std::move(compoundResultStack.Pop());
 }
@@ -806,6 +1013,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
         GenerateCall(ctor, result);
         result.BackpatchArgNextTargets(exprNext);
         ExecutePostfixIncDecStatements(result);
+        ExitFunction(result);
         if (returnsClassObjectByValue)
         {
             emitter->Emit(Cm::IrIntf::Ret());
@@ -821,6 +1029,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
     }
     else
     {
+        ExitFunction(result);
         emitter->Emit(Cm::IrIntf::Ret());
     }
     resultStack.Push(std::move(result));
@@ -831,11 +1040,16 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundCons
     Cm::Core::GenResult result(emitter.get(), genFlags);
     int n = boundConstructionStatement.Arguments().Count();
     Ir::Intf::LabelObject* resultLabel = nullptr;
+    Ir::Intf::Object* object = nullptr;
     for (int i = 0; i < n; ++i)
     {
         const std::unique_ptr<Cm::BoundTree::BoundExpression>& arg = boundConstructionStatement.Arguments()[i];
         arg->Accept(*this);
         Cm::Core::GenResult argResult = resultStack.Pop();
+        if (i == 0)
+        {
+            object = argResult.MainObject();
+        }
         if (!resultLabel)
         {
             resultLabel = argResult.GetLabel();
@@ -853,7 +1067,100 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundCons
     {
         result.SetLabel(resultLabel);
     }
+    Cm::Sym::TypeSymbol* variableType = boundConstructionStatement.LocalVariable()->GetType();
+    if (variableType->IsClassTypeSymbol())
+    {
+        Cm::Sym::ClassTypeSymbol* variableClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(variableType);
+        if (variableClassType->Destructor())
+        {
+            currentCompoundDestructionStack.Push(new Cm::BoundTree::BoundDestructionStatement(boundConstructionStatement.SyntaxNode(), object, variableClassType->Destructor()));
+        }
+    }
     resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundDestructionStatement& boundDestructionStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    result.SetMainObject(boundDestructionStatement.Object());
+    Cm::Sym::FunctionSymbol* dtor = boundDestructionStatement.Destructor();
+    GenerateCall(dtor, result);
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::ClearCompoundDestructionStack(Cm::Core::GenResult& result)
+{
+    bool first = true;
+    while (!currentCompoundDestructionStack.IsEmpty())
+    {
+        std::unique_ptr<Cm::BoundTree::BoundDestructionStatement> boundDestructionStatement = currentCompoundDestructionStack.Pop();
+        boundDestructionStatement->Accept(*this);
+        Cm::Core::GenResult destructionResult = resultStack.Pop();
+        if (first)
+        {
+            first = false;
+            result.BackpatchNextTargets(destructionResult.GetLabel());
+            if (!result.LabelSet())
+            {
+                result.SetLabel(destructionResult.GetLabel());
+                result.SetLabelSet();
+            }
+        }
+    }
+}
+
+void FunctionEmitter::ExitCompound(Cm::Core::GenResult& result, const CompoundDestructionStack& compoundDestructionStack, bool& first)
+{
+    int n = int(compoundDestructionStack.DestructionStatements().size());
+    for (int i = n - 1; i >= 0; --i)
+    {
+        const std::unique_ptr<Cm::BoundTree::BoundDestructionStatement>& boundDestructionStatement = compoundDestructionStack.DestructionStatements()[i];
+        boundDestructionStatement->Accept(*this);
+        Cm::Core::GenResult destructionResult = resultStack.Pop();
+        if (first)
+        {
+            first = false;
+            result.BackpatchNextTargets(destructionResult.GetLabel());
+            if (!result.LabelSet())
+            {
+                result.SetLabelSet();
+                result.SetLabel(destructionResult.GetLabel());
+            }
+        }
+    }
+}
+
+void FunctionEmitter::ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromCompound, Cm::BoundTree::BoundCompoundStatement* targetCompound, Cm::Core::GenResult& result)
+{
+    bool first = true;
+    const CompoundDestructionStack* compoundDestructionStack = &currentCompoundDestructionStack;
+    Cm::BoundTree::BoundCompoundStatement* compound = fromCompound;
+    int n = int(functionDestructionStack.CompoundDestructionStacks().size());
+    int i = n - 1;
+    while (compound != targetCompound)
+    {
+        ExitCompound(result, *compoundDestructionStack, first);
+        compound = compound->CompoundParent();
+        if (i < 0)
+        {
+            throw std::runtime_error("runaway compound destruction stack");
+        }
+        compoundDestructionStack = &functionDestructionStack.CompoundDestructionStacks()[i];
+        --i;
+    }
+}
+
+
+void FunctionEmitter::ExitFunction(Cm::Core::GenResult& result)
+{
+    bool first = true;
+    ExitCompound(result,  currentCompoundDestructionStack, first);
+    int n = int(functionDestructionStack.CompoundDestructionStacks().size());
+    for (int i = n - 1; i >= 0; --i)
+    {
+        const CompoundDestructionStack& compoundDestructionStack = functionDestructionStack.CompoundDestructionStacks()[i];
+        ExitCompound(result, compoundDestructionStack, first);
+    }
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement)
@@ -910,6 +1217,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatem
     Ir::Intf::LabelObject* breakTargetLabel = Cm::IrIntf::CreateNextLocalLabel();
     emitter->Own(breakTargetLabel);
     breakTargetStatement->AddBreakTargetLabel(breakTargetLabel);
+    ExitCompounds(boundBreakStatement.CompoundParent(), breakTargetStatement->CompoundParent(), result);
     emitter->Emit(Cm::IrIntf::Br(breakTargetLabel));
     resultStack.Push(std::move(result));
 }
@@ -920,6 +1228,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundContinueStatement& boundContinue
     Ir::Intf::LabelObject* continueTargetLabel = Cm::IrIntf::CreateNextLocalLabel();
     emitter->Own(continueTargetLabel);
     continueTargetStatement->AddContinueTargetLabel(continueTargetLabel);
+    ExitCompounds(boundContinueStatement.CompoundParent(), continueTargetStatement->CompoundParent(), result);
     emitter->Emit(Cm::IrIntf::Br(continueTargetLabel));
     resultStack.Push(std::move(result));
 }
@@ -991,7 +1300,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileSta
     PopContinueTargetStatement();
     PopBreakTargetStatement();
     result.SetLabel(conditionResult.GetLabel());
-    result.Merge(conditionResult);
+    result.Merge(conditionResult, true);
     result.Merge(statementResult);
     resultStack.Push(std::move(result));
 }
@@ -1084,7 +1393,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStat
     Ir::Intf::LabelObject* resultLabel = conditionResult.GetLabel();
     result.Merge(conditionResult);
     std::vector<Ir::Intf::LabelObject*> caseLabels;
-    std::unordered_map<std::string, Ir::Intf::LabelObject*> caseConstantMap;
+    std::unordered_map<std::string, std::pair<Ir::Intf::LabelObject*, Cm::BoundTree::BoundStatement*>> caseConstantMap;
     std::vector<std::pair<Ir::Intf::Object*, Ir::Intf::LabelObject*>> destinations;
     switchEmitStateStack.push(currentSwitchEmitState);
     currentSwitchEmitState = SwitchEmitState::createSwitchTargets;
@@ -1174,7 +1483,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCaseStatement& boundCaseStatemen
             {
                 throw Cm::Core::Exception("duplicate case constant '" + caseConstant->Name() + "'", boundCaseStatement.SyntaxNode()->GetSpan());
             }
-            currentSwitchCaseConstantMap->insert(std::make_pair(caseConstant->Name(), label));
+            currentSwitchCaseConstantMap->insert(std::make_pair(caseConstant->Name(), std::make_pair(label, &boundCaseStatement)));
             switchCaseConstants.push_back(caseConstant);
         }
         switchCaseLabel = label;
@@ -1200,7 +1509,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDefaultStatement& boundDefaultSt
         Ir::Intf::LabelObject* label = Cm::IrIntf::CreateNextLocalLabel();
         emitter->Own(label);
         switchCaseLabel = label;
-        currentSwitchCaseConstantMap->insert(std::make_pair("@default", label));
+        currentSwitchCaseConstantMap->insert(std::make_pair("@default", std::make_pair(label, &boundDefaultStatement)));
     }
     else if (currentSwitchEmitState == SwitchEmitState::emitStatements)
     {
@@ -1225,7 +1534,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCase
     SwitchCaseConstantMapIt i = currentSwitchCaseConstantMap->find(caseConstant->Name());
     if (i != currentSwitchCaseConstantMap->end())
     {
-        Ir::Intf::LabelObject* target = i->second;
+        Ir::Intf::LabelObject* target = i->second.first;
+        Cm::BoundTree::BoundStatement* targetS = i->second.second;
+        ExitCompounds(boundGotoCaseStatement.CompoundParent(), targetS->CompoundParent(), result);
         emitter->Emit(Cm::IrIntf::Br(target));
     }
     else
@@ -1241,7 +1552,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoD
     SwitchCaseConstantMapIt i = currentSwitchCaseConstantMap->find("@default");
     if (i != currentSwitchCaseConstantMap->end())
     {
-        Ir::Intf::LabelObject* target = i->second;
+        Ir::Intf::LabelObject* target = i->second.first;
+        Cm::BoundTree::BoundStatement* targetS = i->second.second;
+        ExitCompounds(boundGotoDefaultStatement.CompoundParent(), targetS->CompoundParent(), result);
         emitter->Emit(Cm::IrIntf::Br(target));
     }
     else

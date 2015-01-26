@@ -41,7 +41,7 @@ Cm::Sym::FunctionSymbol* ClassConversionTable::MakeBaseClassDerivedClassConversi
     {
         return i->second;
     }
-    Cm::Sym::FunctionSymbol* conversion = new ConvertingCtor(typeRepository, baseClassDerivedType, derivedClassDerivedType, ConversionType::implicit, ConversionInst::bitcast, ConversionRank::conversion, distance);
+    Cm::Sym::FunctionSymbol* conversion = new ConvertingCtor(typeRepository, baseClassDerivedType, derivedClassDerivedType, Cm::Sym::ConversionType::implicit, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, distance);
     conversionFunctions.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(conversion));
     return conversion;
 }

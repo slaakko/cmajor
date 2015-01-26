@@ -16,6 +16,8 @@
 
 namespace Cm { namespace BoundTree {
 
+class BoundCompoundStatement;
+
 class BoundStatement : public BoundNode
 {
 public:
@@ -31,6 +33,11 @@ public:
     virtual bool IsBoundDefaultStatement() const { return false; }
     virtual void AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) {}
     virtual void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) {}
+    BoundStatement* Parent() const { return parent; }
+    void SetParent(BoundStatement* parent_) { parent = parent_; }
+    BoundCompoundStatement* CompoundParent() const;
+private:
+    BoundStatement* parent;
 };
 
 class BoundStatementList
@@ -161,6 +168,18 @@ private:
     Cm::Sym::LocalVariableSymbol* localVariable;
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* ctor;
+};
+
+class BoundDestructionStatement : public BoundStatement
+{
+public:
+    BoundDestructionStatement(Cm::Ast::Node* syntaxNode_, Ir::Intf::Object* object_, Cm::Sym::FunctionSymbol* destructor_);
+    void Accept(Visitor& visitor) override;
+    Ir::Intf::Object* Object() const { return object; }
+    Cm::Sym::FunctionSymbol* Destructor() const { return destructor; }
+private:
+    Ir::Intf::Object* object;
+    Cm::Sym::FunctionSymbol* destructor;
 };
 
 class BoundAssignmentStatement : public BoundStatement

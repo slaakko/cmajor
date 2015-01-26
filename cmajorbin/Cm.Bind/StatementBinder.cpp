@@ -54,7 +54,7 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     Cm::Sym::FunctionLookupSet functionLookups;
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Core::ConversionType conversionType = Cm::Core::ConversionType::implicit;
+    Cm::Sym::ConversionType conversionType = Cm::Sym::ConversionType::implicit;
     Cm::Sym::FunctionSymbol* ctor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, constructionStatementNode.GetSpan(), conversions, conversionType, 
         OverloadResolutionFlags::none);
     PrepareFunctionSymbol(ctor, constructionStatementNode.GetSpan());
@@ -188,10 +188,10 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 Cm::Sym::FunctionLookupSet functionLookups;
                 functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, returnType->GetContainerScope()->ClassOrNsScope()));
                 std::vector<Cm::Sym::FunctionSymbol*> conversions;
-                Cm::Core::ConversionType conversionType = Cm::Core::ConversionType::implicit;
+                Cm::Sym::ConversionType conversionType = Cm::Sym::ConversionType::implicit;
                 if (returnValue->IsCast())
                 {
-                    conversionType = Cm::Core::ConversionType::explicit_;
+                    conversionType = Cm::Sym::ConversionType::explicit_;
                 }
                 Cm::Sym::FunctionSymbol* ctor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, returnStatementNode.GetSpan(), conversions, conversionType, 
                     OverloadResolutionFlags::none);

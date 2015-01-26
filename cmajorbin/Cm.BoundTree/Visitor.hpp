@@ -40,6 +40,7 @@ class BoundInitMemberVariableStatement;
 class BoundFunctionCallStatement;
 class BoundReturnStatement;
 class BoundConstructionStatement;
+class BoundDestructionStatement;
 class BoundAssignmentStatement;
 class BoundThrowStatement;
 class BoundSimpleStatement;
@@ -96,6 +97,7 @@ public:
     virtual void Visit(BoundFunctionCallStatement& boundFunctionCallStatement) {}
     virtual void Visit(BoundReturnStatement& boundReturnStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
+    virtual void Visit(BoundDestructionStatement& boundDestructionStatement) {}
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}
     virtual void Visit(BoundThrowStatement& boundThrowStatement) {}
     virtual void Visit(BoundSimpleStatement& boundSimpleStatement) {}

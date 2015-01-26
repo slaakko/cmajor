@@ -281,6 +281,11 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
                 currentClass->SetHasUserDefinedStaticConstructor();
             }
         }
+        else if (functionSymbol->CheckIfConvertingConstructor())
+        {
+            functionSymbol->SetConvertingConstructor();
+            currentClass->AddConversion(functionSymbol);
+        }
         else if (functionSymbol->IsCopyAssignment())
         {
             if (functionSymbol->IsSuppressed())
