@@ -193,13 +193,29 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     Cm::BoundTree::BoundExpression* leftOperand = left;
     if (leftConversionFun)
     {
-        leftOperand = new Cm::BoundTree::BoundConversion(node, left, leftConversionFun);
+        Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, left, leftConversionFun);
+        if (leftConversionFun->GetTargetType()->IsClassTypeSymbol())
+        {
+            Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, currentFunction->CreateTempLocalVariable(leftConversionFun->GetTargetType()));
+            boundTemporary->SetType(leftConversionFun->GetTargetType());
+            boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+            conversion->SetBoundTemporary(boundTemporary);
+        }
+        leftOperand = conversion;
         leftOperand->SetType(leftConversionFun->GetTargetType());
     }
     Cm::BoundTree::BoundExpression* rightOperand = right;
     if (rightConversionFun)
     {
-        rightOperand = new Cm::BoundTree::BoundConversion(node, right, rightConversionFun);
+        Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, right, rightConversionFun);
+        if (rightConversionFun->GetTargetType()->IsClassTypeSymbol())
+        {
+            Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, currentFunction->CreateTempLocalVariable(rightConversionFun->GetTargetType()));
+            boundTemporary->SetType(rightConversionFun->GetTargetType());
+            boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+            conversion->SetBoundTemporary(boundTemporary);
+        }
+        rightOperand = conversion;
         rightOperand->SetType(rightConversionFun->GetTargetType());
     }
     Cm::BoundTree::BoundBinaryOp* op = new Cm::BoundTree::BoundBinaryOp(node, leftOperand, rightOperand);
@@ -225,7 +241,6 @@ void ExpressionBinder::EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode)
     Cm::Sym::LocalVariableSymbol* resultVar = currentFunction->CreateTempLocalVariable(disjunction->GetType());
     disjunction->SetResultVar(resultVar);
     boundExpressionStack.Push(disjunction);
-
 }
 
 void ExpressionBinder::EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode)
@@ -907,10 +922,13 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
         functionGroupSymbol = functionGroup->GetFunctionGroupSymbol();
         functionGroupName = functionGroupSymbol->Name();
-        fun = BindInvokeMemFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupName, numArgs);
-        if (fun)
+        if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
         {
-            type = fun->GetReturnType();
+            fun = BindInvokeMemFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupName, numArgs);
+            if (fun)
+            {
+                type = fun->GetReturnType();
+            }
         }
         if (!fun)
         {
@@ -1301,7 +1319,7 @@ void ExpressionBinder::Visit(Cm::Ast::CastNode& castNode)
     Cm::Sym::FunctionLookupSet functionLookups;
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, toType->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(boundCompileUnit, "@constructor", resolutionArguments, functionLookups, castNode.GetSpan(), conversions, Cm::Core::ConversionType::explicit_, 
+    Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(boundCompileUnit, "@constructor", resolutionArguments, functionLookups, castNode.GetSpan(), conversions, Cm::Sym::ConversionType::explicit_, 
         OverloadResolutionFlags::none);
     Cm::BoundTree::BoundCast* cast = new Cm::BoundTree::BoundCast(&castNode, operand, convertingCtor);
     cast->SetType(toType);

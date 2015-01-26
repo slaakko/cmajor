@@ -180,6 +180,10 @@ void Binder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
         CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &memberFunctionNode);
         CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
         GenerateReceives(boundCompileUnit, boundFunction.get());
+        if (boundFunction->GetFunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor())
+        {
+            GenerateStaticConstructorCall(boundCompileUnit, boundFunction.get(), boundClass->Symbol(), &memberFunctionNode);
+        }
         boundClass->AddBoundNode(boundFunction.release());
         EndContainerScope(); 
     }
@@ -595,10 +599,6 @@ void Binder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNod
 
 void Binder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
-    if (boundFunction->GetFunctionSymbol()->FullName().find("ToLower") != std::string::npos)
-    {
-        int x = 0;
-    }
     ConstructionStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
     constructionStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());

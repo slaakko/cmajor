@@ -197,43 +197,28 @@ public:
     void Generate(Emitter& emitter, GenResult& result) override;
 };
 
-enum class ConversionType
-{
-    explicit_, implicit
-};
-
 enum class ConversionInst
 {
     none, sext, zext, trunc, bitcast, uitofp, sitofp, fptoui, fptosi, fpext, fptrunc, ptrtoint
 };
 
-enum class ConversionRank
-{
-    exactMatch, promotion, conversion
-};
-
-inline bool BetterConversionRank(ConversionRank left, ConversionRank right)
-{
-    return left < right;
-}
-
 class ConvertingCtor : public BasicTypeOp
 {
 public:
-    ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, ConversionType conversionType_, ConversionInst conversionInst_, 
-        ConversionRank conversionRank_, int conversionDistance_);
-    ConversionType GetConversionType() const { return conversionType; }
-    ConversionRank GetConversionRank() const { return conversionRank; }
-    int GetConversionDistance() const { return conversionDistance; }
+    ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, Cm::Sym::ConversionType conversionType_, ConversionInst conversionInst_, 
+        Cm::Sym::ConversionRank conversionRank_, int conversionDistance_);
+    Cm::Sym::ConversionType GetConversionType() const override { return conversionType; }
     bool IsConvertingConstructor() const override { return true; }
     void Generate(Emitter& emitter, GenResult& result) override;
     Cm::Sym::TypeSymbol* GetTargetType() const override { return targetType; }
+    Cm::Sym::ConversionRank GetConversionRank() const override { return conversionRank; }
+    int GetConversionDistance() const override { return conversionDistance; }
 private:
     Cm::Sym::TypeSymbol* targetType;
     Cm::Sym::TypeSymbol* sourceType;
-    ConversionType conversionType;
+    Cm::Sym::ConversionType conversionType;
     ConversionInst conversionInst;
-    ConversionRank conversionRank;
+    Cm::Sym::ConversionRank conversionRank;
     int conversionDistance;
 };
 

@@ -260,7 +260,16 @@ void ClassTypeSymbol::AddSymbol(Symbol* symbol)
         {
             staticConstructor = functionSymbol;
         }
+        else if (functionSymbol->IsConvertingConstructor())
+        { 
+            AddConversion(functionSymbol);
+        }
     }
+}
+
+void ClassTypeSymbol::AddConversion(FunctionSymbol* functionSymbol)
+{
+    conversions.insert(functionSymbol);
 }
 
 void ClassTypeSymbol::MakeIrType()

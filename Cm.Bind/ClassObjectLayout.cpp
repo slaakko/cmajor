@@ -615,4 +615,17 @@ void GenerateStaticInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUn
     staticMemberVariableInitializerHandler.GenerateStaticMemberVariableInitializationStatements(staticConstructorNode);
 }
 
+void GenerateStaticConstructorCall(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, 
+    Cm::Ast::MemberFunctionNode* memberFunctionNode)
+{
+    Cm::BoundTree::BoundExpressionList arguments;
+    Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(memberFunctionNode, std::move(arguments));
+    functionCall->SetFunction(classType->StaticConstructor());
+    Cm::BoundTree::BoundInitClassObjectStatement* initBaseClasObjectStatement = new Cm::BoundTree::BoundInitClassObjectStatement(functionCall);
+    int classObjectLayoutFunIndex = currentFunction->GetClassObjectLayoutFunIndex();
+    currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, initBaseClasObjectStatement);
+    ++classObjectLayoutFunIndex;
+    currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
+}
+
 } } // namespace Cm::Bind

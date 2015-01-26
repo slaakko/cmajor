@@ -13,8 +13,22 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_)
+BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), parent(nullptr)
 {
+}
+
+BoundCompoundStatement* BoundStatement::CompoundParent() const
+{
+    BoundStatement* p = parent;
+    while (p && !p->IsBoundCompoundStatement())
+    {
+        p = p->parent;
+    }
+    if (!p)
+    {
+        throw std::runtime_error("compound parent not set");
+    }
+    return static_cast<BoundCompoundStatement*>(p);
 }
 
 BoundStatementList::BoundStatementList()
@@ -49,6 +63,7 @@ BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : Bou
 
 void BoundCompoundStatement::AddStatement(BoundStatement* statement)
 {
+    statement->SetParent(this);
     statementList.AddStatement(statement);
 }
 
@@ -181,6 +196,16 @@ void BoundConstructionStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundDestructionStatement::BoundDestructionStatement(Cm::Ast::Node* syntaxNode_, Ir::Intf::Object* object_, Cm::Sym::FunctionSymbol* destructor_) :
+    BoundStatement(syntaxNode_), object(object_), destructor(destructor_)
+{
+}
+
+void BoundDestructionStatement::Accept(Visitor& visitor) 
+{
+    visitor.Visit(*this);
+}
+
 BoundAssignmentStatement::BoundAssignmentStatement(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_, Cm::Sym::FunctionSymbol* assignment_) : 
     BoundStatement(syntaxNode_), left(left_), right(right_), assignment(assignment_)
 {
@@ -222,6 +247,7 @@ void BoundSwitchStatement::SetCondition(BoundExpression* condition_)
 
 void BoundSwitchStatement::AddStatement(BoundStatement* statement_)
 {
+    statement_->SetParent(this);
     if (statement_->IsBoundCaseStatement())
     {
         caseStatements.AddStatement(statement_);
@@ -248,6 +274,7 @@ BoundCaseStatement::BoundCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundParent
 
 void BoundCaseStatement::AddStatement(BoundStatement* statement_)
 {
+    statement_->SetParent(this);
     statements.AddStatement(statement_);
 }
 
@@ -267,6 +294,7 @@ BoundDefaultStatement::BoundDefaultStatement(Cm::Ast::Node* syntaxNode_) : Bound
 
 void BoundDefaultStatement::AddStatement(BoundStatement* statement_)
 {
+    statement_->SetParent(this);
     statements.AddStatement(statement_);
 }
 
@@ -327,6 +355,7 @@ void BoundConditionalStatement::SetCondition(BoundExpression* condition_)
 
 void BoundConditionalStatement::AddStatement(BoundStatement* statement)
 {
+    statement->SetParent(this);
     if (!thenS)
     {
         thenS.reset(statement);
@@ -363,6 +392,7 @@ void BoundWhileStatement::SetCondition(BoundExpression* condition_)
 
 void BoundWhileStatement::AddStatement(BoundStatement* statement_)
 {
+    statement_->SetParent(this);
     statement.reset(statement_);
 }
 
@@ -398,6 +428,7 @@ void BoundDoStatement::SetCondition(BoundExpression* condition_)
 
 void BoundDoStatement::AddStatement(BoundStatement* statement_)
 {
+    statement_->SetParent(this);
     statement.reset(statement_);
 }
 
@@ -438,6 +469,7 @@ void BoundForStatement::SetIncrement(BoundExpression* increment_)
 
 void BoundForStatement::AddStatement(BoundStatement* statement_)
 {
+    statement_->SetParent(this);
     if (!initS)
     {
         initS.reset(statement_);

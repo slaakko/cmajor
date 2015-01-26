@@ -106,12 +106,10 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
 {
     boost::filesystem::path projectBase = project->BasePath();
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
-    /*
     if (project->Name() != "system" && project->Name() != "support" && project->Name() != "os")
     {
         referenceFilePaths.insert(referenceFilePaths.begin(), "system.cml");
     }
-    */
     if (project->Name() != "support" && project->Name() != "os")
     {
         referenceFilePaths.insert(referenceFilePaths.begin(), "support.cml");

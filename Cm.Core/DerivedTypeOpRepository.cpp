@@ -459,7 +459,7 @@ Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetPtrToVoidPtrConversion(Cm::Sym::
     if (!ptrToVoidPtrConversion)
     {
         ptrToVoidPtrConversion.reset(new ConvertingCtor(typeRepository, typeRepository.MakePointerType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), span), type,
-            ConversionType::implicit, ConversionInst::bitcast, ConversionRank::conversion, 100));
+            Cm::Sym::ConversionType::implicit, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
         conversionTable.AddConversion(ptrToVoidPtrConversion.get());
     }
     return ptrToVoidPtrConversion.get();
@@ -470,7 +470,7 @@ Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetVoidPtrToPtrConversion(Cm::Sym::
     if (!voidPtrToPtrConversion)
     {
         voidPtrToPtrConversion.reset(new ConvertingCtor(typeRepository, type, typeRepository.MakePointerType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), span),
-            ConversionType::explicit_, ConversionInst::bitcast, ConversionRank::conversion, 100));
+            Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
     }
     return voidPtrToPtrConversion.get();
 }
@@ -480,7 +480,7 @@ Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetNullPtrToPtrConversion(Cm::Sym::
     if (!nullPtrToPtrConversion)
     {
         nullPtrToPtrConversion.reset(new ConvertingCtor(typeRepository, type, typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::nullPtrId)),
-            ConversionType::implicit, ConversionInst::bitcast, ConversionRank::conversion, 1));
+            Cm::Sym::ConversionType::implicit, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 1));
         conversionTable.AddConversion(nullPtrToPtrConversion.get());
     }
     return nullPtrToPtrConversion.get();

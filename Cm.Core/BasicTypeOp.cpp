@@ -549,8 +549,8 @@ void OpDecrement::Generate(Emitter& emitter, GenResult& result)
     Cm::IrIntf::Assign(emitter, GetIrType(), result.MainObject(), result.Arg1());
 }
 
-ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, ConversionType conversionType_, ConversionInst conversionInst_,
-    ConversionRank conversionRank_, int conversionDistance_) : BasicTypeOp(targetType_), targetType(targetType_), sourceType(sourceType_), conversionType(conversionType_), conversionInst(conversionInst_), 
+ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, Cm::Sym::ConversionType conversionType_, ConversionInst conversionInst_,
+    Cm::Sym::ConversionRank conversionRank_, int conversionDistance_) : BasicTypeOp(targetType_), targetType(targetType_), sourceType(sourceType_), conversionType(conversionType_), conversionInst(conversionInst_),
     conversionRank(conversionRank_), conversionDistance(conversionDistance_)
 {
     SetGroupName("@constructor");

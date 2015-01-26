@@ -48,7 +48,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundC
     const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, OverloadResolutionFlags flags);
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
-    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::Core::ConversionType conversionType, OverloadResolutionFlags flags);
+    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::Sym::ConversionType conversionType, OverloadResolutionFlags flags);
 
 
 } } // namespace Cm::Bind

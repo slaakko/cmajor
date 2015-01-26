@@ -46,6 +46,28 @@ enum class SwitchEmitState
     none, createSwitchTargets, emitStatements
 };
 
+class CompoundDestructionStack
+{
+public:
+    void Push(Cm::BoundTree::BoundDestructionStatement* destructionStatement);
+    std::unique_ptr<Cm::BoundTree::BoundDestructionStatement> Pop();
+    const std::vector<std::unique_ptr<Cm::BoundTree::BoundDestructionStatement>>& DestructionStatements() const { return destructionStatements; }
+    bool IsEmpty() const { return destructionStatements.empty(); }
+private:
+    std::vector<std::unique_ptr<Cm::BoundTree::BoundDestructionStatement>> destructionStatements;
+};
+
+class FunctionDestructionStack
+{
+public:
+    void Push(CompoundDestructionStack&& compoundDestructionStack);
+    CompoundDestructionStack Pop();
+    const std::vector<CompoundDestructionStack>& CompoundDestructionStacks() const { return compoundDestructionStacks; }
+    bool IsEmpty() const { return compoundDestructionStacks.empty(); }
+private:
+    std::vector<CompoundDestructionStack> compoundDestructionStacks;
+};
+
 class FunctionEmitter : public Cm::BoundTree::Visitor
 {
 public:
@@ -81,6 +103,7 @@ public:
     void Visit(Cm::BoundTree::BoundFunctionCallStatement& boundFunctionCallStatement) override;
     void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
+    void Visit(Cm::BoundTree::BoundDestructionStatement& boundDestructionStatement) override;
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
     void Visit(Cm::BoundTree::BoundThrowStatement& boundThrowStatement) {}
     void Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement) override;
@@ -109,6 +132,8 @@ private:
     Cm::Core::GenResultStack compoundResultStack;
     Cm::Core::GenResultStack resultStack;
     bool firstStatementInCompound;
+    FunctionDestructionStack functionDestructionStack;
+    CompoundDestructionStack currentCompoundDestructionStack;
     std::stack<bool> firstStatementInCompoundStack;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;
@@ -129,12 +154,16 @@ private:
     bool executingPostfixIncDecStatements;
     SwitchEmitState currentSwitchEmitState;
     std::stack<SwitchEmitState> switchEmitStateStack;
-    typedef std::unordered_map<std::string, Ir::Intf::LabelObject*> SwitchCaseConstantMap;
+    typedef std::unordered_map<std::string, std::pair<Ir::Intf::LabelObject*, Cm::BoundTree::BoundStatement*>> SwitchCaseConstantMap;
     typedef SwitchCaseConstantMap::const_iterator SwitchCaseConstantMapIt;
     std::stack<SwitchCaseConstantMap*> switchCaseConstantMapStack;
     SwitchCaseConstantMap* currentSwitchCaseConstantMap;
     Ir::Intf::LabelObject* switchCaseLabel;
     std::vector<Ir::Intf::Object*> switchCaseConstants;
+    void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
+    void ExitCompound(Cm::Core::GenResult& result, const CompoundDestructionStack& compoundDestructionStack, bool& first);
+    void ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromCompound, Cm::BoundTree::BoundCompoundStatement* targetCompound, Cm::Core::GenResult& result);
+    void ExitFunction(Cm::Core::GenResult& result);
     void PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement);
     void PopBreakTargetStatement();
     void PushContinueTargetStatement(Cm::BoundTree::BoundStatement* statement);

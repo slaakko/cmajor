@@ -21,18 +21,18 @@ namespace Cm { namespace Bind {
 
 struct ArgumentMatch
 {
-    ArgumentMatch(Cm::Core::ConversionRank conversionRank_) : conversionRank(conversionRank_), conversionDistance(0) 
+    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_) : conversionRank(conversionRank_), conversionDistance(0) 
     {
     }
-    ArgumentMatch(Cm::Core::ConversionRank conversionRank_, const Cm::Sym::DerivationCounts& parameterDerivationCounts_, const Cm::Sym::DerivationCounts& argumentDerivationCounts_) : 
+    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_, const Cm::Sym::DerivationCounts& parameterDerivationCounts_, const Cm::Sym::DerivationCounts& argumentDerivationCounts_) : 
         conversionRank(conversionRank_), conversionDistance(0), parameterDerivationCounts(parameterDerivationCounts_), argumentDerivationCounts(argumentDerivationCounts_) 
     {
     }
-    ArgumentMatch(Cm::Core::ConversionRank conversionRank_, int conversionDistance_, const Cm::Sym::DerivationCounts& parameterDerivationCounts_, const Cm::Sym::DerivationCounts& argumentDerivationCounts_):
+    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_, int conversionDistance_, const Cm::Sym::DerivationCounts& parameterDerivationCounts_, const Cm::Sym::DerivationCounts& argumentDerivationCounts_):
         conversionRank(conversionRank_), conversionDistance(conversionDistance_), parameterDerivationCounts(parameterDerivationCounts_), argumentDerivationCounts(argumentDerivationCounts_) 
     {
     }
-    Cm::Core::ConversionRank conversionRank;
+    Cm::Sym::ConversionRank conversionRank;
     int conversionDistance;
     Cm::Sym::DerivationCounts parameterDerivationCounts;
     Cm::Sym::DerivationCounts argumentDerivationCounts;
@@ -40,11 +40,11 @@ struct ArgumentMatch
 
 bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& right)
 {
-    if (Cm::Core::BetterConversionRank(left.conversionRank, right.conversionRank))
+    if (Cm::Sym::BetterConversionRank(left.conversionRank, right.conversionRank))
     {
         return true;
     }
-    else if (Cm::Core::BetterConversionRank(right.conversionRank, left.conversionRank))
+    else if (Cm::Sym::BetterConversionRank(right.conversionRank, left.conversionRank))
     {
         return false;
     }
@@ -197,7 +197,7 @@ bool BaseClassDerivedClassRelationShip(Cm::Core::ClassConversionTable& classConv
 }
 
 bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, const std::vector<Cm::Core::Argument>& arguments, 
-    Cm::Core::ConversionType conversionType, const Cm::Parsing::Span& span, FunctionMatch& functionMatch)
+    Cm::Sym::ConversionType conversionType, const Cm::Parsing::Span& span, FunctionMatch& functionMatch, std::unordered_set<Cm::Sym::ClassTypeSymbol*>& conversionClassTypes)
 {
     int arity = int(parameters.size());
     if (arity != int(arguments.size()))
@@ -214,11 +214,11 @@ bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const st
         {
             if (argument.BindToRvalueRef() && !parameterType->IsRvalueRefType())
             {
-                functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Core::ConversionRank::conversion, 1, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
+                functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Sym::ConversionRank::conversion, 1, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
             }
             else
             {
-                functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Core::ConversionRank::exactMatch));
+                functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Sym::ConversionRank::exactMatch));
             }
             functionMatch.conversions.push_back(nullptr);
             continue;
@@ -228,7 +228,7 @@ bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const st
         Cm::Sym::TypeSymbol* plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(argumentType);
         if (Cm::Sym::TypesEqual(plainParameterType, plainArgumentType))
         {
-            functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Core::ConversionRank::exactMatch, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
+            functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Sym::ConversionRank::exactMatch, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
             functionMatch.conversions.push_back(nullptr);
             continue;
         }
@@ -237,19 +237,19 @@ bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const st
         if (BaseClassDerivedClassRelationShip(boundCompileUnit.ClassConversionTable(), ClassConversionType::derivedToBase, plainParameterType, plainArgumentType, parameterType, argumentType, 
             distance, conversion, span))
         {
-            functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Core::ConversionRank::conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
+            functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Sym::ConversionRank::conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
             functionMatch.conversions.push_back(conversion);
             ++functionMatch.numConversions;
             continue;
         }
-        if (conversionType == Cm::Core::ConversionType::explicit_)
+        if (conversionType == Cm::Sym::ConversionType::explicit_)
         {
             int distance = 0;
             Cm::Sym::FunctionSymbol* conversion = nullptr;
             if (BaseClassDerivedClassRelationShip(boundCompileUnit.ClassConversionTable(), ClassConversionType::baseToDerived, plainParameterType, plainArgumentType, parameterType, argumentType, 
                 distance, conversion, span))
             {
-                functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Core::ConversionRank::conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
+                functionMatch.argumentMatches.push_back(ArgumentMatch(Cm::Sym::ConversionRank::conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
                 functionMatch.conversions.push_back(conversion);
                 ++functionMatch.numConversions;
                 continue;
@@ -271,13 +271,46 @@ bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const st
         {
             boundCompileUnit.EnumTypeOpRepository().InsertEnumConversionsToConversionTable(boundCompileUnit.ConversionTable(), plainParameterType, span);
         }
+        Cm::Sym::ClassTypeSymbol* conversionClassType1 = nullptr;
+        Cm::Sym::ClassTypeSymbol* conversionClassType2 = nullptr;
+        if (plainArgumentType->IsClassTypeSymbol())
+        {
+            conversionClassType1 = static_cast<Cm::Sym::ClassTypeSymbol*>(plainArgumentType);
+            if (conversionClassTypes.find(conversionClassType1) != conversionClassTypes.end())
+            {
+                conversionClassType1 = nullptr;
+            }
+        }
+        if (plainParameterType->IsClassTypeSymbol())
+        {
+            conversionClassType2 = static_cast<Cm::Sym::ClassTypeSymbol*>(plainParameterType);
+            if (conversionClassTypes.find(conversionClassType2) != conversionClassTypes.end())
+            {
+                conversionClassType1 = nullptr;
+            }
+        }
+        if (conversionClassType1)
+        {
+            conversionClassTypes.insert(conversionClassType1);
+            for (Cm::Sym::FunctionSymbol* conversion : conversionClassType1->Conversions())
+            {
+                boundCompileUnit.ConversionTable().AddConversion(conversion);
+            }
+        }
+        if (conversionClassType2 && conversionClassType2 != conversionClassType1)
+        {
+            conversionClassTypes.insert(conversionClassType2);
+            for (Cm::Sym::FunctionSymbol* conversion : conversionClassType2->Conversions())
+            {
+                boundCompileUnit.ConversionTable().AddConversion(conversion);
+            }
+        }
         conversion = boundCompileUnit.ConversionTable().GetConversion(plainArgumentType, plainParameterType);
         if (conversion)
         {
             if (conversion->IsConvertingConstructor())
             {
-                Cm::Core::ConvertingCtor* convertingCtor = static_cast<Cm::Core::ConvertingCtor*>(conversion);
-                functionMatch.argumentMatches.push_back(ArgumentMatch(convertingCtor->GetConversionRank(), convertingCtor->GetConversionDistance(),
+                functionMatch.argumentMatches.push_back(ArgumentMatch(conversion->GetConversionRank(), conversion->GetConversionDistance(),
                     parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts()));
                 functionMatch.conversions.push_back(conversion);
                 ++functionMatch.numConversions;
@@ -322,18 +355,19 @@ std::string MakeOverloadName(const std::string& groupName, const std::vector<Cm:
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
     const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions)
 {
-    return ResolveOverload(boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Core::ConversionType::implicit, OverloadResolutionFlags::none);
+    return ResolveOverload(boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, OverloadResolutionFlags::none);
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
     const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, OverloadResolutionFlags flags)
 {
-    return ResolveOverload(boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Core::ConversionType::implicit, flags);
+    return ResolveOverload(boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, flags);
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
-    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::Core::ConversionType conversionType, OverloadResolutionFlags flags)
+    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::Sym::ConversionType conversionType, OverloadResolutionFlags flags)
 {
+    std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
     conversions.clear();
     int arity = int(arguments.size());
     std::unordered_set<Cm::Sym::FunctionSymbol*> viableFunctions;
@@ -379,26 +413,26 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundC
         }
     }
     std::vector<FunctionMatch> functionMatches;
-    Cm::Core::ConvertingCtor* convertingCtor = nullptr;
+    Cm::Sym::FunctionSymbol* convertingCtor = nullptr;
     bool mustCast = false;
     for (Cm::Sym::FunctionSymbol* viableFunction : viableFunctions)
     {
         if (viableFunction->IsConvertingConstructor())
         {
-            convertingCtor = static_cast<Cm::Core::ConvertingCtor*>(viableFunction);
-            if (convertingCtor->GetConversionType() == Cm::Core::ConversionType::explicit_ && conversionType == Cm::Core::ConversionType::implicit)
+            if (viableFunction->GetConversionType() == Cm::Sym::ConversionType::explicit_ && conversionType == Cm::Sym::ConversionType::implicit)
             {
                 FunctionMatch functionMatch(viableFunction);
-                bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, Cm::Core::ConversionType::explicit_, span, functionMatch);
+                bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, Cm::Sym::ConversionType::explicit_, span, functionMatch, conversionClassTypes);
                 if (candidateFound)
                 {
                     mustCast = true;
+                    convertingCtor = viableFunction;
                 }
                 continue;
             }
         }
         FunctionMatch functionMatch(viableFunction);
-        bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, conversionType, span, functionMatch);
+        bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, conversionType, span, functionMatch, conversionClassTypes);
         if (candidateFound)
         {
             functionMatches.push_back(functionMatch);

@@ -77,6 +77,7 @@ public:
     bool DoGenerateStaticConstructor();
     bool HasNonTrivialMemberDestructor() const;
     void AddSymbol(Symbol* symbol) override;
+    void AddConversion(FunctionSymbol* functionSymbol);
     const std::vector<MemberVariableSymbol*>& MemberVariables() const { return memberVariables; }
     const std::vector<MemberVariableSymbol*>& StaticMemberVariables() const { return staticMemberVariables; }
     bool IsVirtual() const
@@ -249,6 +250,7 @@ public:
     }
     FunctionSymbol* Destructor() const { return destructor; }
     FunctionSymbol* StaticConstructor() const { return staticConstructor; }
+    const std::unordered_set<FunctionSymbol*> Conversions() const { return conversions; }
     MemberVariableSymbol* InitializedVar() const { return initializedVar.get(); }
     void SetInitializedVar(MemberVariableSymbol* initializedVar_);
     int16_t VPtrIndex() const { return vptrIndex; }
@@ -268,6 +270,7 @@ private:
     std::unique_ptr<MemberVariableSymbol> initializedVar;
     int16_t vptrIndex;
     std::vector<Cm::Sym::FunctionSymbol*> vtbl;
+    std::unordered_set<FunctionSymbol*> conversions;
     bool GetFlag(ClassTypeSymbolFlags flag) const
     {
         return (flags & flag) != ClassTypeSymbolFlags::none;

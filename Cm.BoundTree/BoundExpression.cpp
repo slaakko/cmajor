@@ -153,6 +153,11 @@ void BoundConversion::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+void BoundConversion::SetBoundTemporary(Cm::BoundTree::BoundExpression* boundTemporary_)
+{
+    boundTemporary.reset(boundTemporary_);
+}
+
 BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_) : BoundExpression(syntaxNode_), operand(operand_), conversionFun(conversionFun_)
 {
 }

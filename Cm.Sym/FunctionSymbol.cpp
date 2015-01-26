@@ -113,6 +113,21 @@ bool FunctionSymbol::IsStaticConstructor() const
     return false;
 }
 
+bool FunctionSymbol::IsConvertingConstructor() const
+{
+    return GetFlag(FunctionSymbolFlags::conversion);
+}
+
+void FunctionSymbol::SetConvertingConstructor()
+{
+    SetFlag(FunctionSymbolFlags::conversion);
+}
+
+bool FunctionSymbol::CheckIfConvertingConstructor() const
+{
+    return IsConstructor() && !IsExplicit() && !IsStatic() && !IsCopyConstructor() && !IsMoveConstructor();
+}
+
 bool FunctionSymbol::IsCopyAssignment() const
 {
     if (groupName == "operator=" && parameters.size() == 2)
@@ -213,7 +228,7 @@ void FunctionSymbol::ComputeName()
 
 TypeSymbol* FunctionSymbol::GetTargetType() const
 {
-    throw std::runtime_error("member function not applicable");
+    return parameters[0]->GetType()->GetBaseType();
 }
 
 void FunctionSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) 

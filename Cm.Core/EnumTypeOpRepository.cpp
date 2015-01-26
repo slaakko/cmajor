@@ -82,7 +82,7 @@ Cm::Sym::FunctionSymbol* EnumTypeOpCache::GetConversionToUnderlyingType(Cm::Sym:
     if (!conversionToUnderlyingType)
     {
         Cm::Sym::EnumTypeSymbol* enumTypeSymbol = static_cast<Cm::Sym::EnumTypeSymbol*>(enumType);
-        conversionToUnderlyingType.reset(new ConvertingCtor(typeRepository, enumTypeSymbol->GetUnderlyingType(), enumType, ConversionType::implicit, ConversionInst::bitcast, ConversionRank::conversion,
+        conversionToUnderlyingType.reset(new ConvertingCtor(typeRepository, enumTypeSymbol->GetUnderlyingType(), enumType, Cm::Sym::ConversionType::implicit, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion,
             100));
         conversionTable.AddConversion(conversionToUnderlyingType.get());
     }
@@ -94,8 +94,8 @@ Cm::Sym::FunctionSymbol* EnumTypeOpCache::GetConversionFromUnderlyingType(Cm::Sy
     if (!conversionFromUnderlyingType)
     {
         Cm::Sym::EnumTypeSymbol* enumTypeSymbol = static_cast<Cm::Sym::EnumTypeSymbol*>(enumType);
-        conversionFromUnderlyingType.reset(new ConvertingCtor(typeRepository, enumTypeSymbol, enumTypeSymbol->GetUnderlyingType(), ConversionType::explicit_, ConversionInst::bitcast,
-            ConversionRank::conversion, 100));
+        conversionFromUnderlyingType.reset(new ConvertingCtor(typeRepository, enumTypeSymbol, enumTypeSymbol->GetUnderlyingType(), Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast,
+            Cm::Sym::ConversionRank::conversion, 100));
     }
     return conversionFromUnderlyingType.get();
 }
