@@ -108,6 +108,8 @@ private:
     Cm::Core::GenResult compoundResult;
     Cm::Core::GenResultStack compoundResultStack;
     Cm::Core::GenResultStack resultStack;
+    bool firstStatementInCompound;
+    std::stack<bool> firstStatementInCompoundStack;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;
     Cm::Core::StringRepository& stringRepository;
@@ -133,7 +135,6 @@ private:
     SwitchCaseConstantMap* currentSwitchCaseConstantMap;
     Ir::Intf::LabelObject* switchCaseLabel;
     std::vector<Ir::Intf::Object*> switchCaseConstants;
-    bool firstStatementInCompound;
     void PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement);
     void PopBreakTargetStatement();
     void PushContinueTargetStatement(Cm::BoundTree::BoundStatement* statement);

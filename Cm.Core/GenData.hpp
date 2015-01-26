@@ -23,7 +23,8 @@ enum class GenFlags : uint8_t
     lvalue = 1 << 1,
     addrArg = 1 << 2,
     classTypeToPointerTypeConversion = 1 << 3,
-    virtualCall = 1 << 4
+    virtualCall = 1 << 4,
+    labelSet = 1 << 5
 };
 
 inline GenFlags operator&(GenFlags left, GenFlags right)
@@ -173,8 +174,11 @@ public:
     void SetGenVirtualCall() { SetFlag(GenFlags::virtualCall, flags); }
     GenData& GetChild(int index);
     void Merge(GenResult& child);
+    void Merge(GenResult& child, bool insertFirst);
     Ir::Intf::LabelObject* GetLabel() const;
     void SetLabel(Ir::Intf::LabelObject* label);
+    bool LabelSet() const { return GetFlag(GenFlags::labelSet, flags); }
+    void SetLabelSet() { SetFlag(GenFlags::labelSet, flags); }
 private:
     Emitter* emitter;
     GenFlags flags;
@@ -185,10 +189,11 @@ private:
 class GenResultStack
 {
 public:
-    void Push(GenResult&& genResult) { stack.push(std::move(genResult)); }
-    GenResult Pop() { GenResult top = std::move(stack.top()); stack.pop(); return top; }
+    void Push(GenResult&& genResult) { stack.push_back(std::move(genResult)); }
+    GenResult Pop() { GenResult top = std::move(stack.back()); stack.pop_back(); return top; }
+    std::vector<GenResult>& Stack() { return stack; }
 private:
-    std::stack<GenResult> stack;
+    std::vector<GenResult> stack;
 };
 
 } } // namespace Cm::Core
