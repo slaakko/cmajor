@@ -313,6 +313,19 @@ GenData& GenResult::GetChild(int index)
     return children[index]; 
 }
 
+void GenResult::Merge(GenResult& child, bool insertFirst)
+{
+    genData.MergeData(child.genData);
+    if (insertFirst)
+    {
+        children.insert(children.begin(), std::move(child.genData));
+    }
+    else
+    {
+        AddChild(std::move(child.genData));
+    }
+}
+
 void GenResult::Merge(GenResult& child)
 {
     genData.MergeData(child.genData);

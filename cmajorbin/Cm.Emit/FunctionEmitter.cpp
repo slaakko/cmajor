@@ -443,10 +443,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
-    if (currentFunction->Name() == "@constructor(char)")
-    {
-        int x = 0;
-    }
     Cm::Core::GenResult result(emitter.get(), genFlags);
     bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();
     if (functionReturnsClassObjectByValue)
@@ -639,12 +635,12 @@ void FunctionEmitter::EndVisitStatement(Cm::BoundTree::BoundStatement& statement
         compoundResult.BackpatchNextTargets(statementResult.GetLabel());
     }
     compoundResult.Merge(statementResult);
-    if (firstStatementInCompound)
+    if (!compoundResult.LabelSet())
     {
         if (statementResult.GetLabel())
         {
             compoundResult.SetLabel(statementResult.GetLabel());
-            firstStatementInCompound = false;
+            compoundResult.SetLabelSet();
         }
     }
 }
@@ -658,7 +654,6 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCom
         compoundResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
         GenerateCall(irFunctionRepository.GetDoNothingFunction(), compoundResult, false);
     }
-    firstStatementInCompound = true;
 }
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
@@ -967,7 +962,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     {
         result.SetLabel(resultLabel);
     }
-    result.Merge(conditionResult);
+    result.Merge(conditionResult, true);
     resultStack.Push(std::move(result));
 }
 
@@ -1039,6 +1034,10 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundForStatement& boundForState
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStatement)
 {
+    if (currentFunction->FullName() == "System.String.StartsWith(const String& prefix)")
+    {
+        int x = 0;
+    }
     PopSkipContent();
     Cm::Core::GenResult result(emitter.get(), genFlags);
     PushBreakTargetStatement(&boundForStatement);
