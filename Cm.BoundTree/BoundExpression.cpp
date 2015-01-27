@@ -10,6 +10,8 @@
 #include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.BoundTree/BoundStatement.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 
 namespace Cm { namespace BoundTree {
 
@@ -237,6 +239,24 @@ BoundConjunction::BoundConjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* 
 void BoundConjunction::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundConversion* CreateBoundConversion(Cm::Ast::Node* node, BoundExpression* operand, Cm::Sym::FunctionSymbol* conversionFun, BoundFunction* currentFunction)
+{
+    BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, operand, conversionFun);
+    if (conversionFun->GetTargetType()->IsClassTypeSymbol())
+    {
+        Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, currentFunction->CreateTempLocalVariable(conversionFun->GetTargetType()));
+        boundTemporary->SetType(conversionFun->GetTargetType());
+        boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        conversion->SetBoundTemporary(boundTemporary);
+        conversion->SetType(boundTemporary->GetType());
+    }
+    else
+    {
+        conversion->SetType(conversionFun->GetTargetType());
+    }
+    return conversion;
 }
 
 } } // namespace Cm::BoundTree

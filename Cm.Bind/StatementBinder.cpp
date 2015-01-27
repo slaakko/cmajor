@@ -61,7 +61,7 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     constructionStatement->SetConstructor(ctor);
     constructionStatement->InsertLocalVariableToArguments();
     constructionStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
-    constructionStatement->ApplyConversions(conversions);
+    constructionStatement->ApplyConversions(conversions, CurrentFunction());
     PrepareFunctionArguments(ctor, constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository());
     if (localVariableType->IsReferenceType())
     {
@@ -102,14 +102,12 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     Cm::Sym::FunctionSymbol* leftConversion = conversions[0];
     if (leftConversion)
     {
-        left = new Cm::BoundTree::BoundConversion(&assignmentStatementNode, left, leftConversion);
-        left->SetType(leftConversion->GetTargetType());
+        left = Cm::BoundTree::CreateBoundConversion(&assignmentStatementNode, left, leftConversion, CurrentFunction());
     }
     Cm::Sym::FunctionSymbol* rightConversion = conversions[1];
     if (rightConversion)
     {
-        right = new Cm::BoundTree::BoundConversion(&assignmentStatementNode, right, rightConversion);
-        right->SetType(rightConversion->GetTargetType());
+        right = Cm::BoundTree::CreateBoundConversion(&assignmentStatementNode, right, rightConversion, CurrentFunction());
     }
     if (!assignment->Parameters()[1]->GetType()->IsReferenceType() && right->GetType()->IsReferenceType())
     {
@@ -204,8 +202,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 Cm::Sym::FunctionSymbol* conversionFun = conversions[1];
                 if (conversionFun)
                 {
-                    returnValue = new Cm::BoundTree::BoundConversion(&returnStatementNode, returnValue, conversionFun);
-                    returnValue->SetType(conversionFun->GetTargetType());
+                    returnValue = Cm::BoundTree::CreateBoundConversion(&returnStatementNode, returnValue, conversionFun, CurrentFunction());
                 }
                 if (returnValue->GetType()->IsClassTypeSymbol() && returnType->IsReferenceType())
                 {

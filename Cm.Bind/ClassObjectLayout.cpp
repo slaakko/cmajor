@@ -84,8 +84,7 @@ void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpres
         {
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
             Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(baseInitializerNode, std::move(arguments));
@@ -167,8 +166,7 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
         {
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
             Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(&thisInitializerNode, std::move(arguments));
@@ -299,8 +297,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
         {
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
             Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
@@ -539,8 +536,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializer
         {
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
             Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
