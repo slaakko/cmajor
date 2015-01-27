@@ -161,8 +161,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     Cm::BoundTree::BoundExpression* unaryOperand = operand;
     if (conversionFun)
     {
-        unaryOperand = new Cm::BoundTree::BoundConversion(node, operand, conversionFun);
-        unaryOperand->SetType(conversionFun->GetTargetType());
+        unaryOperand = Cm::BoundTree::CreateBoundConversion(node, operand, conversionFun, currentFunction);
     }
     Cm::BoundTree::BoundUnaryOp* op = new Cm::BoundTree::BoundUnaryOp(node, unaryOperand);
     op->SetFunction(fun);
@@ -193,30 +192,12 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     Cm::BoundTree::BoundExpression* leftOperand = left;
     if (leftConversionFun)
     {
-        Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, left, leftConversionFun);
-        if (leftConversionFun->GetTargetType()->IsClassTypeSymbol())
-        {
-            Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, currentFunction->CreateTempLocalVariable(leftConversionFun->GetTargetType()));
-            boundTemporary->SetType(leftConversionFun->GetTargetType());
-            boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
-            conversion->SetBoundTemporary(boundTemporary);
-        }
-        leftOperand = conversion;
-        leftOperand->SetType(leftConversionFun->GetTargetType());
+        leftOperand = Cm::BoundTree::CreateBoundConversion(node, left, leftConversionFun, currentFunction);
     }
     Cm::BoundTree::BoundExpression* rightOperand = right;
     if (rightConversionFun)
     {
-        Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, right, rightConversionFun);
-        if (rightConversionFun->GetTargetType()->IsClassTypeSymbol())
-        {
-            Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, currentFunction->CreateTempLocalVariable(rightConversionFun->GetTargetType()));
-            boundTemporary->SetType(rightConversionFun->GetTargetType());
-            boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
-            conversion->SetBoundTemporary(boundTemporary);
-        }
-        rightOperand = conversion;
-        rightOperand->SetType(rightConversionFun->GetTargetType());
+        rightOperand = Cm::BoundTree::CreateBoundConversion(node, right, rightConversionFun, currentFunction);
     }
     Cm::BoundTree::BoundBinaryOp* op = new Cm::BoundTree::BoundBinaryOp(node, leftOperand, rightOperand);
     op->SetFunction(fun);
@@ -958,9 +939,9 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
         if (conversionFun)
         {
-            Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, arguments[i].release(), conversionFun);
-            conversion->SetType(conversionFun->GetTargetType());
-            arguments[i].reset(conversion);
+            Cm::BoundTree::BoundExpression* arg = arguments[i].release();
+            std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
+            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, currentFunction));
         }
     }
     if (!constructTemporary)

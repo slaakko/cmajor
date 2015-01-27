@@ -296,6 +296,10 @@ private:
     Cm::Sym::LocalVariableSymbol* resultVar;
 };
 
+class BoundFunction;
+
+BoundConversion* CreateBoundConversion(Cm::Ast::Node* node, BoundExpression* operand, Cm::Sym::FunctionSymbol* conversionFun, BoundFunction* currentFunction);
+
 } } // namespace Cm::BoundTree
 
 #endif // CM_BOUND_TREE_BOUND_EXPRESSION_INCLUDED

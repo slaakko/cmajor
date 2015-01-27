@@ -171,7 +171,7 @@ void BoundConstructionStatement::GetResolutionArguments(std::vector<Cm::Core::Ar
     }
 }
 
-void BoundConstructionStatement::ApplyConversions(const std::vector<Cm::Sym::FunctionSymbol*>& conversions)
+void BoundConstructionStatement::ApplyConversions(const std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundFunction* currentFunction)
 {
     int n = int(conversions.size());
     if (n != arguments.Count())
@@ -185,8 +185,7 @@ void BoundConstructionStatement::ApplyConversions(const std::vector<Cm::Sym::Fun
         {
             std::unique_ptr<BoundExpression>& argument = arguments[i];
             BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            argument.reset(CreateBoundConversion(SyntaxNode(), arg, conversionFun, currentFunction));
         }
     }
 }
