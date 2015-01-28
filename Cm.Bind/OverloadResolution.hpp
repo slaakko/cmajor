@@ -41,14 +41,16 @@ inline bool GetFlag(OverloadResolutionFlags flag, OverloadResolutionFlags flags)
     return (flags & flag) != OverloadResolutionFlags::none;
 }
 
-Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,  const std::vector<Cm::Core::Argument>& arguments, 
-    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions);
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,  
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions);
 
-Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
-    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, OverloadResolutionFlags flags);
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    OverloadResolutionFlags flags);
 
-Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
-    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::Sym::ConversionType conversionType, OverloadResolutionFlags flags);
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    Cm::Sym::ConversionType conversionType, OverloadResolutionFlags flags);
 
 
 } } // namespace Cm::Bind

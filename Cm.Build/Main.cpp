@@ -69,7 +69,7 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     Cm::BoundTree::BoundFunction* mainFunction = new Cm::BoundTree::BoundFunction(nullptr, mainFunctionSymbol.get());
     Cm::BoundTree::BoundCompoundStatement* mainBody = new Cm::BoundTree::BoundCompoundStatement(nullptr);
     mainFunction->SetBody(mainBody);
-    Cm::Bind::GenerateReceives(mainCompileUnit, mainFunction);
+    Cm::Bind::GenerateReceives(nullptr, mainCompileUnit, mainFunction);
     Cm::Sym::LocalVariableSymbol* returnValueVariable = new Cm::Sym::LocalVariableSymbol(userMainFunction->GetSpan(), "returnValue");
     returnValueVariable->SetType(intType);
     mainFunctionSymbol->AddSymbol(returnValueVariable);

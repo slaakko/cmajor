@@ -55,8 +55,8 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::ConversionType conversionType = Cm::Sym::ConversionType::implicit;
-    Cm::Sym::FunctionSymbol* ctor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, constructionStatementNode.GetSpan(), conversions, conversionType, 
-        OverloadResolutionFlags::none);
+    Cm::Sym::FunctionSymbol* ctor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, constructionStatementNode.GetSpan(), conversions, 
+        conversionType,  OverloadResolutionFlags::none);
     PrepareFunctionSymbol(ctor, constructionStatementNode.GetSpan());
     constructionStatement->SetConstructor(ctor);
     constructionStatement->InsertLocalVariableToArguments();
@@ -93,7 +93,7 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     Cm::Sym::FunctionLookupSet functionLookups;
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, leftPlainType->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* assignment = ResolveOverload(BoundCompileUnit(), "operator=", resolutionArguments, functionLookups, assignmentStatementNode.GetSpan(), conversions);
+    Cm::Sym::FunctionSymbol* assignment = ResolveOverload(ContainerScope(), BoundCompileUnit(), "operator=", resolutionArguments, functionLookups, assignmentStatementNode.GetSpan(), conversions);
     PrepareFunctionSymbol(assignment, assignmentStatementNode.GetSpan());
     if (conversions.size() != 2)
     {
@@ -191,8 +191,8 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 {
                     conversionType = Cm::Sym::ConversionType::explicit_;
                 }
-                Cm::Sym::FunctionSymbol* ctor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, returnStatementNode.GetSpan(), conversions, conversionType, 
-                    OverloadResolutionFlags::none);
+                Cm::Sym::FunctionSymbol* ctor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, returnStatementNode.GetSpan(), conversions, 
+                    conversionType, OverloadResolutionFlags::none);
                 PrepareFunctionSymbol(ctor, returnStatementNode.GetSpan());
                 returnStatement->SetConstructor(ctor);
                 if (conversions.size() != 2)

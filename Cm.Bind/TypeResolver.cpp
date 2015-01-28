@@ -13,6 +13,7 @@
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/TemplateParameterSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Expression.hpp>
 
@@ -192,6 +193,11 @@ void TypeResolver::ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
             }
         }
         symbol = typedefSymbol->GetType();
+    }
+    else if (symbol->IsBoundTemplateParameterSymbol())
+    {
+        Cm::Sym::BoundTemplateParameterSymbol* boundTemplateParam = static_cast<Cm::Sym::BoundTemplateParameterSymbol*>(symbol);
+        symbol = boundTemplateParam->GetType();
     }
     if (symbol->IsTypeSymbol())
     {

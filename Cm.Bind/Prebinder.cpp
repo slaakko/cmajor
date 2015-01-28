@@ -215,13 +215,13 @@ void Prebinder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 
 void Prebinder::EndVisit(Cm::Ast::FunctionNode& functionNode)
 {
-    CompleteBindFunction(symbolTable, currentContainerScope, fileScope.get(), &functionNode, currentFunction, currentClass);
     if (functionNode.TemplateParameters().Count() > 0)
     {
         PopSkipContent();
     }
     else
     {
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScope.get(), &functionNode, currentFunction, currentClass);
         EndContainerScope();
     }
 }

@@ -54,6 +54,8 @@ public:
     void EndVisit(Cm::Ast::DelegateNode& delegateNode) override;
     void BeginVisit(Cm::Ast::ClassDelegateNode& classDelegateNode) override;
     void EndVisit(Cm::Ast::ClassDelegateNode& classDelegateNode) override;
+    void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
+    void EndContainerScope();
 private:
     Cm::Sym::SymbolTable& symbolTable;
     std::unique_ptr<Cm::Sym::FileScope> fileScope;
@@ -62,8 +64,6 @@ private:
     int parameterIndex;
     Cm::Sym::ClassTypeSymbol* currentClass;
     Cm::Sym::FunctionSymbol* currentFunction;
-    void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
-    void EndContainerScope();
 };
 
 } } // namespace Cm::Bind

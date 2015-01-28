@@ -17,8 +17,9 @@
 
 namespace Cm { namespace Bind {
 
-Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const Cm::Parsing::Span& span, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Sym::ClassTypeSymbol* classTypeSymbol, 
-    Cm::Sym::ClassTypeSymbol* baseClassType, Cm::Sym::ParameterSymbol* thisParam, Cm::BoundTree::BoundExpressionList& arguments, const std::string& errorMessageHeader, Cm::Core::Exception*& exception)
+Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, 
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ClassTypeSymbol* baseClassType, Cm::Sym::ParameterSymbol* thisParam, Cm::BoundTree::BoundExpressionList& arguments, 
+    const std::string& errorMessageHeader, Cm::Core::Exception*& exception)
 {
     compileUnit.IrClassTypeRepository().AddClassType(baseClassType);
     std::vector<Cm::Core::Argument> resolutionArguments;
@@ -35,7 +36,7 @@ Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const 
     Cm::Sym::FunctionSymbol* baseClassCtor = nullptr;
     try
     {
-        baseClassCtor = ResolveOverload(compileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
+        baseClassCtor = ResolveOverload(containerScope, compileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -71,8 +72,9 @@ Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const 
     return initBaseClasObjectStatement;
 }
 
-Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableStatement(const Cm::Parsing::Span& span, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Sym::ClassTypeSymbol* classTypeSymbol, 
-    Cm::Sym::ParameterSymbol* thisParam, Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments, const std::string& errorMessageHeader, Cm::Core::Exception*& exception)
+Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableStatement(const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, 
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ParameterSymbol* thisParam, Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments, 
+    const std::string& errorMessageHeader, Cm::Core::Exception*& exception)
 {
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
@@ -93,7 +95,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableState
     Cm::Sym::FunctionSymbol* memberCtor = nullptr;
     try
     {
-        memberCtor = ResolveOverload(compileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
+        memberCtor = ResolveOverload(containerScope, compileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -128,8 +130,9 @@ Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableState
     return initMemberVariableStatement;
 }
 
-Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::Parsing::Span& span, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Sym::ClassTypeSymbol* classTypeSymbol,
-    Cm::Sym::ClassTypeSymbol* baseClassType, Cm::Sym::ParameterSymbol* thisParam, Cm::BoundTree::BoundExpressionList& arguments, const std::string& errorMessageHeader, Cm::Core::Exception*& exception)
+Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit,
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ClassTypeSymbol* baseClassType, Cm::Sym::ParameterSymbol* thisParam, Cm::BoundTree::BoundExpressionList& arguments, 
+    const std::string& errorMessageHeader, Cm::Core::Exception*& exception)
 {
     compileUnit.IrClassTypeRepository().AddClassType(baseClassType);
     std::vector<Cm::Core::Argument> resolutionArguments;
@@ -146,7 +149,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::
     Cm::Sym::FunctionSymbol* baseClassAssignment = nullptr;
     try
     {
-        baseClassAssignment = ResolveOverload(compileUnit, "operator=", resolutionArguments, functionLookups, span, conversions);
+        baseClassAssignment = ResolveOverload(containerScope, compileUnit, "operator=", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -180,9 +183,9 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::
     return assignBaseClasObjectStatement;
 }
 
-Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement(const Cm::Parsing::Span& span, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Sym::ClassTypeSymbol* classTypeSymbol,
-    Cm::Sym::ParameterSymbol* thisParam, Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments, const std::string& errorMessageHeader, 
-    Cm::Core::Exception*& exception)
+Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement(const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, 
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ParameterSymbol* thisParam, Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments, 
+    const std::string& errorMessageHeader, Cm::Core::Exception*& exception)
 {
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
@@ -203,7 +206,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement
     Cm::Sym::FunctionSymbol* memberAssignment = nullptr;
     try
     {
-        memberAssignment = ResolveOverload(compileUnit, "operator=", resolutionArguments, functionLookups, span, conversions);
+        memberAssignment = ResolveOverload(containerScope, compileUnit, "operator=", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -239,7 +242,8 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement
     return assignMemberVariableStatement;
 }
 
-Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, 
+    Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
@@ -260,7 +264,7 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     if (!generateImplementation) return defaultConstructorSymbol;
     std::unique_ptr<Cm::BoundTree::BoundFunction> defaultConstructor(new Cm::BoundTree::BoundFunction(nullptr, defaultConstructorSymbol));
     defaultConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
-    GenerateReceives(compileUnit, defaultConstructor.get());
+    GenerateReceives(containerScope, compileUnit, defaultConstructor.get());
     if (classTypeSymbol->StaticConstructor())
     {
         Cm::BoundTree::BoundExpressionList arguments;
@@ -271,7 +275,7 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     {
         Cm::Sym::ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
         Cm::BoundTree::BoundExpressionList arguments;
-        Cm::BoundTree::BoundInitClassObjectStatement* initBaseClasObjectStatement = GenerateBaseConstructorCall(span, compileUnit, classTypeSymbol, baseClassType, thisParam, arguments, 
+        Cm::BoundTree::BoundInitClassObjectStatement* initBaseClasObjectStatement = GenerateBaseConstructorCall(span, containerScope, compileUnit, classTypeSymbol, baseClassType, thisParam, arguments, 
             "cannot generate default constructor", exception);
         if (initBaseClasObjectStatement)
         {
@@ -289,7 +293,7 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     for (Cm::Sym::MemberVariableSymbol* memberVariableSymbol : classTypeSymbol->MemberVariables())
     {
         Cm::BoundTree::BoundExpressionList arguments;
-        Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = GenerateInitMemberVariableStatement(span, compileUnit, classTypeSymbol, thisParam, memberVariableSymbol, arguments,
+        Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = GenerateInitMemberVariableStatement(span, containerScope, compileUnit, classTypeSymbol, thisParam, memberVariableSymbol, arguments,
             "cannot generate default constructor", exception);
         if (initMemberVariableStatement)
         {
@@ -304,7 +308,8 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     return defaultConstructorSymbol;
 }
 
-Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
@@ -329,7 +334,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
     if (!generateImplementation) return copyConstructorSymbol;
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyConstructor(new Cm::BoundTree::BoundFunction(nullptr, copyConstructorSymbol));
     copyConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
-    GenerateReceives(compileUnit, copyConstructor.get());
+    GenerateReceives(containerScope, compileUnit, copyConstructor.get());
     if (classTypeSymbol->StaticConstructor())
     {
         Cm::BoundTree::BoundExpressionList arguments;
@@ -347,7 +352,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
         thatAsBase->SetType(baseClassConstRefType);
         Cm::BoundTree::BoundExpressionList arguments;
         arguments.Add(thatAsBase);
-        Cm::BoundTree::BoundInitClassObjectStatement* initBaseClasObjectStatement = GenerateBaseConstructorCall(span, compileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
+        Cm::BoundTree::BoundInitClassObjectStatement* initBaseClasObjectStatement = GenerateBaseConstructorCall(span, containerScope, compileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
             "cannot generate copy constructor", exception);
         if (initBaseClasObjectStatement)
         {
@@ -371,8 +376,8 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
         boundThatParam->SetType(thatParam->GetType());
         thatMemberVarArg->SetClassObject(boundThatParam);
         arguments.Add(thatMemberVarArg);
-        Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = GenerateInitMemberVariableStatement(span, compileUnit, classTypeSymbol, thisParam, memberVariableSymbol, arguments,
-            "cannot generate copy constructor", exception);
+        Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = GenerateInitMemberVariableStatement(span, containerScope, compileUnit, classTypeSymbol, thisParam, 
+            memberVariableSymbol, arguments, "cannot generate copy constructor", exception);
         if (initMemberVariableStatement)
         {
             copyConstructor->Body()->AddStatement(initMemberVariableStatement);
@@ -386,13 +391,15 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
     return copyConstructorSymbol;
 }
 
-Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, 
+    Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     // todo
     return nullptr;
 }
 
-Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, 
+    Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
@@ -418,7 +425,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
     if (!generateImplementation) return copyAssignmentSymbol;
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyAssignment(new Cm::BoundTree::BoundFunction(nullptr, copyAssignmentSymbol));
     copyAssignment->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
-    GenerateReceives(compileUnit, copyAssignment.get());
+    GenerateReceives(containerScope, compileUnit, copyAssignment.get());
     if (classTypeSymbol->BaseClass())
     {
         Cm::Sym::ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
@@ -430,7 +437,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
         thatAsBase->SetType(baseClassConstRefType);
         Cm::BoundTree::BoundExpressionList arguments;
         arguments.Add(thatAsBase);
-        Cm::BoundTree::BoundFunctionCallStatement* assignBaseClasObjectStatement = GenerateBaseAssignmentCall(span, compileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
+        Cm::BoundTree::BoundFunctionCallStatement* assignBaseClasObjectStatement = GenerateBaseAssignmentCall(span, containerScope, compileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
             "cannot generate copy assignment", exception);
         if (assignBaseClasObjectStatement)
         {
@@ -450,8 +457,8 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
         boundThatParam->SetType(thatParam->GetType());
         thatMemberVarArg->SetClassObject(boundThatParam);
         arguments.Add(thatMemberVarArg);
-        Cm::BoundTree::BoundFunctionCallStatement* assignMemberVariableStatement = GenerateAssignMemberVariableStatement(span, compileUnit, classTypeSymbol, thisParam, memberVariableSymbol, arguments,
-            "cannot generate copy assignment", exception);
+        Cm::BoundTree::BoundFunctionCallStatement* assignMemberVariableStatement = GenerateAssignMemberVariableStatement(span, containerScope, compileUnit, classTypeSymbol, thisParam, 
+            memberVariableSymbol, arguments, "cannot generate copy assignment", exception);
         if (assignMemberVariableStatement)
         {
             copyAssignment->Body()->AddStatement(assignMemberVariableStatement);
@@ -465,7 +472,8 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
     return copyAssignmentSymbol;
 }
 
-Cm::Sym::FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, bool unique, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, 
+    Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     return nullptr;
 }
@@ -510,14 +518,14 @@ Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& s
     return staticConstructorSymbol;
 }
 
-void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit)
+void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     Cm::Sym::FunctionSymbol* destructorSymbol = classTypeSymbol->Destructor();
     Cm::Sym::ParameterSymbol* thisParam = destructorSymbol->Parameters()[0];
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     std::unique_ptr<Cm::BoundTree::BoundFunction> destructor(new Cm::BoundTree::BoundFunction(nullptr, destructorSymbol));
     destructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
-    GenerateReceives(compileUnit, destructor.get());
+    GenerateReceives(containerScope, compileUnit, destructor.get());
     if (classTypeSymbol->IsVirtual())
     {
         destructor->Body()->AddStatement(new Cm::BoundTree::BoundInitVPtrStatement(classTypeSymbol));
@@ -591,7 +599,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
     boolAssignArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boolType));
     Cm::Sym::FunctionLookupSet boolAssignLookups;
     boolAssignLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_parent, containerScope));
-    Cm::Sym::FunctionSymbol* boolAssignment = ResolveOverload(compileUnit, "operator=", boolAssignArgs, boolAssignLookups, span, boolAssignConversions);
+    Cm::Sym::FunctionSymbol* boolAssignment = ResolveOverload(containerScope, compileUnit, "operator=", boolAssignArgs, boolAssignLookups, span, boolAssignConversions);
     Cm::BoundTree::BoundAssignmentStatement* setInitializedStatement = new Cm::BoundTree::BoundAssignmentStatement(nullptr, boundInitializedVarLeft, boundTrue, boolAssignment);
     staticConstructor->Body()->AddStatement(setInitializedStatement);
 
@@ -622,7 +630,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
         Cm::Sym::FunctionSymbol* memberCtor = nullptr;
         try
         {
-            memberCtor = ResolveOverload(compileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
+            memberCtor = ResolveOverload(containerScope, compileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
         }
         catch (const Cm::Core::Exception& ex)
         {
@@ -656,32 +664,33 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
     boundClass->AddBoundNode(staticConstructor.release());
 }
 
-void GenerateSynthesizedFunctionImplementation(Cm::Sym::FunctionSymbol* function, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit)
+void GenerateSynthesizedFunctionImplementation(Cm::Sym::FunctionSymbol* function, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     Cm::Core::Exception* exception = nullptr;
     if (classTypeSymbol->GenerateDefaultConstructor() && function->IsDefaultConstructor())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateDefaultConstructor(true, true, span, classTypeSymbol, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateDefaultConstructor(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateCopyConstructor() && function->IsCopyConstructor())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyConstructor(true, true, span, classTypeSymbol, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyConstructor(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateMoveConstructor() && function->IsMoveConstructor())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveConstructor(true, true, span, classTypeSymbol, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveConstructor(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateCopyAssignment() && function->IsCopyAssignment())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyAssignment(true, true, span, classTypeSymbol, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyAssignment(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateMoveAssignment() && function->IsMoveAssignment())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveAssignment(true, true, span, classTypeSymbol, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveAssignment(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     if (exception)
@@ -696,52 +705,57 @@ SynthesizedClassFunCache::SynthesizedClassFunCache()
 {
 }
 
-Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetDefaultConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetDefaultConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     if (!defaultConstructor)
     {
         bool generateImplementation = !classTypeSymbol->GenerateDefaultConstructor(); // default implementation is generated from elsewhere
-        defaultConstructor.reset(GenerateDefaultConstructor(generateImplementation, classTypeSymbol->GenerateDefaultConstructor(), span, classTypeSymbol, compileUnit, exception));
+        defaultConstructor.reset(GenerateDefaultConstructor(generateImplementation, classTypeSymbol->GenerateDefaultConstructor(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return defaultConstructor.get();
 }
 
-Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetCopyConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetCopyConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     if (!copyConstructor)
     {
         bool generateImplementation = !classTypeSymbol->GenerateCopyConstructor(); // default implementation is generated from elsewhere
-        copyConstructor.reset(GenerateCopyConstructor(generateImplementation, classTypeSymbol->GenerateCopyConstructor(), span, classTypeSymbol, compileUnit, exception));
+        copyConstructor.reset(GenerateCopyConstructor(generateImplementation, classTypeSymbol->GenerateCopyConstructor(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return copyConstructor.get();
 }
 
-Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetMoveConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetMoveConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     if (!moveConstructor)
     {
         bool generateImplementation = !classTypeSymbol->GenerateMoveConstructor(); // default implementation is generated from elsewhere
-        moveConstructor.reset(GenerateMoveConstructor(generateImplementation, classTypeSymbol->GenerateMoveConstructor(), span, classTypeSymbol, compileUnit, exception));
+        moveConstructor.reset(GenerateMoveConstructor(generateImplementation, classTypeSymbol->GenerateMoveConstructor(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return moveConstructor.get();
 }
 
-Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetCopyAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetCopyAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     if (!copyAssignment)
     {
         bool generateImplementation = !classTypeSymbol->GenerateCopyAssignment(); // default implementation is generated from elsewhere
-        copyAssignment.reset(GenerateCopyAssignment(generateImplementation, classTypeSymbol->GenerateCopyAssignment(), span, classTypeSymbol, compileUnit, exception));
+        copyAssignment.reset(GenerateCopyAssignment(generateImplementation, classTypeSymbol->GenerateCopyAssignment(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return copyAssignment.get();
 }
 
-Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetMoveAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
+Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetMoveAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception)
 {
     if (!moveAssignment)
     {
         bool generateImplementation = !classTypeSymbol->GenerateMoveAssignment(); // default implementation is generated from elsewhere
-        moveAssignment.reset(GenerateMoveAssignment(generateImplementation, classTypeSymbol->GenerateMoveAssignment(), span, classTypeSymbol, compileUnit, exception));
+        moveAssignment.reset(GenerateMoveAssignment(generateImplementation, classTypeSymbol->GenerateMoveAssignment(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return moveAssignment.get();
 }
@@ -759,7 +773,7 @@ SynthesizedConstructorGroup::SynthesizedConstructorGroup(Cm::BoundTree::BoundCom
 }
 
 void SynthesizedConstructorGroup::CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments,
-    const Cm::Parsing::Span& span, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception)
+    const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception)
 {
     if (arity == 1)
     {
@@ -778,7 +792,7 @@ void SynthesizedConstructorGroup::CollectViableFunctions(SynthesizedClassTypeCac
         else
         {
             SynthesizedClassFunCache& cache = cacheMap[classType];
-            Cm::Sym::FunctionSymbol* defaultConstructor = cache.GetDefaultConstructor(span, classType, CompileUnit(), exception);
+            Cm::Sym::FunctionSymbol* defaultConstructor = cache.GetDefaultConstructor(span, classType, containerScope, CompileUnit(), exception);
             if (defaultConstructor)
             {
                 viableFunctions.insert(defaultConstructor);
@@ -812,7 +826,7 @@ void SynthesizedConstructorGroup::CollectViableFunctions(SynthesizedClassTypeCac
                 else
                 {
                     SynthesizedClassFunCache& cache = cacheMap[classType];
-                    Cm::Sym::FunctionSymbol* copyConstructor = cache.GetCopyConstructor(span, classType, CompileUnit(), exception);
+                    Cm::Sym::FunctionSymbol* copyConstructor = cache.GetCopyConstructor(span, classType, containerScope, CompileUnit(), exception);
                     if (copyConstructor)
                     {
                         viableFunctions.insert(copyConstructor);
@@ -828,7 +842,7 @@ SynthesizedAssignmentGroup::SynthesizedAssignmentGroup(Cm::BoundTree::BoundCompi
 }
 
 void SynthesizedAssignmentGroup::CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments,
-    const Cm::Parsing::Span& span, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception)
+    const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception)
 {
     if (arity != 2) return;
     Cm::Sym::TypeSymbol* secondArgumentType = arguments[1].Type();
@@ -856,7 +870,7 @@ void SynthesizedAssignmentGroup::CollectViableFunctions(SynthesizedClassTypeCach
             else
             {
                 SynthesizedClassFunCache& cache = cacheMap[classType];
-                Cm::Sym::FunctionSymbol* copyAssignment = cache.GetCopyAssignment(span, classType, CompileUnit(), exception);
+                Cm::Sym::FunctionSymbol* copyAssignment = cache.GetCopyAssignment(span, classType, containerScope, CompileUnit(), exception);
                 if (copyAssignment)
                 {
                     viableFunctions.insert(copyAssignment);
@@ -873,8 +887,8 @@ SynthesizedClassFunRepository::SynthesizedClassFunRepository(Cm::BoundTree::Boun
     synthesizedClassFunGroupMap["operator="] = &synthesizedAssignmentGroup;
 }
 
-void SynthesizedClassFunRepository::CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span,
-    std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception)
+void SynthesizedClassFunRepository::CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, 
+    Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception)
 {
     if (int(arguments.size()) != arity)
     {
@@ -888,7 +902,7 @@ void SynthesizedClassFunRepository::CollectViableFunctions(const std::string& gr
     if (i != synthesizedClassFunGroupMap.end())
     {
         SynthesizedClassFunGroup* group = i->second;
-        group->CollectViableFunctions(cacheMap, classType, arity, arguments, span, viableFunctions, exception);
+        group->CollectViableFunctions(cacheMap, classType, arity, arguments, span, containerScope, viableFunctions, exception);
     }
 }
 

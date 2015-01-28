@@ -29,7 +29,7 @@
 
 namespace Cm { namespace Sym {
 
-SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs), currentClass(nullptr), typeRepository(), standardConversionTable(typeRepository)
+SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs), currentClass(nullptr), currentFunction(nullptr), typeRepository(), standardConversionTable(typeRepository)
 {
 }
 
@@ -179,6 +179,7 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
 void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, FunctionSymbolFlags flags)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
+    currentFunction = functionSymbol;
     if ((functionNode->GetSpecifiers() & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
     {
         functionSymbol->SetStatic();
@@ -200,6 +201,7 @@ void SymbolTable::EndFunctionScope()
     FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(container);
     EndContainer();
     container->AddSymbol(functionSymbol);
+    currentFunction = nullptr;
 }
 
 void SymbolTable::BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode)

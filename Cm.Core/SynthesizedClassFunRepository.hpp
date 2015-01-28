@@ -20,7 +20,7 @@ class SynthesizedClassFunRepository
 {
 public:
     virtual ~SynthesizedClassFunRepository();
-    virtual void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Argument>& arguments, const Cm::Parsing::Span& span, 
+    virtual void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Exception*& exception) = 0;
 };
 

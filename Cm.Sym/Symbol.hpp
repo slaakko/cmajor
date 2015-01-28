@@ -27,8 +27,8 @@ class ContainerSymbol;
 enum class SymbolType : uint8_t
 {
     boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
-    classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, memberVariableSymbol, namespaceSymbol,
-    parameterSymbol, templateParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol,
+    classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
+    memberVariableSymbol, namespaceSymbol, parameterSymbol, templateParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTemplateParameterSymbol,
     maxSymbol
 };
 
@@ -130,6 +130,8 @@ public:
     virtual bool IsFunctionGroupSymbol() const { return false; }
     virtual bool IsTemplateTypeSymbol() const { return false; }
     virtual bool IsParameterSymbol() const { return false; }
+    virtual bool IsTemplateParameterSymbol() const { return false; }
+    virtual bool IsBoundTemplateParameterSymbol() const { return false; }
     virtual bool IsMemberVariableSymbol() const { return false; }
     virtual bool IsLocalVariableSymbol() const { return false; }
     virtual bool IsTypedefSymbol() const { return false; }

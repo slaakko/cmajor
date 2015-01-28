@@ -78,7 +78,8 @@ enum class FunctionSymbolFlags: uint16_t
     suppressed = 1 << 10,
     default_ = 1 << 11,
     explicit_ = 1 << 12,
-    conversion = 1 << 13
+    conversion = 1 << 13,
+    templateSpecialization = 1 << 14
 };
 
 inline FunctionSymbolFlags operator|(FunctionSymbolFlags left, FunctionSymbolFlags right)
@@ -90,6 +91,8 @@ inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFla
 {
     return FunctionSymbolFlags(uint16_t(left) & uint16_t(right));
 }
+
+class TemplateParameterSymbol;
 
 class FunctionSymbol : public ContainerSymbol
 {
@@ -103,11 +106,15 @@ public:
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
     virtual bool IsConvertingConstructor() const;
+    bool IsExportSymbol() const override { return IsFunctionTemplateSpecialization() ? false : ContainerSymbol::IsExportSymbol(); }
     void SetConvertingConstructor();
     bool CheckIfConvertingConstructor() const;
+    bool IsFunctionTemplate() const { return !templateParameters.empty(); }
     virtual ConversionType GetConversionType() const { return IsExplicit() ? Cm::Sym::ConversionType::explicit_ : Cm::Sym::ConversionType::implicit; }
     virtual ConversionRank GetConversionRank() const { return IsConvertingConstructor() ? Cm::Sym::ConversionRank::conversion : Cm::Sym::ConversionRank::exactMatch; }
     virtual int GetConversionDistance() const { return IsConvertingConstructor() ? 100 : 0; }
+    bool IsFunctionTemplateSpecialization() const { return GetFlag(FunctionSymbolFlags::templateSpecialization); }
+    void SetFunctionTemplateSpecialization() { SetFlag(FunctionSymbolFlags::templateSpecialization); }
     bool IsConstructorOrDestructorSymbol() const { return GetFlag(FunctionSymbolFlags::constructorOrDestructorSymbol); }
     void SetConstructorOrDestructorSymbol() { SetFlag(FunctionSymbolFlags::constructorOrDestructorSymbol); }
     bool IsMemberFunctionSymbol() const { return GetFlag(FunctionSymbolFlags::memberFunctionSymbol); }
@@ -149,7 +156,10 @@ public:
     void SetType(TypeSymbol* type_, int index) override;
     void SetReturnType(TypeSymbol* returnType_);
     TypeSymbol* GetReturnType() const { return returnType; }
+    Cm::Ast::CompoundStatementNode* Body() const { return body; }
+    void SetBody(Cm::Ast::CompoundStatementNode* body_) { body = body_; }
     bool ReturnsClassObjectByValue() const;
+    const std::vector<TemplateParameterSymbol*>& TemplateParameters() const { return templateParameters; }
     int Arity() const { return int(parameters.size()); }
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void ComputeName();
@@ -167,6 +177,8 @@ private:
     int16_t vtblIndex;
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
+    std::vector<TemplateParameterSymbol*> templateParameters;
+    Cm::Ast::CompoundStatementNode* body;
     Cm::Ast::CompileUnitNode* compileUnit;
     Ir::Intf::Parameter* classObjectResultIrParam;
     bool GetFlag(FunctionSymbolFlags flag) const

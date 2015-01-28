@@ -125,24 +125,19 @@ void OpEqual::Generate(Emitter& emitter, GenResult& result)
 {
     Ir::Intf::Object* arg1 = result.Arg1();
     Ir::Intf::Object* arg2 = result.Arg2();
-    Ir::Intf::Type* ptrArg1 = Cm::IrIntf::Pointer(arg1->GetType(), arg1->GetType()->NumPointers() + 1);
-    emitter.Own(ptrArg1);
-    if (Cm::IrIntf::TypesEqual(ptrArg1, arg2->GetType()))
+    Ir::Intf::Type* ptrType = Cm::IrIntf::Pointer(GetIrType(), 1);
+    emitter.Own(ptrType);
+    if (Cm::IrIntf::TypesEqual(arg1->GetType(), ptrType))
+    {
+        arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType());
+        emitter.Own(arg1);
+        Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
+    }
+    if (Cm::IrIntf::TypesEqual(arg2->GetType(), ptrType))
     {
         arg2 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType());
         emitter.Own(arg2);
         Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg2(), arg2);
-    }
-    else
-    {
-        Ir::Intf::Type* ptrArg2 = Cm::IrIntf::Pointer(arg2->GetType(), arg2->GetType()->NumPointers() + 1);
-        emitter.Own(ptrArg2);
-        if (Cm::IrIntf::TypesEqual(arg1->GetType(), ptrArg2))
-        {
-            arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType());
-            emitter.Own(arg1);
-            Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
-        }
     }
     if (Type()->IsFloatingPointTypeSymbol())
     {
@@ -182,24 +177,19 @@ void OpLess::Generate(Emitter& emitter, GenResult& result)
 {
     Ir::Intf::Object* arg1 = result.Arg1();
     Ir::Intf::Object* arg2 = result.Arg2();
-    Ir::Intf::Type* ptrArg1 = Cm::IrIntf::Pointer(arg1->GetType(), arg1->GetType()->NumPointers() + 1);
-    emitter.Own(ptrArg1);
-    if (Cm::IrIntf::TypesEqual(ptrArg1, arg2->GetType()))
+    Ir::Intf::Type* ptrType = Cm::IrIntf::Pointer(GetIrType(), 1);
+    emitter.Own(ptrType);
+    if (Cm::IrIntf::TypesEqual(arg1->GetType(), ptrType))
+    {
+        arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType());
+        emitter.Own(arg1);
+        Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
+    }
+    if (Cm::IrIntf::TypesEqual(arg2->GetType(), ptrType))
     {
         arg2 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType());
         emitter.Own(arg2);
         Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg2(), arg2);
-    }
-    else
-    {
-        Ir::Intf::Type* ptrArg2 = Cm::IrIntf::Pointer(arg2->GetType(), arg2->GetType()->NumPointers() + 1);
-        emitter.Own(ptrArg2);
-        if (Cm::IrIntf::TypesEqual(arg1->GetType(), ptrArg2))
-        {
-            arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType());
-            emitter.Own(arg1);
-            Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
-        }
     }
     if (Type()->IsFloatingPointTypeSymbol())
     {

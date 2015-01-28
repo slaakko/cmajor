@@ -15,21 +15,27 @@
 
 namespace Cm { namespace Bind {
 
-void GenerateSynthesizedFunctionImplementation(Cm::Sym::FunctionSymbol* function, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit);
+void GenerateSynthesizedFunctionImplementation(Cm::Sym::FunctionSymbol* function, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundCompileUnit& compileUnit);
 Cm::Sym::FunctionSymbol* GenerateDestructorSymbol(Cm::Sym::SymbolTable& symbolTable, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Ast::CompileUnitNode* compileUnit);
 Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& symbolTable, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Ast::CompileUnitNode* compileUnit);
-void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit);
+void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit);
 void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundClass, Cm::Sym::ContainerScope* containerScope, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit);
 
 class SynthesizedClassFunCache
 {
 public:
     SynthesizedClassFunCache();
-    Cm::Sym::FunctionSymbol* GetDefaultConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
-    Cm::Sym::FunctionSymbol* GetCopyConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
-    Cm::Sym::FunctionSymbol* GetMoveConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
-    Cm::Sym::FunctionSymbol* GetCopyAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
-    Cm::Sym::FunctionSymbol* GetMoveAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
+    Cm::Sym::FunctionSymbol* GetDefaultConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+        Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
+    Cm::Sym::FunctionSymbol* GetCopyConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+        Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
+    Cm::Sym::FunctionSymbol* GetMoveConstructor(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+        Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
+    Cm::Sym::FunctionSymbol* GetCopyAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+        Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
+    Cm::Sym::FunctionSymbol* GetMoveAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+        Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Core::Exception*& exception);
 private:
     std::unique_ptr<Cm::Sym::FunctionSymbol> defaultConstructor;
     std::unique_ptr<Cm::Sym::FunctionSymbol> copyConstructor;
@@ -46,8 +52,8 @@ class SynthesizedClassFunGroup
 public:
     SynthesizedClassFunGroup(Cm::BoundTree::BoundCompileUnit& compileUnit_);
     virtual ~SynthesizedClassFunGroup();
-    virtual void CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span,
-        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception) = 0;
+    virtual void CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments, 
+        const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception) = 0;
     Cm::BoundTree::BoundCompileUnit& CompileUnit() { return compileUnit; }
 private:
     Cm::BoundTree::BoundCompileUnit& compileUnit;
@@ -57,23 +63,23 @@ class SynthesizedConstructorGroup : public SynthesizedClassFunGroup
 {
 public:
     SynthesizedConstructorGroup(Cm::BoundTree::BoundCompileUnit& compileUnit_);
-    void CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span,
-        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception) override;
+    void CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, 
+        Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception) override;
 };
 
 class SynthesizedAssignmentGroup : public SynthesizedClassFunGroup
 {
 public:
     SynthesizedAssignmentGroup(Cm::BoundTree::BoundCompileUnit& compileUnit_);
-    void CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span,
-        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception) override;
+    void CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, 
+        Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception) override;
 };
 
 class SynthesizedClassFunRepository : public Cm::Core::SynthesizedClassFunRepository
 {
 public:
     SynthesizedClassFunRepository(Cm::BoundTree::BoundCompileUnit& compileUnit_);
-    void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, 
+    void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception) override;
 private:
     Cm::BoundTree::BoundCompileUnit& compileUnit;

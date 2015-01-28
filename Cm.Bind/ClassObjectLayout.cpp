@@ -58,7 +58,7 @@ void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpres
     Cm::Sym::FunctionSymbol* baseClassCtor = nullptr;
     try
     {
-        baseClassCtor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, span, conversions);
+        baseClassCtor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, span, conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -144,7 +144,7 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
     Cm::Sym::FunctionSymbol* thisClassCtor = nullptr;
     try
     {
-        thisClassCtor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, thisInitializerNode.GetSpan(), conversions);
+        thisClassCtor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, thisInitializerNode.GetSpan(), conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -271,7 +271,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     Cm::Sym::FunctionSymbol* memberCtor = nullptr;
     try
     {
-        memberCtor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
+        memberCtor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -443,7 +443,8 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
     boolAssignArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boolType));
     Cm::Sym::FunctionLookupSet boolAssignLookups;
     boolAssignLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_parent, containerScope));
-    Cm::Sym::FunctionSymbol* boolAssignment = ResolveOverload(boundCompileUnit, "operator=", boolAssignArgs, boolAssignLookups, staticConstructorNode->GetSpan(), boolAssignConversions);
+    Cm::Sym::FunctionSymbol* boolAssignment = ResolveOverload(containerScope, boundCompileUnit, "operator=", boolAssignArgs, boolAssignLookups, staticConstructorNode->GetSpan(), 
+        boolAssignConversions);
     Cm::BoundTree::BoundAssignmentStatement* setInitializedStatement = new Cm::BoundTree::BoundAssignmentStatement(staticConstructorNode, boundInitializedVarLeft, boundTrue, boolAssignment);
     int classObjectLayoutFunIndex1 = currentFunction->GetClassObjectLayoutFunIndex();
     currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex1, setInitializedStatement);
@@ -514,7 +515,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializer
     Cm::Sym::FunctionSymbol* memberCtor = nullptr;
     try
     {
-        memberCtor = ResolveOverload(BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
+        memberCtor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
     }
     catch (const Cm::Core::Exception& ex)
     {

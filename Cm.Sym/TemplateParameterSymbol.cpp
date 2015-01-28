@@ -12,7 +12,11 @@ Distributed under the GNU General Public License, version 3 (GPLv3).
 
 namespace Cm { namespace Sym {
 
-TemplateParameterSymbol::TemplateParameterSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_)
+TemplateParameterSymbol::TemplateParameterSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), index(-1)
+{
+}
+
+BoundTemplateParameterSymbol::BoundTemplateParameterSymbol(const Span& span_, const std::string& name_): Symbol(span_, name_), type(nullptr)
 {
 }
 

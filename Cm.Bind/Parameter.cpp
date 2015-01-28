@@ -53,7 +53,7 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
     }
 }
 
-void GenerateReceives(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* boundFunction)
+void GenerateReceives(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* boundFunction)
 {
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
     if (functionSymbol->IsExternal()) return;
@@ -78,7 +78,7 @@ void GenerateReceives(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Bou
         Cm::Sym::FunctionLookupSet functionLookups;
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
-        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(boundCompileUnit, "@constructor", resolutionArguments, functionLookups, parameterSymbol->GetSpan(), conversions);
+        Cm::Sym::FunctionSymbol* ctor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, parameterSymbol->GetSpan(), conversions);
         boundReceiveStatement->SetConstructor(ctor);
         boundFunction->Body()->InsertStatement(index, boundReceiveStatement);
         ++index;

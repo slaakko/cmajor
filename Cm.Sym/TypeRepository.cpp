@@ -159,8 +159,11 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
     }
     std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(derivations, baseType), baseType, derivations, typeId));
     derivedTypeSymbol->SetAccess(SymbolAccess::public_);
-    derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
-    derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
+    if (!baseType->IsTemplateParameterSymbol())
+    {
+        derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
+        derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
+    }
     types.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol.get()));
     AddType(derivedTypeSymbol.get());
     return derivedTypeSymbol.release();
