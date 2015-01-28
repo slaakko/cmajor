@@ -222,6 +222,10 @@ void DeclarationVisitor::Visit(Cm::Ast::MemberVariableNode& memberVariableNode)
 void DeclarationVisitor::BeginVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
 {
     symbolTable.BeginDeclarationScope(&compoundStatementNode);
+    if (symbolTable.CurrentFunction()->IsFunctionTemplate())
+    {
+        symbolTable.CurrentFunction()->SetBody(&compoundStatementNode);
+    }
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)

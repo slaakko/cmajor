@@ -11,6 +11,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/TemplateParameterSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
@@ -20,7 +21,7 @@ FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lo
 }
 
 FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
-    classObjectResultIrParam(nullptr)
+    classObjectResultIrParam(nullptr), body(nullptr)
 {
 }
 
@@ -51,6 +52,12 @@ void FunctionSymbol::AddSymbol(Symbol* symbol)
     {
         ParameterSymbol* parameterSymbol = static_cast<ParameterSymbol*>(symbol);
         parameters.push_back(parameterSymbol);
+    }
+    else if (symbol->IsTemplateParameterSymbol())
+    {
+        TemplateParameterSymbol* templateParameterSymbol = static_cast<TemplateParameterSymbol*>(symbol);
+        templateParameterSymbol->SetIndex(int(templateParameters.size()));
+        templateParameters.push_back(templateParameterSymbol);
     }
 }
 

@@ -19,9 +19,28 @@ class TemplateParameterSymbol : public TypeSymbol
 public:
     TemplateParameterSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::templateParameterSymbol; }
+    bool IsTemplateParameterSymbol() const override { return true; }
     std::string TypeString() const override { return "template parameter"; };
     std::string GetMangleId() const { return Name(); }
     bool IsExportSymbol() const override { return false; }
+    int Index() const { return index; }
+    void SetIndex(int index_) { index = index_; }
+private:
+    int index;
+};
+
+class BoundTemplateParameterSymbol : public Symbol
+{
+public:
+    BoundTemplateParameterSymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::boundTemplateParameterSymbol; }
+    bool IsBoundTemplateParameterSymbol() const override { return true; }
+    std::string TypeString() const override { return "bound template parameter"; };
+    bool IsExportSymbol() const override { return false; }
+    TypeSymbol* GetType() const { return type; }
+    void SetType(TypeSymbol* type_) { type = type_; }
+private:
+    TypeSymbol* type;
 };
 
 } } // namespace Cm::Sym

@@ -64,6 +64,7 @@ public:
     void Import(Reader& reader);
     ContainerSymbol* Container() const { return container; }
     ClassTypeSymbol* CurrentClass() const { return currentClass; }
+    FunctionSymbol* CurrentFunction() const { return currentFunction; }
     TypeRepository& GetTypeRepository() { return typeRepository; }
     ConversionTable& GetStandardConversionTable() { return standardConversionTable; }
     void AddPredefinedSymbolToGlobalScope(Symbol* symbol);
@@ -72,6 +73,7 @@ private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
     ClassTypeSymbol* currentClass;
+    FunctionSymbol* currentFunction;
     std::stack<ContainerSymbol*> containerStack;
     typedef std::unordered_map<Cm::Ast::Node*, ContainerScope*> NodeScopeMap;
     typedef NodeScopeMap::const_iterator NodeScopeMapIt;

@@ -8,12 +8,15 @@
 ========================================================================*/
 
 #include <Cm.Bind/OverloadResolution.hpp>
+#include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/Template.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/TemplateParameterSymbol.hpp>
 #include <unordered_set>
 #include <algorithm>
 
@@ -84,6 +87,7 @@ struct FunctionMatch
     std::vector<ArgumentMatch> argumentMatches;
     int numConversions;
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    std::vector<Cm::Sym::TypeSymbol*> templateArguments;
 };
 
 struct BetterFunctionMatch
@@ -122,6 +126,14 @@ struct BetterFunctionMatch
         { 
             return false;
         }
+        else if (!left.function->IsFunctionTemplate() && right.function->IsFunctionTemplate())
+        {
+            return true;
+        }
+        else if (!right.function->IsFunctionTemplate() && left.function->IsFunctionTemplate())
+        {
+            return false;
+        }
         else
         {
             return false;
@@ -146,6 +158,68 @@ bool CheckArgVsParam(const Cm::Core::Argument& argument, Cm::Sym::TypeSymbol* pa
     {
         return false;
     }
+    return true;
+}
+
+bool BindTemplateParameter(Cm::Sym::TypeSymbol* parameterType, Cm::Sym::TypeSymbol* argumentType, std::vector<Cm::Sym::TypeSymbol*>& templateArguments)
+{
+    if (Cm::Sym::TypesEqual(parameterType, argumentType))
+    {
+        return true;
+    }
+    Cm::Sym::TypeSymbol* parameterBaseType = parameterType->GetBaseType();
+    if (parameterBaseType->IsTemplateParameterSymbol())
+    {
+        Cm::Sym::TemplateParameterSymbol* templateParameterSymbol = static_cast<Cm::Sym::TemplateParameterSymbol*>(parameterBaseType);
+        int index = templateParameterSymbol->Index();
+        Cm::Sym::TypeSymbol*& templateArgumentType = templateArguments[index];
+        if (!templateArgumentType)  // unbound template argument
+        {
+            templateArgumentType = argumentType;
+            return true;
+        }
+        else 
+        {
+            return Cm::Sym::TypesEqual(argumentType, templateArgumentType); // bound templatem argument
+        }
+    }
+    return false;
+}
+
+bool BindTemplateParameters(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit,  const std::vector<Cm::Sym::TemplateParameterSymbol*>& templateParameters, 
+    const std::vector<Cm::Sym::ParameterSymbol*>& parameters, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, FunctionMatch& functionMatch)
+{
+    int m = int(parameters.size());
+    if (m != int(arguments.size())) return false;
+    int n = int(templateParameters.size());
+    functionMatch.templateArguments.resize(n);
+    Cm::Sym::ContainerScope deductionScope;
+    for (Cm::Sym::TemplateParameterSymbol* templateParameter : templateParameters)
+    {
+        deductionScope.Install(templateParameter);
+    }
+    deductionScope.SetParent(containerScope);
+    for (int i = 0; i < m; ++i)
+    {
+        Cm::Sym::ParameterSymbol* parameterSymbol = parameters[i];
+        Cm::Ast::ParameterNode* parameterNode = static_cast<Cm::Ast::ParameterNode*>(boundCompileUnit.SymbolTable().GetNode(parameterSymbol));
+        Cm::Ast::Node* parameterTypeExpr = parameterNode->TypeExpr();
+        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.GetFileScope(), parameterTypeExpr);
+        Cm::Sym::TypeSymbol* argumentType = arguments[i].Type();
+        bool bound = BindTemplateParameter(parameterType, argumentType, functionMatch.templateArguments);
+        if (!bound)
+        {
+            return false;
+        }
+    }
+    for (Cm::Sym::TypeSymbol* templateArgumentType : functionMatch.templateArguments)
+    {
+        if (!templateArgumentType)  // unbound template parameter
+        {
+            return false;
+        }
+    }
+    functionMatch.conversions.resize(m);
     return true;
 }
 
@@ -352,20 +426,22 @@ std::string MakeOverloadName(const std::string& groupName, const std::vector<Cm:
     return overloadName;
 }
 
-Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
-    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions)
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions)
 {
-    return ResolveOverload(boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, OverloadResolutionFlags::none);
+    return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, OverloadResolutionFlags::none);
 }
 
-Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
-    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, OverloadResolutionFlags flags)
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    OverloadResolutionFlags flags)
 {
-    return ResolveOverload(boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, flags);
+    return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, flags);
 }
 
-Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments, 
-    const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::Sym::ConversionType conversionType, OverloadResolutionFlags flags)
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
+    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    Cm::Sym::ConversionType conversionType, OverloadResolutionFlags flags)
 {
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
     conversions.clear();
@@ -378,7 +454,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundC
     }
     std::unique_ptr<Cm::Core::Exception> ownedException = nullptr;
     Cm::Core::Exception* exception = nullptr;
-    boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, arguments, span, viableFunctions, exception);
+    boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions, exception);
     if (exception)
     {
         ownedException.reset(exception);
@@ -432,10 +508,21 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundC
             }
         }
         FunctionMatch functionMatch(viableFunction);
-        bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, conversionType, span, functionMatch, conversionClassTypes);
-        if (candidateFound)
+        if (viableFunction->IsFunctionTemplate())
         {
-            functionMatches.push_back(functionMatch);
+            bool candidateFound = BindTemplateParameters(containerScope, boundCompileUnit, viableFunction->TemplateParameters(), viableFunction->Parameters(), arguments, span, functionMatch);
+            if (candidateFound)
+            {
+                functionMatches.push_back(functionMatch);
+            }
+        }
+        else
+        {
+            bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, conversionType, span, functionMatch, conversionClassTypes);
+            if (candidateFound)
+            {
+                functionMatches.push_back(functionMatch);
+            }
         }
     }
     if (functionMatches.empty())
@@ -467,20 +554,17 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundC
     }
     else
     {
+        Cm::Sym::FunctionSymbol* function = nullptr;
+        FunctionMatch bestMatch(function);
         if (functionMatches.size() > 1)
         {
             BetterFunctionMatch betterFunctionMatch;
             std::sort(functionMatches.begin(), functionMatches.end(), betterFunctionMatch);
             if (betterFunctionMatch(functionMatches[0], functionMatches[1]))
             {
-                const FunctionMatch& bestMatch = functionMatches[0];
+                bestMatch = functionMatches[0];
                 conversions = bestMatch.conversions;
-                Cm::Sym::FunctionSymbol* function = bestMatch.function;
-                if (function->IsSuppressed())
-                {
-                    throw Cm::Core::Exception("cannot call suppressed member function", span, function->GetSpan());
-                }
-                return function;
+                function = bestMatch.function;
             }
             else
             {
@@ -511,15 +595,33 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::BoundTree::BoundCompileUnit& boundC
         }
         else // single best
         {
-            const FunctionMatch& bestMatch = functionMatches[0];
+            bestMatch = functionMatches[0];
             conversions = bestMatch.conversions;
-            Cm::Sym::FunctionSymbol* function = bestMatch.function;
-            if (function->IsSuppressed())
+            function = bestMatch.function;
+        }
+        if (function->IsSuppressed())
+        {
+            if (GetFlag(OverloadResolutionFlags::nothrow, flags))
+            {
+                return nullptr;
+            }
+            else
             {
                 throw Cm::Core::Exception("cannot call suppressed member function", span, function->GetSpan());
             }
-            return function;
         }
+        if (function->IsFunctionTemplate())
+        {
+            Cm::Core::FunctionTemplateKey key(function, bestMatch.templateArguments);
+            Cm::Sym::FunctionSymbol* functionTemplateInstance = boundCompileUnit.FunctionTemplateRepository().GetFunctionTemplateInstance(key);
+            if (!functionTemplateInstance)
+            {
+                functionTemplateInstance = Instantiate(containerScope, boundCompileUnit, function, bestMatch.templateArguments);
+                boundCompileUnit.FunctionTemplateRepository().AddFunctionTemplateInstance(key, functionTemplateInstance);
+            }
+            function = functionTemplateInstance;
+        }
+        return function;
     }
 }
 
