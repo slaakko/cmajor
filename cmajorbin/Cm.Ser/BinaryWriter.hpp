@@ -35,9 +35,12 @@ public:
     void Write(char x);
     void Write(const std::string& s);
     void Write(const void* data, int size);
+    uint64_t Pos() const { return pos; }
+    void Seek(uint64_t pos);
 private:
     std::string fileName;
     FILE* file;
+    uint64_t pos;
 };
 
 } } // Cm::Ser

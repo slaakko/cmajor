@@ -54,6 +54,14 @@ std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess)
         }
         s.append("bound");
     }
+    if ((flags & SymbolFlags::static_) != SymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(" ");
+        }
+        s.append("static");
+    }
     if ((flags & SymbolFlags::project) != SymbolFlags::none)
     {
         if (!s.empty())

@@ -56,6 +56,10 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
 void GenerateReceives(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* boundFunction)
 {
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
+    if (functionSymbol->FullName() == "System.EndLine.@constructor(const EndLine&)")
+    {
+        int x = 0;
+    }
     if (functionSymbol->IsExternal()) return;
     int index = 0;
     for (Cm::Sym::ParameterSymbol* parameterSymbol : functionSymbol->Parameters())

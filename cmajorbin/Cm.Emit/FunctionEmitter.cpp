@@ -123,9 +123,9 @@ CompoundDestructionStack FunctionDestructionStack::Pop()
 
 FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
-    std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_) :
+    std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_) :
     Cm::BoundTree::Visitor(true), codeFormatter(codeFormatter_), emitter(nullptr), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_), 
-    irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(nullptr), 
+    irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), compoundResult(), currentCompileUnit(currentCompileUnit_),
     currentClass(currentClass_), currentFunction(nullptr), thisParam(nullptr), externalFunctions(externalFunctions_), staticMemberVariableRepository(staticMemberVariableRepository_), 
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), currentSwitchCaseConstantMap(nullptr), 
     switchCaseLabel(nullptr), firstStatementInCompound(false)
@@ -136,7 +136,6 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     Cm::IrIntf::ResetLocalLabelCounter();
     currentFunction = boundFunction.GetFunctionSymbol();
-    currentCompileUnit = currentFunction->CompileUnit();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction);
     emitter.reset(new Cm::Core::Emitter(irFunction));
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
@@ -145,7 +144,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     {
         Ir::Intf::Object* localVariableIrObject = localVariableIrObjectRepository.CreateLocalVariableIrObjectFor(parameter);
         emitter->Emit(Cm::IrIntf::Alloca(parameter->GetType()->GetIrType(), localVariableIrObject));
-        if (currentFunction->IsMemberFunctionSymbol() && parameterIndex == 0)
+        if (currentFunction->IsMemberFunctionSymbol() && !currentFunction->IsStatic() && parameterIndex == 0)
         {
             thisParam = parameter;
         }
@@ -239,6 +238,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundEnumConstant& boundEnumConstant)
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable)
 {
+    if (currentFunction->FullName() == "System.IO.BinaryFileStream.ReadString()")
+    {
+        int x = 0;
+    }
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Sym::TypeSymbol* type = boundLocalVariable.Symbol()->GetType();
     bool typeIsReferenceType = type->IsReferenceType() || type->IsRvalueRefType();
@@ -307,7 +310,17 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
     if (boundMemberVariable.Symbol()->IsStatic())
     {
         Ir::Intf::Object* irObject = staticMemberVariableRepository.GetStaticMemberVariableIrObject(boundMemberVariable.Symbol());
-        result.SetMainObject(irObject);
+        if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
+        {
+            result.SetMainObject(irObject);
+        }
+        else
+        {
+            Cm::Sym::TypeSymbol* type = boundMemberVariable.Symbol()->GetType();
+            result.SetMainObject(type);
+            result.AddObject(irObject);
+            Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
+        }
     }
     else
     {
@@ -384,7 +397,12 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
     {
         result.SetGenJumpingBoolCode();
     }
+    boundConversion.Operand()->Accept(*this);
     Cm::Core::GenResult operandResult = resultStack.Pop();
+    if (boundConversion.Operand()->GetFlag(Cm::BoundTree::BoundNodeFlags::addrArg))
+    {
+        result.SetAddrArg();
+    }
     Ir::Intf::LabelObject* resultLabel = operandResult.GetLabel();
     result.Merge(operandResult);
     Cm::Sym::FunctionSymbol* conversionFun = boundConversion.ConversionFun();
@@ -432,8 +450,19 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCast& boundCast)
     resultStack.Push(std::move(result));
 }
 
+void FunctionEmitter::Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExpr)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    result.SetMainObject(Cm::IrIntf::SizeOf(*emitter, boundSizeOfExpr.Type()->GetIrType()));
+    resultStack.Push(std::move(result));
+}
+
 void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 {
+    if (currentFunction->FullName() == "System.Reverse<const char*>(const char*, const char*)")
+    {
+        int x = 0;
+    }
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Sym::FunctionSymbol* op = boundUnaryOp.GetFunction();
     result.SetMainObject(op->GetReturnType());
@@ -442,7 +471,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
     {
         result.SetGenJumpingBoolCode();
     }
-    if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
+    if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
     {
         result.SetLvalue();
     }
@@ -492,6 +521,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
+    if (currentFunction->FullName() == "System.IO.BinaryFileStream.Write(char c)")
+    {
+        int x = 0;
+    }
     Cm::Core::GenResult result(emitter.get(), genFlags);
     bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();
     if (functionReturnsClassObjectByValue)
@@ -1235,6 +1268,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundContinueStatement& boundContinue
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement)
 {
+    if (currentFunction->Name().find("ParseBool") != std::string::npos)
+    {
+        int x = 0;
+    }
     PushSkipContent();
 }
 

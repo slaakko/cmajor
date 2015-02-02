@@ -117,6 +117,18 @@ bool HasRvalueRefDerivation(const Cm::Ast::DerivationList& derivations)
     return false;
 }
 
+bool HasConstPointerDerivation(const Cm::Ast::DerivationList& derivations)
+{
+    uint8_t n = derivations.NumDerivations();
+    return n == 2 && derivations[0] == Cm::Ast::Derivation::const_ && derivations[1] == Cm::Ast::Derivation::pointer;
+}
+
+bool HasConstPointerPointerDerivation(const Cm::Ast::DerivationList& derivations)
+{
+    uint8_t n = derivations.NumDerivations();
+    return n == 3 && derivations[0] == Cm::Ast::Derivation::const_ && derivations[1] == Cm::Ast::Derivation::pointer && derivations[2] == Cm::Ast::Derivation::pointer;;
+}
+
 DerivationCounts CountDerivations(const Cm::Ast::DerivationList& derivations)
 {
     DerivationCounts counts;

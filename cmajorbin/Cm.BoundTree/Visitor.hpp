@@ -24,6 +24,7 @@ class BoundMemberVariable;
 class BoundParameter;
 class BoundConversion;
 class BoundCast;
+class BoundSizeOfExpression;
 class BoundUnaryOp;
 class BoundBinaryOp;
 class BoundFunctionCall;
@@ -78,6 +79,7 @@ public:
     virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundCast& boundCast) {}
+    virtual void Visit(BoundSizeOfExpression& boundSizeOfExpr) {}
     virtual void Visit(BoundUnaryOp& boundUnaryOp) {}
     virtual void Visit(BoundBinaryOp& boundBinaryOp) {}
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}

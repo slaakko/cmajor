@@ -195,4 +195,21 @@ void BinaryReader::Read(void* buf, int size)
     }
 }
 
+void BinaryReader::SetPos(uint64_t pos_)
+{
+    pos = begin + pos_;
+}
+
+void BinaryReader::Skip(uint64_t size)
+{
+    if (pos + size <= end)
+    {
+        pos += size;
+    }
+    else
+    {
+        throw std::runtime_error("unexpected end of file '" + fileName + "' while skipping size " + std::to_string(size));
+    }
+}
+
 } } // Cm::Ser

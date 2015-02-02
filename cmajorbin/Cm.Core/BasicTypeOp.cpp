@@ -555,8 +555,10 @@ ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
 
 void ConvertingCtor::Generate(Emitter& emitter, GenResult& result)
 {
-    if (conversionInst == ConversionInst::none || Cm::IrIntf::TypesEqual(sourceType->GetIrType(), targetType->GetIrType()))
+    if (conversionInst == ConversionInst::none || Cm::IrIntf::TypesEqual(sourceType->GetIrType(), targetType->GetIrType()) && !result.MainObject()->IsStackVar())
     {
+        result.SetMainObject(result.Arg1());
+/*
         if (result.AddrArg())
         {
             Cm::IrIntf::Init(emitter, targetType->GetIrType(), result.Arg1(), result.MainObject());
@@ -565,6 +567,7 @@ void ConvertingCtor::Generate(Emitter& emitter, GenResult& result)
         {
             result.SetMainObject(result.Arg1());
         }
+*/
         return;
     }
     Ir::Intf::Object* from = result.Arg1();

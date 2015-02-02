@@ -320,20 +320,34 @@ ContainerScope* SymbolTable::GetContainerScope(Cm::Ast::Node* node) const
     else
     {
         throw std::runtime_error("container scope not found");
-    }
+    } 
 }
 
 Cm::Ast::Node* SymbolTable::GetNode(Symbol* symbol) const
+{
+    return GetNode(symbol, true);
+}
+
+Cm::Ast::Node* SymbolTable::GetNode(Symbol* symbol, bool throw_) const
 {
     SymbolNodeMapIt i = symbolNodeMap.find(symbol);
     if (i != symbolNodeMap.end())
     {
         return i->second;
     }
+    else if (throw_)
+    {
+        throw std::runtime_error("node for symbol '" + symbol->FullName() + "' not found in symbol table");
+    }
     else
     {
-        throw std::runtime_error("node for symbol not found");
+        return nullptr;
     }
+}
+
+void SymbolTable::SetNode(Symbol* symbol, Cm::Ast::Node* node)
+{
+    symbolNodeMap[symbol] = node;
 }
 
 FunctionSymbol* SymbolTable::GetFunctionSymbol(Cm::Ast::Node* functionNode) const

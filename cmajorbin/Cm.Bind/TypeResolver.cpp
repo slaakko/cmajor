@@ -230,7 +230,14 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
         }
         const std::string& memberName = dotNode.MemberId()->Str();
         Cm::Sym::Symbol* symbol = containerScope->Lookup(memberName);
-        ResolveSymbol(&dotNode, symbol);
+        if (symbol)
+        {
+            ResolveSymbol(&dotNode, symbol);
+        }
+        else
+        {
+            throw Cm::Core::Exception("symbol '" + memberName + "' not found", dotNode.GetSpan());
+        }
     }
     else
     {
@@ -240,8 +247,9 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
 
 void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
-    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&derivedTypeExprNode);
-    Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, scope, fileScope, derivedTypeExprNode.BaseTypeExprNode());
+    //Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&derivedTypeExprNode);
+    //Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, scope, fileScope, derivedTypeExprNode.BaseTypeExprNode());
+    Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, currentContainerScope, fileScope, derivedTypeExprNode.BaseTypeExprNode());
     typeSymbol = symbolTable.GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan());
 }
 

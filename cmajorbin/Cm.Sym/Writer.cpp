@@ -13,7 +13,7 @@
 
 namespace Cm {  namespace Sym {
 
-Writer::Writer(const std::string& fileName): binaryWriter(fileName)
+Writer::Writer(const std::string& fileName, SymbolTable* symbolTable_): binaryWriter(fileName), symbolTable(symbolTable_), astWriter(binaryWriter)
 {
 }
 

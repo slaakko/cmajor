@@ -168,6 +168,7 @@ public:
     void SetGenJumpingBoolCode() { SetFlag(GenFlags::genJumpingBoolCode, flags); }
     void SetLvalue() { SetFlag(GenFlags::lvalue, flags); }
     bool AddrArg() const { return GetFlag(GenFlags::addrArg, flags); }
+    void SetAddrArg() { SetFlag(GenFlags::addrArg, flags); }
     bool ClassTypeToPointerTypeConversion() const { return GetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
     void SetClassTypeToPointerTypeConversion() { SetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
     bool GenerateVirtualCall() const { return GetFlag(GenFlags::virtualCall, flags); }

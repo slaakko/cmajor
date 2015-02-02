@@ -77,19 +77,22 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionN
 {
     symbolTable.BeginFunctionScope(&memberFunctionNode, FunctionSymbolFlags::memberFunctionSymbol);
     parameterIndex = 0;
-    ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
-    if (memberFunctionNode.IsConst())
+    if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::static_) == Cm::Ast::Specifiers::none)
     {
-        TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakeConstPointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
-        thisParam->SetType(thisParamType);
+        ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
+        if (memberFunctionNode.IsConst())
+        {
+            TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakeConstPointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
+            thisParam->SetType(thisParamType);
+        }
+        else
+        {
+            TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
+            thisParam->SetType(thisParamType);
+        }
+        thisParam->SetBound();
+        symbolTable.AddParameter(thisParam);
     }
-    else
-    {
-        TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
-        thisParam->SetType(thisParamType);
-    }
-    thisParam->SetBound();
-    symbolTable.AddParameter(thisParam);
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode) 
@@ -222,10 +225,6 @@ void DeclarationVisitor::Visit(Cm::Ast::MemberVariableNode& memberVariableNode)
 void DeclarationVisitor::BeginVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
 {
     symbolTable.BeginDeclarationScope(&compoundStatementNode);
-    if (symbolTable.CurrentFunction()->IsFunctionTemplate())
-    {
-        symbolTable.CurrentFunction()->SetBody(&compoundStatementNode);
-    }
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)

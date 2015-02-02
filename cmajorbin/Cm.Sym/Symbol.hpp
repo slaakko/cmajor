@@ -145,6 +145,7 @@ public:
     virtual bool IsSameParentOrAncestorOf(Symbol* that) const;
     bool Bound() const { return GetFlag(SymbolFlags::bound); }
     void SetBound() { SetFlag(SymbolFlags::bound); }
+    SymbolFlags Flags() const { return flags; }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none;  }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }

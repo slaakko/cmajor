@@ -19,6 +19,7 @@ class BinaryReader
 {
 public:
     BinaryReader(const std::string& fileName_);
+    const std::string& FileName() const { return fileName; }
     bool ReadBool();
     int8_t ReadSByte();
     uint8_t ReadByte();
@@ -33,6 +34,9 @@ public:
     char ReadChar();
     std::string ReadString();
     void Read(void* buf, int size);
+    uint64_t GetPos() const { return pos - begin; }
+    void SetPos(uint64_t pos_);
+    void Skip(uint64_t size);
 private:
     std::string fileName;
     Cm::Util::MappedInputFile file;

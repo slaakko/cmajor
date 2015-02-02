@@ -12,6 +12,7 @@
 #include <Cm.Sym/TypeId.hpp>
 #include <Cm.Ser/BinaryReader.hpp>
 #include <Cm.Ast/TypeExpr.hpp>
+#include <Cm.Ast/Reader.hpp>
 #include <Cm.Parsing/Scanner.hpp>
 #include <unordered_map>
 #include <forward_list>
@@ -32,6 +33,8 @@ class Reader
 public:
     Reader(const std::string& fileName, SymbolTable& symbolTable_);
     BinaryReader& GetBinaryReader() { return binaryReader; }
+    Cm::Ast::Reader& GetAstReader() { return astReader; }
+    SymbolTable& GetSymbolTable() { return symbolTable; }
     Symbol* ReadSymbol();
     SymbolType ReadSymbolType();
     Span ReadSpan();
@@ -48,6 +51,7 @@ public:
 private:
     BinaryReader binaryReader;
     SymbolTable& symbolTable;
+    Cm::Ast::Reader astReader;
     typedef std::forward_list<std::pair<Symbol*, int>> FetchTypeList;
     typedef std::unordered_map<TypeId, FetchTypeList, TypeIdHash> FetchTypeMap;
     typedef FetchTypeMap::iterator FetchTypeMapIt;

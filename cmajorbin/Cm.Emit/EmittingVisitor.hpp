@@ -34,6 +34,7 @@ private:
     std::ofstream irFile;
     Cm::Util::CodeFormatter codeFormatter;
     Cm::BoundTree::BoundClass* currentClass;
+    Cm::Ast::CompileUnitNode* currentCompileUnit;
     std::unordered_set<Ir::Intf::Function*> externalFunctions;
     Cm::Core::StaticMemberVariableRepository staticMemberVariableRepository;
 };

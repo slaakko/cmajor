@@ -25,6 +25,7 @@ EmittingVisitor::EmittingVisitor(const std::string& irFilePath, Cm::Sym::TypeRep
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     irClassTypeRepository.Write(codeFormatter, compileUnit.SyntaxUnit(), externalFunctions, irFunctionRepository);
+    currentCompileUnit = compileUnit.SyntaxUnit();
 }
 
 void EmittingVisitor::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
@@ -53,9 +54,13 @@ void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
-    FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions, staticMemberVariableRepository);
+    if (boundFunction.GetFunctionSymbol()->FullName() == "System.IO.BinaryFileStream.Write(char c)")
+    {
+        int x = 0;
+    }
+    FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions, staticMemberVariableRepository,
+        currentCompileUnit);
     boundFunction.Accept(functionEmitter);
 }
-
 
 } } // namespace Cm::Emit

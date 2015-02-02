@@ -19,10 +19,12 @@ class TemplateParameterSymbol : public TypeSymbol
 public:
     TemplateParameterSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::templateParameterSymbol; }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
     bool IsTemplateParameterSymbol() const override { return true; }
     std::string TypeString() const override { return "template parameter"; };
     std::string GetMangleId() const { return Name(); }
-    bool IsExportSymbol() const override { return false; }
+    bool IsExportSymbol() const override { return true; }
     int Index() const { return index; }
     void SetIndex(int index_) { index = index_; }
 private:

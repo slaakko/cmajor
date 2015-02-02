@@ -177,14 +177,17 @@ void Binder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
     }
     else if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::suppress) == Cm::Ast::Specifiers::none)
     {
-        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &memberFunctionNode);
-        CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
-        GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
-        if (boundFunction->GetFunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor())
+        if (!boundFunction->GetFunctionSymbol()->IsAbstract())
         {
-            GenerateStaticConstructorCall(boundCompileUnit, boundFunction.get(), boundClass->Symbol(), &memberFunctionNode);
+            CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &memberFunctionNode);
+            CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+            GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
+            if (boundFunction->GetFunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor())
+            {
+                GenerateStaticConstructorCall(boundCompileUnit, boundFunction.get(), boundClass->Symbol(), &memberFunctionNode);
+            }
+            boundClass->AddBoundNode(boundFunction.release());
         }
-        boundClass->AddBoundNode(boundFunction.release());
         EndContainerScope(); 
     }
 }

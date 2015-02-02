@@ -12,8 +12,9 @@
 
 namespace Cm { namespace Ast {
 
-Writer::Writer(const std::string& fileName) : binaryWriter(fileName)
+Writer::Writer(BinaryWriter& binaryWriter_): binaryWriter(binaryWriter_)
 {
+
 }
 
 void Writer::Write(NodeType nodeType)

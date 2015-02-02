@@ -15,6 +15,7 @@
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
+#include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Core/SynthesizedClassFunRepository.hpp>
@@ -24,7 +25,8 @@
 
 namespace Cm { namespace Bind {
 
-void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, Cm::Core::IrClassTypeRepository& irClassTypeRepository);
+void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, 
+    Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, Cm::Core::IrClassTypeRepository& irClassTypeRepository);
 
 class BoundExpressionStack
 {
@@ -83,13 +85,13 @@ public:
     void EndVisit(Cm::Ast::InvokeNode& invokeNode) override;
     void Visit(Cm::Ast::IndexNode& indexNode) override;
 
-    void Visit(Cm::Ast::SizeOfNode& sizeOfNode) {}
+    void Visit(Cm::Ast::SizeOfNode& sizeOfNode) override;
     void Visit(Cm::Ast::CastNode& castNode) override;
     void BeginVisit(Cm::Ast::ConstructNode& constructNode) {}
     void EndVisit(Cm::Ast::ConstructNode& constructNode) {}
     void BeginVisit(Cm::Ast::NewNode& newNode) {}
     void EndVisit(Cm::Ast::NewNode& newNode) {}
-    void Visit(Cm::Ast::TemplateIdNode& templateIdNode) {}
+    void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
     void Visit(Cm::Ast::ThisNode& thisNode) override;
     void Visit(Cm::Ast::BaseNode& baseNode) override;
@@ -146,6 +148,7 @@ private:
     void BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::NamespaceSymbol* namespaceSymbol);
     void BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTypeSymbol* enumTypeSymbol);
     void BindEnumConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumConstantSymbol* enumConstantSymbol);
+    void BindTypedefSymbol(Cm::Ast::Node* idNode, Cm::Sym::TypedefSymbol* typedefSymbol);
     void BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol);
     void BindIndexPointer(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
     void BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
@@ -155,7 +158,7 @@ private:
     Cm::Sym::FunctionSymbol* BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, 
         bool& firstArgByRef, bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs);
     Cm::Sym::FunctionSymbol* BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
-        bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol);
+        bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments);
     void BindArrow(Cm::Ast::Node* node, const std::string& memberId);
 };
 

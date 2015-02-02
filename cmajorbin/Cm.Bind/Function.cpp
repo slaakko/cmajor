@@ -450,7 +450,7 @@ void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol)
     }
     int n = int(functionSymbol->Parameters().size());
     int start = 0;
-    if (functionSymbol->IsMemberFunctionSymbol())
+    if (functionSymbol->IsMemberFunctionSymbol() && !functionSymbol->IsStatic())
     {
         start = 1;
     }
