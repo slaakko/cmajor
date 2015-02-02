@@ -18,7 +18,15 @@ namespace Cm { namespace Core {
 
 Ir::Intf::Parameter* CreateIrParameter(Cm::Sym::ParameterSymbol* parameter)
 {
-    Ir::Intf::Type* irParameterType = parameter->GetType()->GetIrType();
+    Ir::Intf::Type* irParameterType = nullptr;
+    if (parameter->GetType()->IsClassTypeSymbol())
+    {
+        irParameterType = Cm::IrIntf::Pointer(parameter->GetType()->GetIrType(), 1);
+    }
+    else
+    {
+        irParameterType = parameter->GetType()->GetIrType();
+    }
     std::string parameterName = parameter->Name();
     parameterName.append(Cm::IrIntf::GetPrivateSeparator()).append("p");
     Ir::Intf::Parameter* irParameter = Cm::IrIntf::CreateParameter(parameterName, irParameterType);
@@ -98,7 +106,7 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     }
     if (!function->IsCDecl() && !function->IsStaticConstructor())
     {
-        functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, std::vector<Cm::Sym::TypeSymbol*>(), function->Parameters());
+        functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, function->TemplateArguments(), function->Parameters());
     }
     Ir::Intf::Function* irFunction = Cm::IrIntf::CreateFunction(functionName, irReturnType, irParameters);
     ownedIrFunctions.push_back(std::unique_ptr<Ir::Intf::Function>(irFunction));

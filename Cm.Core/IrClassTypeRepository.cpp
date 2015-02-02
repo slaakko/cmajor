@@ -17,6 +17,17 @@ namespace Cm { namespace Core {
 void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
     classTypes.insert(classTypeSymbol);
+    if (classTypeSymbol->BaseClass())
+    {
+        AddClassType(classTypeSymbol->BaseClass());
+    }
+    for (Cm::Sym::MemberVariableSymbol* memberVar : classTypeSymbol->MemberVariables())
+    {
+        if (memberVar->GetType()->IsClassTypeSymbol())
+        {
+            AddClassType(static_cast<Cm::Sym::ClassTypeSymbol*>(memberVar->GetType()));
+        }
+    }
 }
 
 void IrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions, 

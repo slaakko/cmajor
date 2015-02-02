@@ -35,7 +35,8 @@ namespace Cm { namespace Bind {
 
 using Cm::Parsing::Span;
 
-void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, Cm::Core::IrClassTypeRepository& irClassTypeRepository)
+void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, 
+    Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, Cm::Core::IrClassTypeRepository& irClassTypeRepository)
 {
     if (int(fun->Parameters().size()) != arguments.Count())
     {
@@ -67,7 +68,45 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::Bound
             }
             else if (paramType->IsConstReferenceType())
             {
-                argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+                bool argumentIsConversion = false;
+                if (argument->IsBoundConversion())
+                {
+                    Cm::BoundTree::BoundConversion* conversion = static_cast<Cm::BoundTree::BoundConversion*>(argument);
+                    Cm::BoundTree::BoundExpression* operand = conversion->Operand();
+                    if (operand->IsLiteral() || operand->IsConstant() || operand->IsEnumConstant())
+                    {
+                        argumentIsConversion = true;
+                    }
+                }
+                if ((argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argumentIsConversion) && 
+                    (argument->GetType()->IsBasicTypeSymbol() || argument->GetType()->IsEnumTypeSymbol()))
+                {
+                    if (!currentFunction)
+                    {
+                        throw std::runtime_error("current function not set in prepare function arguments");
+                    }
+                    argument = arguments[i].release();
+                    std::vector<Cm::Core::Argument> resolutionArguments;
+                    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(argument->GetType(), 
+                        argument->SyntaxNode()->GetSpan())));
+                    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, argument->GetType()));
+                    Cm::Sym::FunctionLookupSet resolutionLookups;
+                    resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, containerScope->ClassOrNsScope()));
+                    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+                    Cm::Sym::FunctionSymbol* basicTypeCopyCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, resolutionLookups,
+                        argument->SyntaxNode()->GetSpan(), conversions);
+                    Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(argument->SyntaxNode(), currentFunction->CreateTempLocalVariable(argument->GetType()));
+                    boundTemporary->SetType(argument->GetType());
+                    Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(argument->SyntaxNode(), argument, basicTypeCopyCtor);
+                    boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+                    conversion->SetBoundTemporary(boundTemporary);
+                    conversion->SetType(paramType);
+                    arguments[i].reset(conversion);
+                }
+                else
+                {
+                    argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+                }
             }
             else if (paramType->IsRvalueRefType())
             {
@@ -392,10 +431,17 @@ void ExpressionBinder::Visit(Cm::Ast::AddrOfNode& addrOfNode)
     operand->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
     boundExpressionStack.Push(operand);
     BindUnaryOp(&addrOfNode, "operator&");
+    Cm::BoundTree::BoundExpression* op = boundExpressionStack.Pop();
+    op->SetFlag(Cm::BoundTree::BoundNodeFlags::addrArg);
+    boundExpressionStack.Push(op);
 }
 
 void ExpressionBinder::Visit(Cm::Ast::DerefNode& derefNode)
 {
+    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Reverse<const char*>(const char*, const char*)")
+    {
+        int x = 0;
+    }
     bool isDerefThis = derefNode.Subject()->IsThisNode();   // '*this' is special
     derefNode.Subject()->Accept(*this);
     BindUnaryOp(&derefNode, "operator*");
@@ -914,7 +960,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
         functionGroupSymbol = functionGroup->GetFunctionGroupSymbol();
         functionGroupName = functionGroupSymbol->Name();
-        if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
+        if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol() && !currentFunction->GetFunctionSymbol()->IsStatic())
         {
             fun = BindInvokeMemFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupName, numArgs);
             if (fun)
@@ -924,7 +970,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         }
         if (!fun)
         {
-            fun = BindInvokeFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupSymbol);
+            fun = BindInvokeFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupSymbol, functionGroup->BoundTemplateArguments());
             type = fun->GetReturnType();
         }
     }
@@ -957,7 +1003,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     }
     if (!constructTemporary)
     {
-        PrepareFunctionArguments(fun, arguments, firstArgByRef && fun->IsMemberFunctionSymbol(), boundCompileUnit.IrClassTypeRepository());
+        PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, firstArgByRef && fun->IsMemberFunctionSymbol() && !fun->IsStatic(), boundCompileUnit.IrClassTypeRepository());
     }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
     functionCall->SetFunction(fun);
@@ -994,7 +1040,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
     Cm::BoundTree::BoundLocalVariable* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, temporary);
     boundTemporary->SetType(typeSymbol);
     arguments.InsertFront(boundTemporary);
-    PrepareFunctionArguments(fun, arguments, true, boundCompileUnit.IrClassTypeRepository());
+    PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
     return fun;
 }
 
@@ -1047,7 +1093,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node,
 }
 
 Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
-    bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol)
+    bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments)
 {
     Cm::Sym::FunctionLookupSet functionLookups;
     std::vector<Cm::Core::Argument> resolutionArguments;
@@ -1088,7 +1134,8 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         }
     }
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()->ClassOrNsScope()));
-    Cm::Sym::FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions);
+    Cm::Sym::FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions, 
+        Cm::Sym::ConversionType::implicit, boundTemplateArguments, Cm::Bind::OverloadResolutionFlags());
     if (fun->IsVirtualAbstractOrOverride() && firstArgIsPointerOrReference && !firstArgIsThisOrBase)
     {
         generateVirtualCall = true;
@@ -1153,6 +1200,12 @@ void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
         {
             Cm::Sym::FunctionGroupSymbol* functionGroupSymbol = static_cast<Cm::Sym::FunctionGroupSymbol*>(symbol);
             BindFunctionGroup(node, functionGroupSymbol);
+            break;
+        }
+        case Cm::Sym::SymbolType::typedefSymbol:
+        {
+            Cm::Sym::TypedefSymbol*  typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
+            BindTypedefSymbol(node, typedefSymbol);
             break;
         }
         default:
@@ -1276,28 +1329,44 @@ void ExpressionBinder::BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTy
 
 void ExpressionBinder::BindEnumConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumConstantSymbol* enumConstantSymbol)
 {
-    Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(enumConstantSymbol);
     Cm::Sym::TypeSymbol* enumType = nullptr;
-    if (node->IsEnumConstantNode())
+    Cm::Sym::Symbol* enumConstantParent = enumConstantSymbol->Parent();
+    if (enumConstantParent)
     {
-        Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
-        Cm::Ast::EnumTypeNode* enumTypeNode = static_cast<Cm::Ast::EnumTypeNode*>(enumConstantNode->Parent());
-        Cm::Sym::ContainerScope* enumTypeScope = boundCompileUnit.SymbolTable().GetContainerScope(enumTypeNode);
-        enumType = static_cast<Cm::Sym::EnumTypeSymbol*>(enumTypeScope->Container());
+        if (enumConstantParent->IsEnumTypeSymbol())
+        {
+            enumType = static_cast<Cm::Sym::EnumTypeSymbol*>(enumConstantParent);
+        }
     }
-    else 
+    if (!enumType)
     {
-        throw std::runtime_error("not enum constant node");
+        throw Cm::Core::Exception("enum type for enum constant not found", idNode->GetSpan());
     }
     Cm::BoundTree::BoundEnumConstant* boundEnumConstant = new Cm::BoundTree::BoundEnumConstant(idNode, enumConstantSymbol);
     boundEnumConstant->SetType(enumType);
     boundExpressionStack.Push(boundEnumConstant);
 }
 
+void ExpressionBinder::BindTypedefSymbol(Cm::Ast::Node* idNode, Cm::Sym::TypedefSymbol* typedefSymbol)
+{
+    CheckAccess(currentFunction->GetFunctionSymbol(), idNode->GetSpan(), typedefSymbol);
+    Cm::BoundTree::BoundTypeExpression* type = new Cm::BoundTree::BoundTypeExpression(idNode, typedefSymbol->GetType());
+    boundExpressionStack.Push(type);
+}
+
 void ExpressionBinder::BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol)
 {
     Cm::BoundTree::BoundFunctionGroup* boundFunctionGroup = new Cm::BoundTree::BoundFunctionGroup(idNode, functionGroupSymbol);
     boundExpressionStack.Push(boundFunctionGroup);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::SizeOfNode& sizeOfNode) 
+{
+    sizeOfNode.Subject()->Accept(*this);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
+    Cm::BoundTree::BoundSizeOfExpression* boundSizeOfExpr = new Cm::BoundTree::BoundSizeOfExpression(&sizeOfNode, subject->GetType());
+    boundSizeOfExpr->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)));
+    boundExpressionStack.Push(boundSizeOfExpr);
 }
 
 void ExpressionBinder::Visit(Cm::Ast::CastNode& castNode)
@@ -1319,6 +1388,28 @@ void ExpressionBinder::Visit(Cm::Ast::CastNode& castNode)
     boundExpressionStack.Push(cast);
 }
 
+void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
+{
+    templateIdNode.Subject()->Accept(*this);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
+    if (subject->IsBoundFunctionGroup())
+    {
+        std::vector<Cm::Sym::TypeSymbol*> boundTemplateArguments;
+        Cm::BoundTree::BoundFunctionGroup* boundFunctionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
+        for (const std::unique_ptr<Cm::Ast::Node>& templateArgument : templateIdNode.TemplateArguments())
+        {
+            Cm::Sym::TypeSymbol* templateArgumentType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScope(), templateArgument.get());
+            boundTemplateArguments.push_back(templateArgumentType);
+        }
+        boundFunctionGroup->SetBoundTemplateArguments(boundTemplateArguments);
+        boundExpressionStack.Push(subject.release());
+    }
+    else
+    {
+        throw Cm::Core::Exception("function group expected", templateIdNode.GetSpan());
+    }
+}
+
 void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
@@ -1338,7 +1429,7 @@ void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
 
 void ExpressionBinder::Visit(Cm::Ast::ThisNode& thisNode)
 {
-    if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol())
+    if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol() && !currentFunction->GetFunctionSymbol()->IsStatic())
     {
         Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
         Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(&thisNode, thisParam);
@@ -1348,7 +1439,7 @@ void ExpressionBinder::Visit(Cm::Ast::ThisNode& thisNode)
     }
     else
     {
-        throw Cm::Core::Exception("'this' can be used only in member function context", thisNode.GetSpan());
+        throw Cm::Core::Exception("'this' can be used only in non-static member function context", thisNode.GetSpan());
     }
 }
 

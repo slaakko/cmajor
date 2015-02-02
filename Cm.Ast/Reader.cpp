@@ -22,7 +22,7 @@
 
 namespace Cm { namespace Ast {
 
-Reader::Reader(const std::string& fileName) : binaryReader(fileName)
+Reader::Reader(BinaryReader& binaryReader_) : binaryReader(binaryReader_)
 {
 }
 

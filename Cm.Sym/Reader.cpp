@@ -15,7 +15,7 @@
 
 namespace Cm { namespace Sym {
 
-Reader::Reader(const std::string& fileName, SymbolTable& symbolTable_) : binaryReader(fileName), symbolTable(symbolTable_), spanFileIndexOffset(0), markSymbolsBound(false)
+Reader::Reader(const std::string& fileName, SymbolTable& symbolTable_) : binaryReader(fileName), astReader(binaryReader), symbolTable(symbolTable_), spanFileIndexOffset(0), markSymbolsBound(false)
 {
 }
 

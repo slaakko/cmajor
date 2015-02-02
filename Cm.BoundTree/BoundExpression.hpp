@@ -35,6 +35,10 @@ public:
     virtual bool IsBoundPostfixIncDecExpr() const { return false; }
     virtual bool IsBoundTypeExpression() const { return false; }
     virtual bool IsBoundLocalVariable() const { return false; }
+    virtual bool IsBoundConversion() const { return false; }
+    virtual bool IsLiteral() const { return false; }
+    virtual bool IsConstant() const { return false; }
+    virtual bool IsEnumConstant() const { return false; }
     virtual bool IsCast() const { return false; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
@@ -81,6 +85,7 @@ public:
     void SetValue(Cm::Sym::Value* value_) { value.reset(value_); }
     Cm::Sym::Value* GetValue() const { return value.get(); }
     void Accept(Visitor& visitor) override;
+    bool IsLiteral() const override { return true; }
 private:
     std::unique_ptr<Cm::Sym::Value> value;
 };
@@ -91,6 +96,7 @@ public:
     BoundConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConstantSymbol* symbol_);
     Cm::Sym::ConstantSymbol* Symbol() const { return symbol; }
     void Accept(Visitor& visitor) override;
+    bool IsConstant() const override { return true; }
 private:
     Cm::Sym::ConstantSymbol* symbol;
 };
@@ -101,6 +107,7 @@ public:
     BoundEnumConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::EnumConstantSymbol* symbol_);
     Cm::Sym::EnumConstantSymbol* Symbol() const { return symbol; }
     void Accept(Visitor& visitor) override;
+    bool IsEnumConstant() const override { return true; }
 private:
     Cm::Sym::EnumConstantSymbol* symbol;
 };
@@ -169,6 +176,7 @@ class BoundConversion : public BoundExpression
 {
 public:
     BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_);
+    bool IsBoundConversion() const override { return true; }
     BoundExpression* Operand() const { return operand.get(); }
     Cm::Sym::FunctionSymbol* ConversionFun() const { return conversionFun; }
     void Accept(Visitor& visitor) override;
@@ -190,6 +198,16 @@ public:
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* conversionFun;
+};
+
+class BoundSizeOfExpression : public BoundExpression
+{
+public:
+    BoundSizeOfExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* type_);
+    void Accept(Visitor& visitor) override;
+    Cm::Sym::TypeSymbol* Type() const { return type; }
+private:
+    Cm::Sym::TypeSymbol* type;
 };
 
 class BoundUnaryOp : public BoundExpression
@@ -243,8 +261,11 @@ public:
     Cm::Sym::FunctionGroupSymbol* GetFunctionGroupSymbol() const { return functionGroupSymbol; }
     void Accept(Visitor& visitor) override;
     bool IsBoundFunctionGroup() const override { return true; }
+    void SetBoundTemplateArguments(const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments_);
+    const std::vector<Cm::Sym::TypeSymbol*>& BoundTemplateArguments() const { return boundTemplateArguments; }
 private:
     Cm::Sym::FunctionGroupSymbol* functionGroupSymbol;
+    std::vector<Cm::Sym::TypeSymbol*> boundTemplateArguments;
 };
 
 class BoundFunctionCall : public BoundExpression

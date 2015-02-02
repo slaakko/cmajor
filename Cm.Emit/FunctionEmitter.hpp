@@ -73,7 +73,7 @@ class FunctionEmitter : public Cm::BoundTree::Visitor
 public:
     FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
         Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
-        std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_);
+        std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
@@ -86,6 +86,7 @@ public:
     void Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable) override;
     void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
     void Visit(Cm::BoundTree::BoundCast& boundCast) override;
+    void Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExpr) override;
     void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;

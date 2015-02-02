@@ -23,7 +23,7 @@ using Cm::Ser::BinaryWriter;
 class Writer
 {
 public:
-    Writer(const std::string& fileName);
+    Writer(BinaryWriter& binaryWriter_);
     void Write(NodeType nodeType);
     void Write(const Span& span);
     void Write(Node* node);
@@ -44,7 +44,7 @@ public:
     void Write(const DerivationList& derivationList);
     void Write(Specifiers x);
 private:
-    BinaryWriter binaryWriter;
+    BinaryWriter& binaryWriter;
 };
 
 } } // namespace Cm::Ast

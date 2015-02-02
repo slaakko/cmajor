@@ -62,7 +62,7 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     constructionStatement->InsertLocalVariableToArguments();
     constructionStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
     constructionStatement->ApplyConversions(conversions, CurrentFunction());
-    PrepareFunctionArguments(ctor, constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository());
+    PrepareFunctionArguments(ctor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository());
     if (localVariableType->IsReferenceType())
     {
         constructionStatement->Arguments()[1]->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);

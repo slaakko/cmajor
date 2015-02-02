@@ -11,7 +11,7 @@
 
 namespace Cm { namespace Ser {
 
-BinaryWriter::BinaryWriter(const std::string& fileName_) : fileName(fileName_)
+BinaryWriter::BinaryWriter(const std::string& fileName_) : fileName(fileName_), pos(0)
 {
     file = fopen(fileName.c_str(), "wb");
     if (!file)
@@ -35,6 +35,7 @@ void BinaryWriter::Write(bool x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(int8_t x)
@@ -44,6 +45,7 @@ void BinaryWriter::Write(int8_t x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(uint8_t x)
@@ -53,6 +55,7 @@ void BinaryWriter::Write(uint8_t x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(int16_t x)
@@ -62,6 +65,7 @@ void BinaryWriter::Write(int16_t x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(uint16_t x)
@@ -71,6 +75,7 @@ void BinaryWriter::Write(uint16_t x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(int32_t x)
@@ -80,6 +85,7 @@ void BinaryWriter::Write(int32_t x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(uint32_t x)
@@ -89,6 +95,7 @@ void BinaryWriter::Write(uint32_t x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(int64_t x)
@@ -98,6 +105,7 @@ void BinaryWriter::Write(int64_t x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(uint64_t x)
@@ -107,6 +115,7 @@ void BinaryWriter::Write(uint64_t x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(float x)
@@ -116,6 +125,7 @@ void BinaryWriter::Write(float x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(double x)
@@ -125,6 +135,7 @@ void BinaryWriter::Write(double x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(char x)
@@ -134,6 +145,7 @@ void BinaryWriter::Write(char x)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += sizeof(x);
 }
 
 void BinaryWriter::Write(const std::string& s)
@@ -151,6 +163,7 @@ void BinaryWriter::Write(const std::string& s)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += s.length() + 1;
 }
 
 void BinaryWriter::Write(const void* data, int size)
@@ -160,6 +173,17 @@ void BinaryWriter::Write(const void* data, int size)
     {
         throw std::runtime_error("could not write: " + std::string(strerror(errno)));
     }
+    pos += size;
+}
+
+void BinaryWriter::Seek(uint64_t pos_)
+{
+    int result = fseek(file, static_cast<long>(pos_), SEEK_SET);
+    if (result != 0)
+    {
+        throw std::runtime_error("could not seek: " + std::string(strerror(errno)));
+    }
+    pos = pos_;
 }
 
 } } // Cm::Ser

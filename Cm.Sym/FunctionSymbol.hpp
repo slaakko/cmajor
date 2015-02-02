@@ -82,6 +82,8 @@ enum class FunctionSymbolFlags: uint16_t
     templateSpecialization = 1 << 14
 };
 
+std::string FunctionSymbolFlagString(FunctionSymbolFlags flags);
+
 inline FunctionSymbolFlags operator|(FunctionSymbolFlags left, FunctionSymbolFlags right)
 {
     return FunctionSymbolFlags(uint16_t(left) | uint16_t(right));
@@ -93,6 +95,17 @@ inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFla
 }
 
 class TemplateParameterSymbol;
+
+struct FunctionTemplateData
+{
+    FunctionTemplateData();
+    uint64_t bodyPos;
+    uint64_t bodySize;
+    std::unique_ptr<Cm::Ast::Node> returnTypeExprNode;
+    std::unique_ptr<Cm::Ast::FunctionGroupIdNode> groupId;
+    Cm::Ast::Specifiers specifiers;
+    std::string cmlFilePath;
+};
 
 class FunctionSymbol : public ContainerSymbol
 {
@@ -106,7 +119,7 @@ public:
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
     virtual bool IsConvertingConstructor() const;
-    bool IsExportSymbol() const override { return IsFunctionTemplateSpecialization() ? false : ContainerSymbol::IsExportSymbol(); }
+    bool IsExportSymbol() const override;
     void SetConvertingConstructor();
     bool CheckIfConvertingConstructor() const;
     bool IsFunctionTemplate() const { return !templateParameters.empty(); }
@@ -156,10 +169,15 @@ public:
     void SetType(TypeSymbol* type_, int index) override;
     void SetReturnType(TypeSymbol* returnType_);
     TypeSymbol* GetReturnType() const { return returnType; }
-    Cm::Ast::CompoundStatementNode* Body() const { return body; }
-    void SetBody(Cm::Ast::CompoundStatementNode* body_) { body = body_; }
+    Cm::Ast::Node* ReturnTypeExprNode() const { return functionTemplateData->returnTypeExprNode.get(); }
+    Cm::Ast::FunctionGroupIdNode* GroupId() const { return functionTemplateData->groupId.get(); }
+    uint64_t BodyPos() const { return functionTemplateData->bodyPos; }
+    uint64_t BodySize() const { return functionTemplateData->bodySize; }
+    Cm::Ast::Specifiers GetSpecifiers() const { return functionTemplateData->specifiers; }
+    std::string CmlFilePath() const { return functionTemplateData->cmlFilePath; }
     bool ReturnsClassObjectByValue() const;
     const std::vector<TemplateParameterSymbol*>& TemplateParameters() const { return templateParameters; }
+    const std::vector<Cm::Sym::TypeSymbol*>& TemplateArguments() const { return templateArguments; }
     int Arity() const { return int(parameters.size()); }
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void ComputeName();
@@ -171,6 +189,8 @@ public:
     void SetVtblIndex(int16_t vtblIndex_) { vtblIndex = vtblIndex_; }
     Ir::Intf::Parameter* ClassObjectResultIrParam() const { return classObjectResultIrParam; }
     void SetClassObjectResultIrParam(Ir::Intf::Parameter* classObjectResultIrParam_) { classObjectResultIrParam = classObjectResultIrParam_; }
+    void SetTemplateArguments(const std::vector<Cm::Sym::TypeSymbol*>& templateArguments_) { templateArguments = templateArguments_; }
+    void Dump(CodeFormatter& formatter) override;
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
@@ -178,9 +198,10 @@ private:
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
     std::vector<TemplateParameterSymbol*> templateParameters;
-    Cm::Ast::CompoundStatementNode* body;
+    std::vector<Cm::Sym::TypeSymbol*> templateArguments;
     Cm::Ast::CompileUnitNode* compileUnit;
     Ir::Intf::Parameter* classObjectResultIrParam;
+    std::unique_ptr<FunctionTemplateData> functionTemplateData;
     bool GetFlag(FunctionSymbolFlags flag) const
     {
         return (flags & flag) != FunctionSymbolFlags::none;

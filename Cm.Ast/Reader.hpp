@@ -39,7 +39,7 @@ enum class Specifiers : uint16_t;
 class Reader
 {
 public:
-    Reader(const std::string& fileName);
+    Reader(BinaryReader& binaryReader_);
     NodeType ReadNodeType();
     Span ReadSpan();
     Node* ReadNode();
@@ -77,7 +77,7 @@ public:
     DerivationList ReadDerivationList();
     Specifiers ReadSpecifiers();
 private:
-    BinaryReader binaryReader;
+    BinaryReader& binaryReader;
 };
 
 } } // namespace Cm::Ast

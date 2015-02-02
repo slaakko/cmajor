@@ -58,7 +58,7 @@ void Module::WriteSourceFilePaths(Writer& writer)
 
 void Module::Export(SymbolTable& symbolTable)
 {
-    Writer writer(filePath);
+    Writer writer(filePath, &symbolTable);
     WriteModuleFileId(writer);
     WriteSourceFilePaths(writer);
     symbolTable.Export(writer);

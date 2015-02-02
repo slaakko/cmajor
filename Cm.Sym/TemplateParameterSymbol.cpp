@@ -16,6 +16,17 @@ TemplateParameterSymbol::TemplateParameterSymbol(const Span& span_, const std::s
 {
 }
 
+void TemplateParameterSymbol::Write(Writer& writer)
+{
+    TypeSymbol::Write(writer);
+}
+
+void TemplateParameterSymbol::Read(Reader& reader) 
+{
+    TypeSymbol::Read(reader);
+}
+
+
 BoundTemplateParameterSymbol::BoundTemplateParameterSymbol(const Span& span_, const std::string& name_): Symbol(span_, name_), type(nullptr)
 {
 }

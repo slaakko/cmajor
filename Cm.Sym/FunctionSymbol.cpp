@@ -12,16 +12,143 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/TemplateParameterSymbol.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
+
+std::string FunctionSymbolFlagString(FunctionSymbolFlags flags)
+{
+    std::string s;
+    if ((flags & FunctionSymbolFlags::constructorOrDestructorSymbol) != FunctionSymbolFlags::none)
+    {
+        s.append("constructor|destructor");
+    }
+    if ((flags & FunctionSymbolFlags::memberFunctionSymbol) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("member function");
+    }
+    if ((flags & FunctionSymbolFlags::external) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("external");
+    }
+    if ((flags & FunctionSymbolFlags::cdecl_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("cdecl");
+    }
+    if ((flags & FunctionSymbolFlags::virtual_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("virtual");
+    }
+    if ((flags & FunctionSymbolFlags::abstract_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("abstract");
+    }
+    if ((flags & FunctionSymbolFlags::override_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("override");
+    }
+    if ((flags & FunctionSymbolFlags::nothrow) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("nothrow");
+    }
+    if ((flags & FunctionSymbolFlags::inline_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("inline");
+    }
+    if ((flags & FunctionSymbolFlags::replicated) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("replicated");
+    }
+    if ((flags & FunctionSymbolFlags::suppressed) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("suppressed");
+    }
+    if ((flags & FunctionSymbolFlags::default_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("default");
+    }
+    if ((flags & FunctionSymbolFlags::explicit_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("explicit");
+    }
+    if ((flags & FunctionSymbolFlags::conversion) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("conversion");
+    }
+    if ((flags & FunctionSymbolFlags::templateSpecialization) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("template specialization");
+    }
+    return s;
+}
 
 FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lookup(lookup_), scope(scope_)
 {
 }
 
+FunctionTemplateData::FunctionTemplateData(): bodyPos(0), bodySize(0), specifiers(), returnTypeExprNode(nullptr), groupId(nullptr)
+{
+}
+
 FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
-    classObjectResultIrParam(nullptr), body(nullptr)
+    classObjectResultIrParam(nullptr)
 {
 }
 
@@ -125,6 +252,15 @@ bool FunctionSymbol::IsConvertingConstructor() const
     return GetFlag(FunctionSymbolFlags::conversion);
 }
 
+bool FunctionSymbol::IsExportSymbol() const 
+{ 
+    if (Name().find("Min") != std::string::npos)
+    {
+        int x = 0;
+    }
+    return IsFunctionTemplateSpecialization() ? false : ContainerSymbol::IsExportSymbol(); 
+}
+
 void FunctionSymbol::SetConvertingConstructor()
 {
     SetFlag(FunctionSymbolFlags::conversion);
@@ -132,7 +268,7 @@ void FunctionSymbol::SetConvertingConstructor()
 
 bool FunctionSymbol::CheckIfConvertingConstructor() const
 {
-    return IsConstructor() && !IsExplicit() && !IsStatic() && !IsCopyConstructor() && !IsMoveConstructor();
+    return IsConstructor() && parameters.size() == 2 && !IsExplicit() && !IsStatic() && !IsCopyConstructor() && !IsMoveConstructor();
 }
 
 bool FunctionSymbol::IsCopyAssignment() const
@@ -180,11 +316,52 @@ void FunctionSymbol::Write(Writer& writer)
     writer.GetBinaryWriter().Write(uint16_t(flags));
     writer.GetBinaryWriter().Write(groupName);
     writer.GetBinaryWriter().Write(vtblIndex);
-    bool hasReturnType = returnType != nullptr;
-    writer.GetBinaryWriter().Write(hasReturnType);
-    if (hasReturnType)
+    if (IsFunctionTemplate())
     {
-        writer.Write(returnType->Id());
+        SymbolTable* symbolTable = writer.GetSymbolTable();
+        Cm::Ast::Node* node = symbolTable->GetNode(this);
+        if (!node)
+        {
+            throw std::runtime_error("write: function node not found from symbol table");
+        }
+        if (node->IsFunctionNode())
+        {
+            Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
+            bool hasReturnType = functionNode->ReturnTypeExpr();
+            writer.GetBinaryWriter().Write(hasReturnType);
+            if (hasReturnType)
+            {
+                writer.GetAstWriter().Write(functionNode->ReturnTypeExpr());
+            }
+            if (!functionNode->Body())
+            {
+                throw std::runtime_error("write: function node has no body");
+            }
+            writer.GetAstWriter().Write(functionNode->GetSpecifiers());
+            writer.GetAstWriter().Write(functionNode->GroupId());
+            uint64_t sizePos = writer.GetBinaryWriter().Pos();
+            writer.GetBinaryWriter().Write(uint64_t(0));
+            uint64_t bodyPos = writer.GetBinaryWriter().Pos();
+            writer.GetAstWriter().Write(functionNode->Body());
+            uint64_t bodyEndPos = writer.GetBinaryWriter().Pos();
+            uint64_t bodySize = bodyEndPos - bodyPos;
+            writer.GetBinaryWriter().Seek(sizePos);
+            writer.GetBinaryWriter().Write(bodySize);
+            writer.GetBinaryWriter().Seek(bodyEndPos);
+        }
+        else
+        {
+            throw std::runtime_error("write: not function node");
+        }
+    }
+    else
+    {
+        bool hasReturnType = returnType != nullptr;
+        writer.GetBinaryWriter().Write(hasReturnType);
+        if (hasReturnType)
+        {
+            writer.Write(returnType->Id());
+        }
     }
 }
 
@@ -194,10 +371,28 @@ void FunctionSymbol::Read(Reader& reader)
     flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUShort());
     groupName = reader.GetBinaryReader().ReadString();
     vtblIndex = reader.GetBinaryReader().ReadShort();
-    bool hasReturnType = reader.GetBinaryReader().ReadBool();
-    if (hasReturnType)
+    if (IsFunctionTemplate())
     {
-        reader.FetchTypeFor(this, 0);
+        functionTemplateData.reset(new FunctionTemplateData());
+        bool hasReturnType = reader.GetBinaryReader().ReadBool();
+        if (hasReturnType)
+        {
+            functionTemplateData->returnTypeExprNode.reset(reader.GetAstReader().ReadNode());
+        }
+        functionTemplateData->specifiers = reader.GetAstReader().ReadSpecifiers();
+        functionTemplateData->groupId.reset(reader.GetAstReader().ReadFunctionGroupIdNode());
+        functionTemplateData->bodySize = reader.GetBinaryReader().ReadULong();
+        functionTemplateData->bodyPos = reader.GetBinaryReader().GetPos();
+        functionTemplateData->cmlFilePath = reader.GetBinaryReader().FileName();
+        reader.GetBinaryReader().Skip(functionTemplateData->bodySize);
+    }
+    else
+    {
+        bool hasReturnType = reader.GetBinaryReader().ReadBool();
+        if (hasReturnType)
+        {
+            reader.FetchTypeFor(this, 0);
+        }
     }
 }
 
@@ -209,11 +404,25 @@ void FunctionSymbol::SetType(TypeSymbol* type_, int index)
 void FunctionSymbol::ComputeName()
 {
     std::string s;
-    if (returnType)
-    {
-        s.append(returnType->FullName()).append(1, ' ');
-    }
     s.append(groupName);
+    if (!templateArguments.empty())
+    {
+        s.append(1, '<');
+        bool first = true;
+        for (Cm::Sym::TypeSymbol* templateArgument : templateArguments)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                s.append(", ");
+            }
+            s.append(templateArgument->FullName());
+        }
+        s.append(1, '>');
+    }
     s.append(1, '(');
     bool first = true;
     for (ParameterSymbol* parameter : parameters)
@@ -251,6 +460,66 @@ void FunctionSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& expor
     {
         parameter->CollectExportedDerivedTypes(exportedDerivedTypes);
     }
+}
+
+void FunctionSymbol::Dump(CodeFormatter& formatter)
+{
+    std::string s = SymbolFlagStr(Flags(), DeclaredAccess());
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append(FunctionSymbolFlagString(flags));
+    formatter.Write(s);
+    if (!s.empty())
+    {
+        formatter.Write(" ");
+    }
+    if (returnType)
+    {
+        formatter.Write(returnType->FullName() + " ");
+    }
+    formatter.Write(groupName);
+    if (!templateParameters.empty())
+    {
+        std::string t = "<";
+        bool first = true;
+        for (TemplateParameterSymbol* templateParam : templateParameters)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                t.append(", ");
+            }
+            t.append(templateParam->Name());
+        }
+        t.append(">");
+        formatter.Write(t);
+    }
+    std::string p = "(";
+    bool first = true;
+    for (ParameterSymbol* param : parameters)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            p.append(", ");
+        }
+        if (param->GetType())
+        {
+            p.append(param->GetType()->FullName() + " ");
+        }
+        p.append(param->Name());
+    }
+    p.append(")");
+    formatter.Write(p);
+    formatter.WriteLine();
 }
 
 } } // namespace Cm::Sym

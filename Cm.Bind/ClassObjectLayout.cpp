@@ -71,7 +71,7 @@ void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpres
     Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(nullptr, boundThisParam, conversionFun);
     thisAsBase->SetType(baseClassPtrType);
     arguments.InsertFront(thisAsBase); // insert 'this' to front
-    PrepareFunctionArguments(baseClassCtor, arguments, false, BoundCompileUnit().IrClassTypeRepository());
+    PrepareFunctionArguments(baseClassCtor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, false, BoundCompileUnit().IrClassTypeRepository());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -153,7 +153,7 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
     Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
     boundThisParam->SetType(thisParam->GetType());
     arguments.InsertFront(boundThisParam); // insert 'this' to front
-    PrepareFunctionArguments(thisClassCtor, arguments, false, BoundCompileUnit().IrClassTypeRepository());
+    PrepareFunctionArguments(thisClassCtor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, false, BoundCompileUnit().IrClassTypeRepository());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -284,7 +284,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     boundThisParam->SetType(thisParam->GetType());
     boundMemberVariable->SetClassObject(boundThisParam);
     arguments.InsertFront(boundMemberVariable);
-    PrepareFunctionArguments(memberCtor, arguments, true, BoundCompileUnit().IrClassTypeRepository());
+    PrepareFunctionArguments(memberCtor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, true, BoundCompileUnit().IrClassTypeRepository());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -387,7 +387,7 @@ void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit
         boundMemberVariable->SetClassObject(boundThisParam);
         Cm::BoundTree::BoundExpressionList arguments;
         arguments.Add(boundMemberVariable);
-        PrepareFunctionArguments(memberDtor, arguments, true, boundCompileUnit.IrClassTypeRepository());
+        PrepareFunctionArguments(memberDtor, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
         Cm::BoundTree::BoundFunctionCallStatement* destroyMemberVariableStatement = new Cm::BoundTree::BoundFunctionCallStatement(memberDtor, std::move(arguments));
         currentFunction->Body()->AddStatement(destroyMemberVariableStatement);
     }
@@ -409,7 +409,7 @@ void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boun
     thisAsBase->SetType(baseClassPtrType);
     Cm::BoundTree::BoundExpressionList arguments;
     arguments.Add(thisAsBase); 
-    PrepareFunctionArguments(baseClassDtor, arguments, true, boundCompileUnit.IrClassTypeRepository());
+    PrepareFunctionArguments(baseClassDtor, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
     Cm::BoundTree::BoundFunctionCallStatement* destroyBaseClassObjectStatement = new Cm::BoundTree::BoundFunctionCallStatement(baseClassDtor, std::move(arguments));
     currentFunction->Body()->AddStatement(destroyBaseClassObjectStatement);
 }
@@ -434,6 +434,7 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
     ++classObjectLayoutFunIndex;
     currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
     Cm::BoundTree::BoundMemberVariable* boundInitializedVarLeft = new Cm::BoundTree::BoundMemberVariable(staticConstructorNode, initializedVar);
+    boundInitializedVarLeft->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     Cm::BoundTree::BoundLiteral* boundTrue = new Cm::BoundTree::BoundLiteral(staticConstructorNode);
     boundTrue->SetType(boolType);
     boundTrue->SetValue(new Cm::Sym::BoolValue(true));
@@ -524,7 +525,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializer
     Cm::BoundTree::BoundMemberVariable* boundMemberVariable = new Cm::BoundTree::BoundMemberVariable(node, memberVariableSymbol);
     boundMemberVariable->SetType(memberVariableSymbol->GetType());
     arguments.InsertFront(boundMemberVariable);
-    PrepareFunctionArguments(memberCtor, arguments, true, BoundCompileUnit().IrClassTypeRepository());
+    PrepareFunctionArguments(memberCtor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, true, BoundCompileUnit().IrClassTypeRepository());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {

@@ -59,6 +59,8 @@ public:
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
     ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
     Cm::Ast::Node* GetNode(Symbol* symbol) const;
+    Cm::Ast::Node* GetNode(Symbol* symbol, bool throw_) const;
+    void SetNode(Symbol* symbol, Cm::Ast::Node* node);
     FunctionSymbol* GetFunctionSymbol(Cm::Ast::Node* functionNode) const;
     void Export(Writer& writer);
     void Import(Reader& reader);

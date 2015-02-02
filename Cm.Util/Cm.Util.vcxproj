@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Algorithm.hpp" />
     <ClInclude Include="CodeFormatter.hpp" />
     <ClInclude Include="Handle.hpp" />
     <ClInclude Include="MappedInputFile.hpp" />

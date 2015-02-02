@@ -31,8 +31,10 @@ public:
     void SetType(TypeSymbol* type_) { SetType(type_, 0); }
     void SetType(TypeSymbol* type_, int index) override;
     void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) override;
+    Cm::Ast::ParameterNode* ParameterNode() const { return ownedParameterNode.get(); }
 private:
     TypeSymbol* type;
+    std::unique_ptr<Cm::Ast::ParameterNode> ownedParameterNode;
 };
 
 } } // namespace Cm::Sym

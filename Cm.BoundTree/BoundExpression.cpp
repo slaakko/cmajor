@@ -151,7 +151,6 @@ BoundConversion::BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* op
 
 void BoundConversion::Accept(Visitor& visitor)
 {
-    operand->Accept(visitor);
     visitor.Visit(*this);
 }
 
@@ -167,6 +166,15 @@ BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::
 void BoundCast::Accept(Visitor& visitor)
 {
     operand->Accept(visitor);
+    visitor.Visit(*this);
+}
+
+BoundSizeOfExpression::BoundSizeOfExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* type_) : BoundExpression(syntaxNode_), type(type_)
+{
+}
+
+void BoundSizeOfExpression::Accept(Visitor& visitor)
+{
     visitor.Visit(*this);
 }
 
@@ -207,6 +215,11 @@ BoundFunctionGroup::BoundFunctionGroup(Cm::Ast::Node* syntaxNode_, Cm::Sym::Func
 void BoundFunctionGroup::Accept(Visitor& visitor)
 {
     throw std::runtime_error("member function not applicable");
+}
+
+void BoundFunctionGroup::SetBoundTemplateArguments(const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments_)
+{
+    boundTemplateArguments = boundTemplateArguments_;
 }
 
 BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_)), fun(nullptr), 

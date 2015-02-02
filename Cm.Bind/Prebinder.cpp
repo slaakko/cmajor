@@ -204,6 +204,7 @@ void Prebinder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
     if (functionNode.TemplateParameters().Count() > 0)
     {
         PushSkipContent();
+        BindFunction(symbolTable, currentContainerScope, fileScope.get(), &functionNode, nullptr);
     }
     else
     {

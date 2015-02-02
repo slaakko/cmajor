@@ -23,6 +23,8 @@ bool IsNonConstReferenceDerivationList(const Cm::Ast::DerivationList& derivation
 bool HasConstDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasConstReferenceDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasRvalueRefDerivation(const Cm::Ast::DerivationList& derivations);
+bool HasConstPointerDerivation(const Cm::Ast::DerivationList& derivations);
+bool HasConstPointerPointerDerivation(const Cm::Ast::DerivationList& derivations);
 DerivationCounts CountDerivations(const Cm::Ast::DerivationList& derivations);
 
 class DerivedTypeSymbol : public TypeSymbol
@@ -44,7 +46,9 @@ public:
     bool IsNonConstReferenceType() const override { return IsNonConstReferenceDerivationList(derivations); }
     bool IsConstType() const override { return HasConstDerivation(derivations); }
     bool IsRvalueRefType() const override { return HasRvalueRefDerivation(derivations); }
-    bool IsConstReferenceType() const { return HasConstReferenceDerivation(derivations);; }
+    bool IsConstReferenceType() const { return HasConstReferenceDerivation(derivations); }
+    bool IsConstPointerType() const { return HasConstPointerDerivation(derivations); }
+    bool IsConstPointerPointerType() const { return HasConstPointerPointerDerivation(derivations); }
     DerivationCounts GetDerivationCounts() const override { return CountDerivations(derivations); }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
