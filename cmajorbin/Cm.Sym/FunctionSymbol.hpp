@@ -94,7 +94,7 @@ inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFla
     return FunctionSymbolFlags(uint16_t(left) & uint16_t(right));
 }
 
-class TemplateParameterSymbol;
+class TypeParameterSymbol;
 
 struct FunctionTemplateData
 {
@@ -122,7 +122,7 @@ public:
     bool IsExportSymbol() const override;
     void SetConvertingConstructor();
     bool CheckIfConvertingConstructor() const;
-    bool IsFunctionTemplate() const { return !templateParameters.empty(); }
+    bool IsFunctionTemplate() const { return !typeParameters.empty(); }
     virtual ConversionType GetConversionType() const { return IsExplicit() ? Cm::Sym::ConversionType::explicit_ : Cm::Sym::ConversionType::implicit; }
     virtual ConversionRank GetConversionRank() const { return IsConvertingConstructor() ? Cm::Sym::ConversionRank::conversion : Cm::Sym::ConversionRank::exactMatch; }
     virtual int GetConversionDistance() const { return IsConvertingConstructor() ? 100 : 0; }
@@ -176,8 +176,8 @@ public:
     Cm::Ast::Specifiers GetSpecifiers() const { return functionTemplateData->specifiers; }
     std::string CmlFilePath() const { return functionTemplateData->cmlFilePath; }
     bool ReturnsClassObjectByValue() const;
-    const std::vector<TemplateParameterSymbol*>& TemplateParameters() const { return templateParameters; }
-    const std::vector<Cm::Sym::TypeSymbol*>& TemplateArguments() const { return templateArguments; }
+    const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
+    const std::vector<Cm::Sym::TypeSymbol*>& TypeArguments() const { return typeArguments; }
     int Arity() const { return int(parameters.size()); }
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void ComputeName();
@@ -189,7 +189,7 @@ public:
     void SetVtblIndex(int16_t vtblIndex_) { vtblIndex = vtblIndex_; }
     Ir::Intf::Parameter* ClassObjectResultIrParam() const { return classObjectResultIrParam; }
     void SetClassObjectResultIrParam(Ir::Intf::Parameter* classObjectResultIrParam_) { classObjectResultIrParam = classObjectResultIrParam_; }
-    void SetTemplateArguments(const std::vector<Cm::Sym::TypeSymbol*>& templateArguments_) { templateArguments = templateArguments_; }
+    void SetTypeArguments(const std::vector<Cm::Sym::TypeSymbol*>& typeArguments_) { typeArguments = typeArguments_; }
     void Dump(CodeFormatter& formatter) override;
 private:
     FunctionSymbolFlags flags;
@@ -197,8 +197,8 @@ private:
     int16_t vtblIndex;
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
-    std::vector<TemplateParameterSymbol*> templateParameters;
-    std::vector<Cm::Sym::TypeSymbol*> templateArguments;
+    std::vector<TypeParameterSymbol*> typeParameters;
+    std::vector<Cm::Sym::TypeSymbol*> typeArguments;
     Cm::Ast::CompileUnitNode* compileUnit;
     Ir::Intf::Parameter* classObjectResultIrParam;
     std::unique_ptr<FunctionTemplateData> functionTemplateData;

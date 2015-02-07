@@ -44,10 +44,10 @@
     <ClInclude Include="Scope.hpp" />
     <ClInclude Include="Symbol.hpp" />
     <ClInclude Include="SymbolTable.hpp" />
-    <ClInclude Include="TemplateParameterSymbol.hpp" />
     <ClInclude Include="TemplateTypeSymbol.hpp" />
     <ClInclude Include="TypedefSymbol.hpp" />
     <ClInclude Include="TypeId.hpp" />
+    <ClInclude Include="TypeParameterSymbol.hpp" />
     <ClInclude Include="TypeRepository.hpp" />
     <ClInclude Include="TypeSymbol.hpp" />
     <ClInclude Include="Value.hpp" />
@@ -79,10 +79,10 @@
     <ClCompile Include="Scope.cpp" />
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
-    <ClCompile Include="TemplateParameterSymbol.cpp" />
     <ClCompile Include="TemplateTypeSymbol.cpp" />
     <ClCompile Include="TypedefSymbol.cpp" />
     <ClCompile Include="TypeId.cpp" />
+    <ClCompile Include="TypeParameterSymbol.cpp" />
     <ClCompile Include="TypeRepository.cpp" />
     <ClCompile Include="TypeSymbol.cpp" />
     <ClCompile Include="Value.cpp" />

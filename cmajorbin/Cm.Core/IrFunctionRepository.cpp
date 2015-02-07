@@ -106,7 +106,7 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     }
     if (!function->IsCDecl() && !function->IsStaticConstructor())
     {
-        functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, function->TemplateArguments(), function->Parameters());
+        functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, function->TypeArguments(), function->Parameters());
     }
     Ir::Intf::Function* irFunction = Cm::IrIntf::CreateFunction(functionName, irReturnType, irParameters);
     ownedIrFunctions.push_back(std::unique_ptr<Ir::Intf::Function>(irFunction));

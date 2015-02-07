@@ -16,7 +16,7 @@
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
-#include <Cm.Sym/TemplateParameterSymbol.hpp>
+#include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <unordered_set>
 #include <algorithm>
 
@@ -377,9 +377,9 @@ bool DeduceTemplateParameter(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
         return true;
     }
     Cm::Sym::TypeSymbol* parameterBaseType = parameterType->GetBaseType();
-    if (parameterBaseType->IsTemplateParameterSymbol())
+    if (parameterBaseType->IsTypeParameterSymbol())
     {
-        Cm::Sym::TemplateParameterSymbol* templateParameterSymbol = static_cast<Cm::Sym::TemplateParameterSymbol*>(parameterBaseType);
+        Cm::Sym::TypeParameterSymbol* templateParameterSymbol = static_cast<Cm::Sym::TypeParameterSymbol*>(parameterBaseType);
         int index = templateParameterSymbol->Index();
         Cm::Sym::TypeSymbol*& templateArgumentType = templateArguments[index];
         if (!templateArgumentType)  // unbound template argument
@@ -405,7 +405,7 @@ bool DeduceTemplateParameter(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
     return false;
 }
 
-bool DeduceTemplateParameters(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::vector<Cm::Sym::TemplateParameterSymbol*>& templateParameters,
+bool DeduceTypeParameters(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::vector<Cm::Sym::TypeParameterSymbol*>& templateParameters,
     const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, const std::vector<Cm::Core::Argument>& arguments,
     const Cm::Parsing::Span& span, std::unordered_set<Cm::Sym::ClassTypeSymbol*>& conversionClassTypes, FunctionMatch& functionMatch)
 {
@@ -426,7 +426,7 @@ bool DeduceTemplateParameters(Cm::Sym::ContainerScope* containerScope, Cm::Bound
         }
     }
     Cm::Sym::ContainerScope deductionScope;
-    for (Cm::Sym::TemplateParameterSymbol* templateParameter : templateParameters)
+    for (Cm::Sym::TypeParameterSymbol* templateParameter : templateParameters)
     {
         deductionScope.Install(templateParameter);
     }
@@ -578,7 +578,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         FunctionMatch functionMatch(viableFunction);
         if (viableFunction->IsFunctionTemplate())
         {
-            bool candidateFound = DeduceTemplateParameters(containerScope, boundCompileUnit, viableFunction->TemplateParameters(), boundTemplateArguments, viableFunction->Parameters(), arguments, span,
+            bool candidateFound = DeduceTypeParameters(containerScope, boundCompileUnit, viableFunction->TypeParameters(), boundTemplateArguments, viableFunction->Parameters(), arguments, span,
                 conversionClassTypes, functionMatch);
             if (candidateFound)
             {

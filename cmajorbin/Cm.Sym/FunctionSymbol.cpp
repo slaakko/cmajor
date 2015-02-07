@@ -11,7 +11,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
-#include <Cm.Sym/TemplateParameterSymbol.hpp>
+#include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -180,11 +180,11 @@ void FunctionSymbol::AddSymbol(Symbol* symbol)
         ParameterSymbol* parameterSymbol = static_cast<ParameterSymbol*>(symbol);
         parameters.push_back(parameterSymbol);
     }
-    else if (symbol->IsTemplateParameterSymbol())
+    else if (symbol->IsTypeParameterSymbol())
     {
-        TemplateParameterSymbol* templateParameterSymbol = static_cast<TemplateParameterSymbol*>(symbol);
-        templateParameterSymbol->SetIndex(int(templateParameters.size()));
-        templateParameters.push_back(templateParameterSymbol);
+        TypeParameterSymbol* typeParameterSymbol = static_cast<TypeParameterSymbol*>(symbol);
+        typeParameterSymbol->SetIndex(int(typeParameters.size()));
+        typeParameters.push_back(typeParameterSymbol);
     }
 }
 
@@ -401,11 +401,11 @@ void FunctionSymbol::ComputeName()
 {
     std::string s;
     s.append(groupName);
-    if (!templateArguments.empty())
+    if (!typeArguments.empty())
     {
         s.append(1, '<');
         bool first = true;
-        for (Cm::Sym::TypeSymbol* templateArgument : templateArguments)
+        for (Cm::Sym::TypeSymbol* typeArgument : typeArguments)
         {
             if (first)
             {
@@ -415,7 +415,7 @@ void FunctionSymbol::ComputeName()
             {
                 s.append(", ");
             }
-            s.append(templateArgument->FullName());
+            s.append(typeArgument->FullName());
         }
         s.append(1, '>');
     }
@@ -476,11 +476,11 @@ void FunctionSymbol::Dump(CodeFormatter& formatter)
         formatter.Write(returnType->FullName() + " ");
     }
     formatter.Write(groupName);
-    if (!templateParameters.empty())
+    if (!typeParameters.empty())
     {
         std::string t = "<";
         bool first = true;
-        for (TemplateParameterSymbol* templateParam : templateParameters)
+        for (TypeParameterSymbol* typeParam : typeParameters)
         {
             if (first)
             {
@@ -490,7 +490,7 @@ void FunctionSymbol::Dump(CodeFormatter& formatter)
             {
                 t.append(", ");
             }
-            t.append(templateParam->Name());
+            t.append(typeParam->Name());
         }
         t.append(">");
         formatter.Write(t);
