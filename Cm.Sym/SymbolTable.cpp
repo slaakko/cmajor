@@ -17,7 +17,7 @@
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Sym/DeclarationBlock.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
-#include <Cm.Sym/TemplateParameterSymbol.hpp>
+#include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
@@ -266,9 +266,9 @@ void SymbolTable::AddParameter(Cm::Ast::ParameterNode* parameterNode, const std:
 void SymbolTable::AddTemplateParameter(Cm::Ast::TemplateParameterNode* templateParameterNode)
 {
     Cm::Ast::IdentifierNode* templateParameterId = templateParameterNode->Id();
-    TemplateParameterSymbol* templateParameterSymbol = new TemplateParameterSymbol(templateParameterId->GetSpan(), templateParameterId->Str());
-    container->AddSymbol(templateParameterSymbol);
-    symbolNodeMap[templateParameterSymbol] = templateParameterNode;
+    TypeParameterSymbol* typeParameterSymbol = new TypeParameterSymbol(templateParameterId->GetSpan(), templateParameterId->Str());
+    container->AddSymbol(typeParameterSymbol);
+    symbolNodeMap[typeParameterSymbol] = templateParameterNode;
 }
 
 void SymbolTable::BeginDeclarationScope(Cm::Ast::StatementNode* statementNode)

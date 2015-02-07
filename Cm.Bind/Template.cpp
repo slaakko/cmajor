@@ -11,7 +11,7 @@
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
-#include <Cm.Sym/TemplateParameterSymbol.hpp>
+#include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -79,13 +79,13 @@ Cm::Ast::FunctionNode* CreateFunctionInstanceNode(Cm::BoundTree::BoundCompileUni
     return functionInstanceNode;
 }
 
-void BindTemplateParameters(Cm::Sym::FunctionSymbol* functionTemplate, Cm::Sym::FunctionSymbol* functionTemplateInstance, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments)
+void BindTypeParameters(Cm::Sym::FunctionSymbol* functionTemplate, Cm::Sym::FunctionSymbol* functionTemplateInstance, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments)
 {
-    int n = int(functionTemplate->TemplateParameters().size());
+    int n = int(functionTemplate->TypeParameters().size());
     for (int i = 0; i < n; ++i)
     {
-        Cm::Sym::TemplateParameterSymbol* templateParameter = functionTemplate->TemplateParameters()[i];
-        Cm::Sym::BoundTemplateParameterSymbol* boundTemplateParam = new Cm::Sym::BoundTemplateParameterSymbol(templateParameter->GetSpan(), templateParameter->Name());
+        Cm::Sym::TypeParameterSymbol* templateParameter = functionTemplate->TypeParameters()[i];
+        Cm::Sym::BoundTypeParameterSymbol* boundTemplateParam = new Cm::Sym::BoundTypeParameterSymbol(templateParameter->GetSpan(), templateParameter->Name());
         boundTemplateParam->SetType(templateArguments[i]);
         functionTemplateInstance->AddSymbol(boundTemplateParam);
     }
@@ -104,10 +104,10 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     Cm::Sym::FunctionSymbol* functionTemplateInstance = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
     functionTemplateInstance->SetReplicated();
     functionTemplateInstance->SetFunctionTemplateSpecialization();
-    BindTemplateParameters(functionTemplate, functionTemplateInstance, templateArguments);
+    BindTypeParameters(functionTemplate, functionTemplateInstance, templateArguments);
     Prebinder prebinder(boundCompileUnit.SymbolTable());
     globalNs->Accept(prebinder);
-    functionTemplateInstance->SetTemplateArguments(templateArguments);
+    functionTemplateInstance->SetTypeArguments(templateArguments);
     functionTemplateInstance->ComputeName();
     Binder binder(boundCompileUnit);
     globalNs->Accept(binder);

@@ -141,7 +141,7 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
     }
     std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(derivations, baseType), baseType, derivations, typeId));
     derivedTypeSymbol->SetAccess(SymbolAccess::public_);
-    if (!baseType->IsTemplateParameterSymbol())
+    if (!baseType->IsTypeParameterSymbol())
     {
         derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
         derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
