@@ -71,6 +71,7 @@ public:
     ConversionTable& GetStandardConversionTable() { return standardConversionTable; }
     void AddPredefinedSymbolToGlobalScope(Symbol* symbol);
     void InitVirtualFunctionTables();
+    FunctionSymbol* GetOverload(const std::string& fullOverloadGroupName) const;
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;

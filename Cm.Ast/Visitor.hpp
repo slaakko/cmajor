@@ -255,10 +255,8 @@ public:
 
     virtual void Visit(SizeOfNode& sizeOfNode) {}
     virtual void Visit(CastNode& castNode) {}
-    virtual void BeginVisit(ConstructNode& constructNode) {}
-    virtual void EndVisit(ConstructNode& constructNode) {}
-    virtual void BeginVisit(NewNode& newNode) {}
-    virtual void EndVisit(NewNode& newNode) {}
+    virtual void Visit(ConstructNode& constructNode) {}
+    virtual void Visit(NewNode& newNode) {}
     virtual void Visit(TemplateIdNode& templateIdNode) {}
     virtual void Visit(IdentifierNode& identifierNode) {}
     virtual void Visit(ThisNode& thisNode) {}

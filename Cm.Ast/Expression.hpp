@@ -500,6 +500,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::newNode; }
     Node* Clone() const override;
     void AddArgument(Node* argument) override;
+    NodeList& Arguments() { return arguments; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -518,6 +519,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::constructNode; }
     Node* Clone() const override;
     void AddArgument(Node* argument) override;
+    NodeList& Arguments() { return arguments; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;

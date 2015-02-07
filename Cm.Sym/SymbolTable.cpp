@@ -23,6 +23,7 @@
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -406,6 +407,20 @@ void SymbolTable::AddPredefinedSymbolToGlobalScope(Symbol* symbol)
 void SymbolTable::InitVirtualFunctionTables()
 {
     globalNs.InitVirtualFunctionTables();
+}
+
+FunctionSymbol* SymbolTable::GetOverload(const std::string& fullOverloadGroupName) const
+{
+    Symbol* symbol = globalNs.GetContainerScope()->Lookup(fullOverloadGroupName);
+    if (symbol)
+    {
+        if (symbol->IsFunctionGroupSymbol())
+        {
+            FunctionGroupSymbol* functionGroup = static_cast<FunctionGroupSymbol*>(symbol);
+            return functionGroup->GetOverload();
+        }
+    }
+    return nullptr;
 }
 
 } } // namespace Cm::Sym

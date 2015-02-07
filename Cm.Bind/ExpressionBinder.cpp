@@ -438,10 +438,6 @@ void ExpressionBinder::Visit(Cm::Ast::AddrOfNode& addrOfNode)
 
 void ExpressionBinder::Visit(Cm::Ast::DerefNode& derefNode)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Reverse<const char*>(const char*, const char*)")
-    {
-        int x = 0;
-    }
     bool isDerefThis = derefNode.Subject()->IsThisNode();   // '*this' is special
     derefNode.Subject()->Accept(*this);
     BindUnaryOp(&derefNode, "operator*");
@@ -955,6 +951,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     bool firstArgByRef = false;
     bool constructTemporary = false;
+    bool returnClassObjectByValue = false;
     if (subject->IsBoundFunctionGroup())
     {
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
@@ -972,6 +969,10 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         {
             fun = BindInvokeFun(node, conversions, arguments, firstArgByRef, generateVirtualCall, functionGroupSymbol, functionGroup->BoundTemplateArguments());
             type = fun->GetReturnType();
+            if (type->IsClassTypeSymbol())
+            {
+                returnClassObjectByValue = true;
+            }
         }
     }
     else if (subject->IsBoundTypeExpression())
@@ -1017,7 +1018,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
     }
-    else if (constructTemporary)
+    else if (constructTemporary || returnClassObjectByValue)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
     }
@@ -1369,23 +1370,137 @@ void ExpressionBinder::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
     boundExpressionStack.Push(boundSizeOfExpr);
 }
 
+void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Ast::Node* targetTypeExpr, Cm::Ast::Node* sourceExpr, const Cm::Parsing::Span& span)
+{
+    Cm::Sym::TypeSymbol* toType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScope, targetTypeExpr);
+    sourceExpr->Accept(*this);
+    Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
+    BindCast(node, toType, operand);
+}
+
+void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* targetType, Cm::BoundTree::BoundExpression* sourceExpr)
+{
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(targetType, node->GetSpan())));
+    resolutionArguments.push_back(Cm::Core::Argument(sourceExpr->GetArgumentCategory(), sourceExpr->GetType()));
+    Cm::Sym::FunctionLookupSet functionLookups;
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, targetType->GetContainerScope()->ClassOrNsScope()));
+    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions, Cm::Sym::ConversionType::explicit_,
+        OverloadResolutionFlags::none);
+    Cm::BoundTree::BoundCast* cast = new Cm::BoundTree::BoundCast(node, sourceExpr, convertingCtor);
+    cast->SetType(targetType);
+    boundExpressionStack.Push(cast);
+}
+
 void ExpressionBinder::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    Cm::Sym::TypeSymbol* toType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScope, targetTypeExpr);
-    castNode.SourceExpr()->Accept(*this);
-    Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
+    Cm::Ast::Node* sourceExpr = castNode.SourceExpr();
+    BindCast(&castNode, targetTypeExpr, sourceExpr, castNode.GetSpan());
+}
+
+void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes, Cm::BoundTree::BoundExpression* allocationArg)
+{
+    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScope(), typeExpr);
+    if (type->IsReferenceType() || type->IsRvalueRefType())
+    {
+        throw Cm::Core::Exception("cannot construct a reference", node->GetSpan());
+    }
+    if (type->IsAbstract())
+    {
+        throw Cm::Core::Exception("cannot instantiate an abstract class", node->GetSpan());
+    }
+    Cm::Sym::TypeSymbol* returnType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(type, node->GetSpan());
+    int n = argumentNodes.Count();
+    if (n == 0 && !allocationArg)
+    {
+        throw Cm::Core::Exception("must supply at least one argument to construct expression", node->GetSpan());
+    }
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Ast::Node* argument = argumentNodes[i];
+        argument->Accept(*this);
+    }
+    Cm::BoundTree::BoundExpressionList arguments = boundExpressionStack.Pop(n);
+    if (allocationArg)
+    {
+        arguments.InsertFront(allocationArg);
+    }
+    Cm::Sym::TypeSymbol* pointerType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(arguments[0]->GetType());
+    if (!pointerType->IsPointerType())
+    {
+        throw Cm::Core::Exception("first argument of a construct expression must be of a pointer type", node->GetSpan());
+    }
+    if (pointerType->IsVoidPtrType())
+    {
+        Cm::Ast::DerivationList pointerDerivation;
+        pointerDerivation.Add(Cm::Ast::Derivation::pointer);
+        Cm::Ast::DerivedTypeExprNode pointerTypeNode(node->GetSpan(), pointerDerivation, typeExpr->Clone());
+        BindCast(node, &pointerTypeNode, argumentNodes[0], node->GetSpan());
+        Cm::BoundTree::BoundExpression* cast = boundExpressionStack.Pop();
+        arguments[0].reset(cast);
+    }
+    else if (!Cm::Sym::TypesEqual(returnType, pointerType))
+    {
+        throw Cm::Core::Exception("type of the first argument conflicts with the return type of the construct expression", node->GetSpan());
+    }
     std::vector<Cm::Core::Argument> resolutionArguments;
-    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(toType, castNode.GetSpan())));
-    resolutionArguments.push_back(Cm::Core::Argument(operand->GetArgumentCategory(), operand->GetType()));
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, returnType));
+    if (allocationArg)
+    {
+        ++n;
+    }
+    for (int i = 1; i < n; ++i)
+    {
+        resolutionArguments.push_back(Cm::Core::Argument(arguments[i]->GetArgumentCategory(), arguments[i]->GetType()));
+    }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, toType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, type->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, castNode.GetSpan(), conversions, Cm::Sym::ConversionType::explicit_,
-        OverloadResolutionFlags::none);
-    Cm::BoundTree::BoundCast* cast = new Cm::BoundTree::BoundCast(&castNode, operand, convertingCtor);
-    cast->SetType(toType);
-    boundExpressionStack.Push(cast);
+    Cm::Sym::FunctionSymbol* ctor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
+    PrepareFunctionSymbol(ctor, node->GetSpan());
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
+        if (conversionFun)
+        {
+            std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
+            Cm::BoundTree::BoundExpression* arg = argument.release();
+            argument.reset(CreateBoundConversion(node, arg, conversionFun, currentFunction));
+        }
+    }
+    Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
+    functionCall->SetFunction(ctor);
+    functionCall->SetType(returnType);
+    boundExpressionStack.Push(functionCall);
+}
+
+void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes)
+{
+    BindConstruct(node, typeExpr, argumentNodes, nullptr);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::ConstructNode& constructNode)
+{
+    Cm::Ast::Node* typeExpr = constructNode.TypeExpr();
+    BindConstruct(&constructNode, typeExpr, constructNode.Arguments());
+}
+
+void ExpressionBinder::Visit(Cm::Ast::NewNode& newNode)
+{
+    Cm::Sym::FunctionSymbol* memAlloc = boundCompileUnit.SymbolTable().GetOverload("System.Support.MemAlloc");
+    Cm::BoundTree::BoundExpressionList memAllocArguments;
+    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScope(), newNode.TypeExpr());
+    Cm::BoundTree::BoundSizeOfExpression* boundSizeOfExpr = new Cm::BoundTree::BoundSizeOfExpression(&newNode, type);
+    boundSizeOfExpr->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)));
+    memAllocArguments.Add(boundSizeOfExpr);
+    Cm::BoundTree::BoundFunctionCall* memAllocCall = new Cm::BoundTree::BoundFunctionCall(&newNode, std::move(memAllocArguments));
+    memAllocCall->SetFunction(memAlloc);
+    memAllocCall->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), newNode.GetSpan()));
+    BindCast(&newNode, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(type, newNode.GetSpan()), memAllocCall);
+    Cm::BoundTree::BoundExpression* castedMemAllocCall = boundExpressionStack.Pop();
+    BindConstruct(&newNode, newNode.TypeExpr(), newNode.Arguments(), castedMemAllocCall);
 }
 
 void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)

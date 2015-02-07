@@ -25,7 +25,8 @@ public:
     void AddFunction(FunctionSymbol* function);
     void CollectViableFunctions(int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
-    ContainerScope* GetContainerScope() override { return containerScope; }
+    ContainerScope* GetContainerScope() const override { return const_cast<ContainerScope*>(containerScope); }
+    FunctionSymbol* GetOverload() const;
     void Dump(CodeFormatter& formatter) override;
 private:
     std::string name;

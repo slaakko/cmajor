@@ -476,8 +476,8 @@ public:
 
     void Visit(Cm::Ast::SizeOfNode& sizeOfNode) override;
     void Visit(Cm::Ast::CastNode& castNode) override;
-    void BeginVisit(Cm::Ast::ConstructNode& constructNode) override;
-    void BeginVisit(Cm::Ast::NewNode& newNode) override;
+    void Visit(Cm::Ast::ConstructNode& constructNode) override;
+    void Visit(Cm::Ast::NewNode& newNode) override;
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
     void Visit(Cm::Ast::ThisNode& thisNode) override;
@@ -813,12 +813,12 @@ void Evaluator::Visit(Cm::Ast::CastNode& castNode)
     stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScope));
 }
 
-void Evaluator::BeginVisit(Cm::Ast::ConstructNode& constructNode)
+void Evaluator::Visit(Cm::Ast::ConstructNode& constructNode)
 {
     throw Cm::Core::Exception("cannot evaluate statically", constructNode.GetSpan());
 }
 
-void Evaluator::BeginVisit(Cm::Ast::NewNode& newNode)
+void Evaluator::Visit(Cm::Ast::NewNode& newNode)
 {
     throw Cm::Core::Exception("cannot evaluate statically", newNode.GetSpan());
 }
@@ -977,8 +977,8 @@ public:
 
     void Visit(Cm::Ast::SizeOfNode& sizeOfNode) override;
     void Visit(Cm::Ast::CastNode& castNode) override;
-    void BeginVisit(Cm::Ast::ConstructNode& constructNode) override;
-    void BeginVisit(Cm::Ast::NewNode& newNode) override;
+    void Visit(Cm::Ast::ConstructNode& constructNode) override;
+    void Visit(Cm::Ast::NewNode& newNode) override;
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
     void Visit(Cm::Ast::ThisNode& thisNode) override;
@@ -1333,12 +1333,12 @@ void BooleanEvaluator::Visit(Cm::Ast::CastNode& castNode)
     stack.Push(IsAlwaysTrue(castNode.SourceExpr(), symbolTable, currentContainerScope, fileScope) ? new Cm::Sym::BoolValue(true) : new Cm::Sym::BoolValue(false));
 }
 
-void BooleanEvaluator::BeginVisit(Cm::Ast::ConstructNode& constructNode)
+void BooleanEvaluator::Visit(Cm::Ast::ConstructNode& constructNode)
 {
     interrupted = true;
 }
 
-void BooleanEvaluator::BeginVisit(Cm::Ast::NewNode& newNode)
+void BooleanEvaluator::Visit(Cm::Ast::NewNode& newNode)
 {
     interrupted = true;
 }

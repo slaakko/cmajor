@@ -56,10 +56,6 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
 void GenerateReceives(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* boundFunction)
 {
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
-    if (functionSymbol->FullName() == "System.EndLine.@constructor(const EndLine&)")
-    {
-        int x = 0;
-    }
     if (functionSymbol->IsExternal()) return;
     int index = 0;
     for (Cm::Sym::ParameterSymbol* parameterSymbol : functionSymbol->Parameters())
@@ -72,6 +68,11 @@ void GenerateReceives(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
         if (parameterType->IsNonConstReferenceType())
         {
             Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, parameterType);
+            resolutionArguments.push_back(sourceArgument);
+        }
+        else if (parameterType->IsRvalueRefType())
+        {
+            Cm::Core::Argument sourceArgument = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, parameterType);
             resolutionArguments.push_back(sourceArgument);
         }
         else

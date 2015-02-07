@@ -717,6 +717,18 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
                     }
                 }
             }
+            else if (leftType->IsRvalueRefType())
+            {
+                Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
+                Cm::Sym::TypeSymbol* leftPlainType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
+                Cm::Sym::TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                if (Cm::Sym::TypesEqual(leftPlainType, rightPlainType)) // rvalue reference type copy constructor
+                {
+                    Cm::Sym::TypeSymbol* rvalueRefType = typeRepository.MakeRvalueRefType(leftPlainType, span);
+                    DerivedTypeOpCache& cache = derivedTypeOpCacheMap[rvalueRefType];
+                    viableFunctions.insert(cache.GetCopyCtor(typeRepository, rvalueRefType));
+                }
+            }
             break;
         }
     }
@@ -795,6 +807,18 @@ void AssignmentOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::
                 DerivedTypeOpCache& cache = derivedTypeOpCacheMap[referenceType];
                 viableFunctions.insert(cache.GetCopyAssignment(typeRepository, referenceType));
             }
+        }
+    }
+    else if (leftType->IsRvalueRefType())
+    {
+        Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
+        Cm::Sym::TypeSymbol* leftPlainType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
+        Cm::Sym::TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+        if (Cm::Sym::TypesEqual(leftPlainType, rightPlainType)) // rvalue reference type copy assignment
+        {
+            Cm::Sym::TypeSymbol* rvalueRefType = typeRepository.MakeRvalueRefType(leftPlainType, span);
+            DerivedTypeOpCache& cache = derivedTypeOpCacheMap[rvalueRefType];
+            viableFunctions.insert(cache.GetCopyAssignment(typeRepository, rvalueRefType));
         }
     }
 }

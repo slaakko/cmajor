@@ -88,7 +88,7 @@ public:
     {
         SetFlag(ClassTypeSymbolFlags::virtual_);
     }
-    bool IsAbstract() const
+    bool IsAbstract() const override
     {
         return GetFlag(ClassTypeSymbolFlags::abstract_);
     }
