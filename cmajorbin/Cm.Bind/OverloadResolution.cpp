@@ -165,7 +165,7 @@ bool CheckArgVsParam(const Cm::Core::Argument& argument, Cm::Sym::TypeSymbol* pa
             return false;
         }
     }
-    else if (parameterType->IsRvalueRefType() && !argument.BindToRvalueRef())
+    else if (parameterType->IsRvalueRefType() && !argument.BindToRvalueRef() && !argument.Type()->IsRvalueRefType())
     {
         return false;
     }

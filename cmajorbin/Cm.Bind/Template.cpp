@@ -110,10 +110,6 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     functionTemplateInstance->SetTemplateArguments(templateArguments);
     functionTemplateInstance->ComputeName();
     Binder binder(boundCompileUnit);
-    if (functionTemplateInstance->Name() == "ToHexString<ushort>(ushort)")
-    {
-        int x = 0;
-    }
     globalNs->Accept(binder);
     return functionTemplateInstance;
 }

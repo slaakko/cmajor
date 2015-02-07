@@ -87,10 +87,8 @@ public:
 
     void Visit(Cm::Ast::SizeOfNode& sizeOfNode) override;
     void Visit(Cm::Ast::CastNode& castNode) override;
-    void BeginVisit(Cm::Ast::ConstructNode& constructNode) {}
-    void EndVisit(Cm::Ast::ConstructNode& constructNode) {}
-    void BeginVisit(Cm::Ast::NewNode& newNode) {}
-    void EndVisit(Cm::Ast::NewNode& newNode) {}
+    void Visit(Cm::Ast::ConstructNode& constructNode) override;
+    void Visit(Cm::Ast::NewNode& newNode) override;
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
     void Visit(Cm::Ast::ThisNode& thisNode) override;
@@ -159,6 +157,10 @@ private:
         bool& firstArgByRef, bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs);
     Cm::Sym::FunctionSymbol* BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
         bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments);
+    void BindCast(Cm::Ast::Node* node, Cm::Ast::Node* targetTypeExpr, Cm::Ast::Node* sourceExpr, const Cm::Parsing::Span& span);
+    void BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* targetType, Cm::BoundTree::BoundExpression* sourceExpr);
+    void BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes);
+    void BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes, Cm::BoundTree::BoundExpression* allocationArg);
     void BindArrow(Cm::Ast::Node* node, const std::string& memberId);
 };
 

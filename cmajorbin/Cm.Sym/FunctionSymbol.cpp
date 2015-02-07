@@ -254,10 +254,6 @@ bool FunctionSymbol::IsConvertingConstructor() const
 
 bool FunctionSymbol::IsExportSymbol() const 
 { 
-    if (Name().find("Min") != std::string::npos)
-    {
-        int x = 0;
-    }
     return IsFunctionTemplateSpecialization() ? false : ContainerSymbol::IsExportSymbol(); 
 }
 

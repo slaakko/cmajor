@@ -23,7 +23,7 @@ public:
     ContainerSymbol(const Span& span_, const std::string& name_);
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
-    ContainerScope* GetContainerScope() override { return &containerScope; }
+    ContainerScope* GetContainerScope() const override { return const_cast<ContainerScope*>(&containerScope); }
     bool IsContainerSymbol() const override { return true; }
     virtual void AddSymbol(Symbol* symbol);
     FunctionGroupSymbol* MakeFunctionGroupSymbol(const std::string& groupName, const Span& span);

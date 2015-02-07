@@ -39,6 +39,16 @@ void FunctionGroupSymbol::CollectViableFunctions(int arity, std::unordered_set<F
     }
 }
 
+FunctionSymbol* FunctionGroupSymbol::GetOverload() const
+{
+    if (arityFunctionListMap.size() == 1)
+    {
+        const std::vector<FunctionSymbol*>& overloads = arityFunctionListMap.begin()->second;
+        if (overloads.size() == 1) return overloads.front();
+    }
+    return nullptr;
+}
+
 void FunctionGroupSymbol::Dump(CodeFormatter& formatter)
 {
 }

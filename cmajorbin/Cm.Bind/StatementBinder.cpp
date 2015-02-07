@@ -48,6 +48,10 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     constructionStatement->SetArguments(GetExpressions());
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* localVariableType = constructionStatement->LocalVariable()->GetType();
+    if (localVariableType->IsAbstract())
+    {
+        throw Cm::Core::Exception("cannot instantiate an abstract class", constructionStatementNode.GetSpan());
+    }
     Cm::Core::Argument variableArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(localVariableType, constructionStatementNode.GetSpan()));
     resolutionArguments.push_back(variableArgument);
     constructionStatement->GetResolutionArguments(resolutionArguments);
@@ -180,7 +184,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 }
                 if (returnValue->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary) || returnValue->IsBoundLocalVariable())
                 {
-                    Cm::Core::Argument& sourceArgument = resolutionArguments.front();
+                    Cm::Core::Argument& sourceArgument = resolutionArguments[1];
                     sourceArgument.SetBindToRvalueRef();
                 }
                 Cm::Sym::FunctionLookupSet functionLookups;

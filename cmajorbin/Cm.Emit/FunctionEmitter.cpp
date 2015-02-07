@@ -238,10 +238,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundEnumConstant& boundEnumConstant)
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable)
 {
-    if (currentFunction->FullName() == "System.IO.BinaryFileStream.ReadString()")
-    {
-        int x = 0;
-    }
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Sym::TypeSymbol* type = boundLocalVariable.Symbol()->GetType();
     bool typeIsReferenceType = type->IsReferenceType() || type->IsRvalueRefType();
@@ -459,10 +455,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExp
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 {
-    if (currentFunction->FullName() == "System.Reverse<const char*>(const char*, const char*)")
-    {
-        int x = 0;
-    }
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Sym::FunctionSymbol* op = boundUnaryOp.GetFunction();
     result.SetMainObject(op->GetReturnType());
@@ -521,10 +513,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
-    if (currentFunction->FullName() == "System.IO.BinaryFileStream.Write(char c)")
-    {
-        int x = 0;
-    }
     Cm::Core::GenResult result(emitter.get(), genFlags);
     bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();
     if (functionReturnsClassObjectByValue)
@@ -1268,10 +1256,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundContinueStatement& boundContinue
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement)
 {
-    if (currentFunction->Name().find("ParseBool") != std::string::npos)
-    {
-        int x = 0;
-    }
     PushSkipContent();
 }
 
@@ -1380,10 +1364,6 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundForStatement& boundForState
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStatement)
 {
-    if (currentFunction->FullName() == "System.String.StartsWith(const String& prefix)")
-    {
-        int x = 0;
-    }
     PopSkipContent();
     Cm::Core::GenResult result(emitter.get(), genFlags);
     PushBreakTargetStatement(&boundForStatement);

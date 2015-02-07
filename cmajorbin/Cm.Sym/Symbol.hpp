@@ -107,7 +107,7 @@ public:
     void SetParent(Symbol* parent_) { parent = parent_; }
     virtual std::string TypeString() const { return "symbol"; };
     virtual void SetType(TypeSymbol* typeSymbol, int index);
-    virtual ContainerScope* GetContainerScope() { return nullptr; }
+    virtual ContainerScope* GetContainerScope() const { return nullptr; }
     virtual bool IsExportSymbol() const;
     virtual bool WillBeExported() const;
     virtual bool IsNamespaceSymbol() const { return false; }

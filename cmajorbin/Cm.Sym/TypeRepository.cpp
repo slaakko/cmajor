@@ -70,34 +70,12 @@ void CountDerivations(const Cm::Ast::DerivationList& derivations, int& numPointe
             }
             case Cm::Ast::Derivation::reference: 
             {
-                if (ref)
-                {
-                    throw Exception("references to references not allowed", span);
-                }
-                else if (rvalueRef)
-                {
-                    throw Exception("references to rvalue references not allowed", span);
-                }
-                else
-                {
-                    ref = true;
-                }
+                ref = true;
                 break;
             }
             case Cm::Ast::Derivation::rvalueRef:
             {
-                if (ref)
-                {
-                    throw Exception("rvalue references to references not allowed", span);
-                }
-                else if (rvalueRef)
-                {
-                    throw Exception("rvalue references to rvalue references not allowed", span);
-                }
-                else
-                {
-                    rvalueRef = true;
-                }
+                rvalueRef = true;
                 break;
             }
         }
@@ -151,6 +129,10 @@ Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& 
 
 TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span)
 {
+    if (HasRvalueRefDerivation(derivations) && baseType->IsReferenceType())
+    {
+        return MakeDerivedType(derivations, baseType->GetBaseType(), span); // hack to remove rvalue references to reference types
+    }
     TypeId typeId = ComputeDerivedTypeId(baseType, derivations);
     TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
     if (typeSymbol)
@@ -330,11 +312,11 @@ TypeSymbol* TypeRepository::MakePlainType(TypeSymbol* type)
         derivations = ClearConstsRefsAndRvalueRefs(derivations);
         if (derivations.NumDerivations() == 0)
         {
-            return derivedType->GetBaseType();
+            return MakePlainType(derivedType->GetBaseType());
         }
         else
         {
-            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan());
+            return MakeDerivedType(derivations, MakePlainType(derivedType->GetBaseType()), derivedType->GetSpan());
         }
     }
     else
@@ -352,11 +334,11 @@ TypeSymbol* TypeRepository::MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
         derivations = ClearConstsRefsRvalueRefsAndOnePointer(derivations);
         if (derivations.NumDerivations() == 0)
         {
-            return derivedType->GetBaseType();
+            return MakePlainType(derivedType->GetBaseType());
         }
         else
         {
-            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan());
+            return MakeDerivedType(derivations, MakePlainType(derivedType->GetBaseType()), derivedType->GetSpan());
         }
     }
     else

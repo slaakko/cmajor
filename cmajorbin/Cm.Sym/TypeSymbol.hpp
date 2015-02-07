@@ -39,6 +39,7 @@ public:
     const TypeId& Id() const { return id; }
     void SetId(const TypeId& id_) { id = id_;  }
     virtual std::string GetMangleId() const = 0;
+    virtual bool IsAbstract() const { return false; }
     virtual bool IsDerivedTypeSymbol() const { return false; }
     virtual TypeSymbol* GetBaseType() const { return const_cast<TypeSymbol*>(this); }
     virtual bool IsSignedType() const { return false; }

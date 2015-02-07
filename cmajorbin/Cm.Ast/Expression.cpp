@@ -968,9 +968,7 @@ std::string NewNode::ToString() const
 
 void NewNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    arguments.Accept(visitor);
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
 ConstructNode::ConstructNode(const Span& span_) : Node(span_)
@@ -1024,9 +1022,7 @@ std::string ConstructNode::ToString() const
 
 void ConstructNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    arguments.Accept(visitor);
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
 ThisNode::ThisNode(const Span& span_) : Node(span_)

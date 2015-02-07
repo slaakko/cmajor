@@ -54,10 +54,6 @@ void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
-    if (boundFunction.GetFunctionSymbol()->FullName() == "System.IO.BinaryFileStream.Write(char c)")
-    {
-        int x = 0;
-    }
     FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions, staticMemberVariableRepository,
         currentCompileUnit);
     boundFunction.Accept(functionEmitter);
