@@ -161,6 +161,15 @@ class AxiomNode;
 class ConceptIdNode;
 class ConceptNode;
 
+class SameConstraintNode;
+class DerivedConstraintNode;
+class ConvertibleConstraintNode;
+class ExplicitlyConvertibleConstraintNode;
+class SameConceptNode;
+class DerivedConceptNode;
+class ConvertibleConceptNode;
+class ExplicitlyConvertibleConceptNode;
+
 class Visitor
 {
 public:
@@ -367,12 +376,9 @@ public:
     virtual void EndVisit(ConversionFunctionNode& conversionFunctionNode) {}
     virtual void Visit(MemberVariableNode& memberVariableNode) {}
 
-    virtual void BeginVisit(ConceptNode& conceptNode) {}
-    virtual void EndVisit(ConceptNode& conceptNode) {}
-    virtual void BeginVisit(DisjunctiveConstraintNode& disjunctiveConstraintNode) {}
-    virtual void EndVisit(DisjunctiveConstraintNode& disjunctiveConstraintNode) {}
-    virtual void BeginVisit(ConjunctiveConstraintNode& conjunctiveConstraintNode) {}
-    virtual void EndVisit(ConjunctiveConstraintNode& conjunctiveConstraintNode) {}
+    virtual void Visit(ConceptNode& conceptNode) {}
+    virtual void Visit(DisjunctiveConstraintNode& disjunctiveConstraintNode) {}
+    virtual void Visit(ConjunctiveConstraintNode& conjunctiveConstraintNode) {}
     virtual void BeginVisit(WhereConstraintNode& whereConstraintNode) {}
     virtual void EndVisit(WhereConstraintNode& whereConstraintNode) {}
     virtual void Visit(IsConstraintNode& isConstraintNode) {}
@@ -386,6 +392,16 @@ public:
     virtual void BeginVisit(AxiomNode& axiomNode) {}
     virtual void EndVisit(AxiomNode& axiomNode) {}
     virtual void Visit(ConceptIdNode& conceptIdNode) {}
+
+    virtual void Visit(SameConstraintNode& sameConstraintNode) {}
+    virtual void Visit(DerivedConstraintNode& derivedConstraintNode) {}
+    virtual void Visit(ConvertibleConstraintNode& convertibleConstraintNode) {}
+    virtual void Visit(ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode) {}
+    virtual void Visit(SameConceptNode& sameConceptNode) {}
+    virtual void Visit(DerivedConceptNode& derivedConceptNode) {}
+    virtual void Visit(ConvertibleConceptNode& convertibleConceptNode) {}
+    virtual void Visit(ExplicitlyConvertibleConceptNode& explicitlyConvertibleConceptNode) {}
+
     bool VisitBodies() const { return visitBodies; }
     bool VisitExpressions() const { return visitExpressions; }
     void PushSkipContent();

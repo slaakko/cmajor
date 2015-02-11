@@ -41,6 +41,14 @@ private:
     Cm::Util::ToolError toolError;
 };
 
+class ConceptCheckException : public Exception
+{
+public:
+    ConceptCheckException();
+    ConceptCheckException(const std::string& message_);
+    ConceptCheckException(const std::string& message_, const Span& defined_);
+};
+
 } } // namespace Cm::Core
 
 #endif // CM_CORE_EXCEPTION_INCLUDED

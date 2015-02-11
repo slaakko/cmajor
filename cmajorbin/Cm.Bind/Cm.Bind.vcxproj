@@ -22,6 +22,7 @@
     <ClInclude Include="Binder.hpp" />
     <ClInclude Include="Class.hpp" />
     <ClInclude Include="ClassObjectLayout.hpp" />
+    <ClInclude Include="Concept.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
@@ -45,6 +46,7 @@
     <ClCompile Include="Binder.cpp" />
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="ClassObjectLayout.cpp" />
+    <ClCompile Include="Concept.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />

@@ -29,7 +29,6 @@ public:
     FunctionSymbol* GetOverload() const;
     void Dump(CodeFormatter& formatter) override;
 private:
-    std::string name;
     typedef std::unordered_map<int, std::vector<FunctionSymbol*>> ArityFunctionListMap;
     typedef ArityFunctionListMap::iterator ArityFunctionListMapIt;
     ArityFunctionListMap arityFunctionListMap;

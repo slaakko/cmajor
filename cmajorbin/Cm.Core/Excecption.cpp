@@ -28,4 +28,16 @@ ToolErrorExcecption::ToolErrorExcecption(const Cm::Util::ToolError& toolError_) 
 {
 }
 
+ConceptCheckException::ConceptCheckException() : Exception("")
+{
+}
+
+ConceptCheckException::ConceptCheckException(const std::string& message_) : Exception(message_)
+{
+}
+
+ConceptCheckException::ConceptCheckException(const std::string& message_, const Span& defined_) : Exception(message_, defined_)
+{
+}
+
 } } // namespace Cm::Core

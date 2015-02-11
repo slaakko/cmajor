@@ -41,6 +41,7 @@ void Prebinder::EndContainerScope()
 void Prebinder::BeginVisit(Cm::Ast::CompileUnitNode& compileUnitNode)
 {
     fileScope.reset(new Cm::Sym::FileScope());
+    usingNodes.clear();
 }
 
 void Prebinder::EndVisit(Cm::Ast::CompileUnitNode& compileUnitNode)
@@ -62,11 +63,13 @@ void Prebinder::EndVisit(Cm::Ast::NamespaceNode& namespaceNode)
 void Prebinder::Visit(Cm::Ast::AliasNode& aliasNode)
 {
     fileScope->InstallAlias(currentContainerScope, &aliasNode);
+    usingNodes.push_back(&aliasNode);
 }
 
 void Prebinder::Visit(Cm::Ast::NamespaceImportNode& namespaceImportNode)
 {
     fileScope->InstallNamespaceImport(currentContainerScope, &namespaceImportNode);
+    usingNodes.push_back(&namespaceImportNode);
 }
 
 void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
@@ -204,7 +207,8 @@ void Prebinder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
     if (functionNode.TemplateParameters().Count() > 0)
     {
         PushSkipContent();
-        BindFunction(symbolTable, currentContainerScope, fileScope.get(), &functionNode, nullptr);
+        Cm::Sym::FunctionSymbol* templateFunction = BindFunction(symbolTable, currentContainerScope, fileScope.get(), &functionNode, nullptr);
+        templateFunction->SetUsingNodes(usingNodes);
     }
     else
     {

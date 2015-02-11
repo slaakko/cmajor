@@ -302,6 +302,7 @@ public:
     ConceptNode(const Span& span_);
     ConceptNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::conceptNode; }
+    bool IsConceptNode() const override { return true; }
     const std::string& FirstTypeParameter() const;
     void AddTypeParameter(Node* typeParameter);
     void SetRefinement(ConceptIdNode* refinement_);
@@ -315,8 +316,10 @@ public:
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     IdentifierNode* Id() const { return id.get(); }
-    const NodeList& TypeParameters() const { typeParameters; }
+    const NodeList& TypeParameters() const { return typeParameters; }
     ConceptIdNode* Refinement() const { return refinement.get(); }
+    ConstraintNodeList& Constraints() { return constraints; }
+    NodeList& Axioms() { return axioms; }
 private:
     Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;

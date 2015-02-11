@@ -23,6 +23,7 @@
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
+#include <Cm.Sym/ConceptSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -220,6 +221,7 @@ void InitFactory()
     SymbolFactory::Instance().Register(SymbolType::templateTypeSymbol, new ConcreteSymbolCreator<TemplateTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::derivedTypeSymbol, new ConcreteSymbolCreator<DerivedTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::typedefSymbol, new ConcreteSymbolCreator<TypedefSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::conceptSymbol, new ConcreteSymbolCreator<ConceptSymbol>());
 }
 
 void DoneFactory()

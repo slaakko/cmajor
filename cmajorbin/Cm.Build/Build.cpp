@@ -134,9 +134,9 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
     }
 }
 
-void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths)
+void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths)
 {
-    Cm::Core::InitSymbolTable(symbolTable);
+    Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
     ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths);
     symbolTable.InitVirtualFunctionTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
@@ -376,10 +376,12 @@ void Build(const std::string& projectFilePath)
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
     std::vector<std::string> assemblyFilePaths;
     assemblyFilePaths.push_back(project->AssemblyFilePath());
+    Cm::Core::GlobalConceptData globalConceptData;
+    Cm::Core::SetGlobalConceptData(&globalConceptData);
     Cm::Sym::SymbolTable symbolTable;
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
-    BuildSymbolTable(symbolTable, syntaxTree, project.get(), libraryDirs, assemblyFilePaths);
+    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project.get(), libraryDirs, assemblyFilePaths);
     boost::filesystem::create_directories(project->OutputBasePath());
     Cm::Sym::FunctionSymbol* userMainFunction = nullptr;
     std::vector<std::string> objectFilePaths;
@@ -401,6 +403,7 @@ void Build(const std::string& projectFilePath)
     projectModule.SetSourceFilePaths(project->SourceFilePaths());
     projectModule.Export(symbolTable);
     Cm::Parser::SetCurrentFileRegistry(nullptr);
+    Cm::Core::SetGlobalConceptData(nullptr);
     auto end = std::chrono::system_clock::now();
     auto dur = end - start;
     long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();

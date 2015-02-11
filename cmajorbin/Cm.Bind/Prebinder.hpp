@@ -64,6 +64,7 @@ private:
     int parameterIndex;
     Cm::Sym::ClassTypeSymbol* currentClass;
     Cm::Sym::FunctionSymbol* currentFunction;
+    std::vector<Cm::Ast::Node*> usingNodes;
 };
 
 } } // namespace Cm::Bind

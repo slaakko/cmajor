@@ -30,7 +30,7 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
         }
         else 
         {
-            if (!ownedSymbol->IsFunctionGroupSymbol())
+            if (!ownedSymbol->IsFunctionGroupSymbol() && !ownedSymbol->IsConceptGroupSymbol())
             {
                 Symbol* symbol = ownedSymbol.release();
                 symbolTable.Container()->AddSymbol(symbol);

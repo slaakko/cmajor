@@ -247,8 +247,6 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
 
 void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
-    //Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&derivedTypeExprNode);
-    //Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, scope, fileScope, derivedTypeExprNode.BaseTypeExprNode());
     Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, currentContainerScope, fileScope, derivedTypeExprNode.BaseTypeExprNode());
     typeSymbol = symbolTable.GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan());
 }

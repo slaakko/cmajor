@@ -257,4 +257,10 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::ConstructionStatementNode& construc
     symbolTable.AddLocalVariable(&constructionStatementNode);
 }
 
+void DeclarationVisitor::Visit(Cm::Ast::ConceptNode& conceptNode)
+{
+    symbolTable.BeginConceptScope(&conceptNode);
+    symbolTable.EndConceptScope();
+}
+
 } } // namespace Cm::Sym

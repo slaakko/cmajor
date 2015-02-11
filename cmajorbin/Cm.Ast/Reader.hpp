@@ -29,6 +29,7 @@ class ParameterNode;
 class FunctionGroupIdNode;
 class AxiomStatementNode;
 class ConceptIdNode;
+class ConceptNode;
 class TemplateParatemerNode;
 class WhereConstraintNode;
 class InitializerNode;
@@ -55,6 +56,7 @@ public:
     AxiomStatementNode* ReadAxiomStatementNode();
     FunctionGroupIdNode* ReadFunctionGroupIdNode();
     ConceptIdNode* ReadConceptIdNode();
+    ConceptNode* ReadConceptNode();
     TemplateParameterNode* ReadTemplateParameterNode();
     WhereConstraintNode* ReadWhereConstraintNode();
     InitializerNode* ReadInitializerNode();

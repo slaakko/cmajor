@@ -292,9 +292,10 @@ void MakeBasicTypes(Cm::Sym::SymbolTable& symbolTable)
         floatTypeSymbol, doubleTypeSymbol, charTypeSymbol, boolTypeSymbol);
 }
 
-void InitSymbolTable(Cm::Sym::SymbolTable& symbolTable)
+void InitSymbolTable(Cm::Sym::SymbolTable& symbolTable, GlobalConceptData& globalConceptData)
 {
     MakeBasicTypes(symbolTable);
+    globalConceptData.AddIntrinsicConceptsToSymbolTable(symbolTable);
 }
 
 } } // namespace Cm::Core

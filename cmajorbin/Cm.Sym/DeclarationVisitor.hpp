@@ -53,6 +53,7 @@ public:
     void Visit(Cm::Ast::TemplateParameterNode& templateParameterNode) override;
     void Visit(Cm::Ast::ParameterNode& parameterNode) override;
     void Visit(Cm::Ast::MemberVariableNode& memberVariableNode) override;
+    void Visit(Cm::Ast::ConceptNode& conceptNode) override;
 private:
     SymbolTable& symbolTable;
     int parameterIndex;

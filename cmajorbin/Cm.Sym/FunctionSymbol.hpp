@@ -13,6 +13,7 @@
 #include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
+#include <Cm.Ast/Concept.hpp>
 #include <Cm.IrIntf/Fwd.hpp>
 
 namespace Cm { namespace Sym {
@@ -55,6 +56,7 @@ public:
     FunctionLookupSet();
     typedef std::vector<FunctionLookup>::const_iterator const_iterator;
     void Add(const FunctionLookup& lookup);
+    void Clear() { lookups.clear(); }
     const_iterator begin() const { return lookups.begin(); }
     const_iterator end() const { return lookups.end(); }
 private:
@@ -96,15 +98,18 @@ inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFla
 
 class TypeParameterSymbol;
 
-struct FunctionTemplateData
+struct PersistentFunctionData
 {
-    FunctionTemplateData();
+    PersistentFunctionData();
     uint64_t bodyPos;
     uint64_t bodySize;
     std::unique_ptr<Cm::Ast::Node> returnTypeExprNode;
     std::unique_ptr<Cm::Ast::FunctionGroupIdNode> groupId;
+    std::unique_ptr<Cm::Ast::WhereConstraintNode> constraint;
     Cm::Ast::Specifiers specifiers;
     std::string cmlFilePath;
+    Cm::Ast::NodeList usingNodes;
+    std::unique_ptr<FileScope> functionFileScope;
 };
 
 class FunctionSymbol : public ContainerSymbol
@@ -123,6 +128,7 @@ public:
     void SetConvertingConstructor();
     bool CheckIfConvertingConstructor() const;
     bool IsFunctionTemplate() const { return !typeParameters.empty(); }
+    void SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes_);
     virtual ConversionType GetConversionType() const { return IsExplicit() ? Cm::Sym::ConversionType::explicit_ : Cm::Sym::ConversionType::implicit; }
     virtual ConversionRank GetConversionRank() const { return IsConvertingConstructor() ? Cm::Sym::ConversionRank::conversion : Cm::Sym::ConversionRank::exactMatch; }
     virtual int GetConversionDistance() const { return IsConvertingConstructor() ? 100 : 0; }
@@ -169,12 +175,13 @@ public:
     void SetType(TypeSymbol* type_, int index) override;
     void SetReturnType(TypeSymbol* returnType_);
     TypeSymbol* GetReturnType() const { return returnType; }
-    Cm::Ast::Node* ReturnTypeExprNode() const { return functionTemplateData->returnTypeExprNode.get(); }
-    Cm::Ast::FunctionGroupIdNode* GroupId() const { return functionTemplateData->groupId.get(); }
-    uint64_t BodyPos() const { return functionTemplateData->bodyPos; }
-    uint64_t BodySize() const { return functionTemplateData->bodySize; }
-    Cm::Ast::Specifiers GetSpecifiers() const { return functionTemplateData->specifiers; }
-    std::string CmlFilePath() const { return functionTemplateData->cmlFilePath; }
+    Cm::Ast::Node* ReturnTypeExprNode() const { return persistentFunctionData->returnTypeExprNode.get(); }
+    Cm::Ast::FunctionGroupIdNode* GroupId() const { return persistentFunctionData->groupId.get(); }
+    Cm::Ast::WhereConstraintNode* Constraint() const { return persistentFunctionData->constraint.get(); }
+    uint64_t BodyPos() const { return persistentFunctionData->bodyPos; }
+    uint64_t BodySize() const { return persistentFunctionData->bodySize; }
+    Cm::Ast::Specifiers GetSpecifiers() const { return persistentFunctionData->specifiers; }
+    std::string CmlFilePath() const { return persistentFunctionData->cmlFilePath; }
     bool ReturnsClassObjectByValue() const;
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
     const std::vector<Cm::Sym::TypeSymbol*>& TypeArguments() const { return typeArguments; }
@@ -191,6 +198,7 @@ public:
     void SetClassObjectResultIrParam(Ir::Intf::Parameter* classObjectResultIrParam_) { classObjectResultIrParam = classObjectResultIrParam_; }
     void SetTypeArguments(const std::vector<Cm::Sym::TypeSymbol*>& typeArguments_) { typeArguments = typeArguments_; }
     void Dump(CodeFormatter& formatter) override;
+    FileScope* GetFileScope(ContainerScope* containerScope);
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
@@ -201,7 +209,7 @@ private:
     std::vector<Cm::Sym::TypeSymbol*> typeArguments;
     Cm::Ast::CompileUnitNode* compileUnit;
     Ir::Intf::Parameter* classObjectResultIrParam;
-    std::unique_ptr<FunctionTemplateData> functionTemplateData;
+    std::unique_ptr<PersistentFunctionData> persistentFunctionData;
     bool GetFlag(FunctionSymbolFlags flag) const
     {
         return (flags & flag) != FunctionSymbolFlags::none;
