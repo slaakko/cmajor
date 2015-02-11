@@ -28,7 +28,8 @@ enum class SymbolType : uint8_t
 {
     boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
     classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
-    memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol,
+    memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, conceptGroupSymbol,
+    instantiatedConceptSymbol, 
     maxSymbol
 };
 
@@ -128,6 +129,8 @@ public:
     virtual bool IsEnumConstantSymbol() const { return false; }
     virtual bool IsFunctionSymbol() const { return false; }
     virtual bool IsFunctionGroupSymbol() const { return false; }
+    virtual bool IsConceptSymbol() const { return false; }
+    virtual bool IsConceptGroupSymbol() const { return false; }
     virtual bool IsTemplateTypeSymbol() const { return false; }
     virtual bool IsParameterSymbol() const { return false; }
     virtual bool IsTypeParameterSymbol() const { return false; }

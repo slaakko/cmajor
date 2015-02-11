@@ -18,6 +18,7 @@
 #include <Cm.Core/IrClassTypeRepository.hpp>
 #include <Cm.Core/SynthesizedClassFunRepository.hpp>
 #include <Cm.Core/FunctionTemplateRepository.hpp>
+#include <Cm.Core/ConceptRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -42,6 +43,7 @@ public:
     void SetSynthesizedClassFunRepository(Cm::Core::SynthesizedClassFunRepository* synthesizedClassFunRepository_);
     Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return *synthesizedClassFunRepository; }
     Cm::Core::FunctionTemplateRepository& FunctionTemplateRepository() { return functionTemplateRepository; }
+    Cm::Core::ConceptRepository& ConceptRepository() { return conceptRepository; }
     void AddBoundNode(BoundNode* boundNode);
     void Accept(Visitor& visitor);
     void Own(Cm::Sym::FunctionSymbol* functionSymbol);
@@ -60,6 +62,7 @@ private:
     Cm::Core::IrClassTypeRepository irClassTypeRepository;
     std::unique_ptr<Cm::Core::SynthesizedClassFunRepository> synthesizedClassFunRepository;
     Cm::Core::FunctionTemplateRepository functionTemplateRepository;
+    Cm::Core::ConceptRepository conceptRepository;
     std::vector<std::unique_ptr<BoundNode>> boundNodes;
     std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionSymbols;
 };

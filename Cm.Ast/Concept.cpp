@@ -157,10 +157,7 @@ std::string DisjunctiveConstraintNode::ToString() const
 
 void DisjunctiveConstraintNode::Accept(Visitor& visitor) 
 {
-    visitor.BeginVisit(*this);
-    Left()->Accept(visitor);
-    Right()->Accept(visitor);
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
 ConjunctiveConstraintNode::ConjunctiveConstraintNode(const Span& span_) : BinaryConstraintNode(span_)
@@ -183,10 +180,7 @@ std::string ConjunctiveConstraintNode::ToString() const
 
 void ConjunctiveConstraintNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    Left()->Accept(visitor);
-    Right()->Accept(visitor);
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
 WhereConstraintNode::WhereConstraintNode(const Span& span_) : ConstraintNode(span_)
@@ -846,10 +840,7 @@ std::string ConceptNode::Name() const
 
 void ConceptNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    constraints.Accept(visitor);
-    axioms.Accept(visitor);
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::Ast

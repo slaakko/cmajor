@@ -239,6 +239,16 @@ ConceptIdNode* Reader::ReadConceptIdNode()
     return static_cast<ConceptIdNode*>(node);
 }
 
+ConceptNode* Reader::ReadConceptNode()
+{
+    Node* node = ReadNode();
+    if (node->GetNodeType() != NodeType::conceptNode)
+    {
+        throw std::runtime_error("concept node expected");
+    }
+    return static_cast<ConceptNode*>(node);
+}
+
 std::string Reader::ReadString()
 {
     return binaryReader.ReadString();

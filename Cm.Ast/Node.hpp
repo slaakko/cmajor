@@ -41,7 +41,7 @@ enum class NodeType: uint8_t
     constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
     functionGroupIdNode, templateParameterNode, functionNode, 
     classNode, memberInitializerNode, baseInitializerNode, thisInitializerNode, staticConstructorNode, constructorNode, destructorNode, memberFunctionNode, conversionFunctionNode, memberVariableNode,
-    aliasNode, namespaceImportNode, namespaceNode, compileUnitNode,
+    aliasNode, namespaceImportNode, namespaceNode, compileUnitNode, intrinsicConstraintNode,
     maxNode
 };
 
@@ -84,6 +84,7 @@ public:
     virtual bool IsCondCompExprNode() const { return false; }
     virtual bool IsCondCompSymbolNode() const { return false; }
     virtual bool IsCondCompPartNode() const { return false; }
+    virtual bool IsConceptNode() const { return false; }
     virtual bool IsConstraintNode() const { return false; }
     virtual bool IsInitializerNode() const { return false; }
     virtual bool IsConstantNode() const { return false; }

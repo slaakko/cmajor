@@ -126,7 +126,8 @@ void Module::ImportTo(SymbolTable& symbolTable)
 void Module::Dump()
 {
     SymbolTable symbolTable;
-    Cm::Core::InitSymbolTable(symbolTable);
+    Cm::Core::GlobalConceptData globalConceptData;
+    Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
     Reader reader(filePath, symbolTable);
     char readModuleFileId[4];
     try

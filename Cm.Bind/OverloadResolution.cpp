@@ -10,6 +10,7 @@
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Template.hpp>
+#include <Cm.Bind/Concept.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
@@ -379,8 +380,8 @@ bool DeduceTemplateParameter(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
     Cm::Sym::TypeSymbol* parameterBaseType = parameterType->GetBaseType();
     if (parameterBaseType->IsTypeParameterSymbol())
     {
-        Cm::Sym::TypeParameterSymbol* templateParameterSymbol = static_cast<Cm::Sym::TypeParameterSymbol*>(parameterBaseType);
-        int index = templateParameterSymbol->Index();
+        Cm::Sym::TypeParameterSymbol* typeParameterSymbol = static_cast<Cm::Sym::TypeParameterSymbol*>(parameterBaseType);
+        int index = typeParameterSymbol->Index();
         Cm::Sym::TypeSymbol*& templateArgumentType = templateArguments[index];
         if (!templateArgumentType)  // unbound template argument
         {
@@ -559,6 +560,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     std::vector<FunctionMatch> functionMatches;
     Cm::Sym::FunctionSymbol* convertingCtor = nullptr;
     bool mustCast = false;
+    std::vector<Cm::Core::ConceptCheckException> conceptCheckExceptions;
     for (Cm::Sym::FunctionSymbol* viableFunction : viableFunctions)
     {
         if (viableFunction->IsConvertingConstructor())
@@ -580,6 +582,37 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         {
             bool candidateFound = DeduceTypeParameters(containerScope, boundCompileUnit, viableFunction->TypeParameters(), boundTemplateArguments, viableFunction->Parameters(), arguments, span,
                 conversionClassTypes, functionMatch);
+            Cm::Ast::WhereConstraintNode* constraintNode = nullptr;
+            if (candidateFound)
+            {
+                Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(viableFunction, false);
+                if (node)
+                {
+                    if (node->IsFunctionNode())
+                    {
+                        Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
+                        constraintNode = functionNode->Constraint();
+                    }
+                    else
+                    {
+                        throw std::runtime_error("not function node");
+                    }
+                }
+                else
+                {
+                    constraintNode = viableFunction->Constraint();
+                }
+            }
+            if (candidateFound && constraintNode)
+            {
+                Cm::Core::ConceptCheckException exception;
+                candidateFound = CheckConstraint(containerScope, boundCompileUnit, viableFunction->GetFileScope(containerScope), constraintNode, viableFunction->TypeParameters(), 
+                    functionMatch.templateArguments, exception);
+                if (!candidateFound)
+                {
+                    conceptCheckExceptions.push_back(exception);
+                }
+            }
             if (candidateFound)
             {
                 functionMatches.push_back(functionMatch);
@@ -616,8 +649,20 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
             }
             else
             {
-                throw Cm::Core::Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
-                    std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+                std::string errorMessage = "overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                    std::to_string(viableFunctions.size()) + " viable functions examined";
+                Cm::Parsing::Span conceptCheckSpan;
+                if (!conceptCheckExceptions.empty())
+                {
+                    Cm::Core::ConceptCheckException& firstEx = conceptCheckExceptions.front();
+                    conceptCheckSpan = firstEx.Defined();
+                    errorMessage.append(":\n").append(firstEx.Message());
+                }
+                else
+                {
+                    errorMessage.append(".");
+                }
+                throw Cm::Core::Exception(errorMessage, span, conceptCheckSpan);
             }
         }
     }

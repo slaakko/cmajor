@@ -15,6 +15,7 @@ namespace Cm { namespace Sym {
 
 class FunctionSymbol;
 class FunctionGroupSymbol;
+class ConceptGroupSymbol;
 class TemplateTypeSymbol;
 
 class ContainerSymbol : public Symbol
@@ -27,6 +28,7 @@ public:
     bool IsContainerSymbol() const override { return true; }
     virtual void AddSymbol(Symbol* symbol);
     FunctionGroupSymbol* MakeFunctionGroupSymbol(const std::string& groupName, const Span& span);
+    ConceptGroupSymbol* MakeConceptGroupSymbol(const std::string& groupName, const Span& span);
     std::vector<std::unique_ptr<Symbol>>& Symbols() { return symbols; }
     void Dump(CodeFormatter& formatter) override;
     void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes);

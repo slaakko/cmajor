@@ -143,7 +143,7 @@ FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lo
 {
 }
 
-FunctionTemplateData::FunctionTemplateData(): bodyPos(0), bodySize(0), specifiers(), returnTypeExprNode(nullptr), groupId(nullptr)
+PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), specifiers(), returnTypeExprNode(nullptr), groupId(nullptr), constraint(nullptr)
 {
 }
 
@@ -267,6 +267,18 @@ bool FunctionSymbol::CheckIfConvertingConstructor() const
     return IsConstructor() && parameters.size() == 2 && !IsExplicit() && !IsStatic() && !IsCopyConstructor() && !IsMoveConstructor();
 }
 
+void FunctionSymbol::SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes_)
+{
+    if (!persistentFunctionData)
+    {
+        persistentFunctionData.reset(new PersistentFunctionData());
+        for (Cm::Ast::Node* usingNode : usingNodes_)
+        {
+            persistentFunctionData->usingNodes.Add(usingNode->Clone());
+        }
+    }
+}
+
 bool FunctionSymbol::IsCopyAssignment() const
 {
     if (groupName == "operator=" && parameters.size() == 2)
@@ -335,6 +347,21 @@ void FunctionSymbol::Write(Writer& writer)
             }
             writer.GetAstWriter().Write(functionNode->GetSpecifiers());
             writer.GetAstWriter().Write(functionNode->GroupId());
+            bool hasConstraint = functionNode->Constraint() != nullptr;
+            writer.GetBinaryWriter().Write(hasConstraint);
+            if (hasConstraint)
+            {
+                writer.GetAstWriter().Write(functionNode->Constraint());
+            }
+            if (persistentFunctionData)
+            {
+                writer.GetBinaryWriter().Write(true);
+                persistentFunctionData->usingNodes.Write(writer.GetAstWriter());
+            }
+            else
+            {
+                writer.GetBinaryWriter().Write(false);
+            }
             uint64_t sizePos = writer.GetBinaryWriter().Pos();
             writer.GetBinaryWriter().Write(uint64_t(0));
             uint64_t bodyPos = writer.GetBinaryWriter().Pos();
@@ -369,18 +396,28 @@ void FunctionSymbol::Read(Reader& reader)
     vtblIndex = reader.GetBinaryReader().ReadShort();
     if (IsFunctionTemplate())
     {
-        functionTemplateData.reset(new FunctionTemplateData());
+        persistentFunctionData.reset(new PersistentFunctionData());
         bool hasReturnType = reader.GetBinaryReader().ReadBool();
         if (hasReturnType)
         {
-            functionTemplateData->returnTypeExprNode.reset(reader.GetAstReader().ReadNode());
+            persistentFunctionData->returnTypeExprNode.reset(reader.GetAstReader().ReadNode());
         }
-        functionTemplateData->specifiers = reader.GetAstReader().ReadSpecifiers();
-        functionTemplateData->groupId.reset(reader.GetAstReader().ReadFunctionGroupIdNode());
-        functionTemplateData->bodySize = reader.GetBinaryReader().ReadULong();
-        functionTemplateData->bodyPos = reader.GetBinaryReader().GetPos();
-        functionTemplateData->cmlFilePath = reader.GetBinaryReader().FileName();
-        reader.GetBinaryReader().Skip(functionTemplateData->bodySize);
+        persistentFunctionData->specifiers = reader.GetAstReader().ReadSpecifiers();
+        persistentFunctionData->groupId.reset(reader.GetAstReader().ReadFunctionGroupIdNode());
+        bool hasConstraint = reader.GetBinaryReader().ReadBool();
+        if (hasConstraint)
+        {
+            persistentFunctionData->constraint.reset(reader.GetAstReader().ReadWhereConstraintNode());
+        }
+        bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
+        if (hasUsingNodes)
+        {
+            persistentFunctionData->usingNodes.Read(reader.GetAstReader());
+        }
+        persistentFunctionData->bodySize = reader.GetBinaryReader().ReadULong();
+        persistentFunctionData->bodyPos = reader.GetBinaryReader().GetPos();
+        persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
+        reader.GetBinaryReader().Skip(persistentFunctionData->bodySize);
     }
     else
     {
@@ -516,6 +553,34 @@ void FunctionSymbol::Dump(CodeFormatter& formatter)
     p.append(")");
     formatter.Write(p);
     formatter.WriteLine();
+}
+
+FileScope* FunctionSymbol::GetFileScope(ContainerScope* containerScope)
+{
+    if (!persistentFunctionData->functionFileScope)
+    {
+        persistentFunctionData->functionFileScope.reset(new FileScope());
+        for (const std::unique_ptr<Cm::Ast::Node>& usingNode : persistentFunctionData->usingNodes)
+        {
+            Cm::Ast::NodeType nodeType = usingNode->GetNodeType();
+            switch (nodeType)
+            {
+                case Cm::Ast::NodeType::aliasNode:
+                {
+                    Cm::Ast::AliasNode* aliasNode = static_cast<Cm::Ast::AliasNode*>(usingNode.get());
+                    persistentFunctionData->functionFileScope->InstallAlias(containerScope, aliasNode);
+                    break;
+                }
+                case Cm::Ast::NodeType::namespaceImportNode:
+                {
+                    Cm::Ast::NamespaceImportNode* namespaceImportNode = static_cast<Cm::Ast::NamespaceImportNode*>(usingNode.get());
+                    persistentFunctionData->functionFileScope->InstallNamespaceImport(containerScope, namespaceImportNode);
+                    break;
+                }
+            }
+        }
+    }
+    return persistentFunctionData->functionFileScope.get();
 }
 
 } } // namespace Cm::Sym

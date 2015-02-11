@@ -24,6 +24,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
+#include <Cm.Sym/ConceptSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -305,6 +306,46 @@ void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableN
     }
     container->AddSymbol(memberVariableSymbol);
     symbolNodeMap[memberVariableSymbol] = memberVariableNode;
+}
+
+void SymbolTable::BeginConceptScope(Cm::Ast::ConceptNode* conceptNode)
+{
+    Cm::Ast::IdentifierNode* conceptId = conceptNode->Id();
+    std::string conceptName = conceptId->Str();
+    conceptName.append(1, '<');
+    bool first = true;
+    for (const std::unique_ptr<Cm::Ast::Node>& typeParameter : conceptNode->TypeParameters())
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            conceptName.append(", ");
+        }
+        conceptName.append(typeParameter->Name());
+    }
+    conceptName.append(1, '>');
+    ConceptSymbol* conceptSymbol = new ConceptSymbol(conceptId->GetSpan(), conceptName);
+    conceptSymbol->SetGroupName(conceptId->Str());
+    for (const std::unique_ptr<Cm::Ast::Node>& typeParameter : conceptNode->TypeParameters())
+    {
+        Cm::Sym::TypeParameterSymbol* typeParameterSymbol = new Cm::Sym::TypeParameterSymbol(typeParameter->GetSpan(), typeParameter->Name());
+        conceptSymbol->AddSymbol(typeParameterSymbol);
+    }
+    ContainerScope* conceptScope = conceptSymbol->GetContainerScope();
+    nodeScopeMap[conceptNode] = conceptScope;
+    symbolNodeMap[conceptSymbol] = conceptNode;
+    ContainerScope* containerScope = container->GetContainerScope();
+    conceptScope->SetParent(containerScope);
+    container->AddSymbol(conceptSymbol);
+    BeginContainer(conceptSymbol);
+}
+
+void SymbolTable::EndConceptScope()
+{
+    EndContainer();
 }
 
 ContainerScope* SymbolTable::GetContainerScope(Cm::Ast::Node* node) const

@@ -10,6 +10,7 @@
 #include <Cm.Sym/ContainerSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
+#include <Cm.Sym/ConceptGroupSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
@@ -57,7 +58,7 @@ void ContainerSymbol::Read(Reader& reader)
 
 void ContainerSymbol::AddSymbol(Symbol* symbol)
 {
-    if (!symbol->Name().empty() && !symbol->IsFunctionSymbol() && !symbol->IsTemplateTypeSymbol())
+    if (!symbol->Name().empty() && !symbol->IsFunctionSymbol() && !symbol->IsTemplateTypeSymbol() && !symbol->IsConceptSymbol())
     {
         containerScope.Install(symbol);
     }
@@ -66,6 +67,12 @@ void ContainerSymbol::AddSymbol(Symbol* symbol)
         FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(symbol);
         FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
         functionGroupSymbol->AddFunction(functionSymbol);
+    }
+    else if (symbol->IsConceptSymbol())
+    {
+        ConceptSymbol* conceptSymbol = static_cast<ConceptSymbol*>(symbol);
+        ConceptGroupSymbol* conceptGroupSymbol = MakeConceptGroupSymbol(conceptSymbol->GroupName(), conceptSymbol->GetSpan());
+        conceptGroupSymbol->AddConcept(conceptSymbol);
     }
     symbols.push_back(std::unique_ptr<Symbol>(symbol));
     symbol->SetParent(this);
@@ -89,6 +96,27 @@ FunctionGroupSymbol* ContainerSymbol::MakeFunctionGroupSymbol(const std::string&
     else
     {
         throw Exception("name of symbol '" + symbol->FullName() + "' conflicts with a function group '" + groupName + "'", symbol->GetSpan(), span);
+    }
+}
+
+ConceptGroupSymbol* ContainerSymbol::MakeConceptGroupSymbol(const std::string& groupName, const Span& span)
+{
+    Cm::Sym::Symbol* symbol = containerScope.Lookup(groupName);
+    if (!symbol)
+    {
+        ConceptGroupSymbol* conceptGroupSymbol = new ConceptGroupSymbol(span, groupName, &containerScope);
+        conceptGroupSymbol->SetPublic();
+        AddSymbol(conceptGroupSymbol);
+        return conceptGroupSymbol;
+    }
+    if (symbol->IsConceptGroupSymbol())
+    {
+        ConceptGroupSymbol* conceptGroupSymbol = static_cast<ConceptGroupSymbol*>(symbol);
+        return conceptGroupSymbol;
+    }
+    else
+    {
+        throw Exception("name of symbol '" + symbol->FullName() + "' conflicts with a concept group '" + groupName + "'", symbol->GetSpan(), span);
     }
 }
 

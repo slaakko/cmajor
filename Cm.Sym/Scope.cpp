@@ -62,7 +62,10 @@ Symbol* ContainerScope::LookupQualified(const std::vector<std::string>& componen
                 scope = s->GetContainerScope();
             }
         }
-        else if ((lookup & ScopeLookup::parent) != ScopeLookup::none)
+    }
+    if (!s)
+    {
+        if ((lookup & ScopeLookup::parent) != ScopeLookup::none)
         {
             if (parent)
             {

@@ -31,6 +31,7 @@
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="InitDone.hpp" />
+    <ClInclude Include="IntrinsicConcept.hpp" />
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Namespace.hpp" />
     <ClInclude Include="Node.hpp" />
@@ -58,6 +59,7 @@
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Function.cpp" />
+    <ClCompile Include="IntrinsicConcept.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="Identifier.cpp" />
