@@ -16,7 +16,8 @@
 
 namespace Cm { namespace Bind {
 
-void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::MemberVariableNode* memberVariableNode)
+void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Ast::MemberVariableNode* memberVariableNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(memberVariableNode->Id()->Str());
     if (symbol)
@@ -24,7 +25,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
         if (symbol->IsMemberVariableSymbol())
         {
             Cm::Sym::MemberVariableSymbol* memberVariableSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(symbol);
-            BindMemberVariable(symbolTable, containerScope, fileScope, memberVariableNode, memberVariableSymbol);
+            BindMemberVariable(symbolTable, containerScope, fileScopes, memberVariableNode, memberVariableSymbol);
         }
         else
         {
@@ -37,8 +38,8 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     }
 }
 
-void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::MemberVariableNode* memberVariableNode,
-    Cm::Sym::MemberVariableSymbol* memberVariableSymbol)
+void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Ast::MemberVariableNode* memberVariableNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol)
 {
     if (memberVariableSymbol->Bound())
     {
@@ -91,7 +92,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     {
         throw Cm::Core::Exception("member variable cannot be throw", memberVariableSymbol->GetSpan());
     }
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, memberVariableNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, memberVariableNode->TypeExpr());
     if (type->Access() < memberVariableSymbol->Access())
     {
         throw Cm::Core::Exception("type of a member variable must be at least as accessible as the member variable itself", type->GetSpan(), memberVariableSymbol->GetSpan());

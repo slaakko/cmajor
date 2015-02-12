@@ -159,10 +159,10 @@ Cm::BoundTree::BoundExpressionList BoundExpressionStack::Pop(int numExpressions)
     return expressions;
 }
 
-ExpressionBinder::ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+ExpressionBinder::ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::BoundTree::BoundFunction* currentFunction_) :
     Cm::Ast::Visitor(true, true), boundCompileUnit(boundCompileUnit_), containerScope(containerScope_), 
-    fileScope(fileScope_), currentFunction(currentFunction_), expressionCount(0)
+    fileScopes(fileScopes_), currentFunction(currentFunction_), expressionCount(0)
 {
 }
 
@@ -1226,7 +1226,7 @@ void ExpressionBinder::BindConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::Consta
         {
             Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
             Cm::Sym::ContainerScope* constantScope = boundCompileUnit.SymbolTable().GetContainerScope(constantNode);
-            BindConstant(boundCompileUnit.SymbolTable(), constantScope, fileScope, constantNode, constantSymbol);
+            BindConstant(boundCompileUnit.SymbolTable(), constantScope, fileScopes, constantNode, constantSymbol);
         }
         else
         {
@@ -1248,7 +1248,7 @@ void ExpressionBinder::BindLocalVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::L
         {
             Cm::Ast::ConstructionStatementNode* constructionStatementNode = static_cast<Cm::Ast::ConstructionStatementNode*>(node);
             Cm::Sym::ContainerScope* localVariableScope = boundCompileUnit.SymbolTable().GetContainerScope(constructionStatementNode);
-            BindLocalVariable(boundCompileUnit.SymbolTable(), containerScope, fileScope, constructionStatementNode, localVariableSymbol);
+            BindLocalVariable(boundCompileUnit.SymbolTable(), containerScope, fileScopes, constructionStatementNode, localVariableSymbol);
         }
         else
         {
@@ -1275,7 +1275,7 @@ void ExpressionBinder::BindMemberVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::
         {
             Cm::Ast::MemberVariableNode* memberVariableNode = static_cast<Cm::Ast::MemberVariableNode*>(node);
             Cm::Sym::ContainerScope* memberVariableScope = boundCompileUnit.SymbolTable().GetContainerScope(memberVariableNode);
-            BindMemberVariable(boundCompileUnit.SymbolTable(), containerScope, fileScope, memberVariableNode, memberVariableSymbol);
+            BindMemberVariable(boundCompileUnit.SymbolTable(), containerScope, fileScopes, memberVariableNode, memberVariableSymbol);
         }
         else
         {
@@ -1305,7 +1305,7 @@ void ExpressionBinder::BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::Class
         {
             Cm::Ast::ClassNode* classNode = static_cast<Cm::Ast::ClassNode*>(node);
             Cm::Sym::ContainerScope* classScope = boundCompileUnit.SymbolTable().GetContainerScope(classNode);
-            BindClass(boundCompileUnit.SymbolTable(), classScope, fileScope, classNode, classTypeSymbol);
+            BindClass(boundCompileUnit.SymbolTable(), classScope, fileScopes, classNode, classTypeSymbol);
         }
         else
         {
@@ -1372,7 +1372,7 @@ void ExpressionBinder::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 
 void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Ast::Node* targetTypeExpr, Cm::Ast::Node* sourceExpr, const Cm::Parsing::Span& span)
 {
-    Cm::Sym::TypeSymbol* toType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScope, targetTypeExpr);
+    Cm::Sym::TypeSymbol* toType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, targetTypeExpr);
     sourceExpr->Accept(*this);
     Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
     BindCast(node, toType, operand);
@@ -1402,7 +1402,7 @@ void ExpressionBinder::Visit(Cm::Ast::CastNode& castNode)
 
 void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes, Cm::BoundTree::BoundExpression* allocationArg)
 {
-    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScope(), typeExpr);
+    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), typeExpr);
     if (type->IsReferenceType() || type->IsRvalueRefType())
     {
         throw Cm::Core::Exception("cannot construct a reference", node->GetSpan());
@@ -1491,7 +1491,7 @@ void ExpressionBinder::Visit(Cm::Ast::NewNode& newNode)
 {
     Cm::Sym::FunctionSymbol* memAlloc = boundCompileUnit.SymbolTable().GetOverload("System.Support.MemAlloc");
     Cm::BoundTree::BoundExpressionList memAllocArguments;
-    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScope(), newNode.TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), newNode.TypeExpr());
     Cm::BoundTree::BoundSizeOfExpression* boundSizeOfExpr = new Cm::BoundTree::BoundSizeOfExpression(&newNode, type);
     boundSizeOfExpr->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)));
     memAllocArguments.Add(boundSizeOfExpr);
@@ -1513,7 +1513,7 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
         Cm::BoundTree::BoundFunctionGroup* boundFunctionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
         for (const std::unique_ptr<Cm::Ast::Node>& templateArgument : templateIdNode.TemplateArguments())
         {
-            Cm::Sym::TypeSymbol* templateArgumentType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScope(), templateArgument.get());
+            Cm::Sym::TypeSymbol* templateArgumentType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), templateArgument.get());
             boundTemplateArguments.push_back(templateArgumentType);
         }
         boundFunctionGroup->SetBoundTemplateArguments(boundTemplateArguments);
@@ -1530,7 +1530,11 @@ void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
     Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
     if (!symbol)
     {
-        symbol = fileScope->Lookup(identifierNode.Str());
+        for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
+        {
+            symbol = fileScope->Lookup(identifierNode.Str());
+            if (symbol) break;
+        }
     }
     if (symbol)
     {

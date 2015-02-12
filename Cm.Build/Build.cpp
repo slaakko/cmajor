@@ -238,7 +238,7 @@ void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree,
     {
         Cm::Bind::Prebinder prebinder(symbolTable);
         compileUnit->Accept(prebinder);
-        fileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.GetFileScope()));
+        fileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.ReleaseFileScope()));
     }
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
@@ -251,7 +251,7 @@ void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree,
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
         Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable);
         boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
-        boundCompileUnit.SetFileScope(fileScopes[index].release());
+        boundCompileUnit.AddFileScope(fileScopes[index].release());
         Bind(compileUnit.get(), boundCompileUnit, userMainFunction);
         Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
         GenerateObjectCode(boundCompileUnit);

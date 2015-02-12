@@ -17,7 +17,8 @@
 
 namespace Cm { namespace Bind {
 
-Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ClassNode* classNode)
+Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Ast::ClassNode* classNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(classNode->Id()->Str());
     if (symbol)
@@ -25,7 +26,7 @@ Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::
         if (symbol->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(symbol);
-            BindClass(symbolTable, containerScope, fileScope, classNode, classTypeSymbol);
+            BindClass(symbolTable, containerScope, fileScopes, classNode, classTypeSymbol);
             return classTypeSymbol;
         }
         else
@@ -39,7 +40,8 @@ Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::
     }
 }
 
-void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ClassNode* classNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol)
+void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ClassNode* classNode, 
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
     if (classTypeSymbol->Bound()) return;
     Cm::Ast::Specifiers specifiers = classNode->GetSpecifiers();
@@ -96,7 +98,7 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     Cm::Ast::Node* baseClassTypeExpr = classNode->BaseClassTypeExpr();
     if (baseClassTypeExpr)
     {
-        Cm::Sym::TypeSymbol* baseTypeSymbol = ResolveType(symbolTable, containerScope, fileScope, baseClassTypeExpr);
+        Cm::Sym::TypeSymbol* baseTypeSymbol = ResolveType(symbolTable, containerScope, fileScopes, baseClassTypeExpr);
         if (baseTypeSymbol)
         {
             if (baseTypeSymbol->IsClassTypeSymbol())
@@ -107,7 +109,7 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
                 {
                     Cm::Ast::ClassNode* baseClassNode = static_cast<Cm::Ast::ClassNode*>(node);
                     Cm::Sym::ContainerScope* baseClassContainerScope = symbolTable.GetContainerScope(baseClassNode);
-                    BindClass(symbolTable, baseClassContainerScope, fileScope, baseClassNode, baseClassTypeSymbol);
+                    BindClass(symbolTable, baseClassContainerScope, fileScopes, baseClassNode, baseClassTypeSymbol);
                 }
                 else
                 {

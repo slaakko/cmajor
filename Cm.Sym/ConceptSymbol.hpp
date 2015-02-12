@@ -31,11 +31,14 @@ public:
     int Arity() const { return int(typeParameters.size()); }
     Cm::Ast::ConceptNode* GetConceptNode() const { return conceptNode.get(); }
     const TypeId& Id() const { return id; }
+    ConceptSymbol* RefinedConcept() const { return refinedConcept; }
+    void SetRefinedConcept(ConceptSymbol* refinedConcept_) { refinedConcept = refinedConcept_; }
 private:
     TypeId id;
     std::string groupName;
     std::vector<TypeParameterSymbol*> typeParameters;
     std::unique_ptr<Cm::Ast::ConceptNode> conceptNode;
+    ConceptSymbol* refinedConcept;
 };
 
 TypeId ComputeInstantiatedConceptSymbolTypeId(ConceptSymbol* conceptSymbol, const std::vector<TypeSymbol*>& typeArguments);

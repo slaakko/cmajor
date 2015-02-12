@@ -18,22 +18,23 @@
 
 namespace Cm { namespace Bind {
 
-StatementBinder::StatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+StatementBinder::StatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::BoundTree::BoundFunction* currentFunction_) :
-    ExpressionBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), symbolTable(boundCompileUnit_.SymbolTable()), containerScope(containerScope_), fileScope(fileScope_), 
+    ExpressionBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), symbolTable(boundCompileUnit_.SymbolTable()), containerScope(containerScope_), fileScopes(fileScopes_), 
     result(nullptr)
 {
 }
 
-ConstructionStatementBinder::ConstructionStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
-    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), constructionStatement(nullptr)
+ConstructionStatementBinder::ConstructionStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), constructionStatement(nullptr)
 {
 }
 
 void ConstructionStatementBinder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
     constructionStatement = new Cm::BoundTree::BoundConstructionStatement(&constructionStatementNode);
-    Cm::Sym::LocalVariableSymbol* localVariable = BindLocalVariable(SymbolTable(), ContainerScope(), FileScope(), &constructionStatementNode);
+    Cm::Sym::LocalVariableSymbol* localVariable = BindLocalVariable(SymbolTable(), ContainerScope(), FileScopes(), &constructionStatementNode);
     constructionStatement->SetLocalVariable(localVariable);
     CurrentFunction()->AddLocalVariable(localVariable);
 }
@@ -74,8 +75,9 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     SetResult(constructionStatement);
 }
 
-AssignmentStatementBinder::AssignmentStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
-    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+AssignmentStatementBinder::AssignmentStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
 {
 }
 
@@ -121,8 +123,9 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     SetResult(assignmentStatement);
 }
 
-SimpleStatementBinder::SimpleStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
-    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+SimpleStatementBinder::SimpleStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
 {
 }
 
@@ -137,8 +140,9 @@ void SimpleStatementBinder::EndVisit(Cm::Ast::SimpleStatementNode& simpleStateme
     SetResult(simpleStatement);
 }
 
-ReturnStatementBinder::ReturnStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
-    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+ReturnStatementBinder::ReturnStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
 {
 }
 
@@ -149,7 +153,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
     Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
     if (returnTypeExpr)
     {
-        Cm::Sym::TypeSymbol* returnType = ResolveType(SymbolTable(), ContainerScope(), FileScope(), returnTypeExpr);
+        Cm::Sym::TypeSymbol* returnType = ResolveType(SymbolTable(), ContainerScope(), FileScopes(), returnTypeExpr);
         if (!returnType->IsVoidTypeSymbol())
         {
             if (returnStatementNode.ReturnsValue())
@@ -231,9 +235,9 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
     SetResult(returnStatement);
 }
 
-ConditionalStatementBinder::ConditionalStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
-    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_) :
-    StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), conditionalStatement(conditionalStatement_)
+ConditionalStatementBinder::ConditionalStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_) :
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), conditionalStatement(conditionalStatement_)
 {
     PushSkipContent();
 }
@@ -251,9 +255,9 @@ void ConditionalStatementBinder::EndVisit(Cm::Ast::ConditionalStatementNode& con
     conditionalStatement->SetCondition(condition);
 }
 
-WhileStatementBinder::WhileStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+WhileStatementBinder::WhileStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundWhileStatement* whileStatement_) :
-    StatementBinder(boundCompileUnit_, containerScope_, fileScope_,  currentFunction_), whileStatement(whileStatement_)
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_,  currentFunction_), whileStatement(whileStatement_)
 {
     PushSkipContent();
 }
@@ -271,9 +275,9 @@ void WhileStatementBinder::EndVisit(Cm::Ast::WhileStatementNode& whileStatementN
     whileStatement->SetCondition(condition);
 }
 
-DoStatementBinder::DoStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+DoStatementBinder::DoStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundDoStatement* doStatement_) :
-    StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), doStatement(doStatement_)
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), doStatement(doStatement_)
 {
     PushSkipContent();
 }
@@ -291,9 +295,9 @@ void DoStatementBinder::EndVisit(Cm::Ast::DoStatementNode& doStatementNode)
     doStatement->SetCondition(condition);
 }
 
-ForStatementBinder::ForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+ForStatementBinder::ForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundForStatement* forStatement_) :
-    StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), forStatement(forStatement_)
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), forStatement(forStatement_)
 {
     PushSkipContent();
 }
@@ -321,9 +325,9 @@ void ForStatementBinder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
     forStatement->SetCondition(condition);
 }
 
-SwitchStatementBinder::SwitchStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
-    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundSwitchStatement* switchStatement_): StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_),
-    switchStatement(switchStatement_)
+SwitchStatementBinder::SwitchStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundSwitchStatement* switchStatement_): 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), switchStatement(switchStatement_)
 {
 }
 
@@ -349,9 +353,9 @@ void SwitchStatementBinder::EndVisit(Cm::Ast::SwitchStatementNode& switchStateme
     PopSkipContent();
 }
 
-CaseStatementBinder::CaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
+CaseStatementBinder::CaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundCaseStatement* caseStatement_, Cm::BoundTree::BoundSwitchStatement* switchStatement_) : 
-    StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), caseStatement(caseStatement_), switchStatement(switchStatement_)
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), caseStatement(caseStatement_), switchStatement(switchStatement_)
 {
     PushSkipContent();
 }
@@ -397,7 +401,7 @@ void CaseStatementBinder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode
         }
         Cm::Sym::SymbolType symbolType = condType->GetSymbolType();
         Cm::Sym::ValueType valueType = Cm::Sym::GetValueTypeFor(symbolType);
-        Cm::Sym::Value* value = Evaluate(valueType, false, expr.get(), SymbolTable(), ContainerScope(), FileScope());
+        Cm::Sym::Value* value = Evaluate(valueType, false, expr.get(), SymbolTable(), ContainerScope(), FileScopes());
         caseStatement->AddValue(value);
     }
     for (const std::unique_ptr<Cm::Ast::StatementNode>& statement : caseStatementNode.Statements())
@@ -407,8 +411,9 @@ void CaseStatementBinder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode
     throw Cm::Core::Exception("case must end in break, continue, return, throw, goto, goto case or goto default statement", caseStatementNode.GetSpan());
 }
 
-DefaultStatementBinder::DefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
-    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundDefaultStatement* defaultStatement_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_),
+DefaultStatementBinder::DefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundDefaultStatement* defaultStatement_) : StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_),
     defaultStatement(defaultStatement_)
 {
 }
@@ -422,8 +427,8 @@ void DefaultStatementBinder::EndVisit(Cm::Ast::DefaultStatementNode& defaultStat
     throw Cm::Core::Exception("default case must end in break, continue, return, throw goto, goto case or goto default statement", defaultStatementNode.GetSpan());
 }
 
-BreakStatementBinder::BreakStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
-    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+BreakStatementBinder::BreakStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
 {
 }
 
@@ -442,8 +447,9 @@ void BreakStatementBinder::Visit(Cm::Ast::BreakStatementNode& breakStatementNode
     SetResult(boundBreakStatement);
 }
 
-ContinueStatementBinder::ContinueStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
-    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+ContinueStatementBinder::ContinueStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
 {
 }
 
@@ -462,9 +468,9 @@ void ContinueStatementBinder::Visit(Cm::Ast::ContinueStatementNode& continueStat
     SetResult(boundContinueStatement);
 }
 
-GotoCaseStatementBinder::GotoCaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
-    Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundSwitchStatement* switchStatement_) :
-    StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), switchStatement(switchStatement_)
+GotoCaseStatementBinder::GotoCaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundSwitchStatement* switchStatement_) :
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), switchStatement(switchStatement_)
 {
 }
 
@@ -487,14 +493,15 @@ void GotoCaseStatementBinder::EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseS
     }
     Cm::Sym::SymbolType symbolType = condType->GetSymbolType();
     Cm::Sym::ValueType valueType = Cm::Sym::GetValueTypeFor(symbolType);
-    Cm::Sym::Value* value = Evaluate(valueType, false, gotoCaseStatementNode.TargetCaseExpr(), SymbolTable(), ContainerScope(), FileScope());
+    Cm::Sym::Value* value = Evaluate(valueType, false, gotoCaseStatementNode.TargetCaseExpr(), SymbolTable(), ContainerScope(), FileScopes());
     Cm::BoundTree::BoundGotoCaseStatement* boundGotoCasetatement = new Cm::BoundTree::BoundGotoCaseStatement(&gotoCaseStatementNode);
     boundGotoCasetatement->SetValue(value);
     SetResult(boundGotoCasetatement);
 }
 
-GotoDefaultStatementBinder::GotoDefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
-    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_)
+GotoDefaultStatementBinder::GotoDefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
 {
 }
 

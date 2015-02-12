@@ -20,8 +20,8 @@ namespace Cm { namespace Bind {
 class ClassInitializerHandler : public ExpressionBinder
 {
 public:
-    ClassInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, Cm::BoundTree::BoundFunction* currentFunction_,
-        Cm::Sym::ClassTypeSymbol* classType_);
+    ClassInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
+        Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_);
     void GenerateBaseInitializer(Cm::BoundTree::BoundExpressionList& arguments, const Cm::Parsing::Span& span, Cm::Ast::Node* baseInitializerNode);
     void Visit(Cm::Ast::BaseInitializerNode& baseInitializerNode);
     void Visit(Cm::Ast::ThisInitializerNode& thisInitializerNode);
@@ -33,10 +33,9 @@ private:
     Cm::Ast::ThisInitializerNode* thisInitializer;
 };
 
-ClassInitializerHandler::ClassInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
-    Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_) :
-    ExpressionBinder(boundCompileUnit_, containerScope_, 
-    fileScope_, currentFunction_), classType(classType_), baseInitializer(nullptr), thisInitializer(nullptr)
+ClassInitializerHandler::ClassInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_) :
+    ExpressionBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), classType(classType_), baseInitializer(nullptr), thisInitializer(nullptr)
 {
 }
 
@@ -178,8 +177,8 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
     CurrentFunction()->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
 }
 
-void GenerateClassInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::BoundTree::BoundFunction* currentFunction, 
-    Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode, bool& callToThisInitializerGenerated)
+void GenerateClassInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode, bool& callToThisInitializerGenerated)
 {
     callToThisInitializerGenerated = false;
     if (classType->StaticConstructor())
@@ -191,7 +190,7 @@ void GenerateClassInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUni
         ++classObjectLayoutFunIndex;
         currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
     }
-    ClassInitializerHandler classInitializerHandler(boundCompileUnit, containerScope, fileScope, currentFunction, classType);
+    ClassInitializerHandler classInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, classType);
     const Cm::Ast::InitializerNodeList& initializers = constructorNode->Initializers();
     for (const std::unique_ptr<Cm::Ast::InitializerNode>& initializerNode : initializers)
     {
@@ -223,7 +222,7 @@ void GenerateInitVPtrStatement(Cm::Sym::ClassTypeSymbol* classType, Cm::BoundTre
 class MemberVariableInitializerHandler : public ExpressionBinder
 {
 public:
-    MemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+    MemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
         Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_);
     Cm::BoundTree::BoundInitMemberVariableStatement* GenerateMerberVariableInitializationStatement(Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments, 
         Cm::Ast::Node* node);
@@ -237,8 +236,9 @@ private:
     MemberVariableNameIndexMap memberVariableNameIndexMap;
 };
 
-MemberVariableInitializerHandler::MemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
-    Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_) : ExpressionBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), classType(classType_)
+MemberVariableInitializerHandler::MemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_) : 
+    ExpressionBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), classType(classType_)
 {
     int n = int(classType->MemberVariables().size());
     initializationStatements.resize(n);
@@ -355,10 +355,10 @@ void MemberVariableInitializerHandler::GenerateMemberVariableInitializationState
     }
 }
 
-void GenerateMemberVariableInitStatements(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, 
+void GenerateMemberVariableInitStatements(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::ConstructorNode* constructorNode)
 {
-    MemberVariableInitializerHandler memberVariableInitializerHandler(boundCompileUnit, containerScope, fileScope, currentFunction, classType);
+    MemberVariableInitializerHandler memberVariableInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, classType);
     const Cm::Ast::InitializerNodeList& initializers = constructorNode->Initializers();
     for (const std::unique_ptr<Cm::Ast::InitializerNode>& initializerNode : initializers)
     {
@@ -367,8 +367,8 @@ void GenerateMemberVariableInitStatements(Cm::BoundTree::BoundCompileUnit& bound
     memberVariableInitializerHandler.GenerateMemberVariableInitializationStatements(constructorNode);
 }
 
-void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, 
-    Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode)
+void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode)
 {
     int n = int(classType->MemberVariables().size());
     for (int i = n - 1; i >= 0; --i)
@@ -393,7 +393,7 @@ void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit
     }
 }
 
-void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, 
+void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::DestructorNode* destructorNode)
 {
     if (!classType->BaseClass()) return;
@@ -468,7 +468,7 @@ void GenerateStaticBaseClassInitStatement(Cm::BoundTree::BoundFunction* currentF
 class StaticMemberVariableInitializerHandler : public ExpressionBinder
 {
 public:
-    StaticMemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
+    StaticMemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
         Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_);
     Cm::BoundTree::BoundInitMemberVariableStatement* GenerateStaticMerberVariableInitializationStatement(Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments,
         Cm::Ast::Node* node);
@@ -482,8 +482,9 @@ private:
     StaticMemberVariableNameIndexMap staticMemberVariableNameIndexMap;
 };
 
-StaticMemberVariableInitializerHandler::StaticMemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_,
-    Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_) : ExpressionBinder(boundCompileUnit_, containerScope_, fileScope_, currentFunction_), classType(classType_)
+StaticMemberVariableInitializerHandler::StaticMemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_) : 
+    ExpressionBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), classType(classType_)
 {
     int n = int(classType->StaticMemberVariables().size());
     initializationStatements.resize(n);
@@ -596,7 +597,7 @@ void StaticMemberVariableInitializerHandler::GenerateStaticMemberVariableInitial
     }
 }
 
-void GenerateStaticInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
+void GenerateStaticInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::StaticConstructorNode* staticConstructorNode)
 {
     GenerateStaticCheckInitializedStatement(boundCompileUnit, containerScope, currentFunction, classType, staticConstructorNode);
@@ -604,7 +605,7 @@ void GenerateStaticInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUn
     {
         GenerateStaticBaseClassInitStatement(currentFunction, classType, staticConstructorNode);
     }
-    StaticMemberVariableInitializerHandler staticMemberVariableInitializerHandler(boundCompileUnit, containerScope, fileScope, currentFunction, classType);
+    StaticMemberVariableInitializerHandler staticMemberVariableInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, classType);
     const Cm::Ast::InitializerNodeList& initializers = staticConstructorNode->Initializers();
     for (const std::unique_ptr<Cm::Ast::InitializerNode>& initializerNode : initializers)
     {

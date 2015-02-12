@@ -43,11 +43,11 @@ private:
 class ExpressionBinder : public Cm::Ast::Visitor
 {
 public:
-    ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, Cm::Sym::FileScope* fileScope_, 
+    ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
         Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::BoundTree::BoundCompileUnit& BoundCompileUnit() { return boundCompileUnit; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
-    Cm::Sym::FileScope* FileScope() const { return fileScope; }
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& FileScopes() const { return fileScopes; }
     Cm::BoundTree::BoundFunction* CurrentFunction() const { return currentFunction; }
     Cm::BoundTree::BoundExpressionList GetExpressions();
     Cm::BoundTree::BoundExpression* Pop() { return boundExpressionStack.Pop(); }
@@ -130,7 +130,7 @@ public:
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* containerScope;
-    Cm::Sym::FileScope* fileScope;
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes;
     BoundExpressionStack boundExpressionStack;
     int expressionCount;
     std::stack<int> expressionCountStack;
