@@ -15,7 +15,8 @@
 
 namespace Cm { namespace Bind {
 
-Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ConstructionStatementNode* constructionStatementNode)
+Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Ast::ConstructionStatementNode* constructionStatementNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(constructionStatementNode->Id()->Str());
     if (symbol)
@@ -23,7 +24,7 @@ Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTabl
         if (symbol->IsLocalVariableSymbol())
         {
             Cm::Sym::LocalVariableSymbol* localVariableSymbol = static_cast<Cm::Sym::LocalVariableSymbol*>(symbol);
-            return BindLocalVariable(symbolTable, containerScope, fileScope, constructionStatementNode, localVariableSymbol);
+            return BindLocalVariable(symbolTable, containerScope, fileScopes, constructionStatementNode, localVariableSymbol);
         }
         else
         {
@@ -36,18 +37,17 @@ Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTabl
     }
 }
 
-Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope,
+Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::Ast::ConstructionStatementNode* constructionStatementNode, Cm::Sym::LocalVariableSymbol* localVariableSymbol)
 {
     if (localVariableSymbol->Bound())
     {
         return localVariableSymbol;
     }
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScope, constructionStatementNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, constructionStatementNode->TypeExpr());
     localVariableSymbol->SetType(type);
     localVariableSymbol->SetBound();
     return localVariableSymbol;
 }
-
 
 } } // namespace Cm::Bind

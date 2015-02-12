@@ -10,6 +10,7 @@
 #ifndef CM_BIND_CONCEPT_INCLUDED
 #define CM_BIND_CONCEPT_INCLUDED
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
+#include <Cm.BoundTree/BoundConcept.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Ast/Concept.hpp>
@@ -18,6 +19,9 @@ namespace Cm { namespace Bind {
 
 bool CheckConstraint(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FileScope* functionFileScope, Cm::Ast::WhereConstraintNode* constraint, 
     const std::vector<Cm::Sym::TypeParameterSymbol*>& templateParameters, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments, Cm::Core::ConceptCheckException& exception);
+
+Cm::BoundTree::BoundConstraint* BindConstraint(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FileScope* functionFileScope, 
+    Cm::Ast::WhereConstraintNode* constraint);
 
 } } // namespace Cm::Bind
 

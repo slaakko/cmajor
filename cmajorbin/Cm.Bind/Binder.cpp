@@ -119,13 +119,13 @@ void Binder::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
         CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
         GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
         bool callToThisInitializerGenerated = false;
-        GenerateClassInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), boundClass->Symbol(), &constructorNode, 
+        GenerateClassInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), boundClass->Symbol(), &constructorNode, 
             callToThisInitializerGenerated);
         if (boundClass->Symbol()->IsVirtual() && !callToThisInitializerGenerated)
         {
             GenerateInitVPtrStatement(boundClass->Symbol(), boundFunction.get());
         }
-        GenerateMemberVariableInitStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), boundClass->Symbol(), &constructorNode);
+        GenerateMemberVariableInitStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), boundClass->Symbol(), &constructorNode);
         boundClass->AddBoundNode(boundFunction.release());
         EndContainerScope();
     }
@@ -151,8 +151,8 @@ void Binder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
         {
             GenerateInitVPtrStatement(boundClass->Symbol(), boundFunction.get());
         }
-        GenerateMemberVariableDestructionStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), boundClass->Symbol(), &destructorNode);
-        GenerateBaseClassDestructionStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), boundClass->Symbol(), &destructorNode);
+        GenerateMemberVariableDestructionStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), boundClass->Symbol(), &destructorNode);
+        GenerateBaseClassDestructionStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), boundClass->Symbol(), &destructorNode);
         boundClass->AddBoundNode(boundFunction.release());
         EndContainerScope();
     }
@@ -179,7 +179,7 @@ void Binder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
     {
         if (!boundFunction->GetFunctionSymbol()->IsAbstract())
         {
-            CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &memberFunctionNode);
+            CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction->GetFunctionSymbol(), &memberFunctionNode);
             CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
             GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
             if (boundFunction->GetFunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor())
@@ -201,7 +201,7 @@ void Binder::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 
 void Binder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
-    CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &conversionFunctionNode);
+    CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction->GetFunctionSymbol(), &conversionFunctionNode);
     CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
     GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
     boundClass->AddBoundNode(boundFunction.release());
@@ -217,7 +217,7 @@ void Binder::BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
 
 void Binder::EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
 {
-    GenerateStaticInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), boundClass->Symbol(), &staticConstructorNode);
+    GenerateStaticInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), boundClass->Symbol(), &staticConstructorNode);
     boundClass->AddBoundNode(boundFunction.release());
     EndContainerScope();
 }
@@ -255,7 +255,7 @@ void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
     }
     else
     {
-        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction->GetFunctionSymbol(), &functionNode);
+        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction->GetFunctionSymbol(), &functionNode);
         CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
         GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
         boundCompileUnit.AddBoundNode(boundFunction.release());
@@ -318,7 +318,7 @@ void Binder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
     if (cp->IsBoundForStatement())
     {
         Cm::BoundTree::BoundForStatement* forStatement = static_cast<Cm::BoundTree::BoundForStatement*>(cp);
-        ForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), forStatement);
+        ForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), forStatement);
         forStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -341,7 +341,7 @@ void Binder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
 {
-    ReturnStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    ReturnStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     returnStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -358,7 +358,7 @@ void Binder::EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNod
     if (cp->IsBoundConditionalStatement())
     {
         Cm::BoundTree::BoundConditionalStatement* conditionalStatement = static_cast<Cm::BoundTree::BoundConditionalStatement*>(cp);
-        ConditionalStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), conditionalStatement);
+        ConditionalStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), conditionalStatement);
         conditionalStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -382,7 +382,7 @@ void Binder::BeginVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
 {
     parentStack.push(currentParent.release());
     switchStatement = new Cm::BoundTree::BoundSwitchStatement(&switchStatementNode);
-    SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), switchStatement);
+    SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), switchStatement);
     switchStatementNode.Accept(binder);
     currentParent.reset(switchStatement);
 }
@@ -426,7 +426,7 @@ void Binder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
     if (cp->IsBoundCaseStatement())
     {
         Cm::BoundTree::BoundCaseStatement* caseStatement = static_cast<Cm::BoundTree::BoundCaseStatement*>(cp);
-        CaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), caseStatement, switchStatement);
+        CaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), caseStatement, switchStatement);
         caseStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -458,7 +458,7 @@ void Binder::EndVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode)
     if (cp->IsBoundDefaultStatement())
     {
         Cm::BoundTree::BoundDefaultStatement* defaultStatement = static_cast<Cm::BoundTree::BoundDefaultStatement*>(cp);
-        DefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), defaultStatement);
+        DefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), defaultStatement);
         defaultStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -484,14 +484,14 @@ void Binder::BeginVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode)
 
 void Binder::EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode)
 {
-    GotoCaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), switchStatement);
+    GotoCaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), switchStatement);
     gotoCaseStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
 
 void Binder::Visit(Cm::Ast::GotoDefaultStatementNode& gotoDefaultStatementNode)
 {
-    GotoDefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    GotoDefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     gotoDefaultStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -508,7 +508,7 @@ void Binder::EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode)
     if (cp->IsBoundWhileStatement())
     {
         Cm::BoundTree::BoundWhileStatement* whileStatement = static_cast<Cm::BoundTree::BoundWhileStatement*>(cp);
-        WhileStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), whileStatement);
+        WhileStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), whileStatement);
         whileStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -540,7 +540,7 @@ void Binder::EndVisit(Cm::Ast::DoStatementNode& doStatementNode)
     if (cp->IsBoundDoStatement())
     {
         Cm::BoundTree::BoundDoStatement* doStatement = static_cast<Cm::BoundTree::BoundDoStatement*>(cp);
-        DoStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get(), doStatement);
+        DoStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), doStatement);
         doStatementNode.Accept(binder);
         Cm::BoundTree::BoundParentStatement* parent = parentStack.top();
         parentStack.pop();
@@ -562,14 +562,14 @@ void Binder::EndVisit(Cm::Ast::DoStatementNode& doStatementNode)
 
 void Binder::Visit(Cm::Ast::BreakStatementNode& breakStatementNode)
 {
-    BreakStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    BreakStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     breakStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
 
 void Binder::Visit(Cm::Ast::ContinueStatementNode& continueStatementNode)
 {
-    ContinueStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    ContinueStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     continueStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -584,7 +584,7 @@ void Binder::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 {
-    SimpleStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    SimpleStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     simpleStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
@@ -595,14 +595,14 @@ void Binder::EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
 {
-    AssignmentStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    AssignmentStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     assignmentStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }
 
 void Binder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
-    ConstructionStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScope(), boundFunction.get());
+    ConstructionStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     constructionStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
 }

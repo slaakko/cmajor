@@ -20,7 +20,9 @@ class Prebinder : public Cm::Ast::Visitor
 {
 public:
     Prebinder(Cm::Sym::SymbolTable& symbolTable_);
-    Cm::Sym::FileScope* GetFileScope() { return fileScope.release(); }
+    void BeginCompileUnit();
+    void EndCompileUnit();
+    Cm::Sym::FileScope* ReleaseFileScope() { return fileScope.release(); }
     void BeginVisit(Cm::Ast::CompileUnitNode& compileUnitNode) override;
     void EndVisit(Cm::Ast::CompileUnitNode& compileUnitNode) override;
     void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
@@ -58,6 +60,7 @@ public:
     void EndContainerScope();
 private:
     Cm::Sym::SymbolTable& symbolTable;
+    std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     std::unique_ptr<Cm::Sym::FileScope> fileScope;
     Cm::Sym::ContainerScope* currentContainerScope;
     std::stack<Cm::Sym::ContainerScope*> containerScopeStack;

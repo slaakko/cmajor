@@ -19,7 +19,7 @@
 
 namespace Cm { namespace Bind {
 
-Cm::Ast::NamespaceNode* CreateNamespaces(const Cm::Parsing::Span& span, const std::string& nsFullName, Cm::Ast::NamespaceNode*& currentNs)
+Cm::Ast::NamespaceNode* CreateNamespaces(const Cm::Parsing::Span& span, const std::string& nsFullName, const Cm::Ast::NodeList& usingNodes, Cm::Ast::NamespaceNode*& currentNs)
 {
     Cm::Ast::NamespaceNode* globalNs = new Cm::Ast::NamespaceNode(span);
     currentNs = globalNs;
@@ -32,6 +32,10 @@ Cm::Ast::NamespaceNode* CreateNamespaces(const Cm::Parsing::Span& span, const st
             currentNs->AddMember(namespaceNode);
             currentNs = namespaceNode;
         }
+    }
+    for (const std::unique_ptr<Cm::Ast::Node>& usingNode : usingNodes)
+    {
+        currentNs->AddMember(usingNode->Clone());
     }
     return globalNs;
 }
@@ -95,7 +99,7 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     const std::vector<Cm::Sym::TypeSymbol*>& templateArguments)
 {
     Cm::Ast::NamespaceNode* currentNs = nullptr;
-    std::unique_ptr<Cm::Ast::NamespaceNode> globalNs(CreateNamespaces(functionTemplate->GetSpan(), functionTemplate->Ns()->FullName(), currentNs));
+    std::unique_ptr<Cm::Ast::NamespaceNode> globalNs(CreateNamespaces(functionTemplate->GetSpan(), functionTemplate->Ns()->FullName(), functionTemplate->GetUsingNodes(), currentNs));
     std::unique_ptr<Cm::Ast::CompoundStatementNode> ownedBody;
     Cm::Ast::FunctionNode* functionInstanceNode = CreateFunctionInstanceNode(boundCompileUnit, functionTemplate, ownedBody);
     currentNs->AddMember(functionInstanceNode);
@@ -106,11 +110,16 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     functionTemplateInstance->SetFunctionTemplateSpecialization();
     BindTypeParameters(functionTemplate, functionTemplateInstance, templateArguments);
     Prebinder prebinder(boundCompileUnit.SymbolTable());
+    prebinder.BeginCompileUnit();
     globalNs->Accept(prebinder);
     functionTemplateInstance->SetTypeArguments(templateArguments);
     functionTemplateInstance->ComputeName();
+    prebinder.EndCompileUnit();
+    Cm::Sym::FileScope* fileScope = prebinder.ReleaseFileScope();
+    boundCompileUnit.AddFileScope(fileScope);
     Binder binder(boundCompileUnit);
     globalNs->Accept(binder);
+    boundCompileUnit.RemoveLastFileScope();
     return functionTemplateInstance;
 }
 

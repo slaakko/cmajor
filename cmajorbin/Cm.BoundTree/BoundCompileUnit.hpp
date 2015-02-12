@@ -28,8 +28,9 @@ class BoundCompileUnit
 public:
     BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_);
     Cm::Ast::CompileUnitNode* SyntaxUnit() const { return syntaxUnit; }
-    void SetFileScope(Cm::Sym::FileScope* fileScope_);
-    Cm::Sym::FileScope* GetFileScope() const { return fileScope.get(); }
+    void AddFileScope(Cm::Sym::FileScope* fileScope_);
+    void RemoveLastFileScope();
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& GetFileScopes() const { return fileScopes; }
     const std::string& IrFilePath() const { return irFilePath; }
     const std::string& ObjectFilePath() const { return objectFilePath; }
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
@@ -49,7 +50,7 @@ public:
     void Own(Cm::Sym::FunctionSymbol* functionSymbol);
 private:
     Cm::Ast::CompileUnitNode* syntaxUnit;
-    std::unique_ptr<Cm::Sym::FileScope> fileScope;
+    std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     std::string irFilePath;
     std::string objectFilePath;
     Cm::Sym::SymbolTable& symbolTable;

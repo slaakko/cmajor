@@ -86,17 +86,22 @@ bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& right)
 
 struct FunctionMatch
 {
-    FunctionMatch(Cm::Sym::FunctionSymbol* function_) : function(function_), numConversions(0) {}
+    FunctionMatch(Cm::Sym::FunctionSymbol* function_, Cm::Sym::ContainerScope* containerScope_, Cm::BoundTree::BoundCompileUnit* compileUnit_) : 
+        function(function_), numConversions(0), containerScope(containerScope_), compileUnit(compileUnit_), constraint(nullptr), boundConstraint(nullptr) {}
     Cm::Sym::FunctionSymbol* function;
     std::vector<ArgumentMatch> argumentMatches;
     int numConversions;
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     std::vector<Cm::Sym::TypeSymbol*> templateArguments;
+    Cm::Ast::WhereConstraintNode* constraint;
+    Cm::Sym::ContainerScope* containerScope;
+    Cm::BoundTree::BoundCompileUnit* compileUnit;
+    std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
 };
 
 struct BetterFunctionMatch
 {
-    bool operator()(const FunctionMatch& left, const FunctionMatch& right) const
+    bool operator()(FunctionMatch& left, FunctionMatch& right) 
     {
         int leftBetterArgumentMatches = 0;
         int rightBetterArgumentMatches = 0;
@@ -146,9 +151,45 @@ struct BetterFunctionMatch
         {
             return  false;
         }
-        else
+        else if (left.constraint && !right.constraint)
+        {
+            return true;
+        }
+        else if (right.constraint && !left.constraint)
         {
             return false;
+        }
+        else
+        {
+            if (left.constraint && right.constraint)
+            {
+                if (!left.boundConstraint)
+                {
+                    left.boundConstraint.reset(BindConstraint(left.containerScope, *left.compileUnit, left.function->GetFileScope(left.containerScope), left.constraint));
+                }
+                if (!right.boundConstraint)
+                {
+                    right.boundConstraint.reset(BindConstraint(right.containerScope, *right.compileUnit, right.function->GetFileScope(right.containerScope), right.constraint));
+                }
+                bool leftImplyRight = left.boundConstraint->Imply(right.boundConstraint.get());
+                bool rightImplyLeft = right.boundConstraint->Imply(left.boundConstraint.get());
+                if (leftImplyRight && !rightImplyLeft)
+                {
+                    return true;
+                }
+                else if (rightImplyLeft && !leftImplyRight)
+                {
+                    return false;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 };
@@ -437,7 +478,7 @@ bool DeduceTypeParameters(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree
         Cm::Sym::ParameterSymbol* parameterSymbol = parameters[i];
         Cm::Ast::ParameterNode* parameterNode = static_cast<Cm::Ast::ParameterNode*>(boundCompileUnit.SymbolTable().GetNode(parameterSymbol));
         Cm::Ast::Node* parameterTypeExpr = parameterNode->TypeExpr();
-        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.GetFileScope(), parameterTypeExpr);
+        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.GetFileScopes(), parameterTypeExpr);
         const Cm::Core::Argument& argument = arguments[i];
         Cm::Sym::FunctionSymbol* conversion = nullptr;
         Cm::Bind::ArgumentMatch argumentMatch;
@@ -567,7 +608,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         {
             if (viableFunction->GetConversionType() == Cm::Sym::ConversionType::explicit_ && conversionType == Cm::Sym::ConversionType::implicit)
             {
-                FunctionMatch functionMatch(viableFunction);
+                FunctionMatch functionMatch(viableFunction, containerScope, &boundCompileUnit);
                 bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, Cm::Sym::ConversionType::explicit_, span, functionMatch, conversionClassTypes);
                 if (candidateFound)
                 {
@@ -577,7 +618,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 continue;
             }
         }
-        FunctionMatch functionMatch(viableFunction);
+        FunctionMatch functionMatch(viableFunction, containerScope, &boundCompileUnit);
         if (viableFunction->IsFunctionTemplate())
         {
             bool candidateFound = DeduceTypeParameters(containerScope, boundCompileUnit, viableFunction->TypeParameters(), boundTemplateArguments, viableFunction->Parameters(), arguments, span,
@@ -608,14 +649,18 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 Cm::Core::ConceptCheckException exception;
                 candidateFound = CheckConstraint(containerScope, boundCompileUnit, viableFunction->GetFileScope(containerScope), constraintNode, viableFunction->TypeParameters(), 
                     functionMatch.templateArguments, exception);
-                if (!candidateFound)
+                if (candidateFound)
+                {
+                    functionMatch.constraint = constraintNode;
+                }
+                else
                 {
                     conceptCheckExceptions.push_back(exception);
                 }
             }
             if (candidateFound)
             {
-                functionMatches.push_back(functionMatch);
+                functionMatches.push_back(std::move(functionMatch));
             }
         }
         else if (boundTemplateArguments.empty())
@@ -623,7 +668,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
             bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, conversionType, span, functionMatch, conversionClassTypes);
             if (candidateFound)
             {
-                functionMatches.push_back(functionMatch);
+                functionMatches.push_back(std::move(functionMatch));
             }
         }
     }
@@ -669,14 +714,14 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     else
     {
         Cm::Sym::FunctionSymbol* function = nullptr;
-        FunctionMatch bestMatch(function);
+        FunctionMatch bestMatch(function, containerScope, &boundCompileUnit);
         if (functionMatches.size() > 1)
         {
             BetterFunctionMatch betterFunctionMatch;
             std::sort(functionMatches.begin(), functionMatches.end(), betterFunctionMatch);
             if (betterFunctionMatch(functionMatches[0], functionMatches[1]))
             {
-                bestMatch = functionMatches[0];
+                bestMatch = std::move(functionMatches[0]);
                 conversions = bestMatch.conversions;
                 function = bestMatch.function;
             }
@@ -685,16 +730,16 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 std::string overloadName = MakeOverloadName(groupName, arguments);
                 std::string matchedFunctionNames;
                 bool first = true;
-                FunctionMatch equalMatch = functionMatches[0];
+                FunctionMatch equalMatch = std::move(functionMatches[0]);
                 std::vector<FunctionMatch> equalMatches;
-                equalMatches.push_back(equalMatch);
+                equalMatches.push_back(std::move(equalMatch));
                 int n = int(functionMatches.size());
                 for (int i = 1; i < n; ++i)
                 {
-                    const FunctionMatch& match = functionMatches[i];
+                    FunctionMatch match = std::move(functionMatches[i]);
                     if (!betterFunctionMatch(equalMatch, match))
                     {
-                        equalMatches.push_back(match);
+                        equalMatches.push_back(std::move(match));
                     }
                 }
                 for (const FunctionMatch& match : equalMatches)
@@ -721,7 +766,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         }
         else // single best
         {
-            bestMatch = functionMatches[0];
+            bestMatch = std::move(functionMatches[0]);
             conversions = bestMatch.conversions;
             function = bestMatch.function;
         }

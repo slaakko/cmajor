@@ -15,8 +15,8 @@
 
 namespace Cm { namespace Bind {
 
-void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ConstantNode* constantNode);
-void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, Cm::Sym::FileScope* fileScope, Cm::Ast::ConstantNode* constantNode, Cm::Sym::ConstantSymbol* constantSymbol);
+void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ConstantNode* constantNode);
+void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ConstantNode* constantNode, Cm::Sym::ConstantSymbol* constantSymbol);
 
 } } // namespace Cm::Bind
 

@@ -129,6 +129,7 @@ public:
     bool CheckIfConvertingConstructor() const;
     bool IsFunctionTemplate() const { return !typeParameters.empty(); }
     void SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes_);
+    const Cm::Ast::NodeList& GetUsingNodes() const;
     virtual ConversionType GetConversionType() const { return IsExplicit() ? Cm::Sym::ConversionType::explicit_ : Cm::Sym::ConversionType::implicit; }
     virtual ConversionRank GetConversionRank() const { return IsConvertingConstructor() ? Cm::Sym::ConversionRank::conversion : Cm::Sym::ConversionRank::exactMatch; }
     virtual int GetConversionDistance() const { return IsConvertingConstructor() ? 100 : 0; }

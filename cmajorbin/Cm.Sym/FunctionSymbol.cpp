@@ -279,6 +279,11 @@ void FunctionSymbol::SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes
     }
 }
 
+const Cm::Ast::NodeList& FunctionSymbol::GetUsingNodes() const
+{
+    return persistentFunctionData->usingNodes;
+}
+
 bool FunctionSymbol::IsCopyAssignment() const
 {
     if (groupName == "operator=" && parameters.size() == 2)

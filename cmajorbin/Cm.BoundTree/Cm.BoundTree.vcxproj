@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="BoundClass.hpp" />
     <ClInclude Include="BoundCompileUnit.hpp" />
+    <ClInclude Include="BoundConcept.hpp" />
     <ClInclude Include="BoundExpression.hpp" />
     <ClInclude Include="BoundFunction.hpp" />
     <ClInclude Include="BoundNode.hpp" />
@@ -30,6 +31,7 @@
   <ItemGroup>
     <ClCompile Include="BoundClass.cpp" />
     <ClCompile Include="BoundCompileUnit.cpp" />
+    <ClCompile Include="BoundConcept.cpp" />
     <ClCompile Include="BoundExpression.cpp" />
     <ClCompile Include="BoundFunction.cpp" />
     <ClCompile Include="BoundNode.cpp" />

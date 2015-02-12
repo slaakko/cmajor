@@ -15,15 +15,20 @@
 namespace Cm { namespace BoundTree {
 
 BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(syntaxUnit_),
-    fileScope(), irFilePath(irFilePath_), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), 
+    fileScopes(), irFilePath(irFilePath_), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), 
     derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository()
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
 }
 
-void BoundCompileUnit::SetFileScope(Cm::Sym::FileScope* fileScope_)
+void BoundCompileUnit::AddFileScope(Cm::Sym::FileScope* fileScope_)
 {
-    fileScope.reset(fileScope_);
+    fileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(fileScope_));
+}
+
+void BoundCompileUnit::RemoveLastFileScope()
+{
+    fileScopes.pop_back();
 }
 
 void BoundCompileUnit::AddBoundNode(BoundNode* boundNode)
