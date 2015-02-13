@@ -24,6 +24,7 @@
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/Binder.hpp>
+#include <Cm.Bind/ClassTemplateRepository.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
@@ -250,6 +251,7 @@ void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree,
     {
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
         Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable);
+        boundCompileUnit.SetClassTemplateRepostory(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
         boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
         boundCompileUnit.AddFileScope(fileScopes[index].release());
         Bind(compileUnit.get(), boundCompileUnit, userMainFunction);

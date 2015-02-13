@@ -14,8 +14,13 @@
 
 namespace Cm { namespace Sym {
 
-ConceptSymbol::ConceptSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), refinedConcept(nullptr)
+ConceptSymbol::ConceptSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), refinedConcept(nullptr), isIntrinsicConcept(false)
 {
+}
+
+bool ConceptSymbol::IsExportSymbol() const 
+{
+    return !isIntrinsicConcept;
 }
 
 void ConceptSymbol::Write(Writer& writer)

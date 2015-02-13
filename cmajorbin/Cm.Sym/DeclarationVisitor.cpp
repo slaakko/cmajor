@@ -16,8 +16,14 @@
 
 namespace Cm { namespace Sym {
 
-DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), memberVariableIndex(0)
+DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), memberVariableIndex(0), templateClassNode(nullptr), templateType(nullptr)
 {
+}
+
+void DeclarationVisitor::SetTemplateType(Cm::Ast::ClassNode* templateClassNode_, Cm::Sym::TemplateTypeSymbol* templateType_)
+{
+    templateClassNode = templateClassNode_;
+    templateType = templateType_;
 }
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
@@ -32,13 +38,27 @@ void DeclarationVisitor::EndVisit(Cm::Ast::NamespaceNode& namespaceNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::ClassNode& classNode)
 {
-    symbolTable.BeginClassScope(&classNode);
+    if (&classNode == templateClassNode)
+    {
+        symbolTable.BeginTemplateTypeScope(templateClassNode, templateType);
+    }
+    else
+    {
+        symbolTable.BeginClassScope(&classNode);
+    }
     memberVariableIndex = 0;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
 {
-    symbolTable.EndClassScope();
+    if (&classNode == templateClassNode)
+    {
+        symbolTable.EndTemplateTypeScope();
+    }
+    else
+    {
+        symbolTable.EndClassScope();
+    }
 }
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)

@@ -24,7 +24,7 @@ FunctionGroupIdNode::FunctionGroupIdNode(const Span& span_, const std::string& f
 {
 }
 
-Node* FunctionGroupIdNode::Clone() const
+Node* FunctionGroupIdNode::Clone(CloneContext& cloneContext) const
 {
     return new FunctionGroupIdNode(GetSpan(), functionGroupId);
 }
@@ -39,12 +39,12 @@ void FunctionGroupIdNode::Write(Writer& writer)
     writer.Write(functionGroupId);
 }
 
-FunctionNode::FunctionNode(const Span& span_) : Node(span_), compileUnit(nullptr)
+FunctionNode::FunctionNode(const Span& span_) : Node(span_), compileUnit(nullptr), bodySource(nullptr)
 {
 }
 
 FunctionNode::FunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_) :
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_), compileUnit(nullptr)
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_), compileUnit(nullptr), bodySource(nullptr)
 {
     if (returnTypeExpr)
     {
@@ -83,22 +83,22 @@ void FunctionNode::SetBody(CompoundStatementNode* body_)
     }
 }
 
-Node* FunctionNode::Clone() const
+Node* FunctionNode::Clone(CloneContext& cloneContext) const
 {
-    FunctionNode* clone = new FunctionNode(GetSpan(), specifiers, returnTypeExpr->Clone(), static_cast<FunctionGroupIdNode*>(groupId->Clone()));
+    FunctionNode* clone = new FunctionNode(GetSpan(), specifiers, returnTypeExpr->Clone(cloneContext), static_cast<FunctionGroupIdNode*>(groupId->Clone(cloneContext)));
     for (const std::unique_ptr<TemplateParameterNode>& templateParameter : templateParameters)
     {
-        clone->AddTemplateParameter(static_cast<TemplateParameterNode*>(templateParameter->Clone()));
+        clone->AddTemplateParameter(static_cast<TemplateParameterNode*>(templateParameter->Clone(cloneContext)));
     }
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     if (constraint)
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(constraint->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(constraint->Clone(cloneContext)));
     }
-    clone->SetBody(static_cast<CompoundStatementNode*>(body->Clone()));
+    clone->SetBody(static_cast<CompoundStatementNode*>(body->Clone(cloneContext)));
     return clone;
 }
 
@@ -208,6 +208,11 @@ void FunctionNode::Accept(Visitor& visitor)
         }
     }
     visitor.EndVisit(*this);
+}
+
+void FunctionNode::SetBodySource(CompoundStatementNode* bodySource_)
+{
+    bodySource = bodySource_;
 }
 
 } } // namespace Cm::Ast

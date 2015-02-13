@@ -82,7 +82,7 @@ public:
     DisjunctiveConstraintNode(const Span& span_);
     DisjunctiveConstraintNode(const Span& span_, ConstraintNode* left_, ConstraintNode* right_);
     NodeType GetNodeType() const override { return NodeType::disjunctiveConstraintNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
 };
@@ -93,7 +93,7 @@ public:
     ConjunctiveConstraintNode(const Span& span_);
     ConjunctiveConstraintNode(const Span& span_, ConstraintNode* left_, ConstraintNode* right_);
     NodeType GetNodeType() const override { return NodeType::conjunctiveConstraintNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
 };
@@ -104,7 +104,7 @@ public:
     WhereConstraintNode(const Span& span_);
     WhereConstraintNode(const Span& span_, ConstraintNode* constraint_);
     NodeType GetNodeType() const override { return NodeType::whereConstraintNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -119,7 +119,7 @@ public:
     IsConstraintNode(const Span& span_);
     IsConstraintNode(const Span& span_, Node* typeExpr_, Node* conceptOrTypeName_);
     NodeType GetNodeType() const override { return NodeType::isConstraintNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -138,7 +138,7 @@ public:
     MultiParamConstraintNode(const Span& span_, IdentifierNode* conceptId_);
     NodeType GetNodeType() const override { return NodeType::multiParamConstraintNode; }
     void AddTypeExpr(Node* typeExpr);
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -156,7 +156,7 @@ public:
     TypenameConstraintNode(const Span& span_);
     TypenameConstraintNode(const Span& span_, IdentifierNode* typeId_);
     NodeType GetNodeType() const override { return NodeType::typenameConstraintNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -178,7 +178,7 @@ public:
     ConstructorConstraintNode(const Span& span_);
     void AddParameter(ParameterNode* parameter) override;
     NodeType GetNodeType() const override { return NodeType::constructorConstraintNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -193,7 +193,7 @@ class DestructorConstraintNode : public SignatureConstraintNode
 public:
     DestructorConstraintNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::destructorConstraintNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
 };
@@ -205,7 +205,7 @@ public:
     MemberFunctionConstraintNode(const Span& span_, Node* returnTypeExpr_, IdentifierNode* typeParamId_, FunctionGroupIdNode* functionGroupId_);
     NodeType GetNodeType() const override { return NodeType::memberFunctionConstraintNode; }
     void AddParameter(ParameterNode* parameter) override;
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -228,7 +228,7 @@ public:
     FunctionConstraintNode(const Span& span_, Node* returnTypeExpr_, FunctionGroupIdNode* functionGroupId_);
     NodeType GetNodeType() const override { return NodeType::functionConstraintNode; }
     void AddParameter(ParameterNode* parameter) override;
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -248,7 +248,7 @@ public:
     AxiomStatementNode(const Span& span_);
     AxiomStatementNode(const Span& span_, Node* expression_);
     NodeType GetNodeType() const override { return NodeType::axiomStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -266,7 +266,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::axiomNode; }
     void AddParameter(ParameterNode* parameter) override;
     void AddStatement(AxiomStatementNode* statement);
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter);
@@ -284,7 +284,7 @@ public:
     ConceptIdNode(const Span& span_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::conceptIdNode; }
     void AddTypeParameter(Node* typeParameter);
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -308,7 +308,7 @@ public:
     void SetRefinement(ConceptIdNode* refinement_);
     void AddConstraint(ConstraintNode* constraint);
     void AddAxiom(AxiomNode* axiom);
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;

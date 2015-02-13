@@ -17,7 +17,7 @@ IntrinsicConstraintNode::IntrinsicConstraintNode() : ConstraintNode(Cm::Parsing:
 {
 }
 
-Node* IntrinsicConstraintNode::Clone() const
+Node* IntrinsicConstraintNode::Clone(CloneContext& cloneContext) const
 {
     throw std::runtime_error("member function not applicable");
 }

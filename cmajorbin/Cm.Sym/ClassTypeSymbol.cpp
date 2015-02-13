@@ -14,12 +14,18 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/Exception.hpp>
+#include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), 
+    destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
+{
+}
+
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : TypeSymbol(span_, name_, id_), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1),
     destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
 {
 }
@@ -265,6 +271,10 @@ void ClassTypeSymbol::AddSymbol(Symbol* symbol)
             AddConversion(functionSymbol);
         }
     }
+    else if (symbol->IsTypeParameterSymbol())
+    {
+        typeParameters.push_back(static_cast<TypeParameterSymbol*>(symbol));
+    }
 }
 
 void ClassTypeSymbol::AddConversion(FunctionSymbol* functionSymbol)
@@ -275,6 +285,24 @@ void ClassTypeSymbol::AddConversion(FunctionSymbol* functionSymbol)
 void ClassTypeSymbol::MakeIrType()
 {
     SetIrType(Cm::IrIntf::CreateClassTypeName(FullName()));
+}
+
+void ClassTypeSymbol::SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes_)
+{
+    if (!persistentClassData)
+    {
+        persistentClassData.reset(new PersistentClassData());
+        for (Cm::Ast::Node* usingNode : usingNodes_)
+        {
+            Cm::Ast::CloneContext cloneContext;
+            persistentClassData->usingNodes.Add(usingNode->Clone(cloneContext));
+        }
+    }
+}
+
+const Cm::Ast::NodeList& ClassTypeSymbol::GetUsingNodes() const
+{
+    return persistentClassData->usingNodes;
 }
 
 } } // namespace Cm::Sym

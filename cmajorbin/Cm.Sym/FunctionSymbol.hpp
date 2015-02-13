@@ -81,7 +81,8 @@ enum class FunctionSymbolFlags: uint16_t
     default_ = 1 << 11,
     explicit_ = 1 << 12,
     conversion = 1 << 13,
-    templateSpecialization = 1 << 14
+    templateSpecialization = 1 << 14,
+    memberOfTemplateType = 1 << 15
 };
 
 std::string FunctionSymbolFlagString(FunctionSymbolFlags flags);
@@ -162,6 +163,8 @@ public:
     void SetDefault() { SetFlag(FunctionSymbolFlags::default_); }
     bool IsExplicit() const { return GetFlag(FunctionSymbolFlags::explicit_); }
     void SetExplicit() { SetFlag(FunctionSymbolFlags::explicit_); }
+    bool IsMemberOfTemplateType() const { return GetFlag(FunctionSymbolFlags::memberOfTemplateType); }
+    void SetMemberOfTemplateType() { SetFlag(FunctionSymbolFlags::memberOfTemplateType); }
     bool IsConstructor() const;
     bool IsDefaultConstructor() const;
     bool IsCopyConstructor() const;

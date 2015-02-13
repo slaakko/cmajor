@@ -1436,7 +1436,8 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
     {
         Cm::Ast::DerivationList pointerDerivation;
         pointerDerivation.Add(Cm::Ast::Derivation::pointer);
-        Cm::Ast::DerivedTypeExprNode pointerTypeNode(node->GetSpan(), pointerDerivation, typeExpr->Clone());
+        Cm::Ast::CloneContext cloneContext;
+        Cm::Ast::DerivedTypeExprNode pointerTypeNode(node->GetSpan(), pointerDerivation, typeExpr->Clone(cloneContext));
         BindCast(node, &pointerTypeNode, argumentNodes[0], node->GetSpan());
         Cm::BoundTree::BoundExpression* cast = boundExpressionStack.Pop();
         arguments[0].reset(cast);

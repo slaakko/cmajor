@@ -21,7 +21,7 @@ public:
     TypedefNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::typedefNode; }
     bool IsTypedefNode() const override { return true; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;

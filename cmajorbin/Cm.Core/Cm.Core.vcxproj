@@ -22,6 +22,7 @@
     <ClInclude Include="Argument.hpp" />
     <ClInclude Include="BasicTypeOp.hpp" />
     <ClInclude Include="ClassConversionTable.hpp" />
+    <ClInclude Include="ClassTemplateRepository.hpp" />
     <ClInclude Include="ConceptRepository.hpp" />
     <ClInclude Include="DerivedTypeOpRepository.hpp" />
     <ClInclude Include="EnumTypeOpRepository.hpp" />
@@ -40,6 +41,7 @@
     <ClCompile Include="Argument.cpp" />
     <ClCompile Include="BasicTypeOp.cpp" />
     <ClCompile Include="ClassConversionTable.cpp" />
+    <ClCompile Include="ClassTemplateRepository.cpp" />
     <ClCompile Include="ConceptRepository.cpp" />
     <ClCompile Include="DerivedTypeOpRepository.cpp" />
     <ClCompile Include="EnumTypeOpRepository.cpp" />

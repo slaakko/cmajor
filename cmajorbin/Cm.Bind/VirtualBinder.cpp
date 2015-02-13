@@ -19,6 +19,7 @@ VirtualBinder::VirtualBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Ast::Compil
 
 void VirtualBinder::EndVisit(Cm::Ast::ClassNode& classNode)
 {
+    if (classNode.TemplateParameters().Count() > 0) return;
     Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&classNode);
     Cm::Sym::ClassTypeSymbol* classTypeSymbol = containerScope->Class();
     if (classTypeSymbol->DoGenerateDestructor())

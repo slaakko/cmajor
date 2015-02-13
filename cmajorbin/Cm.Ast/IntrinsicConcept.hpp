@@ -18,7 +18,7 @@ class IntrinsicConstraintNode : public ConstraintNode
 public:
     IntrinsicConstraintNode();
     NodeType GetNodeType() const override { return NodeType::intrinsicConstraintNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
 };
 
 class SameConstraintNode : public IntrinsicConstraintNode

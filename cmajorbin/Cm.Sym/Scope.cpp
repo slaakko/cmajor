@@ -320,4 +320,9 @@ Symbol* FileScope::Lookup(const std::string& name, ScopeLookup lookup) const
     }
 }
 
+FileScope* FileScope::Clone() const
+{
+    return new FileScope(*this);
+}
+
 } } // namespace Cm::Sym

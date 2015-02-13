@@ -19,6 +19,7 @@
 #include <Cm.Bind/StatementBinder.hpp>
 #include <Cm.Bind/Delegate.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
+#include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -88,6 +89,12 @@ void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
 {
     if (classNode.TemplateParameters().Count() > 0)
     {
+        Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(classNode.Id()->Str());
+        if (symbol->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* classTemplate = static_cast<Cm::Sym::ClassTypeSymbol*>(symbol);
+            classTemplate->SetUsingNodes(usingNodes);
+        }
         PushSkipContent();
     }
     else

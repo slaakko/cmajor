@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
     <ClInclude Include="Class.hpp" />
+    <ClInclude Include="Clone.hpp" />
     <ClInclude Include="CompileUnit.hpp" />
     <ClInclude Include="Concept.hpp" />
     <ClInclude Include="Constant.hpp" />
@@ -52,6 +53,7 @@
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
     <ClCompile Include="Class.cpp" />
+    <ClCompile Include="Clone.cpp" />
     <ClCompile Include="CompileUnit.cpp" />
     <ClCompile Include="Concept.cpp" />
     <ClCompile Include="Constant.cpp" />

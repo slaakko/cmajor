@@ -23,7 +23,7 @@ public:
     const std::string& GroupName() const { return groupName; }
     void SetGroupName(const std::string& groupName_) { groupName = groupName_; }
     std::string TypeString() const override { return "concept"; };
-    bool IsExportSymbol() const override { return true; }
+    bool IsExportSymbol() const override;
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
@@ -33,7 +33,9 @@ public:
     const TypeId& Id() const { return id; }
     ConceptSymbol* RefinedConcept() const { return refinedConcept; }
     void SetRefinedConcept(ConceptSymbol* refinedConcept_) { refinedConcept = refinedConcept_; }
+    void SetIntrinsicConcept() { isIntrinsicConcept = true; }
 private:
+    bool isIntrinsicConcept;
     TypeId id;
     std::string groupName;
     std::vector<TypeParameterSymbol*> typeParameters;

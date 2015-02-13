@@ -18,6 +18,7 @@ class DeclarationVisitor : public Cm::Ast::Visitor
 {
 public:
     DeclarationVisitor(SymbolTable& symbolTable_);
+    void SetTemplateType(Cm::Ast::ClassNode* templateClassNode_, Cm::Sym::TemplateTypeSymbol* templateType_);
     void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
     void EndVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
     void BeginVisit(Cm::Ast::ClassNode& classNode) override;
@@ -58,6 +59,8 @@ private:
     SymbolTable& symbolTable;
     int parameterIndex;
     int memberVariableIndex;
+    Cm::Ast::ClassNode* templateClassNode;
+    Cm::Sym::TemplateTypeSymbol* templateType;
 };
 
 } } // namespace Cm::Sym

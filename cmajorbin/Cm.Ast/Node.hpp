@@ -10,6 +10,7 @@
 #ifndef CM_AST_NODE_INCLUDED
 #define CM_AST_NODE_INCLUDED
 #include <Cm.Ast/Rank.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <Cm.Parsing/Scanner.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
 #include <memory>
@@ -61,7 +62,7 @@ public:
     Node(const Span& span_);
     virtual ~Node();
     virtual NodeType GetNodeType() const = 0;
-    virtual Node* Clone() const = 0;
+    virtual Node* Clone(CloneContext& cloneContext) const = 0;
     const Span& GetSpan() const { return span; }
     Span& GetSpan() { return span; }
     virtual void Read(Reader& reader);

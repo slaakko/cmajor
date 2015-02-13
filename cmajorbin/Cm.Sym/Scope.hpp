@@ -90,6 +90,7 @@ public:
     void InstallNamespaceImport(ContainerScope* currentContainerScope, Cm::Ast::NamespaceImportNode* namespaceImportNode);
     Symbol* Lookup(const std::string& name) const override;
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const override;
+    FileScope* Clone() const;
 private:
     std::vector<ContainerScope*> containerScopes;
     typedef std::unordered_map<std::string, Symbol*> AliasSymbolMap;

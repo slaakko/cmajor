@@ -42,7 +42,7 @@ public:
     LabelNode(const Span& span_);
     LabelNode(const Span& span_, const std::string& label_);
     NodeType GetNodeType() const override { return NodeType::labelNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override { return label + ":";  }
@@ -60,7 +60,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void SetLabelNode(LabelNode* labelNode_);
-    void CloneLabelTo(StatementNode* clone) const;
+    void CloneLabelTo(StatementNode* clone, CloneContext& cloneContext) const;
     LabelNode* Label() const { return labelNode.get(); }
     virtual bool IsConditionalStatementNode() const { return false; }
     virtual bool IsSwitchStatementNode() const { return false; }
@@ -79,7 +79,7 @@ public:
     SimpleStatementNode(const Span& span_);
     SimpleStatementNode(const Span& span_, Node* expr_);
     NodeType GetNodeType() const override { return NodeType::simpleStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -95,7 +95,7 @@ public:
     ReturnStatementNode(const Span& span_);
     ReturnStatementNode(const Span& span_, Node* expr_);
     NodeType GetNodeType() const override { return NodeType::returnStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -113,7 +113,7 @@ public:
     ConditionalStatementNode(const Span& span_);
     ConditionalStatementNode(const Span& span_, Node* condition_, StatementNode* thenS_, StatementNode* elseS_);
     NodeType GetNodeType() const override { return NodeType::conditionalStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -140,7 +140,7 @@ public:
     void AddCase(StatementNode* caseS);
     void SetDefault(StatementNode* defaultS);
     NodeType GetNodeType() const override { return NodeType::switchStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     bool IsSwitchStatementNode() const override { return true; }
     bool IsBreakEnclosingStatementNode() const override { return true; }
     Node* Condition() const { return condition.get(); }
@@ -166,7 +166,7 @@ public:
     NodeList& Expressions() { return expressions; }
     void AddStatement(StatementNode* statement);
     StatementNodeList& Statements() { return statements; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -184,7 +184,7 @@ public:
     bool IsDefaultStatementNode() const override { return true; }
     void AddStatement(StatementNode* statement);
     StatementNodeList& Statements() { return statements; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -199,7 +199,7 @@ public:
     GotoCaseStatementNode(const Span& span_);
     GotoCaseStatementNode(const Span& span_, Node* targetCaseExpr_);
     NodeType GetNodeType() const override { return NodeType::gotoCaseStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -215,7 +215,7 @@ class GotoDefaultStatementNode : public StatementNode
 public:
     GotoDefaultStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::gotoDefaultStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     bool IsCaseTerminatingNode() const override { return true; }
@@ -227,7 +227,7 @@ public:
     WhileStatementNode(const Span& span_);
     WhileStatementNode(const Span& span_, Node* condition_, StatementNode* statement_);
     NodeType GetNodeType() const override { return NodeType::whileStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     bool IsWhileStatementNode() const override { return true; }
     bool IsBreakEnclosingStatementNode() const override { return true; }
     bool IsContinueEnclosingStatementNode() const override { return true; }
@@ -248,7 +248,7 @@ public:
     DoStatementNode(const Span& span_);
     DoStatementNode(const Span& span_, StatementNode* statement_, Node* condition_);
     NodeType GetNodeType() const override { return NodeType::doStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     bool IsDoStatementNode() const override { return true; }
     bool IsBreakEnclosingStatementNode() const override { return true; }
     bool IsContinueEnclosingStatementNode() const override { return true; }
@@ -269,7 +269,7 @@ public:
     ForStatementNode(const Span& span_);
     ForStatementNode(const Span& span_, StatementNode* init_, Node* condition_, Node* increment_, StatementNode* action_);
     NodeType GetNodeType() const override { return NodeType::forStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     bool IsForStatementNode() const override { return true; }
     bool IsBreakEnclosingStatementNode() const override { return true; }
     bool IsContinueEnclosingStatementNode() const override { return true; }
@@ -294,7 +294,7 @@ public:
     RangeForStatementNode(const Span& span_);
     RangeForStatementNode(const Span& span_, Node* varTypeExpr_, IdentifierNode* varId_, Node* container_, StatementNode* action_);
     NodeType GetNodeType() const override { return NodeType::rangeForStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     bool IsBreakEnclosingStatementNode() const override { return true; }
     bool IsContinueEnclosingStatementNode() const override { return true; }
     void Read(Reader& reader) override;
@@ -317,7 +317,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::compoundStatementNode; }
     void AddStatement(StatementNode* statement);
     StatementNodeList& Statements() { return statements; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -332,7 +332,7 @@ class BreakStatementNode : public StatementNode
 public:
     BreakStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::breakStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     bool IsCaseTerminatingNode() const override { return true; }
@@ -343,7 +343,7 @@ class ContinueStatementNode : public StatementNode
 public:
     ContinueStatementNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::continueStatemetNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     bool IsCaseTerminatingNode() const override { return true; }
@@ -355,7 +355,7 @@ public:
     GotoStatementNode(const Span& span_);
     GotoStatementNode(const Span& span_, LabelNode* target_);
     NodeType GetNodeType() const override { return NodeType::gotoStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -372,7 +372,7 @@ public:
     TypedefStatementNode(const Span& span_);
     TypedefStatementNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::typedefStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -390,7 +390,7 @@ public:
     AssignmentStatementNode(const Span& span_);
     AssignmentStatementNode(const Span& span_, Node* targetExpr_, Node* sourceExpr_);
     NodeType GetNodeType() const override { return NodeType::assignmentStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -409,7 +409,7 @@ public:
     void AddArgument(Node* argument) override;
     NodeType GetNodeType() const override { return NodeType::constructionStatementNode; }
     bool IsConstructionStatementNode() const override { return true; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -429,7 +429,7 @@ public:
     DeleteStatementNode(const Span& span_);
     DeleteStatementNode(const Span& span_, Node* pointerExpr_);
     NodeType GetNodeType() const override { return NodeType::deleteStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -444,7 +444,7 @@ public:
     DestroyStatementNode(const Span& span_);
     DestroyStatementNode(const Span& span_, Node* pointerExpr_);
     NodeType GetNodeType() const override { return NodeType::destroyStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -459,7 +459,7 @@ public:
     ThrowStatementNode(const Span& span_);
     ThrowStatementNode(const Span& span_, Node* exceptionExpr_);
     NodeType GetNodeType() const override { return NodeType::throwStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -479,7 +479,7 @@ public:
     TryStatementNode(const Span& span_, CompoundStatementNode* tryBlock_);
     NodeType GetNodeType() const override { return NodeType::tryStatementNode; }
     void AddHandler(CatchNode* handler);
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -495,7 +495,7 @@ public:
     CatchNode(const Span& span_);
     CatchNode(const Span& span_, Node* exceptionTypeExpr_, IdentifierNode* exceptionId_, CompoundStatementNode* catchBlock_);
     NodeType GetNodeType() const override { return NodeType::catchNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -514,7 +514,7 @@ public:
     AssertStatementNode(const Span& span_);
     AssertStatementNode(const Span& span_, Node* assertExpr_);
     NodeType GetNodeType() const override { return NodeType::assertStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -529,7 +529,7 @@ public:
     CondCompSymbolNode(const Span& span_);
     CondCompSymbolNode(const Span& span_, const std::string& symbol_);
     NodeType GetNodeType() const override { return NodeType::condCompSymbolNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override { return symbol; }
@@ -569,7 +569,7 @@ public:
     CondCompDisjunctionNode(const Span& span_, CondCompExprNode* left_, CondCompExprNode* right_);
     NodeType GetNodeType() const override { return NodeType::condCompDisjunctionNode; }
     virtual bool IsCondCompDisjunctionNode() const { return true; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
 };
@@ -580,7 +580,7 @@ public:
     CondCompConjunctionNode(const Span& span_);
     CondCompConjunctionNode(const Span& span_, CondCompExprNode* left_, CondCompExprNode* right_);
     NodeType GetNodeType() const override { return NodeType::condCompConjunctionNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
 };
@@ -591,7 +591,7 @@ public:
     CondCompNotNode(const Span& span_);
     CondCompNotNode(const Span& span_, CondCompExprNode* subject_);
     NodeType GetNodeType() const override { return NodeType::condCompNotNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -606,7 +606,7 @@ public:
     CondCompPrimaryNode(const Span& span_);
     CondCompPrimaryNode(const Span& span_, CondCompSymbolNode* symbolNode_);
     NodeType GetNodeType() const override { return NodeType::condCompPrimaryNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -622,7 +622,7 @@ public:
     CondCompilationPartNode(const Span& span_);
     CondCompilationPartNode(const Span& span_, CondCompExprNode* expr_);
     NodeType GetNodeType() const override { return NodeType::condCompilationPartNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -660,7 +660,7 @@ public:
     CondCompStatementNode(const Span& span_);
     CondCompStatementNode(const Span& span_, CondCompExprNode* ifExpr);
     NodeType GetNodeType() const override { return NodeType::condCompStatementNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;

@@ -115,9 +115,9 @@ DerivedTypeExprNode::DerivedTypeExprNode(const Span& span_, const DerivationList
     baseTypeExprNode->SetParent(this);
 }
 
-Node* DerivedTypeExprNode::Clone() const
+Node* DerivedTypeExprNode::Clone(CloneContext& cloneContext) const
 {
-    return new DerivedTypeExprNode(GetSpan(), derivations, baseTypeExprNode->Clone());
+    return new DerivedTypeExprNode(GetSpan(), derivations, baseTypeExprNode->Clone(cloneContext));
 }
 
 void DerivedTypeExprNode::Read(Reader& reader)

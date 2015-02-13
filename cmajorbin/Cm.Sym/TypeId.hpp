@@ -21,6 +21,7 @@ public:
     const Cm::Util::Uuid& Rep() const { return rep; }
     Cm::Util::Uuid& Rep() { return rep; }
     size_t GetHashCode() const { if (!hashCodeValid) ComputeHashCode(); return hashCode; }
+    void InvalidateHashCode() { hashCodeValid = false; }
 private:
     Cm::Util::Uuid rep;
     mutable bool hashCodeValid;

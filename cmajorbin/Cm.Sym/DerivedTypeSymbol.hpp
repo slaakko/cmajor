@@ -40,6 +40,7 @@ public:
     TypeSymbol* GetBaseType() const override { return baseType; }
     bool IsPointerType() const override { return HasPointertDerivation(derivations); }
     bool IsPointerToClassType() const override { return GetPointerCount() == 1 && GetBaseType()->IsClassTypeSymbol(); }
+    bool IsPointerToTemplateType() const override { return GetPointerCount() == 1 && GetBaseType()->IsTemplateTypeSymbol(); }
     bool IsVoidPtrType() const override { return baseType->IsVoidTypeSymbol() && HasVoidPtrDerivation(derivations); }
     int GetPointerCount() const override { return CountPointers(derivations); }
     bool IsReferenceType() const { return HasReferenceDerivation(derivations); }

@@ -20,7 +20,7 @@ public:
     NamespaceNode(const Span& span_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::namespaceNode; }
     void AddMember(Node* member);
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -39,7 +39,7 @@ public:
     AliasNode(const Span& span_);
     AliasNode(const Span& span_, IdentifierNode* id_, IdentifierNode* qid_);
     NodeType GetNodeType() const override { return NodeType::aliasNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -57,7 +57,7 @@ public:
     NamespaceImportNode(const Span& span_);
     NamespaceImportNode(const Span& span_, IdentifierNode* ns_);
     NodeType GetNodeType() const override { return NodeType::namespaceImportNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;

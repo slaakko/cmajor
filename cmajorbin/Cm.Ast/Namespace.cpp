@@ -30,12 +30,12 @@ void NamespaceNode::AddMember(Node* member)
     members.Add(member);
 }
 
-Node* NamespaceNode::Clone() const
+Node* NamespaceNode::Clone(CloneContext& cloneContext) const
 {
-    NamespaceNode* clone = new NamespaceNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone()));
+    NamespaceNode* clone = new NamespaceNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& member : members)
     {
-        clone->AddMember(member->Clone());
+        clone->AddMember(member->Clone(cloneContext));
     }
     return clone;
 }
@@ -86,9 +86,9 @@ AliasNode::AliasNode(const Span& span_, IdentifierNode* id_, IdentifierNode* qid
     qid->SetParent(this);
 }
 
-Node* AliasNode::Clone() const
+Node* AliasNode::Clone(CloneContext& cloneContext) const
 {
-    return new AliasNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone()), static_cast<IdentifierNode*>(qid->Clone()));
+    return new AliasNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)), static_cast<IdentifierNode*>(qid->Clone(cloneContext)));
 }
 
 void AliasNode::Read(Reader& reader)
@@ -124,9 +124,9 @@ NamespaceImportNode::NamespaceImportNode(const Span& span_, IdentifierNode* ns_)
     ns->SetParent(this);
 }
 
-Node* NamespaceImportNode::Clone() const
+Node* NamespaceImportNode::Clone(CloneContext& cloneContext) const
 {
-    return new NamespaceImportNode(GetSpan(), static_cast<IdentifierNode*>(ns->Clone()));
+    return new NamespaceImportNode(GetSpan(), static_cast<IdentifierNode*>(ns->Clone(cloneContext)));
 }
 
 void NamespaceImportNode::Read(Reader& reader)

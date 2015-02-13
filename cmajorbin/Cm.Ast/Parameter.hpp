@@ -21,7 +21,7 @@ public:
     ParameterNode(const Span& span_);
     ParameterNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::parameterNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Accept(Visitor& visitor) override;

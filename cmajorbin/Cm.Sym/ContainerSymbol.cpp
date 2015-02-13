@@ -58,7 +58,7 @@ void ContainerSymbol::Read(Reader& reader)
 
 void ContainerSymbol::AddSymbol(Symbol* symbol)
 {
-    if (!symbol->Name().empty() && !symbol->IsFunctionSymbol() && !symbol->IsTemplateTypeSymbol() && !symbol->IsConceptSymbol())
+    if (!symbol->Name().empty() && !symbol->IsFunctionSymbol() && !symbol->IsConceptSymbol())
     {
         containerScope.Install(symbol);
     }

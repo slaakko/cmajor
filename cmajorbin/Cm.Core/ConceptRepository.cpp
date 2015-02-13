@@ -62,7 +62,8 @@ void GlobalConceptData::AddIntrinsicConceptsToSymbolTable(Cm::Sym::SymbolTable& 
 {
     for (const std::unique_ptr<Cm::Ast::ConceptNode>& conceptNode : intrinsicConcepts)
     {
-        symbolTable.BeginConceptScope(conceptNode.get());
+        Cm::Sym::ConceptSymbol* intrinsicConceptSymbol = symbolTable.BeginConceptScope(conceptNode.get());
+        intrinsicConceptSymbol->SetIntrinsicConcept();
         symbolTable.EndConceptScope();
     }
 }

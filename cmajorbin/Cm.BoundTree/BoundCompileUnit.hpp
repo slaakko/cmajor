@@ -16,6 +16,7 @@
 #include <Cm.Core/StringRepository.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
 #include <Cm.Core/IrClassTypeRepository.hpp>
+#include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Core/SynthesizedClassFunRepository.hpp>
 #include <Cm.Core/FunctionTemplateRepository.hpp>
 #include <Cm.Core/ConceptRepository.hpp>
@@ -43,6 +44,8 @@ public:
     Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
     void SetSynthesizedClassFunRepository(Cm::Core::SynthesizedClassFunRepository* synthesizedClassFunRepository_);
     Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return *synthesizedClassFunRepository; }
+    void SetClassTemplateRepostory(Cm::Core::ClassTemplateRepository* classTemplateRepository_);
+    Cm::Core::ClassTemplateRepository& ClassTemplateRepository() { return *classTemplateRepository; }
     Cm::Core::FunctionTemplateRepository& FunctionTemplateRepository() { return functionTemplateRepository; }
     Cm::Core::ConceptRepository& ConceptRepository() { return conceptRepository; }
     void AddBoundNode(BoundNode* boundNode);
@@ -62,6 +65,7 @@ private:
     Cm::Core::IrFunctionRepository irFunctionRepository;
     Cm::Core::IrClassTypeRepository irClassTypeRepository;
     std::unique_ptr<Cm::Core::SynthesizedClassFunRepository> synthesizedClassFunRepository;
+    std::unique_ptr<Cm::Core::ClassTemplateRepository> classTemplateRepository;
     Cm::Core::FunctionTemplateRepository functionTemplateRepository;
     Cm::Core::ConceptRepository conceptRepository;
     std::vector<std::unique_ptr<BoundNode>> boundNodes;

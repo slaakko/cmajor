@@ -9,30 +9,40 @@
 
 #ifndef CM_SYM_TEMPLATE_TYPE_SYMBOL_INCLUDED
 #define CM_SYM_TEMPLATE_TYPE_SYMBOL_INCLUDED
-#include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/MemberVariableSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
 std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments);
 TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments);
 
-class TemplateTypeSymbol : public TypeSymbol
+class TemplateTypeSymbol : public ClassTypeSymbol
 {
 public:
     TemplateTypeSymbol(const Span& span_, const std::string& name_);
     TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::templateTypeSymbol; }
     bool IsTemplateTypeSymbol() const override { return true; }
+    bool IsExportSymbol() const override { return false; }
     std::string TypeString() const override { return "template type"; };
     std::string GetMangleId() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetSubjectType(TypeSymbol* subjectType_);
+    TypeSymbol* GetSubjectType() const { return subjectType; }
+    const std::vector<TypeSymbol*>& TypeArguments() const { return typeArguments; }
     void AddTypeArgument(TypeSymbol* typeArgument);
     void SetType(TypeSymbol* type, int index) override;
+    void MakeIrType() override;
+    void SetFileScope(FileScope* fileScope_);
+    FileScope* CloneFileScope() const { return fileScope->Clone(); }
+    void SetGlobalNs(std::unique_ptr<Cm::Ast::NamespaceNode>&& globalNs_);
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;
+    std::unique_ptr<Cm::Ast::NamespaceNode> globalNs;
+    std::unique_ptr<FileScope> fileScope;
 };
 
 } } // namespace Cm::Sym

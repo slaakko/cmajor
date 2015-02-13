@@ -16,7 +16,7 @@ BoolNode::BoolNode(const Span& span_): Node(span_)
 {
 }
 
-Node* BoolNode::Clone() const
+Node* BoolNode::Clone(CloneContext& cloneContext) const
 {
     return new BoolNode(GetSpan());
 }
@@ -30,7 +30,7 @@ SByteNode::SByteNode(const Span& span_): Node(span_)
 {
 }
 
-Node* SByteNode::Clone() const
+Node* SByteNode::Clone(CloneContext& cloneContext) const
 {
     return new SByteNode(GetSpan());
 }
@@ -44,7 +44,7 @@ ByteNode::ByteNode(const Span& span_): Node(span_)
 {
 }
 
-Node* ByteNode::Clone() const
+Node* ByteNode::Clone(CloneContext& cloneContext) const
 {
     return new ByteNode(GetSpan());
 }
@@ -58,7 +58,7 @@ ShortNode::ShortNode(const Span& span_): Node(span_)
 {
 }
 
-Node* ShortNode::Clone() const
+Node* ShortNode::Clone(CloneContext& cloneContext) const
 {
     return new ShortNode(GetSpan());
 }
@@ -72,7 +72,7 @@ UShortNode::UShortNode(const Span& span_): Node(span_)
 {
 }
 
-Node* UShortNode::Clone() const
+Node* UShortNode::Clone(CloneContext& cloneContext) const
 {
     return new UShortNode(GetSpan());
 }
@@ -86,7 +86,7 @@ IntNode::IntNode(const Span& span_): Node(span_)
 {
 }
 
-Node* IntNode::Clone() const
+Node* IntNode::Clone(CloneContext& cloneContext) const
 {
     return new IntNode(GetSpan());
 }
@@ -100,7 +100,7 @@ UIntNode::UIntNode(const Span& span_): Node(span_)
 {
 }
 
-Node* UIntNode::Clone() const
+Node* UIntNode::Clone(CloneContext& cloneContext) const
 {
     return new UIntNode(GetSpan());
 }
@@ -114,7 +114,7 @@ LongNode::LongNode(const Span& span_): Node(span_)
 {
 }
 
-Node* LongNode::Clone() const
+Node* LongNode::Clone(CloneContext& cloneContext) const
 {
     return new LongNode(GetSpan());
 }
@@ -128,7 +128,7 @@ ULongNode::ULongNode(const Span& span_): Node(span_)
 {
 }
 
-Node* ULongNode::Clone() const
+Node* ULongNode::Clone(CloneContext& cloneContext) const
 {
     return new ULongNode(GetSpan());
 }
@@ -142,7 +142,7 @@ FloatNode::FloatNode(const Span& span_): Node(span_)
 {
 }
 
-Node* FloatNode::Clone() const
+Node* FloatNode::Clone(CloneContext& cloneContext) const
 {
     return new FloatNode(GetSpan());
 }
@@ -156,7 +156,7 @@ DoubleNode::DoubleNode(const Span& span_): Node(span_)
 {
 }
 
-Node* DoubleNode::Clone() const
+Node* DoubleNode::Clone(CloneContext& cloneContext) const
 {
     return new DoubleNode(GetSpan());
 }
@@ -170,7 +170,7 @@ CharNode::CharNode(const Span& span_): Node(span_)
 {
 }
 
-Node* CharNode::Clone() const
+Node* CharNode::Clone(CloneContext& cloneContext) const
 {
     return new CharNode(GetSpan());
 }
@@ -184,7 +184,7 @@ VoidNode::VoidNode(const Span& span_): Node(span_)
 {
 }
 
-Node* VoidNode::Clone() const
+Node* VoidNode::Clone(CloneContext& cloneContext) const
 {
     return new VoidNode(GetSpan());
 }

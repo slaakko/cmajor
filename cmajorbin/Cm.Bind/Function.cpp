@@ -220,6 +220,10 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
         Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, functionNode->ReturnTypeExpr());
         functionSymbol->SetReturnType(returnType);
     }
+    if (currentClass && currentClass->IsTemplateTypeSymbol())
+    {
+        functionSymbol->SetMemberOfTemplateType();
+    }
     if (functionSymbol->IsMemberFunctionSymbol())
     {
         if (functionSymbol->IsDefaultConstructor())

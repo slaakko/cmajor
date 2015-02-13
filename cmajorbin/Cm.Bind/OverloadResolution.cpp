@@ -564,6 +564,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     }
     std::unique_ptr<Cm::Core::Exception> ownedException = nullptr;
     Cm::Core::Exception* exception = nullptr;
+    boundCompileUnit.ClassTemplateRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions, exception);
     boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions, exception);
     if (exception)
     {
@@ -791,6 +792,13 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 boundCompileUnit.FunctionTemplateRepository().AddFunctionTemplateInstance(key, functionTemplateInstance);
             }
             function = functionTemplateInstance;
+        }
+        else if (function->IsMemberOfTemplateType())
+        {
+            if (!boundCompileUnit.ClassTemplateRepository().Instantiated(function))
+            {
+                boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, function);
+            }
         }
         return function;
     }
