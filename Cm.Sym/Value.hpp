@@ -40,6 +40,7 @@ public:
     virtual Value* As(ValueType targetType, bool cast, const Span& span) const = 0;
     virtual Ir::Intf::Object* CreateIrObject() const = 0;
     virtual bool IsScopedValue() const { return false; }
+    virtual bool IsNull() const { return false; }
 };
 
 class BoolValue : public Value
@@ -256,6 +257,10 @@ public:
     void Write(Cm::Ser::BinaryWriter& writer) override;
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
+    bool IsNull() const override { return true; }
+    void SetIrType(Ir::Intf::Type* irType_);
+private:
+    Ir::Intf::Type* irType;
 };
 
 class StringValue : public Value

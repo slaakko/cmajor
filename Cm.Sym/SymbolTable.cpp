@@ -25,6 +25,7 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Sym/ConceptSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -138,6 +139,24 @@ void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
 }
 
 void SymbolTable::EndClassScope()
+{
+    currentClass = nullptr;
+    EndContainer();
+}
+
+void SymbolTable::BeginTemplateTypeScope(Cm::Ast::ClassNode* templateClassNode, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol)
+{
+    ContainerScope* templateTypeScope = templateTypeSymbol->GetContainerScope();
+    nodeScopeMap[templateClassNode] = templateTypeScope;
+    symbolNodeMap[templateTypeSymbol] = templateClassNode;
+    ContainerScope* containerScope = container->GetContainerScope();
+    container->AddSymbol(templateTypeSymbol);
+    templateTypeScope->SetParent(containerScope);
+    BeginContainer(templateTypeSymbol);
+    currentClass = templateTypeSymbol;
+}
+
+void SymbolTable::EndTemplateTypeScope()
 {
     currentClass = nullptr;
     EndContainer();
@@ -308,7 +327,7 @@ void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableN
     symbolNodeMap[memberVariableSymbol] = memberVariableNode;
 }
 
-void SymbolTable::BeginConceptScope(Cm::Ast::ConceptNode* conceptNode)
+ConceptSymbol* SymbolTable::BeginConceptScope(Cm::Ast::ConceptNode* conceptNode)
 {
     Cm::Ast::IdentifierNode* conceptId = conceptNode->Id();
     std::string conceptName = conceptId->Str();
@@ -341,6 +360,7 @@ void SymbolTable::BeginConceptScope(Cm::Ast::ConceptNode* conceptNode)
     conceptScope->SetParent(containerScope);
     container->AddSymbol(conceptSymbol);
     BeginContainer(conceptSymbol);
+    return conceptSymbol;
 }
 
 void SymbolTable::EndConceptScope()

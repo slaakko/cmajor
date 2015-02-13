@@ -57,24 +57,27 @@ void ClassNode::AddMember(Node* member)
     members.Add(member);
 }
 
-Node* ClassNode::Clone() const
+Node* ClassNode::Clone(CloneContext& cloneContext) const
 {
-    ClassNode* clone = new ClassNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone()));
-    for (const std::unique_ptr<TemplateParameterNode>& templateParameter : templateParameters)
+    ClassNode* clone = new ClassNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone(cloneContext)));
+    if (!cloneContext.InstantiateClassNode())
     {
-        clone->AddTemplateParameter(static_cast<TemplateParameterNode*>(templateParameter->Clone()));
+        for (const std::unique_ptr<TemplateParameterNode>& templateParameter : templateParameters)
+        {
+            clone->AddTemplateParameter(static_cast<TemplateParameterNode*>(templateParameter->Clone(cloneContext)));
+        }
     }
     if (baseClassTypeExpr)
     {
-        clone->SetBaseClassTypeExpr(baseClassTypeExpr->Clone());
+        clone->SetBaseClassTypeExpr(baseClassTypeExpr->Clone(cloneContext));
     }
     if (constraint)
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(constraint->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(constraint->Clone(cloneContext)));
     }
     for (const std::unique_ptr<Node>& member : members)
     {
-        clone->AddMember(member->Clone());
+        clone->AddMember(member->Clone(cloneContext));
     }
     return clone;
 }
@@ -151,6 +154,11 @@ std::string ClassNode::Name() const
     return id->Str(); 
 }
 
+void ClassNode::SetId(IdentifierNode* id_)
+{ 
+    id.reset(id_); 
+}
+
 void ClassNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
@@ -192,12 +200,12 @@ MemberInitializerNode::MemberInitializerNode(const Span& span_, IdentifierNode* 
     memberId->SetParent(this);
 }
 
-Node* MemberInitializerNode::Clone() const
+Node* MemberInitializerNode::Clone(CloneContext& cloneContext) const
 {
-    MemberInitializerNode* clone = new MemberInitializerNode(GetSpan(), static_cast<IdentifierNode*>(memberId->Clone()));
+    MemberInitializerNode* clone = new MemberInitializerNode(GetSpan(), static_cast<IdentifierNode*>(memberId->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& argument : Arguments())
     {
-        clone->AddArgument(argument->Clone());
+        clone->AddArgument(argument->Clone(cloneContext));
     }
     return clone;
 }
@@ -234,12 +242,12 @@ BaseInitializerNode::BaseInitializerNode(const Span& span_) : InitializerNode(sp
 {
 }
 
-Node* BaseInitializerNode::Clone() const
+Node* BaseInitializerNode::Clone(CloneContext& cloneContext) const
 {
     BaseInitializerNode* clone = new BaseInitializerNode(GetSpan());
     for (const std::unique_ptr<Node>& argument : Arguments())
     {
-        clone->AddArgument(argument->Clone());
+        clone->AddArgument(argument->Clone(cloneContext));
     }
     return clone;
 }
@@ -258,12 +266,12 @@ ThisInitializerNode::ThisInitializerNode(const Span& span_) : InitializerNode(sp
 {
 }
 
-Node* ThisInitializerNode::Clone() const
+Node* ThisInitializerNode::Clone(CloneContext& cloneContext) const
 {
     ThisInitializerNode* clone = new ThisInitializerNode(GetSpan());
     for (const std::unique_ptr<Node>& argument : Arguments())
     {
-        clone->AddArgument(argument->Clone());
+        clone->AddArgument(argument->Clone(cloneContext));
     }
     return clone;
 }
@@ -343,20 +351,27 @@ void StaticConstructorNode::AddInitializer(InitializerNode* initializer)
     initializers.Add(initializer);
 }
 
-Node* StaticConstructorNode::Clone() const
+Node* StaticConstructorNode::Clone(CloneContext& cloneContext) const
 {
     StaticConstructorNode* clone = new StaticConstructorNode(GetSpan(), GetSpecifiers());
     for (const std::unique_ptr<InitializerNode>& initializer : initializers)
     {
-        clone->AddInitializer(static_cast<InitializerNode*>(initializer->Clone()));
+        clone->AddInitializer(static_cast<InitializerNode*>(initializer->Clone(cloneContext)));
     }
     if (Constraint())
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext)));
     }
     if (Body())
     {
-        clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone()));
+        if (cloneContext.InstantiateClassNode())
+        {
+            clone->SetBodySource(Body());
+        }
+        else
+        {
+            clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
     }
     return clone;
 }
@@ -428,24 +443,31 @@ void ConstructorNode::AddInitializer(InitializerNode* initializer)
     initializers.Add(initializer);
 }
 
-Node* ConstructorNode::Clone() const
+Node* ConstructorNode::Clone(CloneContext& cloneContext) const
 {
     ConstructorNode* clone = new ConstructorNode(GetSpan(), GetSpecifiers());
     for (const std::unique_ptr<ParameterNode>& parameter : Parameters())
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     for (const std::unique_ptr<InitializerNode>& initializer : initializers)
     {
-        clone->AddInitializer(static_cast<InitializerNode*>(initializer->Clone()));
+        clone->AddInitializer(static_cast<InitializerNode*>(initializer->Clone(cloneContext)));
     }
     if (Constraint())
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext)));
     }
     if (Body())
     {
-        clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone()));
+        if (cloneContext.InstantiateClassNode())
+        {
+            clone->SetBodySource(Body());
+        }
+        else
+        {
+            clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
     }
     return clone;
 }
@@ -519,17 +541,27 @@ DestructorNode::DestructorNode(const Span& span_, Specifiers specifiers_, Compou
     SetBody(body_);
 }
 
-Node* DestructorNode::Clone() const
+Node* DestructorNode::Clone(CloneContext& cloneContext) const
 {
     CompoundStatementNode* clonedBody = nullptr;
     if (Body())
     {
-        clonedBody = static_cast<CompoundStatementNode*>(Body()->Clone());
+        if (!cloneContext.InstantiateClassNode())
+        {
+            clonedBody = static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext));
+        }
     }
     DestructorNode* clone = new DestructorNode(GetSpan(), GetSpecifiers(), clonedBody);
     if (Constraint())
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext)));
+    }
+    if (cloneContext.InstantiateClassNode())
+    {
+        if (Body())
+        {
+            clone->SetBodySource(Body());
+        }
     }
     return clone;
 }
@@ -602,20 +634,27 @@ void MemberFunctionNode::SetConst()
     isConst = true;
 }
 
-Node* MemberFunctionNode::Clone() const
+Node* MemberFunctionNode::Clone(CloneContext& cloneContext) const
 {
-    MemberFunctionNode* clone = new MemberFunctionNode(GetSpan(), GetSpecifiers(), ReturnTypeExpr()->Clone(), static_cast<FunctionGroupIdNode*>(GroupId()->Clone()));
+    MemberFunctionNode* clone = new MemberFunctionNode(GetSpan(), GetSpecifiers(), ReturnTypeExpr()->Clone(cloneContext), static_cast<FunctionGroupIdNode*>(GroupId()->Clone(cloneContext)));
     for (const std::unique_ptr<ParameterNode>& parameter : Parameters())
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     if (Constraint())
     {
-        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone()));
+        clone->SetConstraint(static_cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext)));
     }
     if (Body())
     {
-        clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone()));
+        if (cloneContext.InstantiateClassNode())
+        {
+            clone->SetBodySource(Body());
+        }
+        else
+        {
+            clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
     }
     return clone;
 }
@@ -685,19 +724,30 @@ ConversionFunctionNode::ConversionFunctionNode(const Span& span_, Specifiers spe
     }
 }
 
-Node* ConversionFunctionNode::Clone() const
+Node* ConversionFunctionNode::Clone(CloneContext& cloneContext) const
 {
     WhereConstraintNode* clonedConstraint = nullptr;
     if (Constraint())
     {
-        clonedConstraint = static_cast<WhereConstraintNode*>(Constraint()->Clone());
+        clonedConstraint = static_cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext));
     }
     CompoundStatementNode* clonedBody = nullptr;
     if (Body())
     {
-        clonedBody = static_cast<CompoundStatementNode*>(Body()->Clone());
+        if (!cloneContext.InstantiateClassNode())
+        {
+            clonedBody = static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext));
+        }
     }
-    return new ConversionFunctionNode(GetSpan(), GetSpecifiers(), ReturnTypeExpr()->Clone(), IsConst(), clonedConstraint, clonedBody);
+    ConversionFunctionNode* clone = new ConversionFunctionNode(GetSpan(), GetSpecifiers(), ReturnTypeExpr()->Clone(cloneContext), IsConst(), clonedConstraint, clonedBody);
+    if (cloneContext.InstantiateClassNode())
+    {
+        if (Body())
+        {
+            clone->SetBodySource(Body());
+        }
+    }
+    return clone;
 }
 
 void ConversionFunctionNode::Read(Reader& reader)
@@ -758,9 +808,9 @@ MemberVariableNode::MemberVariableNode(const Span& span_, Specifiers specifiers_
     id->SetParent(this);
 }
 
-Node* MemberVariableNode::Clone() const
+Node* MemberVariableNode::Clone(CloneContext& cloneContext) const
 {
-    return new MemberVariableNode(GetSpan(), specifiers, typeExpr->Clone(), static_cast<IdentifierNode*>(id->Clone()));
+    return new MemberVariableNode(GetSpan(), specifiers, typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
 }
 
 void MemberVariableNode::Read(Reader& reader)

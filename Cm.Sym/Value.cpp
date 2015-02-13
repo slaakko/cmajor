@@ -1808,7 +1808,12 @@ Value* NullValue::As(ValueType targetType, bool cast, const Span& span) const
 
 Ir::Intf::Object* NullValue::CreateIrObject() const
 {
-    return Cm::IrIntf::Null(Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1));
+    return Cm::IrIntf::Null(irType);
+}
+
+void NullValue::SetIrType(Ir::Intf::Type* irType_)
+{
+    irType = irType_;
 }
 
 StringValue::StringValue() : value("")

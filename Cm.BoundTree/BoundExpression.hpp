@@ -37,6 +37,7 @@ public:
     virtual bool IsBoundLocalVariable() const { return false; }
     virtual bool IsBoundConversion() const { return false; }
     virtual bool IsLiteral() const { return false; }
+    virtual bool IsBoundNullLiteral() const { return false; }
     virtual bool IsConstant() const { return false; }
     virtual bool IsEnumConstant() const { return false; }
     virtual bool IsCast() const { return false; }
@@ -86,6 +87,8 @@ public:
     Cm::Sym::Value* GetValue() const { return value.get(); }
     void Accept(Visitor& visitor) override;
     bool IsLiteral() const override { return true; }
+    bool IsBoundNullLiteral() const override { return value->IsNull(); }
+    void SetIrType(Ir::Intf::Type* irType);
 private:
     std::unique_ptr<Cm::Sym::Value> value;
 };

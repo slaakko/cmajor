@@ -27,12 +27,12 @@ DelegateNode::DelegateNode(const Span& span_, Specifiers specifiers_, Node* retu
     id->SetParent(this);
 }
 
-Node* DelegateNode::Clone() const
+Node* DelegateNode::Clone(CloneContext& cloneContext) const
 {
-    DelegateNode* clone = new DelegateNode(GetSpan(), specifiers, returnTypeExpr->Clone(), static_cast<IdentifierNode*>(id->Clone()));
+    DelegateNode* clone = new DelegateNode(GetSpan(), specifiers, returnTypeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     return clone;
 }
@@ -99,12 +99,12 @@ ClassDelegateNode::ClassDelegateNode(const Span& span_, Specifiers specifiers_, 
     id->SetParent(this);
 }
 
-Node* ClassDelegateNode::Clone() const
+Node* ClassDelegateNode::Clone(CloneContext& cloneContext) const
 {
-    ClassDelegateNode* clone = new ClassDelegateNode(GetSpan(), specifiers, returnTypeExpr->Clone(), static_cast<IdentifierNode*>(id->Clone()));
+    ClassDelegateNode* clone = new ClassDelegateNode(GetSpan(), specifiers, returnTypeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     return clone;
 }

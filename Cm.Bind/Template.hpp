@@ -14,6 +14,8 @@
 
 namespace Cm { namespace Bind {
 
+Cm::Ast::NamespaceNode* CreateNamespaces(const Cm::Parsing::Span& span, const std::string& nsFullName, const Cm::Ast::NodeList& usingNodes, Cm::Ast::NamespaceNode*& currentNs);
+
 Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* function, 
     const std::vector<Cm::Sym::TypeSymbol*>& templateArguments);
 

@@ -28,13 +28,14 @@ public:
     void SetBaseClassTypeExpr(Node* baseClassTypeExpr_);
     void SetConstraint(WhereConstraintNode* constraint_);
     void AddMember(Node* member);
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     std::string Name() const override;
     Specifiers GetSpecifiers() const { return specifiers; }
     IdentifierNode* Id() const { return id.get(); }
+    void SetId(IdentifierNode* id_);
     const TemplateParameterNodeList& TemplateParameters() const { return templateParameters; }
     Node* BaseClassTypeExpr() const { return baseClassTypeExpr.get(); }
     WhereConstraintNode* Constraint() const { return constraint.get(); }
@@ -68,7 +69,7 @@ public:
     MemberInitializerNode(const Span& span_);
     MemberInitializerNode(const Span& span_, IdentifierNode* memberId_);
     NodeType GetNodeType() const override { return NodeType::memberInitializerNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
@@ -83,7 +84,7 @@ class BaseInitializerNode : public InitializerNode
 public:
     BaseInitializerNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::baseInitializerNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
 };
@@ -93,7 +94,7 @@ class ThisInitializerNode : public InitializerNode
 public:
     ThisInitializerNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::thisInitializerNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
 };
@@ -125,7 +126,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::staticConstructorNode; }
     void AddInitializer(InitializerNode* initializer) override;
     const InitializerNodeList& Initializers() const { return initializers; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -142,7 +143,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::constructorNode; }
     void AddInitializer(InitializerNode* initializer) override;
     const InitializerNodeList& Initializers() const { return initializers; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -157,7 +158,7 @@ public:
     DestructorNode(const Span& span_);
     DestructorNode(const Span& span_, Specifiers specifiers_, CompoundStatementNode* body_);
     NodeType GetNodeType() const override { return NodeType::destructorNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -171,7 +172,7 @@ public:
     MemberFunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_);
     NodeType GetNodeType() const override { return NodeType::memberFunctionNode; }
     void SetConst();
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -187,7 +188,7 @@ public:
     ConversionFunctionNode(const Span& span_);
     ConversionFunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, bool setConst_, WhereConstraintNode* constraint_, CompoundStatementNode* body_);
     NodeType GetNodeType() const override { return NodeType::conversionFunctionNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -201,7 +202,7 @@ public:
     MemberVariableNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::memberVariableNode; }
     bool IsMemberVariableNode() const override { return true; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;

@@ -21,7 +21,7 @@ public:
     FunctionGroupIdNode(const Span& span_);
     FunctionGroupIdNode(const Span& span_, const std::string& functionGroupId_);
     NodeType GetNodeType() const override { return NodeType::functionGroupIdNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     const std::string& Str() const { return functionGroupId; }
@@ -46,7 +46,7 @@ public:
     void AddParameter(ParameterNode* parameter) override;
     void SetConstraint(WhereConstraintNode* constraint_);
     void SetBody(CompoundStatementNode* body_);
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
@@ -62,6 +62,8 @@ public:
     bool HasBody() const { return body != nullptr; }
     void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     CompileUnitNode* GetCompileUnit() const { return compileUnit; }
+    CompoundStatementNode* BodySource() const { return bodySource; }
+    void SetBodySource(CompoundStatementNode* bodySource_);
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
@@ -71,6 +73,7 @@ private:
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
     CompileUnitNode* compileUnit;
+    CompoundStatementNode* bodySource;
 };
 
 } } // namespace Cm::Ast

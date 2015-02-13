@@ -47,6 +47,7 @@ public:
     virtual bool IsFunctionType() const { return false; }
     virtual int GetPointerCount() const { return 0; }
     virtual bool IsPointerToClassType() const { return false; }
+    virtual bool IsPointerToTemplateType() const { return false; }
     virtual bool IsReferenceType() const { return false; }
     virtual bool IsNonConstReferenceType() const { return false; }
     virtual bool IsConstType() const { return false; }

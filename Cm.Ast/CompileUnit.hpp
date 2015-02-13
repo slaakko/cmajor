@@ -22,7 +22,7 @@ public:
     CompileUnitNode(const Span& span_, const std::string& filePath_);
     NodeType GetNodeType() const override { return NodeType::compileUnitNode; }
     NamespaceNode* GlobalNs() const { return globalNs.get(); }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;

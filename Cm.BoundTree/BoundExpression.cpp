@@ -71,6 +71,19 @@ void BoundLiteral::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+void BoundLiteral::SetIrType(Ir::Intf::Type* irType)
+{
+    if (value->IsNull())
+    {
+        Cm::Sym::NullValue* nullValue = static_cast<Cm::Sym::NullValue*>(value.get());
+        nullValue->SetIrType(irType);
+    }
+    else
+    {
+        throw std::runtime_error("member function not applicable");
+    }
+}
+
 BoundConstant::BoundConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConstantSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }

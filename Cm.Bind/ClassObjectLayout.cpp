@@ -256,6 +256,12 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     Cm::Sym::TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
     Cm::Core::Argument variableArgument(Cm::Core::ArgumentCategory::lvalue, BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(memberVariableType, node->GetSpan()));
     resolutionArguments.push_back(variableArgument);
+    if (memberVariableType->IsPointerType() && arguments.Count() == 1 && arguments[0]->IsBoundNullLiteral())
+    {
+        arguments[0]->SetType(memberVariableType);
+        Cm::BoundTree::BoundLiteral* nullLiteral = static_cast<Cm::BoundTree::BoundLiteral*>(arguments[0].get());
+        nullLiteral->SetIrType(memberVariableType->GetIrType());
+    }
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
         resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));

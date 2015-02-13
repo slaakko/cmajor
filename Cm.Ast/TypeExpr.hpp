@@ -57,7 +57,7 @@ public:
     DerivedTypeExprNode(const Span& span_);
     DerivedTypeExprNode(const Span& span_, const DerivationList& derivations_, Node* baseTypeExprNode_);
     NodeType GetNodeType() const override { return NodeType::derivedTypeExprNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     const DerivationList& Derivations() const { return derivations; }
     Node* BaseTypeExprNode() const { return baseTypeExprNode.get();  }
     Node* ReleaseBaseTypeExprNode() { return baseTypeExprNode.release();  }

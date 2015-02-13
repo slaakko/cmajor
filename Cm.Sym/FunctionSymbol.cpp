@@ -274,7 +274,8 @@ void FunctionSymbol::SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes
         persistentFunctionData.reset(new PersistentFunctionData());
         for (Cm::Ast::Node* usingNode : usingNodes_)
         {
-            persistentFunctionData->usingNodes.Add(usingNode->Clone());
+            Cm::Ast::CloneContext cloneContext;
+            persistentFunctionData->usingNodes.Add(usingNode->Clone(cloneContext));
         }
     }
 }

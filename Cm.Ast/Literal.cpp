@@ -24,7 +24,7 @@ BooleanLiteralNode::BooleanLiteralNode(const Span& span_, bool value_) : Node(sp
 {
 }
 
-Node* BooleanLiteralNode::Clone() const 
+Node* BooleanLiteralNode::Clone(CloneContext& cloneContext) const 
 {
     return new BooleanLiteralNode(GetSpan(), value);
 }
@@ -57,7 +57,7 @@ SByteLiteralNode::SByteLiteralNode(const Span& span_, int8_t value_) : Node(span
 {
 }
 
-Node* SByteLiteralNode::Clone() const
+Node* SByteLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new SByteLiteralNode(GetSpan(), value);
 }
@@ -90,7 +90,7 @@ ByteLiteralNode::ByteLiteralNode(const Span& span_, uint8_t value_) : Node(span_
 {
 }
 
-Node* ByteLiteralNode::Clone() const
+Node* ByteLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new ByteLiteralNode(GetSpan(), value);
 }
@@ -123,7 +123,7 @@ ShortLiteralNode::ShortLiteralNode(const Span& span_, int16_t value_) : Node(spa
 {
 }
 
-Node* ShortLiteralNode::Clone() const
+Node* ShortLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new ShortLiteralNode(GetSpan(), value);
 }
@@ -156,7 +156,7 @@ UShortLiteralNode::UShortLiteralNode(const Span& span_, uint16_t value_) : Node(
 {
 }
 
-Node* UShortLiteralNode::Clone() const
+Node* UShortLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new UShortLiteralNode(GetSpan(), value);
 }
@@ -189,7 +189,7 @@ IntLiteralNode::IntLiteralNode(const Span& span_, int32_t value_) : Node(span_),
 {
 }
 
-Node* IntLiteralNode::Clone() const
+Node* IntLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new IntLiteralNode(GetSpan(), value);
 }
@@ -222,7 +222,7 @@ UIntLiteralNode::UIntLiteralNode(const Span& span_, uint32_t value_) : Node(span
 {
 }
 
-Node* UIntLiteralNode::Clone() const
+Node* UIntLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new UIntLiteralNode(GetSpan(), value);
 }
@@ -255,7 +255,7 @@ LongLiteralNode::LongLiteralNode(const Span& span_, int64_t value_) : Node(span_
 {
 }
 
-Node* LongLiteralNode::Clone() const
+Node* LongLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new LongLiteralNode(GetSpan(), value);
 }
@@ -288,7 +288,7 @@ ULongLiteralNode::ULongLiteralNode(const Span& span_, uint64_t value_) : Node(sp
 {
 }
 
-Node* ULongLiteralNode::Clone() const
+Node* ULongLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new ULongLiteralNode(GetSpan(), value);
 }
@@ -343,7 +343,7 @@ FloatLiteralNode::FloatLiteralNode(const Span& span_, float value_) : Node(span_
 {
 }
 
-Node* FloatLiteralNode::Clone() const
+Node* FloatLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new FloatLiteralNode(GetSpan(), value);
 }
@@ -376,7 +376,7 @@ DoubleLiteralNode::DoubleLiteralNode(const Span& span_, double value_) : Node(sp
 {
 }
 
-Node* DoubleLiteralNode::Clone() const
+Node* DoubleLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new DoubleLiteralNode(GetSpan(), value);
 }
@@ -421,7 +421,7 @@ CharLiteralNode::CharLiteralNode(const Span& span_, char value_) : Node(span_), 
 {
 }
 
-Node* CharLiteralNode::Clone() const
+Node* CharLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new CharLiteralNode(GetSpan(), value);
 }
@@ -456,7 +456,7 @@ StringLiteralNode::StringLiteralNode(const Span& span_, const std::string& value
 {
 }
 
-Node* StringLiteralNode::Clone() const
+Node* StringLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new StringLiteralNode(GetSpan(), value);
 }
@@ -487,7 +487,7 @@ NullLiteralNode::NullLiteralNode(const Span& span_) : Node(span_)
 {
 }
 
-Node* NullLiteralNode::Clone() const
+Node* NullLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new NullLiteralNode(GetSpan());
 }

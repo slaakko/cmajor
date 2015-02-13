@@ -70,7 +70,7 @@ LabelNode::LabelNode(const Span& span_, const std::string& label_): Node(span_),
 {
 }
 
-Node* LabelNode::Clone() const
+Node* LabelNode::Clone(CloneContext& cloneContext) const
 {
     return new LabelNode(GetSpan(), label);
 }
@@ -125,11 +125,11 @@ void StatementNode::SetLabelNode(LabelNode* labelNode_)
     labelNode->SetParent(this);
 }
 
-void StatementNode::CloneLabelTo(StatementNode* clone) const
+void StatementNode::CloneLabelTo(StatementNode* clone, CloneContext& cloneContext) const
 {
     if (labelNode)
     {
-        clone->SetLabelNode(static_cast<LabelNode*>(labelNode->Clone()));
+        clone->SetLabelNode(static_cast<LabelNode*>(labelNode->Clone(cloneContext)));
     }
 }
 
@@ -145,15 +145,15 @@ SimpleStatementNode::SimpleStatementNode(const Span& span_, Node* expr_) : State
     }
 }
 
-Node* SimpleStatementNode::Clone() const
+Node* SimpleStatementNode::Clone(CloneContext& cloneContext) const
 {
     Node* clonedExpr = nullptr;
     if (expr)
     {
-        clonedExpr = expr->Clone();
+        clonedExpr = expr->Clone(cloneContext);
     }
     SimpleStatementNode* clone = new SimpleStatementNode(GetSpan(), clonedExpr);
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -214,15 +214,15 @@ ReturnStatementNode::ReturnStatementNode(const Span& span_, Node* expr_) : State
     }
 }
 
-Node* ReturnStatementNode::Clone() const
+Node* ReturnStatementNode::Clone(CloneContext& cloneContext) const
 {
     Node* clonedExpr = nullptr;
     if (expr)
     {
-        clonedExpr = expr->Clone();
+        clonedExpr = expr->Clone(cloneContext);
     }
     ReturnStatementNode* clone = new ReturnStatementNode(GetSpan(), clonedExpr);
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -287,15 +287,15 @@ ConditionalStatementNode::ConditionalStatementNode(const Span& span_, Node* cond
     }
 }
 
-Node* ConditionalStatementNode::Clone() const
+Node* ConditionalStatementNode::Clone(CloneContext& cloneContext) const
 {
     StatementNode* clonedElseS = nullptr;
     if (elseS)
     {
-        clonedElseS = static_cast<StatementNode*>(elseS->Clone());
+        clonedElseS = static_cast<StatementNode*>(elseS->Clone(cloneContext));
     }
-    ConditionalStatementNode* clone = new ConditionalStatementNode(GetSpan(), condition->Clone(), static_cast<StatementNode*>(thenS->Clone()), clonedElseS);
-    CloneLabelTo(clone);
+    ConditionalStatementNode* clone = new ConditionalStatementNode(GetSpan(), condition->Clone(cloneContext), static_cast<StatementNode*>(thenS->Clone(cloneContext)), clonedElseS);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -400,18 +400,18 @@ void SwitchStatementNode::SetDefault(StatementNode* defaultS)
     defaultStatement.reset(defaultS);
 }
 
-Node* SwitchStatementNode::Clone() const
+Node* SwitchStatementNode::Clone(CloneContext& cloneContext) const
 {
-    SwitchStatementNode* clone = new SwitchStatementNode(GetSpan(), condition->Clone());
+    SwitchStatementNode* clone = new SwitchStatementNode(GetSpan(), condition->Clone(cloneContext));
     for (const std::unique_ptr<StatementNode>& caseS : caseStatements)
     {
-        clone->AddCase(static_cast<StatementNode*>(caseS->Clone()));
+        clone->AddCase(static_cast<StatementNode*>(caseS->Clone(cloneContext)));
     }
     if (defaultStatement)
     {
-        clone->SetDefault(static_cast<StatementNode*>(defaultStatement->Clone()));
+        clone->SetDefault(static_cast<StatementNode*>(defaultStatement->Clone(cloneContext)));
     }
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -492,18 +492,18 @@ void CaseStatementNode::AddStatement(StatementNode* statement)
     statements.Add(statement);
 }
 
-Node* CaseStatementNode::Clone() const
+Node* CaseStatementNode::Clone(CloneContext& cloneContext) const
 {
     CaseStatementNode* clone = new CaseStatementNode(GetSpan());
     for (const std::unique_ptr<Node>& expr : expressions)
     {
-        clone->AddExpr(expr->Clone());
+        clone->AddExpr(expr->Clone(cloneContext));
     }
     for (const std::unique_ptr<StatementNode>& statement : statements)
     {
-        clone->AddStatement(static_cast<StatementNode*>(statement->Clone()));
+        clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
     }
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -561,14 +561,14 @@ void DefaultStatementNode::AddStatement(StatementNode* statement)
     statements.Add(statement);
 }
 
-Node* DefaultStatementNode::Clone() const
+Node* DefaultStatementNode::Clone(CloneContext& cloneContext) const
 {
     DefaultStatementNode* clone = new DefaultStatementNode(GetSpan());
     for (const std::unique_ptr<StatementNode>& statement : statements)
     {
-        clone->AddStatement(static_cast<StatementNode*>(statement->Clone()));
+        clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
     }
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -612,10 +612,10 @@ GotoCaseStatementNode::GotoCaseStatementNode(const Span& span_, Node* targetCase
     targetCaseExpr->SetParent(this);
 }
 
-Node* GotoCaseStatementNode::Clone() const
+Node* GotoCaseStatementNode::Clone(CloneContext& cloneContext) const
 {
-    GotoCaseStatementNode* clone = new GotoCaseStatementNode(GetSpan(), targetCaseExpr->Clone());
-    CloneLabelTo(clone);
+    GotoCaseStatementNode* clone = new GotoCaseStatementNode(GetSpan(), targetCaseExpr->Clone(cloneContext));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -652,10 +652,10 @@ GotoDefaultStatementNode::GotoDefaultStatementNode(const Span& span_) : Statemen
 {
 }
 
-Node* GotoDefaultStatementNode::Clone() const
+Node* GotoDefaultStatementNode::Clone(CloneContext& cloneContext) const
 {
     GotoDefaultStatementNode* clone = new GotoDefaultStatementNode(GetSpan());
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -680,10 +680,10 @@ WhileStatementNode::WhileStatementNode(const Span& span_, Node* condition_, Stat
     statement->SetParent(this);
 }
 
-Node* WhileStatementNode::Clone() const
+Node* WhileStatementNode::Clone(CloneContext& cloneContext) const
 {
-    WhileStatementNode* clone = new WhileStatementNode(GetSpan(), condition->Clone(), static_cast<StatementNode*>(statement->Clone()));
-    CloneLabelTo(clone);
+    WhileStatementNode* clone = new WhileStatementNode(GetSpan(), condition->Clone(cloneContext), static_cast<StatementNode*>(statement->Clone(cloneContext)));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -743,10 +743,10 @@ DoStatementNode::DoStatementNode(const Span& span_, StatementNode* statement_, N
     condition->SetParent(this);
 }
 
-Node* DoStatementNode::Clone() const
+Node* DoStatementNode::Clone(CloneContext& cloneContext) const
 {
-    DoStatementNode* clone = new DoStatementNode(GetSpan(), static_cast<StatementNode*>(statement->Clone()), condition->Clone());
-    CloneLabelTo(clone);
+    DoStatementNode* clone = new DoStatementNode(GetSpan(), static_cast<StatementNode*>(statement->Clone(cloneContext)), condition->Clone(cloneContext));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -816,20 +816,20 @@ ForStatementNode::ForStatementNode(const Span& span_, StatementNode* init_, Node
     action->SetParent(this);
 }
 
-Node* ForStatementNode::Clone() const
+Node* ForStatementNode::Clone(CloneContext& cloneContext) const
 {
     Node* cloneOfCond = nullptr;
     if (condition)
     {
-        cloneOfCond = condition->Clone();
+        cloneOfCond = condition->Clone(cloneContext);
     }
     Node* cloneOfInc = nullptr;
     if (increment)
     {
-        cloneOfInc = increment->Clone();
+        cloneOfInc = increment->Clone(cloneContext);
     }
-    ForStatementNode* clone = new ForStatementNode(GetSpan(), static_cast<StatementNode*>(init->Clone()), cloneOfCond, cloneOfInc, static_cast<StatementNode*>(action->Clone()));
-    CloneLabelTo(clone);
+    ForStatementNode* clone = new ForStatementNode(GetSpan(), static_cast<StatementNode*>(init->Clone(cloneContext)), cloneOfCond, cloneOfInc, static_cast<StatementNode*>(action->Clone(cloneContext)));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -939,10 +939,10 @@ RangeForStatementNode::RangeForStatementNode(const Span& span_, Node* varTypeExp
     action->SetParent(this);
 }
 
-Node* RangeForStatementNode::Clone() const
+Node* RangeForStatementNode::Clone(CloneContext& cloneContext) const
 {
-    RangeForStatementNode* clone = new RangeForStatementNode(GetSpan(), varTypeExpr->Clone(), static_cast<IdentifierNode*>(varId->Clone()), container->Clone(), static_cast<StatementNode*>(action->Clone()));
-    CloneLabelTo(clone);
+    RangeForStatementNode* clone = new RangeForStatementNode(GetSpan(), varTypeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(varId->Clone(cloneContext)), container->Clone(cloneContext), static_cast<StatementNode*>(action->Clone(cloneContext)));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1005,14 +1005,14 @@ void CompoundStatementNode::AddStatement(StatementNode* statement)
     statements.Add(statement);
 }
 
-Node* CompoundStatementNode::Clone() const
+Node* CompoundStatementNode::Clone(CloneContext& cloneContext) const
 {
     CompoundStatementNode* clone = new CompoundStatementNode(GetSpan());
     for (const std::unique_ptr<StatementNode>& statement : statements)
     {
-        clone->AddStatement(static_cast<StatementNode*>(statement->Clone()));
+        clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
     }
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1050,10 +1050,10 @@ BreakStatementNode::BreakStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
-Node* BreakStatementNode::Clone() const
+Node* BreakStatementNode::Clone(CloneContext& cloneContext) const
 {
     BreakStatementNode* clone = new BreakStatementNode(GetSpan());
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1072,10 +1072,10 @@ ContinueStatementNode::ContinueStatementNode(const Span& span_) : StatementNode(
 {
 }
 
-Node* ContinueStatementNode::Clone() const
+Node* ContinueStatementNode::Clone(CloneContext& cloneContext) const
 {
     ContinueStatementNode* clone = new ContinueStatementNode(GetSpan());
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1099,10 +1099,10 @@ GotoStatementNode::GotoStatementNode(const Span& span_, LabelNode* target_) : St
     target->SetParent(this);
 }
 
-Node* GotoStatementNode::Clone() const
+Node* GotoStatementNode::Clone(CloneContext& cloneContext) const
 {
-    GotoStatementNode* clone = new GotoStatementNode(GetSpan(), static_cast<LabelNode*>(target->Clone()));
-    CloneLabelTo(clone);
+    GotoStatementNode* clone = new GotoStatementNode(GetSpan(), static_cast<LabelNode*>(target->Clone(cloneContext)));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1140,10 +1140,10 @@ TypedefStatementNode::TypedefStatementNode(const Span& span_, Node* typeExpr_, I
     id->SetParent(this);
 }
 
-Node* TypedefStatementNode::Clone() const
+Node* TypedefStatementNode::Clone(CloneContext& cloneContext) const
 {
-    TypedefStatementNode* clone = new TypedefStatementNode(GetSpan(), typeExpr->Clone(), static_cast<IdentifierNode*>(id->Clone()));
-    CloneLabelTo(clone);
+    TypedefStatementNode* clone = new TypedefStatementNode(GetSpan(), typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1184,10 +1184,10 @@ AssignmentStatementNode::AssignmentStatementNode(const Span& span_, Node* target
     sourceExpr->SetParent(this);
 }
 
-Node* AssignmentStatementNode::Clone() const
+Node* AssignmentStatementNode::Clone(CloneContext& cloneContext) const
 {
-    AssignmentStatementNode* clone = new AssignmentStatementNode(GetSpan(), targetExpr->Clone(), sourceExpr->Clone());
-    CloneLabelTo(clone);
+    AssignmentStatementNode* clone = new AssignmentStatementNode(GetSpan(), targetExpr->Clone(cloneContext), sourceExpr->Clone(cloneContext));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1240,14 +1240,14 @@ void ConstructionStatementNode::AddArgument(Node* argument)
     arguments.Add(argument);
 }
 
-Node* ConstructionStatementNode::Clone() const
+Node* ConstructionStatementNode::Clone(CloneContext& cloneContext) const
 {
-    ConstructionStatementNode* clone = new ConstructionStatementNode(GetSpan(), typeExpr->Clone(), static_cast<IdentifierNode*>(id->Clone()));
+    ConstructionStatementNode* clone = new ConstructionStatementNode(GetSpan(), typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& argument : arguments)
     {
-        clone->AddArgument(argument->Clone());
+        clone->AddArgument(argument->Clone(cloneContext));
     }
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1300,10 +1300,10 @@ DeleteStatementNode::DeleteStatementNode(const Span& span_, Node* pointerExpr_) 
     pointerExpr->SetParent(this);
 }
 
-Node* DeleteStatementNode::Clone() const
+Node* DeleteStatementNode::Clone(CloneContext& cloneContext) const
 {
-    DeleteStatementNode* clone = new DeleteStatementNode(GetSpan(), pointerExpr->Clone());
-    CloneLabelTo(clone);
+    DeleteStatementNode* clone = new DeleteStatementNode(GetSpan(), pointerExpr->Clone(cloneContext));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1345,10 +1345,10 @@ DestroyStatementNode::DestroyStatementNode(const Span& span_, Node* pointerExpr_
     pointerExpr->SetParent(this);
 }
 
-Node* DestroyStatementNode::Clone() const
+Node* DestroyStatementNode::Clone(CloneContext& cloneContext) const
 {
-    DestroyStatementNode* clone = new DestroyStatementNode(GetSpan(), pointerExpr->Clone());
-    CloneLabelTo(clone);
+    DestroyStatementNode* clone = new DestroyStatementNode(GetSpan(), pointerExpr->Clone(cloneContext));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1390,10 +1390,10 @@ ThrowStatementNode::ThrowStatementNode(const Span& span_, Node* exceptionExpr_) 
     exceptionExpr->SetParent(this);
 }
 
-Node* ThrowStatementNode::Clone() const
+Node* ThrowStatementNode::Clone(CloneContext& cloneContext) const
 {
-    ThrowStatementNode* clone = new ThrowStatementNode(GetSpan(), exceptionExpr->Clone());
-    CloneLabelTo(clone);
+    ThrowStatementNode* clone = new ThrowStatementNode(GetSpan(), exceptionExpr->Clone(cloneContext));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1441,14 +1441,14 @@ void TryStatementNode::AddHandler(CatchNode* handler)
     handlers.Add(handler);
 }
 
-Node* TryStatementNode::Clone() const
+Node* TryStatementNode::Clone(CloneContext& cloneContext) const
 {
-    TryStatementNode* clone = new TryStatementNode(GetSpan(), static_cast<CompoundStatementNode*>(tryBlock->Clone()));
+    TryStatementNode* clone = new TryStatementNode(GetSpan(), static_cast<CompoundStatementNode*>(tryBlock->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& handler : handlers)
     {
-        clone->AddHandler(static_cast<CatchNode*>(handler->Clone()));
+        clone->AddHandler(static_cast<CatchNode*>(handler->Clone(cloneContext)));
     }
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1501,14 +1501,14 @@ CatchNode::CatchNode(const Span& span_, Node* exceptionTypeExpr_, IdentifierNode
     catchBlock->SetParent(this);
 }
 
-Node* CatchNode::Clone() const
+Node* CatchNode::Clone(CloneContext& cloneContext) const
 {
     IdentifierNode* clonedId = nullptr;
     if (exceptionId)
     {
-        clonedId = static_cast<IdentifierNode*>(exceptionId->Clone());
+        clonedId = static_cast<IdentifierNode*>(exceptionId->Clone(cloneContext));
     }
-    return new CatchNode(GetSpan(), exceptionTypeExpr->Clone(), clonedId, static_cast<CompoundStatementNode*>(catchBlock->Clone()));
+    return new CatchNode(GetSpan(), exceptionTypeExpr->Clone(cloneContext), clonedId, static_cast<CompoundStatementNode*>(catchBlock->Clone(cloneContext)));
 }
 
 void CatchNode::Read(Reader& reader)
@@ -1559,10 +1559,10 @@ AssertStatementNode::AssertStatementNode(const Span& span_, Node* assertExpr_) :
     assertExpr->SetParent(this);
 }
 
-Node* AssertStatementNode::Clone() const
+Node* AssertStatementNode::Clone(CloneContext& cloneContext) const
 {
-    AssertStatementNode* clone = new AssertStatementNode(GetSpan(), assertExpr->Clone());
-    CloneLabelTo(clone);
+    AssertStatementNode* clone = new AssertStatementNode(GetSpan(), assertExpr->Clone(cloneContext));
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 
@@ -1603,7 +1603,7 @@ CondCompSymbolNode::CondCompSymbolNode(const Span& span_, const std::string& sym
 {
 }
 
-Node* CondCompSymbolNode::Clone() const
+Node* CondCompSymbolNode::Clone(CloneContext& cloneContext) const
 {
     return new CondCompSymbolNode(GetSpan(), symbol);
 }
@@ -1655,9 +1655,9 @@ CondCompDisjunctionNode::CondCompDisjunctionNode(const Span& span_, CondCompExpr
 {
 }
 
-Node* CondCompDisjunctionNode::Clone() const
+Node* CondCompDisjunctionNode::Clone(CloneContext& cloneContext) const
 {
-    return new CondCompDisjunctionNode(GetSpan(), static_cast<CondCompExprNode*>(Left()->Clone()), static_cast<CondCompExprNode*>(Right()->Clone()));
+    return new CondCompDisjunctionNode(GetSpan(), static_cast<CondCompExprNode*>(Left()->Clone(cloneContext)), static_cast<CondCompExprNode*>(Right()->Clone(cloneContext)));
 }
 
 std::string CondCompDisjunctionNode::ToString() const 
@@ -1681,9 +1681,9 @@ CondCompConjunctionNode::CondCompConjunctionNode(const Span& span_, CondCompExpr
 {
 }
 
-Node* CondCompConjunctionNode::Clone() const
+Node* CondCompConjunctionNode::Clone(CloneContext& cloneContext) const
 {
-    return new CondCompConjunctionNode(GetSpan(), static_cast<CondCompExprNode*>(Left()->Clone()), static_cast<CondCompExprNode*>(Right()->Clone()));
+    return new CondCompConjunctionNode(GetSpan(), static_cast<CondCompExprNode*>(Left()->Clone(cloneContext)), static_cast<CondCompExprNode*>(Right()->Clone(cloneContext)));
 }
 
 std::string CondCompConjunctionNode::ToString() const
@@ -1726,9 +1726,9 @@ CondCompNotNode::CondCompNotNode(const Span& span_, CondCompExprNode* subject_) 
     subject->SetParent(this);
 }
 
-Node* CondCompNotNode::Clone() const
+Node* CondCompNotNode::Clone(CloneContext& cloneContext) const
 {
-    return new CondCompNotNode(GetSpan(), static_cast<CondCompExprNode*>(subject->Clone()));
+    return new CondCompNotNode(GetSpan(), static_cast<CondCompExprNode*>(subject->Clone(cloneContext)));
 }
 
 void CondCompNotNode::Read(Reader& reader)
@@ -1772,9 +1772,9 @@ CondCompPrimaryNode::CondCompPrimaryNode(const Span& span_, CondCompSymbolNode* 
     symbolNode->SetParent(this);
 }
 
-Node* CondCompPrimaryNode::Clone() const
+Node* CondCompPrimaryNode::Clone(CloneContext& cloneContext) const
 {
-    return new CondCompPrimaryNode(GetSpan(), static_cast<CondCompSymbolNode*>(symbolNode->Clone()));
+    return new CondCompPrimaryNode(GetSpan(), static_cast<CondCompSymbolNode*>(symbolNode->Clone(cloneContext)));
 }
 
 void CondCompPrimaryNode::Read(Reader& reader)
@@ -1816,12 +1816,12 @@ void CondCompilationPartNode::AddStatement(StatementNode* statement)
     statements.Add(statement);
 }
 
-Node* CondCompilationPartNode::Clone() const
+Node* CondCompilationPartNode::Clone(CloneContext& cloneContext) const
 {
-    CondCompilationPartNode* clone = new CondCompilationPartNode(GetSpan(), static_cast<CondCompExprNode*>(expr->Clone()));
+    CondCompilationPartNode* clone = new CondCompilationPartNode(GetSpan(), static_cast<CondCompExprNode*>(expr->Clone(cloneContext)));
     for (const std::unique_ptr<StatementNode>& statement : statements)
     {
-        clone->AddStatement(static_cast<StatementNode*>(statement->Clone()));
+        clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
     }
     return clone;
 }
@@ -1913,22 +1913,22 @@ CondCompStatementNode::CondCompStatementNode(const Span& span_, CondCompExprNode
     ifPart->SetParent(this);
 }
 
-Node* CondCompStatementNode::Clone() const
+Node* CondCompStatementNode::Clone(CloneContext& cloneContext) const
 {
-    CondCompStatementNode* clone = new CondCompStatementNode(GetSpan(), static_cast<CondCompExprNode*>(ifPart->Expr()->Clone()));
+    CondCompStatementNode* clone = new CondCompStatementNode(GetSpan(), static_cast<CondCompExprNode*>(ifPart->Expr()->Clone(cloneContext)));
     for (const std::unique_ptr<CondCompilationPartNode>& elifPart : elifParts)
     {
-        CondCompilationPartNode* clonedElifPart = static_cast<CondCompilationPartNode*>(elifPart->Clone());
+        CondCompilationPartNode* clonedElifPart = static_cast<CondCompilationPartNode*>(elifPart->Clone(cloneContext));
         clonedElifPart->SetParent(clone);
         clone->elifParts.Add(clonedElifPart);
     }
     if (elsePart)
     {
-        CondCompilationPartNode* clonedElsePart = static_cast<CondCompilationPartNode*>(elsePart->Clone());
+        CondCompilationPartNode* clonedElsePart = static_cast<CondCompilationPartNode*>(elsePart->Clone(cloneContext));
         clonedElsePart->SetParent(clone);
         clone->elsePart.reset(clonedElsePart);
     }
-    CloneLabelTo(clone);
+    CloneLabelTo(clone, cloneContext);
     return clone;
 }
 

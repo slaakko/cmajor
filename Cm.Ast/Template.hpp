@@ -41,7 +41,7 @@ public:
     TemplateParameterNode(const Span& span_);
     TemplateParameterNode(const Span& span_, IdentifierNode* id_, Node* defaultTemplateArgument_);
     NodeType GetNodeType() const override { return NodeType::templateParameterNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Accept(Visitor& visitor) override;
@@ -58,7 +58,7 @@ public:
     TemplateIdNode(const Span& span_);
     TemplateIdNode(const Span& span_, Node* subject_);
     NodeType GetNodeType() const override { return NodeType::templateIdNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void AddTemplateArgument(Node* templateArgument);
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;

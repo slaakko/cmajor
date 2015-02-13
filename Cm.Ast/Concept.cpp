@@ -145,9 +145,9 @@ DisjunctiveConstraintNode::DisjunctiveConstraintNode(const Span& span_, Constrai
 {
 }
 
-Node* DisjunctiveConstraintNode::Clone() const
+Node* DisjunctiveConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    return new DisjunctiveConstraintNode(GetSpan(), static_cast<ConstraintNode*>(Left()->Clone()), static_cast<ConstraintNode*>(Right()->Clone()));
+    return new DisjunctiveConstraintNode(GetSpan(), static_cast<ConstraintNode*>(Left()->Clone(cloneContext)), static_cast<ConstraintNode*>(Right()->Clone(cloneContext)));
 }
 
 std::string DisjunctiveConstraintNode::ToString() const
@@ -168,9 +168,9 @@ ConjunctiveConstraintNode::ConjunctiveConstraintNode(const Span& span_, Constrai
 {
 }
 
-Node* ConjunctiveConstraintNode::Clone() const
+Node* ConjunctiveConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    return new ConjunctiveConstraintNode(GetSpan(), static_cast<ConstraintNode*>(Left()->Clone()), static_cast<ConstraintNode*>(Right()->Clone()));
+    return new ConjunctiveConstraintNode(GetSpan(), static_cast<ConstraintNode*>(Left()->Clone(cloneContext)), static_cast<ConstraintNode*>(Right()->Clone(cloneContext)));
 }
 
 std::string ConjunctiveConstraintNode::ToString() const
@@ -192,9 +192,9 @@ WhereConstraintNode::WhereConstraintNode(const Span& span_, ConstraintNode* cons
     constraint->SetParent(this);
 }
 
-Node* WhereConstraintNode::Clone() const
+Node* WhereConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    return new WhereConstraintNode(GetSpan(), static_cast<ConstraintNode*>(constraint->Clone()));
+    return new WhereConstraintNode(GetSpan(), static_cast<ConstraintNode*>(constraint->Clone(cloneContext)));
 }
 
 void WhereConstraintNode::Read(Reader& reader)
@@ -230,9 +230,9 @@ IsConstraintNode::IsConstraintNode(const Span& span_, Node* typeExpr_, Node* con
     conceptOrTypeName->SetParent(this);
 }
 
-Node* IsConstraintNode::Clone() const
+Node* IsConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    return new IsConstraintNode(GetSpan(), typeExpr->Clone(), conceptOrTypeName->Clone());
+    return new IsConstraintNode(GetSpan(), typeExpr->Clone(cloneContext), conceptOrTypeName->Clone(cloneContext));
 }
 
 void IsConstraintNode::Read(Reader& reader)
@@ -274,12 +274,12 @@ void MultiParamConstraintNode::AddTypeExpr(Node* typeExpr)
     typeExprNodes.Add(typeExpr);
 }
 
-Node* MultiParamConstraintNode::Clone() const
+Node* MultiParamConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    MultiParamConstraintNode* clone = new MultiParamConstraintNode(GetSpan(), static_cast<IdentifierNode*>(conceptId->Clone()));
+    MultiParamConstraintNode* clone = new MultiParamConstraintNode(GetSpan(), static_cast<IdentifierNode*>(conceptId->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& typeExpr : typeExprNodes)
     {
-        clone->AddTypeExpr(typeExpr->Clone());
+        clone->AddTypeExpr(typeExpr->Clone(cloneContext));
     }
     return clone;
 }
@@ -333,9 +333,9 @@ TypenameConstraintNode::TypenameConstraintNode(const Span& span_, IdentifierNode
     typeId->SetParent(this);
 }
 
-Node* TypenameConstraintNode::Clone() const
+Node* TypenameConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    return new TypenameConstraintNode(GetSpan(), static_cast<IdentifierNode*>(typeId->Clone()));
+    return new TypenameConstraintNode(GetSpan(), static_cast<IdentifierNode*>(typeId->Clone(cloneContext)));
 }
 
 void TypenameConstraintNode::Read(Reader& reader)
@@ -373,12 +373,12 @@ void ConstructorConstraintNode::AddParameter(ParameterNode* parameter)
     parameters.Add(parameter);
 }
 
-Node* ConstructorConstraintNode::Clone() const
+Node* ConstructorConstraintNode::Clone(CloneContext& cloneContext) const
 {
     ConstructorConstraintNode* clone = new ConstructorConstraintNode(GetSpan());
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     return clone;
 }
@@ -408,7 +408,7 @@ DestructorConstraintNode::DestructorConstraintNode(const Span& span_) : Signatur
 {
 }
 
-Node* DestructorConstraintNode::Clone() const
+Node* DestructorConstraintNode::Clone(CloneContext& cloneContext) const
 {
     return new DestructorConstraintNode(GetSpan());
 }
@@ -441,13 +441,13 @@ void MemberFunctionConstraintNode::AddParameter(ParameterNode* parameter)
     parameters.Add(parameter);
 }
 
-Node* MemberFunctionConstraintNode::Clone() const
+Node* MemberFunctionConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    MemberFunctionConstraintNode* clone = new MemberFunctionConstraintNode(GetSpan(), returnTypeExpr->Clone(), static_cast<IdentifierNode*>(typeParamId->Clone()),
-        static_cast<FunctionGroupIdNode*>(functionGroupId->Clone()));
+    MemberFunctionConstraintNode* clone = new MemberFunctionConstraintNode(GetSpan(), returnTypeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(typeParamId->Clone(cloneContext)),
+        static_cast<FunctionGroupIdNode*>(functionGroupId->Clone(cloneContext)));
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     return clone;
 }
@@ -501,12 +501,12 @@ void FunctionConstraintNode::AddParameter(ParameterNode* parameter)
     parameters.Add(parameter);
 }
 
-Node* FunctionConstraintNode::Clone() const
+Node* FunctionConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    FunctionConstraintNode* clone = new FunctionConstraintNode(GetSpan(), returnTypeExpr->Clone(), static_cast<FunctionGroupIdNode*>(functionGroupId->Clone()));
+    FunctionConstraintNode* clone = new FunctionConstraintNode(GetSpan(), returnTypeExpr->Clone(cloneContext), static_cast<FunctionGroupIdNode*>(functionGroupId->Clone(cloneContext)));
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     return clone;
 }
@@ -549,9 +549,9 @@ AxiomStatementNode::AxiomStatementNode(const Span& span_, Node* expression_) : N
     expression->SetParent(this);
 }
 
-Node* AxiomStatementNode::Clone() const
+Node* AxiomStatementNode::Clone(CloneContext& cloneContext) const
 {
-    return new AxiomStatementNode(GetSpan(), expression->Clone());
+    return new AxiomStatementNode(GetSpan(), expression->Clone(cloneContext));
 }
 
 void AxiomStatementNode::Read(Reader& reader)
@@ -598,21 +598,21 @@ void AxiomNode::AddStatement(AxiomStatementNode* statement)
     axiomStatements.Add(statement);
 }
 
-Node* AxiomNode::Clone() const
+Node* AxiomNode::Clone(CloneContext& cloneContext) const
 {
     IdentifierNode* clonedId = nullptr;
     if (id)
     {
-        clonedId = static_cast<IdentifierNode*>(id->Clone());
+        clonedId = static_cast<IdentifierNode*>(id->Clone(cloneContext));
     }
     AxiomNode* clone = new AxiomNode(GetSpan(), clonedId);
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
-        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone()));
+        clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
     for (const std::unique_ptr<AxiomStatementNode>& axiomStatement : axiomStatements)
     {
-        clone->AddStatement(static_cast<AxiomStatementNode*>(axiomStatement->Clone()));
+        clone->AddStatement(static_cast<AxiomStatementNode*>(axiomStatement->Clone(cloneContext)));
     }
     return clone;
 }
@@ -681,12 +681,12 @@ void ConceptIdNode::AddTypeParameter(Node* typeParameter)
     typeParameters.Add(typeParameter);
 }
 
-Node* ConceptIdNode::Clone() const
+Node* ConceptIdNode::Clone(CloneContext& cloneContext) const
 {
-    ConceptIdNode* clone = new ConceptIdNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone()));
+    ConceptIdNode* clone = new ConceptIdNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& typeParameter : typeParameters)
     {
-        clone->AddTypeParameter(typeParameter->Clone());
+        clone->AddTypeParameter(typeParameter->Clone(cloneContext));
     }
     return clone;
 }
@@ -756,24 +756,24 @@ void ConceptNode::AddAxiom(AxiomNode* axiom)
     axioms.Add(axiom);
 }
 
-Node* ConceptNode::Clone() const
+Node* ConceptNode::Clone(CloneContext& cloneContext) const
 {
-    ConceptNode* clone = new ConceptNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone()));
+    ConceptNode* clone = new ConceptNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& typeParameter : typeParameters)
     {
-        clone->AddTypeParameter(typeParameter->Clone());
+        clone->AddTypeParameter(typeParameter->Clone(cloneContext));
     }
     if (refinement)
     {
-        clone->SetRefinement(static_cast<ConceptIdNode*>(refinement->Clone()));
+        clone->SetRefinement(static_cast<ConceptIdNode*>(refinement->Clone(cloneContext)));
     }
     for (const std::unique_ptr<ConstraintNode>& constraint : constraints)
     {
-        clone->AddConstraint(static_cast<ConstraintNode*>(constraint->Clone()));
+        clone->AddConstraint(static_cast<ConstraintNode*>(constraint->Clone(cloneContext)));
     }
     for (const std::unique_ptr<Node>& axiom : axioms)
     {
-        clone->AddAxiom(static_cast<AxiomNode*>(axiom->Clone()));
+        clone->AddAxiom(static_cast<AxiomNode*>(axiom->Clone(cloneContext)));
     }
     return clone;
 }

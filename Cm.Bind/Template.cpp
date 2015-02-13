@@ -33,9 +33,10 @@ Cm::Ast::NamespaceNode* CreateNamespaces(const Cm::Parsing::Span& span, const st
             currentNs = namespaceNode;
         }
     }
+    Cm::Ast::CloneContext cloneContext;
     for (const std::unique_ptr<Cm::Ast::Node>& usingNode : usingNodes)
     {
-        currentNs->AddMember(usingNode->Clone());
+        currentNs->AddMember(usingNode->Clone(cloneContext));
     }
     return globalNs;
 }
@@ -52,34 +53,35 @@ Cm::Ast::CompoundStatementNode* ReadFunctionTemplateBody(Cm::Sym::FunctionSymbol
 
 Cm::Ast::FunctionNode* CreateFunctionInstanceNode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* functionTemplate, std::unique_ptr<Cm::Ast::CompoundStatementNode>& ownedBody)
 {
+    Cm::Ast::CloneContext cloneContext;
     Cm::Ast::FunctionNode* functionInstanceNode = nullptr;
     Cm::Ast::CompoundStatementNode* body = nullptr;
     Cm::Ast::FunctionNode* functionTemplateNode = static_cast<Cm::Ast::FunctionNode*>(boundCompileUnit.SymbolTable().GetNode(functionTemplate, false));
     if (functionTemplateNode)
     {
         Cm::Ast::Node* returnTypeExpr = functionTemplateNode->ReturnTypeExpr();
-        functionInstanceNode = new Cm::Ast::FunctionNode(functionTemplate->GetSpan(), functionTemplateNode->GetSpecifiers(), returnTypeExpr ? returnTypeExpr->Clone() : nullptr,
-            static_cast<Cm::Ast::FunctionGroupIdNode*>(functionTemplateNode->GroupId()->Clone()));
+        functionInstanceNode = new Cm::Ast::FunctionNode(functionTemplate->GetSpan(), functionTemplateNode->GetSpecifiers(), returnTypeExpr ? returnTypeExpr->Clone(cloneContext) : nullptr,
+            static_cast<Cm::Ast::FunctionGroupIdNode*>(functionTemplateNode->GroupId()->Clone(cloneContext)));
         body = functionTemplateNode->Body();
         for (const std::unique_ptr<Cm::Ast::ParameterNode>& parameterNode : functionTemplateNode->Parameters())
         {
-            functionInstanceNode->AddParameter(static_cast<Cm::Ast::ParameterNode*>(parameterNode->Clone()));
+            functionInstanceNode->AddParameter(static_cast<Cm::Ast::ParameterNode*>(parameterNode->Clone(cloneContext)));
         }
     }
     else
     {
         Cm::Ast::Node* returnTypeExpr = functionTemplate->ReturnTypeExprNode();
         Cm::Ast::FunctionGroupIdNode* groupId = functionTemplate->GroupId();
-        functionInstanceNode = new Cm::Ast::FunctionNode(functionTemplate->GetSpan(), functionTemplate->GetSpecifiers(), returnTypeExpr ? returnTypeExpr->Clone() : nullptr,
-            static_cast<Cm::Ast::FunctionGroupIdNode*>(groupId->Clone()));
+        functionInstanceNode = new Cm::Ast::FunctionNode(functionTemplate->GetSpan(), functionTemplate->GetSpecifiers(), returnTypeExpr ? returnTypeExpr->Clone(cloneContext) : nullptr,
+            static_cast<Cm::Ast::FunctionGroupIdNode*>(groupId->Clone(cloneContext)));
         ownedBody.reset(ReadFunctionTemplateBody(functionTemplate));
         for (const Cm::Sym::ParameterSymbol* parameter : functionTemplate->Parameters())
         {
-            functionInstanceNode->AddParameter(static_cast<Cm::Ast::ParameterNode*>(parameter->ParameterNode()->Clone()));
+            functionInstanceNode->AddParameter(static_cast<Cm::Ast::ParameterNode*>(parameter->ParameterNode()->Clone(cloneContext)));
         }
         body = ownedBody.get();
     }
-    functionInstanceNode->SetBody(static_cast<Cm::Ast::CompoundStatementNode*>(body->Clone()));
+    functionInstanceNode->SetBody(static_cast<Cm::Ast::CompoundStatementNode*>(body->Clone(cloneContext)));
     return functionInstanceNode;
 }
 

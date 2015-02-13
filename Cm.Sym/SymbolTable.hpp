@@ -28,6 +28,7 @@
 namespace Cm { namespace Sym {
 
 class ParameterSymbol;
+class ConceptSymbol;
 
 class SymbolTable
 {
@@ -38,6 +39,8 @@ public:
     void EndNamespaceScope();
     void BeginClassScope(Cm::Ast::ClassNode* classNode);
     void EndClassScope();
+    void BeginTemplateTypeScope(Cm::Ast::ClassNode* templateClassNode, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol);
+    void EndTemplateTypeScope();
     void BeginEnumScope(Cm::Ast::EnumTypeNode* enumTypeNode);
     void EndEnumScope();
     void AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode);
@@ -56,7 +59,7 @@ public:
     void EndDeclarationcope();
     void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
     void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode, int memberVariableIndex);
-    void BeginConceptScope(Cm::Ast::ConceptNode* conceptNode);
+    ConceptSymbol* BeginConceptScope(Cm::Ast::ConceptNode* conceptNode);
     void EndConceptScope();
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
     ContainerScope* GetContainerScope(Cm::Ast::Node* node) const;
@@ -68,6 +71,7 @@ public:
     void Import(Reader& reader);
     ContainerSymbol* Container() const { return container; }
     ClassTypeSymbol* CurrentClass() const { return currentClass; }
+    void SetCurrentClass(ClassTypeSymbol* currentClass_) { currentClass = currentClass_; }
     FunctionSymbol* CurrentFunction() const { return currentFunction; }
     TypeRepository& GetTypeRepository() { return typeRepository; }
     ConversionTable& GetStandardConversionTable() { return standardConversionTable; }

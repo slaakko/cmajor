@@ -830,32 +830,32 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
 }
 
 void GenerateSynthesizedFunctionImplementation(Cm::Sym::FunctionSymbol* function, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
-    Cm::BoundTree::BoundCompileUnit& compileUnit)
+    Cm::BoundTree::BoundCompileUnit& compileUnit, bool unique)
 {
     Cm::Core::Exception* exception = nullptr;
     if (classTypeSymbol->GenerateDefaultConstructor() && function->IsDefaultConstructor())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateDefaultConstructor(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateDefaultConstructor(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateCopyConstructor() && function->IsCopyConstructor())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyConstructor(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyConstructor(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateMoveConstructor() && function->IsMoveConstructor())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveConstructor(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveConstructor(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateCopyAssignment() && function->IsCopyAssignment())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyAssignment(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyAssignment(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateMoveAssignment() && function->IsMoveAssignment())
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveAssignment(true, true, span, classTypeSymbol, containerScope, compileUnit, exception);
+        Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveAssignment(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
         compileUnit.Own(functionSymbol);
     }
     if (exception)

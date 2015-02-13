@@ -15,6 +15,7 @@
 namespace Cm { namespace Sym {
 
 class MemberVariableSymbol;
+class TypeParameterSymbol;
 
 enum class ClassTypeSymbolFlags : uint32_t
 {
@@ -58,10 +59,16 @@ inline ClassTypeSymbolFlags operator~(ClassTypeSymbolFlags flag)
     return ClassTypeSymbolFlags(~uint32_t(flag));
 }
 
+struct PersistentClassData
+{
+    Cm::Ast::NodeList usingNodes;
+};
+
 class ClassTypeSymbol : public TypeSymbol
 {
 public:
     ClassTypeSymbol(const Span& span_, const std::string& name_);
+    ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
     std::string TypeString() const override { return "class"; };
     std::string GetMangleId() const override;
@@ -80,6 +87,8 @@ public:
     void AddConversion(FunctionSymbol* functionSymbol);
     const std::vector<MemberVariableSymbol*>& MemberVariables() const { return memberVariables; }
     const std::vector<MemberVariableSymbol*>& StaticMemberVariables() const { return staticMemberVariables; }
+    void SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes_);
+    const Cm::Ast::NodeList& GetUsingNodes() const;
     bool IsVirtual() const
     {
         return GetFlag(ClassTypeSymbolFlags::virtual_) || baseClass && baseClass->IsVirtual();
@@ -260,17 +269,20 @@ public:
     const std::vector<Cm::Sym::FunctionSymbol*>& Vtbl() const { return vtbl; }
     void InitVirtualFunctionTables() override;
     void MakeIrType() override;
+    const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
 private:
     ClassTypeSymbolFlags flags;
     ClassTypeSymbol* baseClass;
     std::vector<MemberVariableSymbol*> memberVariables;
     std::vector<MemberVariableSymbol*> staticMemberVariables;
+    std::vector<TypeParameterSymbol*> typeParameters;
     FunctionSymbol* destructor;
     FunctionSymbol* staticConstructor;
     std::unique_ptr<MemberVariableSymbol> initializedVar;
     int16_t vptrIndex;
     std::vector<Cm::Sym::FunctionSymbol*> vtbl;
     std::unordered_set<FunctionSymbol*> conversions;
+    std::unique_ptr<PersistentClassData> persistentClassData;
     bool GetFlag(ClassTypeSymbolFlags flag) const
     {
         return (flags & flag) != ClassTypeSymbolFlags::none;

@@ -27,9 +27,9 @@ ConstantNode::ConstantNode(const Span& span_, Specifiers specifiers_, Node* type
     value->SetParent(this);
 }
 
-Node* ConstantNode::Clone() const
+Node* ConstantNode::Clone(CloneContext& cloneContext) const
 {
-    return new ConstantNode(GetSpan(), specifiers, typeExpr->Clone(), static_cast<IdentifierNode*>(id->Clone()), value->Clone());
+    return new ConstantNode(GetSpan(), specifiers, typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)), value->Clone(cloneContext));
 }
 
 void ConstantNode::Read(Reader& reader)

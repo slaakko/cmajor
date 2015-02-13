@@ -22,7 +22,7 @@ public:
     DelegateNode(const Span& span_);
     DelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::delegateNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void AddParameter(ParameterNode* parameter) override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
@@ -46,7 +46,7 @@ public:
     ClassDelegateNode(const Span& span_);
     ClassDelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::classDelegateNode; }
-    Node* Clone() const override;
+    Node* Clone(CloneContext& cloneContext) const override;
     void AddParameter(ParameterNode* parameter) override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;

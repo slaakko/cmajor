@@ -39,15 +39,16 @@ TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymb
     {
         id.Rep() = id.Rep() ^ typeArgument->Id().Rep();
     }
+    id.InvalidateHashCode();
     return id;
 }
 
-TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), subjectType(nullptr)
+TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_) : ClassTypeSymbol(span_, name_), subjectType(nullptr)
 {
 }
 
 TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_) :
-    TypeSymbol(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_)
+    ClassTypeSymbol(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_)
 {
 }
 
@@ -101,6 +102,11 @@ void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
     }
 }
 
+void TemplateTypeSymbol::MakeIrType()
+{
+    SetIrType(Cm::IrIntf::CreateClassTypeName(FullName()));
+}
+
 void TemplateTypeSymbol::SetSubjectType(TypeSymbol* subjectType_)
 {
     subjectType = subjectType_;
@@ -109,6 +115,16 @@ void TemplateTypeSymbol::SetSubjectType(TypeSymbol* subjectType_)
 void TemplateTypeSymbol::AddTypeArgument(TypeSymbol* typeArgument)
 {
     typeArguments.push_back(typeArgument);
+}
+
+void TemplateTypeSymbol::SetFileScope(FileScope* fileScope_)
+{
+    fileScope.reset(fileScope_);
+}
+
+void TemplateTypeSymbol::SetGlobalNs(std::unique_ptr<Cm::Ast::NamespaceNode>&& globalNs_)
+{
+    globalNs = std::move(globalNs_);
 }
 
 } } // namespace Cm::Sym

@@ -10,6 +10,7 @@
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
@@ -277,6 +278,9 @@ TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std:
         return typeSymbol;
     }
     std::unique_ptr<TemplateTypeSymbol> templateTypeSymbol(new TemplateTypeSymbol(span, MakeTemplateTypeSymbolName(subjectType, typeArguments), subjectType, typeArguments, typeId));
+    templateTypeSymbol->MakeIrType();
+    templateTypeSymbol->SetAccess(SymbolAccess::public_);
+    templateTypeSymbol->SetParent(subjectType->Ns());
     types.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol.get()));
     AddType(templateTypeSymbol.get());
     return templateTypeSymbol.release();

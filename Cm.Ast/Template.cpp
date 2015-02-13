@@ -92,9 +92,14 @@ TemplateParameterNode::TemplateParameterNode(const Span& span_, IdentifierNode* 
     }
 }
 
-Node* TemplateParameterNode::Clone() const
+Node* TemplateParameterNode::Clone(CloneContext& cloneContext) const
 {
-    return new TemplateParameterNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone()), defaultTemplateArgument->Clone());
+    Cm::Ast::Node* clonedDefaultTemplateargument = nullptr;
+    if (defaultTemplateArgument)
+    {
+        clonedDefaultTemplateargument = defaultTemplateArgument->Clone(cloneContext);
+    }
+    return new TemplateParameterNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)), clonedDefaultTemplateargument);
 }
 
 void TemplateParameterNode::Read(Reader& reader)
@@ -144,12 +149,12 @@ TemplateIdNode::TemplateIdNode(const Span& span_, Node* subject_): Node(span_), 
     subject->SetParent(this);
 }
 
-Node* TemplateIdNode::Clone() const
+Node* TemplateIdNode::Clone(CloneContext& cloneContext) const
 {
-    TemplateIdNode* clone = new TemplateIdNode(GetSpan(), subject->Clone());
+    TemplateIdNode* clone = new TemplateIdNode(GetSpan(), subject->Clone(cloneContext));
     for (const std::unique_ptr<Node>& templateArgument : templateArguments)
     {
-        clone->AddTemplateArgument(templateArgument->Clone());
+        clone->AddTemplateArgument(templateArgument->Clone(cloneContext));
     }
     return clone;
 }

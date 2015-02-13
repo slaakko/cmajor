@@ -22,7 +22,7 @@ IdentifierNode::IdentifierNode(const Span& span_, const std::string& identifier_
 {
 }
 
-Node* IdentifierNode::Clone() const
+Node* IdentifierNode::Clone(CloneContext& cloneContext) const
 {
     return new IdentifierNode(GetSpan(), identifier);
 }

@@ -56,4 +56,9 @@ void BoundCompileUnit::SetSynthesizedClassFunRepository(Cm::Core::SynthesizedCla
     synthesizedClassFunRepository.reset(synthesizedClassFunRepository_);
 }
 
+void BoundCompileUnit::SetClassTemplateRepostory(Cm::Core::ClassTemplateRepository* classTemplateRepository_)
+{
+    classTemplateRepository.reset(classTemplateRepository_);
+}
+
 } } // namespace Cm::BoundTree

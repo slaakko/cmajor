@@ -22,6 +22,7 @@
     <ClInclude Include="Binder.hpp" />
     <ClInclude Include="Class.hpp" />
     <ClInclude Include="ClassObjectLayout.hpp" />
+    <ClInclude Include="ClassTemplateRepository.hpp" />
     <ClInclude Include="Concept.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
@@ -46,6 +47,7 @@
     <ClCompile Include="Binder.cpp" />
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="ClassObjectLayout.cpp" />
+    <ClCompile Include="ClassTemplateRepository.cpp" />
     <ClCompile Include="Concept.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />

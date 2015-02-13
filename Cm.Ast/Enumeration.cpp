@@ -25,12 +25,12 @@ EnumTypeNode::EnumTypeNode(const Span& span_, Specifiers specifiers_, Identifier
     id->SetParent(this);
 }
 
-Node* EnumTypeNode::Clone() const
+Node* EnumTypeNode::Clone(CloneContext& cloneContext) const
 {
-    EnumTypeNode* clone = new EnumTypeNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone()));
+    EnumTypeNode* clone = new EnumTypeNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& constant : constants)
     {
-        clone->AddConstant(constant->Clone());
+        clone->AddConstant(constant->Clone(cloneContext));
     }
     return clone;
 }
@@ -108,9 +108,9 @@ EnumConstantNode::EnumConstantNode(const Span& span_, IdentifierNode* id_, Node*
     value->SetParent(this);
 }
 
-Node* EnumConstantNode::Clone() const
+Node* EnumConstantNode::Clone(CloneContext& cloneContext) const
 {
-    return new EnumConstantNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone()), value->Clone());
+    return new EnumConstantNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)), value->Clone(cloneContext));
 }
 
 void EnumConstantNode::Read(Reader& reader)
@@ -150,7 +150,8 @@ Node* MakeNextEnumConstantValue(const Span& span, EnumTypeNode* enumType)
         Node* lastValue = lastConstant->GetValue();
         if (lastValue)
         {
-            Node* clonedValue = lastValue->Clone();
+            CloneContext cloneContext;
+            Node* clonedValue = lastValue->Clone(cloneContext);
             if (enumType->GetUnderlyingType())
             {
                 if (enumType->GetUnderlyingType()->IsUnsignedTypeNode())
