@@ -12,12 +12,14 @@
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/Scope.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Ast/Typedef.hpp>
 
 namespace Cm { namespace Bind {
 
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::TypedefNode* typedefNode);
-void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol);
+void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::TypedefNode* typedefNode, 
+    Cm::Sym::TypedefSymbol* typedefSymbol);
 
 } } // namespace Cm::Bind
 

@@ -41,7 +41,7 @@ public:
     virtual bool IsConstant() const { return false; }
     virtual bool IsEnumConstant() const { return false; }
     virtual bool IsCast() const { return false; }
-    void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
+    virtual void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
     virtual Cm::Core::ArgumentCategory GetArgumentCategory() const { return Cm::Core::ArgumentCategory::rvalue; }
 private:
@@ -88,7 +88,7 @@ public:
     void Accept(Visitor& visitor) override;
     bool IsLiteral() const override { return true; }
     bool IsBoundNullLiteral() const override { return value->IsNull(); }
-    void SetIrType(Ir::Intf::Type* irType);
+    void SetType(Cm::Sym::TypeSymbol* type_) override;
 private:
     std::unique_ptr<Cm::Sym::Value> value;
 };

@@ -11,6 +11,8 @@
 #include <Cm.Bind/Template.hpp>
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/Binder.hpp>
+#include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Ast/Visitor.hpp>
@@ -35,11 +37,6 @@ void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, C
     {
         throw std::runtime_error("node is not class node");
     }
-    int n = int(subjectClassTypeSymbol->TypeParameters().size());
-    if (n != int(templateTypeSymbol->TypeArguments().size()))
-    {
-        throw std::runtime_error("wrong number of type arguments");
-    }
     Cm::Ast::ClassNode* classNode = static_cast<Cm::Ast::ClassNode*>(node);
     Cm::Ast::NamespaceNode* currentNs = nullptr;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs(CreateNamespaces(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName(), subjectClassTypeSymbol->GetUsingNodes(), currentNs));
@@ -49,11 +46,35 @@ void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, C
     Cm::Ast::IdentifierNode* classInstanceId = new Cm::Ast::IdentifierNode(classInstanceNode->GetSpan(), templateTypeSymbol->FullName());
     classInstanceNode->SetId(classInstanceId);
     currentNs->AddMember(classInstanceNode);
+    int n = int(subjectClassTypeSymbol->TypeParameters().size());
+    int m = int(templateTypeSymbol->TypeArguments().size());
+    if (n < m)
+    {
+        throw Cm::Core::Exception("too many template arguments", templateTypeSymbol->GetSpan());
+    }
     for (int i = 0; i < n; ++i)
     {
         Cm::Sym::TypeParameterSymbol* typeParameterSymbol = subjectClassTypeSymbol->TypeParameters()[i];
-        Cm::Sym::TypeSymbol* typeArgument = templateTypeSymbol->TypeArguments()[i];
         Cm::Sym::BoundTypeParameterSymbol* boundTypeParam = new Cm::Sym::BoundTypeParameterSymbol(typeParameterSymbol->GetSpan(), typeParameterSymbol->Name());
+        Cm::Sym::TypeSymbol* typeArgument = nullptr;
+        if (i < m)
+        {
+            typeArgument = templateTypeSymbol->TypeArguments()[i];
+        }
+        else
+        { 
+            if (classNode->TemplateParameters().Count() >= i)
+            {
+                throw Cm::Core::Exception("too few template arguments", templateTypeSymbol->GetSpan());
+            }
+            Cm::Ast::TemplateParameterNode* templateParameterNode = classNode->TemplateParameters()[i];
+            Cm::Ast::Node* defaultTemplateArgumentNode = templateParameterNode->DefaultTemplateArgument();
+            if (!defaultTemplateArgumentNode)
+            {
+                throw Cm::Core::Exception("too few template arguments", templateTypeSymbol->GetSpan());
+            }
+            typeArgument = ResolveType(boundCompileUnit.SymbolTable(), templateTypeSymbol->GetContainerScope(), boundCompileUnit.GetFileScopes(), defaultTemplateArgumentNode);
+        }
         boundTypeParam->SetType(typeArgument);
         templateTypeSymbol->AddSymbol(boundTypeParam);
     }
@@ -66,6 +87,8 @@ void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, C
     prebinder.EndCompileUnit();
     Cm::Sym::FileScope* fileScope = prebinder.ReleaseFileScope();
     templateTypeSymbol->SetFileScope(fileScope);
+    VirtualBinder virtualBinder(boundCompileUnit.SymbolTable(), boundCompileUnit.SyntaxUnit());
+    globalNs->Accept(virtualBinder);
     Binder binder(boundCompileUnit);
     globalNs->Accept(binder);
     templateTypeSymbol->SetGlobalNs(std::move(globalNs));
@@ -76,7 +99,7 @@ ClassTemplateRepository::ClassTemplateRepository(Cm::BoundTree::BoundCompileUnit
 }
 
 void ClassTemplateRepository::CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, 
-    Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception)
+    Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions)
 {
     if (int(arguments.size()) != arity)
     {

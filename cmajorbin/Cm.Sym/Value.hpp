@@ -258,9 +258,9 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     bool IsNull() const override { return true; }
-    void SetIrType(Ir::Intf::Type* irType_);
+    void SetType(Cm::Sym::TypeSymbol* type_) { type = type_; }
 private:
-    Ir::Intf::Type* irType;
+    Cm::Sym::TypeSymbol* type;
 };
 
 class StringValue : public Value

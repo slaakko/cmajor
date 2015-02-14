@@ -15,6 +15,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -37,6 +38,10 @@ std::string ClassTypeSymbol::GetMangleId() const
 
 void ClassTypeSymbol::Write(Writer& writer)
 {
+    if (Name() == "UniquePtr")
+    {
+        int x = 0;
+    }
     TypeSymbol::Write(writer);
     writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));
     bool hasBaseClass = baseClass != nullptr;
@@ -44,6 +49,20 @@ void ClassTypeSymbol::Write(Writer& writer)
     if (hasBaseClass)
     {
         writer.Write(baseClass->Id());
+    }
+    bool hasClassNode = !typeParameters.empty();
+    writer.GetBinaryWriter().Write(hasClassNode);
+    if (hasClassNode)
+    {
+        Cm::Ast::Node* node = writer.GetSymbolTable()->GetNode(this);
+        if (node->IsClassNode())
+        {
+            writer.GetAstWriter().Write(node);
+        }
+        else
+        {
+            throw std::runtime_error("not class node");
+        }
     }
 }
 
@@ -55,6 +74,19 @@ void ClassTypeSymbol::Read(Reader& reader)
     if (hasBaseClass)
     {
         reader.FetchTypeFor(this, 0);
+    }
+    bool hasClassNode = reader.GetBinaryReader().ReadBool();
+    if (hasClassNode)
+    {
+        Cm::Ast::Node* node = reader.GetAstReader().ReadNode();
+        if (node->IsClassNode())
+        {
+            reader.GetSymbolTable().SetNode(this, node);
+        }
+        else
+        {
+            throw std::runtime_error("not class node");
+        }
     }
 }
 

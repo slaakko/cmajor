@@ -34,6 +34,10 @@ Cm::Sym::FunctionSymbol* BindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym
 void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Ast::FunctionNode* functionNode, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Sym::ClassTypeSymbol* currentClass)
 {
+    if (currentClass && currentClass->IsClassTemplate())
+    {
+        return;
+    }
     bool staticClass = false;
     if (currentClass && currentClass->IsStatic())
     {

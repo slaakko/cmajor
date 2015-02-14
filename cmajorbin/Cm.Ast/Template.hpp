@@ -47,6 +47,7 @@ public:
     void Accept(Visitor& visitor) override;
     std::string ToString() const override;
     IdentifierNode* Id() const { return id.get(); }
+    Node* DefaultTemplateArgument() const { return defaultTemplateArgument.get(); }
 private:
     std::unique_ptr<IdentifierNode> id;
     std::unique_ptr<Node> defaultTemplateArgument;

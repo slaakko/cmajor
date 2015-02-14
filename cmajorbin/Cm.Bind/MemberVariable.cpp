@@ -12,6 +12,7 @@
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Bind {
@@ -91,6 +92,15 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     if ((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("member variable cannot be throw", memberVariableSymbol->GetSpan());
+    }
+    if (memberVariableSymbol->Parent()->IsClassTypeSymbol())
+    {
+        Cm::Sym::ClassTypeSymbol* parentClass = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableSymbol->Parent());
+        if (parentClass->IsClassTemplate())
+        {
+            memberVariableSymbol->SetBound();
+            return;
+        }
     }
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, memberVariableNode->TypeExpr());
     if (type->Access() < memberVariableSymbol->Access())

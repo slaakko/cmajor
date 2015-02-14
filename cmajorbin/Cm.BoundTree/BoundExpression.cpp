@@ -71,16 +71,13 @@ void BoundLiteral::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-void BoundLiteral::SetIrType(Ir::Intf::Type* irType)
+void BoundLiteral::SetType(Cm::Sym::TypeSymbol* type_) 
 {
+    BoundExpression::SetType(type_);
     if (value->IsNull())
     {
         Cm::Sym::NullValue* nullValue = static_cast<Cm::Sym::NullValue*>(value.get());
-        nullValue->SetIrType(irType);
-    }
-    else
-    {
-        throw std::runtime_error("member function not applicable");
+        nullValue->SetType(type_);
     }
 }
 

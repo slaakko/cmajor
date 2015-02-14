@@ -11,11 +11,25 @@
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
 MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr), layoutIndex(-1)
 {
+}
+
+bool MemberVariableSymbol::IsExportSymbol() const 
+{
+    if (Parent()->IsClassTypeSymbol())
+    {
+        ClassTypeSymbol* parentClass = static_cast<ClassTypeSymbol*>(Parent());
+        if (parentClass->IsClassTemplate())
+        {
+            return false;
+        }
+    }
+    return true; 
 }
 
 void MemberVariableSymbol::Write(Writer& writer)

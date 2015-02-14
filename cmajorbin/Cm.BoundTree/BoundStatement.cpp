@@ -158,8 +158,12 @@ void BoundConstructionStatement::InsertLocalVariableToArguments()
     arguments.InsertFront(boundLocalVariable);
 }
 
-void BoundConstructionStatement::GetResolutionArguments(std::vector<Cm::Core::Argument>& resolutionArguments)
+void BoundConstructionStatement::GetResolutionArguments(Cm::Sym::TypeSymbol* localVariableType, std::vector<Cm::Core::Argument>& resolutionArguments)
 {
+    if (localVariableType->IsPointerType() && arguments.Count() == 1 && arguments[0]->IsBoundNullLiteral())
+    {
+        arguments[0]->SetType(localVariableType);
+    }
     for (const std::unique_ptr<BoundExpression>& argument : arguments)
     {
         Cm::Core::Argument arg(argument->GetArgumentCategory(), argument->GetType());
