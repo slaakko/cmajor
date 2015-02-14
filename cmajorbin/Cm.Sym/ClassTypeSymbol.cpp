@@ -50,6 +50,12 @@ void ClassTypeSymbol::Write(Writer& writer)
     {
         writer.Write(baseClass->Id());
     }
+    bool hasUsingNodes = persistentClassData != nullptr;
+    writer.GetBinaryWriter().Write(hasUsingNodes);
+    if (hasUsingNodes)
+    {
+        persistentClassData->usingNodes.Write(writer.GetAstWriter());
+    }
     bool hasClassNode = !typeParameters.empty();
     writer.GetBinaryWriter().Write(hasClassNode);
     if (hasClassNode)
@@ -75,6 +81,15 @@ void ClassTypeSymbol::Read(Reader& reader)
     {
         reader.FetchTypeFor(this, 0);
     }
+    bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
+    if (hasUsingNodes)
+    {
+        if (!persistentClassData)
+        {
+            persistentClassData.reset(new PersistentClassData());
+        }
+        persistentClassData->usingNodes.Read(reader.GetAstReader());
+    }
     bool hasClassNode = reader.GetBinaryReader().ReadBool();
     if (hasClassNode)
     {
@@ -82,6 +97,7 @@ void ClassTypeSymbol::Read(Reader& reader)
         if (node->IsClassNode())
         {
             reader.GetSymbolTable().SetNode(this, node);
+            classNode.reset(static_cast<Cm::Ast::ClassNode*>(node));
         }
         else
         {
@@ -334,6 +350,10 @@ void ClassTypeSymbol::SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNode
 
 const Cm::Ast::NodeList& ClassTypeSymbol::GetUsingNodes() const
 {
+    if (!persistentClassData)
+    {
+        throw std::runtime_error("no persistent class data");
+    }
     return persistentClassData->usingNodes;
 }
 

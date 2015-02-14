@@ -10,12 +10,26 @@
 #include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
 
 ConstantSymbol::ConstantSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr), evaluating(false)
 {
+}
+
+bool ConstantSymbol::IsExportSymbol() const
+{
+    if (Parent()->IsClassTypeSymbol())
+    {
+        ClassTypeSymbol* parentClass = static_cast<ClassTypeSymbol*>(Parent());
+        if (parentClass->IsClassTemplate())
+        {
+            return false;
+        }
+    }
+    return Symbol::IsExportSymbol();
 }
 
 void ConstantSymbol::Write(Writer& writer)

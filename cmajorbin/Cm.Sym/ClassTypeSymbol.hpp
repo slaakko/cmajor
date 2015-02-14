@@ -284,6 +284,7 @@ private:
     std::vector<Cm::Sym::FunctionSymbol*> vtbl;
     std::unordered_set<FunctionSymbol*> conversions;
     std::unique_ptr<PersistentClassData> persistentClassData;
+    std::unique_ptr<Cm::Ast::ClassNode> classNode;
     bool GetFlag(ClassTypeSymbolFlags flag) const
     {
         return (flags & flag) != ClassTypeSymbolFlags::none;

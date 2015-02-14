@@ -92,8 +92,8 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         mainBody->AddStatement(callUserMainStatement);
 
         Cm::BoundTree::BoundLiteral* zero = new Cm::BoundTree::BoundLiteral(nullptr);
-        zero->SetType(intType);
         zero->SetValue(new Cm::Sym::IntValue(0));
+        zero->SetType(intType);
         Cm::BoundTree::BoundLocalVariable* returnValue = new Cm::BoundTree::BoundLocalVariable(nullptr, returnValueVariable);
         returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
         intAssignment.reset(new Cm::Core::CopyAssignment(symbolTable.GetTypeRepository(), intType));
