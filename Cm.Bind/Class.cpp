@@ -95,6 +95,11 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     {
         throw Cm::Core::Exception("class cannnot be throw", classTypeSymbol->GetSpan());
     }
+    if (classNode->TemplateParameters().Count() > 0)
+    {
+        classTypeSymbol->SetBound();
+        return;
+    }
     Cm::Ast::Node* baseClassTypeExpr = classNode->BaseClassTypeExpr();
     if (baseClassTypeExpr)
     {

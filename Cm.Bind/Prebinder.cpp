@@ -18,6 +18,7 @@
 #include <Cm.Bind/LocalVariable.hpp>
 #include <Cm.Bind/StatementBinder.hpp>
 #include <Cm.Bind/Delegate.hpp>
+#include <Cm.Bind/Access.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -87,35 +88,23 @@ void Prebinder::Visit(Cm::Ast::NamespaceImportNode& namespaceImportNode)
 
 void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
 {
+    if (classNode.Name() == "UniquePtr")
+    {
+        int x = 0;
+    }
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, currentContainerScope, fileScopes, &classNode);
     if (classNode.TemplateParameters().Count() > 0)
     {
-        Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(classNode.Id()->Str());
-        if (symbol->IsClassTypeSymbol())
-        {
-            Cm::Sym::ClassTypeSymbol* classTemplate = static_cast<Cm::Sym::ClassTypeSymbol*>(symbol);
-            classTemplate->SetUsingNodes(usingNodes);
-        }
-        PushSkipContent();
+        classTypeSymbol->SetUsingNodes(usingNodes);
     }
-    else
-    {
-        Cm::Sym::ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, currentContainerScope, fileScopes, &classNode);
-        currentClass = classTypeSymbol;
-        Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&classNode);
-        BeginContainerScope(containerScope);
-    }
+    currentClass = classTypeSymbol;
+    Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&classNode);
+    BeginContainerScope(containerScope);
 }
 
 void Prebinder::EndVisit(Cm::Ast::ClassNode& classNode)
 {
-    if (classNode.TemplateParameters().Count() > 0)
-    {
-        PopSkipContent();
-    }
-    else
-    {
-        EndContainerScope();
-    }
+    EndContainerScope();
     currentClass = nullptr;
 }
 
@@ -217,6 +206,10 @@ void Prebinder::Visit(Cm::Ast::ConstantNode& constantNode)
 
 void Prebinder::Visit(Cm::Ast::ParameterNode& parameterNode)
 {
+    if (currentClass && currentClass->IsClassTemplate())
+    {
+        return;
+    }
     BindParameter(symbolTable, currentContainerScope, fileScopes, &parameterNode, parameterIndex);
     ++parameterIndex;
 }

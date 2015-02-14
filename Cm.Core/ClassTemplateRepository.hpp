@@ -21,7 +21,7 @@ class ClassTemplateRepository
 public:
     virtual ~ClassTemplateRepository();
     virtual void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
-        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Exception*& exception) = 0;
+        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) = 0;
     virtual bool Instantiated(Cm::Sym::FunctionSymbol* memberFunctionSymbol) const = 0;
     virtual void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol) = 0;
 };

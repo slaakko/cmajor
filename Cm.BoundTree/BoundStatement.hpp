@@ -157,7 +157,7 @@ public:
     void SetLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable_) { localVariable = localVariable_;  }
     Cm::Sym::LocalVariableSymbol* LocalVariable() const { return localVariable; }
     void SetArguments(BoundExpressionList&& arguments_);
-    void GetResolutionArguments(std::vector<Cm::Core::Argument>& resolutionArguments);
+    void GetResolutionArguments(Cm::Sym::TypeSymbol* localVariableType, std::vector<Cm::Core::Argument>& resolutionArguments);
     void SetConstructor(Cm::Sym::FunctionSymbol* ctor_) { ctor = ctor_; }
     Cm::Sym::FunctionSymbol* Constructor() const { return ctor; }
     void InsertLocalVariableToArguments();

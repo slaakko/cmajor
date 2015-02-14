@@ -10,6 +10,7 @@
 #include <Cm.Sym/Value.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -1808,12 +1809,16 @@ Value* NullValue::As(ValueType targetType, bool cast, const Span& span) const
 
 Ir::Intf::Object* NullValue::CreateIrObject() const
 {
+    Ir::Intf::Type* irType = nullptr;
+    if (type)
+    {
+        irType = type->GetIrType();
+    }
+    else
+    {
+        irType = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI1(), 1);
+    }
     return Cm::IrIntf::Null(irType);
-}
-
-void NullValue::SetIrType(Ir::Intf::Type* irType_)
-{
-    irType = irType_;
 }
 
 StringValue::StringValue() : value("")

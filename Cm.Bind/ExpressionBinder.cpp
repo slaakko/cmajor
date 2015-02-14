@@ -489,8 +489,8 @@ void ExpressionBinder::Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     Cm::Sym::Value* value = new Cm::Sym::BoolValue(booleanLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&booleanLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -499,8 +499,8 @@ void ExpressionBinder::Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::sbyteId));
     Cm::Sym::Value* value = new Cm::Sym::SByteValue(sbyteLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&sbyteLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -509,8 +509,8 @@ void ExpressionBinder::Visit(Cm::Ast::ByteLiteralNode& byteLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::byteId));
     Cm::Sym::Value* value = new Cm::Sym::ByteValue(byteLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&byteLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -519,8 +519,8 @@ void ExpressionBinder::Visit(Cm::Ast::ShortLiteralNode& shortLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
     Cm::Sym::Value* value = new Cm::Sym::ShortValue(shortLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&shortLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -529,8 +529,8 @@ void ExpressionBinder::Visit(Cm::Ast::UShortLiteralNode& ushortLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
     Cm::Sym::Value* value = new Cm::Sym::UShortValue(ushortLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&ushortLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -539,8 +539,8 @@ void ExpressionBinder::Visit(Cm::Ast::IntLiteralNode& intLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
     Cm::Sym::Value* value = new Cm::Sym::IntValue(intLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&intLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -549,8 +549,8 @@ void ExpressionBinder::Visit(Cm::Ast::UIntLiteralNode& uintLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
     Cm::Sym::Value* value = new Cm::Sym::UIntValue(uintLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&uintLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -559,8 +559,8 @@ void ExpressionBinder::Visit(Cm::Ast::LongLiteralNode& longLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::longId));
     Cm::Sym::Value* value = new Cm::Sym::LongValue(longLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&longLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -569,8 +569,8 @@ void ExpressionBinder::Visit(Cm::Ast::ULongLiteralNode& ulongLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
     Cm::Sym::Value* value = new Cm::Sym::ULongValue(ulongLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&ulongLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -579,8 +579,8 @@ void ExpressionBinder::Visit(Cm::Ast::FloatLiteralNode& floatLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::floatId));
     Cm::Sym::Value* value = new Cm::Sym::FloatValue(floatLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&floatLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -589,8 +589,8 @@ void ExpressionBinder::Visit(Cm::Ast::DoubleLiteralNode& doubleLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::doubleId));
     Cm::Sym::Value* value = new Cm::Sym::DoubleValue(doubleLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&doubleLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -599,8 +599,8 @@ void ExpressionBinder::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::charId));
     Cm::Sym::Value* value = new Cm::Sym::CharValue(charLiteralNode.Value());
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&charLiteralNode);
-    literalNode->SetType(type);
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -617,9 +617,9 @@ void ExpressionBinder::Visit(Cm::Ast::NullLiteralNode& nullLiteralNode)
 {
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::nullPtrId));
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&nullLiteralNode);
-    literalNode->SetType(type);
     Cm::Sym::Value* value = new Cm::Sym::NullValue();
     literalNode->SetValue(value);
+    literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
 
@@ -1598,13 +1598,13 @@ void ExpressionBinder::GenerateTrueExpression(Cm::Ast::Node* node)
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     Cm::Sym::Value* value1 = new Cm::Sym::BoolValue(true);
     Cm::BoundTree::BoundLiteral* literalNode1 = new Cm::BoundTree::BoundLiteral(node);
-    literalNode1->SetType(type);
     literalNode1->SetValue(value1);
+    literalNode1->SetType(type);
     boundExpressionStack.Push(literalNode1);
     Cm::Sym::Value* value2 = new Cm::Sym::BoolValue(true);
     Cm::BoundTree::BoundLiteral* literalNode2 = new Cm::BoundTree::BoundLiteral(node);
-    literalNode2->SetType(type);
     literalNode2->SetValue(value2);
+    literalNode2->SetType(type);
     boundExpressionStack.Push(literalNode2);
     BindBinaryOp(node, "operator==");
 }

@@ -15,6 +15,7 @@
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Bind {
@@ -101,6 +102,15 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     if ((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("constant cannot be throw", constantSymbol->GetSpan());
+    }
+    if (constantSymbol->Parent()->IsClassTypeSymbol())
+    {
+        Cm::Sym::ClassTypeSymbol* parentClass = static_cast<Cm::Sym::ClassTypeSymbol*>(constantSymbol->Parent());
+        if (parentClass->IsClassTemplate())
+        {
+            constantSymbol->SetBound();
+            return;
+        }
     }
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, constantNode->TypeExpr());
     if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())

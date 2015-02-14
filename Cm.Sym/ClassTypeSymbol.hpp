@@ -75,6 +75,7 @@ public:
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     bool IsClassTypeSymbol() const override { return true; }
+    bool IsClassTemplate() const { return !typeParameters.empty(); }
     ClassTypeSymbol* BaseClass() const { return baseClass; }
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
     void SetType(TypeSymbol* type, int index);

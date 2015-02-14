@@ -259,8 +259,6 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     if (memberVariableType->IsPointerType() && arguments.Count() == 1 && arguments[0]->IsBoundNullLiteral())
     {
         arguments[0]->SetType(memberVariableType);
-        Cm::BoundTree::BoundLiteral* nullLiteral = static_cast<Cm::BoundTree::BoundLiteral*>(arguments[0].get());
-        nullLiteral->SetIrType(memberVariableType->GetIrType());
     }
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
@@ -442,8 +440,8 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
     Cm::BoundTree::BoundMemberVariable* boundInitializedVarLeft = new Cm::BoundTree::BoundMemberVariable(staticConstructorNode, initializedVar);
     boundInitializedVarLeft->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     Cm::BoundTree::BoundLiteral* boundTrue = new Cm::BoundTree::BoundLiteral(staticConstructorNode);
-    boundTrue->SetType(boolType);
     boundTrue->SetValue(new Cm::Sym::BoolValue(true));
+    boundTrue->SetType(boolType);
     std::vector<Cm::Sym::FunctionSymbol*> boolAssignConversions;
     std::vector<Cm::Core::Argument> boolAssignArgs;
     boolAssignArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(boolType, staticConstructorNode->GetSpan())));

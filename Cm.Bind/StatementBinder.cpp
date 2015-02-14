@@ -55,7 +55,7 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     }
     Cm::Core::Argument variableArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(localVariableType, constructionStatementNode.GetSpan()));
     resolutionArguments.push_back(variableArgument);
-    constructionStatement->GetResolutionArguments(resolutionArguments);
+    constructionStatement->GetResolutionArguments(localVariableType, resolutionArguments);
     Cm::Sym::FunctionLookupSet functionLookups;
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
@@ -90,6 +90,10 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     Cm::Sym::TypeSymbol* leftPlainType = SymbolTable().GetTypeRepository().MakePlainType(left->GetType());
     Cm::Core::Argument leftArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(leftPlainType, assignmentStatementNode.GetSpan()));
     resolutionArguments.push_back(leftArgument);
+    if (leftPlainType->IsPointerType() && right->IsBoundNullLiteral())
+    {
+        right->SetType(leftPlainType);
+    }
     Cm::Core::Argument rightArgument = Cm::Core::Argument(right->GetArgumentCategory(), right->GetType());
     if (right->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
     {

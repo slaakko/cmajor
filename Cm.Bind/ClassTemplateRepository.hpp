@@ -19,7 +19,7 @@ class ClassTemplateRepository : public Cm::Core::ClassTemplateRepository
 public:
     ClassTemplateRepository(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_);
     void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
-        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Cm::Core::Exception*& exception) override;
+        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
     bool Instantiated(Cm::Sym::FunctionSymbol* memberFunctionSymbol) const override;
     void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol) override;
 private:
