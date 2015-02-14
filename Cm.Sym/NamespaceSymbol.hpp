@@ -17,6 +17,7 @@ class NamespaceSymbol : public ContainerSymbol
 {
 public:
     NamespaceSymbol(const Span& span_, const std::string& name_);
+    ~NamespaceSymbol() override;
     SymbolType GetSymbolType() const override { return SymbolType::namespaceSymbol; }
     std::string TypeString() const override { return "namespace"; };
     bool IsNamespaceSymbol() const override { return true; }

@@ -91,7 +91,7 @@ void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, C
     globalNs->Accept(virtualBinder);
     Binder binder(boundCompileUnit);
     globalNs->Accept(binder);
-    templateTypeSymbol->SetGlobalNs(std::move(globalNs));
+    templateTypeSymbol->SetGlobalNs(globalNs.release());
 }
 
 ClassTemplateRepository::ClassTemplateRepository(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
@@ -123,6 +123,7 @@ bool ClassTemplateRepository::Instantiated(Cm::Sym::FunctionSymbol* memberFuncti
 
 void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol)
 {
+    instantiatedMemberFunctionSet.insert(memberFunctionSymbol);
     memberFunctionSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
     Cm::Sym::Symbol* parent = memberFunctionSymbol->Parent();
     if (!parent->IsTemplateTypeSymbol())
@@ -156,6 +157,13 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
     binder.EndVisit(*templateTypeNode);
     functionNode->SetBody(nullptr);
     boundCompileUnit.RemoveLastFileScope();
+    if (templateTypeSymbol->Destructor())
+    {
+        if (!Instantiated(templateTypeSymbol->Destructor()))
+        {
+            Instantiate(containerScope, templateTypeSymbol->Destructor());
+        }
+    }
 }
 
 } } // namespace Cm::Bind

@@ -25,6 +25,14 @@ ContainerSymbol::ContainerSymbol(const Span& span_, const std::string& name_) : 
     containerScope.SetContainer(this);
 }
 
+ContainerSymbol::~ContainerSymbol()
+{
+    for (std::unique_ptr<Symbol>& symbol : symbols)
+    {
+        symbol.reset();
+    }
+}
+
 void ContainerSymbol::Write(Writer& writer)
 {
     Symbol::Write(writer);
@@ -58,6 +66,10 @@ void ContainerSymbol::Read(Reader& reader)
 
 void ContainerSymbol::AddSymbol(Symbol* symbol)
 {
+    if (Name() == "System" && symbols.size() == 87)
+    {
+        int x = 0;
+    }
     if (!symbol->Name().empty() && !symbol->IsFunctionSymbol() && !symbol->IsConceptSymbol())
     {
         containerScope.Install(symbol);
@@ -74,7 +86,10 @@ void ContainerSymbol::AddSymbol(Symbol* symbol)
         ConceptGroupSymbol* conceptGroupSymbol = MakeConceptGroupSymbol(conceptSymbol->GroupName(), conceptSymbol->GetSpan());
         conceptGroupSymbol->AddConcept(conceptSymbol);
     }
-    symbols.push_back(std::unique_ptr<Symbol>(symbol));
+    if (!symbol->IsTemplateTypeSymbol())
+    {
+        symbols.push_back(std::unique_ptr<Symbol>(symbol));
+    }
     symbol->SetParent(this);
 }
 

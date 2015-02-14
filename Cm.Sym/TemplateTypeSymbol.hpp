@@ -37,7 +37,7 @@ public:
     void MakeIrType() override;
     void SetFileScope(FileScope* fileScope_);
     FileScope* CloneFileScope() const { return fileScope->Clone(); }
-    void SetGlobalNs(std::unique_ptr<Cm::Ast::NamespaceNode>&& globalNs_);
+    void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;

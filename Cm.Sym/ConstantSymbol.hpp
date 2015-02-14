@@ -27,6 +27,7 @@ public:
     void SetType(TypeSymbol* type_, int index) override;
     TypeSymbol* GetType() const { return type; }
     virtual bool IsConstantSymbol() const { return true; }
+    bool IsExportSymbol() const override;
     void SetValue(Value* value_);
     Value* GetValue() const { return value.get(); }
     bool Evaluating() const { return evaluating; }

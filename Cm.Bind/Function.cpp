@@ -134,9 +134,12 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
     }
     if ((specifiers & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none)
     {
-        if (!functionNode->HasBody())
+        if (!currentClass || !currentClass->IsTemplateTypeSymbol())
         {
-            throw Cm::Core::Exception("inline functions must have body", functionSymbol->GetSpan());
+            if (!functionNode->HasBody())
+            {
+                throw Cm::Core::Exception("inline functions must have body", functionSymbol->GetSpan());
+            }
         }
         functionSymbol->SetInline();
     }

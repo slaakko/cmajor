@@ -30,7 +30,12 @@ ParameterNode::ParameterNode(const Span& span_, Node* typeExpr_, IdentifierNode*
 
 Node* ParameterNode::Clone(CloneContext& cloneContext) const
 {
-    return new ParameterNode(GetSpan(), typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
+    IdentifierNode* clonedId = nullptr;
+    if (id)
+    {
+        clonedId = static_cast<IdentifierNode*>(id->Clone(cloneContext));
+    }
+    return new ParameterNode(GetSpan(), typeExpr->Clone(cloneContext), clonedId);
 }
 
 void ParameterNode::Read(Reader& reader)

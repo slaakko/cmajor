@@ -122,9 +122,10 @@ void TemplateTypeSymbol::SetFileScope(FileScope* fileScope_)
     fileScope.reset(fileScope_);
 }
 
-void TemplateTypeSymbol::SetGlobalNs(std::unique_ptr<Cm::Ast::NamespaceNode>&& globalNs_)
+void TemplateTypeSymbol::SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_)
 {
-    globalNs = std::move(globalNs_);
+    globalNs.reset(globalNs_);
 }
+
 
 } } // namespace Cm::Sym
