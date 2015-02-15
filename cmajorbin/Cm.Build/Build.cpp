@@ -47,6 +47,15 @@ char GetPlatformPathSeparatorChar()
 #endif
 }
 
+std::string GetOs()
+{
+#ifdef WIN32
+    return "windows";
+#else
+    return "linux";
+#endif
+}
+
 void GetLibraryDirectories(std::vector<std::string>& libraryDirectories)
 {
     char* cmLibraryPath = getenv("CMBIN_LIBRARY_PATH");
@@ -198,6 +207,38 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
         }
     }
     boost::filesystem::remove(llErrorFilePath);
+}
+
+void CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
+{
+    for (const std::string& asmSourceFilePath : project->AsmSourceFilePaths())
+    {
+        std::string llErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(asmSourceFilePath).replace_extension(".ll.error").generic_string());
+        std::string objectFilePath = Cm::Util::GetFullPath((project->OutputBasePath() / boost::filesystem::path(asmSourceFilePath).filename().replace_extension(".o")).generic_string());
+        objectFilePaths.push_back(objectFilePath);
+        std::string command = "llc";
+        command.append(" -O=").append("0");
+        command.append(" -filetype=obj").append(" -o ").append(Cm::Util::QuotedPath(objectFilePath)).append(" ").append(Cm::Util::QuotedPath(asmSourceFilePath));
+        try
+        {
+            Cm::Util::System(command, 2, llErrorFilePath);
+        }
+        catch (const std::exception&)
+        {
+            Cm::Util::MappedInputFile file(llErrorFilePath);
+            try
+            {
+                Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
+                throw Cm::Core::ToolErrorExcecption(toolError);
+            }
+            catch (const std::exception&)
+            {
+                std::string errorText(file.Begin(), file.End());
+                throw std::runtime_error(errorText);
+            }
+        }
+        boost::filesystem::remove(llErrorFilePath);
+    }
 }
 
 void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
@@ -373,7 +414,7 @@ void Build(const std::string& projectFilePath)
     Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
     Cm::Parser::ProjectGrammar* projectGrammar = Cm::Parser::ProjectGrammar::Create();
     int projectFileIndex = fileRegistry.RegisterParsedFile(projectFilePath);
-    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), projectFileIndex, projectFilePath, "debug", "llvm"));
+    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), projectFileIndex, projectFilePath, "debug", "llvm", GetOs()));
     project->ResolveDeclarations();
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
     std::vector<std::string> assemblyFilePaths;
@@ -388,6 +429,7 @@ void Build(const std::string& projectFilePath)
     Cm::Sym::FunctionSymbol* userMainFunction = nullptr;
     std::vector<std::string> objectFilePaths;
     CompileCFiles(project.get(), objectFilePaths);
+    CompileAsmSources(project.get(), objectFilePaths);
     Compile(symbolTable, syntaxTree, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
     if (project->GetTarget() == Cm::Ast::Target::program)
     {

@@ -17,7 +17,9 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
+#include <Cm.Ast/CompileUnit.hpp>
 #include <Cm.Util/Path.hpp>
+#include <Cm.Parsing/Scanner.hpp>
 #include <boost/filesystem.hpp>
 
 namespace Cm { namespace Build {
@@ -29,8 +31,10 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         throw Cm::Core::Exception("program has no main() function");
     }
     boost::filesystem::path outputBase(outputBasePath);
+    Cm::Parsing::Span span;
+    Cm::Ast::CompileUnitNode syntaxUnit(span);
     std::string mainCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__main__.ll")).generic_string());
-    Cm::BoundTree::BoundCompileUnit mainCompileUnit(nullptr, mainCompileUnitIrFilePath, symbolTable);
+    Cm::BoundTree::BoundCompileUnit mainCompileUnit(&syntaxUnit, mainCompileUnitIrFilePath, symbolTable);
     std::unique_ptr<Cm::Sym::FunctionSymbol> mainFunctionSymbol(new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "main"));
     mainFunctionSymbol->SetCDecl();
     Cm::Sym::TypeSymbol* intType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
@@ -91,6 +95,11 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         callUserMainStatement->SetExpression(callUserMainExpr);
         mainBody->AddStatement(callUserMainStatement);
 
+        Cm::Sym::FunctionSymbol* cmExit = symbolTable.GetOverload("cm_exit");
+        Cm::BoundTree::BoundExpressionList cmExitArguments;
+        Cm::BoundTree::BoundFunctionCallStatement* callCmExitStatement = new Cm::BoundTree::BoundFunctionCallStatement(cmExit, std::move(cmExitArguments));
+        mainBody->AddStatement(callCmExitStatement);
+
         Cm::BoundTree::BoundLiteral* zero = new Cm::BoundTree::BoundLiteral(nullptr);
         zero->SetValue(new Cm::Sym::IntValue(0));
         zero->SetType(intType);
@@ -116,6 +125,11 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         intAssignment.reset(new Cm::Core::CopyAssignment(symbolTable.GetTypeRepository(), intType));
         Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(nullptr, returnValue, callUserMainExpr, intAssignment.get());
         mainBody->AddStatement(assignmentStatement);
+
+        Cm::Sym::FunctionSymbol* cmExit = symbolTable.GetOverload("cm_exit");
+        Cm::BoundTree::BoundExpressionList cmExitArguments;
+        Cm::BoundTree::BoundFunctionCallStatement* callCmExitStatement = new Cm::BoundTree::BoundFunctionCallStatement(cmExit, std::move(cmExitArguments));
+        mainBody->AddStatement(callCmExitStatement);
     }
 
     Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(nullptr);

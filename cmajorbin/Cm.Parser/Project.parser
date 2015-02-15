@@ -20,8 +20,8 @@ namespace Cm.Parser
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
 
-        Project(std::string config, std::string backend): Cm::Ast::Project*
-            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend); }
+        Project(std::string config, std::string backend, std::string os): Cm::Ast::Project*
+            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend, os); }
                 Declarations(value)
             ;
 
@@ -62,7 +62,7 @@ namespace Cm.Parser
             ;
 
         AssemblyFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
-            ::= (keyword("assembly") FilePath! ';'!){ value = new AssemblyFileDeclaration(span, FilePath, project->OutputBasePath()); }
+            ::= (keyword("assembly") FilePath! Properties? ';'!){ value = new AssemblyFileDeclaration(span, FilePath, project->OutputBasePath(), Properties); }
             ;
 
         ExecutableFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*

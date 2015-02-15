@@ -32,6 +32,7 @@ std::string TargetStr(Target target);
 class Properties
 {
 public:
+    Properties();
     void AddProperty(const std::string& name_, const std::string& value_);
     std::string GetProperty(const std::string& name_) const;
 private:
@@ -41,7 +42,7 @@ private:
 class ProjectDeclaration
 {
 public:
-    ProjectDeclaration(const Span& span_);
+    ProjectDeclaration(const Span& span_, const Properties& properties_);
     virtual ~ProjectDeclaration();
     virtual bool IsSourceFileDeclaration() const { return false; }
     virtual bool IsTargetDeclaration() const { return false; }
@@ -49,8 +50,10 @@ public:
     virtual bool IsExecutableFileDeclaration() const { return false; }
     virtual bool IsReferenceFileDeclaration() const { return false; }
     const Span& GetSpan() const { return span; }
+    const Properties& GetProperties() const { return properties; }
 private:
     Span span;
+    Properties properties;
 };
 
 class SourceFileDeclaration : public ProjectDeclaration
@@ -63,7 +66,6 @@ public:
 private:
     SourceFileType fileType;
     std::string filePath;
-    Properties properties;
 };
 
 class ReferenceFileDeclaration : public ProjectDeclaration
@@ -74,13 +76,12 @@ public:
     virtual bool IsReferenceFileDeclaration() const { return true; }
 private:
     std::string filePath;
-    Properties properties;
 };
 
 class AssemblyFileDeclaration : public ProjectDeclaration
 {
 public:
-    AssemblyFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& outputBasePath_);
+    AssemblyFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& outputBasePath_, const Properties& properties_);
     const std::string& FilePath() const { return filePath; }
     virtual bool IsAssemblyFileDeclaration() const { return true; }
 private:
@@ -104,7 +105,6 @@ public:
     const std::string& FilePath() const { return filePath; }
 private:
     std::string filePath;
-    Properties properties;
 };
 
 class TargetDeclaration : public ProjectDeclaration
@@ -120,7 +120,7 @@ private:
 class Project
 {
 public:
-    Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_);
+    Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_);
     void AddDeclaration(ProjectDeclaration* declaration);
     void ResolveDeclarations();
     const std::string& Name() const { return name; }
@@ -143,6 +143,7 @@ private:
     boost::filesystem::path outputBasePath;
     std::string config;
     std::string backend;
+    std::string os;
     Target target;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;
     std::vector<std::string> sourceFilePaths;

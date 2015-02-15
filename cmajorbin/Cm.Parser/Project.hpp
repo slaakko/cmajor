@@ -1,5 +1,5 @@
-#ifndef Project_hpp_22018
-#define Project_hpp_22018
+#ifndef Project_hpp_1018
+#define Project_hpp_1018
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -12,7 +12,7 @@ class ProjectGrammar : public Cm::Parsing::Grammar
 public:
     static ProjectGrammar* Create();
     static ProjectGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
-    Cm::Ast::Project* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config, std::string backend);
+    Cm::Ast::Project* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config, std::string backend, std::string os);
 private:
     ProjectGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -35,4 +35,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Project_hpp_22018
+#endif // Project_hpp_1018
