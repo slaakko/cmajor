@@ -565,7 +565,7 @@ DeleteStatementBinder::DeleteStatementBinder(Cm::BoundTree::BoundCompileUnit& bo
 void DeleteStatementBinder::EndVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode)
 {
     bool resultSet = false;
-    Cm::BoundTree::BoundExpression* ptr = Pop();
+    std::unique_ptr<Cm::BoundTree::BoundExpression> ptr(Pop());
     Cm::Sym::TypeSymbol* type = ptr->GetType();
     if (!type->IsPointerType())
     {
@@ -581,7 +581,7 @@ void DeleteStatementBinder::EndVisit(Cm::Ast::DeleteStatementNode& deleteStateme
             if (destructor)
             {
                 Cm::BoundTree::BoundExpressionList arguments;
-                arguments.Add(ptr);
+                arguments.Add(ptr.release());
                 Cm::BoundTree::BoundFunctionCallStatement* destructionStatement = new Cm::BoundTree::BoundFunctionCallStatement(destructor, std::move(arguments));
                 SetResult(destructionStatement);
                 resultSet = true;
@@ -593,7 +593,7 @@ void DeleteStatementBinder::EndVisit(Cm::Ast::DeleteStatementNode& deleteStateme
         SetResult(nullptr);
     }
     deleteStatementNode.PointerExpr()->Accept(*this);
-    Cm::BoundTree::BoundExpression* mem = Pop();
+    std::unique_ptr<Cm::BoundTree::BoundExpression> mem(Pop());
     std::vector<Cm::Core::Argument> resolutionArguments;
     resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, mem->GetType()));
     Cm::Sym::FunctionLookupSet functionLookups;
@@ -607,11 +607,11 @@ void DeleteStatementBinder::EndVisit(Cm::Ast::DeleteStatementNode& deleteStateme
     Cm::BoundTree::BoundExpressionList arguments;
     if (conversions[0])
     {
-        arguments.Add(CreateBoundConversion(&deleteStatementNode, mem, conversions[0], CurrentFunction()));
+        arguments.Add(CreateBoundConversion(&deleteStatementNode, mem.release(), conversions[0], CurrentFunction()));
     }
     else
     {
-        arguments.Add(mem);
+        arguments.Add(mem.release());
     }
     freeStatement = new Cm::BoundTree::BoundFunctionCallStatement(memFreeFun, std::move(arguments));
 }
