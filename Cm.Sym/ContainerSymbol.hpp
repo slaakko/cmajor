@@ -22,7 +22,6 @@ class ContainerSymbol : public Symbol
 {
 public:
     ContainerSymbol(const Span& span_, const std::string& name_);
-    ~ContainerSymbol() override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     ContainerScope* GetContainerScope() const override { return const_cast<ContainerScope*>(&containerScope); }

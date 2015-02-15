@@ -434,6 +434,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    Node* PointerExpr() const { return pointerExpr.get(); }
 private:
     std::unique_ptr<Node> pointerExpr;
 };

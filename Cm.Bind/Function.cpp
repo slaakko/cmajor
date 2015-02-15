@@ -230,6 +230,7 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
     if (currentClass && currentClass->IsTemplateTypeSymbol())
     {
         functionSymbol->SetMemberOfTemplateType();
+        functionSymbol->SetReplicated();
     }
     if (functionSymbol->IsMemberFunctionSymbol())
     {

@@ -25,14 +25,6 @@ ContainerSymbol::ContainerSymbol(const Span& span_, const std::string& name_) : 
     containerScope.SetContainer(this);
 }
 
-ContainerSymbol::~ContainerSymbol()
-{
-    for (std::unique_ptr<Symbol>& symbol : symbols)
-    {
-        symbol.reset();
-    }
-}
-
 void ContainerSymbol::Write(Writer& writer)
 {
     Symbol::Write(writer);

@@ -21,6 +21,10 @@
 
 namespace Cm { namespace Sym {
 
+PersistentClassData::PersistentClassData() : classNodePos(0), classNodeSize(0)
+{
+}
+
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), 
     destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
 {
@@ -50,20 +54,25 @@ void ClassTypeSymbol::Write(Writer& writer)
     {
         writer.Write(baseClass->Id());
     }
-    bool hasUsingNodes = persistentClassData != nullptr;
-    writer.GetBinaryWriter().Write(hasUsingNodes);
-    if (hasUsingNodes)
+    if (IsClassTemplate())
     {
+        if (!persistentClassData)
+        {
+            throw std::runtime_error("no persistent class data");
+        }
         persistentClassData->usingNodes.Write(writer.GetAstWriter());
-    }
-    bool hasClassNode = !typeParameters.empty();
-    writer.GetBinaryWriter().Write(hasClassNode);
-    if (hasClassNode)
-    {
         Cm::Ast::Node* node = writer.GetSymbolTable()->GetNode(this);
         if (node->IsClassNode())
         {
+            uint64_t sizePos = writer.GetBinaryWriter().Pos();
+            writer.GetBinaryWriter().Write(uint64_t(0));
+            uint64_t classNodePos = writer.GetBinaryWriter().Pos();
             writer.GetAstWriter().Write(node);
+            uint64_t classNodeEndPos = writer.GetBinaryWriter().Pos();
+            uint64_t classNodeSize = classNodeEndPos - classNodePos;
+            writer.GetBinaryWriter().Seek(sizePos);
+            writer.GetBinaryWriter().Write(classNodeSize);
+            writer.GetBinaryWriter().Seek(classNodeEndPos);
         }
         else
         {
@@ -81,28 +90,52 @@ void ClassTypeSymbol::Read(Reader& reader)
     {
         reader.FetchTypeFor(this, 0);
     }
-    bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
-    if (hasUsingNodes)
+    if (IsClassTemplate())
     {
         if (!persistentClassData)
         {
             persistentClassData.reset(new PersistentClassData());
         }
         persistentClassData->usingNodes.Read(reader.GetAstReader());
+        persistentClassData->classNodeSize = reader.GetBinaryReader().ReadULong();
+        persistentClassData->classNodePos = reader.GetBinaryReader().GetPos();
+        persistentClassData->cmlFilePath = reader.GetBinaryReader().FileName();
+        reader.GetBinaryReader().Skip(persistentClassData->classNodeSize);
     }
-    bool hasClassNode = reader.GetBinaryReader().ReadBool();
-    if (hasClassNode)
+}
+
+void ClassTypeSymbol::ReadClassNode(Cm::Sym::SymbolTable& symbolTable)
+{
+    if (!persistentClassData)
     {
-        Cm::Ast::Node* node = reader.GetAstReader().ReadNode();
-        if (node->IsClassNode())
-        {
-            reader.GetSymbolTable().SetNode(this, node);
-            classNode.reset(static_cast<Cm::Ast::ClassNode*>(node));
-        }
-        else
-        {
-            throw std::runtime_error("not class node");
-        }
+        throw std::runtime_error("no persistent class data");
+    }
+    const std::string& cmlFilePath = persistentClassData->cmlFilePath;
+    Cm::Ser::BinaryReader binaryReader(cmlFilePath);
+    binaryReader.SetPos(persistentClassData->classNodePos);
+    Cm::Ast::Reader astReader(binaryReader);
+    Cm::Ast::Node* node = astReader.ReadNode();
+    if (node->IsClassNode())
+    {
+        symbolTable.SetNode(this, node);
+        persistentClassData->classNode.reset(static_cast<Cm::Ast::ClassNode*>(node));
+    }
+    else
+    {
+        throw std::runtime_error("not class node");
+    }
+}
+
+void ClassTypeSymbol::FreeClassNode(Cm::Sym::SymbolTable& symbolTable)
+{
+    if (!persistentClassData)
+    {
+        throw std::runtime_error("no persistent class data");
+    }
+    if (persistentClassData->classNode)
+    {
+        persistentClassData->classNode.reset();
+        symbolTable.SetNode(this, nullptr);
     }
 }
 

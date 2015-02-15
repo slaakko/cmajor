@@ -74,9 +74,7 @@ public:
     void BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
     void BeginVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode) override;
-    void EndVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode) override;
     void BeginVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode) override;
-    void EndVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode) override;
     void BeginVisit(Cm::Ast::ThrowStatementNode& throwStatementNode) override;
     void EndVisit(Cm::Ast::ThrowStatementNode& throwStatementNode) override;
     void BeginVisit(Cm::Ast::TryStatementNode& tryStatementNode) override;
