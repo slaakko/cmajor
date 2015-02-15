@@ -18,11 +18,6 @@ NamespaceSymbol::NamespaceSymbol(const Span& span_, const std::string& name_) : 
 {
 }
 
-NamespaceSymbol::~NamespaceSymbol()
-{
-    int x = 0;
-}
-
 void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
 {
     symbolTable.BeginNamespaceScope(that->Name(), that->GetSpan());

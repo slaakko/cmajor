@@ -524,4 +524,96 @@ void GotoDefaultStatementBinder::Visit(Cm::Ast::GotoDefaultStatementNode& gotoDe
     SetResult(boundGotoDefaultStatement);
 }
 
+DestroyStatementBinder::DestroyStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_,
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+{
+}
+
+void DestroyStatementBinder::EndVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode)
+{
+    Cm::BoundTree::BoundExpression* ptr = Pop();
+    Cm::Sym::TypeSymbol* type = ptr->GetType();
+    if (!type->IsPointerType())
+    {
+        throw Cm::Core::Exception("destroy statement needs pointer type operand", destroyStatementNode.GetSpan());
+    }
+    if (type->GetPointerCount() == 1)
+    {
+        Cm::Sym::TypeSymbol* baseType = type->GetBaseType();
+        if (baseType->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(baseType);
+            Cm::Sym::FunctionSymbol* destructor = classType->Destructor();
+            if (destructor)
+            {
+                Cm::BoundTree::BoundExpressionList arguments;
+                arguments.Add(ptr);
+                Cm::BoundTree::BoundFunctionCallStatement* destructionStatement = new Cm::BoundTree::BoundFunctionCallStatement(destructor, std::move(arguments));
+                SetResult(destructionStatement);
+                return;
+            }
+        }
+    }
+    SetResult(nullptr);
+}
+
+DeleteStatementBinder::DeleteStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_,
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+{
+}
+
+void DeleteStatementBinder::EndVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode)
+{
+    bool resultSet = false;
+    Cm::BoundTree::BoundExpression* ptr = Pop();
+    Cm::Sym::TypeSymbol* type = ptr->GetType();
+    if (!type->IsPointerType())
+    {
+        throw Cm::Core::Exception("delete statement needs pointer type operand", deleteStatementNode.GetSpan());
+    }
+    if (type->GetPointerCount() == 1)
+    {
+        Cm::Sym::TypeSymbol* baseType = type->GetBaseType();
+        if (baseType->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(baseType);
+            Cm::Sym::FunctionSymbol* destructor = classType->Destructor();
+            if (destructor)
+            {
+                Cm::BoundTree::BoundExpressionList arguments;
+                arguments.Add(ptr);
+                Cm::BoundTree::BoundFunctionCallStatement* destructionStatement = new Cm::BoundTree::BoundFunctionCallStatement(destructor, std::move(arguments));
+                SetResult(destructionStatement);
+                resultSet = true;
+            }
+        }
+    }
+    if (!resultSet)
+    {
+        SetResult(nullptr);
+    }
+    deleteStatementNode.PointerExpr()->Accept(*this);
+    Cm::BoundTree::BoundExpression* mem = Pop();
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, mem->GetType()));
+    Cm::Sym::FunctionLookupSet functionLookups;
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_parent, ContainerScope()));
+    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    Cm::Sym::FunctionSymbol* memFreeFun = ResolveOverload(ContainerScope(), BoundCompileUnit(), "System.Support.MemFree", resolutionArguments, functionLookups, deleteStatementNode.GetSpan(), conversions);
+    if (conversions.size() != 1)
+    {
+        throw std::runtime_error("wrong number of conversions");
+    }
+    Cm::BoundTree::BoundExpressionList arguments;
+    if (conversions[0])
+    {
+        arguments.Add(CreateBoundConversion(&deleteStatementNode, mem, conversions[0], CurrentFunction()));
+    }
+    else
+    {
+        arguments.Add(mem);
+    }
+    freeStatement = new Cm::BoundTree::BoundFunctionCallStatement(memFreeFun, std::move(arguments));
+}
+
 } } // namespace Cm::Bind

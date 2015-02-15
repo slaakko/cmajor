@@ -61,7 +61,12 @@ inline ClassTypeSymbolFlags operator~(ClassTypeSymbolFlags flag)
 
 struct PersistentClassData
 {
+    PersistentClassData();
+    uint64_t classNodePos;
+    uint64_t classNodeSize;
+    std::string cmlFilePath;
     Cm::Ast::NodeList usingNodes;
+    std::unique_ptr<Cm::Ast::ClassNode> classNode;
 };
 
 class ClassTypeSymbol : public TypeSymbol
@@ -74,6 +79,8 @@ public:
     std::string GetMangleId() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
+    void ReadClassNode(Cm::Sym::SymbolTable& symbolTable);
+    void FreeClassNode(Cm::Sym::SymbolTable& symbolTable);
     bool IsClassTypeSymbol() const override { return true; }
     bool IsClassTemplate() const { return !typeParameters.empty(); }
     ClassTypeSymbol* BaseClass() const { return baseClass; }
@@ -284,7 +291,6 @@ private:
     std::vector<Cm::Sym::FunctionSymbol*> vtbl;
     std::unordered_set<FunctionSymbol*> conversions;
     std::unique_ptr<PersistentClassData> persistentClassData;
-    std::unique_ptr<Cm::Ast::ClassNode> classNode;
     bool GetFlag(ClassTypeSymbolFlags flag) const
     {
         return (flags & flag) != ClassTypeSymbolFlags::none;

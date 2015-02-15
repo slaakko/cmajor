@@ -18,6 +18,7 @@ class ClassTemplateRepository : public Cm::Core::ClassTemplateRepository
 {
 public:
     ClassTemplateRepository(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_);
+    ~ClassTemplateRepository();
     void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
     bool Instantiated(Cm::Sym::FunctionSymbol* memberFunctionSymbol) const override;
@@ -27,6 +28,10 @@ private:
     typedef std::unordered_set<Cm::Sym::FunctionSymbol*> InstantiatedMemberFunctionSet;
     typedef InstantiatedMemberFunctionSet::const_iterator InstantiatedMemberFunctionSetIt;
     InstantiatedMemberFunctionSet instantiatedMemberFunctionSet;
+    typedef std::unordered_set<Cm::Sym::ClassTypeSymbol*> ClassTemplateSet;
+    typedef ClassTemplateSet::const_iterator ClassTemplateSetIt;
+    ClassTemplateSet classTemplates;
+    void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol);
 };
 
 } } // namespace Cm::Bind

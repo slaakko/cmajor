@@ -20,7 +20,7 @@
 
 namespace Cm { namespace Bind {
 
-void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol)
+void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol)
 {
     Cm::Sym::TypeSymbol* subjectTypeSymbol = templateTypeSymbol->GetSubjectType();
     if (!subjectTypeSymbol->IsClassTypeSymbol())
@@ -28,10 +28,12 @@ void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, C
         throw std::runtime_error("subject type not class type");
     }
     Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectTypeSymbol);
-    Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol);
+    classTemplates.insert(subjectClassTypeSymbol);
+    Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol, false);
     if (!node)
     {
-        throw std::runtime_error("node for template type subject '" + subjectTypeSymbol->FullName() + " not found");
+        subjectClassTypeSymbol->ReadClassNode(boundCompileUnit.SymbolTable());
+        node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol);
     }
     if (!node->IsClassNode())
     {
@@ -96,6 +98,20 @@ void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, C
 
 ClassTemplateRepository::ClassTemplateRepository(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
 {
+}
+
+ClassTemplateRepository::~ClassTemplateRepository()
+{
+    try
+    {
+        for (Cm::Sym::ClassTypeSymbol* classTemplate : classTemplates)
+        {
+            classTemplate->FreeClassNode(boundCompileUnit.SymbolTable());
+        }
+    }
+    catch (...)
+    {
+    }
 }
 
 void ClassTemplateRepository::CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, 

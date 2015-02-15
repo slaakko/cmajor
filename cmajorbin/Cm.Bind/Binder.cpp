@@ -623,18 +623,24 @@ void Binder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatemen
 
 void Binder::BeginVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode)
 {
-}
-
-void Binder::EndVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode)
-{
+    DeleteStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
+    deleteStatementNode.Accept(binder);
+    if (binder.Result())
+    {
+        currentParent->AddStatement(binder.Result());
+    }
+    Cm::BoundTree::BoundStatement* freeStatement = binder.GetFreeStatement();
+    currentParent->AddStatement(freeStatement);
 }
 
 void Binder::BeginVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode)
 {
-}
-
-void Binder::EndVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode)
-{
+    DestroyStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
+    destroyStatementNode.Accept(binder);
+    if (binder.Result())
+    {
+        currentParent->AddStatement(binder.Result());
+    }
 }
 
 void Binder::BeginVisit(Cm::Ast::ThrowStatementNode& throwStatementNode)

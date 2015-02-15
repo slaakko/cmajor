@@ -172,6 +172,25 @@ public:
     void Visit(Cm::Ast::GotoDefaultStatementNode& gotoDefaultStatementNode) override;
 };
 
+class DestroyStatementBinder : public StatementBinder
+{
+public:
+    DestroyStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::BoundTree::BoundFunction* currentFunction_);
+    void EndVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode) override;
+};
+
+class DeleteStatementBinder : public StatementBinder
+{
+public:
+    DeleteStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::BoundTree::BoundFunction* currentFunction_);
+    void EndVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode) override;
+    Cm::BoundTree::BoundStatement* GetFreeStatement() const { return freeStatement; }
+private:
+    Cm::BoundTree::BoundStatement* freeStatement;
+};
+
 } } // namespace Cm::Bind
 
 #endif CM_BIND_STATEMENT_INCLUDED
