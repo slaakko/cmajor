@@ -152,7 +152,7 @@ namespace Cm.Parser
     }
     grammar ProjectGrammar
     {
-        Project(std::string config, std::string backend): Cm::Ast::Project*;
+        Project(std::string config, std::string backend, std::string os): Cm::Ast::Project*;
         Declarations(Cm::Ast::Project* project);
         Declaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         SourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;

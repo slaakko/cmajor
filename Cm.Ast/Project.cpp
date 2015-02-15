@@ -22,7 +22,7 @@ std::string TargetStr(Target target)
     return "";
 }
 
-ProjectDeclaration::ProjectDeclaration(const Span& span_) : span(span_)
+ProjectDeclaration::ProjectDeclaration(const Span& span_, const Properties& properties_) : span(span_), properties(properties_)
 {
 }
 
@@ -31,30 +31,34 @@ ProjectDeclaration::~ProjectDeclaration()
 }
 
 SourceFileDeclaration::SourceFileDeclaration(const Span& span_, SourceFileType fileType_, const std::string& filePath_, const boost::filesystem::path& basePath_, const Properties& properties_) :
-    ProjectDeclaration(span_), fileType(fileType_), filePath(boost::filesystem::absolute(filePath_, basePath_).generic_string()), properties(properties_)
+    ProjectDeclaration(span_, properties_), fileType(fileType_), filePath(boost::filesystem::absolute(filePath_, basePath_).generic_string())
 {
 }
 
 ReferenceFileDeclaration::ReferenceFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& basePath_, const Properties& properties_) :
-    ProjectDeclaration(span_), filePath(boost::filesystem::absolute(filePath_, basePath_).generic_string()), properties(properties_)
+    ProjectDeclaration(span_, properties_), filePath(boost::filesystem::absolute(filePath_, basePath_).generic_string())
 {
 }
 
-AssemblyFileDeclaration::AssemblyFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& outputBasePath_) :
-    ProjectDeclaration(span_), filePath(boost::filesystem::absolute(filePath_, outputBasePath_).generic_string())
+AssemblyFileDeclaration::AssemblyFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& outputBasePath_, const Properties& properties_) :
+    ProjectDeclaration(span_, properties_), filePath(boost::filesystem::absolute(filePath_, outputBasePath_).generic_string())
 {
 }
 
 ExecutableFileDeclaration::ExecutableFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& outputBasePath_) :
-    ProjectDeclaration(span_), filePath(boost::filesystem::absolute(filePath_, outputBasePath_).generic_string())
+    ProjectDeclaration(span_, Properties()), filePath(boost::filesystem::absolute(filePath_, outputBasePath_).generic_string())
 {
 }
 
-CLibraryDeclaration::CLibraryDeclaration(const Span& span_, const std::string& filePath_, const Properties& properties_) : ProjectDeclaration(span_), filePath(filePath_), properties(properties_)
+CLibraryDeclaration::CLibraryDeclaration(const Span& span_, const std::string& filePath_, const Properties& properties_) : ProjectDeclaration(span_, properties_), filePath(filePath_)
 {
 }
 
-TargetDeclaration::TargetDeclaration(const Span& span_, Target target_) : ProjectDeclaration(span_), target(target_)
+TargetDeclaration::TargetDeclaration(const Span& span_, Target target_) : ProjectDeclaration(span_, Properties()), target(target_)
+{
+}
+
+Properties::Properties()
 {
 }
 
@@ -73,8 +77,8 @@ std::string Properties::GetProperty(const std::string& name_) const
     return std::string();
 }
 
-Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_) : 
-    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), target(Target::none)
+Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_) :
+    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), target(Target::none)
 {
     basePath.remove_filename();
     outputBasePath = basePath;
@@ -86,6 +90,17 @@ void Project::ResolveDeclarations()
 {
     for (const std::unique_ptr<ProjectDeclaration>& declaration : declarations)
     {
+        const Properties& properties = declaration->GetProperties();
+        std::string declBackEnd = properties.GetProperty("backend");
+        if (!declBackEnd.empty())
+        {
+            if (declBackEnd != backend) continue;
+        }
+        std::string declOs = properties.GetProperty("os");
+        if (!declOs.empty())
+        {
+            if (declOs != os) continue;
+        }
         if (declaration->IsSourceFileDeclaration())
         {
             SourceFileDeclaration* sfd = static_cast<SourceFileDeclaration*>(declaration.get());
