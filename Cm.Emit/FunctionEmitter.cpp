@@ -136,6 +136,10 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     Cm::IrIntf::ResetLocalLabelCounter();
     currentFunction = boundFunction.GetFunctionSymbol();
+    if (currentFunction->FullName() == "System.Console.Write(const char* s)")
+    {
+        int x = 0;
+    }
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction);
     emitter.reset(new Cm::Core::Emitter(irFunction));
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
@@ -306,7 +310,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
     if (boundMemberVariable.Symbol()->IsStatic())
     {
         Ir::Intf::Object* irObject = staticMemberVariableRepository.GetStaticMemberVariableIrObject(boundMemberVariable.Symbol());
-        if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
+        Cm::Sym::TypeSymbol* memberVariableType = boundMemberVariable.Symbol()->GetType();
+        if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || memberVariableType->IsClassTypeSymbol())
         {
             result.SetMainObject(irObject);
         }
@@ -955,6 +960,69 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundInitVPtrStatement& boundInitVPtr
     resultStack.Push(std::move(result));
 }
 
+void FunctionEmitter::RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol)
+{
+    Ir::Intf::Object* irObject = staticMemberVariableRepository.GetStaticMemberVariableIrObject(staticMemberVariableSymbol);
+    Ir::Intf::Object* destructionNode = staticMemberVariableRepository.GetDestructionNode(staticMemberVariableSymbol);
+    Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1);
+    emitter->Own(i8Ptr);
+    Ir::Intf::Type* i8PtrPtr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 2);
+    emitter->Own(i8PtrPtr);
+    Ir::Intf::RegVar* objectFieldPtr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(objectFieldPtr);
+    Ir::Intf::Object* zero = Cm::IrIntf::CreateI32Constant(0);
+    emitter->Own(zero);
+    Ir::Intf::Object* one = Cm::IrIntf::CreateI32Constant(1);
+    emitter->Own(one);
+    emitter->Emit(Cm::IrIntf::GetElementPtr(destructionNode->GetType(), objectFieldPtr, destructionNode, zero, one));
+    Ir::Intf::Object* irObjectAsI8Ptr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(irObjectAsI8Ptr);
+    emitter->Emit(Cm::IrIntf::Bitcast(irObject->GetType(), irObjectAsI8Ptr, irObject, i8Ptr));
+    emitter->Emit(Cm::IrIntf::Store(i8Ptr, irObjectAsI8Ptr, objectFieldPtr));
+
+    Cm::Sym::TypeSymbol* type = staticMemberVariableSymbol->GetType();
+    if (type->IsClassTypeSymbol())
+    {
+        Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
+        if (classType->Destructor())
+        {
+            Cm::Sym::FunctionSymbol* destructor = classType->Destructor();
+            Ir::Intf::Function* destructorIrFun = irFunctionRepository.CreateIrFunction(destructor);
+            Ir::Intf::Type* destructorPtrType = irFunctionRepository.GetFunPtrIrType(destructor);
+            std::vector<Ir::Intf::Type*> dtorParamTypes1(1, i8Ptr->Clone());
+            Ir::Intf::Type* destructorFieldType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(Cm::IrIntf::Void(), dtorParamTypes1), 1);
+            emitter->Own(destructorFieldType);
+            std::vector<Ir::Intf::Type*> dtorParamTypes2(1, i8Ptr->Clone());
+            Ir::Intf::Type* destructorFieldPtrType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(Cm::IrIntf::Void(), dtorParamTypes2), 2);
+            emitter->Own(destructorFieldPtrType);
+            Ir::Intf::RegVar* destructorFieldPtr = Cm::IrIntf::CreateTemporaryRegVar(destructorFieldPtrType);
+            emitter->Own(destructorFieldPtr);
+            Ir::Intf::Object* two = Cm::IrIntf::CreateI32Constant(2);
+            emitter->Own(two);
+            emitter->Emit(Cm::IrIntf::GetElementPtr(destructionNode->GetType(), destructorFieldPtr, destructionNode, zero, two));
+            Ir::Intf::Global* dtor(Cm::IrIntf::CreateGlobal(destructorIrFun->Name(), destructorPtrType));
+            emitter->Own(dtor);
+            Ir::Intf::RegVar* dtorPtr = Cm::IrIntf::CreateTemporaryRegVar(destructorFieldType);
+            emitter->Own(dtorPtr);
+            emitter->Emit(Cm::IrIntf::Bitcast(destructorPtrType, dtorPtr, dtor, destructorFieldType));
+            emitter->Emit(Cm::IrIntf::Store(destructorFieldType, dtorPtr, destructorFieldPtr));
+
+            std::vector<Ir::Intf::Parameter*> registerFunParams;
+            Ir::Intf::Parameter* param = Cm::IrIntf::CreateParameter("node", destructionNode->GetType()->Clone());
+            emitter->Own(param);
+            registerFunParams.push_back(param);
+            Ir::Intf::Function* registerFun = Cm::IrIntf::CreateFunction(Cm::IrIntf::GetRegisterDestructorFunctionName(), Ir::Intf::GetFactory()->GetVoid(), registerFunParams);
+            emitter->Own(registerFun);
+            std::vector<Ir::Intf::Object*> registerFunArgs;
+            registerFunArgs.push_back(destructionNode);
+            Ir::Intf::RegVar* result = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetVoid());
+            emitter->Own(result);
+            emitter->Emit(Cm::IrIntf::Call(result, registerFun, registerFunArgs));
+        }
+    }
+    
+}
+
 void FunctionEmitter::Visit(Cm::BoundTree::BoundInitMemberVariableStatement& boundInitMemberVariableStatement)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
@@ -973,6 +1041,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundInitMemberVariableStatement& bou
     }
     Cm::Sym::FunctionSymbol* ctor = boundInitMemberVariableStatement.Constructor();
     GenerateCall(ctor, result);
+    if (boundInitMemberVariableStatement.RegisterDestructor())
+    {
+        RegisterDestructor(boundInitMemberVariableStatement.GetMemberVariableSymbol());
+    }
     if (resultLabel)
     {
         result.SetLabel(resultLabel);

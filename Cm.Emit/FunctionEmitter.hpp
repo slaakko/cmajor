@@ -175,6 +175,7 @@ private:
     void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
     void GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
+    void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol);
 };
 
 } } // namespace Cm::Emit

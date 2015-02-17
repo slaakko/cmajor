@@ -106,13 +106,19 @@ void BoundInitVPtrStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::FunctionSymbol* ctor_, BoundExpressionList&& arguments_) : BoundStatement(nullptr), ctor(ctor_), arguments(std::move(arguments_))
+BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::FunctionSymbol* ctor_, BoundExpressionList&& arguments_) : 
+    BoundStatement(nullptr), ctor(ctor_), arguments(std::move(arguments_)), registerDestructor(false)
 {
 }
 
 void BoundInitMemberVariableStatement::Accept(Visitor& visitor) 
 {
     visitor.Visit(*this);
+}
+
+void BoundInitMemberVariableStatement::SetMemberVariableSymbol(Cm::Sym::MemberVariableSymbol* memberVarSymbol_)
+{
+    memberVarSymbol = memberVarSymbol_;
 }
 
 BoundFunctionCallStatement::BoundFunctionCallStatement(Cm::Sym::FunctionSymbol* function_, BoundExpressionList&& arguments_) : BoundStatement(nullptr), function(function_), arguments(std::move(arguments_))

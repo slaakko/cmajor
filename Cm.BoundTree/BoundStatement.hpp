@@ -115,9 +115,15 @@ public:
     Cm::Sym::FunctionSymbol* Constructor() const { return ctor; }
     BoundExpressionList& Arguments() { return arguments; }
     void Accept(Visitor& visitor) override;
+    void SetMemberVariableSymbol(Cm::Sym::MemberVariableSymbol* memberVarSymbol_);
+    Cm::Sym::MemberVariableSymbol* GetMemberVariableSymbol() const { return memberVarSymbol; }
+    void SetRegisterDestructor() { registerDestructor = true; }
+    bool RegisterDestructor() const { return registerDestructor; }
 private:
+    Cm::Sym::MemberVariableSymbol* memberVarSymbol;
     Cm::Sym::FunctionSymbol* ctor;
     BoundExpressionList arguments;
+    bool registerDestructor;
 };
 
 class BoundFunctionCallStatement : public BoundStatement

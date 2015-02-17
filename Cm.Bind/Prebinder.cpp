@@ -24,7 +24,8 @@
 
 namespace Cm { namespace Bind {
 
-Prebinder::Prebinder(Cm::Sym::SymbolTable& symbolTable_) : Cm::Ast::Visitor(false, false), symbolTable(symbolTable_), currentContainerScope(nullptr), parameterIndex(0), currentClass(nullptr)
+Prebinder::Prebinder(Cm::Sym::SymbolTable& symbolTable_) : Cm::Ast::Visitor(false, false), symbolTable(symbolTable_), currentContainerScope(nullptr), parameterIndex(0), currentClass(nullptr),
+    dontCompleteFunctions(false)
 {
 }
 
@@ -117,7 +118,10 @@ void Prebinder::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 
 void Prebinder::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
-    CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &constructorNode, currentFunction, currentClass);
+    if (!dontCompleteFunctions)
+    {
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &constructorNode, currentFunction, currentClass);
+    }
     EndContainerScope();
 }
 
@@ -130,7 +134,10 @@ void Prebinder::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
 
 void Prebinder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 {
-    CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &destructorNode, currentFunction, currentClass);
+    if (!dontCompleteFunctions)
+    {
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &destructorNode, currentFunction, currentClass);
+    }
     EndContainerScope();
 }
 
@@ -143,7 +150,10 @@ void Prebinder::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 
 void Prebinder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
-    CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &memberFunctionNode, currentFunction, currentClass);
+    if (!dontCompleteFunctions)
+    {
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &memberFunctionNode, currentFunction, currentClass);
+    }
     EndContainerScope();
 }
 
@@ -156,7 +166,10 @@ void Prebinder::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNo
 
 void Prebinder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
-    CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &conversionFunctionNode, currentFunction, currentClass);
+    if (!dontCompleteFunctions)
+    {
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &conversionFunctionNode, currentFunction, currentClass);
+    }
     EndContainerScope();
 }
 
@@ -169,7 +182,10 @@ void Prebinder::BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode
 
 void Prebinder::EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
 {
-    CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &staticConstructorNode, currentFunction, currentClass);
+    if (!dontCompleteFunctions)
+    {
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &staticConstructorNode, currentFunction, currentClass);
+    }
     EndContainerScope();
 }
 
@@ -238,7 +254,10 @@ void Prebinder::EndVisit(Cm::Ast::FunctionNode& functionNode)
     }
     else
     {
-        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &functionNode, currentFunction, currentClass);
+        if (!dontCompleteFunctions)
+        {
+            CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &functionNode, currentFunction, currentClass);
+        }
         EndContainerScope();
     }
 }

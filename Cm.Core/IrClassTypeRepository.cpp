@@ -33,12 +33,22 @@ void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymb
 void IrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions, 
     IrFunctionRepository& irFunctionRepository)
 {
+    bool exitDeclarationsGenerated = false;
     for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
     {
         WriteIrLayout(classType, codeFormatter);
         if (classType->IsVirtual())
         {
             WriteVtbl(classType, codeFormatter, syntaxUnit, externalFunctions, irFunctionRepository);
+        }
+        for (Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol : classType->StaticMemberVariables())
+        {
+            if (staticMemberVariableSymbol->GetType()->IsClassTypeSymbol() && static_cast<Cm::Sym::ClassTypeSymbol*>(staticMemberVariableSymbol->GetType())->Destructor() && !exitDeclarationsGenerated)
+            {
+                exitDeclarationsGenerated = true;
+                codeFormatter.WriteLine("%destruction$node = type { %destruction$node*, i8*, void (i8*)* }");
+                codeFormatter.WriteLine("declare void @register$destructor(%destruction$node*)");
+            }
         }
     }
 }

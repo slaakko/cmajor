@@ -122,6 +122,7 @@ public:
     void Emit(Ir::Intf::Instruction* instruction) override;
     void Own(Ir::Intf::Object* object) override;
     void Own(Ir::Intf::Type* type) override;
+    void Own(Ir::Intf::Function* fun) override;
 private:
     Ir::Intf::Function* irFunction;
     std::unordered_set<LabelHolder*> labelRequestSet;
@@ -130,6 +131,7 @@ private:
     std::string nextInstructionComment;
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedObjects;
     std::vector<std::unique_ptr<Ir::Intf::Type>> ownedTypes;
+    std::vector<std::unique_ptr<Ir::Intf::Function>> ownedFuns;
 };
 
 class GenResult
