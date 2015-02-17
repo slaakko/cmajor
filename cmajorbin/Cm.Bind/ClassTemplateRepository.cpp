@@ -167,12 +167,28 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
     functionNode->SetBody(static_cast<Cm::Ast::CompoundStatementNode*>(functionNode->BodySource()->Clone(cloneContext)));
     functionNode->SetCompileUnit(boundCompileUnit.SyntaxUnit());
     boundCompileUnit.AddFileScope(templateTypeSymbol->CloneFileScope());
+
+    Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
+    boundCompileUnit.SymbolTable().BeginContainer(memberFunctionSymbol);
+    functionNode->Body()->Accept(declarationVisitor);
+    boundCompileUnit.SymbolTable().EndContainer();
+
+    Prebinder prebinder(boundCompileUnit.SymbolTable());
+    prebinder.SetDontCompleteFunctions();
+    prebinder.BeginCompileUnit();
+    Cm::Sym::ContainerScope* ttContainerScope = boundCompileUnit.SymbolTable().GetContainerScope(ttNode);
+    prebinder.BeginContainerScope(ttContainerScope);
+    functionNode->Accept(prebinder);
+    prebinder.EndContainerScope();
+    prebinder.EndCompileUnit();
+
     Binder binder(boundCompileUnit);
     binder.BeginVisit(*templateTypeNode);
     functionNode->Accept(binder);
     binder.EndVisit(*templateTypeNode);
     functionNode->SetBody(nullptr);
     boundCompileUnit.RemoveLastFileScope();
+
     if (templateTypeSymbol->Destructor())
     {
         if (!Instantiated(templateTypeSymbol->Destructor()))

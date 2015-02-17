@@ -268,6 +268,11 @@ void Emitter::Own(Ir::Intf::Type* type)
     }
 }
 
+void Emitter::Own(Ir::Intf::Function* fun)
+{
+    ownedFuns.push_back(std::unique_ptr<Ir::Intf::Function>(fun));
+}
+
 GenResult::GenResult() : emitter(nullptr), flags()
 {
 }

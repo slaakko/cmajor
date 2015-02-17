@@ -58,6 +58,7 @@ public:
     void EndVisit(Cm::Ast::ClassDelegateNode& classDelegateNode) override;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
+    void SetDontCompleteFunctions() { dontCompleteFunctions = true; }
 private:
     Cm::Sym::SymbolTable& symbolTable;
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
@@ -68,6 +69,7 @@ private:
     Cm::Sym::ClassTypeSymbol* currentClass;
     Cm::Sym::FunctionSymbol* currentFunction;
     std::vector<Cm::Ast::Node*> usingNodes;
+    bool dontCompleteFunctions;
 };
 
 } } // namespace Cm::Bind

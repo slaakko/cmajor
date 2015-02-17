@@ -17,6 +17,8 @@ namespace Ir { namespace Intf {
 
 using Cm::Util::CodeFormatter;
 
+class Function;
+
 class Emitter
 {
 public:
@@ -24,6 +26,7 @@ public:
     virtual void Emit(Instruction* instruction) = 0;
     virtual void Own(Object* object) = 0;
     virtual void Own(Type* type) = 0;
+    virtual void Own(Function* fun) = 0;
 };
 
 class Function

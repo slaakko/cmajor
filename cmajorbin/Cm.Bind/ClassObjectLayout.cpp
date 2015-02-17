@@ -570,6 +570,15 @@ void StaticMemberVariableInitializerHandler::Visit(Cm::Ast::MemberInitializerNod
         memberInitializerNode.Arguments().Accept(*this);
         Cm::BoundTree::BoundExpressionList arguments = GetExpressions();
         initStatement.reset(GenerateStaticMerberVariableInitializationStatement(staticMemberVariableSymbol, arguments, &memberInitializerNode));
+        if (staticMemberVariableSymbol->GetType()->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(staticMemberVariableSymbol->GetType());
+            if (memberVarClassType->Destructor())
+            {
+                initStatement->SetRegisterDestructor();
+                initStatement->SetMemberVariableSymbol(staticMemberVariableSymbol);
+            }
+        }
     }
     else
     {
@@ -593,6 +602,15 @@ void StaticMemberVariableInitializerHandler::GenerateStaticMemberVariableInitial
             Cm::Sym::MemberVariableSymbol* memberVariableSymbol = classType->StaticMemberVariables()[i];
             Cm::BoundTree::BoundExpressionList arguments;
             initMemberVariableStatement = GenerateStaticMerberVariableInitializationStatement(memberVariableSymbol, arguments, staticConstructorNode);
+            if (memberVariableSymbol->GetType()->IsClassTypeSymbol())
+            {
+                Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableSymbol->GetType());
+                if (memberVarClassType->Destructor())
+                {
+                    initMemberVariableStatement->SetRegisterDestructor();
+                    initMemberVariableStatement->SetMemberVariableSymbol(memberVariableSymbol);
+                }
+            }
         }
         int classObjectLayoutFunIndex = CurrentFunction()->GetClassObjectLayoutFunIndex();
         CurrentFunction()->Body()->InsertStatement(classObjectLayoutFunIndex, initMemberVariableStatement);

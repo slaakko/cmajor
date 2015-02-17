@@ -78,6 +78,8 @@ public:
     void AddPredefinedSymbolToGlobalScope(Symbol* symbol);
     void InitVirtualFunctionTables();
     FunctionSymbol* GetOverload(const std::string& fullOverloadGroupName) const;
+    void BeginContainer(ContainerSymbol* container_);
+    void EndContainer();
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
@@ -95,8 +97,6 @@ private:
     TypeRepository typeRepository;
     ConversionTable standardConversionTable;
     SymbolNodeMap symbolNodeMap;
-    void BeginContainer(ContainerSymbol* container_);
-    void EndContainer();
 };
 
 } } // namespace Cm::Sym
