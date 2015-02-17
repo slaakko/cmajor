@@ -17,6 +17,7 @@
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <unordered_set>
 #include <algorithm>
@@ -409,7 +410,7 @@ bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const st
     return true;
 }
 
-bool DeduceTemplateParameter(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm::Parsing::Span& span, Cm::Sym::TypeSymbol* parameterType, const Cm::Core::Argument& argument, 
+bool DeduceTypeParameter(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm::Parsing::Span& span, Cm::Sym::TypeSymbol* parameterType, const Cm::Core::Argument& argument, 
     std::vector<Cm::Sym::TypeSymbol*>& templateArguments, std::unordered_set<Cm::Sym::ClassTypeSymbol*>& conversionClassTypes, 
     Cm::Sym::FunctionSymbol*& conversion, Cm::Bind::ArgumentMatch& argumentMatch, int& numConversions)
 {
@@ -439,6 +440,57 @@ bool DeduceTemplateParameter(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
             {
                 if (FindConversion(boundCompileUnit, span, Cm::Sym::ConversionType::implicit, templateArgumentType, argument, conversionClassTypes, conversion, argumentMatch, numConversions))
                 {
+                    return true;
+                }
+            }
+        }
+    }
+    else if (parameterBaseType->IsTemplateTypeSymbol())
+    {
+        if (argument.Type()->IsTemplateTypeSymbol())
+        {
+            Cm::Sym::TemplateTypeSymbol* argumentTemplateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(argument.Type());
+            Cm::Sym::TemplateTypeSymbol* parameterTemplateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(parameterBaseType);
+            if (Cm::Sym::TypesEqual(argumentTemplateTypeSymbol->GetSubjectType(), parameterTemplateTypeSymbol->GetSubjectType()))
+            {
+                int n = int(argumentTemplateTypeSymbol->TypeArguments().size());
+                if (n == int(parameterTemplateTypeSymbol->TypeArguments().size()))
+                {
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Cm::Sym::TypeSymbol* argumentTypeArgumentSymbol = argumentTemplateTypeSymbol->TypeArguments()[i];
+                        Cm::Sym::TypeSymbol* parameterTypeArgumentSymbol = parameterTemplateTypeSymbol->TypeArguments()[i];
+                        if (parameterTypeArgumentSymbol->IsTypeParameterSymbol())
+                        {
+                            Cm::Sym::TypeParameterSymbol* typeParameterSymbol = static_cast<Cm::Sym::TypeParameterSymbol*>(parameterTypeArgumentSymbol);
+                            int index = typeParameterSymbol->Index();
+                            Cm::Sym::TypeSymbol*& templateArgumentType = templateArguments[index];
+                            if (!templateArgumentType)  // unbound template argument
+                            {
+                                templateArgumentType = argumentTypeArgumentSymbol;
+                            }
+                            else // bound template argument
+                            {
+                                bool match = false;
+                                if (Cm::Sym::TypesEqual(argumentTypeArgumentSymbol, templateArgumentType))
+                                {
+                                    match = true;
+                                }
+                                else
+                                {
+                                    Cm::Core::Argument arg(Cm::Core::ArgumentCategory::rvalue, argumentTypeArgumentSymbol);
+                                    if (FindConversion(boundCompileUnit, span, Cm::Sym::ConversionType::implicit, templateArgumentType, arg, conversionClassTypes, conversion, argumentMatch, numConversions))
+                                    {
+                                        match = true;
+                                    }
+                                }
+                                if (!match)
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
                     return true;
                 }
             }
@@ -482,7 +534,7 @@ bool DeduceTypeParameters(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree
         const Cm::Core::Argument& argument = arguments[i];
         Cm::Sym::FunctionSymbol* conversion = nullptr;
         Cm::Bind::ArgumentMatch argumentMatch;
-        bool bound = DeduceTemplateParameter(boundCompileUnit, span, parameterType, argument, functionMatch.templateArguments, conversionClassTypes, conversion, argumentMatch, functionMatch.numConversions);
+        bool bound = DeduceTypeParameter(boundCompileUnit, span, parameterType, argument, functionMatch.templateArguments, conversionClassTypes, conversion, argumentMatch, functionMatch.numConversions);
         if (bound)
         {
             functionMatch.conversions.push_back(conversion);
@@ -572,6 +624,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     }
     if (viableFunctions.empty())
     {
+        bool fileScopesLookedUp = false;
         for (const Cm::Sym::FunctionLookup& functionLookup : functionLookups)
         {
             Cm::Sym::ScopeLookup lookup = functionLookup.Lookup();
@@ -580,7 +633,16 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
             {
                 scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
             }
+            if ((lookup & Cm::Sym::ScopeLookup::fileScopes) != Cm::Sym::ScopeLookup::none && !fileScopesLookedUp)
+            {
+                fileScopesLookedUp = true;
+                for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : boundCompileUnit.GetFileScopes())
+                {
+                    fileScope->CollectViableFunctions(groupName, arity, viableFunctions);
+                }
+            }
         }
+
     }
     if (viableFunctions.empty())
     {
@@ -605,6 +667,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     std::vector<Cm::Core::ConceptCheckException> conceptCheckExceptions;
     for (Cm::Sym::FunctionSymbol* viableFunction : viableFunctions)
     {
+        if (viableFunction->Name() == "operator==(const RandomAccessIter<T, R, P>& left, const RandomAccessIter<T, R, P>& right)")
+        {
+            int x = 0;
+        }
         if (viableFunction->IsConvertingConstructor())
         {
             if (viableFunction->GetConversionType() == Cm::Sym::ConversionType::explicit_ && conversionType == Cm::Sym::ConversionType::implicit)

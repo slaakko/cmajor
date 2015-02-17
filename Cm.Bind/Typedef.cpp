@@ -107,14 +107,10 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     {
         throw Cm::Core::Exception("typedef cannot be throw", typedefSymbol->GetSpan());
     }
-    if (typedefSymbol->Parent()->IsClassTypeSymbol())
+    if (typedefSymbol->Parent()->IsClassTemplateSymbol())
     {
-        Cm::Sym::ClassTypeSymbol* parentClass = static_cast<Cm::Sym::ClassTypeSymbol*>(typedefSymbol->Parent());
-        if (parentClass->IsClassTemplate())
-        {
-            typedefSymbol->SetBound();
-            return;
-        }
+        typedefSymbol->SetBound();
+        return;
     }
     typedefSymbol->SetEvaluating();
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, typedefNode->TypeExpr());

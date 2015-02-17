@@ -325,4 +325,12 @@ FileScope* FileScope::Clone() const
     return new FileScope(*this);
 }
 
+void FileScope::CollectViableFunctions(const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions)
+{
+    for (ContainerScope* containerScope : containerScopes)
+    {
+        containerScope->CollectViableFunctions(Cm::Sym::ScopeLookup::this_, groupName, arity, viableFunctions);
+    }
+}
+
 } } // namespace Cm::Sym

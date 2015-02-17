@@ -103,14 +103,10 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     {
         throw Cm::Core::Exception("constant cannot be throw", constantSymbol->GetSpan());
     }
-    if (constantSymbol->Parent()->IsClassTypeSymbol())
+    if (constantSymbol->Parent()->IsClassTemplateSymbol())
     {
-        Cm::Sym::ClassTypeSymbol* parentClass = static_cast<Cm::Sym::ClassTypeSymbol*>(constantSymbol->Parent());
-        if (parentClass->IsClassTemplate())
-        {
-            constantSymbol->SetBound();
-            return;
-        }
+        constantSymbol->SetBound();
+        return;
     }
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, constantNode->TypeExpr());
     if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())

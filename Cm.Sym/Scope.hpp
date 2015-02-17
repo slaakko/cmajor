@@ -19,12 +19,13 @@ namespace Cm { namespace Sym {
 enum class ScopeLookup : uint8_t
 {
     none = 0, 
-    this_ = 1, 
-    base = 2, 
-    parent = 4,
+    this_ = 1 << 0, 
+    base = 1 << 1, 
+    parent = 1 << 2,
     this_and_base = this_ | base,
     this_and_parent = this_ | parent,
-    this_and_base_and_parent = this_ | base | parent
+    this_and_base_and_parent = this_ | base | parent,
+    fileScopes = 1 << 3
 };
 
 inline ScopeLookup operator&(ScopeLookup left, ScopeLookup right)
@@ -91,6 +92,7 @@ public:
     Symbol* Lookup(const std::string& name) const override;
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const override;
     FileScope* Clone() const;
+    void CollectViableFunctions(const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
 private:
     std::vector<ContainerScope*> containerScopes;
     typedef std::unordered_map<std::string, Symbol*> AliasSymbolMap;

@@ -25,6 +25,12 @@ std::string EnumTypeSymbol::GetMangleId() const
     return MakeAssemblyName(FullName());
 }
 
+bool EnumTypeSymbol::IsExportSymbol() const
+{
+    if (Parent()->IsClassTemplateSymbol()) return false;
+    return TypeSymbol::IsExportSymbol();
+}
+
 void EnumTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);

@@ -22,6 +22,12 @@ std::string DelegateTypeSymbol::GetMangleId() const
     return MakeAssemblyName(FullName());
 }
 
+bool DelegateTypeSymbol::IsExportSymbol() const
+{
+    if (Parent()->IsClassTemplateSymbol()) return false;
+    return TypeSymbol::IsExportSymbol();
+}
+
 ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), flags(ClassDelegateTypeSymbolFlags::none)
 {
 }
@@ -29,6 +35,12 @@ ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::s
 std::string ClassDelegateTypeSymbol::GetMangleId() const
 {
     return MakeAssemblyName(FullName());
+}
+
+bool ClassDelegateTypeSymbol::IsExportSymbol() const
+{
+    if (Parent()->IsClassTemplateSymbol()) return false;
+    return TypeSymbol::IsExportSymbol();
 }
 
 } } // namespace Cm::Sym

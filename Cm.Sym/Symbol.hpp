@@ -115,6 +115,7 @@ public:
     virtual bool IsContainerSymbol() const { return false; }
     virtual bool IsTypeSymbol() const { return false; }
     virtual bool IsClassTypeSymbol() const { return false; }
+    virtual bool IsClassTemplateSymbol() const { return false; }
     virtual bool IsConstantSymbol() const { return false; }
     virtual bool IsBasicTypeSymbol() const { return false; }
     virtual bool IsBoolTypeSymbol() const { return false; }

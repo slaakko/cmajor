@@ -82,7 +82,7 @@ public:
     void ReadClassNode(Cm::Sym::SymbolTable& symbolTable);
     void FreeClassNode(Cm::Sym::SymbolTable& symbolTable);
     bool IsClassTypeSymbol() const override { return true; }
-    bool IsClassTemplate() const { return !typeParameters.empty(); }
+    bool IsClassTemplateSymbol() const { return !typeParameters.empty(); }
     ClassTypeSymbol* BaseClass() const { return baseClass; }
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
     void SetType(TypeSymbol* type, int index);
