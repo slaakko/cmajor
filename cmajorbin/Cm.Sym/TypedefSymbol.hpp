@@ -22,6 +22,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::typedefSymbol; }
     std::string TypeString() const override { return "typedef"; };
     bool IsTypedefSymbol() const override { return true; }
+    bool IsExportSymbol() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type_) { type = type_; }

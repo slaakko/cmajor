@@ -39,6 +39,7 @@ public:
     std::string TypeString() const override { return "delegate"; };
     bool IsDelegateTypeSymbol() const override { return true; }
     std::string GetMangleId() const override;
+    bool IsExportSymbol() const override;
     bool IsNothrow() const
     {
         return GetFlag(DelegateTypeSymbolFlags::nothrow);
@@ -91,6 +92,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::classDelegateSymbol; }
     std::string TypeString() const override { return "class delegate"; };
     std::string GetMangleId() const override;
+    bool IsExportSymbol() const override;
     bool IsClassDelegateTypeSymbol() const override { return true; }
     bool IsNothrow() const
     {

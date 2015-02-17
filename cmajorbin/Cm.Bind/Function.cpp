@@ -34,7 +34,7 @@ Cm::Sym::FunctionSymbol* BindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym
 void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Ast::FunctionNode* functionNode, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Sym::ClassTypeSymbol* currentClass)
 {
-    if (currentClass && currentClass->IsClassTemplate())
+    if (currentClass && currentClass->IsClassTemplateSymbol())
     {
         return;
     }
@@ -66,9 +66,12 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
         {
             throw Cm::Core::Exception("only constructors can be explicit", functionSymbol->GetSpan());
         }
-        if (!functionNode->HasBody())
+        if (!currentClass || !currentClass->IsTemplateTypeSymbol())
         {
-            throw Cm::Core::Exception("explicit functions must have body", functionSymbol->GetSpan());
+            if (!functionNode->HasBody())
+            {
+                throw Cm::Core::Exception("explicit functions must have body", functionSymbol->GetSpan());
+            }
         }
         if (staticClass)
         {

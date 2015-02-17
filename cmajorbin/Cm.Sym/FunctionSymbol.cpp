@@ -254,7 +254,9 @@ bool FunctionSymbol::IsConvertingConstructor() const
 
 bool FunctionSymbol::IsExportSymbol() const 
 { 
-    return IsFunctionTemplateSpecialization() ? false : ContainerSymbol::IsExportSymbol(); 
+    if (IsFunctionTemplateSpecialization()) return false;
+    if (Parent()->IsClassTemplateSymbol()) return false;
+    return ContainerSymbol::IsExportSymbol(); 
 }
 
 void FunctionSymbol::SetConvertingConstructor()

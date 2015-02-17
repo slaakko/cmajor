@@ -21,14 +21,7 @@ ConstantSymbol::ConstantSymbol(const Span& span_, const std::string& name_) : Sy
 
 bool ConstantSymbol::IsExportSymbol() const
 {
-    if (Parent()->IsClassTypeSymbol())
-    {
-        ClassTypeSymbol* parentClass = static_cast<ClassTypeSymbol*>(Parent());
-        if (parentClass->IsClassTemplate())
-        {
-            return false;
-        }
-    }
+    if (Parent()->IsClassTemplateSymbol()) return false;
     return Symbol::IsExportSymbol();
 }
 

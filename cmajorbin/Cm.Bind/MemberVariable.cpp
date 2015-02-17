@@ -93,14 +93,10 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     {
         throw Cm::Core::Exception("member variable cannot be throw", memberVariableSymbol->GetSpan());
     }
-    if (memberVariableSymbol->Parent()->IsClassTypeSymbol())
+    if (memberVariableSymbol->Parent()->IsClassTemplateSymbol())
     {
-        Cm::Sym::ClassTypeSymbol* parentClass = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableSymbol->Parent());
-        if (parentClass->IsClassTemplate())
-        {
-            memberVariableSymbol->SetBound();
-            return;
-        }
+        memberVariableSymbol->SetBound();
+        return;
     }
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, memberVariableNode->TypeExpr());
     if (type->Access() < memberVariableSymbol->Access())

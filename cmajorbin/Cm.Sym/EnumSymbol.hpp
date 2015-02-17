@@ -22,6 +22,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::enumTypeSymbol; }
     std::string TypeString() const override { return "enum type"; };
     std::string GetMangleId() const override;
+    bool IsExportSymbol() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     bool IsEnumTypeSymbol() const override { return true; }

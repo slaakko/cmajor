@@ -129,11 +129,10 @@ void TypeResolver::Visit(Cm::Ast::DoubleNode& doubleNode)
 void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 {
     std::vector<Cm::Sym::TypeSymbol*> typeArguments;
-    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&templateIdNode);
-    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, scope, fileScopes, templateIdNode.Subject());
+    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, currentContainerScope, fileScopes, templateIdNode.Subject());
     for (const std::unique_ptr<Cm::Ast::Node>& templateArgNode : templateIdNode.TemplateArguments())
     {
-        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, scope, fileScopes, templateArgNode.get());
+        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, currentContainerScope, fileScopes, templateArgNode.get());
         typeArguments.push_back(argumentType);
     }
     typeSymbol = symbolTable.GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());

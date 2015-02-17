@@ -18,6 +18,12 @@ TypedefSymbol::TypedefSymbol(const Span& span_, const std::string& name_) : Symb
 {
 }
 
+bool TypedefSymbol::IsExportSymbol() const
+{
+    if (Parent()->IsClassTemplateSymbol()) return false;
+    return Symbol::IsExportSymbol();
+}
+
 void TypedefSymbol::Write(Writer& writer)
 {
     Symbol::Write(writer);

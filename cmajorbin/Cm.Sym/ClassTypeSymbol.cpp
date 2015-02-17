@@ -54,7 +54,7 @@ void ClassTypeSymbol::Write(Writer& writer)
     {
         writer.Write(baseClass->Id());
     }
-    if (IsClassTemplate())
+    if (IsClassTemplateSymbol())
     {
         if (!persistentClassData)
         {
@@ -90,7 +90,7 @@ void ClassTypeSymbol::Read(Reader& reader)
     {
         reader.FetchTypeFor(this, 0);
     }
-    if (IsClassTemplate())
+    if (IsClassTemplateSymbol())
     {
         if (!persistentClassData)
         {

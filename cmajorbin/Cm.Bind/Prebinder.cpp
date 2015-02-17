@@ -222,7 +222,7 @@ void Prebinder::Visit(Cm::Ast::ConstantNode& constantNode)
 
 void Prebinder::Visit(Cm::Ast::ParameterNode& parameterNode)
 {
-    if (currentClass && currentClass->IsClassTemplate())
+    if (currentClass && currentClass->IsClassTemplateSymbol())
     {
         return;
     }

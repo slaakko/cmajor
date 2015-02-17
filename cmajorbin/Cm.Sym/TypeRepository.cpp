@@ -369,7 +369,7 @@ void TypeRepository::Import(Reader& reader)
     }
     if (!reader.AllTypesFetched())
     {
-        throw std::runtime_error("not all types fetched!");
+        //throw std::runtime_error("not all types fetched!"); todo
     }
 }
 
