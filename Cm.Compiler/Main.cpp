@@ -38,6 +38,7 @@ struct InitDone
     }
 };
 
+
 int main(int argc, const char** argv)
 {
 #if defined(_MSC_VER) && !defined(NDEBUG)

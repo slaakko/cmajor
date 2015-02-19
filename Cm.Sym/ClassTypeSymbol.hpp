@@ -77,6 +77,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
     std::string TypeString() const override { return "class"; };
     std::string GetMangleId() const override;
+    bool IsExportSymbol() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void ReadClassNode(Cm::Sym::SymbolTable& symbolTable);

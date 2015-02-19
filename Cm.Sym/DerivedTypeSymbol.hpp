@@ -35,7 +35,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::derivedTypeSymbol; }
     std::string TypeString() const override { return "derived type"; };
     std::string GetMangleId() const override;
-    const Cm::Ast::DerivationList& Derivations() const { return derivations; }
+    const Cm::Ast::DerivationList& Derivations() const override { return derivations; }
     bool IsDerivedTypeSymbol() const override { return true; }
     TypeSymbol* GetBaseType() const override { return baseType; }
     bool IsPointerType() const override { return HasPointertDerivation(derivations); }
@@ -54,7 +54,8 @@ public:
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type, int index) override;
-    void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) override;
+    void CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
 private:
     TypeSymbol* baseType;
     Cm::Ast::DerivationList derivations;

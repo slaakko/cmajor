@@ -11,6 +11,7 @@
 #include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
@@ -66,6 +67,11 @@ std::string TemplateTypeSymbol::GetMangleId() const
 void TemplateTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
+    if (Name().find("UniquePtr") != std::string::npos)
+    {
+        int x = 0;
+    }
+    writer.GetBinaryWriter().Write(Parent()->FullName());
     writer.Write(subjectType->Id());
     uint8_t n = uint8_t(typeArguments.size());
     writer.GetBinaryWriter().Write(n);
@@ -78,8 +84,31 @@ void TemplateTypeSymbol::Write(Writer& writer)
 void TemplateTypeSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
+    if (Name().find("UniquePtr") != std::string::npos)
+    {
+        int x = 0;
+    }
+    std::string parentName = reader.GetBinaryReader().ReadString();
+    Cm::Sym::Symbol* parent = reader.GetSymbolTable().GlobalScope()->Lookup(parentName);
+    if (parent)
+    {
+        if (parent->IsContainerSymbol())
+        {
+            Cm::Sym::ContainerSymbol* containerParent = static_cast<Cm::Sym::ContainerSymbol*>(parent);
+            containerParent->AddSymbol(this);
+        }
+        else
+        {
+            throw std::runtime_error("not container parent");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("not parent");
+    }
     reader.FetchTypeFor(this, -1);
     uint8_t n = reader.GetBinaryReader().ReadByte();
+    typeArguments.resize(n);
     for (int i = 0; i < int(n); ++i)
     {
         reader.FetchTypeFor(this, i);
@@ -94,11 +123,11 @@ void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
     }
     else
     {
-        if (index != int(typeArguments.size()))
+        if (index >= int(typeArguments.size()))
         {
-            throw std::runtime_error("invalid type argument index");
+            throw std::runtime_error("invalid type index");
         }
-        AddTypeArgument(type);
+        typeArguments[index] = type;
     }
 }
 
@@ -112,11 +141,6 @@ void TemplateTypeSymbol::SetSubjectType(TypeSymbol* subjectType_)
     subjectType = subjectType_;
 }
 
-void TemplateTypeSymbol::AddTypeArgument(TypeSymbol* typeArgument)
-{
-    typeArguments.push_back(typeArgument);
-}
-
 void TemplateTypeSymbol::SetFileScope(FileScope* fileScope_)
 {
     fileScope.reset(fileScope_);
@@ -127,5 +151,36 @@ void TemplateTypeSymbol::SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_)
     globalNs.reset(globalNs_);
 }
 
+void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+{
+    subjectType->CollectExportedDerivedTypes(exportedDerivedTypes);
+    for (TypeSymbol* typeArgument : typeArguments)
+    {
+        typeArgument->CollectExportedDerivedTypes(exportedDerivedTypes);
+    }
+}
+
+void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    if (Source() == SymbolSource::project)
+    {
+        if (collected.find(subjectType) == collected.end())
+        {
+            collected.insert(subjectType);
+            subjectType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+        }
+        for (TypeSymbol* typeArgument : typeArguments)
+        {
+            if (collected.find(typeArgument) == collected.end())
+            {
+                collected.insert(typeArgument);
+                typeArgument->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            }
+        }
+        collected.insert(this);
+        exportedTemplateTypes.insert(this);
+        SetSource(SymbolSource::library);
+    }
+}
 
 } } // namespace Cm::Sym

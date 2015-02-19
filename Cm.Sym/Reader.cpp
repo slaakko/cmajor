@@ -139,6 +139,10 @@ Symbol* Reader::ReadSymbol()
             symbol->SetBound();
         }
         symbol->Read(*this);
+        if (symbol->IsTemplateTypeSymbol())
+        {
+            symbol->ResetFlag(SymbolFlags::bound);
+        }
         return symbol;
     }
 }

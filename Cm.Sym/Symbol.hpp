@@ -12,6 +12,7 @@
 #include <Cm.Parsing/Scanner.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
 #include <Cm.Ast/Specifier.hpp>
+#include <unordered_set>
 
 namespace Cm { namespace Sym {
 
@@ -21,6 +22,7 @@ using Cm::Util::CodeFormatter;
 class ContainerScope;
 class NamespaceSymbol;
 class ClassTypeSymbol;
+class TemplateTypeSymbol;
 class FunctionSymbol;
 class ContainerSymbol;
 
@@ -154,7 +156,8 @@ public:
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
     virtual void Dump(CodeFormatter& formatter);
-    virtual void CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes);
+    virtual void CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes);
+    virtual void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes);
     virtual void InitVirtualFunctionTables();
     virtual void MakeIrType();
 private:

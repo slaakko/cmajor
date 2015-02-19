@@ -35,7 +35,7 @@ ContainerScope::ContainerScope(ContainerScope&& that) : symbolMap(std::move(that
 void ContainerScope::Install(Symbol* symbol)
 {
     SymbolMapIt i = symbolMap.find(symbol->Name());
-    if (i != symbolMap.end())
+    if (i != symbolMap.end() && !symbol->IsTemplateTypeSymbol())
     {
         const Span& defined = symbol->GetSpan();
         Symbol* prev = i->second;

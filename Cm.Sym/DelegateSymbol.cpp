@@ -25,6 +25,7 @@ std::string DelegateTypeSymbol::GetMangleId() const
 bool DelegateTypeSymbol::IsExportSymbol() const
 {
     if (Parent()->IsClassTemplateSymbol()) return false;
+    if (Parent()->IsTemplateTypeSymbol()) return false;
     return TypeSymbol::IsExportSymbol();
 }
 

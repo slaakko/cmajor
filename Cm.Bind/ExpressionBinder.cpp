@@ -193,6 +193,10 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
         fun = ResolveOverload(containerScope, boundCompileUnit, opGroupName, freeFunArguments, freeFunLookups, node->GetSpan(), conversions);
     }
     PrepareFunctionSymbol(fun, node->GetSpan());
+    if (operand->GetType()->IsClassTypeSymbol())
+    {
+        operand->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+    }
     if (conversions.size() != 1)
     {
         throw std::runtime_error("wrong number of conversions");
@@ -238,6 +242,14 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     if (conversions.size() != 2)
     {
         throw std::runtime_error("wrong number of conversions");
+    }
+    if (left->GetType()->IsClassTypeSymbol())
+    {
+        left->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+    }
+    if (right->GetType()->IsClassTypeSymbol())
+    {
+        right->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
     }
     Cm::Sym::FunctionSymbol* leftConversionFun = conversions[0];
     Cm::Sym::FunctionSymbol* rightConversionFun = conversions[1];
@@ -1112,8 +1124,16 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, plainArgumentType->GetContainerScope()->ClassOrNsScope()));
         if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
         {
-            resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, 
-                boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), node->GetSpan())));
+            if (argument->GetType()->IsConstType())
+            {
+                resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue,
+                    boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstPointerType(argument->GetType()->GetBaseType(), node->GetSpan())));
+            }
+            else
+            {
+                resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue,
+                    boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(argument->GetType()->GetBaseType(), node->GetSpan())));
+            }
             if (first)
             {
                 firstArgByRef = true;
@@ -1137,6 +1157,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         }
     }
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
     Cm::Sym::FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions, 
         Cm::Sym::ConversionType::implicit, boundTemplateArguments, Cm::Bind::OverloadResolutionFlags());
     if (fun->IsVirtualAbstractOrOverride() && firstArgIsPointerOrReference && !firstArgIsThisOrBase)

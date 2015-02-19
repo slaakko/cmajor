@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Core/GenData.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Ir.Intf/Label.hpp>
 
@@ -364,14 +365,14 @@ void GenResult::SetLabel(Ir::Intf::LabelObject* label)
     genData.SetLabel(label);
 }
 
-void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type)
+void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type, Cm::Sym::TypeRepository& typeRepository)
 {
     if (type->IsRvalueRefType())
     {
-        Cm::Sym::TypeSymbol* baseType = type->GetBaseType();
-        if (baseType->IsBasicTypeSymbol() || baseType->IsEnumTypeSymbol() || baseType->IsPointerType() || baseType->IsDelegateTypeSymbol())
+        Cm::Sym::TypeSymbol* plainType = typeRepository.MakePlainType(type);
+        if (plainType->IsBasicTypeSymbol() || plainType->IsEnumTypeSymbol() || plainType->IsPointerType() || plainType->IsDelegateTypeSymbol())
         {
-            Ir::Intf::Type* rvalueRefType = Cm::IrIntf::RvalueRef(baseType->GetIrType());
+            Ir::Intf::Type* rvalueRefType = Cm::IrIntf::RvalueRef(plainType->GetIrType());
             emitter->Own(rvalueRefType);
             Ir::Intf::RegVar* temp = Cm::IrIntf::CreateTemporaryRegVar(rvalueRefType);
             emitter->Own(temp);

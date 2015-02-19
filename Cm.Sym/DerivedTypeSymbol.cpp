@@ -18,23 +18,12 @@ TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList&
 {
     TypeId id = baseType->Id();
     int m = derivations.NumDerivations();
-    for (int k = 0; k < m; ++k)
+    for (int i = 0; i < m; ++i)
     {
-        uint8_t derivationCode = 1 << uint8_t(derivations[k]);
-        uint8_t positionCode = 1 << k;
-        int n = int(id.Rep().Tag().size());
-        for (int i = 0; i < n; ++i)
-        {
-            if ((i & 1) == 0)
-            {
-                id.Rep().Tag().data[i] ^= derivationCode;
-            }
-            else
-            {
-                id.Rep().Tag().data[i] ^= positionCode;
-            }
-        }
+        uint8_t derivationCode = 1 << uint8_t(derivations[i]);
+        id.Rep().Tag().data[i + 1] ^= derivationCode;
     }
+    id.InvalidateHashCode();
     return id;
 }
 
@@ -182,12 +171,20 @@ std::string DerivedTypeSymbol::GetMangleId() const
 void DerivedTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
+    if (Name().find("UniquePtr") != std::string::npos)
+    {
+        int x = 0;
+    }
     writer.Write(derivations);
     writer.Write(baseType->Id());
 }
 
 void DerivedTypeSymbol::Read(Reader& reader)
 {
+    if (Name().find("UniquePtr") != std::string::npos)
+    {
+        int x = 0;
+    }
     TypeSymbol::Read(reader);
     derivations = reader.ReadDerivationList();
     reader.FetchTypeFor(this, 0);
@@ -199,12 +196,24 @@ void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
     SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
 }
 
-void DerivedTypeSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
     if (Source() == SymbolSource::project)
     {
-        exportedDerivedTypes.push_back(this);
+        exportedDerivedTypes.insert(this);
         SetSource(SymbolSource::library);
+    }
+}
+
+void DerivedTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    if (Source() == SymbolSource::project)
+    {
+        if (collected.find(baseType) == collected.end())
+        {
+            collected.insert(baseType);
+            baseType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+        }
     }
 }
 

@@ -24,7 +24,6 @@ public:
     TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::templateTypeSymbol; }
     bool IsTemplateTypeSymbol() const override { return true; }
-    bool IsExportSymbol() const override { return false; }
     std::string TypeString() const override { return "template type"; };
     std::string GetMangleId() const override;
     void Write(Writer& writer) override;
@@ -32,12 +31,13 @@ public:
     void SetSubjectType(TypeSymbol* subjectType_);
     TypeSymbol* GetSubjectType() const { return subjectType; }
     const std::vector<TypeSymbol*>& TypeArguments() const { return typeArguments; }
-    void AddTypeArgument(TypeSymbol* typeArgument);
     void SetType(TypeSymbol* type, int index) override;
     void MakeIrType() override;
     void SetFileScope(FileScope* fileScope_);
     FileScope* CloneFileScope() const { return fileScope->Clone(); }
     void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);
+    void CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;

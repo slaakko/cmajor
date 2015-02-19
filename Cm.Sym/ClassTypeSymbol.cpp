@@ -40,12 +40,15 @@ std::string ClassTypeSymbol::GetMangleId() const
     return MakeAssemblyName(FullName());
 }
 
+bool ClassTypeSymbol::IsExportSymbol() const
+{
+    if (Parent()->IsClassTemplateSymbol()) return false;
+    if (Parent()->IsTemplateTypeSymbol()) return false;
+    return TypeSymbol::IsExportSymbol();
+}
+
 void ClassTypeSymbol::Write(Writer& writer)
 {
-    if (Name() == "UniquePtr")
-    {
-        int x = 0;
-    }
     TypeSymbol::Write(writer);
     writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));
     bool hasBaseClass = baseClass != nullptr;

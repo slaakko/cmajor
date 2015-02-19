@@ -89,10 +89,6 @@ void Prebinder::Visit(Cm::Ast::NamespaceImportNode& namespaceImportNode)
 
 void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
 {
-    if (classNode.Name() == "UniquePtr")
-    {
-        int x = 0;
-    }
     Cm::Sym::ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, currentContainerScope, fileScopes, &classNode);
     if (classNode.TemplateParameters().Count() > 0)
     {

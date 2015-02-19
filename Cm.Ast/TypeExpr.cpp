@@ -11,6 +11,7 @@
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Visitor.hpp>
+#include <algorithm>
 
 namespace Cm { namespace Ast {
 
@@ -64,6 +65,21 @@ void DerivationList::RemoveLastPointer()
             return;
         }
     }
+}
+
+struct IsReference
+{
+    bool operator()(Derivation derivation) const
+    {
+        return derivation == Derivation::reference;
+    }
+};
+
+void DerivationList::RemoveReference()
+{
+    Derivation* new_end = std::remove_if(&derivations[0], &derivations[numDerivations], IsReference());
+    std::fill(new_end, &derivations[numDerivations], Derivation());
+    numDerivations -= uint8_t(&derivations[numDerivations] - new_end);
 }
 
 bool operator==(const DerivationList& left, const DerivationList& right)

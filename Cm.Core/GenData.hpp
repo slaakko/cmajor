@@ -11,6 +11,7 @@
 #define CM_CORE_GEN_DATA_INCLUDED
 #include <Cm.Core/Emitter.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/TypeRepository.hpp>
 #include <stack>
 #include <unordered_set>
 
@@ -148,7 +149,7 @@ public:
     void AddChild(GenData&& child);
     Ir::Intf::Object* MainObject() const { return genData.MainObject(); }
     void SetMainObject(Ir::Intf::Object* mainObject) { genData.SetMainObject(mainObject); }
-    void SetMainObject(Cm::Sym::TypeSymbol* type);
+    void SetMainObject(Cm::Sym::TypeSymbol* type, Cm::Sym::TypeRepository& typeRepository);
     void AddObject(Ir::Intf::Object* object) { genData.AddObject(object); }
     Ir::Intf::Object* Arg1() const { return genData.Arg1(); }
     Ir::Intf::Object* Arg2() const { return genData.Arg2(); }

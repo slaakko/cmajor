@@ -58,10 +58,6 @@ void ContainerSymbol::Read(Reader& reader)
 
 void ContainerSymbol::AddSymbol(Symbol* symbol)
 {
-    if (Name() == "System" && symbols.size() == 87)
-    {
-        int x = 0;
-    }
     if (!symbol->Name().empty() && !symbol->IsFunctionSymbol() && !symbol->IsConceptSymbol())
     {
         containerScope.Install(symbol);
@@ -138,13 +134,28 @@ void ContainerSymbol::Dump(CodeFormatter& formatter)
     formatter.DecIndent();
 }
 
-void ContainerSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+void ContainerSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
     for (const std::unique_ptr<Symbol>& symbol : symbols)
     {
         if (symbol->IsExportSymbol())
         {
             symbol->CollectExportedDerivedTypes(exportedDerivedTypes);
+        }
+    }
+}
+
+void ContainerSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    {
+        if (symbol->IsExportSymbol())
+        {
+            if (collected.find(symbol.get()) == collected.end())
+            {
+                collected.insert(symbol.get());
+                symbol->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            }
         }
     }
 }
