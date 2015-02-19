@@ -128,23 +128,67 @@ Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& 
     }
 }
 
+void MergeDerivations(Cm::Ast::DerivationList& targetDerivations, const Cm::Ast::DerivationList& sourceDerivations)
+{
+    int n = sourceDerivations.NumDerivations();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Ast::Derivation derivation = sourceDerivations[i];
+        bool found = false;
+        if (derivation == Cm::Ast::Derivation::reference || derivation == Cm::Ast::Derivation::rvalueRef)
+        {
+            int m = targetDerivations.NumDerivations();
+            for (int j = 0; j < m; ++j)
+            {
+                Cm::Ast::Derivation td = targetDerivations[j];
+                if (td == derivation)
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found)
+        {
+            if (derivation == Cm::Ast::Derivation::const_)
+            {
+                targetDerivations.InsertFront(derivation);
+            }
+            else
+            {
+                targetDerivations.Add(derivation);
+            }
+        }
+    }
+}
+
 TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span)
 {
-    if (HasRvalueRefDerivation(derivations) && baseType->IsReferenceType())
+    Cm::Ast::DerivationList finalDerivations = derivations;
+    TypeSymbol* finalBaseType = baseType;
+    if (baseType->IsDerivedTypeSymbol())
     {
-        return MakeDerivedType(derivations, baseType->GetBaseType(), span); // hack to remove rvalue references to reference types
+        DerivedTypeSymbol* baseDerivedType = static_cast<DerivedTypeSymbol*>(baseType);
+        finalDerivations = baseDerivedType->Derivations();
+        MergeDerivations(finalDerivations, derivations);
+        finalBaseType = baseDerivedType->GetBaseType();
     }
-    TypeId typeId = ComputeDerivedTypeId(baseType, derivations);
+    if (HasRvalueRefDerivation(finalDerivations) && HasReferenceDerivation(finalDerivations))
+    {
+        finalDerivations.RemoveReference();
+        return MakeDerivedType(finalDerivations, finalBaseType, span); // hack to remove rvalue references to reference types
+    }
+    TypeId typeId = ComputeDerivedTypeId(finalBaseType, finalDerivations);
     TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
     if (typeSymbol)
     {
         return typeSymbol;
     }
-    std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(derivations, baseType), baseType, derivations, typeId));
+    std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType), finalBaseType, finalDerivations, typeId));
     derivedTypeSymbol->SetAccess(SymbolAccess::public_);
     if (!baseType->IsTypeParameterSymbol())
     {
-        derivedTypeSymbol->SetIrType(MakeIrType(baseType, derivations, span));
+        derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span));
         derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
     }
     types.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol.get()));
@@ -316,11 +360,11 @@ TypeSymbol* TypeRepository::MakePlainType(TypeSymbol* type)
         derivations = ClearConstsRefsAndRvalueRefs(derivations);
         if (derivations.NumDerivations() == 0)
         {
-            return MakePlainType(derivedType->GetBaseType());
+            return derivedType->GetBaseType();
         }
         else
         {
-            return MakeDerivedType(derivations, MakePlainType(derivedType->GetBaseType()), derivedType->GetSpan());
+            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan());
         }
     }
     else
@@ -338,11 +382,11 @@ TypeSymbol* TypeRepository::MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
         derivations = ClearConstsRefsRvalueRefsAndOnePointer(derivations);
         if (derivations.NumDerivations() == 0)
         {
-            return MakePlainType(derivedType->GetBaseType());
+            return derivedType->GetBaseType();
         }
         else
         {
-            return MakeDerivedType(derivations, MakePlainType(derivedType->GetBaseType()), derivedType->GetSpan());
+            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan());
         }
     }
     else
@@ -353,6 +397,21 @@ TypeSymbol* TypeRepository::MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
 
 void TypeRepository::Import(Reader& reader)
 {
+    int32_t nt = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < nt; ++i)
+    {
+        Symbol* symbol = reader.ReadSymbol();
+        if (symbol->IsTemplateTypeSymbol())
+        {
+            TemplateTypeSymbol* templateTypeSymbol = static_cast<TemplateTypeSymbol*>(symbol);
+            templateTypeSymbol->MakeIrType();
+            types.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol));
+        }
+        else
+        {
+            throw std::runtime_error("template type symbol expected");
+        }
+    }
     int32_t n = reader.GetBinaryReader().ReadInt();
     for (int32_t i = 0; i < n; ++i)
     {
@@ -360,6 +419,7 @@ void TypeRepository::Import(Reader& reader)
         if (symbol->IsTypeSymbol())
         {
             TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
+            typeSymbol->MakeIrType();
             types.push_back(std::unique_ptr<TypeSymbol>(typeSymbol));
         }
         else
@@ -369,7 +429,7 @@ void TypeRepository::Import(Reader& reader)
     }
     if (!reader.AllTypesFetched())
     {
-        //throw std::runtime_error("not all types fetched!"); todo
+        throw std::runtime_error("not all types fetched!");
     }
 }
 

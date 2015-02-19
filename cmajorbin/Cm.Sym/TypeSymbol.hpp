@@ -11,6 +11,7 @@
 #define CM_SYM_TYPE_SYMBOL_INCLUDED
 #include <Cm.Sym/ContainerSymbol.hpp>
 #include <Cm.Sym/TypeId.hpp>
+#include <Cm.Ast/TypeExpr.hpp>
 #include <Ir.Intf/Type.hpp>
 #include <Ir.Intf/Object.hpp>
 
@@ -24,6 +25,8 @@ struct DerivationCounts
     int rvalueRefs;
     int pointers;
 };
+
+extern Cm::Ast::DerivationList emptyDerivationList;
 
 bool operator<(const DerivationCounts& left, const DerivationCounts& right);
 
@@ -58,6 +61,7 @@ public:
     virtual bool IsConstPointerType() const { return false; }
     virtual bool IsConstPointerPointerType() const { return false; }
     virtual DerivationCounts GetDerivationCounts() const { return DerivationCounts(); }
+    virtual const Cm::Ast::DerivationList& Derivations() const { return emptyDerivationList; }
     void SetIrType(Ir::Intf::Type* irType_);
     Ir::Intf::Type* GetIrType() const;
     void SetDefaultIrValue(Ir::Intf::Object* defaultIrValue_);

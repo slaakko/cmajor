@@ -22,6 +22,7 @@ MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string&
 bool MemberVariableSymbol::IsExportSymbol() const 
 {
     if (Parent()->IsClassTemplateSymbol()) return false;
+    if (Parent()->IsTemplateTypeSymbol()) return false;
     return true; 
 }
 

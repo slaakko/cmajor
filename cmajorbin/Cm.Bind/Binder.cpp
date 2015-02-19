@@ -128,7 +128,10 @@ void Binder::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
             {
                 GenerateInitVPtrStatement(boundClass->Symbol(), boundFunction.get());
             }
-            GenerateMemberVariableInitStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), boundClass->Symbol(), &constructorNode);
+            if (!callToThisInitializerGenerated)
+            {
+                GenerateMemberVariableInitStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), boundClass->Symbol(), &constructorNode);
+            }
             boundClass->AddBoundNode(boundFunction.release());
         }
         EndContainerScope();

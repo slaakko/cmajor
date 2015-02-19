@@ -256,6 +256,7 @@ bool FunctionSymbol::IsExportSymbol() const
 { 
     if (IsFunctionTemplateSpecialization()) return false;
     if (Parent()->IsClassTemplateSymbol()) return false;
+    if (Parent()->IsTemplateTypeSymbol()) return false;
     return ContainerSymbol::IsExportSymbol(); 
 }
 
@@ -464,6 +465,7 @@ void FunctionSymbol::ComputeName()
         }
         s.append(1, '>');
     }
+    bool isConst = false;
     s.append(1, '(');
     bool first = true;
     for (ParameterSymbol* parameter : parameters)
@@ -471,6 +473,13 @@ void FunctionSymbol::ComputeName()
         if (first)
         {
             first = false;
+            if (IsMemberFunctionSymbol())
+            {
+                if (parameter->GetType()->IsConstType())
+                {
+                    isConst = true;
+                }
+            }
         }
         else
         {
@@ -480,6 +489,10 @@ void FunctionSymbol::ComputeName()
         s.append(paramType->FullName());
     }
     s.append(1, ')');
+    if (isConst)
+    {
+        s.append(" const");
+    }
     SetName(s);
 }
 
@@ -488,7 +501,7 @@ TypeSymbol* FunctionSymbol::GetTargetType() const
     return parameters[0]->GetType()->GetBaseType();
 }
 
-void FunctionSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes) 
+void FunctionSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
     if (returnType)
     {
@@ -500,6 +513,22 @@ void FunctionSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& expor
     for (ParameterSymbol* parameter : parameters)
     {
         parameter->CollectExportedDerivedTypes(exportedDerivedTypes);
+    }
+}
+
+void FunctionSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    if (returnType)
+    {
+        if (collected.find(returnType) == collected.end())
+        {
+            collected.insert(returnType);
+            returnType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+        }
+    }
+    for (ParameterSymbol* parameter : parameters)
+    {
+        parameter->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
     }
 }
 

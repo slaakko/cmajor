@@ -41,6 +41,7 @@ public:
     const_iterator begin() const { return derivations; }
     const_iterator end() const { return &derivations[numDerivations]; }
     void RemoveLastPointer();
+    void RemoveReference();
 private:
     uint8_t numDerivations;
     Derivation derivations[maxDerivations];

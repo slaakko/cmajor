@@ -66,12 +66,25 @@ void ParameterSymbol::SetType(TypeSymbol* type_, int index)
     type = type_;
 }
 
-void ParameterSymbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+void ParameterSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
     if (!type) return;
     if (type->IsDerivedTypeSymbol())
     {
         type->CollectExportedDerivedTypes(exportedDerivedTypes);
+    }
+}
+
+void ParameterSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    if (!type) return;
+    if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())
+    {
+        if (collected.find(type) == collected.end())
+        {
+            collected.insert(type);
+            type->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+        }
     }
 }
 

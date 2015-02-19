@@ -43,6 +43,7 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
     {
         staticClass = true;
     }
+    functionSymbol->ComputeName();
     Cm::Ast::Specifiers specifiers = functionNode->GetSpecifiers();
     if ((specifiers & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
     {

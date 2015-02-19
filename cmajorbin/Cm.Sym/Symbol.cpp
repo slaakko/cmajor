@@ -255,7 +255,11 @@ void Symbol::Dump(CodeFormatter& formatter)
     formatter.WriteLine(f + TypeString() + " " + Name());
 }
 
-void Symbol::CollectExportedDerivedTypes(std::vector<TypeSymbol*>& exportedDerivedTypes)
+void Symbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+{
+}
+
+void Symbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
 {
 }
 

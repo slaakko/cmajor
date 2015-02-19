@@ -61,7 +61,14 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
         }
         else
         {
-            localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 2));
+            if (type->GetBaseType()->IsVoidTypeSymbol())
+            {
+                localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), type->GetPointerCount() + 2));
+            }
+            else
+            {
+                localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 2));
+            }
         }
     }
     else
@@ -136,10 +143,6 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     Cm::IrIntf::ResetLocalLabelCounter();
     currentFunction = boundFunction.GetFunctionSymbol();
-    if (currentFunction->FullName() == "System.Console.Write(const char* s)")
-    {
-        int x = 0;
-    }
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction);
     emitter.reset(new Cm::Core::Emitter(irFunction));
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
@@ -207,7 +210,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundLiteral& boundLiteral)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundStringLiteral& boundStringLiteral)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    result.SetMainObject(boundStringLiteral.GetType());
+    result.SetMainObject(boundStringLiteral.GetType(), typeRepository);
     Ir::Intf::Object* stringConstant = stringRepository.GetStringConstant(boundStringLiteral.Id());
     Ir::Intf::Object* stringObject = stringRepository.GetStringObject(boundStringLiteral.Id());
     Ir::Intf::Object* zero = Cm::IrIntf::CreateI32Constant(0);
@@ -257,7 +260,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariabl
     else
     {
         Cm::Sym::TypeSymbol* type = boundLocalVariable.Symbol()->GetType();
-        result.SetMainObject(type);
+        result.SetMainObject(type, typeRepository);
         result.AddObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundLocalVariable.Symbol()));
         Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
         if (boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
@@ -289,7 +292,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundParameter& boundParameter)
     else
     {
         Cm::Sym::TypeSymbol* type = boundParameter.Symbol()->GetType();
-        result.SetMainObject(type);
+        result.SetMainObject(type, typeRepository);
         result.AddObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundParameter.Symbol()));
         Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
         if (boundParameter.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
@@ -318,7 +321,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
         else
         {
             Cm::Sym::TypeSymbol* type = boundMemberVariable.Symbol()->GetType();
-            result.SetMainObject(type);
+            result.SetMainObject(type, typeRepository);
             result.AddObject(irObject);
             Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
         }
@@ -352,7 +355,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
         }
         else
         {
-            result.SetMainObject(type);
+            result.SetMainObject(type, typeRepository);
             result.AddObject(memberVariableIrObject);
             Cm::IrIntf::Init(*emitter, type->GetIrType(), result.Arg1(), result.MainObject());
         }
@@ -392,7 +395,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
     }
     else
     {
-        result.SetMainObject(boundConversion.GetType());
+        result.SetMainObject(boundConversion.GetType(), typeRepository);
     }
     if (boundConversion.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
@@ -430,7 +433,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundCast& boundCast)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    result.SetMainObject(boundCast.GetType());
+    result.SetMainObject(boundCast.GetType(), typeRepository);
     if (boundCast.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         result.SetGenJumpingBoolCode();
@@ -462,7 +465,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Sym::FunctionSymbol* op = boundUnaryOp.GetFunction();
-    result.SetMainObject(op->GetReturnType());
+    result.SetMainObject(op->GetReturnType(), typeRepository);
     Cm::Core::GenResult operandResult = resultStack.Pop();
     if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
@@ -491,7 +494,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Core::GenResult right = resultStack.Pop();
     Cm::Core::GenResult left = resultStack.Pop();
-    result.SetMainObject(boundBinaryOp.GetType());
+    result.SetMainObject(boundBinaryOp.GetType(), typeRepository);
     if (boundBinaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         result.SetGenJumpingBoolCode();
@@ -522,11 +525,11 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
     bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();
     if (functionReturnsClassObjectByValue)
     {
-        result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+        result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
     }
     else if (!functionCall.GetFunction()->IsBasicTypeOp() && !functionCall.GetFunction()->IsConstructorOrDestructorSymbol())
     {
-        result.SetMainObject(functionCall.GetType());
+        result.SetMainObject(functionCall.GetType(), typeRepository);
     }
     if (functionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
@@ -880,7 +883,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCom
     compoundResult = Cm::Core::GenResult(emitter.get(), Cm::Core::GenFlags::none);
     if (boundCompoundStatement.IsEmpty())
     {
-        compoundResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+        compoundResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
         GenerateCall(irFunctionRepository.GetDoNothingFunction(), compoundResult, false);
     }
     functionDestructionStack.Push(std::move(currentCompoundDestructionStack));
@@ -1058,7 +1061,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCallStatement& boundFunc
     Cm::Sym::FunctionSymbol* function = boundFunctionCallStatement.Function();
     if (!function->IsBasicTypeOp() && !function->IsConstructorOrDestructorSymbol())
     {
-        result.SetMainObject(function->GetReturnType());
+        result.SetMainObject(function->GetReturnType(), typeRepository);
     }
     int n = boundFunctionCallStatement.Arguments().Count();
     Ir::Intf::LabelObject* resultLabel = nullptr;
@@ -1095,7 +1098,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
         }
         else
         {
-            result.SetMainObject(boundReturnStatement.GetReturnType());
+            result.SetMainObject(boundReturnStatement.GetReturnType(), typeRepository);
         }
         Cm::Core::GenResult retValResult = resultStack.Pop();
         Ir::Intf::LabelObject* resultLabel = retValResult.GetLabel();
@@ -1262,7 +1265,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
     Cm::Sym::FunctionSymbol* assignment = boundAssignmentStatement.Assignment();
     if (!assignment->IsBasicTypeOp())
     {
-        result.SetMainObject(assignment->GetReturnType());
+        result.SetMainObject(assignment->GetReturnType(), typeRepository);
     }
     Cm::Core::GenResult sourceResult = resultStack.Pop();
     Cm::Core::GenResult targetResult = resultStack.Pop(); 
@@ -1298,7 +1301,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStat
     }
     else
     {
-        result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+        result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
         GenerateCall(irFunctionRepository.GetDoNothingFunction(), result, false);
     }
     resultStack.Push(std::move(result));
@@ -1708,7 +1711,7 @@ void FunctionEmitter::GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult&
     if (constructorOrDestructorCall)
     {
         Cm::Core::GenResult memberFunctionResult(emitter.get(), result.Flags());
-        memberFunctionResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+        memberFunctionResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
         for (Ir::Intf::Object* object : result.Objects())
         {
             memberFunctionResult.AddObject(object);
@@ -1732,7 +1735,7 @@ void FunctionEmitter::GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core
     Cm::Core::GenResult memberFunctionResult(emitter.get(), result.Flags());
     if (fun->IsConstructorOrDestructorSymbol())
     {
-        memberFunctionResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+        memberFunctionResult.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
     }
     for (Ir::Intf::Object* object : result.Objects())
     {
