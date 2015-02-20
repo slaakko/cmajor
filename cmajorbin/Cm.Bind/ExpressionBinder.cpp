@@ -1543,9 +1543,22 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
         boundFunctionGroup->SetBoundTemplateArguments(boundTemplateArguments);
         boundExpressionStack.Push(subject.release());
     }
+    else if (subject->IsBoundTypeExpression())
+    {
+        Cm::BoundTree::BoundTypeExpression* boundTypeExpression = static_cast<Cm::BoundTree::BoundTypeExpression*>(subject.get());
+        Cm::Sym::TypeSymbol* subjectType = boundTypeExpression->Symbol();
+        std::vector<Cm::Sym::TypeSymbol*> typeArguments;
+        for (const std::unique_ptr<Cm::Ast::Node>& templateArgument : templateIdNode.TemplateArguments())
+        {
+            Cm::Sym::TypeSymbol* templateArgumentType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), templateArgument.get());
+            typeArguments.push_back(templateArgumentType);
+        }
+        Cm::Sym::TypeSymbol* templateTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
+        boundExpressionStack.Push(new Cm::BoundTree::BoundTypeExpression(&templateIdNode, templateTypeSymbol));
+    }
     else
     {
-        throw Cm::Core::Exception("function group expected", templateIdNode.GetSpan());
+        throw Cm::Core::Exception("function or class template symbol expected", templateIdNode.GetSpan());
     }
 }
 

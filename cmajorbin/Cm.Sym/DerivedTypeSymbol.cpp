@@ -171,20 +171,12 @@ std::string DerivedTypeSymbol::GetMangleId() const
 void DerivedTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
-    if (Name().find("UniquePtr") != std::string::npos)
-    {
-        int x = 0;
-    }
     writer.Write(derivations);
     writer.Write(baseType->Id());
 }
 
 void DerivedTypeSymbol::Read(Reader& reader)
 {
-    if (Name().find("UniquePtr") != std::string::npos)
-    {
-        int x = 0;
-    }
     TypeSymbol::Read(reader);
     derivations = reader.ReadDerivationList();
     reader.FetchTypeFor(this, 0);

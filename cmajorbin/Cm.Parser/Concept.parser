@@ -78,7 +78,7 @@ namespace Cm.Parser
             ;
 
         TypenameConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*
-            ::= (keyword("typename") Identifier! ';'!){ value = new TypenameConstraintNode(span, Identifier); }
+            ::= (keyword("typename") TypeExpr(ctx)! ';'!){ value = new TypenameConstraintNode(span, TypeExpr); }
             ;
 
         SignatureConstraint(ParsingContext* ctx, std::string firstTypeParameter): Cm::Ast::ConstraintNode*

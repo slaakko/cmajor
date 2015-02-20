@@ -258,6 +258,7 @@ bool BoundConcept::Imply(BoundConstraint* that) const
         {
             return true;
         }
+        refined = refined->RefinedConcept();
     }
     return false;
 }

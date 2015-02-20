@@ -328,19 +328,19 @@ TypenameConstraintNode::TypenameConstraintNode(const Span& span_) : ConstraintNo
 {
 }
 
-TypenameConstraintNode::TypenameConstraintNode(const Span& span_, IdentifierNode* typeId_) : ConstraintNode(span_), typeId(typeId_)
+TypenameConstraintNode::TypenameConstraintNode(const Span& span_, Node* typeId_) : ConstraintNode(span_), typeId(typeId_)
 {
     typeId->SetParent(this);
 }
 
 Node* TypenameConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    return new TypenameConstraintNode(GetSpan(), static_cast<IdentifierNode*>(typeId->Clone(cloneContext)));
+    return new TypenameConstraintNode(GetSpan(), static_cast<Node*>(typeId->Clone(cloneContext)));
 }
 
 void TypenameConstraintNode::Read(Reader& reader)
 {
-    typeId.reset(reader.ReadIdentifierNode());
+    typeId.reset(reader.ReadNode());
     typeId->SetParent(this);
 }
 

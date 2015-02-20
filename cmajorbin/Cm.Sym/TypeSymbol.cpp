@@ -63,20 +63,12 @@ TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_, const TypeId
 void TypeSymbol::Write(Writer& writer)
 {
     ContainerSymbol::Write(writer);
-    if (Name().find("UniquePtr") != std::string::npos)
-    {
-        int x = 0;
-    }
     writer.Write(id);
 }
 
 void TypeSymbol::Read(Reader& reader)
 {
     ContainerSymbol::Read(reader);
-    if (Name().find("UniquePtr") != std::string::npos)
-    {
-        int x = 0;
-    }
     id = reader.ReadTypeId();
     reader.BackpatchType(this);
 }

@@ -166,11 +166,13 @@ struct BetterFunctionMatch
             {
                 if (!left.boundConstraint)
                 {
-                    left.boundConstraint.reset(BindConstraint(left.containerScope, *left.compileUnit, left.function->GetFileScope(left.containerScope), left.constraint));
+                    left.boundConstraint.reset(BindConstraint(left.function->TypeParameters(), left.templateArguments, left.containerScope, *left.compileUnit, 
+                        left.function->GetFileScope(left.containerScope), left.constraint));
                 }
                 if (!right.boundConstraint)
                 {
-                    right.boundConstraint.reset(BindConstraint(right.containerScope, *right.compileUnit, right.function->GetFileScope(right.containerScope), right.constraint));
+                    right.boundConstraint.reset(BindConstraint(right.function->TypeParameters(), right.templateArguments, right.containerScope, *right.compileUnit, 
+                        right.function->GetFileScope(right.containerScope), right.constraint));
                 }
                 bool leftImplyRight = left.boundConstraint->Imply(right.boundConstraint.get());
                 bool rightImplyLeft = right.boundConstraint->Imply(left.boundConstraint.get());
@@ -866,6 +868,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         }
         if (function->IsFunctionTemplate())
         {
+            if ((flags & OverloadResolutionFlags::dontInstantiate) != OverloadResolutionFlags::none)
+            {
+                return function;
+            }
             Cm::Core::FunctionTemplateKey key(function, bestMatch.templateArguments);
             Cm::Sym::FunctionSymbol* functionTemplateInstance = boundCompileUnit.FunctionTemplateRepository().GetFunctionTemplateInstance(key);
             if (!functionTemplateInstance)
@@ -877,6 +883,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         }
         else if (function->IsMemberOfTemplateType())
         {
+            if ((flags & OverloadResolutionFlags::dontInstantiate) != OverloadResolutionFlags::none)
+            {
+                return function;
+            }
             if (!boundCompileUnit.ClassTemplateRepository().Instantiated(function))
             {
                 boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, function);

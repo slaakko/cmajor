@@ -44,6 +44,14 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
         staticClass = true;
     }
     functionSymbol->ComputeName();
+    if (functionSymbol->HasConstraint())
+    {
+        functionSymbol->SetName(functionSymbol->Name() + " " + functionSymbol->Constraint()->ToString());
+    }
+    else if (functionNode->Constraint())
+    {
+        functionSymbol->SetName(functionSymbol->Name() + " " + functionNode->Constraint()->ToString());
+    }
     Cm::Ast::Specifiers specifiers = functionNode->GetSpecifiers();
     if ((specifiers & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
     {

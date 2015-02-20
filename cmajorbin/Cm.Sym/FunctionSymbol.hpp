@@ -181,6 +181,7 @@ public:
     TypeSymbol* GetReturnType() const { return returnType; }
     Cm::Ast::Node* ReturnTypeExprNode() const { return persistentFunctionData->returnTypeExprNode.get(); }
     Cm::Ast::FunctionGroupIdNode* GroupId() const { return persistentFunctionData->groupId.get(); }
+    bool HasConstraint() const { return persistentFunctionData && persistentFunctionData->constraint != nullptr; }
     Cm::Ast::WhereConstraintNode* Constraint() const { return persistentFunctionData->constraint.get(); }
     uint64_t BodyPos() const { return persistentFunctionData->bodyPos; }
     uint64_t BodySize() const { return persistentFunctionData->bodySize; }
