@@ -1,5 +1,5 @@
-#ifndef Concept_hpp_22948
-#define Concept_hpp_22948
+#ifndef Concept_hpp_9222
+#define Concept_hpp_9222
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -45,4 +45,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Concept_hpp_22948
+#endif // Concept_hpp_9222

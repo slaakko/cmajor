@@ -23,7 +23,8 @@ enum class OverloadResolutionFlags : uint8_t
 {
     none = 0,
     nothrow = 1 << 0,
-    bindOnlyMemberFunctions = 1 << 1
+    bindOnlyMemberFunctions = 1 << 1,
+    dontInstantiate = 1 << 2
 };
 
 inline OverloadResolutionFlags operator&(OverloadResolutionFlags left, OverloadResolutionFlags right)

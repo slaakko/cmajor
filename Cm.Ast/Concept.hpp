@@ -154,16 +154,16 @@ class TypenameConstraintNode : public ConstraintNode
 {
 public:
     TypenameConstraintNode(const Span& span_);
-    TypenameConstraintNode(const Span& span_, IdentifierNode* typeId_);
+    TypenameConstraintNode(const Span& span_, Node* typeId_);
     NodeType GetNodeType() const override { return NodeType::typenameConstraintNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
-    IdentifierNode* TypeId() const { return typeId.get(); }
+    Node* TypeId() const { return typeId.get(); }
     void Accept(Visitor& visitor) override;
 private:
-    std::unique_ptr<IdentifierNode> typeId;
+    std::unique_ptr<Node> typeId;
 };
 
 class SignatureConstraintNode : public ConstraintNode

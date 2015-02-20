@@ -51,7 +51,8 @@ Cm::Ast::CompoundStatementNode* ReadFunctionTemplateBody(Cm::Sym::FunctionSymbol
     return body;
 }
 
-Cm::Ast::FunctionNode* CreateFunctionInstanceNode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* functionTemplate, std::unique_ptr<Cm::Ast::CompoundStatementNode>& ownedBody)
+Cm::Ast::FunctionNode* CreateFunctionInstanceNode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* functionTemplate, std::unique_ptr<Cm::Ast::CompoundStatementNode>& ownedBody,
+    std::string& constraintStr)
 {
     Cm::Ast::CloneContext cloneContext;
     Cm::Ast::FunctionNode* functionInstanceNode = nullptr;
@@ -59,6 +60,10 @@ Cm::Ast::FunctionNode* CreateFunctionInstanceNode(Cm::BoundTree::BoundCompileUni
     Cm::Ast::FunctionNode* functionTemplateNode = static_cast<Cm::Ast::FunctionNode*>(boundCompileUnit.SymbolTable().GetNode(functionTemplate, false));
     if (functionTemplateNode)
     {
+        if (functionTemplateNode->Constraint())
+        {
+            constraintStr = functionTemplateNode->Constraint()->ToString();
+        }
         Cm::Ast::Node* returnTypeExpr = functionTemplateNode->ReturnTypeExpr();
         functionInstanceNode = new Cm::Ast::FunctionNode(functionTemplate->GetSpan(), functionTemplateNode->GetSpecifiers(), returnTypeExpr ? returnTypeExpr->Clone(cloneContext) : nullptr,
             static_cast<Cm::Ast::FunctionGroupIdNode*>(functionTemplateNode->GroupId()->Clone(cloneContext)));
@@ -70,6 +75,10 @@ Cm::Ast::FunctionNode* CreateFunctionInstanceNode(Cm::BoundTree::BoundCompileUni
     }
     else
     {
+        if (functionTemplate->Constraint())
+        {
+            constraintStr = functionTemplate->Constraint()->ToString();
+        }
         Cm::Ast::Node* returnTypeExpr = functionTemplate->ReturnTypeExprNode();
         Cm::Ast::FunctionGroupIdNode* groupId = functionTemplate->GroupId();
         functionInstanceNode = new Cm::Ast::FunctionNode(functionTemplate->GetSpan(), functionTemplate->GetSpecifiers(), returnTypeExpr ? returnTypeExpr->Clone(cloneContext) : nullptr,
@@ -103,7 +112,8 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     Cm::Ast::NamespaceNode* currentNs = nullptr;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs(CreateNamespaces(functionTemplate->GetSpan(), functionTemplate->Ns()->FullName(), functionTemplate->GetUsingNodes(), currentNs));
     std::unique_ptr<Cm::Ast::CompoundStatementNode> ownedBody;
-    Cm::Ast::FunctionNode* functionInstanceNode = CreateFunctionInstanceNode(boundCompileUnit, functionTemplate, ownedBody);
+    std::string constraintStr;
+    Cm::Ast::FunctionNode* functionInstanceNode = CreateFunctionInstanceNode(boundCompileUnit, functionTemplate, ownedBody, constraintStr);
     currentNs->AddMember(functionInstanceNode);
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     globalNs->Accept(declarationVisitor);
@@ -116,6 +126,10 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     globalNs->Accept(prebinder);
     functionTemplateInstance->SetTypeArguments(templateArguments);
     functionTemplateInstance->ComputeName();
+    if (!constraintStr.empty())
+    {
+        functionTemplateInstance->SetName(functionTemplateInstance->Name() + " " + constraintStr);
+    }
     prebinder.EndCompileUnit();
     Cm::Sym::FileScope* fileScope = prebinder.ReleaseFileScope();
     boundCompileUnit.AddFileScope(fileScope);

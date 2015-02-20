@@ -16,6 +16,7 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <iostream>
 
 namespace Cm { namespace Sym {
 
@@ -429,7 +430,7 @@ void TypeRepository::Import(Reader& reader)
     }
     if (!reader.AllTypesFetched())
     {
-        throw std::runtime_error("not all types fetched!");
+        std::cerr << "not all types fetched!" << std::endl;
     }
 }
 

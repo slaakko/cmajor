@@ -13,9 +13,11 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/ConceptGroupSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/IntrinsicConcept.hpp>
+#include <Cm.Ast/Expression.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -61,6 +63,7 @@ public:
     void Visit(Cm::Ast::MemberFunctionConstraintNode& memberFunctionConstraintNode) override;
     void Visit(Cm::Ast::FunctionConstraintNode& functionConstraintNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
+    void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::BoolNode& boolNode) override;
     void Visit(Cm::Ast::SByteNode& sbyteNode) override;
     void Visit(Cm::Ast::ByteNode& byteNode) override;
@@ -223,6 +226,11 @@ void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
             Cm::Sym::BoundTypeParameterSymbol* boundTypeParameterSymbol = static_cast<Cm::Sym::BoundTypeParameterSymbol*>(symbol);
             type = boundTypeParameterSymbol->GetType();
         }
+        else if (symbol->IsTypedefSymbol())
+        {
+            Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
+            type = typedefSymbol->GetType();
+        }
         else if (symbol->IsConceptGroupSymbol())
         {
             conceptGroup = static_cast<Cm::Sym::ConceptGroupSymbol*>(symbol);
@@ -235,6 +243,38 @@ void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
     else
     {
         throw Cm::Core::ConceptCheckException("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+    }
+}
+
+void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
+{
+    if (!type)
+    {
+        throw Cm::Core::ConceptCheckException("symbol '" + dotNode.Subject()->Name() + "' does not denot a type", dotNode.Subject()->GetSpan());
+    }
+    Cm::Sym::Scope* typeContainerScope = type->GetContainerScope();
+    const std::string& memberName = dotNode.MemberId()->Str();
+    Cm::Sym::Symbol* symbol = typeContainerScope->Lookup(memberName);
+    if (symbol)
+    {
+        if (symbol->IsBoundTypeParameterSymbol())
+        {
+            Cm::Sym::BoundTypeParameterSymbol* boundTypeParameterSymbol = static_cast<Cm::Sym::BoundTypeParameterSymbol*>(symbol);
+            type = boundTypeParameterSymbol->GetType();
+        }
+        else if (symbol->IsTypedefSymbol())
+        {
+            Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
+            type = typedefSymbol->GetType();
+        }
+        else
+        {
+            throw Cm::Core::ConceptCheckException("symbol '" + symbol->FullName() + "' does not denote a type", symbol->GetSpan());
+        }
+    }
+    else
+    {
+        throw Cm::Core::Exception("symbol '" + memberName + "' not found", dotNode.GetSpan());
     }
 }
 
@@ -425,7 +465,7 @@ void ConstraintChecker::Visit(Cm::Ast::ConstructorConstraintNode& constructorCon
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, "@constructor", resolutionArguments, functionLookups, constructorConstraintNode.GetSpan(), conversions,
-        OverloadResolutionFlags::nothrow);
+        OverloadResolutionFlags::nothrow | OverloadResolutionFlags::dontInstantiate);
     if (!functionSymbol)
     {
         std::string signature;
@@ -483,7 +523,7 @@ void ConstraintChecker::Visit(Cm::Ast::MemberFunctionConstraintNode& memberFunct
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, groupName, resolutionArguments, functionLookups, memberFunctionConstraintNode.GetSpan(), conversions,
-        OverloadResolutionFlags::nothrow);
+        OverloadResolutionFlags::nothrow | OverloadResolutionFlags::dontInstantiate);
     if (!functionSymbol)
     {
         std::string signature;
@@ -533,7 +573,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
         functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, groupName, resolutionArguments, functionLookups, functionConstraintNode.GetSpan(), conversions, 
-            OverloadResolutionFlags::nothrow);
+            OverloadResolutionFlags::nothrow | OverloadResolutionFlags::dontInstantiate);
         if (!functionSymbol)
         {
             resolutionArguments.clear();
@@ -547,7 +587,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
             }
             std::vector<Cm::Sym::FunctionSymbol*> conversions;
             functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, groupName, resolutionArguments, functionLookups, functionConstraintNode.GetSpan(), conversions,
-                OverloadResolutionFlags::nothrow);
+                OverloadResolutionFlags::nothrow | OverloadResolutionFlags::dontInstantiate);
         }
     }
     std::vector<Cm::Sym::TypeSymbol*> parameterTypes;
@@ -568,7 +608,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
         functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, groupName, resolutionArguments, functionLookups, functionConstraintNode.GetSpan(), conversions,
-            OverloadResolutionFlags::nothrow);
+            OverloadResolutionFlags::nothrow | OverloadResolutionFlags::dontInstantiate);
     }
     if (!functionSymbol)
     {
@@ -850,7 +890,7 @@ class ConstraintBinder : public Cm::Ast::Visitor
 {
 public:
     ConstraintBinder(Cm::Sym::ContainerScope* containerScope_, Cm::BoundTree::BoundCompileUnit* boundCompileUnit_, Cm::Sym::FileScope* functionFileScope_);
-    Cm::BoundTree::BoundConstraint* GetResult() const { return result; }
+    Cm::BoundTree::BoundConstraint* GetResult();
     void Visit(Cm::Ast::ConceptNode& conceptNode) override;
     void Visit(Cm::Ast::ConceptIdNode& conceptIdNode) override;
     void Visit(Cm::Ast::DisjunctiveConstraintNode& disjunctiveConstraintNode) override;
@@ -885,7 +925,6 @@ private:
     Cm::Sym::ContainerScope* containerScope;
     Cm::BoundTree::BoundCompileUnit* boundCompileUnit;
     Cm::Sym::FileScope* functionFileScope;
-    Cm::BoundTree::BoundConstraint* result;
     Cm::Sym::TypeSymbol* type;
     Cm::Sym::ConceptGroupSymbol* conceptGroup;
     Cm::Sym::ConceptSymbol* conceptSymbol;
@@ -897,14 +936,14 @@ ConstraintBinder::ConstraintBinder(Cm::Sym::ContainerScope* containerScope_, Cm:
 {
 }
 
+Cm::BoundTree::BoundConstraint* ConstraintBinder::GetResult()
+{
+    Cm::BoundTree::BoundConstraint* result = constraintStack.Pop();
+    return result;
+}
+
 void ConstraintBinder::Visit(Cm::Ast::ConceptNode& conceptNode)
 {
-    Cm::Sym::ConceptSymbol* refinedConcept = nullptr;
-    if (conceptNode.Refinement())
-    {
-        conceptNode.Refinement()->Accept(*this);
-        refinedConcept = conceptSymbol;
-    }
     conceptNode.Id()->Accept(*this);
     if (!conceptGroup)
     {
@@ -912,7 +951,16 @@ void ConstraintBinder::Visit(Cm::Ast::ConceptNode& conceptNode)
     }
     int n = conceptNode.TypeParameters().Count();
     Cm::Sym::ConceptSymbol* concept = conceptGroup->GetConcept(n);
-    concept->SetRefinedConcept(refinedConcept);
+    if (!concept->RefinedConcept() && conceptNode.Refinement())
+    {
+        Cm::Sym::ConceptSymbol* refinedConcept = nullptr;
+        conceptNode.Refinement()->Accept(*this);
+        refinedConcept = conceptSymbol;
+        concept->SetRefinedConcept(refinedConcept);
+        Cm::Ast::Node* refinedNode = boundCompileUnit->SymbolTable().GetNode(refinedConcept);
+        refinedNode->Accept(*this);
+        std::unique_ptr<Cm::BoundTree::BoundConstraint> constraint(constraintStack.Pop());
+    }
     constraintStack.Push(new Cm::BoundTree::BoundConcept(&conceptNode, concept));
 }
 
@@ -1071,7 +1119,18 @@ void ConstraintBinder::Visit(Cm::Ast::IsConstraintNode& isConstraintNode)
     else if (conceptGroup)
     {
         Cm::Sym::ConceptSymbol* conceptSymbol = conceptGroup->GetConcept(1);
-        constraintStack.Push(new Cm::BoundTree::BoundTypeSatisfyConceptConstraint(&isConstraintNode, leftType, new Cm::BoundTree::BoundConcept(&isConstraintNode, conceptSymbol)));
+        Cm::Ast::Node* node = boundCompileUnit->SymbolTable().GetNode(conceptSymbol);
+        node->Accept(*this);
+        Cm::BoundTree::BoundConstraint* constraint = constraintStack.Pop();
+        if (constraint->IsBoundConcept())
+        {
+            Cm::BoundTree::BoundConcept* boundConcept = static_cast<Cm::BoundTree::BoundConcept*>(constraint);
+            constraintStack.Push(new Cm::BoundTree::BoundTypeSatisfyConceptConstraint(&isConstraintNode, leftType, boundConcept));
+        }
+        else
+        {
+            throw Cm::Core::ConceptCheckException("concept symbol expected", isConstraintNode.GetSpan());
+        }
     }
 }
 
@@ -1082,6 +1141,18 @@ void ConstraintBinder::Visit(Cm::Ast::MultiParamConstraintNode& multiParamConstr
     {
         int n = multiParamConstraintNode.TypeExprNodes().Count();
         Cm::Sym::ConceptSymbol* conceptSymbol = conceptGroup->GetConcept(n);
+        Cm::Ast::Node* node = boundCompileUnit->SymbolTable().GetNode(conceptSymbol);
+        node->Accept(*this);
+        Cm::BoundTree::BoundConstraint* constraint = constraintStack.Pop();
+        Cm::BoundTree::BoundConcept* boundConcept = nullptr;
+        if (constraint->IsBoundConcept())
+        {
+            boundConcept = static_cast<Cm::BoundTree::BoundConcept*>(constraint);
+        }
+        else
+        {
+            throw Cm::Core::ConceptCheckException("concept symbol expected", multiParamConstraintNode.GetSpan());
+        }
         std::vector<Cm::Sym::TypeSymbol*> typeArguments;
         for (int i = 0; i < n; ++i)
         {
@@ -1096,7 +1167,7 @@ void ConstraintBinder::Visit(Cm::Ast::MultiParamConstraintNode& multiParamConstr
                 throw Cm::Core::ConceptCheckException("'" + typeExprNode->Name() + "' is not bound to a type", typeExprNode->GetSpan());
             }
         }
-        constraintStack.Push(new Cm::BoundTree::BoundMultiParamConstraint(&multiParamConstraintNode, typeArguments, new Cm::BoundTree::BoundConcept(&multiParamConstraintNode, conceptSymbol)));
+        constraintStack.Push(new Cm::BoundTree::BoundMultiParamConstraint(&multiParamConstraintNode, typeArguments, boundConcept));
     }
     else
     {
@@ -1149,10 +1220,28 @@ void ConstraintBinder::Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& expli
     constraintStack.Push(new Cm::BoundTree::BoundAtomicConstraint(&explicitlyConvertibleConstraintNode));
 }
 
-Cm::BoundTree::BoundConstraint* BindConstraint(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FileScope* functionFileScope,
+Cm::BoundTree::BoundConstraint* BindConstraint(const std::vector<Cm::Sym::TypeParameterSymbol*>& templateParameters, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments, 
+    Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FileScope* functionFileScope,
     Cm::Ast::WhereConstraintNode* constraint)
 {
-    ConstraintBinder constraintBinder(containerScope, &boundCompileUnit, functionFileScope);
+    Cm::Sym::ContainerScope constraintBindingScope;
+    constraintBindingScope.SetParent(containerScope);
+    int n = int(templateParameters.size());
+    if (n != int(templateArguments.size()))
+    {
+        throw std::runtime_error("wrong number of template arguments");
+    }
+    std::vector<std::unique_ptr<Cm::Sym::BoundTypeParameterSymbol>> boundTypeParameters;
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::TypeParameterSymbol* templateParameter = templateParameters[i];
+        Cm::Sym::TypeSymbol* templateArgument = templateArguments[i];
+        Cm::Sym::BoundTypeParameterSymbol* boundTypeParameter = new Cm::Sym::BoundTypeParameterSymbol(templateParameter->GetSpan(), templateParameter->Name());
+        boundTypeParameters.push_back(std::unique_ptr<Cm::Sym::BoundTypeParameterSymbol>(boundTypeParameter));
+        boundTypeParameter->SetType(templateArgument);
+        constraintBindingScope.Install(boundTypeParameter);
+    }
+    ConstraintBinder constraintBinder(&constraintBindingScope, &boundCompileUnit, functionFileScope);
     constraint->Accept(constraintBinder);
     Cm::BoundTree::BoundConstraint* boundConstraint = constraintBinder.GetResult();
     return boundConstraint;

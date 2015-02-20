@@ -67,10 +67,6 @@ std::string TemplateTypeSymbol::GetMangleId() const
 void TemplateTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
-    if (Name().find("UniquePtr") != std::string::npos)
-    {
-        int x = 0;
-    }
     writer.GetBinaryWriter().Write(Parent()->FullName());
     writer.Write(subjectType->Id());
     uint8_t n = uint8_t(typeArguments.size());
@@ -84,10 +80,6 @@ void TemplateTypeSymbol::Write(Writer& writer)
 void TemplateTypeSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
-    if (Name().find("UniquePtr") != std::string::npos)
-    {
-        int x = 0;
-    }
     std::string parentName = reader.GetBinaryReader().ReadString();
     Cm::Sym::Symbol* parent = reader.GetSymbolTable().GlobalScope()->Lookup(parentName);
     if (parent)
