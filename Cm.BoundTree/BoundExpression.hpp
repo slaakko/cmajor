@@ -281,10 +281,13 @@ public:
     BoundExpressionList& Arguments() { return arguments; }
     void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
     Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
+    void SetTemporary(BoundLocalVariable* temporary_) { temporary.reset(temporary_); }
+    BoundLocalVariable* GetTemporary() const { return temporary.get(); }
 private:
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* fun;
     Cm::Sym::LocalVariableSymbol* classObjectResultVar;
+    std::unique_ptr<BoundLocalVariable> temporary;
 };
 
 class BoundBooleanBinaryExpression : public BoundExpression

@@ -574,6 +574,16 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
     {
         result.SetMainObject(classObjectResultValue);
     }
+    else if (functionCall.GetTemporary())
+    {
+        if (functionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
+        {
+            functionCall.GetTemporary()->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
+        functionCall.GetTemporary()->Accept(*this);
+        Cm::Core::GenResult temporaryResult = resultStack.Pop();
+        result.SetMainObject(temporaryResult.MainObject());
+    }
     if (resultLabel)
     {
         result.SetLabel(resultLabel);
