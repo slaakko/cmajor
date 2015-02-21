@@ -966,6 +966,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     bool firstArgByRef = false;
     bool constructTemporary = false;
     bool returnClassObjectByValue = false;
+    Cm::Sym::LocalVariableSymbol* temporary = nullptr;
     if (subject->IsBoundFunctionGroup())
     {
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
@@ -992,7 +993,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     else if (subject->IsBoundTypeExpression())
     {
         Cm::BoundTree::BoundTypeExpression* boundTypeExpression = static_cast<Cm::BoundTree::BoundTypeExpression*>(subject.get());
-        fun = BindInvokeConstructTemporary(node, conversions, arguments, boundTypeExpression->Symbol());
+        fun = BindInvokeConstructTemporary(node, conversions, arguments, boundTypeExpression->Symbol(), temporary);
         ++numArgs;
         constructTemporary = true;
         type = boundTypeExpression->Symbol();
@@ -1016,7 +1017,19 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
             argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, currentFunction));
         }
     }
-    if (!constructTemporary)
+    if (constructTemporary)
+    {
+        Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
+        functionCall->SetFunction(fun);
+        functionCall->SetType(type);
+        Cm::BoundTree::BoundLocalVariable* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, temporary);
+        boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
+        boundTemporary->SetType(type);
+        functionCall->SetTemporary(boundTemporary);
+        boundExpressionStack.Push(functionCall);
+        return;
+    }
+    else
     {
         PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, firstArgByRef && fun->IsMemberFunctionSymbol() && !fun->IsStatic(), boundCompileUnit.IrClassTypeRepository());
     }
@@ -1032,7 +1045,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
     }
-    else if (constructTemporary || returnClassObjectByValue)
+    else if (returnClassObjectByValue)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
     }
@@ -1040,12 +1053,12 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
 }
 
 Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
-    Cm::Sym::TypeSymbol* typeSymbol)
+    Cm::Sym::TypeSymbol* typeSymbol, Cm::Sym::LocalVariableSymbol*& temporary)
 {
     Cm::Sym::FunctionLookupSet ctorLookups;
     ctorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, typeSymbol->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Core::Argument> ctorResolutionArguments;
-    Cm::Sym::LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(typeSymbol);
+    temporary = currentFunction->CreateTempLocalVariable(typeSymbol);
     ctorResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(typeSymbol, node->GetSpan())));
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
