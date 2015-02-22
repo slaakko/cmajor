@@ -531,7 +531,7 @@ DestroyStatementBinder::DestroyStatementBinder(Cm::BoundTree::BoundCompileUnit& 
 
 void DestroyStatementBinder::EndVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode)
 {
-    Cm::BoundTree::BoundExpression* ptr = Pop();
+    std::unique_ptr<Cm::BoundTree::BoundExpression> ptr(Pop());
     Cm::Sym::TypeSymbol* type = ptr->GetType();
     if (!type->IsPointerType())
     {
@@ -547,7 +547,7 @@ void DestroyStatementBinder::EndVisit(Cm::Ast::DestroyStatementNode& destroyStat
             if (destructor)
             {
                 Cm::BoundTree::BoundExpressionList arguments;
-                arguments.Add(ptr);
+                arguments.Add(ptr.release());
                 Cm::BoundTree::BoundFunctionCallStatement* destructionStatement = new Cm::BoundTree::BoundFunctionCallStatement(destructor, std::move(arguments));
                 SetResult(destructionStatement);
                 return;

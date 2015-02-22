@@ -45,7 +45,7 @@ int main(int argc, const char** argv)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;
     _CrtSetDbgFlag(dbgFlags);
-    //_CrtSetBreakAlloc(797242);
+    //_CrtSetBreakAlloc(386175);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     try
     {
