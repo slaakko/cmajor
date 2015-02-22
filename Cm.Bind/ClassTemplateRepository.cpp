@@ -175,6 +175,7 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
 
     Prebinder prebinder(boundCompileUnit.SymbolTable());
     prebinder.SetDontCompleteFunctions();
+    prebinder.SetCurrentClass(templateTypeSymbol);
     prebinder.BeginCompileUnit();
     Cm::Sym::ContainerScope* ttContainerScope = boundCompileUnit.SymbolTable().GetContainerScope(ttNode);
     prebinder.BeginContainerScope(ttContainerScope);

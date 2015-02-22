@@ -163,6 +163,37 @@ void MergeDerivations(Cm::Ast::DerivationList& targetDerivations, const Cm::Ast:
     }
 }
 
+Cm::Ast::DerivationList RemoveDerivations(const Cm::Ast::DerivationList& targetDerivations, const Cm::Ast::DerivationList& sourceDerivations)
+{
+    Cm::Ast::DerivationList result;
+    int n = targetDerivations.NumDerivations();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Ast::Derivation targetDerivation = targetDerivations[i];
+        int m = sourceDerivations.NumDerivations();
+        bool found = false;
+        for (int j = 0; j < m; ++j)
+        {
+            Cm::Ast::Derivation sourceDerivation = sourceDerivations[j];
+            if (targetDerivation == sourceDerivation)
+            {
+                found = true;
+                break;
+            }
+            else if (targetDerivation == Cm::Ast::Derivation::reference && sourceDerivation == Cm::Ast::Derivation::rvalueRef)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            result.Add(targetDerivation);
+        }
+    }
+    return result;
+}
+
 TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span)
 {
     Cm::Ast::DerivationList finalDerivations = derivations;

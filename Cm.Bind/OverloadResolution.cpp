@@ -475,12 +475,15 @@ bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol
         }
         else 
         {
-            Cm::Sym::TypeSymbol* plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(argumentType);
+            Cm::Ast::DerivationList argumentTypeDerivations = Cm::Sym::RemoveDerivations(argumentType->Derivations(), parameterType->Derivations());
+            Cm::Sym::TypeSymbol* plainArgumentType = argumentType->GetBaseType();
+            if (argumentTypeDerivations.NumDerivations() > 0)
+            { 
+                plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), Cm::Parsing::Span());
+            }
             if (Bind(boundCompileUnit, parameterType->GetBaseType(), plainArgumentType, templateArguments, boundType))
             {
-                Cm::Ast::DerivationList parameterDerivations = boundType->Derivations();
-                Cm::Sym::MergeDerivations(parameterDerivations, parameterType->Derivations());
-                return Bind(parameterDerivations, argumentType->Derivations());
+                return true;
             }
         }
     }
@@ -706,6 +709,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         FunctionMatch functionMatch(viableFunction, containerScope, &boundCompileUnit);
         if (viableFunction->IsFunctionTemplate())
         {
+            if (viableFunction->Name().find("Destroy") != std::string::npos)
+            {
+                int x = 0;
+            }
             bool candidateFound = DeduceTypeParameters(containerScope, boundCompileUnit, viableFunction->TypeParameters(), boundTemplateArguments, viableFunction->Parameters(), arguments, span,
                 conversionClassTypes, functionMatch);
             Cm::Ast::WhereConstraintNode* constraintNode = nullptr;

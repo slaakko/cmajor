@@ -59,6 +59,7 @@ public:
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
     void SetDontCompleteFunctions() { dontCompleteFunctions = true; }
+    void SetCurrentClass(Cm::Sym::ClassTypeSymbol* currentClass_) { currentClass = currentClass_; }
 private:
     Cm::Sym::SymbolTable& symbolTable;
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
