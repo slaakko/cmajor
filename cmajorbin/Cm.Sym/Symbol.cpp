@@ -110,6 +110,21 @@ std::string Symbol::FullName() const
     }
 }
 
+SymbolAccess Symbol::EffectiveAccess() const
+{
+    SymbolAccess effectiveAccess = Access();
+    Symbol* p = parent;
+    while (p)
+    {
+        if (p->DeclaredAccess() < effectiveAccess)
+        {
+            effectiveAccess = p->DeclaredAccess();
+        }
+        p = p->Parent();
+    }
+    return effectiveAccess;
+}
+
 void Symbol::SetType(TypeSymbol* typeSymbol, int index)
 {
     throw std::runtime_error("member function not applicable");

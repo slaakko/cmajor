@@ -102,6 +102,7 @@ public:
     bool IsStatic() const { return GetFlag(SymbolFlags::static_); }
     void SetStatic() { SetFlag(SymbolFlags::static_); }
     virtual SymbolAccess DeclaredAccess() const { return Access(); }
+    SymbolAccess EffectiveAccess() const;
     bool IsPublic() const { return Access() == SymbolAccess::public_; }
     void SetPublic() { SetAccess(SymbolAccess::public_); }
     SymbolSource Source() const { return GetFlag(SymbolFlags::project) ? SymbolSource::project : SymbolSource::library; }
