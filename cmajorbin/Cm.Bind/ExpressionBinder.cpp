@@ -92,7 +92,8 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerSc
                         argument->SyntaxNode()->GetSpan())));
                     resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, argument->GetType()));
                     Cm::Sym::FunctionLookupSet resolutionLookups;
-                    resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, containerScope->ClassOrNsScope()));
+                    resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope->ClassOrNsScope()));
+                    resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
                     std::vector<Cm::Sym::FunctionSymbol*> conversions;
                     Cm::Sym::FunctionSymbol* basicTypeCopyCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, resolutionLookups,
                         argument->SyntaxNode()->GetSpan(), conversions);

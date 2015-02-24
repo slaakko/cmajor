@@ -13,6 +13,7 @@
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
+#include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Ast/Visitor.hpp>
@@ -64,7 +65,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
             typeArgument = templateTypeSymbol->TypeArguments()[i];
         }
         else
-        { 
+        {
             if (classNode->TemplateParameters().Count() >= i)
             {
                 throw Cm::Core::Exception("too few template arguments", templateTypeSymbol->GetSpan());
@@ -114,7 +115,7 @@ ClassTemplateRepository::~ClassTemplateRepository()
     }
 }
 
-void ClassTemplateRepository::CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, 
+void ClassTemplateRepository::CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span,
     Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions)
 {
     if (int(arguments.size()) != arity)
@@ -140,6 +141,10 @@ bool ClassTemplateRepository::Instantiated(Cm::Sym::FunctionSymbol* memberFuncti
 void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol)
 {
     instantiatedMemberFunctionSet.insert(memberFunctionSymbol);
+    if (memberFunctionSymbol->Name() == "operator=(List<ulong>*, List<ulong>&&) where T is Movable")
+    {
+        int x = 0;
+    }
     memberFunctionSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
     Cm::Sym::Symbol* parent = memberFunctionSymbol->Parent();
     if (!parent->IsTemplateTypeSymbol())
@@ -150,45 +155,53 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
     Cm::Ast::Node* ttNode = boundCompileUnit.SymbolTable().GetNode(templateTypeSymbol);
     if (!ttNode->IsClassNode())
     {
-        std::runtime_error("not class node");
+        throw std::runtime_error("not class node");
     }
     Cm::Ast::ClassNode* templateTypeNode = static_cast<Cm::Ast::ClassNode*>(ttNode);
     Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(memberFunctionSymbol);
     if (!node->IsFunctionNode())
     {
-        std::runtime_error("not function node");
+        throw std::runtime_error("not function node");
     }
     Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
-    Cm::Ast::CloneContext cloneContext;
-    if (!functionNode->BodySource())
+    bool isDefault = (functionNode->GetSpecifiers() & Cm::Ast::Specifiers::default_) != Cm::Ast::Specifiers::none;
+    if (isDefault)
     {
-        std::runtime_error("body source not set");
+        // implementation generated from elsewhere
     }
-    functionNode->SetBody(static_cast<Cm::Ast::CompoundStatementNode*>(functionNode->BodySource()->Clone(cloneContext)));
-    functionNode->SetCompileUnit(boundCompileUnit.SyntaxUnit());
-    boundCompileUnit.AddFileScope(templateTypeSymbol->CloneFileScope());
+    else
+    {
+        Cm::Ast::CloneContext cloneContext;
+        if (!functionNode->BodySource())
+        {
+            throw std::runtime_error("body source not set");
+        }
+        functionNode->SetBody(static_cast<Cm::Ast::CompoundStatementNode*>(functionNode->BodySource()->Clone(cloneContext)));
+        functionNode->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        boundCompileUnit.AddFileScope(templateTypeSymbol->CloneFileScope());
 
-    Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
-    boundCompileUnit.SymbolTable().BeginContainer(memberFunctionSymbol);
-    functionNode->Body()->Accept(declarationVisitor);
-    boundCompileUnit.SymbolTable().EndContainer();
+        Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
+        boundCompileUnit.SymbolTable().BeginContainer(memberFunctionSymbol);
+        functionNode->Body()->Accept(declarationVisitor);
+        boundCompileUnit.SymbolTable().EndContainer();
 
-    Prebinder prebinder(boundCompileUnit.SymbolTable());
-    prebinder.SetDontCompleteFunctions();
-    prebinder.SetCurrentClass(templateTypeSymbol);
-    prebinder.BeginCompileUnit();
-    Cm::Sym::ContainerScope* ttContainerScope = boundCompileUnit.SymbolTable().GetContainerScope(ttNode);
-    prebinder.BeginContainerScope(ttContainerScope);
-    functionNode->Accept(prebinder);
-    prebinder.EndContainerScope();
-    prebinder.EndCompileUnit();
+        Prebinder prebinder(boundCompileUnit.SymbolTable());
+        prebinder.SetDontCompleteFunctions();
+        prebinder.SetCurrentClass(templateTypeSymbol);
+        prebinder.BeginCompileUnit();
+        Cm::Sym::ContainerScope* ttContainerScope = boundCompileUnit.SymbolTable().GetContainerScope(ttNode);
+        prebinder.BeginContainerScope(ttContainerScope);
+        functionNode->Accept(prebinder);
+        prebinder.EndContainerScope();
+        prebinder.EndCompileUnit();
 
-    Binder binder(boundCompileUnit);
-    binder.BeginVisit(*templateTypeNode);
-    functionNode->Accept(binder);
-    binder.EndVisit(*templateTypeNode);
-    functionNode->SetBody(nullptr);
-    boundCompileUnit.RemoveLastFileScope();
+        Binder binder(boundCompileUnit);
+        binder.BeginVisit(*templateTypeNode);
+        functionNode->Accept(binder);
+        binder.EndVisit(*templateTypeNode);
+        functionNode->SetBody(nullptr);
+        boundCompileUnit.RemoveLastFileScope();
+    }
 
     if (templateTypeSymbol->Destructor())
     {
