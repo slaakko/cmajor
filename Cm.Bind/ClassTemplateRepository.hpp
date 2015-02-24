@@ -23,6 +23,7 @@ public:
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
     bool Instantiated(Cm::Sym::FunctionSymbol* memberFunctionSymbol) const override;
     void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol) override;
+    void BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol);
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     typedef std::unordered_set<Cm::Sym::FunctionSymbol*> InstantiatedMemberFunctionSet;
@@ -31,7 +32,6 @@ private:
     typedef std::unordered_set<Cm::Sym::ClassTypeSymbol*> ClassTemplateSet;
     typedef ClassTemplateSet::const_iterator ClassTemplateSetIt;
     ClassTemplateSet classTemplates;
-    void BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol);
 };
 
 } } // namespace Cm::Bind

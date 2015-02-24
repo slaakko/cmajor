@@ -20,7 +20,7 @@
 
 namespace Cm { namespace Bind {
 
-void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol)
+void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol)
 {
     Cm::Sym::TypeSymbol* subjectTypeSymbol = templateTypeSymbol->GetSubjectType();
     if (!subjectTypeSymbol->IsClassTypeSymbol())
@@ -127,7 +127,7 @@ void ClassTemplateRepository::CollectViableFunctions(const std::string& groupNam
     Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(leftArgType->GetBaseType());
     if (!templateTypeSymbol->Bound())
     {
-        BindTemplateTypeSymbol(boundCompileUnit, templateTypeSymbol);
+        BindTemplateTypeSymbol(templateTypeSymbol);
     }
 }
 
