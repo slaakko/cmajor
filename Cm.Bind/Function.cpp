@@ -465,10 +465,14 @@ void CheckFunctionReturnPaths(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::Contai
 
 void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol)
 {
+    if (functionSymbol->Name().find("GetCharacterClass") != std::string::npos)
+    {
+        int x = 0;
+    }
     Cm::Sym::TypeSymbol* returnType = functionSymbol->GetReturnType();
     if (returnType)
     {
-        if (returnType->Access() < functionSymbol->Access())
+        if (returnType->Access() < functionSymbol->EffectiveAccess())
         {
             throw Cm::Core::Exception("return type of a function must be at least as accessible as the function itself", returnType->GetSpan(), functionSymbol->GetSpan());
         }
@@ -483,7 +487,7 @@ void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol)
     {
         Cm::Sym::ParameterSymbol* param = functionSymbol->Parameters()[i];
         Cm::Sym::TypeSymbol* parameterType = param->GetType();
-        if (parameterType->Access() < functionSymbol->Access())
+        if (parameterType->Access() < functionSymbol->EffectiveAccess())
         {
             std::string accessStr = Cm::Sym::AccessStr(parameterType->Access());
             throw Cm::Core::Exception("parameter type of a function must be at least as accessible as the function itself", parameterType->GetSpan(), functionSymbol->GetSpan());
