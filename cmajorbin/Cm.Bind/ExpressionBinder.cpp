@@ -26,6 +26,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Expression.hpp>
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -119,6 +120,10 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerSc
             else if (paramType->IsClassTypeSymbol())
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+            }
+            else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType())
+            {
+                argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
             }
         }
         else if (firstArgByRef && i == 0)
@@ -771,6 +776,11 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
     else
     {
         Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(expression->GetType());
+        if (type->IsTemplateTypeSymbol() && !type->Bound())
+        {
+            Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(type);
+            boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol);
+        }
         if (type->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
@@ -892,6 +902,10 @@ void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
 {
+    if (currentFunction->GetFunctionSymbol()->Name().find("Write") != std::string::npos)
+    {
+        int x = 0;
+    }
     invokeNode.Subject()->Accept(*this);
     std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
     expressionCountStack.push(expressionCount);
@@ -947,8 +961,11 @@ void ExpressionBinder::BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::B
     subject->SetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg | Cm::BoundTree::BoundNodeFlags::lvalue);
     boundExpressionStack.Push(subject);
     boundExpressionStack.Push(index);
+    expressionCountStack.push(expressionCount);
     expressionCountStack.push(0);
     BindInvoke(indexNode, 2);
+    expressionCount = expressionCountStack.top();
+    expressionCountStack.pop();
 }
 
 void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
@@ -1387,8 +1404,9 @@ void ExpressionBinder::BindEnumConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::En
 void ExpressionBinder::BindTypedefSymbol(Cm::Ast::Node* idNode, Cm::Sym::TypedefSymbol* typedefSymbol)
 {
     CheckAccess(currentFunction->GetFunctionSymbol(), idNode->GetSpan(), typedefSymbol);
-    Cm::BoundTree::BoundTypeExpression* type = new Cm::BoundTree::BoundTypeExpression(idNode, typedefSymbol->GetType());
-    boundExpressionStack.Push(type);
+    Cm::BoundTree::BoundTypeExpression* boundTypeExpr = new Cm::BoundTree::BoundTypeExpression(idNode, typedefSymbol->GetType());
+    boundTypeExpr->SetType(typedefSymbol->GetType());
+    boundExpressionStack.Push(boundTypeExpr);
 }
 
 void ExpressionBinder::BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol)
@@ -1507,6 +1525,7 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
             argument.reset(CreateBoundConversion(node, arg, conversionFun, currentFunction));
         }
     }
+    PrepareFunctionArguments(ctor, containerScope, boundCompileUnit, currentFunction, arguments, false, boundCompileUnit.IrClassTypeRepository());
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
     functionCall->SetFunction(ctor);
     functionCall->SetType(returnType);

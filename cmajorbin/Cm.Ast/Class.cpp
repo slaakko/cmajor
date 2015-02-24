@@ -656,6 +656,10 @@ Node* MemberFunctionNode::Clone(CloneContext& cloneContext) const
             clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
         }
     }
+    if (isConst)
+    {
+        clone->SetConst();
+    }
     return clone;
 }
 
@@ -746,6 +750,10 @@ Node* ConversionFunctionNode::Clone(CloneContext& cloneContext) const
         {
             clone->SetBodySource(Body());
         }
+    }
+    if (IsConst())
+    {
+        clone->SetConst();
     }
     return clone;
 }
