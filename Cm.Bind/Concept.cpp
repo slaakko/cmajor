@@ -274,7 +274,7 @@ void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + memberName + "' not found", dotNode.GetSpan());
+        throw Cm::Core::ConceptCheckException("symbol '" + memberName + "' not found", dotNode.GetSpan());
     }
 }
 
