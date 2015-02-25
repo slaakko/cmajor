@@ -106,6 +106,17 @@ private:
     Cm::BoundTree::BoundForStatement* forStatement;
 };
 
+class Binder;
+
+class RangeForStatementBinder : public StatementBinder
+{
+public:
+    RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::BoundTree::BoundFunction* currentFunction_, Cm::Ast::RangeForStatementNode& rangeForStatementNode, Binder& binder_);
+private:
+    Binder& binder;
+};
+
 class SwitchStatementBinder : public StatementBinder
 {
 public:

@@ -303,6 +303,8 @@ public:
     void Accept(Visitor& visitor) override;
     Node* VarTypeExpr() const { return varTypeExpr.get(); }
     IdentifierNode* VarId() const { return varId.get(); }
+    Node* Container() const { return container.get(); }
+    StatementNode* Action() const { return action.get(); }
 private:
     std::unique_ptr<Node> varTypeExpr;
     std::unique_ptr<IdentifierNode> varId;

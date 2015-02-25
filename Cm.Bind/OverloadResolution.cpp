@@ -709,10 +709,6 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         FunctionMatch functionMatch(viableFunction, containerScope, &boundCompileUnit);
         if (viableFunction->IsFunctionTemplate())
         {
-            if (viableFunction->Name().find("Destroy") != std::string::npos)
-            {
-                int x = 0;
-            }
             bool candidateFound = DeduceTypeParameters(containerScope, boundCompileUnit, viableFunction->TypeParameters(), boundTemplateArguments, viableFunction->Parameters(), arguments, span,
                 conversionClassTypes, functionMatch);
             Cm::Ast::WhereConstraintNode* constraintNode = nullptr;

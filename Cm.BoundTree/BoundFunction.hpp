@@ -21,6 +21,7 @@ public:
     void SetBody(BoundCompoundStatement* body_);
     BoundCompoundStatement* Body() const { return body.get(); }
     void AddLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable);
+    std::string GetNextTempVariableName();
     Cm::Sym::LocalVariableSymbol* CreateTempLocalVariable(Cm::Sym::TypeSymbol* type);
     const std::vector<Cm::Sym::LocalVariableSymbol*>& LocalVariables() const { return localVariables; }
     void SetClassObjectLayoutFunIndex(int classObjectLayoutFunIndex_) { classObjectLayoutFunIndex = classObjectLayoutFunIndex_; }

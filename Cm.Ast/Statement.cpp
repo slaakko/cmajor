@@ -991,7 +991,6 @@ void RangeForStatementNode::Accept(Visitor& visitor)
     {
         container->Accept(visitor);
     }
-    action->Accept(visitor);
     visitor.EndVisit(*this);
 }
 

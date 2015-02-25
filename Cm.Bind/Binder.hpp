@@ -47,7 +47,6 @@ public:
     void BeginVisit(Cm::Ast::ForStatementNode& forStatementNode) override;
     void EndVisit(Cm::Ast::ForStatementNode& forStatementNode) override;
     void BeginVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode) override;
-    void EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode) override;
 
     void BeginVisit(Cm::Ast::ReturnStatementNode& returnStatementNode) override;
     void BeginVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode) override;
@@ -94,6 +93,8 @@ public:
     void EndVisit(Cm::Ast::CondCompilationPartNode& condCompilationPartNode) override;
     void BeginVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode) override;
     void EndVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode) override;
+    void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
+    void EndContainerScope();
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* currentContainerScope;
@@ -104,8 +105,6 @@ private:
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
     Cm::Sym::FunctionSymbol* userMainFunction;
     Cm::BoundTree::BoundSwitchStatement* switchStatement;
-    void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
-    void EndContainerScope();
 };
 
 } } // namespace Cm::Bind
