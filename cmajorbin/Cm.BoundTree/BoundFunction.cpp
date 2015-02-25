@@ -26,6 +26,13 @@ void BoundFunction::AddLocalVariable(Cm::Sym::LocalVariableSymbol* localVariable
     localVariables.push_back(localVariable);
 }
 
+std::string BoundFunction::GetNextTempVariableName()
+{
+    std::string tempVarName = "__temp" + std::to_string(int(temporaries.size()));
+    temporaries.push_back(nullptr);
+    return tempVarName;
+}
+
 Cm::Sym::LocalVariableSymbol* BoundFunction::CreateTempLocalVariable(Cm::Sym::TypeSymbol* type)
 {
     std::string tempVarName = "__temp" + std::to_string(int(temporaries.size()));

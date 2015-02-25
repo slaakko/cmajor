@@ -903,10 +903,6 @@ void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
 {
-    if (currentFunction->GetFunctionSymbol()->Name().find("Write") != std::string::npos)
-    {
-        int x = 0;
-    }
     invokeNode.Subject()->Accept(*this);
     std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
     expressionCountStack.push(expressionCount);
@@ -1309,7 +1305,6 @@ void ExpressionBinder::BindLocalVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::L
             throw std::runtime_error("not construction statement node");
         }
     }
-    CheckAccess(currentFunction->GetFunctionSymbol(), idNode->GetSpan(), localVariableSymbol);
     Cm::BoundTree::BoundLocalVariable* boundLocalVariable = new Cm::BoundTree::BoundLocalVariable(idNode, localVariableSymbol);
     boundLocalVariable->SetType(localVariableSymbol->GetType());
     boundExpressionStack.Push(boundLocalVariable);

@@ -141,10 +141,6 @@ bool ClassTemplateRepository::Instantiated(Cm::Sym::FunctionSymbol* memberFuncti
 void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol)
 {
     instantiatedMemberFunctionSet.insert(memberFunctionSymbol);
-    if (memberFunctionSymbol->Name() == "operator=(List<ulong>*, List<ulong>&&) where T is Movable")
-    {
-        int x = 0;
-    }
     memberFunctionSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
     Cm::Sym::Symbol* parent = memberFunctionSymbol->Parent();
     if (!parent->IsTemplateTypeSymbol())

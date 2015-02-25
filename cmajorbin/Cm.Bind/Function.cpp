@@ -465,10 +465,6 @@ void CheckFunctionReturnPaths(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::Contai
 
 void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol)
 {
-    if (functionSymbol->Name().find("GetCharacterClass") != std::string::npos)
-    {
-        int x = 0;
-    }
     Cm::Sym::TypeSymbol* returnType = functionSymbol->GetReturnType();
     if (returnType)
     {

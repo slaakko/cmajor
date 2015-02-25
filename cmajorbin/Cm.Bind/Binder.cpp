@@ -313,13 +313,7 @@ void Binder::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
 {
-    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&rangeForStatementNode));
-    // todo
-}
-
-void Binder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
-{
-    EndContainerScope();
+    RangeForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), rangeForStatementNode, *this);
 }
 
 void Binder::BeginVisit(Cm::Ast::ForStatementNode& forStatementNode)
