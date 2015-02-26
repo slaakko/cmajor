@@ -216,6 +216,11 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     Cm::BoundTree::BoundUnaryOp* op = new Cm::BoundTree::BoundUnaryOp(node, unaryOperand);
     op->SetFunction(fun);
     op->SetType(fun->GetReturnType());
+    if (fun->ReturnsClassObjectByValue() && !fun->IsBasicTypeOp())
+    {
+        Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
+        op->SetClassObjectResultVar(classObjectResultVar);
+    }
     boundExpressionStack.Push(op);
 }
 
@@ -272,6 +277,11 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     Cm::BoundTree::BoundBinaryOp* op = new Cm::BoundTree::BoundBinaryOp(node, leftOperand, rightOperand);
     op->SetFunction(fun);
     op->SetType(fun->GetReturnType());
+    if (fun->ReturnsClassObjectByValue())
+    {
+        Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
+        op->SetClassObjectResultVar(classObjectResultVar);
+    }
     boundExpressionStack.Push(op);
 }
 

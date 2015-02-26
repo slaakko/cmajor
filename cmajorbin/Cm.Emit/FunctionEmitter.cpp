@@ -465,7 +465,15 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Sym::FunctionSymbol* op = boundUnaryOp.GetFunction();
-    result.SetMainObject(op->GetReturnType(), typeRepository);
+    bool functionReturnsClassObjectByValue = op->ReturnsClassObjectByValue() && !op->IsBasicTypeOp();
+    if (functionReturnsClassObjectByValue)
+    {
+        result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
+    }
+    else
+    {
+        result.SetMainObject(op->GetReturnType(), typeRepository);
+    }
     Cm::Core::GenResult operandResult = resultStack.Pop();
     if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
@@ -477,10 +485,28 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
     }
     Ir::Intf::LabelObject* resultLabel = operandResult.GetLabel();
     result.Merge(operandResult);
+    Ir::Intf::Object* classObjectResultValue = nullptr;
+    if (functionReturnsClassObjectByValue)
+    {
+        Cm::BoundTree::BoundLocalVariable classObjectResultVar(boundUnaryOp.SyntaxNode(), boundUnaryOp.GetClassObjectResultVar());
+        classObjectResultVar.SetType(classObjectResultVar.Symbol()->GetType());
+        classObjectResultVar.Accept(*this);
+        Cm::Core::GenResult argResult = resultStack.Pop();
+        if (!resultLabel)
+        {
+            resultLabel = argResult.GetLabel();
+        }
+        classObjectResultValue = argResult.MainObject();
+        result.Merge(argResult);
+    }
     GenerateCall(op, result);
     if (boundUnaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
     {
         MakePlainValueResult(typeRepository.MakePlainType(boundUnaryOp.GetType()), result);
+    }
+    if (functionReturnsClassObjectByValue)
+    {
+        result.SetMainObject(classObjectResultValue);
     }
     if (resultLabel)
     {
@@ -494,7 +520,15 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
     Cm::Core::GenResult result(emitter.get(), genFlags);
     Cm::Core::GenResult right = resultStack.Pop();
     Cm::Core::GenResult left = resultStack.Pop();
-    result.SetMainObject(boundBinaryOp.GetType(), typeRepository);
+    bool functionReturnsClassObjectByValue = boundBinaryOp.GetFunction()->ReturnsClassObjectByValue();
+    if (functionReturnsClassObjectByValue)
+    {
+        result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
+    }
+    else
+    {
+        result.SetMainObject(boundBinaryOp.GetType(), typeRepository);
+    }
     if (boundBinaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         result.SetGenJumpingBoolCode();
@@ -506,11 +540,29 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
     }
     result.Merge(left);
     result.Merge(right);
+    Ir::Intf::Object* classObjectResultValue = nullptr;
+    if (functionReturnsClassObjectByValue)
+    {
+        Cm::BoundTree::BoundLocalVariable classObjectResultVar(boundBinaryOp.SyntaxNode(), boundBinaryOp.GetClassObjectResultVar());
+        classObjectResultVar.SetType(classObjectResultVar.Symbol()->GetType());
+        classObjectResultVar.Accept(*this);
+        Cm::Core::GenResult argResult = resultStack.Pop();
+        if (!resultLabel)
+        {
+            resultLabel = argResult.GetLabel();
+        }
+        classObjectResultValue = argResult.MainObject();
+        result.Merge(argResult);
+    }
     Cm::Sym::FunctionSymbol* op = boundBinaryOp.GetFunction();
     GenerateCall(op, result);
     if (boundBinaryOp.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
     {
         MakePlainValueResult(typeRepository.MakePlainType(boundBinaryOp.GetType()), result);
+    }
+    if (functionReturnsClassObjectByValue)
+    {
+        result.SetMainObject(classObjectResultValue);
     }
     if (resultLabel)
     {
@@ -555,7 +607,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
         Cm::Core::GenResult argResult = resultStack.Pop();
         if (!resultLabel)
         {
-            resultLabel = argResult.GetLabel();;
+            resultLabel = argResult.GetLabel();
         }
         classObjectResultValue = argResult.MainObject();
         result.Merge(argResult);

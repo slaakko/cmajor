@@ -116,6 +116,7 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     Cm::Ast::FunctionNode* functionInstanceNode = CreateFunctionInstanceNode(boundCompileUnit, functionTemplate, ownedBody, constraintStr);
     currentNs->AddMember(functionInstanceNode);
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
+    declarationVisitor.MarkFunctionSymbolAsTemplateSpecialization();
     globalNs->Accept(declarationVisitor);
     Cm::Sym::FunctionSymbol* functionTemplateInstance = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
     functionTemplateInstance->SetReplicated();
