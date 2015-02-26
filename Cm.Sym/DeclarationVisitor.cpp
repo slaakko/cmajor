@@ -16,7 +16,8 @@
 
 namespace Cm { namespace Sym {
 
-DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), memberVariableIndex(0), templateClassNode(nullptr), templateType(nullptr)
+DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : 
+    Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), memberVariableIndex(0), templateClassNode(nullptr), templateType(nullptr), markFunctionSymbolAsTemplateSpecialization(false)
 {
 }
 
@@ -176,7 +177,12 @@ void DeclarationVisitor::Visit(Cm::Ast::TypedefNode& typedefNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 {
-    symbolTable.BeginFunctionScope(&functionNode, FunctionSymbolFlags::none);
+    FunctionSymbolFlags flags = FunctionSymbolFlags::none;
+    if (markFunctionSymbolAsTemplateSpecialization)
+    {
+        flags = flags | FunctionSymbolFlags::templateSpecialization;
+    }
+    symbolTable.BeginFunctionScope(&functionNode, flags);
     parameterIndex = 0;
 }
 

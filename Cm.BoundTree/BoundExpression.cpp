@@ -188,7 +188,7 @@ void BoundSizeOfExpression::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_) : BoundExpression(syntaxNode_), operand(operand_), fun(nullptr)
+BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_) : BoundExpression(syntaxNode_), operand(operand_), fun(nullptr), classObjectResultVar(nullptr)
 {
 }
 
@@ -198,7 +198,8 @@ void BoundUnaryOp::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundBinaryOp::BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(syntaxNode_), left(left_), right(right_), fun(nullptr)
+BoundBinaryOp::BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(syntaxNode_), left(left_), right(right_), fun(nullptr), 
+    classObjectResultVar(nullptr)
 {
 }
 

@@ -223,9 +223,12 @@ public:
     BoundExpression* Operand() const { return operand.get(); }
     BoundExpression* ReleaseOperand() { return operand.release(); }
     void Accept(Visitor& visitor) override;
+    void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
+    Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* fun;
+    Cm::Sym::LocalVariableSymbol* classObjectResultVar;
 };
 
 class BoundBinaryOp : public BoundExpression
@@ -237,10 +240,13 @@ public:
     void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
     Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
     void Accept(Visitor& visitor) override;
+    void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
+    Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
 private:
     std::unique_ptr<BoundExpression> left;
     std::unique_ptr<BoundExpression> right;
     Cm::Sym::FunctionSymbol* fun;
+    Cm::Sym::LocalVariableSymbol* classObjectResultVar;
 };
 
 class BoundPostfixIncDecExpr : public BoundExpression

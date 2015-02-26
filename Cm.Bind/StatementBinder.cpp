@@ -340,6 +340,7 @@ RangeForStatementBinder::RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit
     rangeForStatementNode.Container()->Accept(*this);
     std::unique_ptr<Cm::BoundTree::BoundExpression> container(Pop());
     Cm::Sym::TypeSymbol* containerType = container->GetType();
+    Cm::Sym::TypeSymbol* plainContainerType = SymbolTable().GetTypeRepository().MakePlainType(containerType);
     Cm::Ast::IdentifierNode* beginNode(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "Begin"));
     Cm::Ast::IdentifierNode* endNode(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "End"));
     Cm::Ast::CloneContext cloneContext;
@@ -348,8 +349,16 @@ RangeForStatementBinder::RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit
     Cm::Ast::DotNode* containerEndNode(new Cm::Ast::DotNode(rangeForStatementNode.GetSpan(), rangeForStatementNode.Container()->Clone(cloneContext), endNode));
     Cm::Ast::InvokeNode* invokeContainerEndNode(new Cm::Ast::InvokeNode(rangeForStatementNode.GetSpan(), containerEndNode));
     Cm::Ast::IdentifierNode* iteratorId(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), CurrentFunction()->GetNextTempVariableName()));
-    Cm::Ast::IdentifierNode* iteratorTypeId(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "Iterator"));
-    Cm::Ast::IdentifierNode* containerTypeId(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), containerType->FullName()));
+    Cm::Ast::IdentifierNode* iteratorTypeId = nullptr; 
+    if (containerType->IsConstType())
+    {
+        iteratorTypeId = new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "ConstIterator");
+    }
+    else
+    {
+        iteratorTypeId = new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "Iterator");
+    }
+    Cm::Ast::IdentifierNode* containerTypeId(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), plainContainerType->FullName()));
     Cm::Ast::DotNode* containerIterator(new Cm::Ast::DotNode(rangeForStatementNode.GetSpan(), containerTypeId, iteratorTypeId));
     Cm::Ast::ConstructionStatementNode* initNode(new Cm::Ast::ConstructionStatementNode(rangeForStatementNode.GetSpan(), containerIterator, iteratorId));
     initNode->AddArgument(invokeContainerBeginNode);

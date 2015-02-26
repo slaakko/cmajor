@@ -65,8 +65,11 @@ void ContainerSymbol::AddSymbol(Symbol* symbol)
     if (symbol->IsFunctionSymbol())
     {
         FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(symbol);
-        FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
-        functionGroupSymbol->AddFunction(functionSymbol);
+        if (!functionSymbol->IsFunctionTemplateSpecialization()) // function template specializations are not added to function group
+        {
+            FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
+            functionGroupSymbol->AddFunction(functionSymbol);
+        }
     }
     else if (symbol->IsConceptSymbol())
     {

@@ -15,6 +15,10 @@ namespace Cm { namespace Core {
 FunctionTemplateKey::FunctionTemplateKey(Cm::Sym::FunctionSymbol* subject_, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments_): subject(subject_), templateArguments(templateArguments_),
     hashCodeValid(false)
 {
+    if (subject->Name().find("ConstructiveMove") != std::string::npos)
+    {
+        int x = 0;
+    }
 }
 
 size_t FunctionTemplateKey::GetHashCode() const
