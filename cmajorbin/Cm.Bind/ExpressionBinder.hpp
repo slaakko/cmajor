@@ -147,16 +147,19 @@ private:
     void BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTypeSymbol* enumTypeSymbol);
     void BindEnumConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumConstantSymbol* enumConstantSymbol);
     void BindTypedefSymbol(Cm::Ast::Node* idNode, Cm::Sym::TypedefSymbol* typedefSymbol);
+    void BindBoundTypeParameterSymbol(Cm::Ast::Node* idNode, Cm::Sym::BoundTypeParameterSymbol* boundTypeParameterSymbol);
     void BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol);
     void BindIndexPointer(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
     void BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
     void BindInvoke(Cm::Ast::Node* node, int numArgs);
-    Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
+    Cm::Sym::FunctionSymbol* BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
         Cm::Sym::TypeSymbol* typeSymbol, Cm::Sym::LocalVariableSymbol*& temporary);
     Cm::Sym::FunctionSymbol* BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, 
         bool& firstArgByRef, bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs);
     Cm::Sym::FunctionSymbol* BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
         bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments);
+    Cm::Sym::FunctionSymbol* BindInvokeOpApply(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
+        Cm::Sym::TypeSymbol* plainSubjectType, Cm::BoundTree::BoundExpression* subject);
     void BindCast(Cm::Ast::Node* node, Cm::Ast::Node* targetTypeExpr, Cm::Ast::Node* sourceExpr, const Cm::Parsing::Span& span);
     void BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* targetType, Cm::BoundTree::BoundExpression* sourceExpr);
     void BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes);

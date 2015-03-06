@@ -20,7 +20,8 @@
 
 namespace Cm { namespace Bind {
 
-void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::EnumTypeNode* enumTypeNode)
+void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::EnumTypeNode* enumTypeNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(enumTypeNode->Id()->Str());
     if (symbol)
@@ -87,7 +88,7 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             if (underlyingTypeNode)
             {
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(underlyingTypeNode);
-                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScopes, underlyingTypeNode);
+                Cm::Sym::TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScopes, classTemplateRepository, underlyingTypeNode);
                 if (underlyingType->IsIntegerTypeSymbol())
                 {
                     enumTypeSymbol->SetUnderlyingType(underlyingType);
@@ -120,7 +121,7 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
 }
 
 void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Ast::EnumConstantNode* enumConstantNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::EnumConstantNode* enumConstantNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(enumConstantNode->Id()->Str());
     if (symbol)
@@ -145,7 +146,7 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
             Cm::Sym::SymbolType symbolType = underlyingType->GetSymbolType();
             Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
             enumConstantSymbol->SetEvaluating();
-            Cm::Sym::Value* value = Evaluate(valueType, false, enumConstantNode->Value(), symbolTable, containerScope, fileScopes);
+            Cm::Sym::Value* value = Evaluate(valueType, false, enumConstantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository);
             enumConstantSymbol->ResetEvaluating();
             enumConstantSymbol->SetValue(value);
             enumConstantSymbol->SetBound();

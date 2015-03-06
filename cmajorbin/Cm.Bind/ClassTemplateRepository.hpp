@@ -21,14 +21,10 @@ public:
     ~ClassTemplateRepository();
     void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
-    bool Instantiated(Cm::Sym::FunctionSymbol* memberFunctionSymbol) const override;
     void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol) override;
     void BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol);
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
-    typedef std::unordered_set<Cm::Sym::FunctionSymbol*> InstantiatedMemberFunctionSet;
-    typedef InstantiatedMemberFunctionSet::const_iterator InstantiatedMemberFunctionSetIt;
-    InstantiatedMemberFunctionSet instantiatedMemberFunctionSet;
     typedef std::unordered_set<Cm::Sym::ClassTypeSymbol*> ClassTemplateSet;
     typedef ClassTemplateSet::const_iterator ClassTemplateSetIt;
     ClassTemplateSet classTemplates;

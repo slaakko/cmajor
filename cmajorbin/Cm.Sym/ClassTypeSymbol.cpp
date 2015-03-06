@@ -107,7 +107,7 @@ void ClassTypeSymbol::Read(Reader& reader)
     }
 }
 
-void ClassTypeSymbol::ReadClassNode(Cm::Sym::SymbolTable& symbolTable)
+void ClassTypeSymbol::ReadClassNode(Cm::Sym::SymbolTable& symbolTable, int fileIndex)
 {
     if (!persistentClassData)
     {
@@ -117,6 +117,7 @@ void ClassTypeSymbol::ReadClassNode(Cm::Sym::SymbolTable& symbolTable)
     Cm::Ser::BinaryReader binaryReader(cmlFilePath);
     binaryReader.SetPos(persistentClassData->classNodePos);
     Cm::Ast::Reader astReader(binaryReader);
+    astReader.SetReplaceFileIndex(fileIndex);
     Cm::Ast::Node* node = astReader.ReadNode();
     if (node->IsClassNode())
     {

@@ -32,7 +32,7 @@ Cm::Sym::FunctionSymbol* BindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym
 }
 
 void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Ast::FunctionNode* functionNode, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Sym::ClassTypeSymbol* currentClass)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::FunctionNode* functionNode, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Sym::ClassTypeSymbol* currentClass)
 {
     if (currentClass && currentClass->IsClassTemplateSymbol())
     {
@@ -236,7 +236,7 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
     }
     if (functionNode->ReturnTypeExpr())
     {
-        Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, functionNode->ReturnTypeExpr());
+        Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, functionNode->ReturnTypeExpr());
         functionSymbol->SetReturnType(returnType);
     }
     if (currentClass && currentClass->IsTemplateTypeSymbol())
@@ -359,7 +359,7 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
 }
 
 bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    bool inForEverLoop)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, bool inForEverLoop)
 {
     switch (statement->GetNodeType())
     {
@@ -368,7 +368,7 @@ bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable&
             Cm::Ast::CompoundStatementNode* compoundStatement = static_cast<Cm::Ast::CompoundStatementNode*>(statement);
             for (const std::unique_ptr<Cm::Ast::StatementNode>& stat : compoundStatement->Statements())
             {
-                if (TerminatesFunction(stat.get(), symbolTable, containerScope, fileScopes, inForEverLoop)) return true;
+                if (TerminatesFunction(stat.get(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
             }
             break;
         }
@@ -377,8 +377,9 @@ bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable&
             Cm::Ast::ConditionalStatementNode* conditionalStatement = static_cast<Cm::Ast::ConditionalStatementNode*>(statement);
             if (inForEverLoop || conditionalStatement->HasElseStatement())
             {
-                if (TerminatesFunction(conditionalStatement->ThenS(), symbolTable, containerScope, fileScopes, inForEverLoop) &&
-                    (inForEverLoop || (conditionalStatement->HasElseStatement() && TerminatesFunction(conditionalStatement->ElseS(), symbolTable, containerScope, fileScopes, inForEverLoop))))
+                if (TerminatesFunction(conditionalStatement->ThenS(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop) &&
+                    (inForEverLoop || (conditionalStatement->HasElseStatement() && TerminatesFunction(conditionalStatement->ElseS(), symbolTable, containerScope, fileScopes, 
+                    classTemplateRepository, inForEverLoop))))
                 {
                     return true;
                 }
@@ -392,9 +393,9 @@ bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable&
             {
                 for (const std::unique_ptr<Cm::Ast::StatementNode>& caseStatement : switchStatement->CaseStatements())
                 {
-                    if (!TerminatesFunction(caseStatement.get(), symbolTable, containerScope, fileScopes, inForEverLoop)) return false;
+                    if (!TerminatesFunction(caseStatement.get(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return false;
                 }
-                return TerminatesFunction(switchStatement->DefaultStatement(), symbolTable, containerScope, fileScopes, inForEverLoop);
+                return TerminatesFunction(switchStatement->DefaultStatement(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop);
             }
             break;
         }
@@ -403,7 +404,7 @@ bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable&
             Cm::Ast::CaseStatementNode* caseStatement = static_cast<Cm::Ast::CaseStatementNode*>(statement);
             for (const std::unique_ptr<Cm::Ast::StatementNode>& stat : caseStatement->Statements())
             {
-                if (TerminatesFunction(stat.get(), symbolTable, containerScope, fileScopes, inForEverLoop)) return true;
+                if (TerminatesFunction(stat.get(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
             }
             break;
         }
@@ -412,34 +413,34 @@ bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable&
             Cm::Ast::DefaultStatementNode* defaultStatement = static_cast<Cm::Ast::DefaultStatementNode*>(statement);
             for (const std::unique_ptr<Cm::Ast::StatementNode>& stat : defaultStatement->Statements())
             {
-                if (TerminatesFunction(stat.get(), symbolTable, containerScope, fileScopes, inForEverLoop)) return true;
+                if (TerminatesFunction(stat.get(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
             }
             break;
         }
         case Cm::Ast::NodeType::whileStatementNode:
         {
             Cm::Ast::WhileStatementNode* whileStatement = static_cast<Cm::Ast::WhileStatementNode*>(statement);
-            if (IsAlwaysTrue(whileStatement->Condition(), symbolTable, containerScope, fileScopes))
+            if (IsAlwaysTrue(whileStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
             {
-                if (TerminatesFunction(whileStatement->Statement(), symbolTable, containerScope, fileScopes, true)) return true;
+                if (TerminatesFunction(whileStatement->Statement(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
             }
             break;
         }
         case Cm::Ast::NodeType::doStatementNode:
         {
             Cm::Ast::DoStatementNode* doStatement = static_cast<Cm::Ast::DoStatementNode*>(statement);
-            if (IsAlwaysTrue(doStatement->Condition(), symbolTable, containerScope, fileScopes))
+            if (IsAlwaysTrue(doStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
             {
-                if (TerminatesFunction(doStatement->Statement(), symbolTable, containerScope, fileScopes, true)) return true;
+                if (TerminatesFunction(doStatement->Statement(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
             }
             break;
         }
         case Cm::Ast::NodeType::forStatementNode:
         {
             Cm::Ast::ForStatementNode* forStatement = static_cast<Cm::Ast::ForStatementNode*>(statement);
-            if (!forStatement->Condition() || IsAlwaysTrue(forStatement->Condition(), symbolTable, containerScope, fileScopes))
+            if (!forStatement->Condition() || IsAlwaysTrue(forStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
             {
-                if (TerminatesFunction(forStatement->Action(), symbolTable, containerScope, fileScopes, true)) return true;
+                if (TerminatesFunction(forStatement->Action(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
             }
             break;
         }
@@ -452,13 +453,13 @@ bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable&
 }
 
 void CheckFunctionReturnPaths(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Sym::FunctionSymbol* functionSymbol, Cm::Ast::FunctionNode* functionNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Ast::FunctionNode* functionNode)
 {
     if (!functionSymbol->GetReturnType() || functionSymbol->GetReturnType()->IsVoidTypeSymbol() || !functionNode->HasBody()) return;
     Cm::Ast::CompoundStatementNode* body = functionNode->Body();
     for (const std::unique_ptr<Cm::Ast::StatementNode>& statement : body->Statements())
     {
-        if (TerminatesFunction(statement.get(), symbolTable, containerScope, fileScopes, false)) return;
+        if (TerminatesFunction(statement.get(), symbolTable, containerScope, fileScopes, classTemplateRepository, false)) return;
     }
     throw Cm::Core::Exception("not all control paths terminate in return statement or throw statement", functionNode->GetSpan());
 }

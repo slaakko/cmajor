@@ -546,8 +546,8 @@ void CaseStatementNode::Accept(Visitor& visitor)
         {
             expressions.Accept(visitor);
         }
+        statements.Accept(visitor);
     }
-    statements.Accept(visitor);
     visitor.EndVisit(*this);
 }
 

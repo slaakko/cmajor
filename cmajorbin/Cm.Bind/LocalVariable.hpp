@@ -9,16 +9,17 @@
 
 #ifndef CM_BIND_LOCAL_VARIABLE_INCLUDED
 #define CM_BIND_LOCAL_VARIABLE_INCLUDED
+#include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 
 namespace Cm { namespace Bind {
 
 Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Ast::ConstructionStatementNode* constructionStatementNode);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstructionStatementNode* constructionStatementNode);
 
 Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Ast::ConstructionStatementNode* constructionStatementNode, Cm::Sym::LocalVariableSymbol* localVariableSymbol);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstructionStatementNode* constructionStatementNode, Cm::Sym::LocalVariableSymbol* localVariableSymbol);
 
 } } // namespace Cm::Bind
 

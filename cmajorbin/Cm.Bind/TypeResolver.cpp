@@ -22,7 +22,8 @@ namespace Cm { namespace Bind {
 class TypeResolver : public Cm::Ast::Visitor
 {
 public:
-    TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_);
+    TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
+        Cm::Core::ClassTemplateRepository& classTemplateRepository_, TypeResolverFlags flags_);
     Cm::Sym::TypeSymbol* Resolve(Cm::Ast::Node* typeExpr);
     void Visit(Cm::Ast::BoolNode& boolNode) override;
     void Visit(Cm::Ast::SByteNode& sbyteNode) override;
@@ -45,13 +46,16 @@ private:
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ContainerScope* currentContainerScope;
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes;
+    Cm::Core::ClassTemplateRepository& classTemplateRepository;
+    TypeResolverFlags flags;
     Cm::Sym::TypeSymbol* typeSymbol;
     std::unique_ptr<Cm::Sym::TypeSymbol> nsTypeSymbol;
     void ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol);
 };
 
-TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_) :
-    Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), typeSymbol(nullptr)
+TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository_, TypeResolverFlags flags_) :
+    Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), flags(flags_), typeSymbol(nullptr)
 {
 }
 
@@ -129,10 +133,20 @@ void TypeResolver::Visit(Cm::Ast::DoubleNode& doubleNode)
 void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 {
     std::vector<Cm::Sym::TypeSymbol*> typeArguments;
-    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, currentContainerScope, fileScopes, templateIdNode.Subject());
+    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, templateIdNode.Subject(), flags);
+    if (!subjectType)
+    {
+        typeSymbol = nullptr;
+        return;
+    }
     for (const std::unique_ptr<Cm::Ast::Node>& templateArgNode : templateIdNode.TemplateArguments())
     {
-        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, currentContainerScope, fileScopes, templateArgNode.get());
+        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, templateArgNode.get(), flags);
+        if (!argumentType)
+        {
+            typeSymbol = nullptr;
+            return;
+        }
         typeArguments.push_back(argumentType);
     }
     typeSymbol = symbolTable.GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
@@ -170,9 +184,13 @@ void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
     {
         ResolveSymbol(&identifierNode, symbol);
     }
-    else
+    else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
     {
         throw Cm::Core::Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+    }
+    else
+    {
+        typeSymbol = nullptr;
     }
 }
 
@@ -188,11 +206,16 @@ void TypeResolver::ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
             {
                 Cm::Ast::TypedefNode* typedefNode = static_cast<Cm::Ast::TypedefNode*>(tn);
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(typedefNode);
-                BindTypedef(symbolTable, scope, fileScopes, typedefNode, typedefSymbol);
+                BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefNode, typedefSymbol);
+            }
+            else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
+            {
+                throw std::runtime_error("node is not typedef node");
             }
             else
             {
-                throw std::runtime_error("node is not typedef node");
+                typeSymbol = nullptr; 
+                return;
             }
         }
         symbol = typedefSymbol->GetType();
@@ -211,16 +234,32 @@ void TypeResolver::ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
         nsTypeSymbol.reset(new NamespaceTypeSymbol(static_cast<Cm::Sym::NamespaceSymbol*>(symbol)));
         typeSymbol = nsTypeSymbol.get();
     }
-    else
+    else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
     {
         throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a type", node->GetSpan(), symbol->GetSpan());
+    }
+    else
+    {
+        typeSymbol = nullptr;
     }
 }
 
 void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
 {
+    if (!typeSymbol)
+    {
+        return;
+    }
     if (typeSymbol->IsClassTypeSymbol() || typeSymbol->IsNamespaceTypeSymbol())
     {
+        if (typeSymbol->IsTemplateTypeSymbol())
+        {
+            if (!typeSymbol->Bound())
+            {
+                Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(typeSymbol);
+                classTemplateRepository.BindTemplateTypeSymbol(templateTypeSymbol);
+            }
+        }
         Cm::Sym::Scope* containerScope = nullptr;
         if (typeSymbol->IsClassTypeSymbol())
         {
@@ -237,27 +276,46 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
         {
             ResolveSymbol(&dotNode, symbol);
         }
-        else
+        else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
         {
             throw Cm::Core::Exception("symbol '" + memberName + "' not found", dotNode.GetSpan());
         }
+        else
+        {
+            typeSymbol = nullptr;
+        }
+    }
+    else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
+    {
+        throw Cm::Core::Exception("symbol '" + typeSymbol->FullName() + "' does not denote a class or a namespace", dotNode.GetSpan(), typeSymbol->GetSpan());
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + typeSymbol->FullName() + "' does not denote a class or a namespace", dotNode.GetSpan(), typeSymbol->GetSpan());
+        typeSymbol = nullptr;
     }
 }
 
 void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
-    Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, currentContainerScope, fileScopes, derivedTypeExprNode.BaseTypeExprNode());
+    Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, derivedTypeExprNode.BaseTypeExprNode(), flags);
+    if (!baseType)
+    {
+        typeSymbol = nullptr;
+        return;
+    }
     typeSymbol = symbolTable.GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan());
 }
 
 Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Ast::Node* typeExpr)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::Node* typeExpr)
 {
-    TypeResolver resolver(symbolTable, currentContainerScope, fileScopes);
+    return ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, typeExpr, TypeResolverFlags::none);
+}
+
+Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::Node* typeExpr, TypeResolverFlags flags)
+{
+    TypeResolver resolver(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, flags);
     return resolver.Resolve(typeExpr);
 }
 

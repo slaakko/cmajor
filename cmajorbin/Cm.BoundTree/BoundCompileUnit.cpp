@@ -41,6 +41,16 @@ void BoundCompileUnit::Own(Cm::Sym::FunctionSymbol* functionSymbol)
     ownedFunctionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
 }
 
+bool BoundCompileUnit::Instantiated(Cm::Sym::FunctionSymbol* functionSymbol) const
+{
+    return instantiatedFunctions.find(functionSymbol) != instantiatedFunctions.end();
+}
+
+void BoundCompileUnit::AddToInstantiated(Cm::Sym::FunctionSymbol* functionSymbol)
+{
+    instantiatedFunctions.insert(functionSymbol);
+}
+
 void BoundCompileUnit::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);

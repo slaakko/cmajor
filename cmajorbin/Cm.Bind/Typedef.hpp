@@ -9,6 +9,7 @@
 
 #ifndef CM_BIND_TYPEDEF_INCLUDED
 #define CM_BIND_TYPEDEF_INCLUDED
+#include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/Scope.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
@@ -17,9 +18,10 @@
 
 namespace Cm { namespace Bind {
 
-void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::TypedefNode* typedefNode);
-void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::TypedefNode* typedefNode, 
-    Cm::Sym::TypedefSymbol* typedefSymbol);
+void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode);
+void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol);
 
 } } // namespace Cm::Bind
 

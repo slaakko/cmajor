@@ -33,7 +33,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol, false);
     if (!node)
     {
-        subjectClassTypeSymbol->ReadClassNode(boundCompileUnit.SymbolTable());
+        subjectClassTypeSymbol->ReadClassNode(boundCompileUnit.SymbolTable(), subjectClassTypeSymbol->GetSpan().FileIndex());
         node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol);
     }
     if (!node->IsClassNode())
@@ -66,7 +66,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
         }
         else
         {
-            if (classNode->TemplateParameters().Count() >= i)
+            if (i >= classNode->TemplateParameters().Count())
             {
                 throw Cm::Core::Exception("too few template arguments", templateTypeSymbol->GetSpan());
             }
@@ -76,15 +76,19 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
             {
                 throw Cm::Core::Exception("too few template arguments", templateTypeSymbol->GetSpan());
             }
-            typeArgument = ResolveType(boundCompileUnit.SymbolTable(), templateTypeSymbol->GetContainerScope(), boundCompileUnit.GetFileScopes(), defaultTemplateArgumentNode);
+            typeArgument = ResolveType(boundCompileUnit.SymbolTable(), templateTypeSymbol->GetContainerScope(), boundCompileUnit.GetFileScopes(), *this, defaultTemplateArgumentNode);
         }
         boundTypeParam->SetType(typeArgument);
         templateTypeSymbol->AddSymbol(boundTypeParam);
     }
+    if (templateTypeSymbol->FullName() == "RedBlackTree<int, int, Identity<int>, Less<int>>")
+    {
+        int x = 0;
+    }
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     declarationVisitor.SetTemplateType(classInstanceNode, templateTypeSymbol);
     globalNs->Accept(declarationVisitor);
-    Prebinder prebinder(boundCompileUnit.SymbolTable());
+    Prebinder prebinder(boundCompileUnit.SymbolTable(), *this);
     prebinder.BeginCompileUnit();
     globalNs->Accept(prebinder);
     prebinder.EndCompileUnit();
@@ -132,15 +136,10 @@ void ClassTemplateRepository::CollectViableFunctions(const std::string& groupNam
     }
 }
 
-bool ClassTemplateRepository::Instantiated(Cm::Sym::FunctionSymbol* memberFunctionSymbol) const
-{
-    InstantiatedMemberFunctionSetIt i = instantiatedMemberFunctionSet.find(memberFunctionSymbol);
-    return i != instantiatedMemberFunctionSet.end();
-}
-
 void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol)
 {
-    instantiatedMemberFunctionSet.insert(memberFunctionSymbol);
+    if (boundCompileUnit.Instantiated(memberFunctionSymbol)) return;
+    boundCompileUnit.AddToInstantiated(memberFunctionSymbol);
     memberFunctionSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
     Cm::Sym::Symbol* parent = memberFunctionSymbol->Parent();
     if (!parent->IsTemplateTypeSymbol())
@@ -181,7 +180,7 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         functionNode->Body()->Accept(declarationVisitor);
         boundCompileUnit.SymbolTable().EndContainer();
 
-        Prebinder prebinder(boundCompileUnit.SymbolTable());
+        Prebinder prebinder(boundCompileUnit.SymbolTable(), *this);
         prebinder.SetDontCompleteFunctions();
         prebinder.SetCurrentClass(templateTypeSymbol);
         prebinder.BeginCompileUnit();
@@ -201,10 +200,7 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
 
     if (templateTypeSymbol->Destructor())
     {
-        if (!Instantiated(templateTypeSymbol->Destructor()))
-        {
-            Instantiate(containerScope, templateTypeSymbol->Destructor());
-        }
+        Instantiate(containerScope, templateTypeSymbol->Destructor());
     }
 }
 

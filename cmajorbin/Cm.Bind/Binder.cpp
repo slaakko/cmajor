@@ -190,7 +190,8 @@ void Binder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
     {
         if (!boundFunction->GetFunctionSymbol()->IsAbstract() && boundFunction->Body())
         {
-            CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction->GetFunctionSymbol(), &memberFunctionNode);
+            CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), 
+                boundFunction->GetFunctionSymbol(), &memberFunctionNode);
             CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
             GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
             if (boundFunction->GetFunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor())
@@ -212,7 +213,8 @@ void Binder::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 
 void Binder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
-    CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction->GetFunctionSymbol(), &conversionFunctionNode);
+    CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol(), 
+        &conversionFunctionNode);
     CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
     if (boundFunction->Body())
     {
@@ -272,7 +274,8 @@ void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
     }
     else
     {
-        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction->GetFunctionSymbol(), &functionNode);
+        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol(), 
+            &functionNode);
         CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
         GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
         boundCompileUnit.AddBoundNode(boundFunction.release());
@@ -427,12 +430,10 @@ void Binder::BeginVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
 {
     parentStack.push(currentParent.release());
     currentParent.reset(new Cm::BoundTree::BoundCaseStatement(&caseStatementNode));
-    PushSkipContent();
 }
 
 void Binder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode)
 {
-    PopSkipContent();
     Cm::BoundTree::BoundParentStatement* cp = currentParent.release();
     if (cp->IsBoundCaseStatement())
     {
