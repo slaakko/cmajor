@@ -141,6 +141,10 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
+    if (boundFunction.GetFunctionSymbol()->FullName() == "System.Collections.RedBlackTreeNode<int>.@destructor(RedBlackTreeNode<int>*)")
+    {
+        int x = 0;
+    }
     Cm::IrIntf::ResetLocalLabelCounter();
     currentFunction = boundFunction.GetFunctionSymbol();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction);

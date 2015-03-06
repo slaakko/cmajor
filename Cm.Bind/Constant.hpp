@@ -9,14 +9,17 @@
 
 #ifndef CM_BIND_CONSTANT_INCLUDED
 #define CM_BIND_CONSTANT_INCLUDED
+#include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Ast/Constant.hpp>
 
 namespace Cm { namespace Bind {
 
-void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ConstantNode* constantNode);
-void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ConstantNode* constantNode, Cm::Sym::ConstantSymbol* constantSymbol);
+void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstantNode* constantNode);
+void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstantNode* constantNode, Cm::Sym::ConstantSymbol* constantSymbol);
 
 } } // namespace Cm::Bind
 

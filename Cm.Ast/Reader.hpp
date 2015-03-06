@@ -78,8 +78,10 @@ public:
     Derivation ReadDerivation();
     DerivationList ReadDerivationList();
     Specifiers ReadSpecifiers();
+    void SetReplaceFileIndex(int replaceFileIndex_) { replaceFileIndex = replaceFileIndex_; }
 private:
     BinaryReader& binaryReader;
+    int replaceFileIndex;
 };
 
 } } // namespace Cm::Ast

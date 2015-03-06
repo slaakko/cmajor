@@ -24,7 +24,8 @@
 
 namespace Cm { namespace Bind {
 
-Prebinder::Prebinder(Cm::Sym::SymbolTable& symbolTable_) : Cm::Ast::Visitor(false, false), symbolTable(symbolTable_), currentContainerScope(nullptr), parameterIndex(0), currentClass(nullptr),
+Prebinder::Prebinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Core::ClassTemplateRepository& classTemplateRepository_) : 
+    Cm::Ast::Visitor(false, false), symbolTable(symbolTable_), classTemplateRepository(classTemplateRepository_), currentContainerScope(nullptr), parameterIndex(0), currentClass(nullptr),
     dontCompleteFunctions(false)
 {
 }
@@ -89,7 +90,7 @@ void Prebinder::Visit(Cm::Ast::NamespaceImportNode& namespaceImportNode)
 
 void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
 {
-    Cm::Sym::ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, currentContainerScope, fileScopes, &classNode);
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &classNode);
     if (classNode.TemplateParameters().Count() > 0)
     {
         classTypeSymbol->SetUsingNodes(usingNodes);
@@ -116,7 +117,7 @@ void Prebinder::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
     if (!dontCompleteFunctions)
     {
-        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &constructorNode, currentFunction, currentClass);
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &constructorNode, currentFunction, currentClass);
     }
     EndContainerScope();
 }
@@ -132,7 +133,7 @@ void Prebinder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 {
     if (!dontCompleteFunctions)
     {
-        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &destructorNode, currentFunction, currentClass);
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &destructorNode, currentFunction, currentClass);
     }
     EndContainerScope();
 }
@@ -148,7 +149,7 @@ void Prebinder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
     if (!dontCompleteFunctions)
     {
-        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &memberFunctionNode, currentFunction, currentClass);
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &memberFunctionNode, currentFunction, currentClass);
     }
     EndContainerScope();
 }
@@ -164,7 +165,7 @@ void Prebinder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode
 {
     if (!dontCompleteFunctions)
     {
-        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &conversionFunctionNode, currentFunction, currentClass);
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &conversionFunctionNode, currentFunction, currentClass);
     }
     EndContainerScope();
 }
@@ -180,30 +181,30 @@ void Prebinder::EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
 {
     if (!dontCompleteFunctions)
     {
-        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &staticConstructorNode, currentFunction, currentClass);
+        CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &staticConstructorNode, currentFunction, currentClass);
     }
     EndContainerScope();
 }
 
 void Prebinder::Visit(Cm::Ast::MemberVariableNode& memberVariableNode)
 {
-    BindMemberVariable(symbolTable, currentContainerScope, fileScopes, &memberVariableNode);
+    BindMemberVariable(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &memberVariableNode);
 }
 
 void Prebinder::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
 {
-    BindEnumType(symbolTable, currentContainerScope, fileScopes, &enumTypeNode);
+    BindEnumType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &enumTypeNode);
     BeginContainerScope(symbolTable.GetContainerScope(&enumTypeNode));
 }
 
 void Prebinder::Visit(Cm::Ast::TypedefNode& typedefNode)
 {
-    BindTypedef(symbolTable, currentContainerScope, fileScopes, &typedefNode);
+    BindTypedef(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &typedefNode);
 }
 
 void Prebinder::Visit(Cm::Ast::EnumConstantNode& enumConstantNode)
 {
-    BindEnumConstant(symbolTable, currentContainerScope, fileScopes, &enumConstantNode);
+    BindEnumConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &enumConstantNode);
 }
 
 void Prebinder::EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
@@ -213,7 +214,7 @@ void Prebinder::EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
 
 void Prebinder::Visit(Cm::Ast::ConstantNode& constantNode)
 {
-    BindConstant(symbolTable, currentContainerScope, fileScopes, &constantNode);
+    BindConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &constantNode);
 }
 
 void Prebinder::Visit(Cm::Ast::ParameterNode& parameterNode)
@@ -222,7 +223,7 @@ void Prebinder::Visit(Cm::Ast::ParameterNode& parameterNode)
     {
         return;
     }
-    BindParameter(symbolTable, currentContainerScope, fileScopes, &parameterNode, parameterIndex);
+    BindParameter(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &parameterNode, parameterIndex);
     ++parameterIndex;
 }
 
@@ -252,7 +253,7 @@ void Prebinder::EndVisit(Cm::Ast::FunctionNode& functionNode)
     {
         if (!dontCompleteFunctions)
         {
-            CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, &functionNode, currentFunction, currentClass);
+            CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &functionNode, currentFunction, currentClass);
         }
         EndContainerScope();
     }

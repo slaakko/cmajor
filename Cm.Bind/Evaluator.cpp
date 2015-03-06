@@ -419,7 +419,7 @@ class Evaluator : public Cm::Ast::Visitor
 {
 public:
     Evaluator(Cm::Sym::ValueType targetType_, bool cast, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, 
-        const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_);
+        const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::Core::ClassTemplateRepository& classTemplateRepository_);
     Cm::Sym::Value* DoEvaluate(Cm::Ast::Node* value);
     void Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode) override;
     void Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode) override;
@@ -490,13 +490,15 @@ private:
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ContainerScope* currentContainerScope;
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes;
+    Cm::Core::ClassTemplateRepository& classTemplateRepository;
     EvaluationStack stack;
     void EvaluateSymbol(Cm::Sym::Symbol* symbol);
 };
 
 Evaluator::Evaluator(Cm::Sym::ValueType targetType_, bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, 
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_) :
-    Visitor(true, true), targetType(targetType_), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_)
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::Core::ClassTemplateRepository& classTemplateRepository_) :
+    Visitor(true, true), targetType(targetType_), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), 
+    classTemplateRepository(classTemplateRepository_)
 {
 }
 
@@ -809,10 +811,10 @@ void Evaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void Evaluator::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScopes, targetTypeExpr));
+    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, targetTypeExpr));
     Cm::Sym::SymbolType symbolType = type->GetSymbolType();
     Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
-    stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes));
+    stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes, classTemplateRepository));
 }
 
 void Evaluator::Visit(Cm::Ast::ConstructNode& constructNode)
@@ -846,7 +848,7 @@ void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             if (node->IsConstantNode())
             {
                 Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
-                BindConstant(symbolTable, currentContainerScope, fileScopes, constantNode);
+                BindConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, constantNode);
             }
             else
             {
@@ -865,7 +867,7 @@ void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             {
                 Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
                 Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
-                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, enumConstantNode);
+                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, enumConstantNode);
             }
             else
             {
@@ -917,16 +919,17 @@ void Evaluator::Visit(Cm::Ast::TypeNameNode& typeNameNode)
 }
 
 Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, 
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes)
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository)
 {
-    Evaluator evaluator(targetType, cast, symbolTable, currentContainerScope, fileScopes);
+    Evaluator evaluator(targetType, cast, symbolTable, currentContainerScope, fileScopes, classTemplateRepository);
     return evaluator.DoEvaluate(value);
 }
 
 class BooleanEvaluator : public Cm::Ast::Visitor
 {
 public:
-    BooleanEvaluator(bool cast, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_);
+    BooleanEvaluator(bool cast, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::Core::ClassTemplateRepository& classTemplateRepository_);
     bool DoEvaluate(Cm::Ast::Node* value);
     void Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode) override;
     void Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode) override;
@@ -997,13 +1000,16 @@ private:
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ContainerScope* currentContainerScope;
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes;
+    Cm::Core::ClassTemplateRepository& classTemplateRepository;
     EvaluationStack stack;
     bool interrupted;
     void EvaluateSymbol(Cm::Sym::Symbol* symbol);
 };
 
-BooleanEvaluator::BooleanEvaluator(bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_) :
-    Visitor(true, true), targetType(Cm::Sym::ValueType::boolValue), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), interrupted(false)
+BooleanEvaluator::BooleanEvaluator(bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository_) :
+    Visitor(true, true), targetType(Cm::Sym::ValueType::boolValue), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), 
+    classTemplateRepository(classTemplateRepository_), interrupted(false)
 {
 }
 
@@ -1334,10 +1340,10 @@ void BooleanEvaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void BooleanEvaluator::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScopes, targetTypeExpr));
+    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, targetTypeExpr));
     Cm::Sym::SymbolType symbolType = type->GetSymbolType();
     Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
-    stack.Push(IsAlwaysTrue(castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes) ? new Cm::Sym::BoolValue(true) : new Cm::Sym::BoolValue(false));
+    stack.Push(IsAlwaysTrue(castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes, classTemplateRepository) ? new Cm::Sym::BoolValue(true) : new Cm::Sym::BoolValue(false));
 }
 
 void BooleanEvaluator::Visit(Cm::Ast::ConstructNode& constructNode)
@@ -1371,7 +1377,7 @@ void BooleanEvaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             if (node->IsConstantNode())
             {
                 Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
-                BindConstant(symbolTable, currentContainerScope, fileScopes, constantNode);
+                BindConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, constantNode);
             }
             else
             {
@@ -1390,7 +1396,7 @@ void BooleanEvaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             {
                 Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
                 Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
-                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, enumConstantNode);
+                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, enumConstantNode);
             }
             else
             {
@@ -1441,11 +1447,12 @@ void BooleanEvaluator::Visit(Cm::Ast::TypeNameNode& typeNameNode)
     interrupted = true;
 }
 
-bool IsAlwaysTrue(Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes)
+bool IsAlwaysTrue(Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository)
 {
     try
     {
-        BooleanEvaluator evaluator(false, symbolTable, currentContainerScope, fileScopes);
+        BooleanEvaluator evaluator(false, symbolTable, currentContainerScope, fileScopes, classTemplateRepository);
         return evaluator.DoEvaluate(value);
     }
     catch (...)

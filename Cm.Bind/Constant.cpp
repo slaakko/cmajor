@@ -20,7 +20,8 @@
 
 namespace Cm { namespace Bind {
 
-void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ConstantNode* constantNode)
+void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstantNode* constantNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(constantNode->Id()->Str());
     if (symbol)
@@ -28,7 +29,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         if (symbol->IsConstantSymbol())
         {
             Cm::Sym::ConstantSymbol* constantSymbol = static_cast<Cm::Sym::ConstantSymbol*>(symbol);
-            BindConstant(symbolTable, containerScope, fileScopes, constantNode, constantSymbol);
+            BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode, constantSymbol);
         }
         else
         {
@@ -41,8 +42,8 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     }
 }
 
-void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ConstantNode* constantNode, 
-    Cm::Sym::ConstantSymbol* constantSymbol)
+void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstantNode* constantNode, Cm::Sym::ConstantSymbol* constantSymbol)
 {
     if (constantSymbol->Evaluating())
     {
@@ -108,7 +109,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         constantSymbol->SetBound();
         return;
     }
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, constantNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode->TypeExpr());
     if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())
     {
         if (type->IsEnumTypeSymbol())
@@ -121,7 +122,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
                 {
                     Cm::Ast::EnumTypeNode* enumTypeNode = static_cast<Cm::Ast::EnumTypeNode*>(node);
                     Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(enumTypeNode);
-                    BindEnumType(symbolTable, scope, fileScopes, enumTypeNode);
+                    BindEnumType(symbolTable, scope, fileScopes, classTemplateRepository, enumTypeNode);
                 }
             }
             type = enumTypeSymbol->GetUnderlyingType();
@@ -134,7 +135,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         Cm::Sym::SymbolType symbolType = type->GetSymbolType();
         Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
         constantSymbol->SetEvaluating();
-        Cm::Sym::Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScopes);
+        Cm::Sym::Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository);
         constantSymbol->ResetEvaluating();
         constantSymbol->SetValue(value);
         constantSymbol->SetBound();

@@ -16,7 +16,8 @@
 
 namespace Cm { namespace Bind {
 
-void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::TypedefNode* typedefNode)
+void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(typedefNode->Id()->Str());
     if (!symbol)
@@ -32,7 +33,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
         if (symbol->IsTypedefSymbol())
         {
             Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
-            BindTypedef(symbolTable, containerScope, fileScopes, typedefNode, typedefSymbol);
+            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefNode, typedefSymbol);
         }
         else
         {
@@ -45,8 +46,8 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     }
 }
 
-void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::TypedefNode* typedefNode, 
-    Cm::Sym::TypedefSymbol* typedefSymbol)
+void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol)
 {
     if (typedefSymbol->Evaluating())
     {
@@ -113,7 +114,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
         return;
     }
     typedefSymbol->SetEvaluating();
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, typedefNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefNode->TypeExpr());
     typedefSymbol->ResetEvaluating();
     typedefSymbol->SetType(type);
     typedefSymbol->SetBound();

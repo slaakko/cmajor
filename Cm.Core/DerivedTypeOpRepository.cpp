@@ -712,6 +712,25 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
                         viableFunctions.insert(cache.GetCopyCtor(typeRepository, pointerType));
                         return;
                     }
+                    else
+                    {
+                        Cm::Sym::TypeSymbol* leftBaseType = pointerType->GetBaseType();
+                        if (leftBaseType->IsClassTypeSymbol())
+                        {
+                            Cm::Sym::TypeSymbol* rightBaseType = rightPlainType->GetBaseType();
+                            if (rightBaseType->IsClassTypeSymbol())
+                            {
+                                Cm::Sym::ClassTypeSymbol* leftClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(leftBaseType);
+                                Cm::Sym::ClassTypeSymbol* rightClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(rightBaseType);
+                                if (leftClassType->HasBaseClass(rightClassType) || rightClassType->HasBaseClass(leftClassType))
+                                {
+                                    DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
+                                    viableFunctions.insert(cache.GetCopyCtor(typeRepository, pointerType));
+                                    return;
+                                }
+                            }
+                        }
+                    }
                 }
                 Cm::Sym::TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(pointerType, span);
                 if (Cm::Sym::TypesEqual(alternateRightType, rightPlainType)) // pointer copy constructor
@@ -833,10 +852,12 @@ void EqualityOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::Co
         Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
         if (rightType->IsPointerType() || rightType->IsNullPtrType())
         {
-            if (Cm::Sym::TypesEqual(leftType, rightType)) // operator==(ptr, ptr)
+            Cm::Sym::TypeSymbol* leftPlainType = typeRepository.MakePlainType(leftType);
+            Cm::Sym::TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+            if (Cm::Sym::TypesEqual(leftPlainType, rightPlainType)) // operator==(ptr, ptr)
             {
-                DerivedTypeOpCache& cache = derivedTypeOpCacheMap[leftType];
-                viableFunctions.insert(cache.GetOpEqual(typeRepository, leftType));
+                DerivedTypeOpCache& cache = derivedTypeOpCacheMap[leftPlainType];
+                viableFunctions.insert(cache.GetOpEqual(typeRepository, leftPlainType));
             }
             else if (leftType->IsNullPtrType()) // operator==(null, ptr)
             {
@@ -862,10 +883,12 @@ void LessOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::Core::
         Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
         if (rightType->IsPointerType())
         {
-            if (Cm::Sym::TypesEqual(leftType, rightType)) // operator<(ptr, ptr)
+            Cm::Sym::TypeSymbol* leftPlainType = typeRepository.MakePlainType(leftType);
+            Cm::Sym::TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+            if (Cm::Sym::TypesEqual(leftPlainType, rightPlainType)) // operator<(ptr, ptr)
             {
-                DerivedTypeOpCache& cache = derivedTypeOpCacheMap[leftType];
-                viableFunctions.insert(cache.GetOpLess(typeRepository, leftType));
+                DerivedTypeOpCache& cache = derivedTypeOpCacheMap[leftPlainType];
+                viableFunctions.insert(cache.GetOpLess(typeRepository, leftPlainType));
             }
         }
     }

@@ -556,7 +556,12 @@ bool DeduceTypeParameters(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree
         Cm::Sym::ParameterSymbol* parameterSymbol = parameters[i];
         Cm::Ast::ParameterNode* parameterNode = static_cast<Cm::Ast::ParameterNode*>(boundCompileUnit.SymbolTable().GetNode(parameterSymbol));
         Cm::Ast::Node* parameterTypeExpr = parameterNode->TypeExpr();
-        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.GetFileScopes(), parameterTypeExpr);
+        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), parameterTypeExpr,
+            TypeResolverFlags::dontThrow);
+        if (!parameterType)
+        {
+            return false;
+        }
         const Cm::Core::Argument& argument = arguments[i];
         Cm::Sym::FunctionSymbol* conversion = nullptr;
         Cm::Bind::ArgumentMatch argumentMatch;
@@ -894,10 +899,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
             {
                 return function;
             }
-            if (!boundCompileUnit.ClassTemplateRepository().Instantiated(function))
-            {
-                boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, function);
-            }
+            boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, function);
         }
         return function;
     }

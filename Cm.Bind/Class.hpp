@@ -9,15 +9,16 @@
 
 #ifndef CM_BIND_CLASS_INCLUDED
 #define CM_BIND_CLASS_INCLUDED
+#include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Class.hpp>
 
 namespace Cm { namespace Bind {
 
 Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Ast::ClassNode* classNode);
-void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ClassNode* classNode, 
-    Cm::Sym::ClassTypeSymbol* classTypeSymbol);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode);
+void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode,Cm::Sym::ClassTypeSymbol* classTypeSymbol);
 
 } } // namespace Cm::Bind
 

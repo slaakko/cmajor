@@ -80,7 +80,7 @@ public:
     bool IsExportSymbol() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
-    void ReadClassNode(Cm::Sym::SymbolTable& symbolTable);
+    void ReadClassNode(Cm::Sym::SymbolTable& symbolTable, int fileIndex);
     void FreeClassNode(Cm::Sym::SymbolTable& symbolTable);
     bool IsClassTypeSymbol() const override { return true; }
     bool IsClassTemplateSymbol() const { return !typeParameters.empty(); }

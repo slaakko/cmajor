@@ -19,7 +19,7 @@ namespace Cm { namespace Bind {
 class Prebinder : public Cm::Ast::Visitor
 {
 public:
-    Prebinder(Cm::Sym::SymbolTable& symbolTable_);
+    Prebinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Core::ClassTemplateRepository& classTemplateRepository_);
     void BeginCompileUnit();
     void EndCompileUnit();
     Cm::Sym::FileScope* ReleaseFileScope() { return fileScope.release(); }
@@ -63,6 +63,7 @@ public:
 private:
     Cm::Sym::SymbolTable& symbolTable;
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
+    Cm::Core::ClassTemplateRepository& classTemplateRepository;
     std::unique_ptr<Cm::Sym::FileScope> fileScope;
     Cm::Sym::ContainerScope* currentContainerScope;
     std::stack<Cm::Sym::ContainerScope*> containerScopeStack;

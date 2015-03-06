@@ -275,10 +275,14 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
 void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, std::vector<std::string>& objectFilePaths)
 {
     boost::filesystem::path outputBase(outputBasePath);
+    std::string prebindCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__prebind__.ll")).generic_string());
+    Cm::BoundTree::BoundCompileUnit prebindCompileUnit(syntaxTree.CompileUnits().front().get(), prebindCompileUnitIrFilePath, symbolTable);
+    prebindCompileUnit.SetClassTemplateRepostory(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
+    prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
-        Cm::Bind::Prebinder prebinder(symbolTable);
+        Cm::Bind::Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository());
         compileUnit->Accept(prebinder);
         fileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.ReleaseFileScope()));
     }
@@ -413,8 +417,8 @@ void Build(const std::string& projectFilePath)
     Cm::Parser::FileRegistry fileRegistry;
     Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
     Cm::Parser::ProjectGrammar* projectGrammar = Cm::Parser::ProjectGrammar::Create();
-    int projectFileIndex = fileRegistry.RegisterParsedFile(projectFilePath);
-    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), projectFileIndex, projectFilePath, "debug", "llvm", GetOs()));
+    //int projectFileIndex = fileRegistry.RegisterParsedFile(projectFilePath);
+    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, "debug", "llvm", GetOs()));
     project->ResolveDeclarations();
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
     std::vector<std::string> assemblyFilePaths;

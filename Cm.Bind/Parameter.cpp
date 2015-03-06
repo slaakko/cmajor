@@ -18,7 +18,8 @@
 
 namespace Cm { namespace Bind {
 
-void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ParameterNode* parameterNode, 
+void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ParameterNode* parameterNode,
     int parameterIndex)
 {
     Cm::Sym::Symbol* symbol = nullptr;
@@ -39,7 +40,7 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
             {
                 return;
             }
-            Cm::Sym::TypeSymbol* parameterType = ResolveType(symbolTable, containerScope, fileScopes, parameterNode->TypeExpr());
+            Cm::Sym::TypeSymbol* parameterType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, parameterNode->TypeExpr());
             parameterSymbol->SetType(parameterType);
             parameterSymbol->SetBound();
         }

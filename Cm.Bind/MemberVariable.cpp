@@ -18,7 +18,7 @@
 namespace Cm { namespace Bind {
 
 void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Ast::MemberVariableNode* memberVariableNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::MemberVariableNode* memberVariableNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(memberVariableNode->Id()->Str());
     if (symbol)
@@ -26,7 +26,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
         if (symbol->IsMemberVariableSymbol())
         {
             Cm::Sym::MemberVariableSymbol* memberVariableSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(symbol);
-            BindMemberVariable(symbolTable, containerScope, fileScopes, memberVariableNode, memberVariableSymbol);
+            BindMemberVariable(symbolTable, containerScope, fileScopes, classTemplateRepository, memberVariableNode, memberVariableSymbol);
         }
         else
         {
@@ -40,7 +40,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
 }
 
 void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Ast::MemberVariableNode* memberVariableNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::MemberVariableNode* memberVariableNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol)
 {
     if (memberVariableSymbol->Bound())
     {
@@ -98,7 +98,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
         memberVariableSymbol->SetBound();
         return;
     }
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, memberVariableNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, memberVariableNode->TypeExpr());
     if (type->Access() < memberVariableSymbol->Access())
     {
         throw Cm::Core::Exception("type of a member variable must be at least as accessible as the member variable itself", type->GetSpan(), memberVariableSymbol->GetSpan());

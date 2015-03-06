@@ -47,6 +47,7 @@ Cm::Ast::CompoundStatementNode* ReadFunctionTemplateBody(Cm::Sym::FunctionSymbol
     Cm::Ser::BinaryReader binaryReader(cmlFilePath);
     binaryReader.SetPos(functionTemplate->BodyPos());
     Cm::Ast::Reader astReader(binaryReader);
+    astReader.SetReplaceFileIndex(functionTemplate->GetSpan().FileIndex());
     Cm::Ast::CompoundStatementNode* body = astReader.ReadCompoundStatementNode();
     return body;
 }
@@ -122,7 +123,7 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     functionTemplateInstance->SetReplicated();
     functionTemplateInstance->SetFunctionTemplateSpecialization();
     BindTypeParameters(functionTemplate, functionTemplateInstance, templateArguments);
-    Prebinder prebinder(boundCompileUnit.SymbolTable());
+    Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
     prebinder.BeginCompileUnit();
     globalNs->Accept(prebinder);
     functionTemplateInstance->SetTypeArguments(templateArguments);

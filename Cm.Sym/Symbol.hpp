@@ -64,7 +64,8 @@ enum class SymbolFlags : uint8_t
     access = 1 << 0 | 1 << 1,
     static_ = 1 << 2,
     bound = 1 << 3,
-    project = 1 << 4
+    project = 1 << 4,
+    generated = 1 << 5
 };
 
 std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess);
@@ -152,6 +153,8 @@ public:
     virtual bool IsSameParentOrAncestorOf(Symbol* that) const;
     bool Bound() const { return GetFlag(SymbolFlags::bound); }
     void SetBound() { SetFlag(SymbolFlags::bound); }
+    bool Generated() const { return GetFlag(SymbolFlags::generated); }
+    void SetGenerated() { SetFlag(SymbolFlags::generated); }
     SymbolFlags Flags() const { return flags; }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none;  }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }

@@ -686,6 +686,8 @@ Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& s
 void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     Cm::Sym::FunctionSymbol* destructorSymbol = classTypeSymbol->Destructor();
+    if (compileUnit.Instantiated(destructorSymbol)) return;
+    compileUnit.AddToInstantiated(destructorSymbol);
     Cm::Sym::ParameterSymbol* thisParam = destructorSymbol->Parameters()[0];
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     std::unique_ptr<Cm::BoundTree::BoundFunction> destructor(new Cm::BoundTree::BoundFunction(nullptr, destructorSymbol));
@@ -738,6 +740,8 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
 void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundClass, Cm::Sym::ContainerScope* containerScope, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     Cm::Sym::FunctionSymbol* staticConstructorSymbol = classTypeSymbol->StaticConstructor();
+    if (compileUnit.Instantiated(staticConstructorSymbol)) return;
+    compileUnit.AddToInstantiated(staticConstructorSymbol);
     std::unique_ptr<Cm::BoundTree::BoundFunction> staticConstructor(new Cm::BoundTree::BoundFunction(nullptr, staticConstructorSymbol));
     staticConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
 

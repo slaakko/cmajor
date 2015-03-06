@@ -51,6 +51,8 @@ public:
     void AddBoundNode(BoundNode* boundNode);
     void Accept(Visitor& visitor);
     void Own(Cm::Sym::FunctionSymbol* functionSymbol);
+    bool Instantiated(Cm::Sym::FunctionSymbol* functionSymbol) const;
+    void AddToInstantiated(Cm::Sym::FunctionSymbol* functionSymbol);
 private:
     Cm::Ast::CompileUnitNode* syntaxUnit;
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
@@ -70,6 +72,7 @@ private:
     Cm::Core::ConceptRepository conceptRepository;
     std::vector<std::unique_ptr<BoundNode>> boundNodes;
     std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionSymbols;
+    std::unordered_set<Cm::Sym::FunctionSymbol*> instantiatedFunctions;
 };
 
 } } // namespace Cm::BoundTree

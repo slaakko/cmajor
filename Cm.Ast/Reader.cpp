@@ -22,7 +22,7 @@
 
 namespace Cm { namespace Ast {
 
-Reader::Reader(BinaryReader& binaryReader_) : binaryReader(binaryReader_)
+Reader::Reader(BinaryReader& binaryReader_) : binaryReader(binaryReader_), replaceFileIndex(-1)
 {
 }
 
@@ -36,6 +36,10 @@ Span Reader::ReadSpan()
 {
     Span span;
     binaryReader.Read(&span, sizeof(span));
+    if (replaceFileIndex != -1)
+    {
+        span.SetFileIndex(replaceFileIndex);
+    }
     return span;
 }
 

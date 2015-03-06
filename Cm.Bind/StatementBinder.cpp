@@ -38,7 +38,7 @@ ConstructionStatementBinder::ConstructionStatementBinder(Cm::BoundTree::BoundCom
 void ConstructionStatementBinder::BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
 {
     constructionStatement = new Cm::BoundTree::BoundConstructionStatement(&constructionStatementNode);
-    Cm::Sym::LocalVariableSymbol* localVariable = BindLocalVariable(SymbolTable(), ContainerScope(), FileScopes(), &constructionStatementNode);
+    Cm::Sym::LocalVariableSymbol* localVariable = BindLocalVariable(SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), &constructionStatementNode);
     constructionStatement->SetLocalVariable(localVariable);
     CurrentFunction()->AddLocalVariable(localVariable);
 }
@@ -161,7 +161,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
     Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
     if (returnTypeExpr)
     {
-        Cm::Sym::TypeSymbol* returnType = ResolveType(SymbolTable(), ContainerScope(), FileScopes(), returnTypeExpr);
+        Cm::Sym::TypeSymbol* returnType = ResolveType(SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), returnTypeExpr);
         if (!returnType->IsVoidTypeSymbol())
         {
             if (returnStatementNode.ReturnsValue())
@@ -457,7 +457,7 @@ void CaseStatementBinder::EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode
         }
         Cm::Sym::SymbolType symbolType = condType->GetSymbolType();
         Cm::Sym::ValueType valueType = Cm::Sym::GetValueTypeFor(symbolType);
-        Cm::Sym::Value* value = Evaluate(valueType, false, expr.get(), SymbolTable(), ContainerScope(), FileScopes());
+        Cm::Sym::Value* value = Evaluate(valueType, false, expr.get(), SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository());
         caseStatement->AddValue(value);
     }
     for (const std::unique_ptr<Cm::Ast::StatementNode>& statement : caseStatementNode.Statements())
@@ -549,7 +549,7 @@ void GotoCaseStatementBinder::EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseS
     }
     Cm::Sym::SymbolType symbolType = condType->GetSymbolType();
     Cm::Sym::ValueType valueType = Cm::Sym::GetValueTypeFor(symbolType);
-    Cm::Sym::Value* value = Evaluate(valueType, false, gotoCaseStatementNode.TargetCaseExpr(), SymbolTable(), ContainerScope(), FileScopes());
+    Cm::Sym::Value* value = Evaluate(valueType, false, gotoCaseStatementNode.TargetCaseExpr(), SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository());
     Cm::BoundTree::BoundGotoCaseStatement* boundGotoCasetatement = new Cm::BoundTree::BoundGotoCaseStatement(&gotoCaseStatementNode);
     boundGotoCasetatement->SetValue(value);
     SetResult(boundGotoCasetatement);
