@@ -32,6 +32,7 @@
     <ClInclude Include="DerivedTypeSymbol.hpp" />
     <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="Exception.hpp" />
+    <ClInclude Include="ExceptionTable.hpp" />
     <ClInclude Include="Factory.hpp" />
     <ClInclude Include="FunctionGroupSymbol.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
@@ -69,6 +70,7 @@
     <ClCompile Include="DerivedTypeSymbol.cpp" />
     <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="Exception.cpp" />
+    <ClCompile Include="ExceptionTable.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="FunctionGroupSymbol.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />

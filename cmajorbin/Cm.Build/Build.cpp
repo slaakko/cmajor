@@ -20,6 +20,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Module.hpp>
+#include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
@@ -136,7 +137,7 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
         {
             importedModules.insert(libraryReferencePath);
             Cm::Sym::Module module(libraryReferencePath);
-            module.ImportTo(symbolTable);
+            module.Import(symbolTable);
             boost::filesystem::path afp = libraryReferencePath;
             afp.replace_extension(".cma");
             assemblyFilePaths.push_back(Cm::Util::GetFullPath(afp.generic_string()));
@@ -272,7 +273,8 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
     }
 }
 
-void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, std::vector<std::string>& objectFilePaths)
+void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, 
+    std::vector<std::string>& objectFilePaths)
 {
     boost::filesystem::path outputBase(outputBasePath);
     std::string prebindCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__prebind__.ll")).generic_string());
@@ -290,6 +292,27 @@ void Compile(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree,
     {
         Cm::Bind::VirtualBinder virtualBinder(symbolTable, compileUnit.get());
         compileUnit->Accept(virtualBinder);
+    }
+    if (projectName == "system")
+    {
+        Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
+        Cm::Sym::Symbol* systemExceptionSymbol = symbolTable.GlobalScope()->Lookup("System.Exception");
+        if (systemExceptionSymbol)
+        {
+            if (systemExceptionSymbol->IsTypeSymbol())
+            {
+                Cm::Sym::TypeSymbol* systemExceptionType = static_cast<Cm::Sym::TypeSymbol*>(systemExceptionSymbol);
+                exceptionTable->AddProjectException(systemExceptionType);
+            }
+            else
+            {
+                throw std::runtime_error("System.Exception not a type");
+            }
+        }
+        else
+        {
+            throw std::runtime_error("System.Exception not found");
+        }
     }
     int index = 0;
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
@@ -417,7 +440,6 @@ void Build(const std::string& projectFilePath)
     Cm::Parser::FileRegistry fileRegistry;
     Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
     Cm::Parser::ProjectGrammar* projectGrammar = Cm::Parser::ProjectGrammar::Create();
-    //int projectFileIndex = fileRegistry.RegisterParsedFile(projectFilePath);
     std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, "debug", "llvm", GetOs()));
     project->ResolveDeclarations();
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
@@ -426,6 +448,8 @@ void Build(const std::string& projectFilePath)
     Cm::Core::GlobalConceptData globalConceptData;
     Cm::Core::SetGlobalConceptData(&globalConceptData);
     Cm::Sym::SymbolTable symbolTable;
+    Cm::Sym::ExceptionTable exceptionTable;
+    Cm::Sym::SetExceptionTable(&exceptionTable);
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
     BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project.get(), libraryDirs, assemblyFilePaths);
@@ -434,7 +458,7 @@ void Build(const std::string& projectFilePath)
     std::vector<std::string> objectFilePaths;
     CompileCFiles(project.get(), objectFilePaths);
     CompileAsmSources(project.get(), objectFilePaths);
-    Compile(symbolTable, syntaxTree, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
+    Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
         GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
@@ -452,6 +476,7 @@ void Build(const std::string& projectFilePath)
     projectModule.Export(symbolTable);
     Cm::Parser::SetCurrentFileRegistry(nullptr);
     Cm::Core::SetGlobalConceptData(nullptr);
+    Cm::Sym::SetExceptionTable(nullptr);
     auto end = std::chrono::system_clock::now();
     auto dur = end - start;
     long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();

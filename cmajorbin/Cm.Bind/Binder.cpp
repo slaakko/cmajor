@@ -317,6 +317,7 @@ void Binder::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
 void Binder::BeginVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
 {
     RangeForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), rangeForStatementNode, *this);
+    rangeForStatementNode.Accept(binder);
 }
 
 void Binder::BeginVisit(Cm::Ast::ForStatementNode& forStatementNode)
@@ -643,10 +644,8 @@ void Binder::BeginVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::ThrowStatementNode& throwStatementNode)
 {
-}
-
-void Binder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementNode)
-{
+    ThrowStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), *this);
+    throwStatementNode.Accept(binder);
 }
 
 void Binder::BeginVisit(Cm::Ast::TryStatementNode& tryStatementNode)

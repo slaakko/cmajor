@@ -11,6 +11,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Core/InitSymbolTable.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
@@ -62,6 +63,7 @@ void Module::Export(SymbolTable& symbolTable)
     WriteModuleFileId(writer);
     WriteSourceFilePaths(writer);
     symbolTable.Export(writer);
+    ExportExceptionTable(writer);
 }
 
 void Module::CheckModuleFileId(Reader& reader)
@@ -102,7 +104,7 @@ void Module::ReadSourceFilePaths(Reader& reader)
     }
 }
 
-void Module::ImportTo(SymbolTable& symbolTable)
+void Module::Import(SymbolTable& symbolTable)
 {
     Reader reader(filePath, symbolTable);
     CheckModuleFileId(reader);
@@ -121,6 +123,33 @@ void Module::ImportTo(SymbolTable& symbolTable)
     }
     reader.MarkSymbolsBound();
     symbolTable.Import(reader);
+    ImportExceptionTable(symbolTable, reader);
+}
+
+void Module::ExportExceptionTable(Writer& writer)
+{
+    ExceptionTable* exceptionTable = GetExceptionTable();
+    std::vector<Cm::Sym::TypeSymbol*> exceptionTypes = exceptionTable->GetProjectExceptions();
+    int32_t n = int32_t(exceptionTypes.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Cm::Sym::TypeSymbol* exceptionType = exceptionTypes[i];
+        const TypeId& exceptionTypeId = exceptionType->Id();
+        writer.Write(exceptionTypeId);
+    }
+}
+
+void Module::ImportExceptionTable(SymbolTable& symbolTable, Reader& reader)
+{
+    ExceptionTable* exceptionTable = GetExceptionTable();
+    int32_t numExceptionIds = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < numExceptionIds; ++i)
+    {
+        TypeId exceptionTypeId = reader.ReadTypeId();
+        TypeSymbol* exceptionType = symbolTable.GetTypeRepository().GetType(exceptionTypeId);
+        exceptionTable->AddLibraryException(exceptionType);
+    }
 }
 
 void Module::Dump()

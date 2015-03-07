@@ -17,6 +17,7 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
+#include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.Parsing/Scanner.hpp>
@@ -82,6 +83,16 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 
     if (userMainFunction->GetReturnType()->IsVoidTypeSymbol())
     {
+        Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
+        Cm::Sym::FunctionSymbol* threadTblInit = symbolTable.GetOverload("threadtbl_init");
+        Cm::BoundTree::BoundExpressionList threadTblInitArguments;
+        Cm::BoundTree::BoundLiteral* numExceptions = new Cm::BoundTree::BoundLiteral(nullptr);
+        numExceptions->SetValue(new Cm::Sym::IntValue(exceptionTable->GetNumberOfExceptions()));
+        numExceptions->SetType(intType);
+        threadTblInitArguments.Add(numExceptions);
+        Cm::BoundTree::BoundFunctionCallStatement* callThreadTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblInit, std::move(threadTblInitArguments));
+        mainBody->AddStatement(callThreadTblInitStatement);
+
         Cm::BoundTree::BoundExpressionList arguments;
         if (argcParam && argvParam)
         {
@@ -100,6 +111,11 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundFunctionCallStatement* callCmExitStatement = new Cm::BoundTree::BoundFunctionCallStatement(cmExit, std::move(cmExitArguments));
         mainBody->AddStatement(callCmExitStatement);
 
+        Cm::Sym::FunctionSymbol* threadTblDone = symbolTable.GetOverload("threadtbl_done");
+        Cm::BoundTree::BoundExpressionList threadTblDoneArguments;
+        Cm::BoundTree::BoundFunctionCallStatement* callThreadTblDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblDone, std::move(threadTblDoneArguments));
+        mainBody->AddStatement(callThreadTblDoneStatement);
+
         Cm::BoundTree::BoundLiteral* zero = new Cm::BoundTree::BoundLiteral(nullptr);
         zero->SetValue(new Cm::Sym::IntValue(0));
         zero->SetType(intType);
@@ -117,6 +133,17 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
             arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argcParam));
             arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argvParam));
         }
+
+        Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
+        Cm::Sym::FunctionSymbol* threadTblInit = symbolTable.GetOverload("threadtbl_init");
+        Cm::BoundTree::BoundExpressionList threadTblInitArguments;
+        Cm::BoundTree::BoundLiteral* numExceptions = new Cm::BoundTree::BoundLiteral(nullptr);
+        numExceptions->SetValue(new Cm::Sym::IntValue(exceptionTable->GetNumberOfExceptions()));
+        numExceptions->SetType(intType);
+        threadTblInitArguments.Add(numExceptions);
+        Cm::BoundTree::BoundFunctionCallStatement* callThreadTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblInit, std::move(threadTblInitArguments));
+        mainBody->AddStatement(callThreadTblInitStatement);
+
         Cm::BoundTree::BoundFunctionCall* callUserMainExpr = new Cm::BoundTree::BoundFunctionCall(nullptr, std::move(arguments));
         callUserMainExpr->SetFunction(userMainFunction);
         callUserMainExpr->SetType(userMainFunction->GetReturnType());
@@ -130,6 +157,11 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundExpressionList cmExitArguments;
         Cm::BoundTree::BoundFunctionCallStatement* callCmExitStatement = new Cm::BoundTree::BoundFunctionCallStatement(cmExit, std::move(cmExitArguments));
         mainBody->AddStatement(callCmExitStatement);
+
+        Cm::Sym::FunctionSymbol* threadTblDone = symbolTable.GetOverload("threadtbl_done");
+        Cm::BoundTree::BoundExpressionList threadTblDoneArguments;
+        Cm::BoundTree::BoundFunctionCallStatement* callThreadTblDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblDone, std::move(threadTblDoneArguments));
+        mainBody->AddStatement(callThreadTblDoneStatement);
     }
 
     Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(nullptr);
