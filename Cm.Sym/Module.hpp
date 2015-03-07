@@ -40,7 +40,7 @@ public:
     Module(const std::string& filePath_);
     void SetSourceFilePaths(const std::vector<std::string>& sourceFilePaths_);
     void Export(SymbolTable& symbolTable);
-    void ImportTo(SymbolTable& symbolTable);
+    void Import(SymbolTable& symbolTable);
     void Dump();
 private:
     std::string filePath;
@@ -49,6 +49,8 @@ private:
     void WriteSourceFilePaths(Writer& writer);
     void CheckModuleFileId(Reader& reader);
     void ReadSourceFilePaths(Reader& reader);
+    void ExportExceptionTable(Writer& writer);
+    void ImportExceptionTable(SymbolTable& symbolTable, Reader& reader);
 };
 
 } } // namespace Cm::Sym

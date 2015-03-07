@@ -113,6 +113,7 @@ class RangeForStatementBinder : public StatementBinder
 public:
     RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
         Cm::BoundTree::BoundFunction* currentFunction_, Cm::Ast::RangeForStatementNode& rangeForStatementNode, Binder& binder_);
+    void EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode) override;
 private:
     Binder& binder;
 };
@@ -200,6 +201,16 @@ public:
     Cm::BoundTree::BoundStatement* GetFreeStatement() const { return freeStatement; }
 private:
     Cm::BoundTree::BoundStatement* freeStatement;
+};
+
+class ThrowStatementBinder : public StatementBinder
+{
+public:
+    ThrowStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder& binder_);
+    void EndVisit(Cm::Ast::ThrowStatementNode& throwStatementNode) override;
+private:
+    Binder& binder;
 };
 
 } } // namespace Cm::Bind

@@ -1864,6 +1864,10 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenRe
         else
         {
             Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(fun);
+            if (irFunction->Name() == "System.IO.ct$PSystem.IO.IOExceptionCRSystem.IO.IOException")
+            {
+                int x = 0;
+            }
             if (fun->CompileUnit() != currentCompileUnit && !fun->IsReplicated())
             {
                 externalFunctions.insert(irFunction);

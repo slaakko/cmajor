@@ -254,9 +254,9 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     defaultConstructorSymbol->SetParent(classTypeSymbol);
     defaultConstructorSymbol->SetConstructorOrDestructorSymbol();
     defaultConstructorSymbol->SetMemberFunctionSymbol();
+    defaultConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
     if (!unique)
     {
-        defaultConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
         defaultConstructorSymbol->SetReplicated();
     }
     defaultConstructorSymbol->AddSymbol(thisParam);
@@ -323,9 +323,9 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
     copyConstructorSymbol->SetParent(classTypeSymbol);
     copyConstructorSymbol->SetConstructorOrDestructorSymbol();
     copyConstructorSymbol->SetMemberFunctionSymbol();
+    copyConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
     if (!unique)
     {
-        copyConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
         copyConstructorSymbol->SetReplicated();
     }
     copyConstructorSymbol->AddSymbol(thisParam);
@@ -406,9 +406,9 @@ Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bo
     moveConstructorSymbol->SetParent(classTypeSymbol);
     moveConstructorSymbol->SetConstructorOrDestructorSymbol();
     moveConstructorSymbol->SetMemberFunctionSymbol();
+    moveConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
     if (!unique)
     {
-        moveConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
         moveConstructorSymbol->SetReplicated();
     }
     moveConstructorSymbol->AddSymbol(thisParam);
@@ -500,9 +500,9 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
     copyAssignmentSymbol->SetGroupName("operator=");
     copyAssignmentSymbol->SetParent(classTypeSymbol);
     copyAssignmentSymbol->SetMemberFunctionSymbol();
+    copyAssignmentSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
     if (!unique)
     {
-        copyAssignmentSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
         copyAssignmentSymbol->SetReplicated();
     }
     copyAssignmentSymbol->AddSymbol(thisParam);
@@ -576,9 +576,9 @@ Cm::Sym::FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, boo
     moveAssignmentSymbol->SetReturnType(voidType);
     moveAssignmentSymbol->SetParent(classTypeSymbol);
     moveAssignmentSymbol->SetMemberFunctionSymbol();
+    moveAssignmentSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
     if (!unique)
     {
-        moveAssignmentSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
         moveAssignmentSymbol->SetReplicated();
     }
     moveAssignmentSymbol->AddSymbol(thisParam);

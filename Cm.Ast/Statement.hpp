@@ -469,6 +469,7 @@ public:
     void Accept(Visitor& visitor) override;
     bool IsCaseTerminatingNode() const override { return true; }
     bool IsFunctionTerminatingNode() const override { return true; }
+    Node* ExceptionExpr() const { return exceptionExpr.get(); }
 private:
     std::unique_ptr<Node> exceptionExpr;
 };
