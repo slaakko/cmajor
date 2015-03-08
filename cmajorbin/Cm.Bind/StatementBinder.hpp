@@ -213,6 +213,26 @@ private:
     Binder& binder;
 };
 
+class TryBinder : public StatementBinder
+{
+public:
+    TryBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder& binder_);
+    void Visit(Cm::Ast::TryStatementNode& tryStatementNode) override;
+private:
+    Binder& binder;
+};
+
+class CatchBinder : public StatementBinder
+{
+public:
+    CatchBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder& binder_);
+    void Visit(Cm::Ast::CatchNode& catchNode) override;
+private:
+    Binder& binder;
+};
+
 } } // namespace Cm::Bind
 
 #endif CM_BIND_STATEMENT_INCLUDED

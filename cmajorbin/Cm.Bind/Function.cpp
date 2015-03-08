@@ -163,6 +163,10 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
         }
         functionSymbol->SetCDecl();
     }
+    if ((specifiers & Cm::Ast::Specifiers::nothrow_) != Cm::Ast::Specifiers::none)
+    {
+        functionSymbol->SetNothrow();
+    }
     if ((specifiers & Cm::Ast::Specifiers::abstract_) != Cm::Ast::Specifiers::none)
     {
         if (!functionSymbol->IsMemberFunctionSymbol())

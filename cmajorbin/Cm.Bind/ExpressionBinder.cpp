@@ -31,6 +31,7 @@
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/BasicType.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -746,7 +747,10 @@ void ExpressionBinder::Visit(Cm::Ast::VoidNode& voidNode)
 
 void ExpressionBinder::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
-    // todo
+    Cm::Sym::TypeSymbol* baseType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), derivedTypeExprNode.BaseTypeExprNode());
+    Cm::Sym::TypeSymbol* derivedTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan());
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&derivedTypeExprNode, derivedTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
 }
 
 void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
@@ -796,7 +800,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         {
             Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
             Cm::Sym::ContainerScope* containerScope = classType->GetContainerScope();
-            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str());
+            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_and_base);
             if (symbol)
             {
                 Cm::BoundTree::BoundExpression* classObject = expression.release();
@@ -1659,6 +1663,29 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 
 void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
+    if (identifierNode.Str() == Cm::IrIntf::GetExCodeVarName())
+    {
+        Cm::BoundTree::BoundExceptionCodeVariable* exceptionCodeVariable = new Cm::BoundTree::BoundExceptionCodeVariable();
+        exceptionCodeVariable->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
+        boundExpressionStack.Push(exceptionCodeVariable);
+        return;
+    }
+    else if (identifierNode.Str() == Cm::IrIntf::GetExceptionCodeParamName())
+    {
+        Cm::BoundTree::BoundExceptionCodeParameter* exceptionCodeParam = new Cm::BoundTree::BoundExceptionCodeParameter();
+        exceptionCodeParam->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().MakeReferenceType(
+            boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)), identifierNode.GetSpan()));
+        boundExpressionStack.Push(exceptionCodeParam);
+        return;
+    }
+    else if (identifierNode.Str() == Cm::IrIntf::GetExceptionBaseIdTableName())
+    {
+        Cm::BoundTree::BoundExceptionTableConstant* exceptionTableConstant = new Cm::BoundTree::BoundExceptionTableConstant(&identifierNode);
+        exceptionTableConstant->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(
+            boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)), identifierNode.GetSpan()));
+        boundExpressionStack.Push(exceptionTableConstant);
+        return;
+    }
     Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
     if (!symbol)
     {

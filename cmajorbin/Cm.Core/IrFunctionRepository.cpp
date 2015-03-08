@@ -33,6 +33,10 @@ Ir::Intf::Parameter* CreateIrParameter(Cm::Sym::ParameterSymbol* parameter)
     return irParameter;
 }
 
+IrFunctionRepository::IrFunctionRepository() : exceptionCodeParam(nullptr)
+{
+}
+
 Ir::Intf::Function* IrFunctionRepository::GetDoNothingFunction()
 {
     if (!doNothingFunction)
@@ -92,6 +96,15 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
             irParameters.push_back(irClassObjectParameter);
             irParameterTypes.push_back(classObjectResultParamType->Clone());
             function->SetClassObjectResultIrParam(irClassObjectParameter);
+        }
+        if (function->CanThrow())
+        {
+            Ir::Intf::Type* exceptionCodeParamType = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI32(), 1);
+            Own(exceptionCodeParamType);
+            exceptionCodeParam = Cm::IrIntf::CreateParameter(Cm::IrIntf::GetExceptionCodeParamName(), exceptionCodeParamType);
+            Own(exceptionCodeParam);
+            irParameters.push_back(exceptionCodeParam);
+            irParameterTypes.push_back(exceptionCodeParamType->Clone());
         }
         functionGroupName = function->GroupName();
         if (functionGroupName.empty())

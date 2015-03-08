@@ -525,6 +525,11 @@ std::string LlvmBackEnd::GetExceptionCodeParamName()
     return Llvm::exceptionCodeParamName;
 }
 
+std::string LlvmBackEnd::GetExceptionBaseIdTableName()
+{
+    return "$exception$base$id$table$addr";
+}
+
 int LlvmBackEnd::GetDebugAttrEncodingBoolean()
 {
     return Llvm::debugAttrEncodingBoolean;

@@ -90,6 +90,10 @@ void BoundConstant::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundExceptionTableConstant::BoundExceptionTableConstant(Cm::Ast::Node* syntaxNode_) : BoundConstant(syntaxNode_, nullptr)
+{
+}
+
 BoundEnumConstant::BoundEnumConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::EnumConstantSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }
@@ -106,6 +110,14 @@ BoundLocalVariable::BoundLocalVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::Loca
 void BoundLocalVariable::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundExceptionCodeVariable::BoundExceptionCodeVariable() : BoundLocalVariable(nullptr, nullptr)
+{
+}
+
+BoundExceptionCodeParameter::BoundExceptionCodeParameter() : BoundParameter(nullptr, nullptr)
+{
 }
 
 BoundParameter::BoundParameter(Cm::Ast::Node* syntaxNode_, Cm::Sym::ParameterSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)

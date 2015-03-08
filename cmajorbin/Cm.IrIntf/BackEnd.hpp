@@ -122,6 +122,7 @@ public:
     virtual Ir::Intf::Parameter* CreateParameter(const std::string& parameterName, Ir::Intf::Type* parameterType) = 0;
     virtual std::string GetClassObjectResultParamName() = 0;
     virtual std::string GetExceptionCodeParamName() = 0;
+    virtual std::string GetExceptionBaseIdTableName() = 0;
     virtual int GetDebugAttrEncodingBoolean() = 0;
     virtual int GetDebugAttrEncodingUnsigned() = 0;
     virtual int GetDebugAttrEncodingSigned() = 0;

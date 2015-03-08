@@ -15,6 +15,7 @@
 #include <Cm.Core/StaticMemberVariableRepository.hpp>
 #include <Cm.Core/IrClassTypeRepository.hpp>
 #include <Cm.Core/StringRepository.hpp>
+#include <Cm.Core/ExternalConstantRepository.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 
 namespace Cm { namespace Emit {
@@ -22,8 +23,11 @@ namespace Cm { namespace Emit {
 class LocalVariableIrObjectRepository
 {
 public:
+    LocalVariableIrObjectRepository();
     Ir::Intf::Object* CreateLocalVariableIrObjectFor(Cm::Sym::Symbol *localVariableOrParameter);
     Ir::Intf::Object* GetLocalVariableIrObject(Cm::Sym::Symbol *localVariableOrParameter);
+    void SetExceptionCodeVariable(Ir::Intf::Object* exceptionCodeVariable_) { exceptionCodeVariable = exceptionCodeVariable_; }
+    Ir::Intf::Object* GetExceptionCodeVariable() const { return exceptionCodeVariable; }
 private:
     typedef std::unordered_map<Cm::Sym::Symbol*, Ir::Intf::Object*>  LocalVariableObjectMap;
     typedef LocalVariableObjectMap::const_iterator LocalVariableObjectMapIt;
@@ -31,12 +35,15 @@ private:
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;
     std::unordered_set<std::string> assemblyNames;
     std::string MakeUniqueAssemblyName(const std::string& name);
+    Ir::Intf::Object* exceptionCodeVariable;
 };
 
 class IrObjectRepository
 {
 public:
+    IrObjectRepository();
     Ir::Intf::Object* MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr);
+    void Write(Cm::Util::CodeFormatter& codeFormatter);
 private:
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;
 };
@@ -73,7 +80,8 @@ class FunctionEmitter : public Cm::BoundTree::Visitor
 public:
     FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
         Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
-        std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_);
+        std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, 
+        Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
@@ -106,10 +114,10 @@ public:
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(Cm::BoundTree::BoundDestructionStatement& boundDestructionStatement) override;
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
-    void Visit(Cm::BoundTree::BoundThrowStatement& boundThrowStatement) {}
     void Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement) override;
     void Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatement) override;
     void Visit(Cm::BoundTree::BoundContinueStatement& boundContinueStatement) override;
+    void Visit(Cm::BoundTree::BoundGotoStatement& boundGotoStatement) override;
     void BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) override;
     void EndVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement) override;
     void BeginVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement) override;
@@ -123,7 +131,6 @@ public:
     void Visit(Cm::BoundTree::BoundDefaultStatement& boundDefaultStatement) override;
     void Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCaseStatement) override;
     void Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
-    void Visit(Cm::BoundTree::BoundTryStatement& boundTryStatement) {}
 private:
     Cm::Util::CodeFormatter& codeFormatter;
     std::unique_ptr<Cm::Core::Emitter> emitter;
@@ -142,6 +149,7 @@ private:
     LocalVariableIrObjectRepository localVariableIrObjectRepository;
     IrObjectRepository irObjectRepository;
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository;
+    Cm::Core::ExternalConstantRepository& externalConstantRepository;
     Cm::Ast::CompileUnitNode* currentCompileUnit;
     Cm::BoundTree::BoundClass* currentClass;
     Cm::Sym::FunctionSymbol* currentFunction;
@@ -173,7 +181,7 @@ private:
     void ExecutePostfixIncDecStatements(Cm::Core::GenResult& result);
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
     void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
-    void GenerateCall(Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
+    void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol);
 };

@@ -341,10 +341,8 @@ public:
     virtual void EndVisit(DestroyStatementNode& destroyStatementNode) {}
     virtual void BeginVisit(ThrowStatementNode& throwStatementNode) {}
     virtual void EndVisit(ThrowStatementNode& throwStatementNode) {}
-    virtual void BeginVisit(TryStatementNode& tryStatementNode) {}
-    virtual void EndVisit(TryStatementNode& tryStatementNode) {}
-    virtual void BeginVisit(CatchNode& catchNode) {}
-    virtual void EndVisit(CatchNode& catchNode) {}
+    virtual void Visit(TryStatementNode& tryStatementNode) {}
+    virtual void Visit(CatchNode& catchNode) {}
     virtual void BeginVisit(AssertStatementNode& assertStatementNode) {}
     virtual void EndVisit(AssertStatementNode& assertStatementNode) {}
     virtual void BeginVisit(CondCompDisjunctionNode& condCompDisjunctionNode) {}

@@ -27,12 +27,19 @@ public:
     void SetClassObjectLayoutFunIndex(int classObjectLayoutFunIndex_) { classObjectLayoutFunIndex = classObjectLayoutFunIndex_; }
     int GetClassObjectLayoutFunIndex() const { return classObjectLayoutFunIndex; }
     void Accept(Visitor& visitor) override;
+    void SetHasGotos() { hasGotos = true; }
+    bool HasGotos() const { return hasGotos; }
+    int GetNextCatchId() { return nextCatchId++; }
+    void Own(Cm::Ast::Node* syntaxNode);
 private:
     std::unique_ptr<BoundCompoundStatement> body;
     Cm::Sym::FunctionSymbol* functionSymbol;
     std::vector<Cm::Sym::LocalVariableSymbol*> localVariables;
     int classObjectLayoutFunIndex;
     std::vector<std::unique_ptr<Cm::Sym::LocalVariableSymbol>> temporaries;
+    bool hasGotos;
+    int nextCatchId;
+    std::vector<std::unique_ptr<Cm::Ast::Node>> syntaxNodes;
 };
 
 } } // namespace Cm::BoundTree

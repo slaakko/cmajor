@@ -15,6 +15,18 @@ namespace Cm { namespace BoundTree {
 
 BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), parent(nullptr)
 {
+    if (syntaxNode_)
+    {
+        if (syntaxNode_->IsStatementNode())
+        {
+            Cm::Ast::StatementNode* statementNode = static_cast<Cm::Ast::StatementNode*>(syntaxNode_);
+            Cm::Ast::LabelNode* labelNode = statementNode->Label();
+            if (labelNode)
+            {
+                label = labelNode->Label();
+            }
+        }
+    }
 }
 
 BoundCompoundStatement* BoundStatement::CompoundParent() const
@@ -69,6 +81,7 @@ void BoundCompoundStatement::AddStatement(BoundStatement* statement)
 
 void BoundCompoundStatement::InsertStatement(int index, BoundStatement* statement)
 {
+    statement->SetParent(this);
     statementList.InsertStatement(index, statement);
 }
 
@@ -326,6 +339,16 @@ BoundContinueStatement::BoundContinueStatement(Cm::Ast::Node* syntaxNode_) : Bou
 }
 
 void BoundContinueStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundGotoStatement::BoundGotoStatement(Cm::Ast::Node* syntaxNode_, const std::string& targetLabel_) : 
+    BoundStatement(syntaxNode_), targetLabel(targetLabel_), targetStatement(nullptr), targetCompoundParent(nullptr)
+{
+}
+
+void BoundGotoStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }

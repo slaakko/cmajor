@@ -27,6 +27,7 @@
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/ClassTemplateRepository.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
+#include <Cm.Bind/ControlFlowAnalyzer.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
@@ -175,9 +176,16 @@ void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit
     }
 }
 
+void AnalyzeControlFlow(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
+{
+    Cm::Bind::ControlFlowAnalyzer controlFlowAnalyzer;
+    boundCompileUnit.Accept(controlFlowAnalyzer);
+}
+
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    Cm::Emit::EmittingVisitor emittingVisitor(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), boundCompileUnit.StringRepository());
+    Cm::Emit::EmittingVisitor emittingVisitor(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), 
+        boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
     boundCompileUnit.Accept(emittingVisitor);
 }
 
@@ -323,6 +331,10 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
         boundCompileUnit.AddFileScope(fileScopes[index].release());
         Bind(compileUnit.get(), boundCompileUnit, userMainFunction);
+        if (boundCompileUnit.HasGotos())
+        {
+            AnalyzeControlFlow(boundCompileUnit);
+        }
         Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
         GenerateObjectCode(boundCompileUnit);
         objectFilePaths.push_back(boundCompileUnit.ObjectFilePath());

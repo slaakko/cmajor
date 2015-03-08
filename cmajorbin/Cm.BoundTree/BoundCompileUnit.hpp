@@ -20,6 +20,7 @@
 #include <Cm.Core/SynthesizedClassFunRepository.hpp>
 #include <Cm.Core/FunctionTemplateRepository.hpp>
 #include <Cm.Core/ConceptRepository.hpp>
+#include <Cm.Core/ExternalConstantRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -42,6 +43,7 @@ public:
     Cm::Core::StringRepository& StringRepository() { return stringRepository; }
     Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
     Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
+    Cm::Core::ExternalConstantRepository& ExternalConstantRepository() { return externalConstantRepository; }
     void SetSynthesizedClassFunRepository(Cm::Core::SynthesizedClassFunRepository* synthesizedClassFunRepository_);
     Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return *synthesizedClassFunRepository; }
     void SetClassTemplateRepostory(Cm::Core::ClassTemplateRepository* classTemplateRepository_);
@@ -53,6 +55,8 @@ public:
     void Own(Cm::Sym::FunctionSymbol* functionSymbol);
     bool Instantiated(Cm::Sym::FunctionSymbol* functionSymbol) const;
     void AddToInstantiated(Cm::Sym::FunctionSymbol* functionSymbol);
+    void SetHasGotos() { hasGotos = true; }
+    bool HasGotos() const { return hasGotos; }
 private:
     Cm::Ast::CompileUnitNode* syntaxUnit;
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
@@ -66,6 +70,7 @@ private:
     Cm::Core::StringRepository stringRepository;
     Cm::Core::IrFunctionRepository irFunctionRepository;
     Cm::Core::IrClassTypeRepository irClassTypeRepository;
+    Cm::Core::ExternalConstantRepository externalConstantRepository;
     std::unique_ptr<Cm::Core::SynthesizedClassFunRepository> synthesizedClassFunRepository;
     std::unique_ptr<Cm::Core::ClassTemplateRepository> classTemplateRepository;
     Cm::Core::FunctionTemplateRepository functionTemplateRepository;
@@ -73,6 +78,7 @@ private:
     std::vector<std::unique_ptr<BoundNode>> boundNodes;
     std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionSymbols;
     std::unordered_set<Cm::Sym::FunctionSymbol*> instantiatedFunctions;
+    bool hasGotos;
 };
 
 } } // namespace Cm::BoundTree

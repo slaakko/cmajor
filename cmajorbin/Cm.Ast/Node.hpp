@@ -81,6 +81,9 @@ public:
     virtual bool IsConstructionStatementNode() const { return false; }
     virtual bool IsBreakEnclosingStatementNode() const { return false; }
     virtual bool IsContinueEnclosingStatementNode() const { return false; }
+    virtual bool IsGotoStatementNode() const { return false; }
+    virtual bool IsTryStatementNode() const { return false; }
+    virtual bool IsCatchNode() const { return false; }
     virtual bool IsFunctionNode() const { return false; }
     virtual bool IsCondCompExprNode() const { return false; }
     virtual bool IsCondCompSymbolNode() const { return false; }

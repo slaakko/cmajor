@@ -57,7 +57,6 @@ public:
     void EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode) override;
     void BeginVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode) override;
     void EndVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode) override;
-    void BeginVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode) override;
     void EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode) override;
     void Visit(Cm::Ast::GotoDefaultStatementNode& gotoDefaultStatementNode) override;
     void BeginVisit(Cm::Ast::WhileStatementNode& whileStatementNode) override;
@@ -69,16 +68,13 @@ public:
     void Visit(Cm::Ast::GotoStatementNode& gotoStatementNode) override;
     void Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode) override;
     void BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
-    void EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
     void BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
     void BeginVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode) override;
     void BeginVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode) override;
     void BeginVisit(Cm::Ast::ThrowStatementNode& throwStatementNode) override;
-    void BeginVisit(Cm::Ast::TryStatementNode& tryStatementNode) override;
-    void EndVisit(Cm::Ast::TryStatementNode& tryStatementNode) override;
-    void BeginVisit(Cm::Ast::CatchNode& catchNode) override;
-    void EndVisit(Cm::Ast::CatchNode& catchNode) override;
+    void Visit(Cm::Ast::TryStatementNode& tryStatementNode) override;
+    void Visit(Cm::Ast::CatchNode& catchNode) override;
     void BeginVisit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
     void EndVisit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
     void BeginVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode) override;

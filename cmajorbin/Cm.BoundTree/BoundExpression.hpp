@@ -35,10 +35,13 @@ public:
     virtual bool IsBoundPostfixIncDecExpr() const { return false; }
     virtual bool IsBoundTypeExpression() const { return false; }
     virtual bool IsBoundLocalVariable() const { return false; }
+    virtual bool IsBoundExceptionCodeVariable() const { return false; }
+    virtual bool IsBoundExceptionCodeParameter() const { return false; }
     virtual bool IsBoundConversion() const { return false; }
     virtual bool IsLiteral() const { return false; }
     virtual bool IsBoundNullLiteral() const { return false; }
     virtual bool IsConstant() const { return false; }
+    virtual bool IsBoundExceptionTableConstant() const { return false; }
     virtual bool IsEnumConstant() const { return false; }
     virtual bool IsCast() const { return false; }
     virtual void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
@@ -104,6 +107,13 @@ private:
     Cm::Sym::ConstantSymbol* symbol;
 };
 
+class BoundExceptionTableConstant : public BoundConstant
+{
+public:
+    BoundExceptionTableConstant(Cm::Ast::Node* syntaxNode_);
+    bool IsBoundExceptionTableConstant() const override { return true; }
+};
+
 class BoundEnumConstant : public BoundExpression
 {
 public:
@@ -127,6 +137,13 @@ private:
     Cm::Sym::LocalVariableSymbol* symbol;
 };
 
+class BoundExceptionCodeVariable : public BoundLocalVariable
+{
+public:
+    BoundExceptionCodeVariable();
+    bool IsBoundExceptionCodeVariable() const override { return true; }
+};
+
 class BoundParameter: public BoundExpression
 {
 public:
@@ -136,6 +153,13 @@ public:
     void Accept(Visitor& visitor) override;
 private:
     Cm::Sym::ParameterSymbol* symbol;
+};
+
+class BoundExceptionCodeParameter : public BoundParameter
+{
+public:
+    BoundExceptionCodeParameter();
+    bool IsBoundExceptionCodeParameter() const override { return true; }
 };
 
 class BoundMemberVariable : public BoundExpression

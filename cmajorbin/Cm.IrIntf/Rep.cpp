@@ -483,6 +483,11 @@ std::string GetExceptionCodeParamName()
     return GetBackEndImpl()->GetExceptionCodeParamName();
 }
 
+std::string GetExceptionBaseIdTableName()
+{
+    return GetBackEndImpl()->GetExceptionBaseIdTableName();
+}
+
 Ir::Intf::Parameter* CreateParameter(const std::string& parameterName, Ir::Intf::Type* parameterType)
 {
     return GetBackEndImpl()->CreateParameter(parameterName, parameterType);

@@ -43,20 +43,19 @@ class BoundReturnStatement;
 class BoundConstructionStatement;
 class BoundDestructionStatement;
 class BoundAssignmentStatement;
-class BoundThrowStatement;
 class BoundSimpleStatement;
 class BoundSwitchStatement;
 class BoundCaseStatement;
 class BoundDefaultStatement;
 class BoundBreakStatement;
 class BoundContinueStatement;
+class BoundGotoStatement;
 class BoundGotoCaseStatement;
 class BoundGotoDefaultStatement;
 class BoundConditionalStatement;
 class BoundDoStatement;
 class BoundWhileStatement;
 class BoundForStatement;
-class BoundTryStatement;
 
 class BoundFunction;
 class BoundClass;
@@ -101,13 +100,13 @@ public:
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
     virtual void Visit(BoundDestructionStatement& boundDestructionStatement) {}
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}
-    virtual void Visit(BoundThrowStatement& boundThrowStatement) {}
     virtual void Visit(BoundSimpleStatement& boundSimpleStatement) {}
     virtual void Visit(BoundSwitchStatement& boundSwitchStatement) {}
     virtual void Visit(BoundCaseStatement& boundCaseStatement) {}
     virtual void Visit(BoundDefaultStatement& boundDefaultStatement) {}
     virtual void Visit(BoundBreakStatement& boundBreakStatement) {}
     virtual void Visit(BoundContinueStatement& boundContinueStatement) {}
+    virtual void Visit(BoundGotoStatement& boundGotoStatement) {}
     virtual void Visit(BoundGotoCaseStatement& boundGotoCaseStatement) {}
     virtual void Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement) {}
     virtual void BeginVisit(BoundConditionalStatement& boundConditionalStatement) {}
@@ -118,7 +117,6 @@ public:
     virtual void EndVisit(BoundDoStatement& boundDoStatement) {}
     virtual void BeginVisit(BoundForStatement& boundForStatement) {}
     virtual void EndVisit(BoundForStatement& boundForStatement) {}
-    virtual void Visit(BoundTryStatement& boundTryStatement) {}
 
     virtual void BeginVisit(BoundFunction& boundFunction) {}
     virtual void EndVisit(BoundFunction& boundFunction) {}

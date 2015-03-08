@@ -491,10 +491,6 @@ void Binder::EndVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode)
     }
 }
 
-void Binder::BeginVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode)
-{
-}
-
 void Binder::EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode)
 {
     GotoCaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), switchStatement);
@@ -589,6 +585,9 @@ void Binder::Visit(Cm::Ast::ContinueStatementNode& continueStatementNode)
 
 void Binder::Visit(Cm::Ast::GotoStatementNode& gotoStatementNode)
 {
+    boundFunction->SetHasGotos();
+    boundCompileUnit.SetHasGotos();
+    currentParent->AddStatement(new Cm::BoundTree::BoundGotoStatement(&gotoStatementNode, gotoStatementNode.Target()->Label()));
 }
 
 void Binder::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
@@ -600,10 +599,6 @@ void Binder::BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
     SimpleStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     simpleStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());
-}
-
-void Binder::EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
-{
 }
 
 void Binder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
@@ -648,22 +643,16 @@ void Binder::BeginVisit(Cm::Ast::ThrowStatementNode& throwStatementNode)
     throwStatementNode.Accept(binder);
 }
 
-void Binder::BeginVisit(Cm::Ast::TryStatementNode& tryStatementNode)
+void Binder::Visit(Cm::Ast::TryStatementNode& tryStatementNode)
 {
+    TryBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), *this);
+    tryStatementNode.Accept(binder);
 }
 
-void Binder::EndVisit(Cm::Ast::TryStatementNode& tryStatementNode)
+void Binder::Visit(Cm::Ast::CatchNode& catchNode)
 {
-}
-
-void Binder::BeginVisit(Cm::Ast::CatchNode& catchNode)
-{
-
-}
-
-void Binder::EndVisit(Cm::Ast::CatchNode& catchNode)
-{
-
+    CatchBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), *this);
+    catchNode.Accept(binder);
 }
 
 void Binder::BeginVisit(Cm::Ast::AssertStatementNode& assertStatementNode)

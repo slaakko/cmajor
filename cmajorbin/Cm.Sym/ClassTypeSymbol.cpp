@@ -303,7 +303,7 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
                 {
                     throw Exception("overriding function should be declared with override specifier", f->GetSpan()); 
                 }
-                if (f->IsNothrow() && !v->IsNothrow() || !f->IsNothrow() && v->IsNothrow())
+                if (!f->CanThrow() && v->CanThrow() || f->CanThrow() && !v->CanThrow())
                 {
                     throw Exception("overriding function has conflicting nothrow specification compared to base class virtual function", f->GetSpan(), v->GetSpan());
                 }

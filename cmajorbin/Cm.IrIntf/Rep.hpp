@@ -108,6 +108,7 @@ int GetDebugLangCmajor();
 Ir::Intf::Object* CreateMetadataNull();
 std::string GetClassObjectResultParamName();
 std::string GetExceptionCodeParamName();
+std::string GetExceptionBaseIdTableName();
 int GetDebugAttrEncodingBoolean();
 int GetDebugAttrEncodingUnsigned();
 int GetDebugAttrEncodingSigned();
