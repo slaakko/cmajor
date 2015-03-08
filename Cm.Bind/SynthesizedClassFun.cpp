@@ -261,6 +261,7 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     }
     defaultConstructorSymbol->AddSymbol(thisParam);
     defaultConstructorSymbol->ComputeName();
+    defaultConstructorSymbol->SetNothrow();
     if (!generateImplementation) return defaultConstructorSymbol;
     std::unique_ptr<Cm::BoundTree::BoundFunction> defaultConstructor(new Cm::BoundTree::BoundFunction(nullptr, defaultConstructorSymbol));
     defaultConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
@@ -269,6 +270,10 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     {
         Cm::BoundTree::BoundExpressionList arguments;
         Cm::BoundTree::BoundFunctionCallStatement* staticConstructorCallStatement = new Cm::BoundTree::BoundFunctionCallStatement(classTypeSymbol->StaticConstructor(), std::move(arguments));
+        if (classTypeSymbol->StaticConstructor()->CanThrow())
+        {
+            defaultConstructorSymbol->ResetNothrow();
+        }
         defaultConstructor->Body()->AddStatement(staticConstructorCallStatement);
     }
     if (classTypeSymbol->BaseClass())
@@ -280,6 +285,10 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
         if (initBaseClasObjectStatement)
         {
             defaultConstructor->Body()->AddStatement(initBaseClasObjectStatement);
+            if (initBaseClasObjectStatement->FunctionCall()->GetFunction()->CanThrow())
+            {
+                defaultConstructorSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -298,6 +307,10 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
         if (initMemberVariableStatement)
         {
             defaultConstructor->Body()->AddStatement(initMemberVariableStatement);
+            if (initMemberVariableStatement->Constructor()->CanThrow())
+            {
+                defaultConstructorSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -324,6 +337,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
     copyConstructorSymbol->SetConstructorOrDestructorSymbol();
     copyConstructorSymbol->SetMemberFunctionSymbol();
     copyConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
+    copyConstructorSymbol->SetNothrow();
     if (!unique)
     {
         copyConstructorSymbol->SetReplicated();
@@ -340,6 +354,10 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
         Cm::BoundTree::BoundExpressionList arguments;
         Cm::BoundTree::BoundFunctionCallStatement* staticConstructorCallStatement = new Cm::BoundTree::BoundFunctionCallStatement(classTypeSymbol->StaticConstructor(), std::move(arguments));
         copyConstructor->Body()->AddStatement(staticConstructorCallStatement);
+        if (classTypeSymbol->StaticConstructor()->CanThrow())
+        {
+            copyConstructorSymbol->ResetNothrow();
+        }
     }
     if (classTypeSymbol->BaseClass())
     {
@@ -357,6 +375,10 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
         if (initBaseClasObjectStatement)
         {
             copyConstructor->Body()->AddStatement(initBaseClasObjectStatement);
+            if (initBaseClasObjectStatement->FunctionCall()->GetFunction()->CanThrow())
+            {
+                copyConstructorSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -381,6 +403,10 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
         if (initMemberVariableStatement)
         {
             copyConstructor->Body()->AddStatement(initMemberVariableStatement);
+            if (initMemberVariableStatement->Constructor()->CanThrow())
+            {
+                copyConstructorSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -407,6 +433,7 @@ Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bo
     moveConstructorSymbol->SetConstructorOrDestructorSymbol();
     moveConstructorSymbol->SetMemberFunctionSymbol();
     moveConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
+    moveConstructorSymbol->SetNothrow();
     if (!unique)
     {
         moveConstructorSymbol->SetReplicated();
@@ -423,6 +450,10 @@ Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bo
         Cm::BoundTree::BoundExpressionList arguments;
         Cm::BoundTree::BoundFunctionCallStatement* staticConstructorCallStatement = new Cm::BoundTree::BoundFunctionCallStatement(classTypeSymbol->StaticConstructor(), std::move(arguments));
         moveConstructor->Body()->AddStatement(staticConstructorCallStatement);
+        if (classTypeSymbol->StaticConstructor()->CanThrow())
+        {
+            moveConstructorSymbol->ResetNothrow();
+        }
     }
     if (classTypeSymbol->BaseClass())
     {
@@ -440,6 +471,10 @@ Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bo
         if (initBaseClasObjectStatement)
         {
             moveConstructor->Body()->AddStatement(initBaseClasObjectStatement);
+            if (initBaseClasObjectStatement->FunctionCall()->GetFunction()->CanThrow())
+            {
+                moveConstructorSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -476,6 +511,10 @@ Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bo
         if (initMemberVariableStatement)
         {
             moveConstructor->Body()->AddStatement(initMemberVariableStatement);
+            if (initMemberVariableStatement->Constructor()->CanThrow())
+            {
+                moveConstructorSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -501,6 +540,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
     copyAssignmentSymbol->SetParent(classTypeSymbol);
     copyAssignmentSymbol->SetMemberFunctionSymbol();
     copyAssignmentSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
+    copyAssignmentSymbol->SetNothrow();
     if (!unique)
     {
         copyAssignmentSymbol->SetReplicated();
@@ -530,6 +570,10 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
         if (assignBaseClasObjectStatement)
         {
             copyAssignment->Body()->AddStatement(assignBaseClasObjectStatement);
+            if (assignBaseClasObjectStatement->Function()->CanThrow())
+            {
+                copyAssignmentSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -550,6 +594,10 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
         if (assignMemberVariableStatement)
         {
             copyAssignment->Body()->AddStatement(assignMemberVariableStatement);
+            if (assignMemberVariableStatement->Function()->CanThrow())
+            {
+                copyAssignmentSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -577,6 +625,7 @@ Cm::Sym::FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, boo
     moveAssignmentSymbol->SetParent(classTypeSymbol);
     moveAssignmentSymbol->SetMemberFunctionSymbol();
     moveAssignmentSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
+    moveAssignmentSymbol->SetNothrow();
     if (!unique)
     {
         moveAssignmentSymbol->SetReplicated();
@@ -604,6 +653,10 @@ Cm::Sym::FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, boo
         if (assignBaseClasObjectStatement)
         {
             moveAssignment->Body()->AddStatement(assignBaseClasObjectStatement);
+            if (assignBaseClasObjectStatement->Function()->CanThrow())
+            {
+                moveAssignmentSymbol->ResetNothrow();
+            }
         }
         else
         {
@@ -667,6 +720,7 @@ Cm::Sym::FunctionSymbol* GenerateDestructorSymbol(Cm::Sym::SymbolTable& symbolTa
     destructorSymbol->SetMemberFunctionSymbol();
     destructorSymbol->AddSymbol(thisParam);
     destructorSymbol->ComputeName();
+    destructorSymbol->SetNothrow();
     return destructorSymbol; 
 }
 
@@ -680,6 +734,7 @@ Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& s
     staticConstructorSymbol->SetConstructorOrDestructorSymbol();
     staticConstructorSymbol->SetMemberFunctionSymbol();
     staticConstructorSymbol->ComputeName();
+    staticConstructorSymbol->SetNothrow();
     return staticConstructorSymbol;
 }
 

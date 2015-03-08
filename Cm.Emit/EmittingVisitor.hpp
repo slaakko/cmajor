@@ -13,6 +13,7 @@
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
 #include <Cm.Core/StaticMemberVariableRepository.hpp>
+#include <Cm.Core/ExternalConstantRepository.hpp>
 #include <fstream>
 
 namespace Cm { namespace Emit {
@@ -21,7 +22,7 @@ class EmittingVisitor : public Cm::BoundTree::Visitor
 {
 public:
     EmittingVisitor(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_, 
-        Cm::Core::StringRepository& stringRepository_);
+        Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_);
     void BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
     void EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
     void BeginVisit(Cm::BoundTree::BoundClass& boundClass) override;
@@ -31,6 +32,7 @@ private:
     Cm::Core::IrFunctionRepository& irFunctionRepository;
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;
     Cm::Core::StringRepository& stringRepository;
+    Cm::Core::ExternalConstantRepository& externalConstantRepository;
     std::ofstream irFile;
     Cm::Util::CodeFormatter codeFormatter;
     Cm::BoundTree::BoundClass* currentClass;

@@ -86,6 +86,10 @@ void Function::WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inli
     {
         define.append(" inlinehint");
     }
+    if (define == "define void @__sc_System.CharClassTable() nounwind")
+    {
+        int x = 0;
+    }
     formatter.WriteLine(define);
     formatter.WriteLine("{");
     formatter.IncIndent();

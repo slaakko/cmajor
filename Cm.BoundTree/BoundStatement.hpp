@@ -36,8 +36,10 @@ public:
     BoundStatement* Parent() const { return parent; }
     void SetParent(BoundStatement* parent_) { parent = parent_; }
     BoundCompoundStatement* CompoundParent() const;
+    const std::string& Label() const { return label; }
 private:
     BoundStatement* parent;
+    std::string label;
 };
 
 class BoundStatementList
@@ -202,13 +204,6 @@ private:
     Cm::Sym::FunctionSymbol* assignment;
 };
 
-class BoundThrowStatement : public BoundStatement
-{
-
-private:
-    std::unique_ptr<BoundExpression> exception;
-};
-
 class BoundSimpleStatement : public BoundStatement
 {
 public:
@@ -281,6 +276,22 @@ class BoundContinueStatement : public BoundStatement
 public:
     BoundContinueStatement(Cm::Ast::Node* syntaxNode_);
     void Accept(Visitor& visitor) override;
+};
+
+class BoundGotoStatement : public BoundStatement
+{
+public:
+    BoundGotoStatement(Cm::Ast::Node* syntaxNode_, const std::string& targetLabel_);
+    void Accept(Visitor& visitor) override;
+    const std::string& TargetLabel() const { return targetLabel; }
+    void SetTargetStatement(Cm::BoundTree::BoundStatement* targetStatement_) { targetStatement = targetStatement_; }
+    Cm::BoundTree::BoundStatement* GetTargetStatement() const { return targetStatement; }
+    void SetTargetCompoundParent(Cm::BoundTree::BoundCompoundStatement* targetCompoundParent_) { targetCompoundParent = targetCompoundParent_; }
+    Cm::BoundTree::BoundCompoundStatement* GetTargetCompoundParent() const { return targetCompoundParent; }
+private:
+    std::string targetLabel;
+    Cm::BoundTree::BoundStatement* targetStatement;
+    Cm::BoundTree::BoundCompoundStatement* targetCompoundParent;
 };
 
 class BoundGotoCaseStatement : public BoundStatement
@@ -386,13 +397,6 @@ private:
     std::unique_ptr<BoundStatement> action;
     std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
     std::vector<Ir::Intf::LabelObject*> continueTargetLabels;
-};
-
-class BoundTryStatement : public BoundStatement
-{
-private:
-    std::unique_ptr<BoundStatement> tryBlock;
-    // catches
 };
 
 } } // namespace Cm::BoundTree

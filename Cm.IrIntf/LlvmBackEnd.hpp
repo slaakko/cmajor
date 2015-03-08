@@ -110,6 +110,7 @@ public:
     Ir::Intf::Parameter* CreateParameter(const std::string& parameterName, Ir::Intf::Type* parameterType) override;
     std::string GetClassObjectResultParamName() override;
     std::string GetExceptionCodeParamName() override;
+    std::string GetExceptionBaseIdTableName() override;
     int GetDebugAttrEncodingBoolean() override;
     int GetDebugAttrEncodingUnsigned() override;
     int GetDebugAttrEncodingSigned() override;

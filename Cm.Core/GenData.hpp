@@ -120,6 +120,7 @@ public:
     void RequestLabelFor(GenData& genData);
     void RemoveLabelRequestFor(GenData& genData);
     void AddNextInstructionLabel(Ir::Intf::LabelObject* nextInstructionLabel) { nextInstructionLabels.insert(nextInstructionLabel); }
+    void SetGotoTargetLabel(Ir::Intf::LabelObject* gotoTargetLabel_) { gotoTargetLabel = gotoTargetLabel_; }
     void Emit(Ir::Intf::Instruction* instruction) override;
     void Own(Ir::Intf::Object* object) override;
     void Own(Ir::Intf::Type* type) override;

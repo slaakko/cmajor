@@ -25,6 +25,7 @@
     <ClInclude Include="ClassTemplateRepository.hpp" />
     <ClInclude Include="Concept.hpp" />
     <ClInclude Include="Constant.hpp" />
+    <ClInclude Include="ControlFlowAnalyzer.hpp" />
     <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Evaluator.hpp" />
@@ -50,6 +51,7 @@
     <ClCompile Include="ClassTemplateRepository.cpp" />
     <ClCompile Include="Concept.cpp" />
     <ClCompile Include="Constant.cpp" />
+    <ClCompile Include="ControlFlowAnalyzer.cpp" />
     <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Evaluator.cpp" />

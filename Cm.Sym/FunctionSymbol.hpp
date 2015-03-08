@@ -97,6 +97,11 @@ inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFla
     return FunctionSymbolFlags(uint16_t(left) & uint16_t(right));
 }
 
+inline FunctionSymbolFlags operator~(FunctionSymbolFlags flag)
+{
+    return FunctionSymbolFlags(~uint16_t(flag));
+}
+
 class TypeParameterSymbol;
 
 struct PersistentFunctionData
@@ -153,7 +158,9 @@ public:
     void SetOverride() { SetFlag(FunctionSymbolFlags::override_); }
     bool IsNothrow() const { return GetFlag(FunctionSymbolFlags::nothrow); }
     void SetNothrow() { SetFlag(FunctionSymbolFlags::nothrow); }
+    void ResetNothrow() { ResetFlag(FunctionSymbolFlags::nothrow); }
     bool IsInline() const { return GetFlag(FunctionSymbolFlags::inline_); }
+    bool CanThrow() const { return !IsCDecl() && !IsNothrow() && !IsDestructor(); }
     void SetInline() { SetFlag(FunctionSymbolFlags::inline_); }
     bool IsReplicated() const { return GetFlag(FunctionSymbolFlags::replicated); }
     void SetReplicated() { SetFlag(FunctionSymbolFlags::replicated); }
@@ -223,6 +230,10 @@ private:
     void SetFlag(FunctionSymbolFlags flag)
     {
         flags = flags | flag;
+    }
+    void ResetFlag(FunctionSymbolFlags flag)
+    {
+        flags = flags & ~flag;
     }
 };
 

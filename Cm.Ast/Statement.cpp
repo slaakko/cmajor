@@ -122,7 +122,10 @@ void StatementNode::Print(CodeFormatter& formatter)
 void StatementNode::SetLabelNode(LabelNode* labelNode_)
 {
     labelNode.reset(labelNode_);
-    labelNode->SetParent(this);
+    if (labelNode)
+    {
+        labelNode->SetParent(this);
+    }
 }
 
 void StatementNode::CloneLabelTo(StatementNode* clone, CloneContext& cloneContext) const
@@ -1440,6 +1443,36 @@ void TryStatementNode::AddHandler(CatchNode* handler)
     handlers.Add(handler);
 }
 
+bool TryStatementNode::IsLastHandler(Cm::Ast::CatchNode* handler)
+{
+    int n = handlers.Count();
+    if (n > 0)
+    {
+        if (handlers[n - 1] == handler) return true;
+    }
+    return false;
+}
+
+CatchNode* TryStatementNode::GetNextHandler(CatchNode* handler)
+{
+    int n = handlers.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        if (handlers[i] == handler)
+        {
+            if (i < n - 1)
+            {
+                return static_cast<CatchNode*>(handlers[i + 1]);
+            }
+            else
+            {
+                throw std::runtime_error("no next handler");
+            }
+        }
+    }
+    throw std::runtime_error("handler not found");
+}
+
 Node* TryStatementNode::Clone(CloneContext& cloneContext) const
 {
     TryStatementNode* clone = new TryStatementNode(GetSpan(), static_cast<CompoundStatementNode*>(tryBlock->Clone(cloneContext)));
@@ -1479,18 +1512,25 @@ void TryStatementNode::Print(CodeFormatter& formatter)
 
 void TryStatementNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    tryBlock->Accept(visitor);
-    handlers.Accept(visitor);
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
-CatchNode::CatchNode(const Span& span_) : Node(span_)
+void TryStatementNode::SetFirstCatchId(int catchId)
+{
+    if (handlers.Count() == 0)
+    {
+        throw std::runtime_error("no handlers");
+    }
+    CatchNode* catchNode = static_cast<CatchNode*>(handlers[0]);
+    catchNode->SetCatchId(catchId);
+}
+
+CatchNode::CatchNode(const Span& span_) : Node(span_), catchId(-1)
 {
 }
 
 CatchNode::CatchNode(const Span& span_, Node* exceptionTypeExpr_, IdentifierNode* exceptionId_, CompoundStatementNode* catchBlock_) :
-    Node(span_), exceptionTypeExpr(exceptionTypeExpr_), exceptionId(exceptionId_), catchBlock(catchBlock_)
+    Node(span_), exceptionTypeExpr(exceptionTypeExpr_), exceptionId(exceptionId_), catchBlock(catchBlock_), catchId(-1)
 {
     exceptionTypeExpr->SetParent(this);
     if (exceptionId)
@@ -1544,9 +1584,7 @@ void CatchNode::Print(CodeFormatter& formatter)
 
 void CatchNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    catchBlock->Accept(visitor);
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
 AssertStatementNode::AssertStatementNode(const Span& span_) : StatementNode(span_)

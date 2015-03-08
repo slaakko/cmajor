@@ -27,6 +27,7 @@
     <ClInclude Include="DerivedTypeOpRepository.hpp" />
     <ClInclude Include="EnumTypeOpRepository.hpp" />
     <ClInclude Include="Exception.hpp" />
+    <ClInclude Include="ExternalConstantRepository.hpp" />
     <ClInclude Include="FunctionTemplateRepository.hpp" />
     <ClInclude Include="GenData.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
@@ -46,6 +47,7 @@
     <ClCompile Include="DerivedTypeOpRepository.cpp" />
     <ClCompile Include="EnumTypeOpRepository.cpp" />
     <ClCompile Include="Excecption.cpp" />
+    <ClCompile Include="ExternalConstantRepository.cpp" />
     <ClCompile Include="FunctionTemplateRepository.cpp" />
     <ClCompile Include="GenData.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />

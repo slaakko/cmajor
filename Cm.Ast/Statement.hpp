@@ -364,6 +364,7 @@ public:
     void Accept(Visitor& visitor) override;
     LabelNode* Target() const { return target.get(); }
     bool IsCaseTerminatingNode() const override { return true; }
+    bool IsGotoStatementNode() const override { return true; }
 private:
     std::unique_ptr<LabelNode> target;
 };
@@ -482,12 +483,18 @@ public:
     TryStatementNode(const Span& span_);
     TryStatementNode(const Span& span_, CompoundStatementNode* tryBlock_);
     NodeType GetNodeType() const override { return NodeType::tryStatementNode; }
+    bool IsTryStatementNode() const override { return true; }
     void AddHandler(CatchNode* handler);
+    bool IsLastHandler(Cm::Ast::CatchNode* handler);
+    CatchNode* GetNextHandler(CatchNode* handler);
+    void SetFirstCatchId(int catchId);
     Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    CompoundStatementNode* TryBlock() const { return tryBlock.get(); }
+    NodeList& Handlers() { return handlers; }
 private:
     std::unique_ptr<CompoundStatementNode> tryBlock;
     NodeList handlers;
@@ -499,6 +506,7 @@ public:
     CatchNode(const Span& span_);
     CatchNode(const Span& span_, Node* exceptionTypeExpr_, IdentifierNode* exceptionId_, CompoundStatementNode* catchBlock_);
     NodeType GetNodeType() const override { return NodeType::catchNode; }
+    bool IsCatchNode() const override { return true; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
@@ -506,10 +514,14 @@ public:
     void Accept(Visitor& visitor) override;
     Node* ExceptionTypeExpr() const { return exceptionTypeExpr.get(); }
     IdentifierNode* ExceptionId() const { return exceptionId.get(); }
+    int CatchId() const { return catchId; }
+    void SetCatchId(int catchId_) { catchId = catchId_; }
+    CompoundStatementNode* CatchBlock() const { return catchBlock.get(); }
 private:
     std::unique_ptr<Node> exceptionTypeExpr;
     std::unique_ptr<IdentifierNode> exceptionId;
     std::unique_ptr<CompoundStatementNode> catchBlock;
+    int catchId;
 };
 
 class AssertStatementNode : public StatementNode

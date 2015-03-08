@@ -12,7 +12,8 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0)
+BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0), hasGotos(false),
+    nextCatchId(0)
 {
 }
 
@@ -51,6 +52,11 @@ void BoundFunction::Accept(Visitor& visitor)
         body->Accept(visitor);
     }
     visitor.EndVisit(*this);
+}
+
+void BoundFunction::Own(Cm::Ast::Node* syntaxNode)
+{
+    syntaxNodes.push_back(std::unique_ptr<Cm::Ast::Node>(syntaxNode));
 }
 
 } } // namespace Cm::BoundTree

@@ -19,9 +19,11 @@ Ir::Intf::Parameter* CreateIrParameter(Cm::Sym::ParameterSymbol* parameter);
 class IrFunctionRepository
 {
 public:
+    IrFunctionRepository();
     Ir::Intf::Function* GetDoNothingFunction();
     Ir::Intf::Function* CreateIrFunction(Cm::Sym::FunctionSymbol* function);
     Ir::Intf::Type* GetFunPtrIrType(Cm::Sym::FunctionSymbol* fun);
+    Ir::Intf::Parameter* GetExceptionCodeParam() const { return exceptionCodeParam; }
 private:
     typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Function*> IrFunctionMap;
     typedef IrFunctionMap::const_iterator IrFunctionMapIt;
@@ -33,6 +35,7 @@ private:
     std::vector<std::unique_ptr<Ir::Intf::Function>> ownedIrFunctions;
     std::vector<std::unique_ptr<Ir::Intf::Type>> ownedIrTypes;
     std::vector<std::unique_ptr<Ir::Intf::Parameter>> ownedIrParameters;
+    Ir::Intf::Parameter* exceptionCodeParam;
     void Own(Ir::Intf::Type* type);
     void Own(Ir::Intf::Parameter* parameter);
 };
