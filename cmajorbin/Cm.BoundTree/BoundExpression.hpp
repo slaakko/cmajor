@@ -32,6 +32,8 @@ public:
     virtual bool IsBoundFunctionGroup() const { return false; }
     virtual bool IsBoundMemberVariable() const { return false; }
     virtual bool IsBoundUnaryOp() const { return false; }
+    virtual bool IsBoundBinaryOp() const { return false; }
+    virtual bool IsBoundFunctionCall() const { return false; }
     virtual bool IsBoundPostfixIncDecExpr() const { return false; }
     virtual bool IsBoundTypeExpression() const { return false; }
     virtual bool IsBoundLocalVariable() const { return false; }
@@ -259,6 +261,7 @@ class BoundBinaryOp : public BoundExpression
 {
 public:
     BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
+    bool IsBoundBinaryOp() const override { return true; }
     BoundExpression* Left() const { return left.get(); }
     BoundExpression* Right() const { return right.get(); }
     void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
@@ -305,6 +308,7 @@ class BoundFunctionCall : public BoundExpression
 {
 public:
     BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_);
+    bool IsBoundFunctionCall() const override { return true; }
     void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
     Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
     void Accept(Visitor& visitor) override;

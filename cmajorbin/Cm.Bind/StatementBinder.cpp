@@ -712,7 +712,8 @@ Cm::Ast::TryStatementNode* GetOwnerTry(Cm::Ast::Node* node)
 
 void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementNode)
 {
-    if (CurrentFunction()->GetFunctionSymbol()->IsNothrow())
+    Cm::Ast::TryStatementNode* ownerTry = GetOwnerTry(&throwStatementNode);
+    if (ownerTry == nullptr && CurrentFunction()->GetFunctionSymbol()->IsNothrow())
     {
         throw Cm::Core::Exception("nothrow function cannot throw", throwStatementNode.GetSpan(), CurrentFunction()->GetFunctionSymbol()->GetSpan());
     }
@@ -874,9 +875,16 @@ TryBinder::TryBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym
 
 void TryBinder::Visit(Cm::Ast::TryStatementNode& tryStatementNode)
 {
+    Cm::Ast::CatchNode* firstHandler = tryStatementNode.GetFirstHandler();
+    if (firstHandler->CatchId() == -1)
+    {
+        firstHandler->SetCatchId(CurrentFunction()->GetNextCatchId());
+    }
+    binder.AddBoundStatement(new Cm::BoundTree::BoundBeginTryStatement(&tryStatementNode, firstHandler->CatchId()));
     int continueId = CurrentFunction()->GetNextCatchId();
     std::string continueLabel = "$C" + std::to_string(continueId);
     tryStatementNode.TryBlock()->Accept(binder);
+    binder.AddBoundStatement(new Cm::BoundTree::BoundEndTryStatement(&tryStatementNode));
     Cm::Ast::GotoStatementNode* gotoOverCatches = new Cm::Ast::GotoStatementNode(tryStatementNode.GetSpan(), new Cm::Ast::LabelNode(tryStatementNode.GetSpan(), continueLabel));
     CurrentFunction()->Own(gotoOverCatches);
     gotoOverCatches->Accept(binder);
@@ -947,24 +955,38 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         if (tryStatementNode->IsLastHandler(&catchNode))
                         {
                             Cm::Ast::CompoundStatementNode* propagateExStatement = new Cm::Ast::CompoundStatementNode(catchNode.GetSpan());
-                            if (CurrentFunction()->GetFunctionSymbol()->CanThrow())
+                            Cm::Ast::TryStatementNode* ownerTry = GetOwnerTry(tryStatementNode);
+                            if (ownerTry)
                             {
-                                Cm::Ast::AssignmentStatementNode* setExceptionCodeParamStatement = new Cm::Ast::AssignmentStatementNode(catchNode.GetSpan(),
-                                    new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExceptionCodeParamName()),
-                                    new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()));
-                                propagateExStatement->AddStatement(setExceptionCodeParamStatement);
-                            }
-                            Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
-                            if (returnTypeExpr && returnTypeExpr->GetNodeType() != Cm::Ast::NodeType::voidNode)
-                            {
-                                Cm::Ast::InvokeNode* defaultValue = new Cm::Ast::InvokeNode(catchNode.GetSpan(), returnTypeExpr->Clone(cloneContext));
-                                Cm::Ast::ReturnStatementNode* returnStatement = new Cm::Ast::ReturnStatementNode(catchNode.GetSpan(), defaultValue);
-                                propagateExStatement->AddStatement(returnStatement);
+                                Cm::Ast::CatchNode* outerHandler = ownerTry->GetFirstHandler();
+                                if (outerHandler->CatchId() == -1)
+                                {
+                                    outerHandler->SetCatchId(CurrentFunction()->GetNextCatchId());
+                                }
+                                propagateExStatement->AddStatement(new Cm::Ast::GotoStatementNode(catchNode.GetSpan(), 
+                                    new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(outerHandler->CatchId()))));
                             }
                             else
                             {
-                                Cm::Ast::ReturnStatementNode* returnStatement = new Cm::Ast::ReturnStatementNode(catchNode.GetSpan(), nullptr);
-                                propagateExStatement->AddStatement(returnStatement);
+                                if (CurrentFunction()->GetFunctionSymbol()->CanThrow())
+                                {
+                                    Cm::Ast::AssignmentStatementNode* setExceptionCodeParamStatement = new Cm::Ast::AssignmentStatementNode(catchNode.GetSpan(),
+                                        new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExceptionCodeParamName()),
+                                        new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()));
+                                    propagateExStatement->AddStatement(setExceptionCodeParamStatement);
+                                }
+                                Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
+                                if (returnTypeExpr && returnTypeExpr->GetNodeType() != Cm::Ast::NodeType::voidNode)
+                                {
+                                    Cm::Ast::InvokeNode* defaultValue = new Cm::Ast::InvokeNode(catchNode.GetSpan(), returnTypeExpr->Clone(cloneContext));
+                                    Cm::Ast::ReturnStatementNode* returnStatement = new Cm::Ast::ReturnStatementNode(catchNode.GetSpan(), defaultValue);
+                                    propagateExStatement->AddStatement(returnStatement);
+                                }
+                                else
+                                {
+                                    Cm::Ast::ReturnStatementNode* returnStatement = new Cm::Ast::ReturnStatementNode(catchNode.GetSpan(), nullptr);
+                                    propagateExStatement->AddStatement(returnStatement);
+                                }
                             }
                             Cm::Ast::ConditionalStatementNode* dontHandleTest = new Cm::Ast::ConditionalStatementNode(catchNode.GetSpan(),
                                 new Cm::Ast::NotNode(catchNode.GetSpan(), handleVarId->Clone(cloneContext)), propagateExStatement, nullptr);
@@ -1006,7 +1028,15 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         constRefDerivation.Add(Cm::Ast::Derivation::const_);
                         constRefDerivation.Add(Cm::Ast::Derivation::reference);
                         Cm::Ast::Node* exTypeExpr = catchNode.ExceptionTypeExpr()->Clone(cloneContext);
-                        Cm::Ast::IdentifierNode* exId = static_cast<Cm::Ast::IdentifierNode*>(catchNode.ExceptionId()->Clone(cloneContext));
+                        Cm::Ast::IdentifierNode* exId = nullptr;
+                        if (catchNode.ExceptionId())
+                        {
+                            exId = static_cast<Cm::Ast::IdentifierNode*>(catchNode.ExceptionId()->Clone(cloneContext));
+                        }
+                        else
+                        {
+                            exId = new Cm::Ast::IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
+                        }
                         Cm::Ast::ConstructionStatementNode* constructExVarStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), exTypeExpr, exId);
                         constructExVarStatement->AddArgument(new Cm::Ast::DerefNode(catchNode.GetSpan(), new Cm::Ast::IdentifierNode(catchNode.GetSpan(), exPtrVarName)));
                         handlerBlock->AddStatement(constructExVarStatement);
@@ -1049,160 +1079,6 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
     {
         throw Cm::Core::Exception("exception type expression has no type", catchNode.GetSpan());
     }
-
-/*
-    if (catchNode.CatchId() == -1)
-    {
-        catchNode.SetCatchId(CurrentFunction()->GetNextCatchId());
-    }
-    catchNode.ExceptionTypeExpr()->Accept(*this);
-    std::unique_ptr<Cm::BoundTree::BoundExpression> exceptionTypeExpr(Pop());
-    if (exceptionTypeExpr->IsBoundTypeExpression())
-    {
-        Cm::BoundTree::BoundTypeExpression* boundTypeExpression = static_cast<Cm::BoundTree::BoundTypeExpression*>(exceptionTypeExpr.get());
-        Cm::Sym::TypeSymbol* catchedExceptionType = boundTypeExpression->Symbol();
-        Cm::Sym::TypeSymbol* plainCatchedExceptionType = SymbolTable().GetTypeRepository().MakePlainType(catchedExceptionType);
-        if (plainCatchedExceptionType->IsClassTypeSymbol())
-        {
-            Cm::Sym::ClassTypeSymbol* catchedExceptionClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(plainCatchedExceptionType);
-            if (catchedExceptionClassType->IsAbstract())
-            {
-                throw Cm::Core::Exception("cannot instantiate an abstract class", catchNode.GetSpan());
-            }
-            Cm::Sym::Symbol* systemExceptionSymbol = SymbolTable().GlobalScope()->Lookup("System.Exception");
-            if (systemExceptionSymbol)
-            {
-                if (systemExceptionSymbol->IsClassTypeSymbol())
-                {
-                    Cm::Sym::ClassTypeSymbol* systemExceptionClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(systemExceptionSymbol);
-                    if (Cm::Sym::TypesEqual(catchedExceptionClassType, systemExceptionClassType) || catchedExceptionClassType->HasBaseClass(systemExceptionClassType))
-                    {
-                        Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
-                        exceptionTable->AddProjectException(catchedExceptionClassType);
-                        int32_t catchedExceptionId = exceptionTable->GetExceptionId(catchedExceptionClassType);
-                        Cm::Ast::IdentifierNode* handleVarId = new Cm::Ast::IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
-                        Cm::Ast::ConstructionStatementNode* handleThisExStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), new Cm::Ast::BoolNode(catchNode.GetSpan()), handleVarId);
-                        handleThisExStatement->SetLabelNode(new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(catchNode.CatchId())));
-                        Cm::Ast::InvokeNode* handleThisExCall = new Cm::Ast::InvokeNode(catchNode.GetSpan(), new Cm::Ast::IdentifierNode(catchNode.GetSpan(), "System.Support.HandleThisEx"));
-                        handleThisExCall->AddArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExceptionBaseIdTableName()));
-                        handleThisExCall->AddArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()));
-                        Cm::Ast::CloneContext cloneContext;
-                        handleThisExCall->AddArgument(new Cm::Ast::IntLiteralNode(catchNode.GetSpan(), catchedExceptionId));
-                        handleThisExStatement->AddArgument(handleThisExCall);
-                        Cm::Ast::CompoundStatementNode* handlerBlock = new Cm::Ast::CompoundStatementNode(catchNode.GetSpan());
-                        CurrentFunction()->Own(handlerBlock);
-                        Cm::Ast::FunctionNode* functionNode = catchNode.GetFunction();
-                        handlerBlock->SetParent(functionNode);
-                        handlerBlock->AddStatement(handleThisExStatement);
-                        Cm::Ast::Node* parent = catchNode.Parent();
-                        if (!parent->IsTryStatementNode())
-                        {
-                            throw std::runtime_error("not try node");
-                        }
-                        Cm::Ast::TryStatementNode* tryStatementNode = static_cast<Cm::Ast::TryStatementNode*>(parent);
-                        if (tryStatementNode->IsLastHandler(&catchNode))
-                        {
-                            Cm::Ast::CompoundStatementNode* propagateExStatement = new Cm::Ast::CompoundStatementNode(catchNode.GetSpan());
-                            if (CurrentFunction()->GetFunctionSymbol()->CanThrow())
-                            {
-                                Cm::Ast::AssignmentStatementNode* setExceptionCodeParamStatement = new Cm::Ast::AssignmentStatementNode(catchNode.GetSpan(),
-                                    new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExceptionCodeParamName()),
-                                    new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()));
-                                propagateExStatement->AddStatement(setExceptionCodeParamStatement);
-                            }
-                            Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
-                            if (returnTypeExpr && returnTypeExpr->GetNodeType() != Cm::Ast::NodeType::voidNode)
-                            {
-                                Cm::Ast::InvokeNode* defaultValue = new Cm::Ast::InvokeNode(catchNode.GetSpan(), returnTypeExpr->Clone(cloneContext));
-                                Cm::Ast::ReturnStatementNode* returnStatement = new Cm::Ast::ReturnStatementNode(catchNode.GetSpan(), defaultValue);
-                                propagateExStatement->AddStatement(returnStatement);
-                            }
-                            else
-                            {
-                                Cm::Ast::ReturnStatementNode* returnStatement = new Cm::Ast::ReturnStatementNode(catchNode.GetSpan(), nullptr);
-                                propagateExStatement->AddStatement(returnStatement);
-                            }
-                            Cm::Ast::ConditionalStatementNode* dontHandleTest = new Cm::Ast::ConditionalStatementNode(catchNode.GetSpan(),
-                                new Cm::Ast::NotNode(catchNode.GetSpan(), handleVarId->Clone(cloneContext)), propagateExStatement, nullptr);
-                            handlerBlock->AddStatement(dontHandleTest);
-                        }
-                        else
-                        {
-                            Cm::Ast::CatchNode* nextHandler = tryStatementNode->GetNextHandler(&catchNode);
-                            int nextCatchId = nextHandler->CatchId();
-                            if (nextHandler->CatchId() == -1)
-                            {
-                                nextCatchId = CurrentFunction()->GetNextCatchId();
-                                nextHandler->SetCatchId(nextCatchId);
-                            }
-                            Cm::Ast::GotoStatementNode* gotoNextHandler = new Cm::Ast::GotoStatementNode(catchNode.GetSpan(), new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(nextCatchId)));
-                            Cm::Ast::ConditionalStatementNode* dontHandleTest = new Cm::Ast::ConditionalStatementNode(catchNode.GetSpan(),
-                                new Cm::Ast::NotNode(catchNode.GetSpan(), handleVarId->Clone(cloneContext)), gotoNextHandler, nullptr);
-                            handlerBlock->AddStatement(dontHandleTest);
-                        }
-                        Cm::Ast::InvokeNode* callThisThreadExpr = new Cm::Ast::InvokeNode(catchNode.GetSpan(),
-                            new Cm::Ast::IdentifierNode(catchNode.GetSpan(), "this_thread"));
-                        Cm::Ast::InvokeNode* callGetExceptionTableAddrExpr = new Cm::Ast::InvokeNode(catchNode.GetSpan(),
-                            new Cm::Ast::IdentifierNode(catchNode.GetSpan(), "get_exception_table_addr"));
-                        callGetExceptionTableAddrExpr->AddArgument(callThisThreadExpr);
-                        Cm::Ast::InvokeNode* callGetExceptionAddrExpr = new Cm::Ast::InvokeNode(catchNode.GetSpan(),
-                            new Cm::Ast::IdentifierNode(catchNode.GetSpan(), "System.Support.GetExceptionAddr"));
-                        callGetExceptionAddrExpr->AddArgument(callGetExceptionTableAddrExpr);
-                        callGetExceptionAddrExpr->AddArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()));
-                        Cm::Ast::DerivationList pointerDerivation;
-                        pointerDerivation.Add(Cm::Ast::Derivation::pointer);
-                        Cm::Ast::DerivedTypeExprNode* exPtrType = new Cm::Ast::DerivedTypeExprNode(catchNode.GetSpan(), pointerDerivation, new Cm::Ast::IdentifierNode(catchNode.GetSpan(),
-                            catchedExceptionClassType->FullName()));
-                        std::string exPtrVarName = CurrentFunction()->GetNextTempVariableName();
-                        Cm::Ast::ConstructionStatementNode* constructExPtrStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), exPtrType,
-                            new Cm::Ast::IdentifierNode(catchNode.GetSpan(), exPtrVarName));
-                        constructExPtrStatement->AddArgument(new Cm::Ast::CastNode(catchNode.GetSpan(), exPtrType->Clone(cloneContext), callGetExceptionAddrExpr));
-                        handlerBlock->AddStatement(constructExPtrStatement);
-                        Cm::Ast::ConstructionStatementNode* constructExVarStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), catchNode.ExceptionTypeExpr()->Clone(cloneContext),
-                            static_cast<Cm::Ast::IdentifierNode*>(catchNode.ExceptionId()->Clone(cloneContext)));
-                        constructExVarStatement->AddArgument(new Cm::Ast::DerefNode(catchNode.GetSpan(), new Cm::Ast::IdentifierNode(catchNode.GetSpan(), exPtrVarName)));
-                        handlerBlock->AddStatement(constructExVarStatement);
-
-                        Cm::Ast::TemplateIdNode* exDeleterType = new Cm::Ast::TemplateIdNode(catchNode.GetSpan(), new Cm::Ast::IdentifierNode(catchNode.GetSpan(), "System.Support.ExDeleter"));
-                        exDeleterType->AddTemplateArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), catchedExceptionClassType->FullName()));
-                        Cm::Ast::ConstructionStatementNode* constructExDeleterStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), exDeleterType,
-                            new Cm::Ast::IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName()));
-                        constructExDeleterStatement->AddArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), exPtrVarName));
-                        handlerBlock->AddStatement(constructExDeleterStatement);
-                        handlerBlock->AddStatement(static_cast<Cm::Ast::StatementNode*>(catchNode.CatchBlock()->Clone(cloneContext)));
-                        Cm::Sym::DeclarationVisitor declarationVisitor(SymbolTable());
-                        handlerBlock->Accept(declarationVisitor);
-                        Cm::Sym::ContainerScope* containerScope = SymbolTable().GetContainerScope(handlerBlock);
-                        containerScope->SetParent(ContainerScope());
-                        binder.BeginContainerScope(containerScope);
-                        handlerBlock->Accept(binder);
-                        binder.EndContainerScope();
-                    }
-                    else
-                    {
-                        throw Cm::Core::Exception("exception must be class type equal to or derived from System.Exception class", catchNode.GetSpan());
-                    }
-                }
-                else
-                {
-                    throw std::runtime_error("System.Exception symbol not class type");
-                }
-            }
-            else
-            {
-                throw std::runtime_error("System.Exception symbol not found");
-            }
-        }
-        else
-        {
-            throw Cm::Core::Exception("type of exception must be class type", catchNode.GetSpan());
-        }
-    }
-    else
-    {
-        throw Cm::Core::Exception("exception type expression has no type", catchNode.GetSpan());
-    }
-*/
 }
 
 } } // namespace Cm::Bind

@@ -111,6 +111,8 @@ public:
     void Visit(Cm::BoundTree::BoundInitMemberVariableStatement& boundInitMemberVariableStatement) override;
     void Visit(Cm::BoundTree::BoundFunctionCallStatement& boundFunctionCallStatement) override;
     void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) override;
+    void Visit(Cm::BoundTree::BoundBeginTryStatement& boundBeginTryStatement) override;
+    void Visit(Cm::BoundTree::BoundEndTryStatement& boundEndTryStatement) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(Cm::BoundTree::BoundDestructionStatement& boundDestructionStatement) override;
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
@@ -152,7 +154,7 @@ private:
     Cm::Core::ExternalConstantRepository& externalConstantRepository;
     Cm::Ast::CompileUnitNode* currentCompileUnit;
     Cm::BoundTree::BoundClass* currentClass;
-    Cm::Sym::FunctionSymbol* currentFunction;
+    Cm::BoundTree::BoundFunction* currentFunction;
     Cm::Sym::ParameterSymbol* thisParam;
     std::unordered_set<Ir::Intf::Function*>& externalFunctions;
     std::vector<std::unique_ptr<Cm::BoundTree::BoundStatement>> postfixIncDecStatements;
@@ -163,6 +165,8 @@ private:
     bool executingPostfixIncDecStatements;
     SwitchEmitState currentSwitchEmitState;
     std::stack<SwitchEmitState> switchEmitStateStack;
+    int currentCatchId;
+    std::stack<int> catchIdStack;
     typedef std::unordered_map<std::string, std::pair<Ir::Intf::LabelObject*, Cm::BoundTree::BoundStatement*>> SwitchCaseConstantMap;
     typedef SwitchCaseConstantMap::const_iterator SwitchCaseConstantMapIt;
     std::stack<SwitchCaseConstantMap*> switchCaseConstantMapStack;
@@ -184,6 +188,9 @@ private:
     void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol);
+    void GenerateTestExceptionResult();
+    void CreateLandingPad(int landingPadId);
+    void GenerateLandingPadCode();
 };
 
 } } // namespace Cm::Emit

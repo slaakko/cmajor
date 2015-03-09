@@ -41,6 +41,15 @@ void Binder::EndContainerScope()
     containerScopeStack.pop();
 }
 
+void Binder::AddBoundStatement(Cm::BoundTree::BoundStatement* boundStatement)
+{
+    if (!currentParent)
+    {
+        throw std::runtime_error("binder has no current parent");
+    }
+    currentParent->AddStatement(boundStatement);
+}
+
 void Binder::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
 {
     Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&namespaceNode);

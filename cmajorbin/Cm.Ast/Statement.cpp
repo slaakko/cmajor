@@ -1453,6 +1453,15 @@ bool TryStatementNode::IsLastHandler(Cm::Ast::CatchNode* handler)
     return false;
 }
 
+CatchNode* TryStatementNode::GetFirstHandler() const
+{
+    if (handlers.Count() == 0)
+    {
+        throw std::runtime_error("no handlers");
+    }
+    return static_cast<CatchNode*>(handlers[0]);
+}
+
 CatchNode* TryStatementNode::GetNextHandler(CatchNode* handler)
 {
     int n = handlers.Count();

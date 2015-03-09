@@ -486,6 +486,7 @@ public:
     bool IsTryStatementNode() const override { return true; }
     void AddHandler(CatchNode* handler);
     bool IsLastHandler(Cm::Ast::CatchNode* handler);
+    CatchNode* GetFirstHandler() const;
     CatchNode* GetNextHandler(CatchNode* handler);
     void SetFirstCatchId(int catchId);
     Node* Clone(CloneContext& cloneContext) const override;

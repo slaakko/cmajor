@@ -145,15 +145,15 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     currentClass(currentClass_), currentFunction(nullptr), thisParam(nullptr), externalFunctions(externalFunctions_), staticMemberVariableRepository(staticMemberVariableRepository_), 
     externalConstantRepository(externalConstantRepository_),
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), currentSwitchCaseConstantMap(nullptr), 
-    switchCaseLabel(nullptr), firstStatementInCompound(false)
+    switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1)
 {
 }
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
+    currentFunction = &boundFunction;
     Cm::IrIntf::ResetLocalLabelCounter();
-    currentFunction = boundFunction.GetFunctionSymbol();
-    Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction);
+    Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->GetFunctionSymbol());
     emitter.reset(new Cm::Core::Emitter(irFunction));
 
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
@@ -167,7 +167,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     {
         Ir::Intf::Object* localVariableIrObject = localVariableIrObjectRepository.CreateLocalVariableIrObjectFor(parameter);
         emitter->Emit(Cm::IrIntf::Alloca(parameter->GetType()->GetIrType(), localVariableIrObject));
-        if (currentFunction->IsMemberFunctionSymbol() && !currentFunction->IsStatic() && parameterIndex == 0)
+        if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol() && !currentFunction->GetFunctionSymbol()->IsStatic() && parameterIndex == 0)
         {
             thisParam = parameter;
         }
@@ -207,6 +207,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
         }
         result.BackpatchNextTargets(retLabel);
     }
+    GenerateLandingPadCode();
     irFunction->Clean();
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction.GetFunctionSymbol();
     bool weakOdr = functionSymbol->IsReplicated();
@@ -1212,10 +1213,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
     if (boundReturnStatement.ReturnsValue())
     {
         Cm::Sym::FunctionSymbol* ctor = boundReturnStatement.Constructor();
-        bool returnsClassObjectByValue = currentFunction->ReturnsClassObjectByValue();
+        bool returnsClassObjectByValue = currentFunction->GetFunctionSymbol()->ReturnsClassObjectByValue();
         if (returnsClassObjectByValue)
         {
-            result.SetMainObject(currentFunction->ClassObjectResultIrParam());
+            result.SetMainObject(currentFunction->GetFunctionSymbol()->ClassObjectResultIrParam());
         }
         else
         {
@@ -1249,6 +1250,22 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
         ExitFunction(result);
         emitter->Emit(Cm::IrIntf::Ret());
     }
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundBeginTryStatement& boundBeginTryStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    catchIdStack.push(currentCatchId);
+    currentCatchId = boundBeginTryStatement.FirstCatchId();
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundEndTryStatement& boundEndTryStatement) 
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    currentCatchId = catchIdStack.top();
+    catchIdStack.pop();
     resultStack.Push(std::move(result));
 }
 
@@ -1366,7 +1383,6 @@ void FunctionEmitter::ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromC
         --i;
     }
 }
-
 
 void FunctionEmitter::ExitFunction(Cm::Core::GenResult& result)
 {
@@ -1871,8 +1887,11 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::
         {
             Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(result.MainObject(), fun, result.Args());
             emitter->Emit(callInst);
-
         }
+    }
+    if (functionSymbol && functionSymbol->CanThrow())
+    {
+        GenerateTestExceptionResult();
     }
     if (fun->IsDoNothingFunction())
     {
@@ -1934,6 +1953,10 @@ void FunctionEmitter::GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core
     emitter->Own(loadedFunctionPtr);
     emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, loadedFunctionPtr, loadedFunctionI8Ptr, functionPtrType));
     emitter->Emit(Cm::IrIntf::IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args()));
+    if (fun->CanThrow())
+    {
+        GenerateTestExceptionResult();
+    }
 }
 
 void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result)
@@ -1985,6 +2008,102 @@ void FunctionEmitter::GenJumpingBoolCode(Cm::Core::GenResult& result)
     result.AddTrueTarget(trueLabel);
     result.AddFalseTarget(falseLabel);
     Cm::Core::ResetFlag(Cm::Core::GenFlags::genJumpingBoolCode, genFlags);
+}
+
+void FunctionEmitter::GenerateTestExceptionResult()
+{
+    int landingPadId = currentFunction->GetNextLandingPadId();
+    Ir::Intf::LabelObject* landingPadLabel = Cm::IrIntf::CreateLabel("$P" + std::to_string(landingPadId));
+    emitter->Own(landingPadLabel);
+    Ir::Intf::LabelObject* nextLabel = Cm::IrIntf::CreateNextLocalLabel();
+    emitter->Own(nextLabel);
+    Ir::Intf::Object* exCodeVariable = localVariableIrObjectRepository.GetExceptionCodeVariable();
+    Ir::Intf::RegVar* exCodeReg = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI32());
+    emitter->Own(exCodeReg);
+    Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI32(), exCodeVariable, exCodeReg);
+    Ir::Intf::RegVar* resultReg = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI1());
+    emitter->Own(resultReg);
+    Ir::Intf::Object* zero = Ir::Intf::GetFactory()->GetI32()->CreateDefaultValue();
+    emitter->Own(zero);
+    emitter->Emit(Cm::IrIntf::ICmp(Ir::Intf::GetFactory()->GetI32(), resultReg, Ir::Intf::IConditionCode::ne, exCodeReg, zero));
+    emitter->Emit(Cm::IrIntf::Br(resultReg, landingPadLabel, nextLabel));
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
+    emitter->AddNextInstructionLabel(nextLabel);
+    GenerateCall(nullptr, irFunctionRepository.GetDoNothingFunction(), result, false);
+    CreateLandingPad(landingPadId);
+}
+
+void FunctionEmitter::CreateLandingPad(int landingPadId)
+{
+    Cm::BoundTree::LandingPad* landingPad = new Cm::BoundTree::LandingPad(landingPadId, currentCatchId);
+    int n = int(currentCompoundDestructionStack.DestructionStatements().size());
+    for (int i = n - 1; i >= 0; --i)
+    {
+        Cm::BoundTree::BoundDestructionStatement* destructionStatement = currentCompoundDestructionStack.DestructionStatements()[i].get();
+        landingPad->AddDestructionStatement(new Cm::BoundTree::BoundDestructionStatement(destructionStatement->SyntaxNode(), destructionStatement->Object(), destructionStatement->Destructor()));
+    }
+    if (currentCatchId == -1)
+    {
+        int n = int(functionDestructionStack.CompoundDestructionStacks().size());
+        for (int i = n - 1; i >= 0; --i)
+        {
+            const CompoundDestructionStack& compoundDestructionStack = functionDestructionStack.CompoundDestructionStacks()[i];
+            int m = int(compoundDestructionStack.DestructionStatements().size());
+            for (int j = m - 1; j >= 0; --j)
+            {
+                Cm::BoundTree::BoundDestructionStatement* destructionStatement = compoundDestructionStack.DestructionStatements()[j].get();
+                landingPad->AddDestructionStatement(new Cm::BoundTree::BoundDestructionStatement(destructionStatement->SyntaxNode(), destructionStatement->Object(), destructionStatement->Destructor()));
+            }
+        }
+    }
+    currentFunction->AddLandingPad(landingPad);
+}
+
+void FunctionEmitter::GenerateLandingPadCode()
+{
+    const std::vector<std::unique_ptr<Cm::BoundTree::LandingPad>>& landingPads = currentFunction->GetLandingPads();
+    for (const std::unique_ptr<Cm::BoundTree::LandingPad>& landingPad : landingPads)
+    {
+        Ir::Intf::LabelObject* landingPadLabel = Cm::IrIntf::CreateLabel("$P" + std::to_string(landingPad->Id()));
+        emitter->Own(landingPadLabel);
+        emitter->SetGotoTargetLabel(landingPadLabel);
+        Cm::Core::GenResult result(emitter.get(), genFlags);
+        result.SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
+        GenerateCall(nullptr, irFunctionRepository.GetDoNothingFunction(), result, false);
+
+        for (const std::unique_ptr<Cm::BoundTree::BoundDestructionStatement>& destructionStatement : landingPad->DestructionStatements())
+        {
+            destructionStatement->Accept(*this);
+        }
+        int jumpToCatchId = landingPad->JumpToCatchId();
+        if (jumpToCatchId != -1)    // got handler to jump to...
+        {
+            Ir::Intf::LabelObject* catchIdLabel = Cm::IrIntf::CreateLabel("$C" + std::to_string(jumpToCatchId));
+            emitter->Own(catchIdLabel);
+            emitter->Emit(Cm::IrIntf::Br(catchIdLabel));
+        }
+        else    // no handler to jump to...
+        {
+            if (currentFunction->GetFunctionSymbol()->CanThrow()) // propagate exception to caller
+            {
+                Ir::Intf::Object* exCodeParam = irFunctionRepository.GetExceptionCodeParam();
+                Ir::Intf::Object* exCodeVariable = localVariableIrObjectRepository.GetExceptionCodeVariable(); 
+                Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI32(), exCodeVariable, exCodeParam);
+            }
+            Cm::Sym::TypeSymbol* returnType = currentFunction->GetFunctionSymbol()->GetReturnType();
+            if (!returnType || returnType->IsVoidTypeSymbol() || currentFunction->GetFunctionSymbol()->ReturnsClassObjectByValue())
+            {
+                emitter->Emit(Cm::IrIntf::Ret());
+            }
+            else
+            {
+                Ir::Intf::Object* retval = returnType->GetIrType()->CreateDefaultValue();
+                emitter->Own(retval);
+                emitter->Emit(Cm::IrIntf::Ret(retval));
+            }
+        }
+    }
 }
 
 } } // namespace Cm::Emit

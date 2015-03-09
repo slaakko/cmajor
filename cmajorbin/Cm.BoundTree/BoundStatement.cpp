@@ -161,6 +161,24 @@ void BoundReturnStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundBeginTryStatement::BoundBeginTryStatement(Cm::Ast::Node* syntaxNode_, int firstCatchId_) : BoundStatement(syntaxNode_), firstCatchId(firstCatchId_)
+{
+}
+
+void BoundBeginTryStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundEndTryStatement::BoundEndTryStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundEndTryStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundConstructionStatement::BoundConstructionStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_), localVariable(nullptr), ctor(nullptr)
 {
 }
