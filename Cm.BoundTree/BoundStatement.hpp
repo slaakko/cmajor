@@ -158,6 +158,23 @@ private:
     Cm::Sym::TypeSymbol* returnType;
 };
 
+class BoundBeginTryStatement : public BoundStatement
+{
+public:
+    BoundBeginTryStatement(Cm::Ast::Node* syntaxNode_, int firstCatchId_);
+    void Accept(Visitor& visitor) override;
+    int FirstCatchId() const { return firstCatchId; }
+private:
+    int firstCatchId;
+};
+
+class BoundEndTryStatement : public BoundStatement
+{
+public:
+    BoundEndTryStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
+};
+
 class BoundConstructionStatement : public BoundStatement
 {
 public:

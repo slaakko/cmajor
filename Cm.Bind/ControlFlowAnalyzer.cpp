@@ -10,6 +10,7 @@
 #include <Cm.Bind/ControlFlowAnalyzer.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundStatement.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Ast/Statement.hpp>
 
@@ -66,6 +67,10 @@ ControlFlowAnalyzer::ControlFlowAnalyzer() : Cm::BoundTree::Visitor(false)
 
 void ControlFlowAnalyzer::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
+    if (boundFunction.GetFunctionSymbol()->Name() == "@destructor(InputFileStream*)")
+    {
+        int x = 0;
+    }
     if (boundFunction.HasGotos())
     {
         LabelCollector labelCollector;

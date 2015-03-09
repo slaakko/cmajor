@@ -13,6 +13,20 @@
 
 namespace Cm { namespace BoundTree {
 
+class LandingPad
+{
+public:
+    LandingPad(int id_, int jumpToCatchId_);
+    void AddDestructionStatement(BoundDestructionStatement* destructionStatement);
+    int Id() const { return id; }
+    int JumpToCatchId() const { return jumpToCatchId; }
+    const std::vector<std::unique_ptr<BoundDestructionStatement>>& DestructionStatements() const { return destructionStatements; }
+private:
+    int id;
+    int jumpToCatchId;
+    std::vector<std::unique_ptr<BoundDestructionStatement>> destructionStatements;
+};
+
 class BoundFunction : public BoundNode
 {
 public:
@@ -30,7 +44,10 @@ public:
     void SetHasGotos() { hasGotos = true; }
     bool HasGotos() const { return hasGotos; }
     int GetNextCatchId() { return nextCatchId++; }
+    int GetNextLandingPadId() const { return int(landingPads.size()); }
+    void AddLandingPad(LandingPad* landingPad);
     void Own(Cm::Ast::Node* syntaxNode);
+    const std::vector<std::unique_ptr<LandingPad>>& GetLandingPads() const { return landingPads; }
 private:
     std::unique_ptr<BoundCompoundStatement> body;
     Cm::Sym::FunctionSymbol* functionSymbol;
@@ -40,6 +57,7 @@ private:
     bool hasGotos;
     int nextCatchId;
     std::vector<std::unique_ptr<Cm::Ast::Node>> syntaxNodes;
+    std::vector<std::unique_ptr<LandingPad>> landingPads;
 };
 
 } } // namespace Cm::BoundTree

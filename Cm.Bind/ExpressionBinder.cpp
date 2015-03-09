@@ -75,13 +75,14 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerSc
                 {
                     Cm::BoundTree::BoundConversion* conversion = static_cast<Cm::BoundTree::BoundConversion*>(argument);
                     Cm::BoundTree::BoundExpression* operand = conversion->Operand();
-                    if (operand->IsLiteral() || operand->IsConstant() || operand->IsEnumConstant())
+                    if (operand->IsLiteral() || operand->IsConstant() || operand->IsEnumConstant() || operand->IsBoundUnaryOp() || operand->IsBoundBinaryOp() || operand->IsBoundFunctionCall())
                     {
                         argumentIsConversion = true;
                     }
                 }
-                if ((argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argumentIsConversion) && 
-                    (argument->GetType()->IsBasicTypeSymbol() || argument->GetType()->IsEnumTypeSymbol()))
+                if ((argument->GetType()->IsBasicTypeSymbol() || argument->GetType()->IsEnumTypeSymbol()) && 
+                    (argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argumentIsConversion || argument->IsBoundUnaryOp() || argument->IsBoundBinaryOp() || 
+                    argument->IsBoundFunctionCall()))
                 {
                     if (!currentFunction)
                     {

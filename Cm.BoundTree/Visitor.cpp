@@ -12,7 +12,7 @@
 
 namespace Cm { namespace BoundTree {
 
-Visitor::Visitor(bool visitFunctionBody_) : visitFunctionBody(visitFunctionBody_)
+Visitor::Visitor(bool visitFunctionBody_) : visitFunctionBody(visitFunctionBody_), skipContent(false)
 {
 }
 

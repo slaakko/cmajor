@@ -12,6 +12,15 @@
 
 namespace Cm { namespace BoundTree {
 
+LandingPad::LandingPad(int id_, int jumpToCatchId_) : id(id_), jumpToCatchId(jumpToCatchId_)
+{
+}
+
+void LandingPad::AddDestructionStatement(BoundDestructionStatement* destructionStatement)
+{
+    destructionStatements.push_back(std::unique_ptr<BoundDestructionStatement>(destructionStatement));
+}
+
 BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0), hasGotos(false),
     nextCatchId(0)
 {
@@ -52,6 +61,11 @@ void BoundFunction::Accept(Visitor& visitor)
         body->Accept(visitor);
     }
     visitor.EndVisit(*this);
+}
+
+void BoundFunction::AddLandingPad(LandingPad* landingPad)
+{
+    landingPads.push_back(std::unique_ptr<LandingPad>(landingPad));
 }
 
 void BoundFunction::Own(Cm::Ast::Node* syntaxNode)

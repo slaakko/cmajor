@@ -23,6 +23,10 @@ namespace Cm { namespace Bind {
 
 void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol)
 {
+    if (templateTypeSymbol->Name() == "ExDeleter<Exception>")
+    {
+        int x = 0;
+    }
     Cm::Sym::TypeSymbol* subjectTypeSymbol = templateTypeSymbol->GetSubjectType();
     if (!subjectTypeSymbol->IsClassTypeSymbol())
     {
@@ -80,10 +84,6 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
         }
         boundTypeParam->SetType(typeArgument);
         templateTypeSymbol->AddSymbol(boundTypeParam);
-    }
-    if (templateTypeSymbol->FullName() == "RedBlackTree<int, int, Identity<int>, Less<int>>")
-    {
-        int x = 0;
     }
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     declarationVisitor.SetTemplateType(classInstanceNode, templateTypeSymbol);

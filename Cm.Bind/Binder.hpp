@@ -90,6 +90,7 @@ public:
     void EndVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode) override;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
+    void AddBoundStatement(Cm::BoundTree::BoundStatement* boundStatement);
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* currentContainerScope;
