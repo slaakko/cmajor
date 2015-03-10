@@ -1228,6 +1228,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
         Ir::Intf::LabelObject* exprNext = Cm::IrIntf::CreateNextLocalLabel();
         emitter->Own(exprNext);
         emitter->AddNextInstructionLabel(exprNext);
+        if (!resultLabel)
+        {
+            resultLabel = exprNext;
+        }
         GenerateCall(ctor, result);
         result.BackpatchArgNextTargets(exprNext);
         ExecutePostfixIncDecStatements(result);
