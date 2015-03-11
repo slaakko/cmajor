@@ -212,7 +212,7 @@ void FunctionNode::Accept(Visitor& visitor)
 
 void FunctionNode::SetBodySource(CompoundStatementNode* bodySource_)
 {
-    bodySource = bodySource_;
+    bodySource.reset(bodySource_);
 }
 
 } } // namespace Cm::Ast

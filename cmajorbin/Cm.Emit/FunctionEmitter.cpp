@@ -1273,6 +1273,15 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundEndTryStatement& boundEndTryStat
     resultStack.Push(std::move(result));
 }
 
+void FunctionEmitter::Visit(Cm::BoundTree::BoundExitBlocksStatement& boundExitBlocksStatement)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    Cm::BoundTree::BoundCompoundStatement* currentCompound = boundExitBlocksStatement.CompoundParent();
+    Cm::BoundTree::BoundCompoundStatement* targetCompound = boundExitBlocksStatement.TargetBlock();
+    ExitCompounds(currentCompound, targetCompound, result);
+    resultStack.Push(std::move(result));
+}
+
 void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
@@ -1375,7 +1384,7 @@ void FunctionEmitter::ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromC
     Cm::BoundTree::BoundCompoundStatement* compound = fromCompound;
     int n = int(functionDestructionStack.CompoundDestructionStacks().size());
     int i = n - 1;
-    while (compound != targetCompound)
+    while (compound && compound != targetCompound)
     {
         ExitCompound(result, *compoundDestructionStack, first);
         compound = compound->CompoundParent();
@@ -1473,7 +1482,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundContinueStatement& boundContinue
 void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoStatement& boundGotoStatement)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
-    ExitCompounds(boundGotoStatement.CompoundParent(), boundGotoStatement.GetTargetCompoundParent(), result);
+    if (!boundGotoStatement.IsExceptionHandlingGoto())
+    {
+        ExitCompounds(boundGotoStatement.CompoundParent(), boundGotoStatement.GetTargetCompoundParent(), result);
+    }
     Ir::Intf::LabelObject* gotoTargetLabel = Cm::IrIntf::CreateLabel(boundGotoStatement.TargetLabel());
     emitter->Own(gotoTargetLabel);
     emitter->Emit(Cm::IrIntf::Br(gotoTargetLabel));
@@ -2016,6 +2028,7 @@ void FunctionEmitter::GenJumpingBoolCode(Cm::Core::GenResult& result)
 
 void FunctionEmitter::GenerateTestExceptionResult()
 {
+    if (currentFunction->IsMainFunction()) return;  // in real main() exception code is tested explicitly after call to user$main()
     int landingPadId = currentFunction->GetNextLandingPadId();
     Ir::Intf::LabelObject* landingPadLabel = Cm::IrIntf::CreateLabel("$P" + std::to_string(landingPadId));
     emitter->Own(landingPadLabel);

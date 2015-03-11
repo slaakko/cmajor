@@ -21,9 +21,14 @@ void LandingPad::AddDestructionStatement(BoundDestructionStatement* destructionS
     destructionStatements.push_back(std::unique_ptr<BoundDestructionStatement>(destructionStatement));
 }
 
-BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0), hasGotos(false),
-    nextCatchId(0)
+BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : 
+    BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0), hasGotos(false), nextCatchId(0), currentTry(nullptr), inHandler(false), isMain(false)
 {
+}
+
+BoundFunction::~BoundFunction()
+{
+
 }
 
 void BoundFunction::SetBody(BoundCompoundStatement* body_)
@@ -71,6 +76,62 @@ void BoundFunction::AddLandingPad(LandingPad* landingPad)
 void BoundFunction::Own(Cm::Ast::Node* syntaxNode)
 {
     syntaxNodes.push_back(std::unique_ptr<Cm::Ast::Node>(syntaxNode));
+}
+
+void BoundFunction::PushTryNode(Cm::Ast::TryStatementNode* tryNode)
+{
+    tryNodeStack.push_back(currentTry);
+    currentTry = tryNode;
+}
+
+void BoundFunction::PopTryNode()
+{
+    currentTry = tryNodeStack.back();
+    tryNodeStack.pop_back();
+}
+
+Cm::Ast::TryStatementNode* BoundFunction::GetParentTry()
+{
+    Cm::Ast::TryStatementNode* parentTry = nullptr;
+    if (!tryNodeStack.empty())
+    {
+        parentTry = tryNodeStack.back();
+    }
+    if (parentTry)
+    {
+        return parentTry;
+    }
+    return currentTry;
+}
+
+void BoundFunction::PushHandler()
+{
+    inHandlerStack.push(inHandler);
+    inHandler = true;
+}
+
+void BoundFunction::PopHandler()
+{
+    inHandler = inHandlerStack.top();
+    inHandlerStack.pop();
+}
+
+void BoundFunction::AddTryCompound(Cm::Ast::TryStatementNode* tryNode, BoundCompoundStatement* tryCompound)
+{
+    tryCompoundMap[tryNode] = tryCompound;
+}
+
+BoundCompoundStatement* BoundFunction::GetTryCompound(Cm::Ast::TryStatementNode* tryNode)
+{
+    TryCompoundMapIt i = tryCompoundMap.find(tryNode);
+    if (i != tryCompoundMap.end())
+    {
+        return i->second;
+    }
+    else
+    {
+        throw std::runtime_error("try compound not found");
+    }
 }
 
 } } // namespace Cm::BoundTree

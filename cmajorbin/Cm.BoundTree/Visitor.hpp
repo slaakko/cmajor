@@ -42,6 +42,7 @@ class BoundFunctionCallStatement;
 class BoundReturnStatement;
 class BoundBeginTryStatement;
 class BoundEndTryStatement;
+class BoundExitBlocksStatement;
 class BoundConstructionStatement;
 class BoundDestructionStatement;
 class BoundAssignmentStatement;
@@ -101,6 +102,7 @@ public:
     virtual void Visit(BoundReturnStatement& boundReturnStatement) {}
     virtual void Visit(BoundBeginTryStatement& boundBeginTryStatement) {}
     virtual void Visit(BoundEndTryStatement& boundEndTryStatement) {}
+    virtual void Visit(BoundExitBlocksStatement& boundExitBlocksStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
     virtual void Visit(BoundDestructionStatement& boundDestructionStatement) {}
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}

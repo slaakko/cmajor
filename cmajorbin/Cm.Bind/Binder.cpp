@@ -50,6 +50,19 @@ void Binder::AddBoundStatement(Cm::BoundTree::BoundStatement* boundStatement)
     currentParent->AddStatement(boundStatement);
 }
 
+Cm::BoundTree::BoundCompoundStatement* Binder::GetCurrentCompound()
+{
+    Cm::BoundTree::BoundParentStatement* parent = currentParent.get();
+    if (parent->IsBoundCompoundStatement())
+    {
+        return static_cast<Cm::BoundTree::BoundCompoundStatement*>(parent);
+    }
+    else
+    {
+        return parent->CompoundParent();
+    }
+}
+
 void Binder::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
 {
     Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&namespaceNode);
@@ -596,7 +609,12 @@ void Binder::Visit(Cm::Ast::GotoStatementNode& gotoStatementNode)
 {
     boundFunction->SetHasGotos();
     boundCompileUnit.SetHasGotos();
-    currentParent->AddStatement(new Cm::BoundTree::BoundGotoStatement(&gotoStatementNode, gotoStatementNode.Target()->Label()));
+    Cm::BoundTree::BoundGotoStatement* boundGotoStatement = new Cm::BoundTree::BoundGotoStatement(&gotoStatementNode, gotoStatementNode.Target()->Label());
+    if (gotoStatementNode.IsExceptionHandlingGoto())
+    {
+        boundGotoStatement->SetExceptionHandlingGoto();
+    }
+    currentParent->AddStatement(boundGotoStatement);
 }
 
 void Binder::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
@@ -662,6 +680,12 @@ void Binder::Visit(Cm::Ast::CatchNode& catchNode)
 {
     CatchBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), *this);
     catchNode.Accept(binder);
+}
+
+void Binder::Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode)
+{
+    ExitTryBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), *this);
+    exitTryStatementNode.Accept(binder);
 }
 
 void Binder::BeginVisit(Cm::Ast::AssertStatementNode& assertStatementNode)

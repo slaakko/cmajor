@@ -175,6 +175,16 @@ public:
     void Accept(Visitor& visitor) override;
 };
 
+class BoundExitBlocksStatement : public BoundStatement
+{
+public:
+    BoundExitBlocksStatement(Cm::Ast::Node* syntaxNode_, BoundCompoundStatement* targetBlock_);
+    void Accept(Visitor& visitor) override;
+    BoundCompoundStatement* TargetBlock() const { return targetBlock; }
+private:
+    BoundCompoundStatement* targetBlock;
+};
+
 class BoundConstructionStatement : public BoundStatement
 {
 public:
@@ -305,10 +315,13 @@ public:
     Cm::BoundTree::BoundStatement* GetTargetStatement() const { return targetStatement; }
     void SetTargetCompoundParent(Cm::BoundTree::BoundCompoundStatement* targetCompoundParent_) { targetCompoundParent = targetCompoundParent_; }
     Cm::BoundTree::BoundCompoundStatement* GetTargetCompoundParent() const { return targetCompoundParent; }
+    void SetExceptionHandlingGoto() { isExceptionHandlingGoto = true; }
+    bool IsExceptionHandlingGoto() const { return isExceptionHandlingGoto; }
 private:
     std::string targetLabel;
     Cm::BoundTree::BoundStatement* targetStatement;
     Cm::BoundTree::BoundCompoundStatement* targetCompoundParent;
+    bool isExceptionHandlingGoto;
 };
 
 class BoundGotoCaseStatement : public BoundStatement

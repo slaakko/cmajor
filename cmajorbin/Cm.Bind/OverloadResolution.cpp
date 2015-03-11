@@ -636,10 +636,6 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
     Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags)
 {
-    if (groupName.find("ConstructiveMove") != std::string::npos)
-    {
-        int x = 0;
-    }
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
     conversions.clear();
     int arity = int(arguments.size());

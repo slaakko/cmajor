@@ -10,8 +10,12 @@
 #include <Cm.Build/Main.hpp>
 #include <Cm.Build/Build.hpp>
 #include <Cm.Core/Exception.hpp>
+#include <Cm.Core/Argument.hpp>
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/Parameter.hpp>
+#include <Cm.Bind/OverloadResolution.hpp>
+#include <Cm.Bind/ClassTemplateRepository.hpp>
+#include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
@@ -36,11 +40,14 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     Cm::Ast::CompileUnitNode syntaxUnit(span);
     std::string mainCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__main__.ll")).generic_string());
     Cm::BoundTree::BoundCompileUnit mainCompileUnit(&syntaxUnit, mainCompileUnitIrFilePath, symbolTable);
+    mainCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(mainCompileUnit));
+    mainCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(mainCompileUnit));
     std::unique_ptr<Cm::Sym::FunctionSymbol> mainFunctionSymbol(new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "main"));
     mainFunctionSymbol->SetCDecl();
     Cm::Sym::TypeSymbol* intType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
     Cm::Sym::ParameterSymbol* argcParam = nullptr;
     Cm::Sym::ParameterSymbol* argvParam = nullptr;
+    Cm::Sym::TypeSymbol* boolType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     if (!userMainFunction->Parameters().empty())
     {
         if (userMainFunction->Parameters().size() != 2)
@@ -72,6 +79,7 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 
     mainFunctionSymbol->SetReturnType(intType);
     Cm::BoundTree::BoundFunction* mainFunction = new Cm::BoundTree::BoundFunction(nullptr, mainFunctionSymbol.get());
+    mainFunction->SetMainFunction();
     Cm::BoundTree::BoundCompoundStatement* mainBody = new Cm::BoundTree::BoundCompoundStatement(nullptr);
     mainFunction->SetBody(mainBody);
     Cm::Bind::GenerateReceives(nullptr, mainCompileUnit, mainFunction);
@@ -106,6 +114,39 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         callUserMainStatement->SetExpression(callUserMainExpr);
         mainBody->AddStatement(callUserMainStatement);
 
+        Cm::BoundTree::BoundLiteral* zeroExCode = new Cm::BoundTree::BoundLiteral(nullptr);
+        zeroExCode->SetValue(new Cm::Sym::IntValue(0));
+        zeroExCode->SetType(intType);
+        Cm::BoundTree::BoundConditionalStatement* testExceptionVarStatement = new Cm::BoundTree::BoundConditionalStatement(nullptr);
+        Cm::BoundTree::BoundExceptionCodeVariable* exceptionCodeVariable = new Cm::BoundTree::BoundExceptionCodeVariable();
+        exceptionCodeVariable->SetType(intType);
+        Cm::BoundTree::BoundBinaryOp* exCodeEqualToZero = new Cm::BoundTree::BoundBinaryOp(nullptr, exceptionCodeVariable, zeroExCode);
+        exCodeEqualToZero->SetType(boolType);
+        std::vector<Cm::Core::Argument> equalIntArgs;
+        equalIntArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
+        equalIntArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
+        Cm::Sym::FunctionLookupSet equalIntLookups;
+        equalIntLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, symbolTable.GlobalScope()));
+        std::vector<Cm::Sym::FunctionSymbol*> equalIntConversions;
+        Cm::Sym::FunctionSymbol* equalInt = Cm::Bind::ResolveOverload(symbolTable.GlobalScope(), mainCompileUnit, "operator==", equalIntArgs, equalIntLookups, span, equalIntConversions);
+        exCodeEqualToZero->SetFunction(equalInt);
+        Cm::BoundTree::BoundUnaryOp* exCodeNotEqualToZero = new Cm::BoundTree::BoundUnaryOp(nullptr, exCodeEqualToZero);
+        exCodeNotEqualToZero->SetType(boolType);
+        std::vector<Cm::Core::Argument> notBoolArgs;
+        notBoolArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boolType)); 
+        Cm::Sym::FunctionLookupSet notBoolLookups;
+        notBoolLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, symbolTable.GlobalScope()));
+        std::vector<Cm::Sym::FunctionSymbol*> notBoolConversions;
+        Cm::Sym::FunctionSymbol* notBool = Cm::Bind::ResolveOverload(symbolTable.GlobalScope(), mainCompileUnit, "operator!", notBoolArgs, notBoolLookups, span, notBoolConversions);
+        exCodeNotEqualToZero->SetFunction(notBool);
+        exCodeNotEqualToZero->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
+        testExceptionVarStatement->SetCondition(exCodeNotEqualToZero);
+        Cm::Sym::FunctionSymbol* mainUnhandlerException = symbolTable.GetOverload("System.Support.MainUnhandledException");
+        Cm::BoundTree::BoundExpressionList mainUnhandlerExceptionArguments;
+        Cm::BoundTree::BoundFunctionCallStatement* callMainUnhandlerExceptionStatement = new Cm::BoundTree::BoundFunctionCallStatement(mainUnhandlerException, std::move(mainUnhandlerExceptionArguments));
+        testExceptionVarStatement->AddStatement(callMainUnhandlerExceptionStatement);
+        mainBody->AddStatement(testExceptionVarStatement);
+
         Cm::Sym::FunctionSymbol* cmExit = symbolTable.GetOverload("cm_exit");
         Cm::BoundTree::BoundExpressionList cmExitArguments;
         Cm::BoundTree::BoundFunctionCallStatement* callCmExitStatement = new Cm::BoundTree::BoundFunctionCallStatement(cmExit, std::move(cmExitArguments));
@@ -119,6 +160,7 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundLiteral* zero = new Cm::BoundTree::BoundLiteral(nullptr);
         zero->SetValue(new Cm::Sym::IntValue(0));
         zero->SetType(intType);
+
         Cm::BoundTree::BoundLocalVariable* returnValue = new Cm::BoundTree::BoundLocalVariable(nullptr, returnValueVariable);
         returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
         intAssignment.reset(new Cm::Core::CopyAssignment(symbolTable.GetTypeRepository(), intType));
@@ -152,6 +194,39 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         intAssignment.reset(new Cm::Core::CopyAssignment(symbolTable.GetTypeRepository(), intType));
         Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(nullptr, returnValue, callUserMainExpr, intAssignment.get());
         mainBody->AddStatement(assignmentStatement);
+
+        Cm::BoundTree::BoundLiteral* zeroExCode = new Cm::BoundTree::BoundLiteral(nullptr);
+        zeroExCode->SetValue(new Cm::Sym::IntValue(0));
+        zeroExCode->SetType(intType);
+        Cm::BoundTree::BoundConditionalStatement* testExceptionVarStatement = new Cm::BoundTree::BoundConditionalStatement(nullptr);
+        Cm::BoundTree::BoundExceptionCodeVariable* exceptionCodeVariable = new Cm::BoundTree::BoundExceptionCodeVariable();
+        exceptionCodeVariable->SetType(intType);
+        Cm::BoundTree::BoundBinaryOp* exCodeEqualToZero = new Cm::BoundTree::BoundBinaryOp(nullptr, exceptionCodeVariable, zeroExCode);
+        exCodeEqualToZero->SetType(boolType);
+        std::vector<Cm::Core::Argument> equalIntArgs;
+        equalIntArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
+        equalIntArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
+        Cm::Sym::FunctionLookupSet equalIntLookups;
+        equalIntLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, symbolTable.GlobalScope()));
+        std::vector<Cm::Sym::FunctionSymbol*> equalIntConversions;
+        Cm::Sym::FunctionSymbol* equalInt = Cm::Bind::ResolveOverload(symbolTable.GlobalScope(), mainCompileUnit, "operator==", equalIntArgs, equalIntLookups, span, equalIntConversions);
+        exCodeEqualToZero->SetFunction(equalInt);
+        Cm::BoundTree::BoundUnaryOp* exCodeNotEqualToZero = new Cm::BoundTree::BoundUnaryOp(nullptr, exCodeEqualToZero);
+        exCodeNotEqualToZero->SetType(boolType);
+        std::vector<Cm::Core::Argument> notBoolArgs;
+        notBoolArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boolType));
+        Cm::Sym::FunctionLookupSet notBoolLookups;
+        notBoolLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, symbolTable.GlobalScope()));
+        std::vector<Cm::Sym::FunctionSymbol*> notBoolConversions;
+        Cm::Sym::FunctionSymbol* notBool = Cm::Bind::ResolveOverload(symbolTable.GlobalScope(), mainCompileUnit, "operator!", notBoolArgs, notBoolLookups, span, notBoolConversions);
+        exCodeNotEqualToZero->SetFunction(notBool);
+        exCodeNotEqualToZero->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
+        testExceptionVarStatement->SetCondition(exCodeNotEqualToZero);
+        Cm::Sym::FunctionSymbol* mainUnhandlerException = symbolTable.GetOverload("System.Support.MainUnhandledException");
+        Cm::BoundTree::BoundExpressionList mainUnhandlerExceptionArguments;
+        Cm::BoundTree::BoundFunctionCallStatement* callMainUnhandlerExceptionStatement = new Cm::BoundTree::BoundFunctionCallStatement(mainUnhandlerException, std::move(mainUnhandlerExceptionArguments));
+        testExceptionVarStatement->AddStatement(callMainUnhandlerExceptionStatement);
+        mainBody->AddStatement(testExceptionVarStatement);
 
         Cm::Sym::FunctionSymbol* cmExit = symbolTable.GetOverload("cm_exit");
         Cm::BoundTree::BoundExpressionList cmExitArguments;

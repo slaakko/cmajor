@@ -287,7 +287,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
     boost::filesystem::path outputBase(outputBasePath);
     std::string prebindCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__prebind__.ll")).generic_string());
     Cm::BoundTree::BoundCompileUnit prebindCompileUnit(syntaxTree.CompileUnits().front().get(), prebindCompileUnitIrFilePath, symbolTable);
-    prebindCompileUnit.SetClassTemplateRepostory(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
+    prebindCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
     prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
@@ -327,7 +327,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
     {
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
         Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable);
-        boundCompileUnit.SetClassTemplateRepostory(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
+        boundCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
         boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
         boundCompileUnit.AddFileScope(fileScopes[index].release());
         Bind(compileUnit.get(), boundCompileUnit, userMainFunction);
@@ -443,6 +443,18 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::string& 
 */
 }
 
+void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths)
+{
+    boost::filesystem::path outputBase(projectOutputBasePath);
+    Cm::Parsing::Span span;
+    Cm::Ast::CompileUnitNode syntaxUnit(span);
+    std::string exceptionTableCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__exception_table__.ll")).generic_string());
+    Cm::BoundTree::BoundCompileUnit exceptionTableCompileUnit(&syntaxUnit, exceptionTableCompileUnitIrFilePath, symbolTable);
+    Cm::Sym::GetExceptionTable()->GenerateExceptionTableUnit(exceptionTableCompileUnitIrFilePath);
+    GenerateObjectCode(exceptionTableCompileUnit);
+    objectFilePaths.push_back(exceptionTableCompileUnit.ObjectFilePath());
+}
+
 void Build(const std::string& projectFilePath)
 {
     auto start = std::chrono::system_clock::now();
@@ -474,6 +486,7 @@ void Build(const std::string& projectFilePath)
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
         GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
+        GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths);
     }
     boost::filesystem::remove(project->AssemblyFilePath());
     Archive(objectFilePaths, project->AssemblyFilePath());

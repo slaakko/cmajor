@@ -19,6 +19,7 @@ using Cm::Parsing::Span;
 BasicTypeOp::BasicTypeOp(Cm::Sym::TypeSymbol* type_) : Cm::Sym::FunctionSymbol(Span(), "*basic_type_op*"), type(type_)
 { 
     SetAccess(Cm::Sym::SymbolAccess::public_);
+    SetNothrow();
 }
 
 DefaultCtor::DefaultCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)

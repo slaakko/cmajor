@@ -62,7 +62,7 @@ public:
     bool HasBody() const { return body != nullptr; }
     void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     CompileUnitNode* GetCompileUnit() const { return compileUnit; }
-    CompoundStatementNode* BodySource() const { return bodySource; }
+    CompoundStatementNode* BodySource() const { return bodySource.get(); }
     void SetBodySource(CompoundStatementNode* bodySource_);
 private:
     Specifiers specifiers;
@@ -73,7 +73,7 @@ private:
     std::unique_ptr<WhereConstraintNode> constraint;
     std::unique_ptr<CompoundStatementNode> body;
     CompileUnitNode* compileUnit;
-    CompoundStatementNode* bodySource;
+    std::unique_ptr<CompoundStatementNode> bodySource;
 };
 
 } } // namespace Cm::Ast

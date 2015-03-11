@@ -1001,6 +1001,11 @@ CompoundStatementNode::CompoundStatementNode(const Span& span_) : StatementNode(
 {
 }
 
+CompoundStatementNode::~CompoundStatementNode()
+{
+
+}
+
 void CompoundStatementNode::AddStatement(StatementNode* statement)
 {
     statement->SetParent(this);
@@ -1092,11 +1097,11 @@ void ContinueStatementNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-GotoStatementNode::GotoStatementNode(const Span& span_) : StatementNode(span_)
+GotoStatementNode::GotoStatementNode(const Span& span_) : StatementNode(span_), isExceptionHandlingGoto(false)
 {
 }
 
-GotoStatementNode::GotoStatementNode(const Span& span_, LabelNode* target_) : StatementNode(span_), target(target_)
+GotoStatementNode::GotoStatementNode(const Span& span_, LabelNode* target_) : StatementNode(span_), target(target_), isExceptionHandlingGoto(false)
 {
     target->SetParent(this);
 }
@@ -1105,6 +1110,10 @@ Node* GotoStatementNode::Clone(CloneContext& cloneContext) const
 {
     GotoStatementNode* clone = new GotoStatementNode(GetSpan(), static_cast<LabelNode*>(target->Clone(cloneContext)));
     CloneLabelTo(clone, cloneContext);
+    if (isExceptionHandlingGoto)
+    {
+        clone->isExceptionHandlingGoto = true;
+    }
     return clone;
 }
 
@@ -1113,12 +1122,14 @@ void GotoStatementNode::Read(Reader& reader)
     StatementNode::Read(reader);
     target.reset(reader.ReadLabelNode());
     target->SetParent(this);
+    isExceptionHandlingGoto = reader.ReadBool();
 }
 
 void GotoStatementNode::Write(Writer& writer)
 {
     StatementNode::Write(writer);
     writer.Write(target.get());
+    writer.Write(isExceptionHandlingGoto);
 }
 
 void GotoStatementNode::Print(CodeFormatter& formatter)
@@ -1592,6 +1603,24 @@ void CatchNode::Print(CodeFormatter& formatter)
 }
 
 void CatchNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+ExitTryStatementNode::ExitTryStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+ExitTryStatementNode::ExitTryStatementNode(const Span& span_, TryStatementNode* tryNode_) : StatementNode(span_), tryNode(tryNode_)
+{
+}
+
+Node* ExitTryStatementNode::Clone(CloneContext& cloneContext) const
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+void ExitTryStatementNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }

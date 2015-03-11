@@ -113,6 +113,7 @@ public:
     void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) override;
     void Visit(Cm::BoundTree::BoundBeginTryStatement& boundBeginTryStatement) override;
     void Visit(Cm::BoundTree::BoundEndTryStatement& boundEndTryStatement) override;
+    void Visit(Cm::BoundTree::BoundExitBlocksStatement& boundExitBlocksStatement) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(Cm::BoundTree::BoundDestructionStatement& boundDestructionStatement) override;
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;

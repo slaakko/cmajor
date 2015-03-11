@@ -32,6 +32,7 @@ public:
     std::vector<Cm::Sym::TypeSymbol*> GetProjectExceptions() const;
     int GetExceptionId(Cm::Sym::TypeSymbol* exceptionType) const;
     int GetNumberOfExceptions() const { return int(exceptions.size()); }
+    void GenerateExceptionTableUnit(const std::string& exceptionTableFilePath);
 private:
     typedef std::unordered_map<Cm::Sym::TypeSymbol*, int> ExceptionMap;
     typedef ExceptionMap::const_iterator ExceptionMapIt;

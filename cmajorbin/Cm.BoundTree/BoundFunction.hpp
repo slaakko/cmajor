@@ -10,6 +10,7 @@
 #ifndef CM_BOUND_TREE_BOUND_FUNCTION_INCLUDED
 #define CM_BOUND_TREE_BOUND_FUNCTION_INCLUDED
 #include <Cm.BoundTree/BoundStatement.hpp>
+#include <stack>
 
 namespace Cm { namespace BoundTree {
 
@@ -31,6 +32,7 @@ class BoundFunction : public BoundNode
 {
 public:
     BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_);
+    ~BoundFunction();
     Cm::Sym::FunctionSymbol* GetFunctionSymbol() const { return functionSymbol; }
     void SetBody(BoundCompoundStatement* body_);
     BoundCompoundStatement* Body() const { return body.get(); }
@@ -47,7 +49,18 @@ public:
     int GetNextLandingPadId() const { return int(landingPads.size()); }
     void AddLandingPad(LandingPad* landingPad);
     void Own(Cm::Ast::Node* syntaxNode);
+    void PushTryNode(Cm::Ast::TryStatementNode* tryNode);
+    void PopTryNode();
+    Cm::Ast::TryStatementNode* GetCurrentTry() const { return currentTry; }
+    Cm::Ast::TryStatementNode* GetParentTry();
+    bool InHandler() const { return inHandler; }
+    void PushHandler();
+    void PopHandler();
     const std::vector<std::unique_ptr<LandingPad>>& GetLandingPads() const { return landingPads; }
+    void AddTryCompound(Cm::Ast::TryStatementNode* tryNode, BoundCompoundStatement* tryCompound);
+    BoundCompoundStatement* GetTryCompound(Cm::Ast::TryStatementNode* tryNode);
+    void SetMainFunction() { isMain = true; };
+    bool IsMainFunction() const { return isMain; }
 private:
     std::unique_ptr<BoundCompoundStatement> body;
     Cm::Sym::FunctionSymbol* functionSymbol;
@@ -58,6 +71,14 @@ private:
     int nextCatchId;
     std::vector<std::unique_ptr<Cm::Ast::Node>> syntaxNodes;
     std::vector<std::unique_ptr<LandingPad>> landingPads;
+    typedef std::unordered_map<Cm::Ast::TryStatementNode*, BoundCompoundStatement*> TryCompoundMap;
+    typedef TryCompoundMap::const_iterator TryCompoundMapIt;
+    TryCompoundMap tryCompoundMap;
+    Cm::Ast::TryStatementNode* currentTry;
+    std::vector<Cm::Ast::TryStatementNode*> tryNodeStack;
+    bool inHandler;
+    std::stack<bool> inHandlerStack;
+    bool isMain;
 };
 
 } } // namespace Cm::BoundTree
