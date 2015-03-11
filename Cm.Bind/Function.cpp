@@ -143,6 +143,10 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
             throw Cm::Core::Exception("static class cannot have default members", functionSymbol->GetSpan());
         }
         functionSymbol->SetDefault();
+        if ((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none)
+        {
+            functionSymbol->SetNothrow();
+        }
     }
     if ((specifiers & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none)
     {
@@ -166,6 +170,10 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
     if ((specifiers & Cm::Ast::Specifiers::nothrow_) != Cm::Ast::Specifiers::none)
     {
         functionSymbol->SetNothrow();
+    }
+    if (((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none))
+    {
+        functionSymbol->ResetNothrow();
     }
     if ((specifiers & Cm::Ast::Specifiers::abstract_) != Cm::Ast::Specifiers::none)
     {

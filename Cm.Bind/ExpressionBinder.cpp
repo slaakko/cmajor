@@ -840,10 +840,6 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
 
 void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberId)
 {
-    if (CurrentFunction()->GetFunctionSymbol()->Name() == "Init(RedBlackTree<int, int, Identity<int>, Less<int>>*)")
-    {
-        int x = 0;
-    }
     BindUnaryOp(node, "operator->");
     std::unique_ptr<Cm::BoundTree::BoundExpression> boundUnaryOpExpr(boundExpressionStack.Pop());
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(boundUnaryOpExpr->GetType());

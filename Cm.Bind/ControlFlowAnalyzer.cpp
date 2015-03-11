@@ -67,10 +67,6 @@ ControlFlowAnalyzer::ControlFlowAnalyzer() : Cm::BoundTree::Visitor(false)
 
 void ControlFlowAnalyzer::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
-    if (boundFunction.GetFunctionSymbol()->Name() == "@destructor(InputFileStream*)")
-    {
-        int x = 0;
-    }
     if (boundFunction.HasGotos())
     {
         LabelCollector labelCollector;
@@ -92,21 +88,32 @@ void GotoResolver::Visit(Cm::BoundTree::BoundGotoStatement& boundGotoStatement)
     {
         Cm::BoundTree::BoundStatement* targetStatement = i->second;
         Cm::BoundTree::BoundCompoundStatement* targetCompoundParent = targetStatement->CompoundParent();
+        if (!targetCompoundParent)
+        {
+            throw std::runtime_error("target statement has no compound parent");
+        }
         boundGotoStatement.SetTargetStatement(targetStatement);
         boundGotoStatement.SetTargetCompoundParent(targetCompoundParent);
-        Cm::BoundTree::BoundCompoundStatement* gotoCompoundParent = boundGotoStatement.CompoundParent();
-        while (gotoCompoundParent && gotoCompoundParent != targetCompoundParent)
+        if (!boundGotoStatement.IsExceptionHandlingGoto())
         {
-            gotoCompoundParent = gotoCompoundParent->CompoundParent();
-        }
-        if (!gotoCompoundParent)
-        {
-            Cm::Parsing::Span refSpan;
-            if (targetStatement->SyntaxNode())
+            Cm::BoundTree::BoundCompoundStatement* gotoCompoundParent = boundGotoStatement.CompoundParent();
+            if (!gotoCompoundParent)
             {
-                refSpan = targetStatement->SyntaxNode()->GetSpan();
+                throw std::runtime_error("goto statement has no compound parent");
             }
-            throw Cm::Core::Exception("goto target '" + targetLabel + "' not in enclosing block", boundGotoStatement.SyntaxNode()->GetSpan(), refSpan);
+            while (gotoCompoundParent && gotoCompoundParent != targetCompoundParent)
+            {
+                gotoCompoundParent = gotoCompoundParent->CompoundParent();
+            }
+            if (!gotoCompoundParent)
+            {
+                Cm::Parsing::Span refSpan;
+                if (targetStatement->SyntaxNode())
+                {
+                    refSpan = targetStatement->SyntaxNode()->GetSpan();
+                }
+                throw Cm::Core::Exception("goto target '" + targetLabel + "' not in enclosing block", boundGotoStatement.SyntaxNode()->GetSpan(), refSpan);
+            }
         }
     }
     else

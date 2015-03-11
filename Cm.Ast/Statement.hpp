@@ -316,6 +316,7 @@ class CompoundStatementNode : public StatementNode
 {
 public:
     CompoundStatementNode(const Span& span_);
+    ~CompoundStatementNode();
     NodeType GetNodeType() const override { return NodeType::compoundStatementNode; }
     void AddStatement(StatementNode* statement);
     StatementNodeList& Statements() { return statements; }
@@ -365,8 +366,11 @@ public:
     LabelNode* Target() const { return target.get(); }
     bool IsCaseTerminatingNode() const override { return true; }
     bool IsGotoStatementNode() const override { return true; }
+    bool IsExceptionHandlingGoto() const { return isExceptionHandlingGoto; }
+    void SetExceptionHandlingGoto() { isExceptionHandlingGoto = true; }
 private:
     std::unique_ptr<LabelNode> target;
+    bool isExceptionHandlingGoto;
 };
 
 class TypedefStatementNode : public StatementNode
@@ -523,6 +527,19 @@ private:
     std::unique_ptr<IdentifierNode> exceptionId;
     std::unique_ptr<CompoundStatementNode> catchBlock;
     int catchId;
+};
+
+class ExitTryStatementNode : public StatementNode
+{
+public:
+    ExitTryStatementNode(const Span& span_);
+    ExitTryStatementNode(const Span& span_, TryStatementNode* tryNode_);
+    TryStatementNode* TryNode() const { return tryNode; }
+    NodeType GetNodeType() const override { return NodeType::exitTryNode; }
+    virtual Node* Clone(CloneContext& cloneContext) const;
+    void Accept(Visitor& visitor) override;
+private:
+    TryStatementNode* tryNode;
 };
 
 class AssertStatementNode : public StatementNode

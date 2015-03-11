@@ -75,6 +75,7 @@ public:
     void BeginVisit(Cm::Ast::ThrowStatementNode& throwStatementNode) override;
     void Visit(Cm::Ast::TryStatementNode& tryStatementNode) override;
     void Visit(Cm::Ast::CatchNode& catchNode) override;
+    void Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode) override;
     void BeginVisit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
     void EndVisit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
     void BeginVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode) override;
@@ -91,6 +92,7 @@ public:
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
     void AddBoundStatement(Cm::BoundTree::BoundStatement* boundStatement);
+    Cm::BoundTree::BoundCompoundStatement* GetCurrentCompound();
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* currentContainerScope;

@@ -8,6 +8,10 @@
 ========================================================================*/
 
 #include <Cm.Sym/ExceptionTable.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Util/CodeFormatter.hpp>
+#include <Cm.IrIntf/Rep.hpp>
+#include <fstream>
 
 namespace Cm { namespace Sym {
 
@@ -20,7 +24,7 @@ void ExceptionTable::AddLibraryException(Cm::Sym::TypeSymbol* exceptionType)
     ExceptionMapIt i = exceptionMap.find(exceptionType);
     if (i == exceptionMap.end())
     {
-        int exceptionId = int(exceptions.size());
+        int exceptionId = int(exceptions.size()) + 1;
         exceptions.push_back(ExceptionRecord(exceptionType, Cm::Sym::SymbolSource::library));
         exceptionMap[exceptionType] = exceptionId;
     }
@@ -58,6 +62,45 @@ int ExceptionTable::GetExceptionId(Cm::Sym::TypeSymbol* exceptionType) const
         return i->second;
     }
     throw std::runtime_error("exception id for exception type '" + exceptionType->FullName() + "' not found");
+}
+
+void ExceptionTable::GenerateExceptionTableUnit(const std::string& exceptionTableFilePath)
+{
+    std::ofstream exceptionTableFile(exceptionTableFilePath);
+    Cm::Util::CodeFormatter formatter(exceptionTableFile);
+    int n = int(exceptions.size());
+    std::unique_ptr<Ir::Intf::Type> exceptionBaseIdArrayType(Cm::IrIntf::Array(Cm::IrIntf::I32(), n));
+    exceptionBaseIdArrayType->SetOwned();
+    formatter.WriteLine("@$exception$base$id$table = constant " + exceptionBaseIdArrayType->Name());
+    formatter.WriteLine("[");
+    formatter.IncIndent();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::TypeSymbol* exceptionType = exceptions[i].ExceptionType();
+        if (!exceptionType->IsClassTypeSymbol())
+        {
+            throw std::runtime_error("exception type not class type");
+        }
+        Cm::Sym::ClassTypeSymbol* exceptionClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(exceptionType);
+        int baseId = 0;
+        Cm::Sym::ClassTypeSymbol* baseClassType = exceptionClassType->BaseClass();
+        if (baseClassType)
+        {
+            baseId = GetExceptionId(baseClassType);
+        }
+        std::string baseIdStr;
+        baseIdStr.append(Ir::Intf::GetFactory()->GetI32()->Name()).append(" ").append(std::to_string(baseId));
+        if (i < n - 1)
+        {
+            baseIdStr.append(",");
+        }
+        formatter.WriteLine(baseIdStr);
+    }
+    formatter.DecIndent();
+    formatter.WriteLine("]");
+    std::unique_ptr<Ir::Intf::Type> pointerToExceptionTable(Cm::IrIntf::Pointer(exceptionBaseIdArrayType.get(), 1));
+    pointerToExceptionTable->SetOwned();
+    formatter.WriteLine("@$exception$base$id$table$addr = constant i32* bitcast (" + pointerToExceptionTable->Name() + " @$exception$base$id$table to i32*)");
 }
 
 ExceptionTable* globalExceptionTable = nullptr;

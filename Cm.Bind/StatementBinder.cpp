@@ -684,35 +684,9 @@ ThrowStatementBinder::ThrowStatementBinder(Cm::BoundTree::BoundCompileUnit& boun
 {
 }
 
-Cm::Ast::TryStatementNode* GetOwnerTry(Cm::Ast::Node* node)
-{
-    bool skipTry = false;
-    Cm::Ast::Node* parent = node->Parent();
-    while (parent)
-    {
-        if (parent->IsCatchNode())
-        {
-            skipTry = true;
-        }
-        else if (parent->IsTryStatementNode())
-        {
-            if (skipTry)
-            {
-                skipTry = false;
-            }
-            else
-            {
-                return static_cast<Cm::Ast::TryStatementNode*>(parent);
-            }
-        }
-        parent = parent->Parent();
-    }
-    return nullptr;
-}
-
 void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementNode)
 {
-    Cm::Ast::TryStatementNode* ownerTry = GetOwnerTry(&throwStatementNode);
+    Cm::Ast::TryStatementNode* ownerTry = CurrentFunction()->GetCurrentTry();
     if (ownerTry == nullptr && CurrentFunction()->GetFunctionSymbol()->IsNothrow())
     {
         throw Cm::Core::Exception("nothrow function cannot throw", throwStatementNode.GetSpan(), CurrentFunction()->GetFunctionSymbol()->GetSpan());
@@ -797,12 +771,28 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                     Cm::Ast::AssignmentStatementNode* setExceptionCodeParamStatement = nullptr;
                     Cm::Ast::StatementNode* endOfThrowStatement = nullptr;
                     Cm::Ast::FunctionNode* functionNode = throwStatementNode.GetFunction();
-                    Cm::Ast::TryStatementNode* ownerTry = GetOwnerTry(&throwStatementNode);
+                    Cm::Ast::ExitTryStatementNode* exitTryStatement = nullptr;
+                    Cm::Ast::TryStatementNode* ownerTry = nullptr; 
+                    if (CurrentFunction()->InHandler())
+                    {
+                        ownerTry = CurrentFunction()->GetParentTry();
+                    }
+                    else
+                    {
+                        ownerTry = CurrentFunction()->GetCurrentTry();
+                    }
                     if (ownerTry)
                     {
-                        int catchId = CurrentFunction()->GetNextCatchId();
-                        ownerTry->SetFirstCatchId(catchId);
-                        endOfThrowStatement = new Cm::Ast::GotoStatementNode(throwStatementNode.GetSpan(), new Cm::Ast::LabelNode(throwStatementNode.GetSpan(), "$C" + std::to_string(catchId)));
+                        int catchId = ownerTry->GetFirstHandler()->CatchId();
+                        if (catchId == -1)
+                        {
+                            catchId = CurrentFunction()->GetNextCatchId();
+                            ownerTry->SetFirstCatchId(catchId);
+                        }
+                        exitTryStatement = new Cm::Ast::ExitTryStatementNode(throwStatementNode.GetSpan(), ownerTry);
+                        Cm::Ast::GotoStatementNode* gotoCatch = new Cm::Ast::GotoStatementNode(throwStatementNode.GetSpan(), new Cm::Ast::LabelNode(throwStatementNode.GetSpan(), "$C" + std::to_string(catchId)));
+                        gotoCatch->SetExceptionHandlingGoto();
+                        endOfThrowStatement = gotoCatch;
                     }
                     else
                     {
@@ -837,6 +827,10 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                     if (setExceptionCodeParamStatement)
                     {
                         throwActions->AddStatement(setExceptionCodeParamStatement);
+                    }
+                    if (exitTryStatement)
+                    {
+                        throwActions->AddStatement(exitTryStatement);
                     }
                     throwActions->AddStatement(endOfThrowStatement);
                     Cm::Sym::DeclarationVisitor declarationVisitor(SymbolTable());
@@ -875,19 +869,29 @@ TryBinder::TryBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym
 
 void TryBinder::Visit(Cm::Ast::TryStatementNode& tryStatementNode)
 {
+    CurrentFunction()->PushTryNode(&tryStatementNode);
     Cm::Ast::CatchNode* firstHandler = tryStatementNode.GetFirstHandler();
     if (firstHandler->CatchId() == -1)
     {
         firstHandler->SetCatchId(CurrentFunction()->GetNextCatchId());
     }
+    CurrentFunction()->AddTryCompound(&tryStatementNode, binder.GetCurrentCompound());
     binder.AddBoundStatement(new Cm::BoundTree::BoundBeginTryStatement(&tryStatementNode, firstHandler->CatchId()));
     int continueId = CurrentFunction()->GetNextCatchId();
     std::string continueLabel = "$C" + std::to_string(continueId);
+    Cm::Sym::DeclarationVisitor declarationVisitor(SymbolTable());
+    tryStatementNode.TryBlock()->Accept(declarationVisitor);
+    Cm::Sym::ContainerScope* containerScope = SymbolTable().GetContainerScope(tryStatementNode.TryBlock());
+    containerScope->SetParent(ContainerScope());
+    binder.BeginContainerScope(containerScope);
     tryStatementNode.TryBlock()->Accept(binder);
+    binder.EndContainerScope();
     binder.AddBoundStatement(new Cm::BoundTree::BoundEndTryStatement(&tryStatementNode));
     Cm::Ast::GotoStatementNode* gotoOverCatches = new Cm::Ast::GotoStatementNode(tryStatementNode.GetSpan(), new Cm::Ast::LabelNode(tryStatementNode.GetSpan(), continueLabel));
+    gotoOverCatches->SetExceptionHandlingGoto();
     CurrentFunction()->Own(gotoOverCatches);
     gotoOverCatches->Accept(binder);
+    CurrentFunction()->PopTryNode();
     tryStatementNode.Handlers().Accept(binder);
     Cm::Ast::SimpleStatementNode* emptyStatement = new Cm::Ast::SimpleStatementNode(tryStatementNode.GetSpan(), nullptr);
     CurrentFunction()->Own(emptyStatement);
@@ -902,6 +906,7 @@ CatchBinder::CatchBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm:
 
 void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
 {
+    CurrentFunction()->PushHandler();
     if (catchNode.CatchId() == -1)
     {
         catchNode.SetCatchId(CurrentFunction()->GetNextCatchId());
@@ -955,16 +960,20 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         if (tryStatementNode->IsLastHandler(&catchNode))
                         {
                             Cm::Ast::CompoundStatementNode* propagateExStatement = new Cm::Ast::CompoundStatementNode(catchNode.GetSpan());
-                            Cm::Ast::TryStatementNode* ownerTry = GetOwnerTry(tryStatementNode);
-                            if (ownerTry)
+                            Cm::Ast::TryStatementNode* parentTry = CurrentFunction()->GetParentTry();
+                            if (parentTry)
                             {
-                                Cm::Ast::CatchNode* outerHandler = ownerTry->GetFirstHandler();
+                                Cm::Ast::CatchNode* outerHandler = parentTry->GetFirstHandler();
                                 if (outerHandler->CatchId() == -1)
                                 {
                                     outerHandler->SetCatchId(CurrentFunction()->GetNextCatchId());
                                 }
-                                propagateExStatement->AddStatement(new Cm::Ast::GotoStatementNode(catchNode.GetSpan(), 
-                                    new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(outerHandler->CatchId()))));
+                                Cm::Ast::ExitTryStatementNode* exitTryStatement = new Cm::Ast::ExitTryStatementNode(catchNode.GetSpan(), parentTry);
+                                propagateExStatement->AddStatement(exitTryStatement);
+                                Cm::Ast::GotoStatementNode* gotoOuterCatch = new Cm::Ast::GotoStatementNode(catchNode.GetSpan(),
+                                    new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(outerHandler->CatchId())));
+                                gotoOuterCatch->SetExceptionHandlingGoto();
+                                propagateExStatement->AddStatement(gotoOuterCatch);
                             }
                             else
                             {
@@ -1002,6 +1011,7 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                                 nextHandler->SetCatchId(nextCatchId);
                             }
                             Cm::Ast::GotoStatementNode* gotoNextHandler = new Cm::Ast::GotoStatementNode(catchNode.GetSpan(), new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(nextCatchId)));
+                            gotoNextHandler->SetExceptionHandlingGoto();
                             Cm::Ast::ConditionalStatementNode* dontHandleTest = new Cm::Ast::ConditionalStatementNode(catchNode.GetSpan(),
                                 new Cm::Ast::NotNode(catchNode.GetSpan(), handleVarId->Clone(cloneContext)), gotoNextHandler, nullptr);
                             handlerBlock->AddStatement(dontHandleTest);
@@ -1024,6 +1034,10 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                             new Cm::Ast::IdentifierNode(catchNode.GetSpan(), exPtrVarName));
                         constructExPtrStatement->AddArgument(new Cm::Ast::CastNode(catchNode.GetSpan(), exPtrType->Clone(cloneContext), callGetExceptionAddrExpr));
                         handlerBlock->AddStatement(constructExPtrStatement);
+                        Cm::Ast::AssignmentStatementNode* resetExCodeStatement = new Cm::Ast::AssignmentStatementNode(catchNode.GetSpan(), 
+                            new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()),
+                            new Cm::Ast::IntLiteralNode(catchNode.GetSpan(), 0));
+                        handlerBlock->AddStatement(resetExCodeStatement);
                         Cm::Ast::DerivationList constRefDerivation;
                         constRefDerivation.Add(Cm::Ast::Derivation::const_);
                         constRefDerivation.Add(Cm::Ast::Derivation::reference);
@@ -1079,6 +1093,19 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
     {
         throw Cm::Core::Exception("exception type expression has no type", catchNode.GetSpan());
     }
+    CurrentFunction()->PopHandler();
+}
+
+ExitTryBinder::ExitTryBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+    Cm::BoundTree::BoundFunction* currentFunction_, Binder& binder_) : StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+{
+}
+
+void ExitTryBinder::Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode)
+{
+    Cm::Ast::TryStatementNode* tryNode = exitTryStatementNode.TryNode();
+    Cm::BoundTree::BoundCompoundStatement* tryCompound = CurrentFunction()->GetTryCompound(tryNode);
+    binder.AddBoundStatement(new Cm::BoundTree::BoundExitBlocksStatement(&exitTryStatementNode, tryCompound));
 }
 
 } } // namespace Cm::Bind

@@ -366,7 +366,8 @@ Node* StaticConstructorNode::Clone(CloneContext& cloneContext) const
     {
         if (cloneContext.InstantiateClassNode())
         {
-            clone->SetBodySource(Body());
+            Cm::Ast::CloneContext bodyCloneContext;
+            clone->SetBodySource(static_cast<Cm::Ast::CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
         }
         else
         {
@@ -462,7 +463,8 @@ Node* ConstructorNode::Clone(CloneContext& cloneContext) const
     {
         if (cloneContext.InstantiateClassNode())
         {
-            clone->SetBodySource(Body());
+            Cm::Ast::CloneContext bodyCloneContext;
+            clone->SetBodySource(static_cast<Cm::Ast::CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
         }
         else
         {
@@ -560,7 +562,8 @@ Node* DestructorNode::Clone(CloneContext& cloneContext) const
     {
         if (Body())
         {
-            clone->SetBodySource(Body());
+            Cm::Ast::CloneContext bodyCloneContext;
+            clone->SetBodySource(static_cast<Cm::Ast::CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
         }
     }
     return clone;
@@ -649,7 +652,8 @@ Node* MemberFunctionNode::Clone(CloneContext& cloneContext) const
     {
         if (cloneContext.InstantiateClassNode())
         {
-            clone->SetBodySource(Body());
+            Cm::Ast::CloneContext bodyCloneContext;
+            clone->SetBodySource(static_cast<Cm::Ast::CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
         }
         else
         {
@@ -748,7 +752,8 @@ Node* ConversionFunctionNode::Clone(CloneContext& cloneContext) const
     {
         if (Body())
         {
-            clone->SetBodySource(Body());
+            Cm::Ast::CloneContext bodyCloneContext;
+            clone->SetBodySource(static_cast<Cm::Ast::CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
         }
     }
     if (IsConst())

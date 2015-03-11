@@ -46,7 +46,7 @@ public:
     Cm::Core::ExternalConstantRepository& ExternalConstantRepository() { return externalConstantRepository; }
     void SetSynthesizedClassFunRepository(Cm::Core::SynthesizedClassFunRepository* synthesizedClassFunRepository_);
     Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return *synthesizedClassFunRepository; }
-    void SetClassTemplateRepostory(Cm::Core::ClassTemplateRepository* classTemplateRepository_);
+    void SetClassTemplateRepository(Cm::Core::ClassTemplateRepository* classTemplateRepository_);
     Cm::Core::ClassTemplateRepository& ClassTemplateRepository() { return *classTemplateRepository; }
     Cm::Core::FunctionTemplateRepository& FunctionTemplateRepository() { return functionTemplateRepository; }
     Cm::Core::ConceptRepository& ConceptRepository() { return conceptRepository; }

@@ -38,7 +38,7 @@ BoundCompoundStatement* BoundStatement::CompoundParent() const
     }
     if (!p)
     {
-        throw std::runtime_error("compound parent not set");
+        return nullptr;
     }
     return static_cast<BoundCompoundStatement*>(p);
 }
@@ -175,6 +175,15 @@ BoundEndTryStatement::BoundEndTryStatement(Cm::Ast::Node* syntaxNode_) : BoundSt
 }
 
 void BoundEndTryStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundExitBlocksStatement::BoundExitBlocksStatement(Cm::Ast::Node* syntaxNode_, BoundCompoundStatement* targetBlock_) : BoundStatement(syntaxNode_), targetBlock(targetBlock_)
+{
+}
+
+void BoundExitBlocksStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }
@@ -362,7 +371,7 @@ void BoundContinueStatement::Accept(Visitor& visitor)
 }
 
 BoundGotoStatement::BoundGotoStatement(Cm::Ast::Node* syntaxNode_, const std::string& targetLabel_) : 
-    BoundStatement(syntaxNode_), targetLabel(targetLabel_), targetStatement(nullptr), targetCompoundParent(nullptr)
+    BoundStatement(syntaxNode_), targetLabel(targetLabel_), targetStatement(nullptr), targetCompoundParent(nullptr), isExceptionHandlingGoto(false)
 {
 }
 
