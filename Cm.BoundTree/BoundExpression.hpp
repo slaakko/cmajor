@@ -53,6 +53,19 @@ private:
     Cm::Sym::TypeSymbol* type;
 };
 
+class TraceCallInfo
+{
+public:
+    TraceCallInfo(BoundExpression* fun_, BoundExpression* file_, BoundExpression* line_);
+    BoundExpression* Fun() const { return fun.get(); }
+    BoundExpression* File() const { return file.get(); }
+    BoundExpression* Line() const { return line.get(); }
+private:
+    std::unique_ptr<BoundExpression> fun;
+    std::unique_ptr<BoundExpression> file;
+    std::unique_ptr<BoundExpression> line;
+};
+
 class BoundExpressionList
 {
 public:
@@ -263,10 +276,13 @@ public:
     void Accept(Visitor& visitor) override;
     void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
     Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
+    void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
+    TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* fun;
     Cm::Sym::LocalVariableSymbol* classObjectResultVar;
+    std::unique_ptr<TraceCallInfo> traceCallInfo;
 };
 
 class BoundBinaryOp : public BoundExpression
@@ -281,11 +297,14 @@ public:
     void Accept(Visitor& visitor) override;
     void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
     Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
+    void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
+    TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
 private:
     std::unique_ptr<BoundExpression> left;
     std::unique_ptr<BoundExpression> right;
     Cm::Sym::FunctionSymbol* fun;
     Cm::Sym::LocalVariableSymbol* classObjectResultVar;
+    std::unique_ptr<TraceCallInfo> traceCallInfo;
 };
 
 class BoundPostfixIncDecExpr : public BoundExpression
@@ -329,11 +348,14 @@ public:
     Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
     void SetTemporary(BoundLocalVariable* temporary_) { temporary.reset(temporary_); }
     BoundLocalVariable* GetTemporary() const { return temporary.get(); }
+    void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
+    TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
 private:
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* fun;
     Cm::Sym::LocalVariableSymbol* classObjectResultVar;
     std::unique_ptr<BoundLocalVariable> temporary;
+    std::unique_ptr<TraceCallInfo> traceCallInfo;
 };
 
 class BoundBooleanBinaryExpression : public BoundExpression

@@ -19,6 +19,10 @@ BoundExpression::BoundExpression(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxN
 {
 }
 
+TraceCallInfo::TraceCallInfo(BoundExpression* fun_, BoundExpression* file_, BoundExpression* line_) : fun(fun_), file(file_), line(line_)
+{
+}
+
 BoundExpressionList::BoundExpressionList()
 {
 }
@@ -220,6 +224,11 @@ void BoundUnaryOp::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+void BoundUnaryOp::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+{
+    traceCallInfo.reset(traceCallInfo_);
+}
+
 BoundBinaryOp::BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(syntaxNode_), left(left_), right(right_), fun(nullptr), 
     classObjectResultVar(nullptr)
 {
@@ -230,6 +239,11 @@ void BoundBinaryOp::Accept(Visitor& visitor)
     left->Accept(visitor);
     right->Accept(visitor);
     visitor.Visit(*this);
+}
+
+void BoundBinaryOp::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+{
+    traceCallInfo.reset(traceCallInfo_);
 }
 
 BoundPostfixIncDecExpr::BoundPostfixIncDecExpr(Cm::Ast::Node* syntaxNode_, BoundExpression* value_, BoundStatement* statement_) : BoundExpression(syntaxNode_), value(value_), statement(statement_)
@@ -263,6 +277,11 @@ BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpression
 void BoundFunctionCall::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+void BoundFunctionCall::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+{
+    traceCallInfo.reset(traceCallInfo_);
 }
 
 BoundBooleanBinaryExpression::BoundBooleanBinaryExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(syntaxNode_), left(left_), right(right_)

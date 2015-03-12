@@ -39,6 +39,8 @@ private:
     Cm::Ast::CompileUnitNode* currentCompileUnit;
     std::unordered_set<Ir::Intf::Function*> externalFunctions;
     Cm::Core::StaticMemberVariableRepository staticMemberVariableRepository;
+    Ir::Intf::Function* enterFrameIrFun;
+    Ir::Intf::Function* leaveFrameIrFun;
 };
 
 } } // namespace Cm::Emit

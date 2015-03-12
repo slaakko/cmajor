@@ -167,6 +167,8 @@ private:
     void BindArrow(Cm::Ast::Node* node, const std::string& memberId);
 };
 
+Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span);
+
 } } // namespace Cm::Bind
 
 #endif // CM_BIND_EXPRESSION_INCLUDED

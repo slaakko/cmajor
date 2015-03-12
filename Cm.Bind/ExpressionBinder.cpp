@@ -31,6 +31,7 @@
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/BasicType.hpp>
+#include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Bind {
@@ -223,6 +224,10 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
         Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
         op->SetClassObjectResultVar(classObjectResultVar);
     }
+    if (!fun->IsBasicTypeOp())
+    {
+        op->SetTraceCallInfo(CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), node->GetSpan()));
+    }
     boundExpressionStack.Push(op);
 }
 
@@ -283,6 +288,10 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     {
         Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
         op->SetClassObjectResultVar(classObjectResultVar);
+    }
+    if (!fun->IsBasicTypeOp())
+    {
+        op->SetTraceCallInfo(CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), node->GetSpan()));
     }
     boundExpressionStack.Push(op);
 }
@@ -1082,6 +1091,10 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
         boundTemporary->SetType(type);
         functionCall->SetTemporary(boundTemporary);
+        if (!fun->IsBasicTypeOp())
+        {
+            functionCall->SetTraceCallInfo(CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), node->GetSpan()));
+        }
         boundExpressionStack.Push(functionCall);
         return;
     }
@@ -1104,6 +1117,10 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     else if (returnClassObjectByValue)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
+    }
+    if (!fun->IsBasicTypeOp())
+    {
+        functionCall->SetTraceCallInfo(CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), node->GetSpan()));
     }
     boundExpressionStack.Push(functionCall);
 }
@@ -1818,6 +1835,26 @@ void ExpressionBinder::PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const
             }
         }
     }
+}
+
+Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span)
+{
+    std::string funFullName = fun->FullName();
+    Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);
+    int funId = boundCompileUnit.StringRepository().Install(funFullName);
+    Cm::BoundTree::BoundStringLiteral* funLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, funId);
+    funLiteral->SetType(constCharPtrType);
+    std::string filePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(span.FileIndex());
+    int fileId = boundCompileUnit.StringRepository().Install(filePath);
+    Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, fileId);
+    fileLiteral->SetType(constCharPtrType);
+    Cm::Sym::TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+    Cm::Sym::Value* value = new Cm::Sym::IntValue(span.LineNumber());
+    Cm::BoundTree::BoundLiteral* lineLiteral = new Cm::BoundTree::BoundLiteral(nullptr);
+    lineLiteral->SetValue(value);
+    lineLiteral->SetType(intType);
+    Cm::BoundTree::TraceCallInfo* traceCallInfo = new Cm::BoundTree::TraceCallInfo(funLiteral, fileLiteral, lineLiteral);
+    return traceCallInfo;
 }
 
 } } // namespace Cm::Bind

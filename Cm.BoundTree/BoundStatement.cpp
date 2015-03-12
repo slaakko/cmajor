@@ -143,6 +143,11 @@ void BoundFunctionCallStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+void BoundFunctionCallStatement::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+{
+    traceCallInfo.reset(traceCallInfo_);
+}
+
 BoundReturnStatement::BoundReturnStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_), ctor(nullptr), returnType(nullptr)
 {
 }
@@ -159,6 +164,11 @@ void BoundReturnStatement::Accept(Visitor& visitor)
         expression->Accept(visitor);
     }
     visitor.Visit(*this);
+}
+
+void BoundReturnStatement::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+{
+    traceCallInfo.reset(traceCallInfo_);
 }
 
 BoundBeginTryStatement::BoundBeginTryStatement(Cm::Ast::Node* syntaxNode_, int firstCatchId_) : BoundStatement(syntaxNode_), firstCatchId(firstCatchId_)
@@ -245,6 +255,11 @@ void BoundConstructionStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+void BoundConstructionStatement::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+{
+    traceCallInfo.reset(traceCallInfo_);
+}
+
 BoundDestructionStatement::BoundDestructionStatement(Cm::Ast::Node* syntaxNode_, Ir::Intf::Object* object_, Cm::Sym::FunctionSymbol* destructor_) :
     BoundStatement(syntaxNode_), object(object_), destructor(destructor_)
 {
@@ -265,6 +280,11 @@ void BoundAssignmentStatement::Accept(Visitor& visitor)
     left->Accept(visitor);
     right->Accept(visitor);
     visitor.Visit(*this);
+}
+
+void BoundAssignmentStatement::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+{
+    traceCallInfo.reset(traceCallInfo_);
 }
 
 BoundSimpleStatement::BoundSimpleStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
