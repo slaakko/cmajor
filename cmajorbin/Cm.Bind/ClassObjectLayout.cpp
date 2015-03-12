@@ -185,6 +185,7 @@ void GenerateClassInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUni
     {
         Cm::BoundTree::BoundExpressionList arguments;
         Cm::BoundTree::BoundFunctionCallStatement* staticConstructorCallStatement = new Cm::BoundTree::BoundFunctionCallStatement(classType->StaticConstructor(), std::move(arguments));
+        staticConstructorCallStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), constructorNode->GetSpan()));
         int classObjectLayoutFunIndex = currentFunction->GetClassObjectLayoutFunIndex();
         currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, staticConstructorCallStatement);
         ++classObjectLayoutFunIndex;
@@ -393,6 +394,7 @@ void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit
         arguments.Add(boundMemberVariable);
         PrepareFunctionArguments(memberDtor, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
         Cm::BoundTree::BoundFunctionCallStatement* destroyMemberVariableStatement = new Cm::BoundTree::BoundFunctionCallStatement(memberDtor, std::move(arguments));
+        destroyMemberVariableStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), destructorNode->GetSpan()));
         currentFunction->Body()->AddStatement(destroyMemberVariableStatement);
     }
 }
@@ -415,6 +417,7 @@ void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boun
     arguments.Add(thisAsBase); 
     PrepareFunctionArguments(baseClassDtor, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
     Cm::BoundTree::BoundFunctionCallStatement* destroyBaseClassObjectStatement = new Cm::BoundTree::BoundFunctionCallStatement(baseClassDtor, std::move(arguments));
+    destroyBaseClassObjectStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), destructorNode->GetSpan()));
     currentFunction->Body()->AddStatement(destroyBaseClassObjectStatement);
 }
 

@@ -9,6 +9,7 @@
 
 #ifndef CM_EMIT_FUNCTION_EMITTER_INCLUDED
 #define CM_EMIT_FUNCTION_EMITTER_INCLUDED
+#include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Core/GenData.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
@@ -81,7 +82,7 @@ public:
     FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
         Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
         std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, 
-        Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_);
+        Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, Ir::Intf::Function* enterFrameFun_, Ir::Intf::Function* leaveFrameFun_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
@@ -175,6 +176,8 @@ private:
     SwitchCaseConstantMap* currentSwitchCaseConstantMap;
     Ir::Intf::LabelObject* switchCaseLabel;
     std::vector<Ir::Intf::Object*> switchCaseConstants;
+    Ir::Intf::Function* enterFrameFun;
+    Ir::Intf::Function* leaveFrameFun;
     void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
     void ExitCompound(Cm::Core::GenResult& result, const CompoundDestructionStack& compoundDestructionStack, bool& first);
     void ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromCompound, Cm::BoundTree::BoundCompoundStatement* targetCompound, Cm::Core::GenResult& result);
@@ -185,10 +188,12 @@ private:
     void PopContinueTargetStatement();
     void MakePlainValueResult(Cm::Sym::TypeSymbol* plainType, Cm::Core::GenResult& result);
     void ExecutePostfixIncDecStatements(Cm::Core::GenResult& result);
-    void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
-    void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result);
-    void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
+    void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
+    void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
+    void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
+    void CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
+    void CallLeaveFrame();
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol);
     void GenerateTestExceptionResult();
     void CreateLandingPad(int landingPadId);

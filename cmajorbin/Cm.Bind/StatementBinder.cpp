@@ -76,6 +76,10 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     constructionStatement->InsertLocalVariableToArguments();
     constructionStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
     constructionStatement->ApplyConversions(conversions, CurrentFunction());
+    if (!ctor->IsBasicTypeOp())
+    {
+        constructionStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), constructionStatementNode.GetSpan()));
+    }
     PrepareFunctionArguments(ctor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository());
     if (localVariableType->IsReferenceType())
     {
@@ -133,6 +137,10 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
         right->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
     }
     Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(&assignmentStatementNode, left, right, assignment);
+    if (!assignment->IsBasicTypeOp())
+    {
+        assignmentStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), assignmentStatementNode.GetSpan()));
+    }
     SetResult(assignmentStatement);
 }
 
@@ -216,6 +224,10 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                     conversionType, OverloadResolutionFlags::none);
                 PrepareFunctionSymbol(ctor, returnStatementNode.GetSpan());
                 returnStatement->SetConstructor(ctor);
+                if (!ctor->IsBasicTypeOp())
+                {
+                    returnStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), returnStatementNode.GetSpan()));
+                }
                 if (conversions.size() != 2)
                 {
                     throw std::runtime_error("wrong number of conversions");
@@ -611,6 +623,7 @@ void DestroyStatementBinder::EndVisit(Cm::Ast::DestroyStatementNode& destroyStat
                 Cm::BoundTree::BoundExpressionList arguments;
                 arguments.Add(ptr.release());
                 Cm::BoundTree::BoundFunctionCallStatement* destructionStatement = new Cm::BoundTree::BoundFunctionCallStatement(destructor, std::move(arguments));
+                destructionStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), destroyStatementNode.GetSpan()));
                 SetResult(destructionStatement);
                 return;
             }
@@ -645,6 +658,7 @@ void DeleteStatementBinder::EndVisit(Cm::Ast::DeleteStatementNode& deleteStateme
                 Cm::BoundTree::BoundExpressionList arguments;
                 arguments.Add(ptr.release());
                 Cm::BoundTree::BoundFunctionCallStatement* destructionStatement = new Cm::BoundTree::BoundFunctionCallStatement(destructor, std::move(arguments));
+                destructionStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), deleteStatementNode.GetSpan()));
                 SetResult(destructionStatement);
                 resultSet = true;
             }

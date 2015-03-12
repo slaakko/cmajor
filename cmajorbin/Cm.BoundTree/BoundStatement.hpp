@@ -135,9 +135,12 @@ public:
     Cm::Sym::FunctionSymbol* Function() const { return function; }
     BoundExpressionList& Arguments() { return arguments; }
     void Accept(Visitor& visitor) override;
+    void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
+    TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
 private:
     Cm::Sym::FunctionSymbol* function;
     BoundExpressionList arguments;
+    std::unique_ptr<TraceCallInfo> traceCallInfo;
 };
 
 class BoundReturnStatement : public BoundStatement
@@ -152,10 +155,13 @@ public:
     bool ReturnsValue() const { return expression != nullptr; }
     Cm::Sym::TypeSymbol* GetReturnType() const { return returnType; }
     void SetReturnType(Cm::Sym::TypeSymbol* returnType_) { returnType = returnType_; }
+    void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
+    TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
 private:
     std::unique_ptr<BoundExpression> expression;
     Cm::Sym::FunctionSymbol* ctor;
     Cm::Sym::TypeSymbol* returnType;
+    std::unique_ptr<TraceCallInfo> traceCallInfo;
 };
 
 class BoundBeginTryStatement : public BoundStatement
@@ -199,10 +205,13 @@ public:
     void ApplyConversions(const std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundFunction* currentFunction);
     void Accept(Visitor& visitor) override;
     BoundExpressionList& Arguments() { return arguments; }
+    void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
+    TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
 private:
     Cm::Sym::LocalVariableSymbol* localVariable;
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* ctor;
+    std::unique_ptr<TraceCallInfo> traceCallInfo;
 };
 
 class BoundDestructionStatement : public BoundStatement
@@ -225,10 +234,13 @@ public:
     Cm::BoundTree::BoundExpression* Left() const { return left.get(); }
     Cm::BoundTree::BoundExpression* Right() const { return right.get(); }
     Cm::Sym::FunctionSymbol* Assignment() const { return assignment; }
+    void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
+    TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
 private:
     std::unique_ptr<BoundExpression> left;
     std::unique_ptr<BoundExpression> right;
     Cm::Sym::FunctionSymbol* assignment;
+    std::unique_ptr<TraceCallInfo> traceCallInfo;
 };
 
 class BoundSimpleStatement : public BoundStatement
