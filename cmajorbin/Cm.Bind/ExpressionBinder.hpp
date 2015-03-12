@@ -93,7 +93,7 @@ public:
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
     void Visit(Cm::Ast::ThisNode& thisNode) override;
     void Visit(Cm::Ast::BaseNode& baseNode) override;
-    void Visit(Cm::Ast::TypeNameNode& typeNameNode) {}
+    void Visit(Cm::Ast::TypeNameNode& typeNameNode) override;
 
     void Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode) override;
     void Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode) override;

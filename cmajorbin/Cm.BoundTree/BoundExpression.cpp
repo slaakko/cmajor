@@ -158,15 +158,6 @@ void BoundTypeExpression::Accept(Visitor& visitor)
     throw std::runtime_error("member function not applicable");
 }
 
-BoundNamespaceExpression::BoundNamespaceExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::NamespaceSymbol* namespaceSymbol_) : BoundExpression(syntaxNode_), namespaceSymbol(namespaceSymbol_)
-{
-}
-
-void BoundNamespaceExpression::Accept(Visitor& visitor)
-{
-    throw std::runtime_error("member function not applicable");
-}
-
 BoundConversion::BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_) : BoundExpression(syntaxNode_), operand(operand_), conversionFun(conversionFun_)
 {
 }
@@ -198,6 +189,25 @@ BoundSizeOfExpression::BoundSizeOfExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym
 void BoundSizeOfExpression::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundDynamicTypeNameExpression::BoundDynamicTypeNameExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* subject_, Cm::Sym::ClassTypeSymbol* classType_) : 
+    BoundExpression(syntaxNode_), subject(subject_), classType(classType_)
+{
+}
+
+void BoundDynamicTypeNameExpression::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundNamespaceExpression::BoundNamespaceExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::NamespaceSymbol* namespaceSymbol_) : BoundExpression(syntaxNode_), namespaceSymbol(namespaceSymbol_)
+{
+}
+
+void BoundNamespaceExpression::Accept(Visitor& visitor)
+{
+    throw std::runtime_error("member function not applicable");
 }
 
 BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_) : BoundExpression(syntaxNode_), operand(operand_), fun(nullptr), classObjectResultVar(nullptr)

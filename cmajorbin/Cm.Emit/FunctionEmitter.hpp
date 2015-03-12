@@ -95,6 +95,7 @@ public:
     void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
     void Visit(Cm::BoundTree::BoundCast& boundCast) override;
     void Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExpr) override;
+    void Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamiceTypeNameExpression) override;
     void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;

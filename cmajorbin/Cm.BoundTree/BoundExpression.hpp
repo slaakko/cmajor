@@ -239,6 +239,18 @@ private:
     Cm::Sym::TypeSymbol* type;
 };
 
+class BoundDynamicTypeNameExpression : public BoundExpression
+{
+public:
+    BoundDynamicTypeNameExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* subject_, Cm::Sym::ClassTypeSymbol* classType_);
+    void Accept(Visitor& visitor) override;
+    BoundExpression* Subject() const { return subject.get(); }
+    Cm::Sym::ClassTypeSymbol* ClassType() const { return classType; }
+private:
+    std::unique_ptr<BoundExpression> subject;
+    Cm::Sym::ClassTypeSymbol* classType;
+};
+
 class BoundUnaryOp : public BoundExpression
 {
 public:

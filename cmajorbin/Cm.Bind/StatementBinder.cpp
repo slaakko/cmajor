@@ -726,6 +726,13 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                     Cm::Ast::ConstructionStatementNode* constructEx = new Cm::Ast::ConstructionStatementNode(throwStatementNode.GetSpan(), exPtrType, 
                         new Cm::Ast::IdentifierNode(throwStatementNode.GetSpan(), exVarName));
                     constructEx->AddArgument(newEx);
+                    Cm::Ast::InvokeNode* setExceptionTypeExpr = new Cm::Ast::InvokeNode(throwStatementNode.GetSpan(),
+                        new Cm::Ast::ArrowNode(throwStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(throwStatementNode.GetSpan(), exVarName),
+                        new Cm::Ast::IdentifierNode(throwStatementNode.GetSpan(), "SetExceptionType")));
+                    Cm::Ast::DerefNode* derefExVar = new Cm::Ast::DerefNode(throwStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(throwStatementNode.GetSpan(), exVarName));
+                    Cm::Ast::TypeNameNode* typeNameNode = new Cm::Ast::TypeNameNode(throwStatementNode.GetSpan(), derefExVar);
+                    setExceptionTypeExpr->AddArgument(typeNameNode);
+                    Cm::Ast::SimpleStatementNode* setExceptionTypeStatement = new Cm::Ast::SimpleStatementNode(throwStatementNode.GetSpan(), setExceptionTypeExpr);
                     Cm::Ast::InvokeNode* setFileExpr = new Cm::Ast::InvokeNode(throwStatementNode.GetSpan(),
                         new Cm::Ast::ArrowNode(throwStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(throwStatementNode.GetSpan(), exVarName),
                         new Cm::Ast::IdentifierNode(throwStatementNode.GetSpan(), "SetFile")));
@@ -817,6 +824,7 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                     throwActions->SetLabelNode(throwStatementNode.Label());
                     throwActions->SetParent(functionNode);
                     throwActions->AddStatement(constructEx);
+                    throwActions->AddStatement(setExceptionTypeStatement);
                     throwActions->AddStatement(setFileStatement);
                     throwActions->AddStatement(setLineStatement);
                     throwActions->AddStatement(beginCaptureCallStackStatement);
