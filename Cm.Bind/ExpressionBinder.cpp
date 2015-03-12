@@ -659,6 +659,7 @@ void ExpressionBinder::Visit(Cm::Ast::BoolNode& boolNode)
 {
     Cm::Sym::TypeSymbol* boolTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&boolNode, boolTypeSymbol);
+    typeExpression->SetType(boolTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -666,6 +667,7 @@ void ExpressionBinder::Visit(Cm::Ast::SByteNode& sbyteNode)
 {
     Cm::Sym::TypeSymbol* sbyteTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::sbyteId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&sbyteNode, sbyteTypeSymbol);
+    typeExpression->SetType(sbyteTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -673,6 +675,7 @@ void ExpressionBinder::Visit(Cm::Ast::ByteNode& byteNode)
 {
     Cm::Sym::TypeSymbol* byteTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::byteId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&byteNode, byteTypeSymbol);
+    typeExpression->SetType(byteTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -680,6 +683,7 @@ void ExpressionBinder::Visit(Cm::Ast::ShortNode& shortNode)
 {
     Cm::Sym::TypeSymbol* shortTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&shortNode, shortTypeSymbol);
+    typeExpression->SetType(shortTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -687,6 +691,7 @@ void ExpressionBinder::Visit(Cm::Ast::UShortNode& ushortNode)
 {
     Cm::Sym::TypeSymbol* ushortTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&ushortNode, ushortTypeSymbol);
+    typeExpression->SetType(ushortTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -694,6 +699,7 @@ void ExpressionBinder::Visit(Cm::Ast::IntNode& inttNode)
 {
     Cm::Sym::TypeSymbol* intTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&inttNode, intTypeSymbol);
+    typeExpression->SetType(intTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -701,6 +707,7 @@ void ExpressionBinder::Visit(Cm::Ast::UIntNode& uinttNode)
 {
     Cm::Sym::TypeSymbol* uintTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&uinttNode, uintTypeSymbol);
+    typeExpression->SetType(uintTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -708,6 +715,7 @@ void ExpressionBinder::Visit(Cm::Ast::LongNode& longNode)
 {
     Cm::Sym::TypeSymbol* longTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::longId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&longNode, longTypeSymbol);
+    typeExpression->SetType(longTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -715,6 +723,7 @@ void ExpressionBinder::Visit(Cm::Ast::ULongNode& ulongNode)
 {
     Cm::Sym::TypeSymbol* ulongTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&ulongNode, ulongTypeSymbol);
+    typeExpression->SetType(ulongTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -722,6 +731,7 @@ void ExpressionBinder::Visit(Cm::Ast::FloatNode& floatNode)
 {
     Cm::Sym::TypeSymbol* floatTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::floatId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&floatNode, floatTypeSymbol);
+    typeExpression->SetType(floatTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -729,6 +739,7 @@ void ExpressionBinder::Visit(Cm::Ast::DoubleNode& doubleNode)
 {
     Cm::Sym::TypeSymbol* doubleTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::doubleId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&doubleNode, doubleTypeSymbol);
+    typeExpression->SetType(doubleTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -736,6 +747,7 @@ void ExpressionBinder::Visit(Cm::Ast::CharNode& charNode)
 {
     Cm::Sym::TypeSymbol* charTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::charId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&charNode, charTypeSymbol);
+    typeExpression->SetType(charTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -743,6 +755,7 @@ void ExpressionBinder::Visit(Cm::Ast::VoidNode& voidNode)
 {
     Cm::Sym::TypeSymbol* voidTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&voidNode, voidTypeSymbol);
+    typeExpression->SetType(voidTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -751,6 +764,7 @@ void ExpressionBinder::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
     Cm::Sym::TypeSymbol* baseType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), derivedTypeExprNode.BaseTypeExprNode());
     Cm::Sym::TypeSymbol* derivedTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan());
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&derivedTypeExprNode, derivedTypeSymbol);
+    typeExpression->SetType(derivedTypeSymbol);
     boundExpressionStack.Push(typeExpression);
 }
 
@@ -1412,6 +1426,7 @@ void ExpressionBinder::BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::Class
         }
     }
     Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, classTypeSymbol);
+    boundType->SetType(classTypeSymbol);
     boundExpressionStack.Push(boundType);
 }
 
@@ -1424,6 +1439,7 @@ void ExpressionBinder::BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::Names
 void ExpressionBinder::BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTypeSymbol* enumTypeSymbol)
 {
     Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, enumTypeSymbol);
+    boundType->SetType(enumTypeSymbol);
     boundExpressionStack.Push(boundType);
 }
 
@@ -1747,6 +1763,29 @@ void ExpressionBinder::Visit(Cm::Ast::BaseNode& baseNode)
     }
 }
 
+void ExpressionBinder::Visit(Cm::Ast::TypeNameNode& typeNameNode)
+{
+    Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(typeNameNode.GetSpan());
+    typeNameNode.Subject()->Accept(*this);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> subject(Pop());
+    Cm::Sym::TypeSymbol* subjectType = subject->GetType();
+    Cm::Sym::TypeSymbol* plainType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(subjectType);
+    if (plainType->IsClassTypeSymbol())
+    {
+        Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(plainType);
+        if (classType->IsVirtual())
+        {
+            Cm::BoundTree::BoundDynamicTypeNameExpression* boundDynamicTypeNameExpression = new Cm::BoundTree::BoundDynamicTypeNameExpression(&typeNameNode, subject.release(), classType);
+            boundDynamicTypeNameExpression->SetType(constCharPtrType);
+            boundExpressionStack.Push(boundDynamicTypeNameExpression);
+            return;
+        }
+    }
+    int id = boundCompileUnit.StringRepository().Install(subjectType->FullName());
+    Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(&typeNameNode, id);
+    literalNode->SetType(constCharPtrType);
+    boundExpressionStack.Push(literalNode);
+}
 
 void ExpressionBinder::GenerateTrueExpression(Cm::Ast::Node* node)
 {

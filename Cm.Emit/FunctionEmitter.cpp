@@ -515,6 +515,55 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExp
     resultStack.Push(std::move(result));
 }
 
+void FunctionEmitter::Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamiceTypeNameExpression)
+{
+    Cm::Core::GenResult result(emitter.get(), genFlags);
+    boundDynamiceTypeNameExpression.Subject()->Accept(*this);
+    Cm::Core::GenResult subjectResult = resultStack.Pop();
+    Ir::Intf::LabelObject* resultLabel = subjectResult.GetLabel();
+    if (resultLabel)
+    {
+        result.SetLabel(resultLabel);
+    }
+    Cm::Sym::ClassTypeSymbol* classType = boundDynamiceTypeNameExpression.ClassType();
+    Ir::Intf::Type* classTypePtrType = Cm::IrIntf::Pointer(classType->GetIrType(), 1);
+    emitter->Own(classTypePtrType);
+    Ir::Intf::Object* objectPtr = subjectResult.MainObject();
+    Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1);
+    emitter->Own(i8Ptr);
+    Ir::Intf::Type* i8PtrPtr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 2);
+    emitter->Own(i8PtrPtr);
+    Ir::Intf::Object* vtblPtrContainerPtr = objectPtr;
+    int vptrIndex = classType->VPtrIndex();
+    if (vptrIndex == -1)
+    {
+        Cm::Sym::ClassTypeSymbol* vptrContainerClass = classType->VPtrContainerClass();
+        vptrIndex = vptrContainerClass->VPtrIndex();
+        Ir::Intf::Type* containerPtrType = Cm::IrIntf::Pointer(vptrContainerClass->GetIrType(), 1);
+        emitter->Own(containerPtrType);
+        Ir::Intf::RegVar* containerPtr = Cm::IrIntf::CreateTemporaryRegVar(containerPtrType);
+        emitter->Own(containerPtr);
+        emitter->Emit(Cm::IrIntf::Bitcast(classTypePtrType, containerPtr, objectPtr, containerPtrType));
+        vtblPtrContainerPtr = containerPtr;
+    }
+    Ir::Intf::MemberVar* vptr = Cm::IrIntf::CreateMemberVar(Cm::IrIntf::GetVPtrVarName(), vtblPtrContainerPtr, vptrIndex, i8PtrPtr);
+    emitter->Own(vptr);
+    Ir::Intf::RegVar* loadedVptr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(loadedVptr);
+    Cm::IrIntf::Assign(*emitter, i8PtrPtr, vptr, loadedVptr);
+    Ir::Intf::RegVar* typenameI8PtrPtr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(typenameI8PtrPtr);
+    Ir::Intf::Object* zero = Ir::Intf::GetFactory()->GetI16()->CreateDefaultValue();
+    emitter->Own(zero);
+    emitter->Emit(Cm::IrIntf::GetElementPtr(i8PtrPtr, typenameI8PtrPtr, loadedVptr, zero));
+    Ir::Intf::RegVar* loadedTypenameI8Ptr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(loadedTypenameI8Ptr);
+    Cm::IrIntf::Assign(*emitter, i8Ptr, typenameI8PtrPtr, loadedTypenameI8Ptr);
+    result.SetMainObject(loadedTypenameI8Ptr);
+    result.Merge(subjectResult);
+    resultStack.Push(std::move(result));
+}
+
 void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 {
     Cm::Core::GenResult result(emitter.get(), genFlags);
