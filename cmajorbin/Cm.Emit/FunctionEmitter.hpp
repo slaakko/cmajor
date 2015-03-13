@@ -79,10 +79,11 @@ private:
 class FunctionEmitter : public Cm::BoundTree::Visitor
 {
 public:
-    FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
+    FunctionEmitter(Cm::Core::Emitter* emitter_, Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
         Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
         std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, 
-        Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, Ir::Intf::Function* enterFrameFun_, Ir::Intf::Function* leaveFrameFun_);
+        Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, 
+		Cm::Sym::FunctionSymbol* leaveFrameFun_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
@@ -137,8 +138,8 @@ public:
     void Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCaseStatement) override;
     void Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
 private:
+	Cm::Core::Emitter* emitter;
     Cm::Util::CodeFormatter& codeFormatter;
-    std::unique_ptr<Cm::Core::Emitter> emitter;
     Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::GenFlags genFlags;
     Cm::Core::GenResult compoundResult;
@@ -176,9 +177,9 @@ private:
     SwitchCaseConstantMap* currentSwitchCaseConstantMap;
     Ir::Intf::LabelObject* switchCaseLabel;
     std::vector<Ir::Intf::Object*> switchCaseConstants;
-    Ir::Intf::Function* enterFrameFun;
-    Ir::Intf::Function* leaveFrameFun;
-    void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
+	Cm::Sym::FunctionSymbol* enterFrameFun;
+	Cm::Sym::FunctionSymbol* leaveFrameFun;
+	void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
     void ExitCompound(Cm::Core::GenResult& result, const CompoundDestructionStack& compoundDestructionStack, bool& first);
     void ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromCompound, Cm::BoundTree::BoundCompoundStatement* targetCompound, Cm::Core::GenResult& result);
     void ExitFunction(Cm::Core::GenResult& result);

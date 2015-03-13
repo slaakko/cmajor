@@ -302,6 +302,7 @@ public:
     GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_);
     GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, Ir::Intf::Object* index1_);
     GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, const std::vector<Ir::Intf::Object*>& indeces_);
+	~GetElementPtrInst();
     virtual void SetInbounds() { inbounds = true; }
     virtual std::string ToString() const;
     virtual bool ReturnsResult() const { return true; }

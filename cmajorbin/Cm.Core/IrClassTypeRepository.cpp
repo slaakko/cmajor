@@ -11,6 +11,7 @@
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <Llvm.Ir/Type.hpp>
 
 namespace Cm { namespace Core {
 
@@ -94,9 +95,10 @@ void IrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, C
             ++index;
         }
     }
-    std::unique_ptr<Ir::Intf::Type> irTypeDeclaration(Cm::IrIntf::Structure(tagName, memberTypes, memberNames));
-    std::string typeDeclaration = classType->GetIrType()->Name() + " = type " + irTypeDeclaration->Name();
-    codeFormatter.WriteLine(typeDeclaration);
+	std::unique_ptr<Ir::Intf::Type> irTypeDeclaration(Cm::IrIntf::Structure(tagName, memberTypes, memberNames));
+	std::string typeDeclaration = classType->GetIrType()->Name() + " = type " + irTypeDeclaration->Name();
+	codeFormatter.WriteLine(typeDeclaration);
+
 }
 
 void IrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, 

@@ -14,6 +14,7 @@
 #include <Cm.Core/IrFunctionRepository.hpp>
 #include <Cm.Core/StaticMemberVariableRepository.hpp>
 #include <Cm.Core/ExternalConstantRepository.hpp>
+#include <Cm.Core/GenData.hpp>
 #include <fstream>
 
 namespace Cm { namespace Emit {
@@ -28,7 +29,8 @@ public:
     void BeginVisit(Cm::BoundTree::BoundClass& boundClass) override;
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 private:
-    Cm::Sym::TypeRepository& typeRepository;
+	std::unique_ptr<Cm::Core::Emitter> emitter;
+	Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;
     Cm::Core::StringRepository& stringRepository;
@@ -39,8 +41,8 @@ private:
     Cm::Ast::CompileUnitNode* currentCompileUnit;
     std::unordered_set<Ir::Intf::Function*> externalFunctions;
     Cm::Core::StaticMemberVariableRepository staticMemberVariableRepository;
-    Ir::Intf::Function* enterFrameIrFun;
-    Ir::Intf::Function* leaveFrameIrFun;
+	Cm::Sym::FunctionSymbol* enterFrameFun;
+	Cm::Sym::FunctionSymbol* leaveFrameFun;
 };
 
 } } // namespace Cm::Emit

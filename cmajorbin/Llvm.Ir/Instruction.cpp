@@ -360,13 +360,26 @@ GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object*
 }
 
 GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, Ir::Intf::Object* index1_): 
-    Ir::Intf::Instruction("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(1, index1_), inbounds(false)
+    Ir::Intf::Instruction("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
 {
+	indeces.push_back(index1_);
+	if (index1_->GetType()->IsLabelType())
+	{
+		int x = 0;
+	}
 }
 
 GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, const std::vector<Ir::Intf::Object*>& indeces_): 
     Ir::Intf::Instruction("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(indeces_), inbounds(false)
 {
+}
+
+GetElementPtrInst::~GetElementPtrInst()
+{
+	if (debug)
+	{
+		int x = 0;
+	}
 }
 
 Ir::Intf::Instruction* GetElementPtr(Ir::Intf::Type* ptrType, Ir::Intf::Object* result, Ir::Intf::Object* ptr, Ir::Intf::Object* index)
@@ -397,13 +410,22 @@ std::string GetElementPtrInst::ToString() const
     getElementPtr.append(ptrType->Name()).append(space).append(ptr->Name()).append(comma).append(index->GetType()->Name()).append(space).append(index->Name());   
     for (Ir::Intf::Object* idx : indeces)
     {
+		if (idx->GetType()->IsLabelType())
+		{
+			int x = 0;
+		}
         getElementPtr.append(comma).append(idx->GetType()->Name()).append(space).append(idx->Name());
     }
     return getElementPtr;
 }
 
-CallInst::CallInst(Ir::Intf::Object* result_, Ir::Intf::Function* fun_, const std::vector<Ir::Intf::Object*>& args_): Instruction("call"), result(result_), fun(fun_), args(args_)
+CallInst::CallInst(Ir::Intf::Object* result_, Ir::Intf::Function* fun_, const std::vector<Ir::Intf::Object*>& args_): Instruction("call"), result(result_), fun(fun_), args()
 {
+	int n = int(args_.size());
+	for (int i = 0; i < n; ++i)
+	{
+		args.push_back(args_[i]);
+	}
 }
 
 std::string CallInst::ToString() const
@@ -419,6 +441,10 @@ std::string CallInst::ToString() const
     bool first = true;
     for (Ir::Intf::Object* arg : args)
     {
+		if (arg->GetType()->Name() == "label")
+		{
+			int x = 0;
+		}
         if (first)
         {
             first = false;

@@ -15,6 +15,10 @@
 
 namespace Llvm { 
 
+extern bool debug;
+void PushDebug(bool debug_);
+void PopDebug();
+
 class VoidType : public Ir::Intf::Type
 {
 public:
@@ -30,6 +34,7 @@ class LabelType : public Ir::Intf::Type
 public:
     LabelType();
     Ir::Intf::Type* Clone() const override;
+    bool IsLabelType() const override { return true; }
 };
 
 Ir::Intf::Type* Label();
@@ -79,6 +84,7 @@ class I32Type : public IntegerType
 {
 public:
     I32Type();
+	~I32Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
     Ir::Intf::Object* CreateMinusOne() const override;
@@ -130,11 +136,12 @@ class ArrayType: public Ir::Intf::Type
 {
 public:
     ArrayType(Ir::Intf::Type* itemType_, int size_);
-    Ir::Intf::Type* ItemType() const { return itemType.get(); }
+    Ir::Intf::Type* ItemType() const { return itemType; }
     int Size() const { return size; }
     Ir::Intf::Type* Clone() const override;
 private:
-    std::unique_ptr<Ir::Intf::Type> itemType;
+	Ir::Intf::Type* itemType;
+	std::unique_ptr<Ir::Intf::Type> ownedItemType;
     int size;
 };
 

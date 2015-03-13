@@ -9,11 +9,27 @@
 
 #include <Llvm.Ir/Type.hpp>
 #include <Llvm.Ir/Constant.hpp>
+#include <Ir.Intf/Factory.hpp>
 #include <map>
 #include <stack>
 #include <stdexcept>
 
 namespace Llvm { 
+
+bool debug = false;
+std::stack<bool> debugStack;
+
+void PushDebug(bool debug_)
+{
+	debugStack.push(debug);
+	debug = debug_;
+}
+
+void PopDebug()
+{
+	debug = debugStack.top();
+	debugStack.pop();
+}
 
 VoidType::VoidType(): Ir::Intf::Type("void")
 {
@@ -128,6 +144,14 @@ I32Type::I32Type() : IntegerType("i32")
 {
 }
 
+I32Type::~I32Type()
+{
+	if (debug)
+	{
+		int x = 0;
+	}
+}
+
 Ir::Intf::Type* I32Type::Clone() const
 {
     return new I32Type();
@@ -233,16 +257,23 @@ std::string MakeArrayTypeName(Ir::Intf::Type* itemType, int size)
 
 ArrayType::ArrayType(Ir::Intf::Type* itemType_, int size_): Type(MakeArrayTypeName(itemType_, size_)), itemType(itemType_), size(size_)
 {
-    if (itemType->Owned())
-    {
-        throw std::runtime_error("array item type already owned");
-    }
-    itemType->SetOwned();
+	if (!itemType->Owned())
+	{
+		ownedItemType.reset(itemType);
+		itemType->SetOwned();
+	}
 }
 
 Ir::Intf::Type* ArrayType::Clone() const
 {
-    return new ArrayType(itemType->Clone(), size);
+	if (ownedItemType)
+	{
+		return new ArrayType(itemType->Clone(), size);
+	}
+	else
+	{
+		return new ArrayType(itemType, size);
+	}
 }
 
 ArrayType* Array(Ir::Intf::Type* itemType, int size)
@@ -250,7 +281,7 @@ ArrayType* Array(Ir::Intf::Type* itemType, int size)
     return new ArrayType(itemType, size);
 }
 
-StringType::StringType(int size_): ArrayType(I8(), size_)
+StringType::StringType(int size_): ArrayType(Ir::Intf::GetFactory()->GetI8(), size_)
 {
 }
 
