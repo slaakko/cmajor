@@ -11,27 +11,24 @@
 #include <Cm.Emit/FunctionEmitter.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
+#include <Llvm.Ir/Type.hpp>
 
 namespace Cm { namespace Emit {
 
 EmittingVisitor::EmittingVisitor(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
-    Cm::BoundTree::Visitor(false), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), 
-    externalConstantRepository(externalConstantRepository_), irFile(irFilePath), codeFormatter(irFile), currentClass(nullptr), enterFrameIrFun(nullptr), leaveFrameIrFun(nullptr)
+    Cm::BoundTree::Visitor(false), emitter(new Cm::Core::Emitter()), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_),
+    externalConstantRepository(externalConstantRepository_), irFile(irFilePath), codeFormatter(irFile), currentClass(nullptr), enterFrameFun(nullptr), leaveFrameFun(nullptr)
 {
     stringRepository.Write(codeFormatter);
 }
 
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
-    irClassTypeRepository.Write(codeFormatter, compileUnit.SyntaxUnit(), externalFunctions, irFunctionRepository);
+	irClassTypeRepository.Write(codeFormatter, compileUnit.SyntaxUnit(), externalFunctions, irFunctionRepository);
     currentCompileUnit = compileUnit.SyntaxUnit();
-    Cm::Sym::FunctionSymbol* enterFrameFun = compileUnit.SymbolTable().GetOverload("enter_frame");
-    enterFrameIrFun = irFunctionRepository.CreateIrFunction(enterFrameFun);
-    externalFunctions.insert(enterFrameIrFun);
-    Cm::Sym::FunctionSymbol* leaveFrameFun = compileUnit.SymbolTable().GetOverload("leave_frame");
-    leaveFrameIrFun = irFunctionRepository.CreateIrFunction(leaveFrameFun);
-    externalFunctions.insert(leaveFrameIrFun);
+	enterFrameFun = compileUnit.SymbolTable().GetOverload("enter_frame");
+	leaveFrameFun = compileUnit.SymbolTable().GetOverload("leave_frame");
 }
 
 void EmittingVisitor::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
@@ -61,9 +58,9 @@ void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
-    FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions, staticMemberVariableRepository,
-        externalConstantRepository, currentCompileUnit, enterFrameIrFun, leaveFrameIrFun);
-    boundFunction.Accept(functionEmitter);
+	FunctionEmitter functionEmitter(emitter.get(), codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions, 
+		staticMemberVariableRepository, externalConstantRepository, currentCompileUnit, enterFrameFun, leaveFrameFun);
+	boundFunction.Accept(functionEmitter);
 }
 
 } } // namespace Cm::Emit

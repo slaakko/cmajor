@@ -185,7 +185,7 @@ void GenerateClassInitStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUni
     {
         Cm::BoundTree::BoundExpressionList arguments;
         Cm::BoundTree::BoundFunctionCallStatement* staticConstructorCallStatement = new Cm::BoundTree::BoundFunctionCallStatement(classType->StaticConstructor(), std::move(arguments));
-        staticConstructorCallStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), constructorNode->GetSpan()));
+        //staticConstructorCallStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), constructorNode->GetSpan())); bug?
         int classObjectLayoutFunIndex = currentFunction->GetClassObjectLayoutFunIndex();
         currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, staticConstructorCallStatement);
         ++classObjectLayoutFunIndex;

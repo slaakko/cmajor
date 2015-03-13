@@ -35,6 +35,7 @@
 #include <Cm.Util/TextUtils.hpp>
 #include <Cm.Util/System.hpp>
 #include <Cm.Util/Path.hpp>
+#include <Llvm.Ir/Type.hpp>
 #include <chrono>
 #include <iostream>
 
@@ -336,7 +337,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
             AnalyzeControlFlow(boundCompileUnit);
         }
         Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
-        GenerateObjectCode(boundCompileUnit);
+		GenerateObjectCode(boundCompileUnit);
         objectFilePaths.push_back(boundCompileUnit.ObjectFilePath());
         ++index;
     }

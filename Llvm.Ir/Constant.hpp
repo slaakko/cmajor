@@ -60,6 +60,7 @@ class StringConstant: public Constant
 {
 public:
     StringConstant(const std::string& value_);
+	~StringConstant();
 };
 
 std::string MakeStringConstantName(const std::string& s);

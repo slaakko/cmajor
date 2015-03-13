@@ -21,9 +21,12 @@ int StringRepository::Install(const std::string& str)
     }
     int id = int(stringObjects.size());
     Ir::Intf::Object* stringConstant = Cm::IrIntf::CreateStringConstant(str);
+	stringConstant->SetOwned();
     stringConstants.push_back(std::unique_ptr<Ir::Intf::Object>(stringConstant));
     std::string stringObjectName = ".s" + std::to_string(id);
-    stringObjects.push_back(std::unique_ptr<Ir::Intf::Object>(Cm::IrIntf::CreateGlobal(stringObjectName, stringConstant->GetType())));
+	Ir::Intf::Object* stringObject = Cm::IrIntf::CreateGlobal(stringObjectName, stringConstant->GetType());
+	stringObject->SetOwned();
+    stringObjects.push_back(std::unique_ptr<Ir::Intf::Object>(stringObject));
     stringIntMap[str] = id;
     return id;
 }

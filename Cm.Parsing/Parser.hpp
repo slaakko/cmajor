@@ -31,7 +31,6 @@ public:
     ValueObject(const ValueType& value_): value(value_) {}
     ValueObject<ValueType>& operator=(const ValueType& v) { value = v; return *this; }
     operator ValueType() const { return value; }
-    operator ValueType&() { return value; }
 private:
     ValueType value;
 };

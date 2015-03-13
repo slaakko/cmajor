@@ -31,6 +31,7 @@ public:
     virtual bool IsFunctionType() const { return false; }
     virtual bool IsFunctionPointerType() const { return false; }
     virtual bool IsFunctionPtrPtrType() const { return false; }
+    virtual bool IsLabelType() const { return false; }
     virtual bool IsTypeName() const { return false; }
     virtual std::string Prefix() const { return Name() + " "; }
     virtual std::string Suffix() const { return std::string(); }

@@ -185,6 +185,14 @@ StringConstant::StringConstant(const std::string& value_): Constant(MakeStringCo
 {
 }
 
+StringConstant::~StringConstant()
+{
+	if (debug)
+	{
+		int x = 0;
+	}
+}
+
 Ir::Intf::Object* CreateStringConstant(const std::string& value)
 {
     return new StringConstant(value);

@@ -180,7 +180,7 @@ void GenData::BackpatchArgNextTargets(Ir::Intf::LabelObject* label)
     argNextTargets.clear();
 }
 
-Emitter::Emitter(Ir::Intf::Function* irFunction_) : irFunction(irFunction_), gotoTargetLabel(nullptr)
+Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr)
 {
 }
 
@@ -380,7 +380,7 @@ void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type, Cm::Sym::TypeRepository
             return;
         }
     }
-    Ir::Intf::RegVar* temp = Cm::IrIntf::CreateTemporaryRegVar(type->GetIrType());
+    Ir::Intf::RegVar* temp = Cm::IrIntf::CreateTemporaryRegVar(type->GetIrType()->Clone());
     emitter->Own(temp);
     genData.SetMainObject(temp);
 }
