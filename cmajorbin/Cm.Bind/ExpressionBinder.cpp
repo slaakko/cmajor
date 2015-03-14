@@ -195,7 +195,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     {
         Cm::Sym::FunctionLookupSet freeFunLookups;
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
-        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, operand->GetType()->GetContainerScope()->ClassOrNsScope()));
+        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainOperandType->GetContainerScope()->ClassOrNsScope()));
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
         std::vector<Cm::Core::Argument> freeFunArguments;
         freeFunArguments.push_back(Cm::Core::Argument(operand->GetArgumentCategory(), operand->GetType()));
@@ -251,8 +251,9 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
         freeFunArguments.push_back(Cm::Core::Argument(right->GetArgumentCategory(), right->GetType()));
         Cm::Sym::FunctionLookupSet freeFunLookups;
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
-        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, left->GetType()->GetContainerScope()->ClassOrNsScope()));
-        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, right->GetType()->GetContainerScope()->ClassOrNsScope()));
+		Cm::Sym::TypeSymbol* plainRightType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(right->GetType());
+		freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainLeftType->GetContainerScope()->ClassOrNsScope()));
+        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainRightType->GetContainerScope()->ClassOrNsScope()));
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
         fun = ResolveOverload(containerScope, boundCompileUnit, opGroupName, freeFunArguments, freeFunLookups, node->GetSpan(), conversions);
     }
@@ -1207,7 +1208,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
     {
         Cm::Sym::TypeSymbol* argumentType = argument->GetType();
         Cm::Sym::TypeSymbol* plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(argumentType);
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, plainArgumentType->GetContainerScope()->ClassOrNsScope()));
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainArgumentType->GetContainerScope()->ClassOrNsScope()));
         if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
         {
             if (argument->GetType()->IsConstType())
@@ -1524,7 +1525,7 @@ void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* target
     resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(targetType, node->GetSpan())));
     resolutionArguments.push_back(Cm::Core::Argument(sourceExpr->GetArgumentCategory(), sourceExpr->GetType()));
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, targetType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, targetType->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions, Cm::Sym::ConversionType::explicit_,
         OverloadResolutionFlags::none);
@@ -1606,7 +1607,7 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
         resolutionArguments.push_back(Cm::Core::Argument(arguments[i]->GetArgumentCategory(), arguments[i]->GetType()));
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, type->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, type->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* ctor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
     PrepareFunctionSymbol(ctor, node->GetSpan());

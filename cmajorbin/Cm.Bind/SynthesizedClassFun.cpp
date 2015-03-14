@@ -13,6 +13,7 @@
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/MutexTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Bind {
@@ -792,13 +793,50 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
     compileUnit.AddBoundNode(destructor.release());
 }
 
-void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundClass, Cm::Sym::ContainerScope* containerScope, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit)
+void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundClass, Cm::Sym::ContainerScope* containerScope, const Cm::Parsing::Span& span, 
+	Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     Cm::Sym::FunctionSymbol* staticConstructorSymbol = classTypeSymbol->StaticConstructor();
     if (compileUnit.Instantiated(staticConstructorSymbol)) return;
     compileUnit.AddToInstantiated(staticConstructorSymbol);
     std::unique_ptr<Cm::BoundTree::BoundFunction> staticConstructor(new Cm::BoundTree::BoundFunction(nullptr, staticConstructorSymbol));
     staticConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
+
+	Cm::Sym::TypeSymbol* intType = compileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+	Cm::Sym::Symbol* mutexGuardSymbol = compileUnit.SymbolTable().GlobalScope()->Lookup("System.Support.MtxGuard");
+	if (!mutexGuardSymbol)
+	{
+		throw std::runtime_error("System.Support.MtxGuard class not found");
+	}
+	if (!mutexGuardSymbol->IsClassTypeSymbol())
+	{
+		throw std::runtime_error("System.Support.MtxGuard is not of class type");
+	}
+	Cm::Sym::ClassTypeSymbol* mutexGuardClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(mutexGuardSymbol);
+	std::vector<Cm::Core::Argument> mutexGuardResolutionArguments;
+	Cm::Sym::TypeSymbol* mutexGuardPointerType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(mutexGuardClassType, span);
+	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, mutexGuardPointerType));
+	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
+	Cm::Sym::FunctionLookupSet mutexGuardFunctionLookups;
+	mutexGuardFunctionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, mutexGuardClassType->ClassOrNs()->GetContainerScope()));
+	std::vector<Cm::Sym::FunctionSymbol*> mutexGuardConversions;
+	Cm::Sym::FunctionSymbol* mutexGuardConstructor = ResolveOverload(containerScope, compileUnit, "@constructor", mutexGuardResolutionArguments, mutexGuardFunctionLookups,
+		span, mutexGuardConversions);
+	Cm::BoundTree::BoundConstructionStatement* constructMutexGuardStatement = new Cm::BoundTree::BoundConstructionStatement(nullptr);
+	int mutexId = Cm::Sym::GetMutexTable()->GetNextMutexId(); 
+	Cm::BoundTree::BoundLiteral* mutexIdLiteral = new Cm::BoundTree::BoundLiteral(nullptr);
+	mutexIdLiteral->SetValue(new Cm::Sym::IntValue(mutexId));
+	mutexIdLiteral->SetType(intType);
+	Cm::BoundTree::BoundExpressionList constructMutexGuardArguments;
+	constructMutexGuardArguments.Add(mutexIdLiteral);
+	Cm::Sym::LocalVariableSymbol* mutexGuardVar = new Cm::Sym::LocalVariableSymbol(span, "mtxGuard");
+	mutexGuardVar->SetType(mutexGuardClassType);
+	constructMutexGuardStatement->SetLocalVariable(mutexGuardVar);
+	constructMutexGuardStatement->SetArguments(std::move(constructMutexGuardArguments));
+	constructMutexGuardStatement->SetConstructor(mutexGuardConstructor);
+	constructMutexGuardStatement->InsertLocalVariableToArguments();
+	constructMutexGuardStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
+	staticConstructor->Body()->AddStatement(constructMutexGuardStatement);
 
     Cm::Sym::MemberVariableSymbol* initializedVar = new Cm::Sym::MemberVariableSymbol(span, Cm::IrIntf::GetPrivateSeparator() + "initialized");
     initializedVar->SetParent(classTypeSymbol);
