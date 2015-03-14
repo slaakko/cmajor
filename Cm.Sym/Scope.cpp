@@ -45,6 +45,11 @@ void ContainerScope::Install(Symbol* symbol)
     else
     {
         symbolMap[symbol->Name()] = symbol;
+		if (symbol->IsContainerSymbol())
+		{
+			ContainerSymbol* containerSymbol = static_cast<ContainerSymbol*>(symbol);
+			containerSymbol->GetContainerScope()->SetParent(this);
+		}
     }
 }
 

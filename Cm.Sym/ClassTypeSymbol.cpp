@@ -86,6 +86,10 @@ void ClassTypeSymbol::Write(Writer& writer)
 
 void ClassTypeSymbol::Read(Reader& reader)
 {
+	if (Name() == "OutputStream")
+	{
+		int x = 0;
+	}
     TypeSymbol::Read(reader);
     flags = ClassTypeSymbolFlags(reader.GetBinaryReader().ReadUInt());
     bool hasBaseClass = reader.GetBinaryReader().ReadBool();
@@ -146,6 +150,7 @@ void ClassTypeSymbol::FreeClassNode(Cm::Sym::SymbolTable& symbolTable)
 void ClassTypeSymbol::SetType(TypeSymbol* type, int index) 
 {
     baseClass = static_cast<ClassTypeSymbol*>(type);
+	GetContainerScope()->SetBase(baseClass->GetContainerScope());
 }
 
 bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls) const

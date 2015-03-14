@@ -22,6 +22,7 @@
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
+#include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.Parsing/Scanner.hpp>
@@ -101,6 +102,16 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundFunctionCallStatement* callThreadTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblInit, std::move(threadTblInitArguments));
         mainBody->AddStatement(callThreadTblInitStatement);
 
+		Cm::Sym::MutexTable* mutexTable = Cm::Sym::GetMutexTable();
+		Cm::Sym::FunctionSymbol* mutexTableInit = symbolTable.GetOverload("mutextbl_init");
+		Cm::BoundTree::BoundExpressionList mutexTblInitArguments;
+		Cm::BoundTree::BoundLiteral* numMutexes = new Cm::BoundTree::BoundLiteral(nullptr);
+		numMutexes->SetValue(new Cm::Sym::IntValue(mutexTable->GetNumberOfMutexes()));
+		numMutexes->SetType(intType);
+		mutexTblInitArguments.Add(numMutexes);
+		Cm::BoundTree::BoundFunctionCallStatement* callMutexTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(mutexTableInit, std::move(mutexTblInitArguments));
+		mainBody->AddStatement(callMutexTblInitStatement);
+
         Cm::BoundTree::BoundExpressionList arguments;
         if (argcParam && argvParam)
         {
@@ -152,6 +163,11 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundFunctionCallStatement* callCmExitStatement = new Cm::BoundTree::BoundFunctionCallStatement(cmExit, std::move(cmExitArguments));
         mainBody->AddStatement(callCmExitStatement);
 
+		Cm::Sym::FunctionSymbol* mutexTblDone = symbolTable.GetOverload("mutextbl_done");
+		Cm::BoundTree::BoundExpressionList mutexTblDoneArguments;
+		Cm::BoundTree::BoundFunctionCallStatement* callMutexTblDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(mutexTblDone, std::move(mutexTblDoneArguments));
+		mainBody->AddStatement(callMutexTblDoneStatement);
+
         Cm::Sym::FunctionSymbol* threadTblDone = symbolTable.GetOverload("threadtbl_done");
         Cm::BoundTree::BoundExpressionList threadTblDoneArguments;
         Cm::BoundTree::BoundFunctionCallStatement* callThreadTblDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblDone, std::move(threadTblDoneArguments));
@@ -185,6 +201,16 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         threadTblInitArguments.Add(numExceptions);
         Cm::BoundTree::BoundFunctionCallStatement* callThreadTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblInit, std::move(threadTblInitArguments));
         mainBody->AddStatement(callThreadTblInitStatement);
+
+		Cm::Sym::MutexTable* mutexTable = Cm::Sym::GetMutexTable();
+		Cm::Sym::FunctionSymbol* mutexTableInit = symbolTable.GetOverload("mutextbl_init");
+		Cm::BoundTree::BoundExpressionList mutexTblInitArguments;
+		Cm::BoundTree::BoundLiteral* numMutexes = new Cm::BoundTree::BoundLiteral(nullptr);
+		numMutexes->SetValue(new Cm::Sym::IntValue(mutexTable->GetNumberOfMutexes()));
+		numMutexes->SetType(intType);
+		mutexTblInitArguments.Add(numMutexes);
+		Cm::BoundTree::BoundFunctionCallStatement* callMutexTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(mutexTableInit, std::move(mutexTblInitArguments));
+		mainBody->AddStatement(callMutexTblInitStatement);
 
         Cm::BoundTree::BoundFunctionCall* callUserMainExpr = new Cm::BoundTree::BoundFunctionCall(nullptr, std::move(arguments));
         callUserMainExpr->SetFunction(userMainFunction);
@@ -232,6 +258,11 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundExpressionList cmExitArguments;
         Cm::BoundTree::BoundFunctionCallStatement* callCmExitStatement = new Cm::BoundTree::BoundFunctionCallStatement(cmExit, std::move(cmExitArguments));
         mainBody->AddStatement(callCmExitStatement);
+
+		Cm::Sym::FunctionSymbol* mutexTblDone = symbolTable.GetOverload("mutextbl_done");
+		Cm::BoundTree::BoundExpressionList mutexTblDoneArguments;
+		Cm::BoundTree::BoundFunctionCallStatement* callMutexTblDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(mutexTblDone, std::move(mutexTblDoneArguments));
+		mainBody->AddStatement(callMutexTblDoneStatement);
 
         Cm::Sym::FunctionSymbol* threadTblDone = symbolTable.GetOverload("threadtbl_done");
         Cm::BoundTree::BoundExpressionList threadTblDoneArguments;

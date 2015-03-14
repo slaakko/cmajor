@@ -12,6 +12,7 @@
 #include <Cm.Bind/ExpressionBinder.hpp>
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -424,6 +425,45 @@ void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boun
 void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundFunction* currentFunction, 
     Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::Node* staticConstructorNode)
 {
+	Cm::Sym::TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+	Cm::Sym::Symbol* mutexGuardSymbol = boundCompileUnit.SymbolTable().GlobalScope()->Lookup("System.Support.MtxGuard");
+	if (!mutexGuardSymbol)
+	{
+		throw std::runtime_error("System.Support.MtxGuard class not found");
+	}
+	if (!mutexGuardSymbol->IsClassTypeSymbol())
+	{
+		throw std::runtime_error("System.Support.MtxGuard is not of class type");
+	}
+	Cm::Sym::ClassTypeSymbol* mutexGuardClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(mutexGuardSymbol);
+	std::vector<Cm::Core::Argument> mutexGuardResolutionArguments;
+	Cm::Sym::TypeSymbol* mutexGuardPointerType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(mutexGuardClassType, staticConstructorNode->GetSpan());
+	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, mutexGuardPointerType));
+	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
+	Cm::Sym::FunctionLookupSet mutexGuardFunctionLookups;
+	mutexGuardFunctionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, mutexGuardClassType->ClassOrNs()->GetContainerScope()));
+	std::vector<Cm::Sym::FunctionSymbol*> mutexGuardConversions;
+	Cm::Sym::FunctionSymbol* mutexGuardConstructor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", mutexGuardResolutionArguments, mutexGuardFunctionLookups,
+		staticConstructorNode->GetSpan(), mutexGuardConversions);
+	int classObjectLayoutFunIndex = currentFunction->GetClassObjectLayoutFunIndex();
+	Cm::BoundTree::BoundConstructionStatement* constructMutexGuardStatement = new Cm::BoundTree::BoundConstructionStatement(staticConstructorNode);
+	int mutexId = Cm::Sym::GetMutexTable()->GetNextMutexId();
+	Cm::BoundTree::BoundLiteral* mutexIdLiteral = new Cm::BoundTree::BoundLiteral(staticConstructorNode);
+	mutexIdLiteral->SetValue(new Cm::Sym::IntValue(mutexId));
+	mutexIdLiteral->SetType(intType);
+	Cm::BoundTree::BoundExpressionList constructMutexGuardArguments;
+	constructMutexGuardArguments.Add(mutexIdLiteral);
+	constructMutexGuardStatement->SetLocalVariable(currentFunction->CreateTempLocalVariable(mutexGuardClassType));
+	constructMutexGuardStatement->SetArguments(std::move(constructMutexGuardArguments));
+	constructMutexGuardStatement->SetConstructor(mutexGuardConstructor);
+	constructMutexGuardStatement->InsertLocalVariableToArguments();
+	constructMutexGuardStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
+	constructMutexGuardStatement->ApplyConversions(mutexGuardConversions, currentFunction);
+	PrepareFunctionArguments(mutexGuardConstructor, containerScope, boundCompileUnit, currentFunction, constructMutexGuardStatement->Arguments(), true, boundCompileUnit.IrClassTypeRepository());
+	currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, constructMutexGuardStatement);
+	++classObjectLayoutFunIndex;
+	currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
+
     Cm::Sym::MemberVariableSymbol* initializedVar = new Cm::Sym::MemberVariableSymbol(staticConstructorNode->GetSpan(), Cm::IrIntf::GetPrivateSeparator() + "initialized");
     initializedVar->SetParent(classType);
     Cm::Sym::TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
@@ -436,7 +476,6 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
     checkInitializedStatement->SetCondition(boundInitializedVar);
     Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(staticConstructorNode);
     checkInitializedStatement->AddStatement(returnStatement);
-    int classObjectLayoutFunIndex = currentFunction->GetClassObjectLayoutFunIndex();
     currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, checkInitializedStatement);
     ++classObjectLayoutFunIndex;
     currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
@@ -454,10 +493,9 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
     Cm::Sym::FunctionSymbol* boolAssignment = ResolveOverload(containerScope, boundCompileUnit, "operator=", boolAssignArgs, boolAssignLookups, staticConstructorNode->GetSpan(), 
         boolAssignConversions);
     Cm::BoundTree::BoundAssignmentStatement* setInitializedStatement = new Cm::BoundTree::BoundAssignmentStatement(staticConstructorNode, boundInitializedVarLeft, boundTrue, boolAssignment);
-    int classObjectLayoutFunIndex1 = currentFunction->GetClassObjectLayoutFunIndex();
-    currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex1, setInitializedStatement);
-    ++classObjectLayoutFunIndex1;
-    currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex1);
+    currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, setInitializedStatement);
+    ++classObjectLayoutFunIndex;
+    currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
 }
 
 void GenerateStaticBaseClassInitStatement(Cm::BoundTree::BoundFunction* currentFunction, Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::Node* staticConstructorNode)
@@ -477,7 +515,7 @@ class StaticMemberVariableInitializerHandler : public ExpressionBinder
 public:
     StaticMemberVariableInitializerHandler(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
         Cm::BoundTree::BoundFunction* currentFunction_, Cm::Sym::ClassTypeSymbol* classType_);
-    Cm::BoundTree::BoundInitMemberVariableStatement* GenerateStaticMerberVariableInitializationStatement(Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments,
+    Cm::BoundTree::BoundInitMemberVariableStatement* GenerateStaticMemberVariableInitializationStatement(Cm::Sym::MemberVariableSymbol* memberVariableSymbol, Cm::BoundTree::BoundExpressionList& arguments,
         Cm::Ast::Node* node);
     void Visit(Cm::Ast::MemberInitializerNode& memberInitializerNode);
     void GenerateStaticMemberVariableInitializationStatements(Cm::Ast::Node* staticConstructorNode);
@@ -502,7 +540,7 @@ StaticMemberVariableInitializerHandler::StaticMemberVariableInitializerHandler(C
     }
 }
 
-Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializerHandler::GenerateStaticMerberVariableInitializationStatement(Cm::Sym::MemberVariableSymbol* memberVariableSymbol,
+Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializerHandler::GenerateStaticMemberVariableInitializationStatement(Cm::Sym::MemberVariableSymbol* memberVariableSymbol,
     Cm::BoundTree::BoundExpressionList& arguments, Cm::Ast::Node* node)
 {
     std::vector<Cm::Core::Argument> resolutionArguments;
@@ -572,7 +610,7 @@ void StaticMemberVariableInitializerHandler::Visit(Cm::Ast::MemberInitializerNod
         Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol = classType->StaticMemberVariables()[index];
         memberInitializerNode.Arguments().Accept(*this);
         Cm::BoundTree::BoundExpressionList arguments = GetExpressions();
-        initStatement.reset(GenerateStaticMerberVariableInitializationStatement(staticMemberVariableSymbol, arguments, &memberInitializerNode));
+        initStatement.reset(GenerateStaticMemberVariableInitializationStatement(staticMemberVariableSymbol, arguments, &memberInitializerNode));
         if (staticMemberVariableSymbol->GetType()->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(staticMemberVariableSymbol->GetType());
@@ -604,7 +642,7 @@ void StaticMemberVariableInitializerHandler::GenerateStaticMemberVariableInitial
         {
             Cm::Sym::MemberVariableSymbol* memberVariableSymbol = classType->StaticMemberVariables()[i];
             Cm::BoundTree::BoundExpressionList arguments;
-            initMemberVariableStatement = GenerateStaticMerberVariableInitializationStatement(memberVariableSymbol, arguments, staticConstructorNode);
+            initMemberVariableStatement = GenerateStaticMemberVariableInitializationStatement(memberVariableSymbol, arguments, staticConstructorNode);
             if (memberVariableSymbol->GetType()->IsClassTypeSymbol())
             {
                 Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableSymbol->GetType());

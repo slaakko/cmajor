@@ -21,6 +21,7 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Module.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
+#include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
@@ -474,7 +475,9 @@ void Build(const std::string& projectFilePath)
     Cm::Core::SetGlobalConceptData(&globalConceptData);
     Cm::Sym::SymbolTable symbolTable;
     Cm::Sym::ExceptionTable exceptionTable;
-    Cm::Sym::SetExceptionTable(&exceptionTable);
+	Cm::Sym::SetExceptionTable(&exceptionTable);
+	Cm::Sym::MutexTable mutexTable;
+	Cm::Sym::SetMutexTable(&mutexTable);
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
     BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project.get(), libraryDirs, assemblyFilePaths);
@@ -503,6 +506,7 @@ void Build(const std::string& projectFilePath)
     Cm::Parser::SetCurrentFileRegistry(nullptr);
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);
+	Cm::Sym::SetMutexTable(nullptr);
     auto end = std::chrono::system_clock::now();
     auto dur = end - start;
     long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
