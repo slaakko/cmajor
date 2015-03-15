@@ -309,6 +309,47 @@ void BoundConjunction::Accept(Visitor& visitor)
 BoundConversion* CreateBoundConversion(Cm::Ast::Node* node, BoundExpression* operand, Cm::Sym::FunctionSymbol* conversionFun, BoundFunction* currentFunction)
 {
     BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, operand, conversionFun);
+	Cm::Sym::ParameterSymbol* parameter = conversionFun->Parameters()[1];
+	Cm::Sym::TypeSymbol* paramType = parameter->GetType();
+	Cm::BoundTree::BoundExpression* argument = operand;
+	if (!conversionFun->IsBasicTypeOp())
+	{
+		if (paramType->IsNonConstReferenceType())
+		{
+			argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+		}
+		else if (paramType->IsConstReferenceType())
+		{
+			argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+		}
+		else if (paramType->IsRvalueRefType())
+		{
+			argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+		}
+		else if (paramType->IsClassTypeSymbol())
+		{
+			argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+		}
+		else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType())
+		{
+			argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
+		}
+	}
+	else
+	{
+		if (paramType->IsClassTypeSymbol())
+		{
+			argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+		}
+		else
+		{
+			if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType())
+			{
+				argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
+			}
+		}
+	}
+
     if (conversionFun->GetTargetType()->IsClassTypeSymbol())
     {
         Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, currentFunction->CreateTempLocalVariable(conversionFun->GetTargetType()));
