@@ -13,6 +13,7 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <algorithm>
 
 namespace Cm { namespace Sym {
 
@@ -36,9 +37,18 @@ std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vecto
 TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments)
 {
     TypeId id = subjectType->Id();
-    for (TypeSymbol* typeArgument : typeArguments)
+	uint8_t n = int(typeArguments.size());
+	if (n >= id.Rep().Tag().size())
+	{
+		throw std::runtime_error("only " + std::to_string(id.Rep().Tag().size() - 1) + " supported");
+	}
+	for (uint8_t i = 0; i < n; ++i)
     {
-        id.Rep() = id.Rep() ^ typeArgument->Id().Rep();
+		TypeSymbol* typeArgument = typeArguments[i];
+		Cm::Util::Uuid argumentId = typeArgument->Id().Rep();
+		uint8_t positionCode = i;
+		std::rotate(argumentId.Tag().begin(), argumentId.Tag().begin() + positionCode, argumentId.Tag().end());
+		id.Rep() = id.Rep() ^ argumentId;
     }
     id.InvalidateHashCode();
     return id;

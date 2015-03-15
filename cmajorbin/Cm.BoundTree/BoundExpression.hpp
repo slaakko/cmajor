@@ -37,6 +37,7 @@ public:
     virtual bool IsBoundPostfixIncDecExpr() const { return false; }
     virtual bool IsBoundTypeExpression() const { return false; }
     virtual bool IsBoundLocalVariable() const { return false; }
+	virtual bool IsBoundParameter() const { return false; }
     virtual bool IsBoundExceptionCodeVariable() const { return false; }
     virtual bool IsBoundExceptionCodeParameter() const { return false; }
     virtual bool IsBoundConversion() const { return false; }
@@ -166,6 +167,7 @@ public:
     Cm::Sym::ParameterSymbol* Symbol() const { return symbol; }
     Cm::Core::ArgumentCategory GetArgumentCategory() const override;
     void Accept(Visitor& visitor) override;
+	bool IsBoundParameter() const override { return true; }
 private:
     Cm::Sym::ParameterSymbol* symbol;
 };

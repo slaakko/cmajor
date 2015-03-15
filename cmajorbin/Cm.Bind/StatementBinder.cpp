@@ -169,6 +169,10 @@ ReturnStatementBinder::ReturnStatementBinder(Cm::BoundTree::BoundCompileUnit& bo
 
 void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
 {
+	if (CurrentFunction()->GetFunctionSymbol()->FullName() == "System.operator<<(System.uhuge, System.uhuge)")
+	{
+		int x = 0;
+	}
     Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(&returnStatementNode);
     Cm::Ast::FunctionNode* functionNode = returnStatementNode.GetFunction();
     Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
@@ -194,7 +198,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                         returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
                     }
                 }
-                else
+				else
                 {
                     Cm::Core::Argument sourceArgument = Cm::Core::Argument(returnValue->GetArgumentCategory(), SymbolTable().GetTypeRepository().MakeConstReferenceType(returnValue->GetType(),
                         returnStatementNode.GetSpan()));
@@ -207,7 +211,8 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                         }
                     }
                 }
-                if (returnValue->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary) || returnValue->IsBoundLocalVariable())
+                if (returnValue->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary) || returnValue->IsBoundLocalVariable() || 
+					returnValue->IsBoundParameter() && !returnValue->GetType()->IsReferenceType())
                 {
                     Cm::Core::Argument& sourceArgument = resolutionArguments[1];
                     sourceArgument.SetBindToRvalueRef();
@@ -237,7 +242,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 {
                     returnValue = Cm::BoundTree::CreateBoundConversion(&returnStatementNode, returnValue, conversionFun, CurrentFunction());
                 }
-                if (returnValue->GetType()->IsClassTypeSymbol() && returnType->IsReferenceType())
+                if (returnValue->GetType()->IsClassTypeSymbol() && (returnType->IsReferenceType() || returnType->IsClassTypeSymbol()))
                 {
                     returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
                 }
