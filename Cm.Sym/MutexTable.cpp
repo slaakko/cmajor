@@ -11,23 +11,29 @@
 
 namespace Cm { namespace Sym {
 
-MutexTable::MutexTable() : nextMutexId(0)
+MutexTable::MutexTable() : numMutexes(0), numMutexesInThisProject(0)
 {
 }
 
 void MutexTable::AddLibraryMutexes(int numLibraryMutexes) 
 { 
-	nextMutexId += numLibraryMutexes; 
+	numMutexes = numMutexes + numLibraryMutexes;
 }
 
 int MutexTable::GetNextMutexId() 
 { 
-	return nextMutexId++; 
+	++numMutexesInThisProject;
+	return numMutexes++;
 }
 
 int MutexTable::GetNumberOfMutexes() const
 { 
-	return nextMutexId; 
+	return numMutexes;
+}
+
+int MutexTable::GetNumberOfMutexesInThisProject() const
+{
+	return numMutexesInThisProject;
 }
 
 MutexTable* globalMutexTable = nullptr;
