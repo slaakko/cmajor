@@ -19,8 +19,10 @@ public:
 	void AddLibraryMutexes(int numLibraryMutexes);
 	int GetNextMutexId();
 	int GetNumberOfMutexes() const;
+	int GetNumberOfMutexesInThisProject() const;
 private:
-	int nextMutexId;
+	int numMutexes;
+	int numMutexesInThisProject;
 };
 
 MutexTable* GetMutexTable();

@@ -65,7 +65,7 @@ void Module::Export(SymbolTable& symbolTable)
     WriteSourceFilePaths(writer);
     symbolTable.Export(writer);
     ExportExceptionTable(writer);
-	writer.GetBinaryWriter().Write(int32_t(GetMutexTable()->GetNumberOfMutexes()));
+	writer.GetBinaryWriter().Write(int32_t(GetMutexTable()->GetNumberOfMutexesInThisProject()));
 }
 
 void Module::CheckModuleFileId(Reader& reader)
