@@ -1,0 +1,111 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+public enum OpenFlags
+{
+    none = 0, readOnly = 1, writeOnly = 2, readWrite = 4, create = 8, append = 16, truncate = 32, text = 64, binary = 128
+}
+
+// permission mode:
+public const int S_IREAD    = 0x0100; // windows: read
+public const int S_IWRITE   = 0x0080; // windows: write
+public const int S_IRUSR    = 0x0100; // user: read
+public const int S_IWUSR    = 0x0080; // user: write
+public const int S_IXUSR    = 0x0040; // user: execute
+public const int S_IRGRP    = 0x0020; // group: read
+public const int S_IWGRP    = 0x0010; // group: write
+public const int S_IXGRP    = 0x0008; // group: execute
+public const int S_IROTH    = 0x0004; // others: read
+public const int S_IWOTH    = 0x0002; // others: write
+public const int S_IXOTH    = 0x0001; // others: execute
+// origin:
+public const int SEEK_SET   = 0;
+public const int SEEK_CUR   = 1;
+public const int SEEK_END   = 2;
+// standard file descriptors:
+public const int stdin      = 0;
+public const int stdout     = 1;
+public const int stderr     = 2;
+extern public cdecl int open_file(const char* filename, OpenFlags openFlags, int pmode);
+extern public cdecl int close(int fd);
+extern public cdecl int read(int fd, void* buf, uint size);
+extern public cdecl int write(int fd, const void* buf, uint size);
+extern public cdecl long lseek(int fd, long offset, int origin);
+extern public cdecl void* malloc(ulong size);
+extern public cdecl void free(void* mem);
+extern public cdecl int system(const char* command);
+extern public cdecl void exit(int exitCode);
+extern public cdecl int rand();
+extern public cdecl void srand(uint seed);
+extern public cdecl int get_errno();
+extern public cdecl char* strerror(int errnum);
+extern public cdecl int get_default_pmode();
+extern public cdecl int create_directory(const char* directoryName);
+extern public cdecl int file_exists(const char* filePath);
+extern public cdecl int directory_exists(const char* directoryPath);
+extern public cdecl int path_exists(const char* path);
+extern public cdecl char* get_current_working_directory(char* buf, int bufSize);
+extern public cdecl char* get_environment_variable(const char* varName);
+extern public cdecl void begin_capture_call_stack();
+extern public cdecl void end_capture_call_stack();
+extern public cdecl const char* capture_call_stack();
+extern public cdecl void enter_frame(const char* fun, const char* file, int line);
+extern public cdecl void leave_frame();
+extern public cdecl void dbgheap_init();
+extern public cdecl void dbgheap_done();
+extern public cdecl void dbgheap_report();
+extern public cdecl void dbgheap_stop(int allocation);
+extern public cdecl void* dbgheap_malloc(ulong size, const char* file, int line);
+extern public cdecl void dbgheap_free(void* mem);
+extern public cdecl int dbgheap_get_serial(void* mem);
+extern public cdecl int time_nanosecs(long& secs, int& nanosecs);
+extern public cdecl int sleep(long secs, int nanosecs);
+public typedef ulong thread_t;
+extern public cdecl thread_t this_thread();
+public nothrow delegate void thread_fun(void* arg);
+extern public cdecl int create_thread(thread_t* tid, thread_fun start, void* arg);
+extern public cdecl void exit_thread(void* value);
+extern public cdecl int detach_thread(thread_t tid);
+extern public cdecl int join_thread(thread_t tid, void** value);
+extern public cdecl bool equal_thread(thread_t tid1, thread_t tid2);
+public typedef void* mutex_t;
+extern public cdecl mutex_t* allocate_mutex_handle();
+extern public cdecl void free_mutex_handle(mutex_t* handle);
+extern public cdecl int init_mutex(mutex_t* mtx);
+extern public cdecl int init_recursive_mutex(mutex_t* mtx);
+extern public cdecl int destroy_mutex(mutex_t* mtx);
+extern public cdecl int lock_mutex(mutex_t* mtx);
+extern public cdecl int trylock_mutex(mutex_t* mtx, bool& already_locked);
+extern public cdecl int unlock_mutex(mutex_t* mtx);
+public typedef void* cond_t;
+extern public cdecl cond_t* allocate_cond_handle();
+extern public cdecl void free_cond_handle(cond_t* handle);
+extern public cdecl int init_cond(cond_t* cond);
+extern public cdecl int destroy_cond(cond_t* cond);
+extern public cdecl int broadcast_cond(cond_t* cond);
+extern public cdecl int signal_cond(cond_t* cond);
+extern public cdecl int wait_cond(cond_t* cond, mutex_t* mtx);
+extern public cdecl int timedwait_cond(cond_t* cond, mutex_t* mtx, long secs, int nanosecs, bool& timedout);
+extern public cdecl void threadtbl_init(int numExceptions);
+extern public cdecl void threadtbl_done();
+extern public cdecl void allocate_thread_data(thread_t tid);
+extern public cdecl void free_thread_data(thread_t tid);
+extern public cdecl void* get_exception_table_addr(thread_t tid);
+extern public cdecl void mutextbl_init(int numMutexes);
+extern public cdecl void mutextbl_done();
+extern public cdecl int mutextbl_lock_mtx(int mid);
+extern public cdecl int mutextbl_unlock_mtx(int mid);
+extern public cdecl int get_current_date(char* dateBuf);
+extern public cdecl double pow(double x, double y);

@@ -1,0 +1,107 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+namespace System
+{
+    public inline nothrow byte MinValue(byte)
+    {
+        return cast<byte>(0x00);
+    }
+
+    public inline nothrow byte MaxValue(byte)
+    {
+        return cast<byte>(0xFF);
+    }
+
+    public inline nothrow sbyte MinValue(sbyte)
+    {
+        return cast<sbyte>(0x80);
+    }
+
+    public inline nothrow sbyte MaxValue(sbyte)
+    {
+        return cast<sbyte>(0x7F);
+    }
+
+    public inline nothrow short MinValue(short)
+    {
+        return cast<short>(0x8000);
+    }
+
+    public inline nothrow short MaxValue(short)
+    {
+        return cast<short>(0x7FFF);
+    }
+
+    public inline nothrow ushort MinValue(ushort)
+    {
+        return cast<ushort>(0x0000);
+    }
+
+    public inline nothrow ushort MaxValue(ushort)
+    {
+        return cast<ushort>(0xFFFF);
+    }
+
+    public inline nothrow int MinValue(int)
+    {
+        return cast<int>(0x80000000);
+    }
+
+    public inline nothrow int MaxValue(int)
+    {
+        return cast<int>(0x7FFFFFFF);
+    }
+
+    public inline nothrow uint MinValue(uint)
+    {
+        return cast<uint>(0x00000000);
+    }
+
+    public inline nothrow uint MaxValue(uint)
+    {
+        return cast<uint>(0xFFFFFFFF);
+    }
+
+    public inline nothrow long MinValue(long)
+    {
+        return cast<long>(0x8000000000000000);
+    }
+
+    public inline nothrow long MaxValue(long)
+    {
+        return cast<long>(0x7FFFFFFFFFFFFFFF);
+    }
+
+    public inline nothrow ulong MinValue(ulong)
+    {
+        return cast<ulong>(0x0000000000000000);
+    }
+
+    public inline nothrow ulong MaxValue(ulong)
+    {
+        return cast<ulong>(0xFFFFFFFFFFFFFFFF);
+    }
+
+    public inline nothrow I MinValue<I>() 
+    {
+        return MinValue(cast<I>(0));
+    }
+
+    public inline nothrow I MaxValue<I>() 
+    {
+        return MaxValue(cast<I>(0));
+    }
+}

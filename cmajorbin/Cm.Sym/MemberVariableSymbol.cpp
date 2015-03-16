@@ -48,4 +48,24 @@ void MemberVariableSymbol::SetType(TypeSymbol* type_, int index)
     type = type_;
 }
 
+void MemberVariableSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+{
+	if (type->IsDerivedTypeSymbol())
+	{
+		type->CollectExportedDerivedTypes(exportedDerivedTypes);
+	}
+}
+
+void MemberVariableSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+	if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())
+	{
+		if (collected.find(type) == collected.end())
+		{
+			collected.insert(type);
+			type->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+		}
+	}
+}
+
 } } // namespace Cm::Sym

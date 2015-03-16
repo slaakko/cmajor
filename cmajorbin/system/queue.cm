@@ -1,0 +1,61 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Concepts;
+
+namespace System.Collections
+{
+    public class Queue<T> where T is Semiregular
+    {
+        public typedef T ValueType;
+        private typedef Queue<T> Self;
+        
+        public default Queue();
+        suppress Queue(const Self&);
+        suppress void operator=(const Self&);
+        public default Queue(Self&&);
+        public default void operator=(Self&&);
+        public nothrow inline bool IsEmpty() const
+        {
+            return items.IsEmpty();
+        }
+        public nothrow inline int Count() const
+        {
+            return items.Count();
+        }
+        public inline void Put(const ValueType& item)
+        {
+            items.Add(item);
+        }
+        public inline void Put(ValueType&& item)
+        {
+            items.Add(item);
+        }
+        public inline ValueType Get()
+        {
+            return items.RemoveFirst();
+        }
+        public nothrow inline const ValueType& Front() const 
+        {
+            return items.Front();
+        }
+        public nothrow void Clear()
+        {
+            items.Clear();
+        }
+        private List<ValueType> items;
+    }
+}
