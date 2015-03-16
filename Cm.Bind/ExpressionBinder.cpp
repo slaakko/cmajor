@@ -1856,6 +1856,13 @@ void ExpressionBinder::PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const
             }
         }
     }
+	if (CurrentFunction()->GetFunctionSymbol()->IsNothrow() && fun->CanThrow())
+	{
+		if (!CurrentFunction()->GetCurrentTry())
+		{
+			throw Cm::Core::Exception("a nothrow function can call a function that can throw only from from a try block", span, fun->GetSpan());
+		}
+	}
 }
 
 Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span)

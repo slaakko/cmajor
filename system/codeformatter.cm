@@ -1,0 +1,90 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.IO;
+ 
+namespace System.Text
+{
+    public class CodeFormatter
+    {
+        public CodeFormatter(OutputStream& stream_): stream(stream_), indent(0), indentSize(4), atBeginningOfLine(true), line(1)
+        {
+        }
+        suppress CodeFormatter(const CodeFormatter&);
+        suppress void operator=(const CodeFormatter&);
+        suppress CodeFormatter(CodeFormatter&&);
+        suppress void operator=(CodeFormatter&&);
+        public void Write(const string& text)
+        {
+            if (atBeginningOfLine)
+            {
+                if (indent != 0)
+                {
+                    stream << string(' ', CurrentIndent());
+                    atBeginningOfLine = false;
+                }
+            }
+            stream << text;
+        }
+        public void WriteLine(const string& text)
+        {
+            Write(text);
+            WriteLine();
+        }
+        public void WriteLine()
+        {
+            stream << endl();
+            atBeginningOfLine = true;
+        }
+        public inline nothrow void IncIndent()
+        {
+            ++indent;
+        }
+        public inline nothrow void DecIndent()
+        {
+            --indent;
+        }
+        public inline nothrow int Indent() const
+        {
+            return indent;
+        }
+        public inline nothrow int IndentSize() const
+        {
+            return indentSize;
+        }
+        public inline nothrow void SetIndentSize(int indentSize_)
+        {
+            indentSize = indentSize_;
+        }
+        public inline nothrow int CurrentIndent() const
+        {
+            return indent * indentSize;
+        }
+        public inline nothrow int Line() const
+        {
+            return line;
+        }
+        public nothrow void SetLine(int line_)
+        {
+            line = line_;
+        }
+        private OutputStream& stream;
+        private int indent;
+        private int indentSize;
+        private bool atBeginningOfLine;
+        private int line;
+    }
+}

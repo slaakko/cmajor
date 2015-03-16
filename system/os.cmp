@@ -1,0 +1,9 @@
+project os;
+target=library;
+assembly <os.cma>;
+csource <cmsys.c>;
+csource <dbgheap.c>;
+csource <mutextbl.c>;
+source <os.cm>;
+csource <threadtbl.c>;
+clib <rt>[os=linux];
