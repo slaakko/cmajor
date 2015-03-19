@@ -9,6 +9,7 @@
 
 #ifndef CM_BIND_OVERLOAD_RESOLUTION_INCLUDED
 #define CM_BIND_OVERLOAD_RESOLUTION_INCLUDED
+#include <Cm.Bind/Concept.hpp>
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
@@ -18,6 +19,46 @@
 namespace Cm { namespace Bind {
 
 using Cm::Parsing::Span;
+
+struct ArgumentMatch
+{
+    ArgumentMatch() : conversionRank(Cm::Sym::ConversionRank::exactMatch), conversionDistance(0)
+    {
+    }
+    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_) : conversionRank(conversionRank_), conversionDistance(0)
+    {
+    }
+    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_, const Cm::Sym::DerivationCounts& parameterDerivationCounts_, const Cm::Sym::DerivationCounts& argumentDerivationCounts_) :
+        conversionRank(conversionRank_), conversionDistance(0), parameterDerivationCounts(parameterDerivationCounts_), argumentDerivationCounts(argumentDerivationCounts_)
+    {
+    }
+    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_, int conversionDistance_, const Cm::Sym::DerivationCounts& parameterDerivationCounts_, const Cm::Sym::DerivationCounts& argumentDerivationCounts_) :
+        conversionRank(conversionRank_), conversionDistance(conversionDistance_), parameterDerivationCounts(parameterDerivationCounts_), argumentDerivationCounts(argumentDerivationCounts_)
+    {
+    }
+    Cm::Sym::ConversionRank conversionRank;
+    int conversionDistance;
+    Cm::Sym::DerivationCounts parameterDerivationCounts;
+    Cm::Sym::DerivationCounts argumentDerivationCounts;
+};
+
+struct FunctionMatch
+{
+    FunctionMatch(Cm::Sym::FunctionSymbol* function_, Cm::Sym::ContainerScope* containerScope_, Cm::BoundTree::BoundCompileUnit* compileUnit_) :
+        function(function_), numConversions(0), containerScope(containerScope_), compileUnit(compileUnit_), constraint(nullptr), boundConstraint(nullptr) {}
+    Cm::Sym::FunctionSymbol* function;
+    std::vector<ArgumentMatch> argumentMatches;
+    int numConversions;
+    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    std::vector<Cm::Sym::TypeSymbol*> templateArguments;
+    Cm::Ast::WhereConstraintNode* constraint;
+    Cm::Sym::ContainerScope* containerScope;
+    Cm::BoundTree::BoundCompileUnit* compileUnit;
+    std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
+};
+
+bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, const std::vector<Cm::Core::Argument>& arguments,
+    Cm::Sym::ConversionType conversionType, const Cm::Parsing::Span& span, FunctionMatch& functionMatch, std::unordered_set<Cm::Sym::ClassTypeSymbol*>& conversionClassTypes);
 
 enum class OverloadResolutionFlags : uint8_t
 {
@@ -43,18 +84,18 @@ inline bool GetFlag(OverloadResolutionFlags flag, OverloadResolutionFlags flags)
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,  
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions);
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions);
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
     OverloadResolutionFlags flags);
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
     Cm::Sym::ConversionType conversionType, OverloadResolutionFlags flags);
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
     Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags);
 
 

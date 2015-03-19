@@ -10,6 +10,7 @@
 #ifndef CM_SYM_DELEGATE_SYMBOL_INCLUDED
 #define CM_SYM_DELEGATE_SYMBOL_INCLUDED
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Ast/Delegate.hpp>
 
 namespace Cm { namespace Sym {
@@ -39,6 +40,13 @@ public:
     std::string TypeString() const override { return "delegate"; };
     bool IsDelegateTypeSymbol() const override { return true; }
     std::string GetMangleId() const override;
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
+    void AddSymbol(Symbol* symbol) override;
+    void SetType(TypeSymbol* type_, int index) override;
+    void SetReturnType(TypeSymbol* returnType_);
+    TypeSymbol* GetReturnType() const { return returnType; }
+    const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     bool IsExportSymbol() const override;
     bool IsNothrow() const
     {
@@ -56,8 +64,11 @@ public:
     {
         SetFlag(DelegateTypeSymbolFlags::throw_);
     }
+    void MakeIrType() override;
 private:
     DelegateTypeSymbolFlags flags;
+    TypeSymbol* returnType;
+    std::vector<ParameterSymbol*> parameters;
     bool GetFlag(DelegateTypeSymbolFlags flag) const
     {
         return (flags & flag) != DelegateTypeSymbolFlags::none;

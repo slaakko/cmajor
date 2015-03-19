@@ -21,6 +21,7 @@ class BoundConstant;
 class BoundEnumConstant;
 class BoundLocalVariable;
 class BoundMemberVariable;
+class BoundFunctionId;
 class BoundParameter;
 class BoundConversion;
 class BoundCast;
@@ -29,6 +30,7 @@ class BoundDynamicTypeNameExpression;
 class BoundUnaryOp;
 class BoundBinaryOp;
 class BoundFunctionCall;
+class BoundDelegateCall;
 class BoundDisjunction;
 class BoundConjunction;
 class BoundPostfixIncDecExpr;
@@ -79,6 +81,7 @@ public:
     virtual void Visit(BoundEnumConstant& boundEnumConstant) {}
     virtual void Visit(BoundLocalVariable& boundLocalVariable) {}
     virtual void Visit(BoundMemberVariable& boundMemberVariable) {}
+    virtual void Visit(BoundFunctionId& boundFunctionId) {}
     virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundCast& boundCast) {}
@@ -87,6 +90,7 @@ public:
     virtual void Visit(BoundUnaryOp& boundUnaryOp) {}
     virtual void Visit(BoundBinaryOp& boundBinaryOp) {}
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
+    virtual void Visit(BoundDelegateCall& boundDelegateCall) {}
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
     virtual void Visit(BoundPostfixIncDecExpr& boundPostfixIncDecExpr) {}

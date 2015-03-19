@@ -15,6 +15,7 @@
 #include <Cm.Bind/Function.hpp>
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Bind/Binder.hpp>
+#include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
@@ -80,6 +81,14 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     {
         constructionStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), constructionStatementNode.GetSpan()));
     }
+    if (ctor->IsDelegateFromFunCtor())
+    {
+        DelegateFromFunCtor* delegateFromFunCtor = static_cast<DelegateFromFunCtor*>(ctor);
+        Cm::BoundTree::BoundFunctionId* boundFunctionId = new Cm::BoundTree::BoundFunctionId(&constructionStatementNode, delegateFromFunCtor->FunctionSymbol());
+        boundFunctionId->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunCtor->DelegateType(), constructionStatementNode.GetSpan()));
+        constructionStatement->Arguments()[1].reset(boundFunctionId);
+    }
     PrepareFunctionArguments(ctor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository());
     if (localVariableType->IsReferenceType())
     {
@@ -141,6 +150,14 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     {
         assignmentStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), assignmentStatementNode.GetSpan()));
     }
+    if (assignment->IsDelegateFromFunAssignment())
+    {
+        DelegateFromFunAssignment* delegateFromFunAssignment = static_cast<DelegateFromFunAssignment*>(assignment);
+        Cm::BoundTree::BoundFunctionId* boundFunctionId = new Cm::BoundTree::BoundFunctionId(&assignmentStatementNode, delegateFromFunAssignment->FunctionSymbol());
+        boundFunctionId->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunAssignment->DelegateType(), assignmentStatementNode.GetSpan()));
+        assignmentStatement->RightArgument().reset(boundFunctionId);
+    }
     SetResult(assignmentStatement);
 }
 
@@ -169,10 +186,6 @@ ReturnStatementBinder::ReturnStatementBinder(Cm::BoundTree::BoundCompileUnit& bo
 
 void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
 {
-	if (CurrentFunction()->GetFunctionSymbol()->FullName() == "System.operator<<(System.uhuge, System.uhuge)")
-	{
-		int x = 0;
-	}
     Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(&returnStatementNode);
     Cm::Ast::FunctionNode* functionNode = returnStatementNode.GetFunction();
     Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
@@ -200,14 +213,22 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 }
 				else
                 {
-                    Cm::Core::Argument sourceArgument = Cm::Core::Argument(returnValue->GetArgumentCategory(), SymbolTable().GetTypeRepository().MakeConstReferenceType(returnValue->GetType(),
-                        returnStatementNode.GetSpan()));
-                    resolutionArguments.push_back(sourceArgument);
-                    if (returnType->IsReferenceType())
+                    if (returnValue->GetType()->IsFunctionGroupTypeSymbol())
                     {
-                        if (!returnValue->GetType()->IsReferenceType())
+                        Cm::Core::Argument sourceArgument = Cm::Core::Argument(returnValue->GetArgumentCategory(), returnValue->GetType());
+                        resolutionArguments.push_back(sourceArgument);
+                    }
+                    else
+                    {
+                        Cm::Core::Argument sourceArgument = Cm::Core::Argument(returnValue->GetArgumentCategory(), SymbolTable().GetTypeRepository().MakeConstReferenceType(returnValue->GetType(),
+                            returnStatementNode.GetSpan()));
+                        resolutionArguments.push_back(sourceArgument);
+                        if (returnType->IsReferenceType())
                         {
-                            returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+                            if (!returnValue->GetType()->IsReferenceType())
+                            {
+                                returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+                            }
                         }
                     }
                 }
@@ -232,6 +253,14 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 if (!ctor->IsBasicTypeOp())
                 {
                     returnStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), returnStatementNode.GetSpan()));
+                }
+                if (ctor->IsDelegateFromFunCtor())
+                {
+                    DelegateFromFunCtor* delegateFromFunConstructor = static_cast<DelegateFromFunCtor*>(ctor);
+                    Cm::BoundTree::BoundFunctionId* boundFunctionId = new Cm::BoundTree::BoundFunctionId(&returnStatementNode, delegateFromFunConstructor->FunctionSymbol());
+                    boundFunctionId->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+                    boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunConstructor->DelegateType(), returnStatementNode.GetSpan()));
+                    returnValue = boundFunctionId;
                 }
                 if (conversions.size() != 2)
                 {

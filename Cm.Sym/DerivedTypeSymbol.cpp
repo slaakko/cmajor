@@ -180,11 +180,19 @@ void DerivedTypeSymbol::Read(Reader& reader)
     TypeSymbol::Read(reader);
     derivations = reader.ReadDerivationList();
     reader.FetchTypeFor(this, 0);
+    reader.EnqueueMakeIrTypeFor(this);
 }
 
 void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
 {
     baseType = type;
+}
+
+void DerivedTypeSymbol::MakeIrType()
+{
+    if (IrTypeMade()) return;
+    SetIrTypeMade();
+    baseType->MakeIrType();
     SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
 }
 

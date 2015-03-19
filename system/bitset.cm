@@ -21,18 +21,14 @@ namespace System.Collections
     {
         public nothrow BitSet(): numBits(0), bits()
         {
-            bits.Add(0u);
-/*
             try
             {
                 bits.Add(0u);
             }            
             catch (const Exception& ex)
             {
-                Console.Error() << ex.ToString() << endl();
                 exit(255);
             }
-*/
         }
         public BitSet(int numBits_): numBits(0), bits()
         {

@@ -21,6 +21,7 @@
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.Bind/Function.hpp>
 #include <Cm.Bind/Enumeration.hpp>
+#include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
@@ -1083,9 +1084,15 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
             ++numArgs;
             type = fun->GetReturnType();
         }
+        else if (plainSubjectType->IsDelegateTypeSymbol())
+        {
+            Cm::Sym::DelegateTypeSymbol* delegateType = static_cast<Cm::Sym::DelegateTypeSymbol*>(plainSubjectType);
+            BindInvokeDelegate(node, delegateType, subject.release(), arguments);
+            return;
+        }
         else
         {
-            // todo
+            throw std::runtime_error("BindInvoke todo");
         }
     }
     PrepareFunctionSymbol(fun, node->GetSpan());
@@ -1162,6 +1169,14 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
     Cm::BoundTree::BoundLocalVariable* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, temporary);
     boundTemporary->SetType(typeSymbol);
     arguments.InsertFront(boundTemporary);
+    if (fun->IsDelegateFromFunCtor())
+    {
+        DelegateFromFunCtor* delegateFromFunCtor = static_cast<DelegateFromFunCtor*>(fun);
+        Cm::BoundTree::BoundFunctionId* boundFunctionId = new Cm::BoundTree::BoundFunctionId(node, delegateFromFunCtor->FunctionSymbol());
+        boundFunctionId->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunCtor->DelegateType(), node->GetSpan()));
+        arguments[1].reset(boundFunctionId);
+    }
     PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
     return fun;
 }
@@ -1290,6 +1305,46 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeOpApply(Cm::Ast::Node* node
     return fun;
 }
 
+void ExpressionBinder::BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::DelegateTypeSymbol* delegateType, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpressionList& arguments)
+{
+    int numParams = int(delegateType->Parameters().size());
+    if (arguments.Count() != numParams)
+    {
+        throw Cm::Core::Exception("wrong number of arguments to delegate call (got " + std::to_string(arguments.Count()) + ", need " + std::to_string(numParams) + ")", node->GetSpan());
+    }
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
+    {
+        resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+    }
+    std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
+    Cm::Bind::FunctionMatch functionMatch(nullptr, containerScope, &boundCompileUnit);
+    if (FindConversions(boundCompileUnit, delegateType->Parameters(), resolutionArguments, Cm::Sym::ConversionType::implicit, node->GetSpan(), functionMatch, conversionClassTypes))
+    {
+        int n = int(functionMatch.conversions.size());
+        if (n != arguments.Count())
+        {
+            throw std::runtime_error("wrong number of arguments");
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            Cm::Sym::FunctionSymbol* conversion = functionMatch.conversions[i];
+            if (conversion)
+            {
+                arguments[i].reset(Cm::BoundTree::CreateBoundConversion(node, arguments[i].release(), conversion, currentFunction));
+            }
+        }
+        Cm::BoundTree::BoundDelegateCall* delegateCall = new Cm::BoundTree::BoundDelegateCall(delegateType, subject, node, std::move(arguments));
+        delegateCall->SetType(delegateType->GetReturnType());
+        boundExpressionStack.Push(delegateCall);
+    }
+    else
+    {
+        std::string errorMessage = "delegate resolution failed: there are no acceptable conversions for all argument types.";
+        throw Cm::Core::Exception(errorMessage, node->GetSpan());
+    }
+}
+
 void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
 {
     Cm::Sym::SymbolType symbolType = symbol->GetSymbolType();
@@ -1323,6 +1378,12 @@ void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
         {
             Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(symbol);
             BindClassTypeSymbol(node, classTypeSymbol);
+            break;
+        }
+        case Cm::Sym::SymbolType::delegateSymbol:
+        {
+            Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol = static_cast<Cm::Sym::DelegateTypeSymbol*>(symbol);
+            BindDelegateTypeSymbol(node, delegateTypeSymbol);
             break;
         }
         case Cm::Sym::SymbolType::namespaceSymbol:
@@ -1468,6 +1529,13 @@ void ExpressionBinder::BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::Class
     boundExpressionStack.Push(boundType);
 }
 
+void ExpressionBinder::BindDelegateTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol)
+{
+    Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, delegateTypeSymbol);
+    boundType->SetType(delegateTypeSymbol);
+    boundExpressionStack.Push(boundType);
+}
+
 void ExpressionBinder::BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::NamespaceSymbol* namespaceSymbol)
 {
     Cm::BoundTree::BoundNamespaceExpression* boundNamespace = new Cm::BoundTree::BoundNamespaceExpression(idNode, namespaceSymbol);
@@ -1519,6 +1587,7 @@ void ExpressionBinder::BindBoundTypeParameterSymbol(Cm::Ast::Node* idNode, Cm::S
 void ExpressionBinder::BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol)
 {
     Cm::BoundTree::BoundFunctionGroup* boundFunctionGroup = new Cm::BoundTree::BoundFunctionGroup(idNode, functionGroupSymbol);
+    boundFunctionGroup->SetType(new Cm::Sym::FunctionGroupTypeSymbol(functionGroupSymbol));
     boundExpressionStack.Push(boundFunctionGroup);
 }
 
@@ -1860,7 +1929,7 @@ void ExpressionBinder::PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const
 	{
 		if (!CurrentFunction()->GetCurrentTry())
 		{
-			throw Cm::Core::Exception("a nothrow function can call a function that can throw only from from a try block", span, fun->GetSpan());
+			throw Cm::Core::Exception("a nothrow function can call a function that can throw only from a try block", span, fun->GetSpan());
 		}
 	}
 }

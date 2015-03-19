@@ -24,12 +24,13 @@ namespace Cm { namespace Emit {
 class LocalVariableIrObjectRepository
 {
 public:
-    LocalVariableIrObjectRepository();
+    LocalVariableIrObjectRepository(Cm::Core::IrFunctionRepository* irFunctionRepository_);
     Ir::Intf::Object* CreateLocalVariableIrObjectFor(Cm::Sym::Symbol *localVariableOrParameter);
     Ir::Intf::Object* GetLocalVariableIrObject(Cm::Sym::Symbol *localVariableOrParameter);
     void SetExceptionCodeVariable(Ir::Intf::Object* exceptionCodeVariable_) { exceptionCodeVariable = exceptionCodeVariable_; }
     Ir::Intf::Object* GetExceptionCodeVariable() const { return exceptionCodeVariable; }
 private:
+    Cm::Core::IrFunctionRepository* irFunctionRepository;
     typedef std::unordered_map<Cm::Sym::Symbol*, Ir::Intf::Object*>  LocalVariableObjectMap;
     typedef LocalVariableObjectMap::const_iterator LocalVariableObjectMapIt;
     LocalVariableObjectMap localVariableObjectMap;
@@ -94,6 +95,7 @@ public:
     void Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable) override;
     void Visit(Cm::BoundTree::BoundParameter& boundParameter) override;
     void Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable) override;
+    void Visit(Cm::BoundTree::BoundFunctionId& boundFunctionId) override;
     void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
     void Visit(Cm::BoundTree::BoundCast& boundCast) override;
     void Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExpr) override;
@@ -101,6 +103,7 @@ public:
     void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;
+    void Visit(Cm::BoundTree::BoundDelegateCall& boundDelegateCall) override;
     void Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction) override;
     void Visit(Cm::BoundTree::BoundConjunction& boundConjunction) override;
     void Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncDecExpr) override;

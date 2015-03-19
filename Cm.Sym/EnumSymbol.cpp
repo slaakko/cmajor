@@ -42,6 +42,7 @@ void EnumTypeSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
     reader.FetchTypeFor(this, 0);
+    reader.EnqueueMakeIrTypeFor(this);
 }
 
 void EnumTypeSymbol::SetUnderlyingType(TypeSymbol* underlyingType_)
@@ -51,6 +52,8 @@ void EnumTypeSymbol::SetUnderlyingType(TypeSymbol* underlyingType_)
 
 void EnumTypeSymbol::MakeIrType()
 {
+    if (IrTypeMade()) return;
+    SetIrTypeMade();
     SetIrType(GetUnderlyingType()->GetIrType()->Clone());
     SetDefaultIrValue(GetUnderlyingType()->GetIrType()->CreateDefaultValue());
 }

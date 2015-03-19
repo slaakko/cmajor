@@ -9,13 +9,15 @@
 
 #include <Cm.Bind/Delegate.hpp>
 #include <Cm.Bind/Access.hpp>
+#include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/DelegateSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Bind {
 
-void BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::DelegateNode* delegateNode)
+Cm::Sym::DelegateTypeSymbol* BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::DelegateNode* delegateNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(delegateNode->Id()->Str());
     if (symbol->IsDelegateTypeSymbol())
@@ -72,11 +74,20 @@ void BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         {
             delegateTypeSymbol->SetThrow();
         }
+        return delegateTypeSymbol;
     }
     else
     {
         throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a delegate type", symbol->GetSpan());
     }
+}
+
+void CompleteBindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol, Cm::Ast::DelegateNode* delegateNode)
+{
+    Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, delegateNode->ReturnTypeExpr());
+    delegateTypeSymbol->SetReturnType(returnType);
+    delegateTypeSymbol->MakeIrType();
 }
 
 void BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 

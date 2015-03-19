@@ -98,7 +98,7 @@ Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& 
     }
     else
     {
-        baseIrType = baseType->GetIrType()->Clone();
+        baseIrType = baseType->GetIrType();
     }
     int numPointers = 0;
     bool ref = false;
@@ -218,7 +218,7 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
     }
     std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType), finalBaseType, finalDerivations, typeId));
     derivedTypeSymbol->SetAccess(SymbolAccess::public_);
-    if (!baseType->IsTypeParameterSymbol())
+    if (!baseType->IsTypeParameterSymbol() && !baseType->IsFunctionGroupTypeSymbol())
     {
         derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span));
         derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
@@ -436,7 +436,6 @@ void TypeRepository::Import(Reader& reader)
         if (symbol->IsTemplateTypeSymbol())
         {
             TemplateTypeSymbol* templateTypeSymbol = static_cast<TemplateTypeSymbol*>(symbol);
-            templateTypeSymbol->MakeIrType();
             types.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol));
         }
         else
@@ -451,7 +450,6 @@ void TypeRepository::Import(Reader& reader)
         if (symbol->IsTypeSymbol())
         {
             TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
-            typeSymbol->MakeIrType();
             types.push_back(std::unique_ptr<TypeSymbol>(typeSymbol));
         }
         else
@@ -459,6 +457,7 @@ void TypeRepository::Import(Reader& reader)
             throw std::runtime_error("type symbol expected");
         }
     }
+    reader.MakeIrTypes();
     if (!reader.AllTypesFetched())
     {
         std::cerr << "not all types fetched!" << std::endl;

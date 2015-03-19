@@ -52,7 +52,6 @@ void ContainerSymbol::Read(Reader& reader)
     {
         Symbol* symbol = reader.ReadSymbol();
         AddSymbol(symbol);
-        symbol->MakeIrType();
     }
 }
 

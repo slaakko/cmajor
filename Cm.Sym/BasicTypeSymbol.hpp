@@ -15,7 +15,7 @@ namespace Cm { namespace Sym {
 
 enum class ShortBasicTypeId : uint8_t
 {
-    boolId, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
+    boolId = 1, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
 };
 
 const Cm::Util::Uuid& GetBasicTypeId(ShortBasicTypeId shortId);
