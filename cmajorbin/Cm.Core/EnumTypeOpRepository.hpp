@@ -51,29 +51,29 @@ public:
 class EnumConstructorOpGroup : public EnumTypeOpGroup
 {
 public:
-    virtual void CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,
-        Cm::Sym::TypeRepository& typeRepository, EnumTypeOpCacheMap& enumTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions);
+    void CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,
+        Cm::Sym::TypeRepository& typeRepository, EnumTypeOpCacheMap& enumTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
 };
 
 class EnumAssignmentOpGroup : public EnumTypeOpGroup
 {
 public:
-    virtual void CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,
-        Cm::Sym::TypeRepository& typeRepository, EnumTypeOpCacheMap& enumTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions);
+    void CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,
+        Cm::Sym::TypeRepository& typeRepository, EnumTypeOpCacheMap& enumTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
 };
 
 class EnumEqualOpGroup : public EnumTypeOpGroup
 {
 public:
-    virtual void CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,
-        Cm::Sym::TypeRepository& typeRepository, EnumTypeOpCacheMap& enumTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions);
+    void CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,
+        Cm::Sym::TypeRepository& typeRepository, EnumTypeOpCacheMap& enumTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
 };
 
 class EnumLessOpGroup : public EnumTypeOpGroup
 {
 public:
-    virtual void CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,
-        Cm::Sym::TypeRepository& typeRepository, EnumTypeOpCacheMap& enumTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions);
+    void CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,
+        Cm::Sym::TypeRepository& typeRepository, EnumTypeOpCacheMap& enumTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
 };
 
 class EnumTypeOpRepository

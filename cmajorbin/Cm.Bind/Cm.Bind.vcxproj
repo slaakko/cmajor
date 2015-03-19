@@ -27,6 +27,7 @@
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="ControlFlowAnalyzer.hpp" />
     <ClInclude Include="Delegate.hpp" />
+    <ClInclude Include="DelegateTypeOpRepository.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Evaluator.hpp" />
     <ClInclude Include="ExpressionBinder.hpp" />
@@ -53,6 +54,7 @@
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="ControlFlowAnalyzer.cpp" />
     <ClCompile Include="Delegate.cpp" />
+    <ClCompile Include="DelegateTypeOpRepository.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="ExpressionBinder.cpp" />

@@ -147,6 +147,19 @@ Symbol* Reader::ReadSymbol()
     }
 }
 
+void Reader::EnqueueMakeIrTypeFor(Symbol* symbol)
+{
+    makeIrTypeSet.insert(symbol);
+}
+
+void Reader::MakeIrTypes()
+{
+    for (Symbol* symbol : makeIrTypeSet)
+    {
+        symbol->MakeIrType();
+    }
+}
+
 bool Reader::AllTypesFetched()
 {
     FetchTypeMapIt e = fetchTypeMap.end();

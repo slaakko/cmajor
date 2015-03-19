@@ -115,6 +115,7 @@ void TemplateTypeSymbol::Read(Reader& reader)
     {
         reader.FetchTypeFor(this, i);
     }
+    reader.EnqueueMakeIrTypeFor(this);
 }
 
 void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
@@ -135,6 +136,8 @@ void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
 
 void TemplateTypeSymbol::MakeIrType()
 {
+    if (IrTypeMade()) return;
+    SetIrTypeMade();
     SetIrType(Cm::IrIntf::CreateClassTypeName(FullName()));
 }
 

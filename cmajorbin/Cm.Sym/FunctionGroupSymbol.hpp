@@ -10,6 +10,7 @@
 #ifndef CM_SYM_FUNCTION_GROUP_SYMBOL_INCLUDED
 #define CM_SYM_FUNCTION_GROUP_SYMBOL_INCLUDED
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 #include <unordered_set>
 
 namespace Cm { namespace Sym {
@@ -33,6 +34,18 @@ private:
     typedef ArityFunctionListMap::iterator ArityFunctionListMapIt;
     ArityFunctionListMap arityFunctionListMap;
     ContainerScope* containerScope;
+};
+
+class FunctionGroupTypeSymbol : public TypeSymbol
+{
+public:
+    FunctionGroupTypeSymbol(Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_);
+    SymbolType GetSymbolType() const override { return SymbolType::functionGroupTypeSymbol; }
+    std::string GetMangleId() const override { return Name(); }
+    Cm::Sym::FunctionGroupSymbol* GetFunctionGroupSymbol() const { return functionGroupSymbol; }
+    bool IsFunctionGroupTypeSymbol() const override { return true; }
+private:
+    Cm::Sym::FunctionGroupSymbol* functionGroupSymbol;
 };
 
 } } // namespace Cm::Sym

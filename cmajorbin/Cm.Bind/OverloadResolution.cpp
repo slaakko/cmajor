@@ -10,7 +10,6 @@
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Template.hpp>
-#include <Cm.Bind/Concept.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
@@ -23,28 +22,6 @@
 #include <algorithm>
 
 namespace Cm { namespace Bind {
-
-struct ArgumentMatch
-{
-    ArgumentMatch(): conversionRank(Cm::Sym::ConversionRank::exactMatch), conversionDistance(0)
-    {
-    }
-    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_) : conversionRank(conversionRank_), conversionDistance(0) 
-    {
-    }
-    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_, const Cm::Sym::DerivationCounts& parameterDerivationCounts_, const Cm::Sym::DerivationCounts& argumentDerivationCounts_) : 
-        conversionRank(conversionRank_), conversionDistance(0), parameterDerivationCounts(parameterDerivationCounts_), argumentDerivationCounts(argumentDerivationCounts_) 
-    {
-    }
-    ArgumentMatch(Cm::Sym::ConversionRank conversionRank_, int conversionDistance_, const Cm::Sym::DerivationCounts& parameterDerivationCounts_, const Cm::Sym::DerivationCounts& argumentDerivationCounts_):
-        conversionRank(conversionRank_), conversionDistance(conversionDistance_), parameterDerivationCounts(parameterDerivationCounts_), argumentDerivationCounts(argumentDerivationCounts_) 
-    {
-    }
-    Cm::Sym::ConversionRank conversionRank;
-    int conversionDistance;
-    Cm::Sym::DerivationCounts parameterDerivationCounts;
-    Cm::Sym::DerivationCounts argumentDerivationCounts;
-};
 
 bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& right)
 {
@@ -84,21 +61,6 @@ bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& right)
         }
     }
 }
-
-struct FunctionMatch
-{
-    FunctionMatch(Cm::Sym::FunctionSymbol* function_, Cm::Sym::ContainerScope* containerScope_, Cm::BoundTree::BoundCompileUnit* compileUnit_) : 
-        function(function_), numConversions(0), containerScope(containerScope_), compileUnit(compileUnit_), constraint(nullptr), boundConstraint(nullptr) {}
-    Cm::Sym::FunctionSymbol* function;
-    std::vector<ArgumentMatch> argumentMatches;
-    int numConversions;
-    std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    std::vector<Cm::Sym::TypeSymbol*> templateArguments;
-    Cm::Ast::WhereConstraintNode* constraint;
-    Cm::Sym::ContainerScope* containerScope;
-    Cm::BoundTree::BoundCompileUnit* compileUnit;
-    std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
-};
 
 struct BetterFunctionMatch
 {
@@ -612,20 +574,20 @@ std::string MakeOverloadName(const std::string& groupName, const std::vector<Cm:
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions)
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions)
 {
     return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, OverloadResolutionFlags::none);
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
     OverloadResolutionFlags flags)
 {
     return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, flags);
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
     Cm::Sym::ConversionType conversionType, OverloadResolutionFlags flags)
 {
     std::vector<Cm::Sym::TypeSymbol*> boundTemplateArguments;
@@ -633,7 +595,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
 }
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,
-    const std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
     Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags)
 {
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
@@ -644,6 +606,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     {
         boundCompileUnit.DerivedTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
         boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
+        boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
     }
     std::unique_ptr<Cm::Core::Exception> ownedException = nullptr;
     Cm::Core::Exception* exception = nullptr;

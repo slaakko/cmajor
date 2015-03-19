@@ -299,6 +299,10 @@ void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
         CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol(), 
             &functionNode);
         CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+        if (boundFunction->GetFunctionSymbol()->Name() == "foo(Foo)")
+        {
+            int x = 0;
+        }
         GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
         boundCompileUnit.AddBoundNode(boundFunction.release());
         EndContainerScope();

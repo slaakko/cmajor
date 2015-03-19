@@ -18,6 +18,7 @@
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/Value.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
+#include <Cm.Sym/DelegateSymbol.hpp>
 
 namespace Cm { namespace BoundTree {
 
@@ -194,6 +195,16 @@ private:
     Cm::Sym::MemberVariableSymbol* symbol;
 };
 
+class BoundFunctionId : public BoundExpression
+{
+public:
+    BoundFunctionId(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_);
+    Cm::Sym::FunctionSymbol* FunctionSymbol() const { return functionSymbol; }
+    void Accept(Visitor& visitor) override;
+private:
+    Cm::Sym::FunctionSymbol* functionSymbol;
+};
+
 class BoundTypeExpression : public BoundExpression
 {
 public:
@@ -332,9 +343,11 @@ public:
     bool IsBoundFunctionGroup() const override { return true; }
     void SetBoundTemplateArguments(const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments_);
     const std::vector<Cm::Sym::TypeSymbol*>& BoundTemplateArguments() const { return boundTemplateArguments; }
+    void SetType(Cm::Sym::TypeSymbol* type_) override;
 private:
     Cm::Sym::FunctionGroupSymbol* functionGroupSymbol;
     std::vector<Cm::Sym::TypeSymbol*> boundTemplateArguments;
+    std::unique_ptr<Cm::Sym::TypeSymbol> ownedTypeSymbol;
 };
 
 class BoundFunctionCall : public BoundExpression
@@ -358,6 +371,20 @@ private:
     Cm::Sym::LocalVariableSymbol* classObjectResultVar;
     std::unique_ptr<BoundLocalVariable> temporary;
     std::unique_ptr<TraceCallInfo> traceCallInfo;
+};
+
+class BoundDelegateCall : public BoundExpression
+{
+public:
+    BoundDelegateCall(Cm::Sym::DelegateTypeSymbol* delegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_);
+    void Accept(Visitor& visitor) override;
+    Cm::Sym::DelegateTypeSymbol* DelegateType() const { return delegateType; }
+    BoundExpression* Subject() const { return subject.get(); }
+    BoundExpressionList& Arguments() { return arguments; }
+private:
+    Cm::Sym::DelegateTypeSymbol* delegateType;
+    std::unique_ptr<BoundExpression> subject;
+    BoundExpressionList arguments;
 };
 
 class BoundBooleanBinaryExpression : public BoundExpression

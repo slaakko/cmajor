@@ -53,4 +53,9 @@ void FunctionGroupSymbol::Dump(CodeFormatter& formatter)
 {
 }
 
+FunctionGroupTypeSymbol::FunctionGroupTypeSymbol(Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_) : TypeSymbol(functionGroupSymbol_->GetSpan(), functionGroupSymbol_->Name()), 
+    functionGroupSymbol(functionGroupSymbol_)
+{
+}
+
 } } // namespace Cm::Sym

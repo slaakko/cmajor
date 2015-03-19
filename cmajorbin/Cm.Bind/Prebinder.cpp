@@ -26,7 +26,7 @@ namespace Cm { namespace Bind {
 
 Prebinder::Prebinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Core::ClassTemplateRepository& classTemplateRepository_) : 
     Cm::Ast::Visitor(false, false), symbolTable(symbolTable_), classTemplateRepository(classTemplateRepository_), currentContainerScope(nullptr), parameterIndex(0), currentClass(nullptr),
-    dontCompleteFunctions(false)
+    currentFunction(nullptr), currentDelegate(nullptr), dontCompleteFunctions(false)
 {
 }
 
@@ -261,13 +261,14 @@ void Prebinder::EndVisit(Cm::Ast::FunctionNode& functionNode)
 
 void Prebinder::BeginVisit(Cm::Ast::DelegateNode& delegateNode)
 {
-    BindDelegate(symbolTable, currentContainerScope, fileScopes, &delegateNode);
+    currentDelegate = BindDelegate(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &delegateNode);
     BeginContainerScope(symbolTable.GetContainerScope(&delegateNode));
     parameterIndex = 0;
 }
 
 void Prebinder::EndVisit(Cm::Ast::DelegateNode& delegateNode)
 {
+    CompleteBindDelegate(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, currentDelegate, &delegateNode);
     EndContainerScope();
 }
 

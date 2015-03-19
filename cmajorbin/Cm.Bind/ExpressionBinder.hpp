@@ -143,6 +143,7 @@ private:
     void BindMemberVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol);
     void BindParameterSymbol(Cm::Ast::Node* idNode, Cm::Sym::ParameterSymbol* parameterSymbol);
     void BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol);
+    void BindDelegateTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol);
     void BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::NamespaceSymbol* namespaceSymbol);
     void BindEnumTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumTypeSymbol* enumTypeSymbol);
     void BindEnumConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::EnumConstantSymbol* enumConstantSymbol);
@@ -160,6 +161,7 @@ private:
         bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments);
     Cm::Sym::FunctionSymbol* BindInvokeOpApply(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
         Cm::Sym::TypeSymbol* plainSubjectType, Cm::BoundTree::BoundExpression* subject);
+    void BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::DelegateTypeSymbol* delegateType, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpressionList& arguments);
     void BindCast(Cm::Ast::Node* node, Cm::Ast::Node* targetTypeExpr, Cm::Ast::Node* sourceExpr, const Cm::Parsing::Span& span);
     void BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* targetType, Cm::BoundTree::BoundExpression* sourceExpr);
     void BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes);

@@ -10,11 +10,10 @@
 #ifndef CM_CORE_IR_FUNCTION_REPOSITORY_INCLUDED
 #define CM_CORE_IR_FUNCTION_REPOSITORY_INCLUDED
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/DelegateSymbol.hpp>
 #include <Ir.Intf/Function.hpp>
 
 namespace Cm { namespace Core {
-
-Ir::Intf::Parameter* CreateIrParameter(Cm::Sym::ParameterSymbol* parameter);
 
 class IrFunctionRepository
 {
@@ -22,21 +21,29 @@ public:
     IrFunctionRepository();
     Ir::Intf::Function* GetDoNothingFunction();
     Ir::Intf::Function* CreateIrFunction(Cm::Sym::FunctionSymbol* function);
+    Ir::Intf::Object* GetFunctionId(Cm::Sym::FunctionSymbol* function, Cm::Sym::TypeSymbol* functionPtrPtrType);
+    Ir::Intf::Type* CreateIrPointerToDelegateType(Cm::Sym::DelegateTypeSymbol* delegateType);
     Ir::Intf::Type* GetFunPtrIrType(Cm::Sym::FunctionSymbol* fun);
     Ir::Intf::Parameter* GetExceptionCodeParam() const { return exceptionCodeParam; }
+    Ir::Intf::Parameter* CreateIrParameter(Cm::Sym::ParameterSymbol* parameter);
 private:
     typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Function*> IrFunctionMap;
     typedef IrFunctionMap::const_iterator IrFunctionMapIt;
     typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Type*> IrFunPtrMap;
     typedef IrFunPtrMap::const_iterator IrFunPtrMapIt;
+    typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Object*> FunctionIdMap;
+    typedef FunctionIdMap::const_iterator FunctionIdMapIt;
     IrFunctionMap irFunctionMap;
     IrFunPtrMap irFunPtrMap;
+    FunctionIdMap functionIdMap;
     std::unique_ptr<Ir::Intf::Function> doNothingFunction;
     std::vector<std::unique_ptr<Ir::Intf::Function>> ownedIrFunctions;
     std::vector<std::unique_ptr<Ir::Intf::Type>> ownedIrTypes;
+    std::vector<std::unique_ptr<Ir::Intf::Object>> ownedObjects;
     std::vector<std::unique_ptr<Ir::Intf::Parameter>> ownedIrParameters;
     Ir::Intf::Parameter* exceptionCodeParam;
     void Own(Ir::Intf::Type* type);
+    void Own(Ir::Intf::Object* object);
     void Own(Ir::Intf::Parameter* parameter);
 };
 

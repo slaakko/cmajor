@@ -86,10 +86,6 @@ void ClassTypeSymbol::Write(Writer& writer)
 
 void ClassTypeSymbol::Read(Reader& reader)
 {
-	if (Name() == "OutputStream")
-	{
-		int x = 0;
-	}
     TypeSymbol::Read(reader);
     flags = ClassTypeSymbolFlags(reader.GetBinaryReader().ReadUInt());
     bool hasBaseClass = reader.GetBinaryReader().ReadBool();
@@ -109,6 +105,7 @@ void ClassTypeSymbol::Read(Reader& reader)
         persistentClassData->cmlFilePath = reader.GetBinaryReader().FileName();
         reader.GetBinaryReader().Skip(persistentClassData->classNodeSize);
     }
+    reader.EnqueueMakeIrTypeFor(this);
 }
 
 void ClassTypeSymbol::ReadClassNode(Cm::Sym::SymbolTable& symbolTable, int fileIndex)
@@ -374,6 +371,8 @@ void ClassTypeSymbol::AddConversion(FunctionSymbol* functionSymbol)
 
 void ClassTypeSymbol::MakeIrType()
 {
+    if (IrTypeMade()) return;
+    SetIrTypeMade();
     SetIrType(Cm::IrIntf::CreateClassTypeName(FullName()));
 }
 

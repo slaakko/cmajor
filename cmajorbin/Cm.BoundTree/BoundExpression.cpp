@@ -153,6 +153,15 @@ void BoundMemberVariable::SetClassObject(Cm::BoundTree::BoundExpression* classOb
     classObject.reset(classObject_);
 }
 
+BoundFunctionId::BoundFunctionId(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : BoundExpression(syntaxNode_), functionSymbol(functionSymbol_)
+{
+}
+
+void BoundFunctionId::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundTypeExpression::BoundTypeExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* typeSymbol_) : BoundExpression(syntaxNode_), typeSymbol(typeSymbol_)
 {
 }
@@ -269,6 +278,12 @@ void BoundFunctionGroup::SetBoundTemplateArguments(const std::vector<Cm::Sym::Ty
     boundTemplateArguments = boundTemplateArguments_;
 }
 
+void BoundFunctionGroup::SetType(Cm::Sym::TypeSymbol* type_)
+{
+    BoundExpression::SetType(type_);
+    ownedTypeSymbol.reset(type_);
+}
+
 BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_)), fun(nullptr), 
     classObjectResultVar(nullptr)
 {
@@ -282,6 +297,16 @@ void BoundFunctionCall::Accept(Visitor& visitor)
 void BoundFunctionCall::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
 {
     traceCallInfo.reset(traceCallInfo_);
+}
+
+BoundDelegateCall::BoundDelegateCall(Cm::Sym::DelegateTypeSymbol* delegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) :
+    BoundExpression(syntaxNode_), delegateType(delegateType_), subject(subject_),arguments(std::move(arguments_))
+{
+}
+
+void BoundDelegateCall::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 BoundBooleanBinaryExpression::BoundBooleanBinaryExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(syntaxNode_), left(left_), right(right_)

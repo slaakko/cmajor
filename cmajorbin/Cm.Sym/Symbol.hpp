@@ -30,8 +30,8 @@ enum class SymbolType : uint8_t
 {
     boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
     classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
-    memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, conceptGroupSymbol,
-    instantiatedConceptSymbol, 
+    memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
+    conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol,
     maxSymbol
 };
 
@@ -65,7 +65,7 @@ enum class SymbolFlags : uint8_t
     static_ = 1 << 2,
     bound = 1 << 3,
     project = 1 << 4,
-    generated = 1 << 5
+    irTypeMade = 1 << 5
 };
 
 std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess);
@@ -134,6 +134,7 @@ public:
     virtual bool IsEnumConstantSymbol() const { return false; }
     virtual bool IsFunctionSymbol() const { return false; }
     virtual bool IsFunctionGroupSymbol() const { return false; }
+    virtual bool IsFunctionGroupTypeSymbol() const { return false; }
     virtual bool IsConceptSymbol() const { return false; }
     virtual bool IsConceptGroupSymbol() const { return false; }
     virtual bool IsTemplateTypeSymbol() const { return false; }
@@ -153,8 +154,8 @@ public:
     virtual bool IsSameParentOrAncestorOf(Symbol* that) const;
     bool Bound() const { return GetFlag(SymbolFlags::bound); }
     void SetBound() { SetFlag(SymbolFlags::bound); }
-    bool Generated() const { return GetFlag(SymbolFlags::generated); }
-    void SetGenerated() { SetFlag(SymbolFlags::generated); }
+    bool IrTypeMade() const { return GetFlag(SymbolFlags::irTypeMade); }
+    void SetIrTypeMade() { SetFlag(SymbolFlags::irTypeMade); }
     SymbolFlags Flags() const { return flags; }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none;  }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }

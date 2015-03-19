@@ -70,6 +70,7 @@ private:
     int parameterIndex;
     Cm::Sym::ClassTypeSymbol* currentClass;
     Cm::Sym::FunctionSymbol* currentFunction;
+    Cm::Sym::DelegateTypeSymbol* currentDelegate;
     std::vector<Cm::Ast::Node*> usingNodes;
     bool dontCompleteFunctions;
 };

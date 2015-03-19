@@ -16,7 +16,11 @@
 
 namespace Cm { namespace Core {
 
-Ir::Intf::Parameter* CreateIrParameter(Cm::Sym::ParameterSymbol* parameter)
+IrFunctionRepository::IrFunctionRepository() : exceptionCodeParam(nullptr)
+{
+}
+
+Ir::Intf::Parameter* IrFunctionRepository::CreateIrParameter(Cm::Sym::ParameterSymbol* parameter)
 {
     Ir::Intf::Type* irParameterType = nullptr;
     if (parameter->GetType()->IsClassTypeSymbol())
@@ -31,10 +35,6 @@ Ir::Intf::Parameter* CreateIrParameter(Cm::Sym::ParameterSymbol* parameter)
     parameterName.append(Cm::IrIntf::GetPrivateSeparator()).append("p");
     Ir::Intf::Parameter* irParameter = Cm::IrIntf::CreateParameter(parameterName, irParameterType);
     return irParameter;
-}
-
-IrFunctionRepository::IrFunctionRepository() : exceptionCodeParam(nullptr)
-{
 }
 
 Ir::Intf::Function* IrFunctionRepository::GetDoNothingFunction()
@@ -131,6 +131,43 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     return irFunction;
 }
 
+Ir::Intf::Object* IrFunctionRepository::GetFunctionId(Cm::Sym::FunctionSymbol* function, Cm::Sym::TypeSymbol* functionPtrPtrType)
+{
+    FunctionIdMapIt i = functionIdMap.find(function);
+    if (i != functionIdMap.end())
+    {
+        return i->second;
+    }
+    std::string functionIdName = Cm::Sym::MangleName(function->Ns()->FullName(), function->GroupName(), function->TypeArguments(), function->Parameters());
+    Ir::Intf::Object* functionId = Cm::IrIntf::CreateGlobal(functionIdName, functionPtrPtrType->GetIrType());
+    functionIdMap[function] = functionId;
+    Own(functionId);
+    return functionId;
+}
+
+Ir::Intf::Type* IrFunctionRepository::CreateIrPointerToDelegateType(Cm::Sym::DelegateTypeSymbol* delegateType)
+{
+    Cm::Sym::TypeSymbol* returnType = delegateType->GetReturnType();
+    Ir::Intf::Type* irReturnType = returnType->GetIrType()->Clone();
+    std::vector<Ir::Intf::Type*> irParameterTypes;
+    for (Cm::Sym::ParameterSymbol* parameter : delegateType->Parameters())
+    {
+        Cm::Sym::TypeSymbol* parameterType = parameter->GetType();
+        Ir::Intf::Type* irParameterType = parameterType->GetIrType()->Clone();
+        irParameterTypes.push_back(irParameterType);
+    }
+    if (!delegateType->IsNothrow())
+    {
+        Ir::Intf::Type* exceptionCodeParamType = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI32(), 1);
+        irParameterTypes.push_back(exceptionCodeParamType);
+    }
+    Ir::Intf::Type* irFunctionType = Cm::IrIntf::CreateFunctionType(irReturnType, irParameterTypes);
+    Own(irFunctionType);
+    Ir::Intf::Type* delegatePointerType = Cm::IrIntf::Pointer(irFunctionType, 2);
+    Own(delegatePointerType);
+    return delegatePointerType;
+}
+
 Ir::Intf::Type* IrFunctionRepository::GetFunPtrIrType(Cm::Sym::FunctionSymbol* fun)
 {
     CreateIrFunction(fun);
@@ -148,6 +185,15 @@ void IrFunctionRepository::Own(Ir::Intf::Type* type)
     {
         type->SetOwned();
         ownedIrTypes.push_back(std::unique_ptr<Ir::Intf::Type>(type));
+    }
+}
+
+void IrFunctionRepository::Own(Ir::Intf::Object* object)
+{
+    if (!object->Owned())
+    {
+        object->SetOwned();
+        ownedObjects.push_back(std::unique_ptr<Ir::Intf::Object>(object));
     }
 }
 

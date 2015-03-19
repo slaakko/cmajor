@@ -71,4 +71,9 @@ void BoundCompileUnit::SetClassTemplateRepository(Cm::Core::ClassTemplateReposit
     classTemplateRepository.reset(classTemplateRepository_);
 }
 
+void BoundCompileUnit::SetDelegateTypeOpRepository(Cm::Core::DelegateTypeOpRepository* delegateTypeOpRepository_)
+{
+    delegateTypeOpRepository.reset(delegateTypeOpRepository_);
+}
+
 } } // namespace Cm::BoundTree

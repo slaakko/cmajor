@@ -18,6 +18,7 @@
 #include <Cm.Core/IrClassTypeRepository.hpp>
 #include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Core/SynthesizedClassFunRepository.hpp>
+#include <Cm.Core/DelegateTypeOpRepository.hpp>
 #include <Cm.Core/FunctionTemplateRepository.hpp>
 #include <Cm.Core/ConceptRepository.hpp>
 #include <Cm.Core/ExternalConstantRepository.hpp>
@@ -49,6 +50,8 @@ public:
     void SetClassTemplateRepository(Cm::Core::ClassTemplateRepository* classTemplateRepository_);
     Cm::Core::ClassTemplateRepository& ClassTemplateRepository() { return *classTemplateRepository; }
     Cm::Core::FunctionTemplateRepository& FunctionTemplateRepository() { return functionTemplateRepository; }
+    Cm::Core::DelegateTypeOpRepository& DelegateTypeOpRepository() { return *delegateTypeOpRepository; }
+    void SetDelegateTypeOpRepository(Cm::Core::DelegateTypeOpRepository* delegateTypeOpRepository_);
     Cm::Core::ConceptRepository& ConceptRepository() { return conceptRepository; }
     void AddBoundNode(BoundNode* boundNode);
     void Accept(Visitor& visitor);
@@ -74,6 +77,7 @@ private:
     std::unique_ptr<Cm::Core::SynthesizedClassFunRepository> synthesizedClassFunRepository;
     std::unique_ptr<Cm::Core::ClassTemplateRepository> classTemplateRepository;
     Cm::Core::FunctionTemplateRepository functionTemplateRepository;
+    std::unique_ptr<Cm::Core::DelegateTypeOpRepository> delegateTypeOpRepository;
     Cm::Core::ConceptRepository conceptRepository;
     std::vector<std::unique_ptr<BoundNode>> boundNodes;
     std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionSymbols;

@@ -236,6 +236,7 @@ public:
     Cm::Sym::FunctionSymbol* Assignment() const { return assignment; }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
     TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
+    std::unique_ptr<BoundExpression>& RightArgument() { return right; }
 private:
     std::unique_ptr<BoundExpression> left;
     std::unique_ptr<BoundExpression> right;

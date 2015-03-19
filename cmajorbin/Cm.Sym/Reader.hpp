@@ -15,6 +15,7 @@
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Parsing/Scanner.hpp>
 #include <unordered_map>
+#include <unordered_set>
 #include <forward_list>
 
 namespace Cm { namespace Sym {
@@ -48,6 +49,8 @@ public:
     void SetSpanFileIndexOffset(int spanFileIndexOffset_);
     void MarkSymbolsBound();
     bool AllTypesFetched();
+    void EnqueueMakeIrTypeFor(Symbol* symbol);
+    void MakeIrTypes();
 private:
     BinaryReader binaryReader;
     SymbolTable& symbolTable;
@@ -58,6 +61,7 @@ private:
     FetchTypeMap fetchTypeMap;
     int spanFileIndexOffset;
     bool markSymbolsBound;
+    std::unordered_set<Symbol*> makeIrTypeSet;
 };
 
 } } // namespace Cm::Sym

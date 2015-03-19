@@ -85,7 +85,7 @@ Symbol::~Symbol()
 
 void Symbol::Write(Writer& writer)
 {
-    writer.GetBinaryWriter().Write(uint8_t(flags & ~(SymbolFlags::project)));
+    writer.GetBinaryWriter().Write(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::irTypeMade)));
 }
 
 void Symbol::Read(Reader& reader)
@@ -284,6 +284,7 @@ void Symbol::InitVirtualFunctionTables()
 
 void Symbol::MakeIrType()
 {
+    SetIrTypeMade();
 }
 
 } } // namespace Cm::Sym
