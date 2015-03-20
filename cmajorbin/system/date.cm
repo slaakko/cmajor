@@ -1,0 +1,67 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+namespace System
+{
+    public class Date
+    {
+        public Date(): year(1u), month(1u), day(1u)
+        {
+        }
+        public Date(ushort year_, byte month_, byte day_): year(year_), month(month_), day(day_)
+        {
+        }
+        public nothrow inline ushort Year() const
+        {
+            return year;
+        }
+        public nothrow inline byte Month() const
+        {
+            return month;
+        }
+        public nothrow inline byte Day() const
+        {
+            return day;
+        }
+        private ushort year;
+        private byte month;
+        private byte day;
+    }
+    
+    public nothrow bool operator==(Date left, Date right)
+    {
+        return left.Year() == right.Year() && left.Month() == right.Month() && left.Day() == right.Day();
+    }
+    
+    public nothrow bool operator<(Date left, Date right)
+    {
+        if (left.Year() < right.Year()) return true;
+        else if (left.Year() > right.Year()) return false;
+        else if (left.Month() < right.Month()) return true;
+        else if (left.Month() > right.Month()) return false;
+        else return left.Day() < right.Day();
+    }
+    
+    public Date CurrentDate()
+    {
+        string dateString(' ', 10);
+        int result = get_current_date(dateString.Chars());
+        if (result == 0)
+        {
+            throw Exception("get_current_date failed");
+        }
+        return ParseDate(dateString);
+    }
+}

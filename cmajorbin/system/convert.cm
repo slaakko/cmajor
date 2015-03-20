@@ -84,7 +84,6 @@ namespace System
         return ToString<ulong>(x);
     }
 
-/*
     public string ToString(uhuge x)
     {
         uhuge zero = 0u;
@@ -100,7 +99,6 @@ namespace System
         Reverse(s.Begin(), s.End());
         return s;
     }
-*/
 
     public nothrow string ToString(byte x)
     {
@@ -166,7 +164,6 @@ namespace System
         return "false";
     }
 
-/*
     public nothrow string ToString(Date date)
     {
         string d;
@@ -207,7 +204,6 @@ namespace System
         if (d < 1 || d > 31) throw ConversionException("invalid date '" + s + "'");
         return Date(cast<ushort>(y), cast<byte>(m), cast<byte>(d));
     }
-*/
 
     public nothrow inline char HexChar(byte nibble)
     {
@@ -254,7 +250,6 @@ namespace System
         return ToHexString<ulong>(u);
     }
 
-/*
     public nothrow string ToHexString(uhuge x)
     {
         string s;
@@ -272,7 +267,6 @@ namespace System
         Reverse(s.Begin(), s.End());
         return s;
     }
-*/
 
     public string ToUtf8(uint c)
     {
@@ -481,7 +475,6 @@ namespace System
         throw ConversionException("ulong value cannot be parsed from input string '" + s + "'");
     }
 
-/*
     public bool ParseUHuge(const string& s, uhuge& x)
     {
         uhuge zero = 0u;
@@ -521,7 +514,6 @@ namespace System
         }
         throw ConversionException("uhuge value cannot be parsed from input string '" + s + "'");
     }
-*/
 
     public bool ParseHex(const string& s, ulong& hex)
     {
@@ -563,7 +555,6 @@ namespace System
         throw ConversionException("hexadecimal value cannot be parsed from input string '" + s + "'");
     }
 
-/*
     public bool ParseHex(const string& s, uhuge& hex)
     {
         uhuge zero = 0u;
@@ -606,8 +597,7 @@ namespace System
         }
         throw ConversionException("hexadecimal uhuge value cannot be parsed from input string '" + s + "'");
     }
-*/
-/*
+
     public bool ParseDouble(const string& s, double& x)
     {
         x = 0.0;
@@ -753,6 +743,4 @@ namespace System
         }
         throw ConversionException("bool value cannot be parsed from input string '" + s + "'");
     }
-*/
-
 }
