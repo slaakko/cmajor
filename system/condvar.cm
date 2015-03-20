@@ -67,17 +67,11 @@ namespace System.Threading
         }
         public bool WaitUntil(Mutex& m, TimePoint tp)
         {
-            uhuge tenpow9(1000000000u);
             bool timedOut = false;
             mutex_t* mutexHandle = m.Handle();
-            Pair<uhuge, uhuge> qr = divmod(tp.Rep(), tenpow9);
-            uhuge secs = qr.first;
-            #assert(secs.h == 0u);
-            uhuge nanosecs = qr.second;
-            #assert(nanosecs < tenpow9);
-            long s = cast<long>(secs.l);
-            int n = cast<int>(nanosecs.l);
-            int result = timedwait_cond(handle, mutexHandle, s, n, timedOut);
+            long secs = tp.Rep() / 1000000000;
+            int nanosecs = cast<int>(tp.Rep() % 1000000000);
+            int result = timedwait_cond(handle, mutexHandle, secs, nanosecs, timedOut);
             if (result != 0)
             {
                 string reason = strerror(result);

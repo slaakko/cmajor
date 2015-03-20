@@ -24,7 +24,6 @@ namespace System.Threading
         public ThreadingException(const string& operation, const string& reason): base(operation + ": " + reason)
         {
         }
-        public default ThreadingException(const ThreadingException&);
     }
 
     public delegate void ThreadFun(void* arg);
@@ -50,7 +49,13 @@ namespace System.Threading
         }
         catch (const Exception& ex)
         {
-            Console.Error() << ex.ToString() << endl();
+            try
+            {
+                Console.Error() << ex.ToString() << endl();
+            }
+            catch (const Exception& ex)
+            {
+            }
         }
         delete threadData;
         free_thread_data(this_thread());

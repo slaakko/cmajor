@@ -105,6 +105,10 @@ AssignmentStatementBinder::AssignmentStatementBinder(Cm::BoundTree::BoundCompile
 
 void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
 {
+    if (CurrentFunction()->GetFunctionSymbol()->FullName() == "System.ToString(System.uhuge)")
+    {
+        int x = 0;
+    }
     Cm::BoundTree::BoundExpression* right = Pop();
     Cm::BoundTree::BoundExpression* left = Pop();
     left->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
@@ -141,10 +145,18 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     {
         right = Cm::BoundTree::CreateBoundConversion(&assignmentStatementNode, right, rightConversion, CurrentFunction());
     }
+    Cm::BoundTree::BoundExpressionList arguments;
+    arguments.Add(left);
+    arguments.Add(right);
+    PrepareFunctionArguments(assignment, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, true, BoundCompileUnit().IrClassTypeRepository());
+    left = arguments[0].release();
+    right = arguments[1].release();
+/*
     if (!assignment->Parameters()[1]->GetType()->IsReferenceType() && right->GetType()->IsReferenceType())
     {
         right->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
     }
+*/
     Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(&assignmentStatementNode, left, right, assignment);
     if (!assignment->IsBasicTypeOp())
     {
