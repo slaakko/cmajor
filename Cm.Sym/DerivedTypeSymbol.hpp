@@ -22,6 +22,7 @@ bool HasReferenceDerivation(const Cm::Ast::DerivationList& derivations);
 bool IsNonConstReferenceDerivationList(const Cm::Ast::DerivationList& derivations);
 bool HasConstDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasConstReferenceDerivation(const Cm::Ast::DerivationList& derivations);
+bool HasPureReferenceDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasRvalueRefDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasConstPointerDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasConstPointerPointerDerivation(const Cm::Ast::DerivationList& derivations);
@@ -48,6 +49,10 @@ public:
     bool IsConstType() const override { return HasConstDerivation(derivations); }
     bool IsRvalueRefType() const override { return HasRvalueRefDerivation(derivations); }
     bool IsConstReferenceType() const { return HasConstReferenceDerivation(derivations); }
+    bool IsNonClassReferenceType() const override 
+    { 
+        return HasPureReferenceDerivation(derivations) && !baseType->IsClassTypeSymbol() || HasReferenceDerivation(derivations) && HasPointertDerivation(derivations);
+    }
     bool IsConstPointerType() const { return HasConstPointerDerivation(derivations); }
     bool IsConstPointerPointerType() const { return HasConstPointerPointerDerivation(derivations); }
     DerivationCounts GetDerivationCounts() const override { return CountDerivations(derivations); }

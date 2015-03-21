@@ -132,7 +132,7 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerSc
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
             }
-            else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType() && !argument->GetType()->GetBaseType()->IsClassTypeSymbol())
+            else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsNonClassReferenceType())
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
             }
@@ -149,7 +149,7 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerSc
             }
             else
             {
-                if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType() && !argument->GetType()->GetBaseType()->IsClassTypeSymbol())
+                if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsNonClassReferenceType())
                 {
                     argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
                 }

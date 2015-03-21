@@ -96,6 +96,19 @@ bool HasConstReferenceDerivation(const Cm::Ast::DerivationList& derivations)
     return HasConstDerivation(derivations) && HasReferenceDerivation(derivations);
 }
 
+bool HasPureReferenceDerivation(const Cm::Ast::DerivationList& derivations)
+{
+    bool hasReferenceDerivation = true;
+    uint8_t n = derivations.NumDerivations();
+    for (uint8_t i = 0; i < n; ++i)
+    {
+        if (derivations[i] == Cm::Ast::Derivation::reference) hasReferenceDerivation = true;
+        if (derivations[i] == Cm::Ast::Derivation::rvalueRef) return false;
+        if (derivations[i] == Cm::Ast::Derivation::pointer) return false;
+    }
+    return hasReferenceDerivation;
+}
+
 bool HasRvalueRefDerivation(const Cm::Ast::DerivationList& derivations)
 {
     uint8_t n = derivations.NumDerivations();
