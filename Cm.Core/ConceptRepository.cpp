@@ -35,6 +35,7 @@ GlobalConceptData::GlobalConceptData()
     intrinsicConcepts.push_back(std::unique_ptr<Cm::Ast::ConceptNode>(new Cm::Ast::DerivedConceptNode()));
     intrinsicConcepts.push_back(std::unique_ptr<Cm::Ast::ConceptNode>(new Cm::Ast::ConvertibleConceptNode()));
     intrinsicConcepts.push_back(std::unique_ptr<Cm::Ast::ConceptNode>(new Cm::Ast::ExplicitlyConvertibleConceptNode()));
+    intrinsicConcepts.push_back(std::unique_ptr<Cm::Ast::ConceptNode>(new Cm::Ast::CommonConceptNode()));
 
     memberFunctionGroups.insert("operator<<");
     memberFunctionGroups.insert("operator>>");

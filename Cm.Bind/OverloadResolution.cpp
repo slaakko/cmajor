@@ -399,9 +399,15 @@ bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol
         Cm::Sym::TypeSymbol* parameterBaseType = parameterType->GetBaseType();
         if (parameterBaseType->IsTemplateTypeSymbol())
         {
-            if (argumentType->IsTemplateTypeSymbol())
+            Cm::Ast::DerivationList argumentTypeDerivations = Cm::Sym::RemoveDerivations(argumentType->Derivations(), parameterType->Derivations());
+            Cm::Sym::TypeSymbol* plainArgumentType = argumentType->GetBaseType();
+            if (argumentTypeDerivations.NumDerivations() > 0)
             {
-                Cm::Sym::TemplateTypeSymbol* argumentTemplateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(argumentType);
+                plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), Cm::Parsing::Span());
+            }
+            if (plainArgumentType->IsTemplateTypeSymbol())
+            {
+                Cm::Sym::TemplateTypeSymbol* argumentTemplateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(plainArgumentType);
                 Cm::Sym::TemplateTypeSymbol* parameterTemplateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(parameterBaseType);
                 if (Cm::Sym::TypesEqual(argumentTemplateTypeSymbol->GetSubjectType(), parameterTemplateTypeSymbol->GetSubjectType()))
                 {

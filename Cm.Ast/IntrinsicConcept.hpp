@@ -49,6 +49,13 @@ public:
     void Accept(Visitor& visitor) override;
 };
 
+class CommonConstraintNode : public IntrinsicConstraintNode
+{
+public:
+    CommonConstraintNode();
+    void Accept(Visitor& visitor) override;
+};
+
 class SameConceptNode : public ConceptNode
 {
 public:
@@ -71,6 +78,13 @@ class ExplicitlyConvertibleConceptNode : public ConceptNode
 {
 public:
     ExplicitlyConvertibleConceptNode();
+};
+
+class CommonConceptNode : public ConceptNode
+{
+public:
+    CommonConceptNode();
+    bool IsCommonConceptNode() const override { return true; }
 };
 
 } } // namespace Cm::Ast

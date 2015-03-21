@@ -37,7 +37,7 @@ std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vecto
 TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments)
 {
     TypeId id = subjectType->Id();
-	uint8_t n = int(typeArguments.size());
+	uint8_t n = uint8_t(typeArguments.size());
 	if (n >= id.Rep().Tag().size())
 	{
 		throw std::runtime_error("only " + std::to_string(id.Rep().Tag().size() - 1) + " supported");

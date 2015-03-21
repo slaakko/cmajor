@@ -132,7 +132,7 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerSc
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
             }
-            else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType())
+            else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType() && !argument->GetType()->GetBaseType()->IsClassTypeSymbol())
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
             }
@@ -149,7 +149,7 @@ void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerSc
             }
             else
             {
-                if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType())
+                if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType() && !argument->GetType()->GetBaseType()->IsClassTypeSymbol())
                 {
                     argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
                 }
@@ -862,6 +862,22 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
                 else if (symbolExpr->IsBoundMemberVariable())
                 {
                     Cm::BoundTree::BoundMemberVariable* memberVariable = static_cast<Cm::BoundTree::BoundMemberVariable*>(symbolExpr.release());
+                    Cm::Sym::Symbol* parent = symbol->Parent();
+                    if (!parent->IsClassTypeSymbol())
+                    {
+                        throw std::runtime_error("member variable parent not class type");
+                    }
+                    Cm::Sym::ClassTypeSymbol* memVarOwnerClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(parent);
+                    int distance = 0;
+                    if (classType->HasBaseClass(memVarOwnerClassType, distance))
+                    {
+                        Cm::Sym::TypeSymbol* memVarOwnerClassTypePtr = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(memVarOwnerClassType, dotNode.GetSpan());
+                        Cm::Sym::TypeSymbol* classTypePtr = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classType, dotNode.GetSpan());
+                        Cm::Sym::FunctionSymbol* derivedBaseConversion = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(memVarOwnerClassTypePtr, classTypePtr, 
+                            distance, dotNode.GetSpan());
+                        classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+                        classObject = Cm::BoundTree::CreateBoundConversion(&dotNode, classObject, derivedBaseConversion, currentFunction);
+                    }
                     classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
                     memberVariable->SetClassObject(classObject);
                     boundExpressionStack.Push(memberVariable);
@@ -925,6 +941,22 @@ void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberI
                         else if (symbolExpr->IsBoundMemberVariable())
                         {
                             Cm::BoundTree::BoundMemberVariable* memberVariable = static_cast<Cm::BoundTree::BoundMemberVariable*>(symbolExpr.release());
+                            Cm::Sym::Symbol* parent = symbol->Parent();
+                            if (!parent->IsClassTypeSymbol())
+                            {
+                                throw std::runtime_error("member variable parent not class type");
+                            }
+                            Cm::Sym::ClassTypeSymbol* memVarOwnerClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(parent);
+                            int distance = 0;
+                            if (classTypeSymbol->HasBaseClass(memVarOwnerClassType, distance))
+                            {
+                                Cm::Sym::TypeSymbol* memVarOwnerClassTypePtr = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(memVarOwnerClassType, node->GetSpan());
+                                Cm::Sym::TypeSymbol* classTypePtr = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, node->GetSpan());
+                                Cm::Sym::FunctionSymbol* derivedBaseConversion = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(memVarOwnerClassTypePtr, 
+                                    classTypePtr, distance, node->GetSpan());
+                                classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+                                classObject = Cm::BoundTree::CreateBoundConversion(node, classObject, derivedBaseConversion, currentFunction);
+                            }
                             memberVariable->SetClassObject(classObject);
                             boundExpressionStack.Push(memberVariable);
                         }
@@ -1276,6 +1308,13 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
             {
                 firstArgIsThisOrBase = true;
             }
+        }
+    }
+    if (currentFunction->GetFunctionSymbol()->Name() == "Add(Graph<int>*, const Node<int>&)")
+    {
+        if (functionGroupSymbol->Name() == "Find")
+        {
+            int x = 0;
         }
     }
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()));

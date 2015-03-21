@@ -166,10 +166,12 @@ class SameConstraintNode;
 class DerivedConstraintNode;
 class ConvertibleConstraintNode;
 class ExplicitlyConvertibleConstraintNode;
+class CommonConstraintNode;
 class SameConceptNode;
 class DerivedConceptNode;
 class ConvertibleConceptNode;
 class ExplicitlyConvertibleConceptNode;
+class CommonConceptNode;
 
 class Visitor
 {
@@ -397,10 +399,12 @@ public:
     virtual void Visit(DerivedConstraintNode& derivedConstraintNode) {}
     virtual void Visit(ConvertibleConstraintNode& convertibleConstraintNode) {}
     virtual void Visit(ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode) {}
+    virtual void Visit(CommonConstraintNode& commonConstraintNode) {}
     virtual void Visit(SameConceptNode& sameConceptNode) {}
     virtual void Visit(DerivedConceptNode& derivedConceptNode) {}
     virtual void Visit(ConvertibleConceptNode& convertibleConceptNode) {}
     virtual void Visit(ExplicitlyConvertibleConceptNode& explicitlyConvertibleConceptNode) {}
+    virtual void Visit(CommonConceptNode& commonConceptNode) {}
 
     bool VisitBodies() const { return visitBodies; }
     bool VisitExpressions() const { return visitExpressions; }

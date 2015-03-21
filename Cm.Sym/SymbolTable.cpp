@@ -347,6 +347,10 @@ ConceptSymbol* SymbolTable::BeginConceptScope(Cm::Ast::ConceptNode* conceptNode)
     }
     conceptName.append(1, '>');
     ConceptSymbol* conceptSymbol = new ConceptSymbol(conceptId->GetSpan(), conceptName);
+    if ((conceptNode->GetSpecifiers() & Cm::Ast::Specifiers::public_) != Cm::Ast::Specifiers::none)
+    {
+        conceptSymbol->SetAccess(SymbolAccess::public_);
+    }
     conceptSymbol->SetGroupName(conceptId->Str());
     for (const std::unique_ptr<Cm::Ast::Node>& typeParameter : conceptNode->TypeParameters())
     {

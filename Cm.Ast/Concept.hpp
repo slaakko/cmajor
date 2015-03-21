@@ -320,6 +320,7 @@ public:
     ConceptIdNode* Refinement() const { return refinement.get(); }
     ConstraintNodeList& Constraints() { return constraints; }
     NodeList& Axioms() { return axioms; }
+    virtual bool IsCommonConceptNode() const { return false; }
 private:
     Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;

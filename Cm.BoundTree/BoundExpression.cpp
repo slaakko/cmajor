@@ -355,7 +355,7 @@ BoundConversion* CreateBoundConversion(Cm::Ast::Node* node, BoundExpression* ope
 		{
 			argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
 		}
-		else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType())
+		else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType() && !argument->GetType()->GetBaseType()->IsClassTypeSymbol())
 		{
 			argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
 		}
@@ -368,7 +368,7 @@ BoundConversion* CreateBoundConversion(Cm::Ast::Node* node, BoundExpression* ope
 		}
 		else
 		{
-			if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType())
+			if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsReferenceType() && !argument->GetType()->GetBaseType()->IsClassTypeSymbol())
 			{
 				argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
 			}
