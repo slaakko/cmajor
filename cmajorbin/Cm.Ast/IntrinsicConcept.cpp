@@ -58,6 +58,15 @@ void ExplicitlyConvertibleConstraintNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+CommonConstraintNode::CommonConstraintNode() : IntrinsicConstraintNode()
+{
+}
+
+void CommonConstraintNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 SameConceptNode::SameConceptNode() : ConceptNode(Cm::Parsing::Span(), Specifiers::public_, new IdentifierNode(Cm::Parsing::Span(), "Same"))
 {
     AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "T"));
@@ -84,6 +93,13 @@ ExplicitlyConvertibleConceptNode::ExplicitlyConvertibleConceptNode() : ConceptNo
     AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "T"));
     AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "U"));
     AddConstraint(new ExplicitlyConvertibleConstraintNode());
+}
+
+CommonConceptNode::CommonConceptNode() : ConceptNode(Cm::Parsing::Span(), Specifiers::public_, new IdentifierNode(Cm::Parsing::Span(), "Common"))
+{
+    AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "T"));
+    AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "U"));
+    AddConstraint(new CommonConstraintNode());
 }
 
 } } // namespace Cm::Ast

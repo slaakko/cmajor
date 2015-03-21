@@ -82,6 +82,7 @@ public:
     void Visit(Cm::Ast::DerivedConstraintNode& derivedConstraintNode) override;
     void Visit(Cm::Ast::ConvertibleConstraintNode& convertibleConstraintNode) override;
     void Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode) override;
+    void Visit(Cm::Ast::CommonConstraintNode& commonConstraintNode) override;
 private:
     Cm::Sym::TypeSymbol* firstTypeArgument;
     Cm::Sym::TypeSymbol* secondTypeArgument;
@@ -91,6 +92,7 @@ private:
     ConstraintCheckStack constraintCheckStack;
     Cm::Sym::TypeSymbol* type;
     Cm::Sym::ConceptGroupSymbol* conceptGroup;
+    bool CheckConvertible(Cm::Sym::TypeSymbol* firstType, Cm::Sym::TypeSymbol* secondType, const Cm::Parsing::Span& span);
 };
 
 ConstraintChecker::ConstraintChecker(Cm::Sym::TypeSymbol* firstTypeArgument_, Cm::Sym::TypeSymbol* secondTypeArgument_, Cm::Sym::ContainerScope* containerScope_, 
@@ -462,7 +464,7 @@ void ConstraintChecker::Visit(Cm::Ast::ConstructorConstraintNode& constructorCon
         parameterTypes.push_back(parameterType);
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, "@constructor", resolutionArguments, functionLookups, constructorConstraintNode.GetSpan(), conversions,
@@ -521,7 +523,7 @@ void ConstraintChecker::Visit(Cm::Ast::MemberFunctionConstraintNode& memberFunct
         parameterTypes.push_back(parameterType);
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, type->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, type->GetContainerScope()->ClassOrNsScope()));
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, groupName, resolutionArguments, functionLookups, memberFunctionConstraintNode.GetSpan(), conversions,
@@ -562,7 +564,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
     {
         Cm::Sym::TypeSymbol* thisParameterType = boundCompileUnit->SymbolTable().GetTypeRepository().MakePointerType(firstTypeArgument, functionConstraintNode.GetSpan());
         resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thisParameterType));
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
         int n = functionConstraintNode.Parameters().Count();
         for (int i = 0; i < n; ++i)
         {
@@ -571,7 +573,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
                 parameterNode->TypeExpr());
             Cm::Core::ArgumentCategory argumentCategory = parameterType->IsReferenceType() ? Cm::Core::ArgumentCategory::lvalue : Cm::Core::ArgumentCategory::rvalue;
             resolutionArguments.push_back(Cm::Core::Argument(argumentCategory, parameterType));
-            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, parameterType->GetContainerScope()->ClassOrNsScope()));
         }
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
@@ -608,7 +610,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
             Cm::Core::ArgumentCategory argumentCategory = parameterType->IsReferenceType() ? Cm::Core::ArgumentCategory::lvalue : Cm::Core::ArgumentCategory::rvalue;
             resolutionArguments.push_back(Cm::Core::Argument(argumentCategory, parameterType));
             parameterTypes.push_back(parameterType);
-            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, parameterType->GetContainerScope()->ClassOrNsScope()));
         }
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
@@ -687,21 +689,26 @@ void ConstraintChecker::Visit(Cm::Ast::DerivedConstraintNode& derivedConstraintN
     }
 }
 
+bool ConstraintChecker::CheckConvertible(Cm::Sym::TypeSymbol* firstType, Cm::Sym::TypeSymbol* secondType, const Cm::Parsing::Span& span)
+{
+    Cm::Sym::TypeSymbol* thisParameterType = boundCompileUnit->SymbolTable().GetTypeRepository().MakePointerType(secondType, span);
+    Cm::Sym::TypeSymbol* thatParameterType = boundCompileUnit->SymbolTable().GetTypeRepository().MakeConstReferenceType(firstType, span);
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    Cm::Sym::FunctionLookupSet functionLookups;
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, secondType->GetContainerScope()->ClassOrNsScope()));
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thisParameterType));
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thatParameterType));
+    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    Cm::Sym::FunctionSymbol* functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions,
+        Cm::Sym::ConversionType::implicit, OverloadResolutionFlags::nothrow | OverloadResolutionFlags::dontInstantiate);
+    return functionSymbol != nullptr;
+}
+
 void ConstraintChecker::Visit(Cm::Ast::ConvertibleConstraintNode& convertibleConstraintNode)
 {
     if (firstTypeArgument && secondTypeArgument)
     {
-        Cm::Sym::TypeSymbol* thisParameterType = boundCompileUnit->SymbolTable().GetTypeRepository().MakePointerType(secondTypeArgument, convertibleConstraintNode.GetSpan());
-        Cm::Sym::TypeSymbol* thatParameterType = boundCompileUnit->SymbolTable().GetTypeRepository().MakeConstReferenceType(firstTypeArgument, convertibleConstraintNode.GetSpan());
-        std::vector<Cm::Core::Argument> resolutionArguments;
-        Cm::Sym::FunctionLookupSet functionLookups;
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, secondTypeArgument->GetContainerScope()->ClassOrNsScope()));
-        resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thisParameterType));
-        resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thatParameterType));
-        std::vector<Cm::Sym::FunctionSymbol*> conversions;
-        Cm::Sym::FunctionSymbol* functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, "@constructor", resolutionArguments, functionLookups, convertibleConstraintNode.GetSpan(), conversions,
-            Cm::Sym::ConversionType::implicit, OverloadResolutionFlags::nothrow);
-        if (!functionSymbol)
+        if (!CheckConvertible(firstTypeArgument, secondTypeArgument, convertibleConstraintNode.GetSpan()))
         {
             throw Cm::Core::ConceptCheckException("type '" + firstTypeArgument->FullName() + "' is not convertible to type '" + secondTypeArgument->FullName() + "'");
         }
@@ -721,12 +728,12 @@ void ConstraintChecker::Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& expl
         Cm::Sym::TypeSymbol* thatParameterType = boundCompileUnit->SymbolTable().GetTypeRepository().MakeConstReferenceType(firstTypeArgument, explicitlyConvertibleConstraintNode.GetSpan());
         std::vector<Cm::Core::Argument> resolutionArguments;
         Cm::Sym::FunctionLookupSet functionLookups;
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, secondTypeArgument->GetContainerScope()->ClassOrNsScope()));
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, secondTypeArgument->GetContainerScope()->ClassOrNsScope()));
         resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thisParameterType));
         resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thatParameterType));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
         Cm::Sym::FunctionSymbol* functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, "@constructor", resolutionArguments, functionLookups, explicitlyConvertibleConstraintNode.GetSpan(), conversions,
-            Cm::Sym::ConversionType::explicit_, OverloadResolutionFlags::nothrow);
+            Cm::Sym::ConversionType::explicit_, OverloadResolutionFlags::nothrow | OverloadResolutionFlags::dontInstantiate);
         if (!functionSymbol)
         {
             throw Cm::Core::ConceptCheckException("type '" + firstTypeArgument->FullName() + "' is not explicitly convertible to type '" + secondTypeArgument->FullName() + "'");
@@ -736,6 +743,37 @@ void ConstraintChecker::Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& expl
     else
     {
         throw Cm::Core::ConceptCheckException("Intrinsic 'ExplicitlyConvertible' concept needs two type arguments");
+    }
+}
+
+void ConstraintChecker::Visit(Cm::Ast::CommonConstraintNode& commonConstraintNode)
+{
+    if (firstTypeArgument && secondTypeArgument)
+    {
+        std::unique_ptr<Cm::Sym::BoundTypeParameterSymbol> commonType(new Cm::Sym::BoundTypeParameterSymbol(commonConstraintNode.GetSpan(), "CommonType"));
+        bool same = Cm::Sym::TypesEqual(firstTypeArgument, secondTypeArgument);
+        if (same)
+        {
+            commonType->SetType(firstTypeArgument);
+        }
+        else if (CheckConvertible(firstTypeArgument, secondTypeArgument, commonConstraintNode.GetSpan()))
+        {
+            commonType->SetType(secondTypeArgument);
+        }
+        else if (CheckConvertible(secondTypeArgument, firstTypeArgument, commonConstraintNode.GetSpan()))
+        {
+            commonType->SetType(firstTypeArgument);
+        }
+        else
+        {
+            throw Cm::Core::ConceptCheckException("types '" + firstTypeArgument->FullName() + "' and '" + secondTypeArgument->FullName() + "' have no common type");
+        }
+        containerScope->Install(commonType.release());
+        constraintCheckStack.Push(true);
+    }
+    else
+    {
+        throw Cm::Core::ConceptCheckException("Intrinsic 'Common' concept needs two type arguments");
     }
 }
 
@@ -811,6 +849,11 @@ Cm::Sym::InstantiatedConceptSymbol* Instantiate(Cm::Sym::ContainerScope* contain
         if (result)
         {
             Cm::Sym::InstantiatedConceptSymbol* instantiatedConceptSymbol = new Cm::Sym::InstantiatedConceptSymbol(conceptSymbol, typeArguments);
+            Cm::Sym::Symbol* commonType = instantiationScope.Lookup("CommonType");
+            if (commonType)
+            {
+                containerScope->Install(commonType);
+            }
             return instantiatedConceptSymbol;
         }
         else
@@ -926,6 +969,7 @@ public:
     void Visit(Cm::Ast::DerivedConstraintNode& derivedConstraintNode) override;
     void Visit(Cm::Ast::ConvertibleConstraintNode& convertibleConstraintNode) override;
     void Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode) override;
+    void Visit(Cm::Ast::CommonConstraintNode& commmonConstraintNode) override;
 private:
     Cm::Sym::ContainerScope* containerScope;
     Cm::BoundTree::BoundCompileUnit* boundCompileUnit;
@@ -1223,6 +1267,11 @@ void ConstraintBinder::Visit(Cm::Ast::ConvertibleConstraintNode& convertibleCons
 void ConstraintBinder::Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode)
 {
     constraintStack.Push(new Cm::BoundTree::BoundAtomicConstraint(&explicitlyConvertibleConstraintNode));
+}
+
+void ConstraintBinder::Visit(Cm::Ast::CommonConstraintNode& commmonConstraintNode)
+{
+    constraintStack.Push(new Cm::BoundTree::BoundAtomicConstraint(&commmonConstraintNode));
 }
 
 Cm::BoundTree::BoundConstraint* BindConstraint(const std::vector<Cm::Sym::TypeParameterSymbol*>& templateParameters, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments, 
