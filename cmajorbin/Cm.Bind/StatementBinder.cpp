@@ -151,12 +151,6 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     PrepareFunctionArguments(assignment, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, true, BoundCompileUnit().IrClassTypeRepository());
     left = arguments[0].release();
     right = arguments[1].release();
-/*
-    if (!assignment->Parameters()[1]->GetType()->IsReferenceType() && right->GetType()->IsReferenceType())
-    {
-        right->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
-    }
-*/
     Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(&assignmentStatementNode, left, right, assignment);
     if (!assignment->IsBasicTypeOp())
     {
