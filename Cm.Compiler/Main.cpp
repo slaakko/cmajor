@@ -8,11 +8,13 @@
  ========================================================================*/
 
 #include <Cm.Build/Build.hpp>
-#include <Cm.Core/GlobalFlags.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
+#include <Cm.Sym/Exception.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <Cm.Util/Path.hpp>
@@ -130,7 +132,11 @@ int main(int argc, const char** argv)
                         }
                         else if (arg == "-quiet")
                         {
-                            Cm::Core::SetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+                        }
+                        else if (arg == "-ide")
+                        {
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::ide);
                         }
                         else
                         {
@@ -148,7 +154,7 @@ int main(int argc, const char** argv)
                     }
                 }
             }
-            bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+            bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
             if (!quiet)
             {
                 std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
@@ -170,7 +176,7 @@ int main(int argc, const char** argv)
                 }
             }
         }
-        bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+        bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
         if (!quiet && !solutionOrProjectFilePaths.empty())
         {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -189,24 +195,74 @@ int main(int argc, const char** argv)
     {
         for (const Cm::Parsing::ExpectationFailure& exp : ex.Errors())
         {
-            std::cerr << exp.what() << std::endl;
+            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+            {
+                std::cout << exp.what() << std::endl;
+            }
+            else
+            {
+                std::cerr << exp.what() << std::endl;
+            }
         }
         return 4;
+    }
+    catch (const Cm::Sym::Exception& ex)
+    {
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+        {
+            std::cout << ex.what() << std::endl;
+        }
+        else
+        {
+            std::cerr << ex.what() << std::endl;
+        }
+    }
+    catch (const Cm::Core::Exception& ex)
+    {
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+        {
+            std::cout << ex.what() << std::endl;
+        }
+        else
+        {
+            std::cerr << ex.what() << std::endl;
+        }
     }
     catch (const Cm::Core::ToolErrorExcecption& ex)
     {
         const Cm::Util::ToolError& error = ex.Error();
-        std::cerr << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << std::endl;
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+        {
+            std::cout << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << std::endl;
+        }
+        else
+        {
+            std::cerr << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << std::endl;
+        }
         return 3;
     }
     catch (const std::exception& ex)
     {
-        std::cerr << ex.what() << std::endl;
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+        {
+            std::cout << ex.what() << std::endl;
+        }
+        else
+        {
+            std::cerr << ex.what() << std::endl;
+        }
         return 2;
     }
     catch (...)
     {
-        std::cerr << "unknown exception occurred" << std::endl;
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+        {
+            std::cout << "unknown exception occurred" << std::endl;
+        }
+        else
+        {
+            std::cerr << "unknown exception occurred" << std::endl;
+        }
         return 1;
     }
     return 0;

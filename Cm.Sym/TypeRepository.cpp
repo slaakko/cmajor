@@ -15,6 +15,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Exception.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <iostream>
 
@@ -460,7 +461,14 @@ void TypeRepository::Import(Reader& reader)
     reader.MakeIrTypes();
     if (!reader.AllTypesFetched())
     {
-        std::cerr << "not all types fetched!" << std::endl;
+        if (GetGlobalFlag(GlobalFlags::ide))
+        {
+            std::cout << "not all types fetched!" << std::endl;
+        }
+        else
+        {
+            std::cerr << "not all types fetched!" << std::endl;
+        }
     }
 }
 

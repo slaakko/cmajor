@@ -21,7 +21,11 @@ class Exception : public std::runtime_error
 public:
     Exception(const std::string& message_, const Span& defined_);
     Exception(const std::string& message_, const Span& defined_, const Span& referenced_);
+    const Span& Defined() const { return defined; }
+    const Span& Referenced() const { return referenced; }
+    const std::string& Message() const { return message; }
 private:
+    std::string message;
     Span defined;
     Span referenced;
 };
