@@ -33,6 +33,7 @@
     <ClInclude Include="FunctionTemplateRepository.hpp" />
     <ClInclude Include="GenData.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
+    <ClInclude Include="GlobalSettings.hpp" />
     <ClInclude Include="InitSymbolTable.hpp" />
     <ClInclude Include="IrClassTypeRepository.hpp" />
     <ClInclude Include="IrFunctionRepository.hpp" />
@@ -55,6 +56,7 @@
     <ClCompile Include="FunctionTemplateRepository.cpp" />
     <ClCompile Include="GenData.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />
+    <ClCompile Include="GlobalSettings.cpp" />
     <ClCompile Include="InitSymbolTable.cpp" />
     <ClCompile Include="IrClassTypeRepository.cpp" />
     <ClCompile Include="IrFunctionRepository.cpp" />

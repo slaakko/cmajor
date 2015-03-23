@@ -16,7 +16,8 @@ namespace Cm { namespace Core {
 enum class GlobalFlags : uint8_t
 {
     none = 0,
-    optimize = 1 << 0
+    optimize = 1 << 0,
+    quiet = 1 << 1
 };
 
 inline GlobalFlags operator|(GlobalFlags left, GlobalFlags right)

@@ -27,7 +27,6 @@ void SetCurrentFileRegistry(FileRegistry* fileRegistry)
 int FileRegistry::RegisterParsedFile(const std::string& filePath)
 {
     int fileIndex = int(parsedFiles.size());
-    std::cout << fileIndex << ": " << filePath << std::endl;
     parsedFiles.push_back(filePath);
     return fileIndex;
 }

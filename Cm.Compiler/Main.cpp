@@ -8,10 +8,15 @@
  ========================================================================*/
 
 #include <Cm.Build/Build.hpp>
+#include <Cm.Core/GlobalFlags.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
 #include <Cm.Parsing/InitDone.hpp>
+#include <Cm.Util/TextUtils.hpp>
+#include <Cm.Util/Path.hpp>
+#include <chrono>
 #include <iostream>
 
 #if defined(_MSC_VER) && !defined(NDEBUG)
@@ -38,6 +43,23 @@ struct InitDone
     }
 };
 
+const char* CompilerName()
+{
+#ifdef NDEBUG
+    return "cmc";
+#else
+    return "cmcd";
+#endif
+}
+
+const char* CompilerMode()
+{
+#ifdef NDEBUG
+    return "release";
+#else
+    return "debug";
+#endif
+}
 
 int main(int argc, const char** argv)
 {
@@ -47,19 +69,120 @@ int main(int argc, const char** argv)
     _CrtSetDbgFlag(dbgFlags);
     //_CrtSetBreakAlloc(496148);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    Cm::Core::GlobalSettings globalSettings;
+    Cm::Core::SetGlobalSettings(&globalSettings);
     try
     {
         InitDone initDone;
-        std::vector<std::string> projectFilePaths;
-        std::cout << "Cmajor Binary Compiler version " << version << std::endl;
-        for (int i = 1; i < argc; ++i)
+        std::vector<std::string> solutionOrProjectFilePaths;
+        if (argc < 2)
         {
-            std::string arg = argv[i];
-            projectFilePaths.push_back(arg);
+            std::cout << "Cmajor " << CompilerMode() << " mode compiler " << " version " << version << std::endl;
+            std::cout << "Usage: " << CompilerName() << " [options] {file.cms | file.cmp}" << std::endl;
+            std::cout << "Compile Cmajor solution file.cms or project file.cmp" << std::endl;
+            std::cout << 
+                "options:\n" <<
+                "-config=debug   : use debug configuration (default)\n" <<
+                "-config=release : use release configuration\n" <<
+                "-O=<n>          : set optimization level to <n> (default: debug:0, release:3)\n" << 
+                "-quiet          : generates no output for successful compiles\n" << 
+                std::endl;
         }
-        for (const std::string& projectFilePath : projectFilePaths)
+        else
         {
-            Cm::Build::Build(projectFilePath);
+            for (int i = 1; i < argc; ++i)
+            {
+                std::string arg = argv[i];
+                if (!arg.empty())
+                {
+                    if (arg[0] == '-')
+                    {
+                        if (arg.find('=') != std::string::npos)
+                        {
+                            std::vector<std::string> v = Cm::Util::Split(arg, '=');
+                            if (v.size() == 2)
+                            {
+                                if (v[0] == "-config")
+                                {
+                                    const std::string& config = v[1];
+                                    if (config != "debug" && config != "release")
+                                    {
+                                        throw std::runtime_error("unknown configuration '" + config + "'");
+                                    }
+                                    Cm::Core::GetGlobalSettings()->SetConfig(config);
+                                }
+                                else if (v[0] == "-O")
+                                {
+                                    std::string levelStr = v[1];
+                                    int level = std::stoi(levelStr);
+                                    Cm::Core::GetGlobalSettings()->SetOptimizationLevel(level);
+                                }
+                                else
+                                {
+                                    throw std::runtime_error("unknown argument '" + arg + "'");
+                                }
+                            }
+                            else
+                            {
+                                throw std::runtime_error("unknown argument '" + arg + "'");
+                            }
+                        }
+                        else if (arg == "-quiet")
+                        {
+                            Cm::Core::SetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+                        }
+                        else
+                        {
+                            throw std::runtime_error("unknown argument '" + arg + "'");
+                        }
+                    }
+                    else
+                    {
+                        std::string ext = Cm::Util::Path::GetExtension(arg);
+                        if (ext != ".cms" && ext != ".cmp")
+                        {
+                            throw std::runtime_error(arg + " is not Cmajor solution or project file");
+                        }
+                        solutionOrProjectFilePaths.push_back(arg);
+                    }
+                }
+            }
+            bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+            if (!quiet)
+            {
+                std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
+            }
+            for (const std::string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
+            {
+                std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
+                if (ext == ".cms")
+                {
+                    Cm::Build::BuildSolution(solutionOrProjectFilePath);
+                }
+                else if (ext == ".cmp")
+                {
+                    Cm::Build::BuildProject(solutionOrProjectFilePath);
+                }
+                else
+                {
+                    throw std::runtime_error(solutionOrProjectFilePath + " is not Cmajor solution or project file");
+                }
+            }
+        }
+        bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+        if (!quiet && !solutionOrProjectFilePaths.empty())
+        {
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            auto dur = end - start;
+            long long totalSecs = std::chrono::duration_cast<std::chrono::seconds>(dur).count() + 1;
+            int hours = static_cast<int>(totalSecs / 3600);
+            int mins = static_cast<int>((totalSecs % 3600) / 60);
+            int secs = static_cast<int>(totalSecs % 60);
+            std::cout <<
+                (hours > 0 ? std::to_string(hours) + " hour" + ((hours != 1) ? "s " : " ") : "") <<
+                (mins > 0 ? std::to_string(mins) + " minute" + ((mins != 1) ? "s " : " ") : "") <<
+                secs << " second" << ((secs != 1) ? "s" : "") << std::endl;
         }
     }
     catch (const Cm::Parsing::CombinedParsingError& ex)
