@@ -31,6 +31,7 @@ class BoundUnaryOp;
 class BoundBinaryOp;
 class BoundFunctionCall;
 class BoundDelegateCall;
+class BoundClassDelegateCall;
 class BoundDisjunction;
 class BoundConjunction;
 class BoundPostfixIncDecExpr;
@@ -91,6 +92,7 @@ public:
     virtual void Visit(BoundBinaryOp& boundBinaryOp) {}
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
     virtual void Visit(BoundDelegateCall& boundDelegateCall) {}
+    virtual void Visit(BoundClassDelegateCall& boundClassDelegateCall) {}
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
     virtual void Visit(BoundPostfixIncDecExpr& boundPostfixIncDecExpr) {}

@@ -22,6 +22,7 @@
 #include <Cm.Bind/Function.hpp>
 #include <Cm.Bind/Enumeration.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
+#include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
@@ -1099,7 +1100,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     else if (subject->IsBoundTypeExpression())
     {
         Cm::BoundTree::BoundTypeExpression* boundTypeExpression = static_cast<Cm::BoundTree::BoundTypeExpression*>(subject.get());
-        fun = BindInvokeConstructTemporary(node, conversions, arguments, boundTypeExpression->Symbol(), temporary);
+        fun = BindInvokeConstructTemporary(node, conversions, arguments, boundTypeExpression->Symbol(), temporary, numArgs);
         ++numArgs;
         constructTemporary = true;
         type = boundTypeExpression->Symbol();
@@ -1108,19 +1109,25 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     {
         Cm::Sym::TypeSymbol* subjectType = subject->GetType();
         Cm::Sym::TypeSymbol* plainSubjectType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(subjectType);
-        if (plainSubjectType->IsClassTypeSymbol())
+        if (plainSubjectType->IsDelegateTypeSymbol())
+        {
+            Cm::Sym::DelegateTypeSymbol* delegateType = static_cast<Cm::Sym::DelegateTypeSymbol*>(plainSubjectType);
+            BindInvokeDelegate(node, delegateType, subject.release(), arguments);
+            return;
+        }
+        else if (plainSubjectType->IsClassDelegateTypeSymbol())
+        {
+            Cm::Sym::ClassDelegateTypeSymbol* classDelegateType = static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(plainSubjectType);
+            BindInvokeClassDelegate(node, classDelegateType, subject.release(), arguments);
+            return;
+        }
+        else if (plainSubjectType->IsClassTypeSymbol())
         {
             firstArgByRef = true;
             fun = BindInvokeOpApply(node, conversions, arguments, plainSubjectType, subject.get());
             arguments.InsertFront(subject.release());
             ++numArgs;
             type = fun->GetReturnType();
-        }
-        else if (plainSubjectType->IsDelegateTypeSymbol())
-        {
-            Cm::Sym::DelegateTypeSymbol* delegateType = static_cast<Cm::Sym::DelegateTypeSymbol*>(plainSubjectType);
-            BindInvokeDelegate(node, delegateType, subject.release(), arguments);
-            return;
         }
         else
         {
@@ -1186,13 +1193,28 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
 }
 
 Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
-    Cm::Sym::TypeSymbol* typeSymbol, Cm::Sym::LocalVariableSymbol*& temporary)
+    Cm::Sym::TypeSymbol* typeSymbol, Cm::Sym::LocalVariableSymbol*& temporary, int& numArgs)
 {
     Cm::Sym::FunctionLookupSet ctorLookups;
     ctorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, typeSymbol->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Core::Argument> ctorResolutionArguments;
     temporary = currentFunction->CreateTempLocalVariable(typeSymbol);
     ctorResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(typeSymbol, node->GetSpan())));
+    if (typeSymbol->IsClassDelegateTypeSymbol())
+    {
+        if (arguments.Count() == 1)
+        {
+            Cm::Sym::ParameterSymbol* thisParam = CurrentFunction()->GetFunctionSymbol()->Parameters()[0];
+            Cm::BoundTree::BoundParameter* thisParamArg = new Cm::BoundTree::BoundParameter(node, thisParam);
+            thisParamArg->SetType(thisParam->GetType());
+            arguments.InsertFront(thisParamArg);
+            ++numArgs;
+        }
+        else if (arguments.Count() == 2)
+        {
+            arguments.Reverse();
+        }
+    }
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
         ctorResolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
@@ -1208,6 +1230,14 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
         boundFunctionId->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
         boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunCtor->DelegateType(), node->GetSpan()));
         arguments[1].reset(boundFunctionId);
+    }
+    else if (fun->IsClassDelegateFromFunCtor())
+    {
+        ClassDelegateFromFunCtor* classDelegateFromFunCtor = static_cast<ClassDelegateFromFunCtor*>(fun);
+        Cm::BoundTree::BoundFunctionId* boundFunctionId = new Cm::BoundTree::BoundFunctionId(node, classDelegateFromFunCtor->FunctionSymbol());
+        boundFunctionId->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(classDelegateFromFunCtor->DelegateType(), node->GetSpan()));
+        arguments[2].reset(boundFunctionId);
     }
     PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
     return fun;
@@ -1310,13 +1340,6 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
             }
         }
     }
-    if (currentFunction->GetFunctionSymbol()->Name() == "Add(Graph<int>*, const Node<int>&)")
-    {
-        if (functionGroupSymbol->Name() == "Find")
-        {
-            int x = 0;
-        }
-    }
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()));
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
     Cm::Sym::FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions, 
@@ -1384,6 +1407,47 @@ void ExpressionBinder::BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::Delegate
     }
 }
 
+void ExpressionBinder::BindInvokeClassDelegate(Cm::Ast::Node* node, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType, Cm::BoundTree::BoundExpression* subject, 
+    Cm::BoundTree::BoundExpressionList& arguments)
+{
+    int numParams = int(classDelegateType->Parameters().size());
+    if (arguments.Count() != numParams)
+    {
+        throw Cm::Core::Exception("wrong number of arguments to class delegate call (got " + std::to_string(arguments.Count()) + ", need " + std::to_string(numParams) + ")", node->GetSpan());
+    }
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
+    {
+        resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+    }
+    std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
+    Cm::Bind::FunctionMatch functionMatch(nullptr, containerScope, &boundCompileUnit);
+    if (FindConversions(boundCompileUnit, classDelegateType->Parameters(), resolutionArguments, Cm::Sym::ConversionType::implicit, node->GetSpan(), functionMatch, conversionClassTypes))
+    {
+        int n = int(functionMatch.conversions.size());
+        if (n != arguments.Count())
+        {
+            throw std::runtime_error("wrong number of arguments");
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            Cm::Sym::FunctionSymbol* conversion = functionMatch.conversions[i];
+            if (conversion)
+            {
+                arguments[i].reset(Cm::BoundTree::CreateBoundConversion(node, arguments[i].release(), conversion, currentFunction));
+            }
+        }
+        Cm::BoundTree::BoundClassDelegateCall* classDelegateCall = new Cm::BoundTree::BoundClassDelegateCall(classDelegateType, subject, node, std::move(arguments));
+        classDelegateCall->SetType(classDelegateType->GetReturnType());
+        boundExpressionStack.Push(classDelegateCall);
+    }
+    else
+    {
+        std::string errorMessage = "class delegate resolution failed: there are no acceptable conversions for all argument types.";
+        throw Cm::Core::Exception(errorMessage, node->GetSpan());
+    }
+}
+
 void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
 {
     Cm::Sym::SymbolType symbolType = symbol->GetSymbolType();
@@ -1423,6 +1487,12 @@ void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
         {
             Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol = static_cast<Cm::Sym::DelegateTypeSymbol*>(symbol);
             BindDelegateTypeSymbol(node, delegateTypeSymbol);
+            break;
+        }
+        case Cm::Sym::SymbolType::classDelegateSymbol:
+        {
+            Cm::Sym::ClassDelegateTypeSymbol* classDelegateSymbol = static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(symbol);
+            BindClassDelegateTypeSymbol(node, classDelegateSymbol);
             break;
         }
         case Cm::Sym::SymbolType::namespaceSymbol:
@@ -1572,6 +1642,13 @@ void ExpressionBinder::BindDelegateTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::De
 {
     Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, delegateTypeSymbol);
     boundType->SetType(delegateTypeSymbol);
+    boundExpressionStack.Push(boundType);
+}
+
+void ExpressionBinder::BindClassDelegateTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol)
+{
+    Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, classDelegateTypeSymbol);
+    boundType->SetType(classDelegateTypeSymbol);
     boundExpressionStack.Push(boundType);
 }
 

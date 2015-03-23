@@ -49,7 +49,7 @@ void DelegateTypeSymbol::Read(Reader& reader)
 
 void DelegateTypeSymbol::AddSymbol(Symbol* symbol)
 {
-    ContainerSymbol::AddSymbol(symbol);
+    TypeSymbol::AddSymbol(symbol);
     if (symbol->IsParameterSymbol())
     {
         ParameterSymbol* parameterSymbol = static_cast<ParameterSymbol*>(symbol);
@@ -92,7 +92,7 @@ void DelegateTypeSymbol::MakeIrType()
     SetDefaultIrValue(Cm::IrIntf::Null(irDelegateType));
 }
 
-ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), flags(ClassDelegateTypeSymbolFlags::none)
+ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : ClassTypeSymbol(span_, name_), flags(ClassDelegateTypeSymbolFlags::none), returnType(nullptr)
 {
 }
 
@@ -104,7 +104,43 @@ std::string ClassDelegateTypeSymbol::GetMangleId() const
 bool ClassDelegateTypeSymbol::IsExportSymbol() const
 {
     if (Parent()->IsClassTemplateSymbol()) return false;
-    return TypeSymbol::IsExportSymbol();
+    if (Parent()->IsTemplateTypeSymbol()) return false;
+    return ClassTypeSymbol::IsExportSymbol();
+}
+
+void ClassDelegateTypeSymbol::SetReturnType(TypeSymbol* returnType_)
+{
+    returnType = returnType_;
+}
+
+void ClassDelegateTypeSymbol::AddSymbol(Symbol* symbol)
+{
+    ClassTypeSymbol::AddSymbol(symbol);
+    if (symbol->IsParameterSymbol())
+    {
+        ParameterSymbol* parameterSymbol = static_cast<ParameterSymbol*>(symbol);
+        parameters.push_back(parameterSymbol);
+    }
+}
+
+void ClassDelegateTypeSymbol::SetType(TypeSymbol* type_, int index)
+{
+    SetReturnType(type_);
+}
+
+void ClassDelegateTypeSymbol::Write(Writer& writer)
+{
+    ClassTypeSymbol::Write(writer);
+    writer.GetBinaryWriter().Write(uint8_t(flags));
+    writer.Write(returnType->Id());
+}
+
+void ClassDelegateTypeSymbol::Read(Reader& reader)
+{
+    ClassTypeSymbol::Read(reader);
+    flags = ClassDelegateTypeSymbolFlags(reader.GetBinaryReader().ReadByte());
+    reader.FetchTypeFor(this, 0);
+    reader.EnqueueMakeIrTypeFor(this);
 }
 
 } } // namespace Cm::Sym

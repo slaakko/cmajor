@@ -387,6 +387,20 @@ private:
     BoundExpressionList arguments;
 };
 
+class BoundClassDelegateCall : public BoundExpression
+{
+public:
+    BoundClassDelegateCall(Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_);
+    void Accept(Visitor& visitor) override;
+    Cm::Sym::ClassDelegateTypeSymbol* ClassDelegateType() const { return classDelegateType; }
+    BoundExpression* Subject() const { return subject.get(); }
+    BoundExpressionList& Arguments() { return arguments; }
+private:
+    Cm::Sym::ClassDelegateTypeSymbol* classDelegateType;
+    std::unique_ptr<BoundExpression> subject;
+    BoundExpressionList arguments;
+};
+
 class BoundBooleanBinaryExpression : public BoundExpression
 {
 public:

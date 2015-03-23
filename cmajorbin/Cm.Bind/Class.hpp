@@ -17,8 +17,9 @@ namespace Cm { namespace Bind {
 
 Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode);
+
 void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode,Cm::Sym::ClassTypeSymbol* classTypeSymbol);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol);
 
 } } // namespace Cm::Bind
 

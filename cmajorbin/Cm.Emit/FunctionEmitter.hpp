@@ -9,6 +9,7 @@
 
 #ifndef CM_EMIT_FUNCTION_EMITTER_INCLUDED
 #define CM_EMIT_FUNCTION_EMITTER_INCLUDED
+#include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Core/GenData.hpp>
@@ -104,6 +105,7 @@ public:
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;
     void Visit(Cm::BoundTree::BoundDelegateCall& boundDelegateCall) override;
+    void Visit(Cm::BoundTree::BoundClassDelegateCall& boundClassDelegateCall) override;
     void Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction) override;
     void Visit(Cm::BoundTree::BoundConjunction& boundConjunction) override;
     void Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncDecExpr) override;
@@ -202,6 +204,8 @@ private:
     void GenerateTestExceptionResult();
     void CreateLandingPad(int landingPadId);
     void GenerateLandingPadCode();
+    void GenerateClassDelegateInitFromFun(Cm::Bind::ClassDelegateFromFunCtor* ctor, Cm::Core::GenResult& result);
+    void GenerateClassDelegateAssignmentFromFun(Cm::Bind::ClassDelegateFromFunAssignment* assignment, Cm::Core::GenResult& result);
 };
 
 } } // namespace Cm::Emit

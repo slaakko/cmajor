@@ -17,6 +17,7 @@ namespace Cm { namespace Bind {
 
 void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::MemberVariableNode* memberVariableNode);
+
 void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::MemberVariableNode* memberVariableNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol);
 

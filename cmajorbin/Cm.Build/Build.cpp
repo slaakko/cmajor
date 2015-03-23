@@ -29,6 +29,7 @@
 #include <Cm.Bind/ClassTemplateRepository.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
+#include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ControlFlowAnalyzer.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
@@ -293,6 +294,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
     prebindCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
     prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
     prebindCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(prebindCompileUnit));
+    prebindCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(prebindCompileUnit));
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
@@ -334,6 +336,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         boundCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
         boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
         boundCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(boundCompileUnit));
+        boundCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(boundCompileUnit));
         boundCompileUnit.AddFileScope(fileScopes[index].release());
         Bind(compileUnit.get(), boundCompileUnit, userMainFunction);
         if (boundCompileUnit.HasGotos())

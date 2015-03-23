@@ -16,6 +16,7 @@
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
+#include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
@@ -57,6 +58,22 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
             constructionStatementNode.GetSpan());
     }
     constructionStatement->SetArguments(GetExpressions());
+    if (constructionStatement->LocalVariable()->GetType()->IsClassDelegateTypeSymbol())
+    {
+        if (constructionStatement->Arguments().Count() == 2 && constructionStatement->Arguments()[0]->IsBoundFunctionGroup() &&
+            constructionStatement->Arguments()[1]->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg))
+        {
+            constructionStatement->Arguments().Reverse();
+        }
+        else if (CurrentFunction()->GetFunctionSymbol()->IsMemberFunctionSymbol() && constructionStatement->Arguments().Count() == 1 &&
+            constructionStatement->Arguments()[0]->IsBoundFunctionGroup())
+        {
+            Cm::Sym::ParameterSymbol* thisParam = CurrentFunction()->GetFunctionSymbol()->Parameters()[0];
+            Cm::BoundTree::BoundParameter* thisParamArg = new Cm::BoundTree::BoundParameter(&constructionStatementNode, thisParam);
+            thisParamArg->SetType(thisParam->GetType());
+            constructionStatement->Arguments().InsertFront(thisParamArg);
+        }
+    }
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* localVariableType = constructionStatement->LocalVariable()->GetType();
     if (localVariableType->IsAbstract())
@@ -89,6 +106,14 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
         boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunCtor->DelegateType(), constructionStatementNode.GetSpan()));
         constructionStatement->Arguments()[1].reset(boundFunctionId);
     }
+    else if (ctor->IsClassDelegateFromFunCtor())
+    {
+        ClassDelegateFromFunCtor* classDelegateFromFunCtor = static_cast<ClassDelegateFromFunCtor*>(ctor);
+        Cm::BoundTree::BoundFunctionId* boundFunctionId = new Cm::BoundTree::BoundFunctionId(&constructionStatementNode, classDelegateFromFunCtor->FunctionSymbol());
+        boundFunctionId->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(classDelegateFromFunCtor->DelegateType(), constructionStatementNode.GetSpan()));
+        constructionStatement->Arguments()[2].reset(boundFunctionId);
+    }
     PrepareFunctionArguments(ctor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository());
     if (localVariableType->IsReferenceType())
     {
@@ -105,12 +130,31 @@ AssignmentStatementBinder::AssignmentStatementBinder(Cm::BoundTree::BoundCompile
 
 void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
 {
-    if (CurrentFunction()->GetFunctionSymbol()->FullName() == "System.ToString(System.uhuge)")
+    Cm::BoundTree::BoundExpression* left = nullptr;
+    Cm::BoundTree::BoundExpression* right = nullptr;
+    std::unique_ptr<Cm::BoundTree::BoundExpression> functionGroup(nullptr);
+    if (Stack().ItemCount() == 3)
     {
-        int x = 0;
+        right = Pop();
+        functionGroup.reset(Pop());
+        left = Pop();
     }
-    Cm::BoundTree::BoundExpression* right = Pop();
-    Cm::BoundTree::BoundExpression* left = Pop();
+    else
+    {
+        right = Pop();
+        left = Pop();
+    }
+    if (left->GetType()->IsClassDelegateTypeSymbol())
+    {
+        if (!functionGroup)
+        {
+            functionGroup.reset(right);
+            Cm::Sym::ParameterSymbol* thisParam = CurrentFunction()->GetFunctionSymbol()->Parameters()[0];
+            Cm::BoundTree::BoundParameter* thisParamArg = new Cm::BoundTree::BoundParameter(&assignmentStatementNode, thisParam);
+            thisParamArg->SetType(thisParam->GetType());
+            right = thisParamArg;
+        }
+    }
     left->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* leftPlainType = SymbolTable().GetTypeRepository().MakePlainType(left->GetType());
@@ -126,12 +170,21 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
         rightArgument.SetBindToRvalueRef();
     }
     resolutionArguments.push_back(rightArgument);
+    if (functionGroup)
+    {
+        resolutionArguments.push_back(Cm::Core::Argument(functionGroup->GetArgumentCategory(), functionGroup->GetType()));
+    }
     Cm::Sym::FunctionLookupSet functionLookups;
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, leftPlainType->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* assignment = ResolveOverload(ContainerScope(), BoundCompileUnit(), "operator=", resolutionArguments, functionLookups, assignmentStatementNode.GetSpan(), conversions);
     PrepareFunctionSymbol(assignment, assignmentStatementNode.GetSpan());
-    if (conversions.size() != 2)
+    int conversionCount = 2;
+    if (functionGroup)
+    {
+        conversionCount = 3;
+    }
+    if (conversions.size() != conversionCount)
     {
         throw std::runtime_error("wrong number of conversions");
     }
@@ -148,7 +201,21 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     Cm::BoundTree::BoundExpressionList arguments;
     arguments.Add(left);
     arguments.Add(right);
+    if (assignment->IsClassDelegateFromFunAssignment())
+    {
+        ClassDelegateFromFunAssignment* classDelegateFromFunAssignment = static_cast<ClassDelegateFromFunAssignment*>(assignment);
+        Cm::BoundTree::BoundFunctionId* boundFunctionId = new Cm::BoundTree::BoundFunctionId(&assignmentStatementNode, classDelegateFromFunAssignment->FunctionSymbol());
+        boundFunctionId->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(classDelegateFromFunAssignment->DelegateType(), assignmentStatementNode.GetSpan()));
+        arguments.Add(boundFunctionId);
+    }
     PrepareFunctionArguments(assignment, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, true, BoundCompileUnit().IrClassTypeRepository());
+    if (assignment->IsClassDelegateFromFunAssignment())
+    {
+        Cm::BoundTree::BoundFunctionCallStatement* functionCallStatement = new Cm::BoundTree::BoundFunctionCallStatement(assignment, std::move(arguments));
+        SetResult(functionCallStatement);
+        return;
+    }
     left = arguments[0].release();
     right = arguments[1].release();
     Cm::BoundTree::BoundAssignmentStatement* assignmentStatement = new Cm::BoundTree::BoundAssignmentStatement(&assignmentStatementNode, left, right, assignment);
