@@ -1,0 +1,28 @@
+solution system;
+project <os.cmp>;
+project <support.cmp>;
+project <system.cmp>;
+/*
+project <ext/System.Net.Http/System.Net.Http.cmp>;
+project <ext/System.Net.Sockets/System.Net.Sockets.cmp>;
+project <ext/System.Text.Json/System.Text.Json.cmp>;
+project <ext/System.Text.Parsing/System.Text.Parsing.cmp>;
+project <ext/System.Text.Parsing.CmObjectModel/System.Text.Parsing.CmObjectModel.cmp>;
+project <ext/System.Text.RegularExpressions/System.Text.RegularExpressions.cmp>;
+project <ext/System.Xml/System.Xml.cmp>;
+project <ext/System.Xml.Serialization/System.Xml.Serialization.cmp>;
+activeProject System.Text.RegularExpressions;
+*/
+dependency os();
+dependency support(os);
+dependency system(os, support);
+/*
+dependency System.Text.Parsing.CmObjectModel(system, support, os);
+dependency System.Text.Parsing(System.Text.Parsing.CmObjectModel, system, support, os);
+dependency System.Text.RegularExpressions(os, support, system, System.Text.Parsing, System.Text.Parsing.CmObjectModel);
+dependency System.Net.Sockets(os, support, system, System.Text.Parsing, System.Text.Parsing.CmObjectModel);
+dependency System.Text.Json(os, support, system, System.Text.Parsing, System.Text.Parsing.CmObjectModel);
+dependency System.Net.Http(os, support, system, System.Text.Parsing, System.Text.Parsing.CmObjectModel);
+dependency System.Xml(support, os, system, System.Text.Parsing, System.Text.Parsing.CmObjectModel);
+dependency System.Xml.Serialization(os, support, system, System.Text.Parsing, System.Text.Parsing.CmObjectModel, System.Xml);
+*/

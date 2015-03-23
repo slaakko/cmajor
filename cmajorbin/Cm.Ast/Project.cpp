@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Ast/Project.hpp>
+#include <Cm.Util/Path.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -112,7 +113,7 @@ void Project::ResolveDeclarations()
                     {
                         if (prev == sfd->FilePath())
                         {
-                            throw std::runtime_error("source file '" + prev + "' already specified ('" + FilePath() + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
+                            throw std::runtime_error("source file '" + prev + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
                         }
                     }
                     sourceFilePaths.push_back(sfd->FilePath());
@@ -124,7 +125,7 @@ void Project::ResolveDeclarations()
                     {
                         if (prev == sfd->FilePath())
                         {
-                            throw std::runtime_error("assembly source file '" + prev + "' already specified ('" + FilePath() + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
+                            throw std::runtime_error("assembly source file '" + prev + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
                         }
                     }
                     asmSourceFilePaths.push_back(sfd->FilePath());
@@ -136,7 +137,7 @@ void Project::ResolveDeclarations()
                     {
                         if (prev == sfd->FilePath())
                         {
-                            throw std::runtime_error("C source file '" + prev + "' already specified ('" + FilePath() + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
+                            throw std::runtime_error("C source file '" + prev + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
                         }
                     }
                     cSourceFilePaths.push_back(sfd->FilePath());
@@ -148,7 +149,7 @@ void Project::ResolveDeclarations()
                     {
                         if (prev == sfd->FilePath())
                         {
-                            throw std::runtime_error("text file '" + prev + "' already specified ('" + FilePath() + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
+                            throw std::runtime_error("text file '" + prev + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
                         }
                     }
                     textFilePaths.push_back(sfd->FilePath());
@@ -163,7 +164,7 @@ void Project::ResolveDeclarations()
             {
                 if (prev == rfd->FilePath())
                 {
-                    throw std::runtime_error("reference file '" + prev + "' already specified ('" + FilePath() + "' line " + std::to_string(rfd->GetSpan().LineNumber()) + ")");
+                    throw std::runtime_error("reference file '" + prev + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(rfd->GetSpan().LineNumber()) + ")");
                 }
             }
             referenceFilePaths.push_back(rfd->FilePath());
@@ -177,7 +178,7 @@ void Project::ResolveDeclarations()
             }
             else
             {
-                throw std::runtime_error("target '" + TargetStr(td->GetTarget()) + "' already specified ('" + FilePath() + "' line " + std::to_string(declaration->GetSpan().LineNumber()) + ")");
+                throw std::runtime_error("target '" + TargetStr(td->GetTarget()) + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(declaration->GetSpan().LineNumber()) + ")");
             }
         }
         else if (declaration->IsAssemblyFileDeclaration())
@@ -188,7 +189,7 @@ void Project::ResolveDeclarations()
             }
             else
             {
-                throw std::runtime_error("assembly '" + assemblyFilePath + "' already specified ('" + FilePath() + "' line " + std::to_string(declaration->GetSpan().LineNumber()) + ")");
+                throw std::runtime_error("assembly '" + assemblyFilePath + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(declaration->GetSpan().LineNumber()) + ")");
             }
         }
         else if (declaration->IsExecutableFileDeclaration())
@@ -199,17 +200,17 @@ void Project::ResolveDeclarations()
             }
             else
             {
-                throw std::runtime_error("executable '" + executableFilePath + "' already specified ('" + FilePath() + "' line " + std::to_string(declaration->GetSpan().LineNumber()) + ")");
+                throw std::runtime_error("executable '" + executableFilePath + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(declaration->GetSpan().LineNumber()) + ")");
             }
         }
     }
     if (target == Target::none)
     {
-        throw std::runtime_error("target ('program' | 'library') not specified in file '" + FilePath() + "'");
+        throw std::runtime_error("target ('program' | 'library') not specified in file '" + Cm::Util::GetFullPath(FilePath()) + "'");
     }
     if (assemblyFilePath.empty())
     {
-        throw std::runtime_error("assembly not specified in file '" + FilePath() + "'");
+        throw std::runtime_error("assembly not specified in file '" + Cm::Util::GetFullPath(FilePath()) + "'");
     }
     libraryFilePath = boost::filesystem::path(assemblyFilePath).replace_extension(".cml").generic_string();
     if (target == Target::program && executableFilePath.empty())

@@ -13,7 +13,8 @@
 
 namespace Cm { namespace Build {
 
-void Build(const std::string& projectFilePath);
+void BuildSolution(const std::string& solutionFilePath);
+void BuildProject(const std::string& projectFilePath);
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 

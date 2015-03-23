@@ -10,6 +10,7 @@
 #ifndef CM_AST_SOLUTION_INCLUDED
 #define CM_AST_SOLUTION_INCLUDED
 #include <Cm.Ast/Project.hpp>
+#include <unordered_map>
 
 namespace Cm { namespace Ast {
 
@@ -48,10 +49,14 @@ public:
     void AddDependency(const std::string& dependsOn);
     virtual bool IsProjectDependencyDeclaration() const { return true; }
     const std::string& ProjectName() const { return projectName; }
+    const std::vector<std::string>& DependsOnProjects() const { return dependsOnProjects; }
 private:
     std::string projectName;
     std::vector<std::string> dependsOnProjects;
 };
+
+typedef std::unordered_map<std::string, ProjectDependencyDeclaration*> DependencyMap;
+typedef DependencyMap::const_iterator DependencyMapIt;
 
 class Solution
 {
@@ -63,14 +68,16 @@ public:
     void AddDeclaration(SolutionDeclaration* declaration);
     void ResolveDeclarations();
     const std::vector<std::string>& ProjectFilePaths() const { return projectFilePaths; }
-    void AddProject(Project* project);
+    void AddProject(std::unique_ptr<Cm::Ast::Project>&& project);
+    std::vector<Cm::Ast::Project*> CreateBuildOrder();
 private:
     std::string name;
     std::string filePath;
     boost::filesystem::path basePath;
     std::vector<std::unique_ptr<SolutionDeclaration>> declarations;
     std::vector<std::string> projectFilePaths;
-    std::vector<std::unique_ptr<Project>> projects;
+    std::vector<std::unique_ptr<Cm::Ast::Project>> projects;
+    DependencyMap dependencyMap;
 };
 
 } } // namespace Cm::Ast
