@@ -130,7 +130,9 @@ public:
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
     virtual bool IsDelegateFromFunCtor() const { return false; }
+    virtual bool IsClassDelegateFromFunCtor() const { return false; }
     virtual bool IsDelegateFromFunAssignment() const { return false; }
+    virtual bool IsClassDelegateFromFunAssignment() const { return false; }
     virtual bool IsConvertingConstructor() const;
     bool IsExportSymbol() const override;
     void SetConvertingConstructor();

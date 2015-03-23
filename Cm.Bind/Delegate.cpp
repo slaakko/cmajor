@@ -10,6 +10,7 @@
 #include <Cm.Bind/Delegate.hpp>
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/MemberVariable.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/DelegateSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -90,8 +91,8 @@ void CompleteBindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
     delegateTypeSymbol->MakeIrType();
 }
 
-void BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Ast::ClassDelegateNode* classDelegateNode)
+Cm::Sym::ClassDelegateTypeSymbol* BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ClassDelegateNode* classDelegateNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(classDelegateNode->Id()->Str());
     if (symbol->IsClassDelegateTypeSymbol())
@@ -148,7 +149,39 @@ void BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScop
         {
             classDelegateTypeSymbol->SetThrow();
         }
+        return classDelegateTypeSymbol;
     }
+    else
+    {
+        throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a class delegate type", symbol->GetSpan());
+    }
+}
+
+void CompleBindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol, Cm::Ast::ClassDelegateNode* classDelegateNode)
+{
+    Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, classDelegateNode->ReturnTypeExpr());
+    classDelegateTypeSymbol->SetReturnType(returnType);
+    Cm::Sym::MemberVariableSymbol* obj = new Cm::Sym::MemberVariableSymbol(classDelegateNode->GetSpan(), "obj");
+    obj->SetType(symbolTable.GetTypeRepository().MakeGenericPtrType(classDelegateNode->GetSpan()));
+    classDelegateTypeSymbol->AddSymbol(obj);
+    Cm::Sym::MemberVariableSymbol* dlg = new Cm::Sym::MemberVariableSymbol(classDelegateNode->GetSpan(), "dlg");
+    Cm::Sym::DelegateTypeSymbol* dlgType = new Cm::Sym::DelegateTypeSymbol(classDelegateNode->GetSpan(), "dlgType");
+    dlgType->SetReturnType(returnType);
+    Cm::Sym::ParameterSymbol* dlgTypeObjParam = new Cm::Sym::ParameterSymbol(classDelegateNode->GetSpan(), "obj");
+    dlgTypeObjParam->SetType(symbolTable.GetTypeRepository().MakeGenericPtrType(classDelegateNode->GetSpan()));
+    dlgType->AddSymbol(dlgTypeObjParam);
+    for (Cm::Sym::ParameterSymbol* classDelegateParam : classDelegateTypeSymbol->Parameters())
+    {
+        Cm::Sym::ParameterSymbol* dlgTypeParam = new Cm::Sym::ParameterSymbol(classDelegateNode->GetSpan(), classDelegateParam->Name());
+        dlgTypeParam->SetType(classDelegateParam->GetType());
+        dlgType->AddSymbol(dlgTypeParam);
+    }
+    dlgType->MakeIrType();
+    classDelegateTypeSymbol->AddSymbol(dlgType);
+    dlg->SetType(dlgType);
+    classDelegateTypeSymbol->AddSymbol(dlg);
+    classDelegateTypeSymbol->MakeIrType();
 }
 
 } } // namespace Cm::Bind

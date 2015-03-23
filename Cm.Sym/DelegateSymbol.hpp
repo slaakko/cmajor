@@ -9,7 +9,8 @@
 
 #ifndef CM_SYM_DELEGATE_SYMBOL_INCLUDED
 #define CM_SYM_DELEGATE_SYMBOL_INCLUDED
-#include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Ast/Delegate.hpp>
 
@@ -96,7 +97,7 @@ inline ClassDelegateTypeSymbolFlags operator|(ClassDelegateTypeSymbolFlags left,
     return ClassDelegateTypeSymbolFlags(uint8_t(left) | uint8_t(right));
 }
 
-class ClassDelegateTypeSymbol : public TypeSymbol
+class ClassDelegateTypeSymbol : public ClassTypeSymbol
 {
 public:
     ClassDelegateTypeSymbol(const Span& span_, const std::string& name_);
@@ -105,6 +106,13 @@ public:
     std::string GetMangleId() const override;
     bool IsExportSymbol() const override;
     bool IsClassDelegateTypeSymbol() const override { return true; }
+    void Write(Writer& writer) override;
+    void Read(Reader& reader) override;
+    void AddSymbol(Symbol* symbol) override;
+    void SetType(TypeSymbol* type_, int index) override;
+    void SetReturnType(TypeSymbol* returnType_);
+    TypeSymbol* GetReturnType() const { return returnType; }
+    const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     bool IsNothrow() const
     {
         return GetFlag(ClassDelegateTypeSymbolFlags::nothrow);
@@ -123,6 +131,8 @@ public:
     }
 private:
     ClassDelegateTypeSymbolFlags flags;
+    TypeSymbol* returnType;
+    std::vector<ParameterSymbol*> parameters;
     bool GetFlag(ClassDelegateTypeSymbolFlags flag) const
     {
         return (flags & flag) != ClassDelegateTypeSymbolFlags::none;

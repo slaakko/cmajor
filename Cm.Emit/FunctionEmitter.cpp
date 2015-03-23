@@ -10,6 +10,7 @@
 #include <Cm.Emit/FunctionEmitter.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
+#include <Cm.Bind/MemberVariable.hpp>
 #include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
@@ -800,6 +801,50 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDelegateCall& boundDelegateCall)
     {
         result.SetLabel(resultLabel);
     }
+    result.Merge(subjectResult);
+    resultStack.Push(std::move(result));
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundClassDelegateCall& boundClassDelegateCall)
+{
+    Cm::Core::GenResult result(emitter, genFlags);
+    result.SetMainObject(boundClassDelegateCall.GetType(), typeRepository);
+    boundClassDelegateCall.Subject()->Accept(*this);
+    Cm::Core::GenResult subjectResult = resultStack.Pop();
+    Cm::Sym::Symbol* objSymbol = boundClassDelegateCall.ClassDelegateType()->GetContainerScope()->Lookup("obj");
+    if (!objSymbol->IsMemberVariableSymbol())
+    {
+        throw std::runtime_error("not member variable symbol");
+    }
+    Cm::Sym::MemberVariableSymbol* objMemberVarSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(objSymbol);
+    std::unique_ptr<Cm::BoundTree::BoundMemberVariable> objMemberVar(new Cm::BoundTree::BoundMemberVariable(nullptr, objMemberVarSymbol));
+    Ir::Intf::Object* obj = irObjectRepository.MakeMemberVariableIrObject(objMemberVar.get(), subjectResult.MainObject());
+    Ir::Intf::RegVar* thisPtr = Cm::IrIntf::CreateTemporaryRegVar(obj->GetType()->Clone());
+    emitter->Own(thisPtr);
+    Cm::IrIntf::Assign(*emitter, obj->GetType(), obj, thisPtr);
+    result.AddObject(thisPtr);
+    for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : boundClassDelegateCall.Arguments())
+    {
+        argument->Accept(*this);
+        Cm::Core::GenResult argumentResult = resultStack.Pop();
+        result.Merge(argumentResult);
+    }
+    if (!boundClassDelegateCall.ClassDelegateType()->IsNothrow())
+    {
+        result.AddObject(localVariableIrObjectRepository.GetExceptionCodeVariable());
+    }
+    Cm::Sym::Symbol* dlgSymbol = boundClassDelegateCall.ClassDelegateType()->GetContainerScope()->Lookup("dlg");
+    if (!dlgSymbol->IsMemberVariableSymbol())
+    {
+        throw std::runtime_error("not member variable symbol");
+    }
+    Cm::Sym::MemberVariableSymbol* dlgMemberVarSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(dlgSymbol);
+    std::unique_ptr<Cm::BoundTree::BoundMemberVariable> dlgMemberVar(new Cm::BoundTree::BoundMemberVariable(nullptr, dlgMemberVarSymbol));
+    Ir::Intf::Object* dlg = irObjectRepository.MakeMemberVariableIrObject(dlgMemberVar.get(), subjectResult.MainObject());
+    Ir::Intf::RegVar* funPtr = Cm::IrIntf::CreateTemporaryRegVar(dlg->GetType());
+    emitter->Own(funPtr);
+    Cm::IrIntf::Assign(*emitter, dlg->GetType(), dlg, funPtr);
+    emitter->Emit(Cm::IrIntf::IndirectCall(result.MainObject(), funPtr, result.Args()));
     result.Merge(subjectResult);
     resultStack.Push(std::move(result));
 }
@@ -2110,9 +2155,69 @@ void FunctionEmitter::GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Boun
     }
 }
 
+void FunctionEmitter::GenerateClassDelegateInitFromFun(Cm::Bind::ClassDelegateFromFunCtor* ctor, Cm::Core::GenResult& result)
+{
+    Cm::Sym::Symbol* objSymbol = ctor->ClassDelegateType()->GetContainerScope()->Lookup("obj");
+    if (!objSymbol->IsMemberVariableSymbol())
+    {
+        throw std::runtime_error("not member variable symbol");
+    }
+    Cm::Sym::MemberVariableSymbol* objMemberVarSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(objSymbol);
+    std::unique_ptr<Cm::BoundTree::BoundMemberVariable> objMemberVar(new Cm::BoundTree::BoundMemberVariable(nullptr, objMemberVarSymbol));
+    Ir::Intf::Object* obj = irObjectRepository.MakeMemberVariableIrObject(objMemberVar.get(), result.MainObject());
+    Cm::IrIntf::Init(*emitter, result.Arg1()->GetType(), result.Arg1(), obj);
+    Cm::Sym::Symbol* dlgSymbol = ctor->ClassDelegateType()->GetContainerScope()->Lookup("dlg");
+    if (!dlgSymbol->IsMemberVariableSymbol())
+    {
+        throw std::runtime_error("not member variable symbol");
+    }
+    Cm::Sym::MemberVariableSymbol* dlgMemberVarSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(dlgSymbol);
+    std::unique_ptr<Cm::BoundTree::BoundMemberVariable> dlgMemberVar(new Cm::BoundTree::BoundMemberVariable(nullptr, dlgMemberVarSymbol));
+    Ir::Intf::Object* dlg = irObjectRepository.MakeMemberVariableIrObject(dlgMemberVar.get(), result.MainObject());
+    Ir::Intf::Type* funPtrIrType = irFunctionRepository.GetFunPtrIrType(ctor->FunctionSymbol());
+    Ir::Intf::RegVar* delegatePtr = Cm::IrIntf::CreateTemporaryRegVar(ctor->DelegateType()->GetIrType());
+    emitter->Own(delegatePtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(funPtrIrType, delegatePtr, result.Arg2(), ctor->DelegateType()->GetIrType()));
+    Cm::IrIntf::Init(*emitter, ctor->DelegateType()->GetIrType(), delegatePtr, dlg);
+}
+
+void FunctionEmitter::GenerateClassDelegateAssignmentFromFun(Cm::Bind::ClassDelegateFromFunAssignment* assignment, Cm::Core::GenResult& result)
+{
+    Cm::Sym::Symbol* objSymbol = assignment->ClassDelegateType()->GetContainerScope()->Lookup("obj");
+    if (!objSymbol->IsMemberVariableSymbol())
+    {
+        throw std::runtime_error("not member variable symbol");
+    }
+    Cm::Sym::MemberVariableSymbol* objMemberVarSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(objSymbol);
+    std::unique_ptr<Cm::BoundTree::BoundMemberVariable> objMemberVar(new Cm::BoundTree::BoundMemberVariable(nullptr, objMemberVarSymbol));
+    Ir::Intf::Object* obj = irObjectRepository.MakeMemberVariableIrObject(objMemberVar.get(), result.MainObject());
+    Cm::IrIntf::Assign(*emitter, result.Arg1()->GetType(), result.Arg1(), obj);
+    Cm::Sym::Symbol* dlgSymbol = assignment->ClassDelegateType()->GetContainerScope()->Lookup("dlg");
+    if (!dlgSymbol->IsMemberVariableSymbol())
+    {
+        throw std::runtime_error("not member variable symbol");
+    }
+    Cm::Sym::MemberVariableSymbol* dlgMemberVarSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(dlgSymbol);
+    std::unique_ptr<Cm::BoundTree::BoundMemberVariable> dlgMemberVar(new Cm::BoundTree::BoundMemberVariable(nullptr, dlgMemberVarSymbol));
+    Ir::Intf::Object* dlg = irObjectRepository.MakeMemberVariableIrObject(dlgMemberVar.get(), result.MainObject());
+    Ir::Intf::Type* funPtrIrType = irFunctionRepository.GetFunPtrIrType(assignment->FunctionSymbol());
+    Ir::Intf::RegVar* delegatePtr = Cm::IrIntf::CreateTemporaryRegVar(assignment->DelegateType()->GetIrType());
+    emitter->Own(delegatePtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(funPtrIrType, delegatePtr, result.Arg2(), assignment->DelegateType()->GetIrType()));
+    Cm::IrIntf::Assign(*emitter, assignment->DelegateType()->GetIrType(), delegatePtr, dlg);
+}
+
 void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result)
 {
-    if (fun->IsBasicTypeOp())
+    if (fun->IsClassDelegateFromFunCtor())
+    {
+        GenerateClassDelegateInitFromFun(static_cast<Cm::Bind::ClassDelegateFromFunCtor*>(fun), result);
+    }
+    else if (fun->IsClassDelegateFromFunAssignment())
+    {
+        GenerateClassDelegateAssignmentFromFun(static_cast<Cm::Bind::ClassDelegateFromFunAssignment*>(fun), result);
+    }
+    else if (fun->IsBasicTypeOp())
     {
         Cm::Core::BasicTypeOp* op = static_cast<Cm::Core::BasicTypeOp*>(fun);
         op->Generate(*emitter, result);

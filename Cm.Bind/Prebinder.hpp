@@ -71,6 +71,7 @@ private:
     Cm::Sym::ClassTypeSymbol* currentClass;
     Cm::Sym::FunctionSymbol* currentFunction;
     Cm::Sym::DelegateTypeSymbol* currentDelegate;
+    Cm::Sym::ClassDelegateTypeSymbol* currentClassDelegate;
     std::vector<Cm::Ast::Node*> usingNodes;
     bool dontCompleteFunctions;
 };

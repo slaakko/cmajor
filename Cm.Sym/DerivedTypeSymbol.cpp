@@ -207,6 +207,10 @@ void DerivedTypeSymbol::MakeIrType()
     SetIrTypeMade();
     baseType->MakeIrType();
     SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
+    if (IsPointerType())
+    {
+        SetDefaultIrValue(GetIrType()->CreateDefaultValue());
+    }
 }
 
 void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)

@@ -300,11 +300,21 @@ void BoundFunctionCall::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
 }
 
 BoundDelegateCall::BoundDelegateCall(Cm::Sym::DelegateTypeSymbol* delegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) :
-    BoundExpression(syntaxNode_), delegateType(delegateType_), subject(subject_),arguments(std::move(arguments_))
+    BoundExpression(syntaxNode_), delegateType(delegateType_), subject(subject_), arguments(std::move(arguments_))
 {
 }
 
 void BoundDelegateCall::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundClassDelegateCall::BoundClassDelegateCall(Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) :
+    BoundExpression(syntaxNode_), classDelegateType(classDelegateType_), subject(subject_), arguments(std::move(arguments_))
+{
+}
+
+void BoundClassDelegateCall::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }
