@@ -7,11 +7,11 @@
 
 ========================================================================*/
 
-#ifndef CM_CORE_GLOBAL_FLAGS_INCLUDED
-#define CM_CORE_GLOBAL_FLAGS_INCLUDED
+#ifndef CM_SYM_GLOBAL_FLAGS_INCLUDED
+#define CM_SYM_GLOBAL_FLAGS_INCLUDED
 #include <stdint.h>
 
-namespace Cm { namespace Core {
+namespace Cm { namespace Sym {
 
 enum class GlobalFlags : uint8_t
 {
@@ -34,6 +34,6 @@ inline GlobalFlags operator&(GlobalFlags left, GlobalFlags right)
 bool GetGlobalFlag(GlobalFlags flag);
 void SetGlobalFlag(GlobalFlags flag);
 
-} } // namespace Cm::Core
+} } // namespace Cm::Sym
 
-#endif // CM_CORE_GLOBAL_FLAGS_INCLUDED
+#endif // CM_SYM_GLOBAL_FLAGS_INCLUDED

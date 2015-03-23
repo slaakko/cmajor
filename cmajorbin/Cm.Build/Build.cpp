@@ -34,7 +34,7 @@
 #include <Cm.Bind/ControlFlowAnalyzer.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
-#include <Cm.Core/GlobalFlags.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
@@ -137,7 +137,7 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
     {
         referenceFilePaths.insert(referenceFilePaths.begin(), "os.cml");
     }
-    bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !referenceFilePaths.empty())
     {
         std::cout << "Importing libraries..." << std::endl;
@@ -236,7 +236,7 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 
 void CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
 {
-    bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !project->AsmSourceFilePaths().empty())
     {
         std::cout << "Compiling assembly sources..." << std::endl;
@@ -277,7 +277,7 @@ void CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& obje
 
 void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
 {
-    bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !project->CSourceFilePaths().empty())
     {
         std::cout << "Compiling C files..." << std::endl;
@@ -318,7 +318,7 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
 void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, 
     std::vector<std::string>& objectFilePaths)
 {
-    bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !syntaxTree.CompileUnits().empty())
     {
         std::cout << "Compiling..." << std::endl;
@@ -391,7 +391,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
 
 void Archive(const std::vector<std::string>& objectFilePaths, const std::string& assemblyFilePath)
 {
-    bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !objectFilePaths.empty())
     {
         std::cout << "Archiving..." << std::endl;
@@ -434,7 +434,7 @@ void Archive(const std::vector<std::string>& objectFilePaths, const std::string&
 
 void Link(const std::vector<std::string>& assemblyFilePaths, const std::string& executableFilePath)
 {
-    bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !assemblyFilePaths.empty())
     {
         std::cout << "Linking..." << std::endl;
@@ -502,7 +502,7 @@ void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::st
 
 void BuildProject(Cm::Ast::Project* project)
 {
-    bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
         std::cout << "Building project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ")..." << std::endl;
@@ -596,7 +596,7 @@ void BuildSolution(const std::string& solutionFilePath)
         solutionGrammar = Cm::Parser::SolutionGrammar::Create();
     }
     std::unique_ptr<Cm::Ast::Solution> solution(solutionGrammar->Parse(solutionFile.Begin(), solutionFile.End(), 0, solutionFilePath));
-    bool quiet = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::quiet);
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
         std::cout << "Building solution '" << solution->Name() << "' (" << Cm::Util::GetFullPath(solution->FilePath()) << ")..." << std::endl;

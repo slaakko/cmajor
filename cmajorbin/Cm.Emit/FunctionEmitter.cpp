@@ -15,7 +15,7 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
-#include <Cm.Core/GlobalFlags.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -222,7 +222,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
     irFunction->Clean();
     Cm::Sym::FunctionSymbol* functionSymbol = boundFunction.GetFunctionSymbol();
     bool weakOdr = functionSymbol->IsReplicated();
-    bool inline_ = Cm::Core::GetGlobalFlag(Cm::Core::GlobalFlags::optimize) && functionSymbol->IsInline();
+    bool inline_ = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize) && functionSymbol->IsInline();
     irFunction->WriteDefinition(codeFormatter, weakOdr, inline_);
     currentFunction = nullptr;
 }
