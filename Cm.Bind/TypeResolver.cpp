@@ -257,7 +257,7 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
             if (!typeSymbol->Bound())
             {
                 Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(typeSymbol);
-                classTemplateRepository.BindTemplateTypeSymbol(templateTypeSymbol);
+                classTemplateRepository.BindTemplateTypeSymbol(templateTypeSymbol, currentContainerScope);
             }
         }
         Cm::Sym::Scope* containerScope = nullptr;

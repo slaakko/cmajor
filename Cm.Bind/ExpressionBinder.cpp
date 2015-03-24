@@ -841,7 +841,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         if (type->IsTemplateTypeSymbol() && !type->Bound())
         {
             Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(type);
-            boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol);
+            boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope);
         }
         if (type->IsClassTypeSymbol())
         {
