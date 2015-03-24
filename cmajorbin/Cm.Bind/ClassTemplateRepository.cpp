@@ -14,6 +14,7 @@
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
+#include <Cm.Bind/Concept.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Ast/Visitor.hpp>
@@ -21,7 +22,7 @@
 
 namespace Cm { namespace Bind {
 
-void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol)
+void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope)
 {
     Cm::Sym::TypeSymbol* subjectTypeSymbol = templateTypeSymbol->GetSubjectType();
     if (!subjectTypeSymbol->IsClassTypeSymbol())
@@ -90,6 +91,16 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     prebinder.EndCompileUnit();
     Cm::Sym::FileScope* fileScope = prebinder.ReleaseFileScope();
     templateTypeSymbol->SetFileScope(fileScope);
+    if (classNode->Constraint())
+    {
+        Cm::Core::ConceptCheckException exception;
+        bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(),
+            templateTypeSymbol->TypeArguments(), exception);
+        if (!constraintSatisfied)
+        {
+            throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.Referenced());
+        }
+    }
     VirtualBinder virtualBinder(boundCompileUnit.SymbolTable(), boundCompileUnit.SyntaxUnit());
     globalNs->Accept(virtualBinder);
     Binder binder(boundCompileUnit);
@@ -128,7 +139,7 @@ void ClassTemplateRepository::CollectViableFunctions(const std::string& groupNam
     Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(leftArgType->GetBaseType());
     if (!templateTypeSymbol->Bound())
     {
-        BindTemplateTypeSymbol(templateTypeSymbol);
+        BindTemplateTypeSymbol(templateTypeSymbol, containerScope);
     }
 }
 

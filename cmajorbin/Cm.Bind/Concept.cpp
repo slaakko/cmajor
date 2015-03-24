@@ -217,7 +217,7 @@ void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
             if (symbol) break;
         }
     }
-    if (!symbol)
+    if (!symbol && functionFileScope)
     {
         symbol = functionFileScope->Lookup(identifierNode.Str());
     }

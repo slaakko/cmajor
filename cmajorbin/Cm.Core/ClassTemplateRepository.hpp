@@ -23,7 +23,7 @@ public:
     virtual void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) = 0;
     virtual void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol) = 0;
-    virtual void BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol) = 0;
+    virtual void BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope) = 0;
 };
 
 } } // namespace Cm::Core
