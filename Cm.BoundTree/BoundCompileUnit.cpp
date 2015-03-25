@@ -19,6 +19,7 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
     derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository(), hasGotos(false)
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
+    optIrFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".opt.ll").generic_string());
 }
 
 void BoundCompileUnit::AddFileScope(Cm::Sym::FileScope* fileScope_)
@@ -69,6 +70,11 @@ void BoundCompileUnit::SetSynthesizedClassFunRepository(Cm::Core::SynthesizedCla
 void BoundCompileUnit::SetClassTemplateRepository(Cm::Core::ClassTemplateRepository* classTemplateRepository_)
 {
     classTemplateRepository.reset(classTemplateRepository_);
+}
+
+void BoundCompileUnit::SetInlineFunctionRepository(Cm::Core::InlineFunctionRepository* inlineFunctionRepository_)
+{
+    inlineFunctionRepository.reset(inlineFunctionRepository_);
 }
 
 void BoundCompileUnit::SetDelegateTypeOpRepository(Cm::Core::DelegateTypeOpRepository* delegateTypeOpRepository_)

@@ -33,6 +33,7 @@
     <ClInclude Include="Evaluator.hpp" />
     <ClInclude Include="ExpressionBinder.hpp" />
     <ClInclude Include="Function.hpp" />
+    <ClInclude Include="InlineFunctionRepository.hpp" />
     <ClInclude Include="LocalVariable.hpp" />
     <ClInclude Include="MemberVariable.hpp" />
     <ClInclude Include="OverloadResolution.hpp" />
@@ -61,6 +62,7 @@
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="ExpressionBinder.cpp" />
     <ClCompile Include="Function.cpp" />
+    <ClCompile Include="InlineFunctionRepository.cpp" />
     <ClCompile Include="LocalVariable.cpp" />
     <ClCompile Include="MemberVariable.cpp" />
     <ClCompile Include="OverloadResolution.cpp" />

@@ -93,6 +93,8 @@ public:
     void EndContainerScope();
     void AddBoundStatement(Cm::BoundTree::BoundStatement* boundStatement);
     Cm::BoundTree::BoundCompoundStatement* GetCurrentCompound();
+    void BeginClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol);
+    void EndClass();
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* currentContainerScope;

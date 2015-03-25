@@ -34,6 +34,7 @@
     <ClInclude Include="GenData.hpp" />
     <ClInclude Include="GlobalSettings.hpp" />
     <ClInclude Include="InitSymbolTable.hpp" />
+    <ClInclude Include="InlineFunctionRepository.hpp" />
     <ClInclude Include="IrClassTypeRepository.hpp" />
     <ClInclude Include="IrFunctionRepository.hpp" />
     <ClInclude Include="StaticMemberVariableRepository.hpp" />
@@ -56,6 +57,7 @@
     <ClCompile Include="GenData.cpp" />
     <ClCompile Include="GlobalSettings.cpp" />
     <ClCompile Include="InitSymbolTable.cpp" />
+    <ClCompile Include="InlineFunctionRepository.cpp" />
     <ClCompile Include="IrClassTypeRepository.cpp" />
     <ClCompile Include="IrFunctionRepository.cpp" />
     <ClCompile Include="StaticMemberVariableRepository.cpp" />

@@ -15,6 +15,7 @@
 #include <Cm.Bind/Evaluator.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -36,6 +37,7 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
 {
     if (currentClass && currentClass->IsClassTemplateSymbol())
     {
+        functionSymbol->SetMemberOfClassTemplate();
         return;
     }
     bool staticClass = false;
@@ -158,6 +160,10 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
             }
         }
         functionSymbol->SetInline();
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+        {
+            functionSymbol->SetReplicated();
+        }
     }
     if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
     {

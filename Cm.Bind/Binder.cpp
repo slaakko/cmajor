@@ -119,6 +119,17 @@ void Binder::EndVisit(Cm::Ast::ClassNode& classNode)
     }
 }
 
+void Binder::BeginClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
+{
+    boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+    boundClass.reset(new Cm::BoundTree::BoundClass(classTypeSymbol, nullptr));
+}
+
+void Binder::EndClass()
+{
+    boundCompileUnit.AddBoundNode(boundClass.release());
+}
+
 void Binder::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
     if ((constructorNode.GetSpecifiers() & (Cm::Ast::Specifiers::default_ | Cm::Ast::Specifiers::suppress)) == Cm::Ast::Specifiers::none)

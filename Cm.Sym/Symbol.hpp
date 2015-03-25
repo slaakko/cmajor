@@ -63,9 +63,11 @@ enum class SymbolFlags : uint8_t
     none = 0,
     access = 1 << 0 | 1 << 1,
     static_ = 1 << 2,
-    bound = 1 << 3,
-    project = 1 << 4,
-    irTypeMade = 1 << 5
+    external = 1 << 3,
+    bound = 1 << 4,
+    project = 1 << 5,
+    irTypeMade = 1 << 6,
+    replica = 1 << 7
 };
 
 std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess);
@@ -102,6 +104,8 @@ public:
     void SetAccess(SymbolAccess access_) { flags = flags | SymbolFlags(access_); }
     bool IsStatic() const { return GetFlag(SymbolFlags::static_); }
     void SetStatic() { SetFlag(SymbolFlags::static_); }
+    bool IsExternal() const { return GetFlag(SymbolFlags::external); }
+    void SetExternal() { SetFlag(SymbolFlags::external); }
     virtual SymbolAccess DeclaredAccess() const { return Access(); }
     SymbolAccess EffectiveAccess() const;
     bool IsPublic() const { return Access() == SymbolAccess::public_; }
@@ -110,6 +114,8 @@ public:
     void SetSource(SymbolSource source) { if (source == SymbolSource::project) SetFlag(SymbolFlags::project); else ResetFlag(SymbolFlags::project); }
     Symbol* Parent() const { return parent; }
     void SetParent(Symbol* parent_) { parent = parent_; }
+    bool IsReplica() const { return GetFlag(SymbolFlags::replica); }
+    void SetReplica() { SetFlag(SymbolFlags::replica); }
     virtual std::string TypeString() const { return "symbol"; };
     virtual void SetType(TypeSymbol* typeSymbol, int index);
     virtual ContainerScope* GetContainerScope() const { return nullptr; }

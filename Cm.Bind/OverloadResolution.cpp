@@ -18,6 +18,7 @@
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <unordered_set>
 #include <algorithm>
 
@@ -866,6 +867,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 return function;
             }
             boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, function);
+        }
+        else if (function->IsInline() && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+        {
+            boundCompileUnit.InlineFunctionRepository().Instantiate(containerScope, function);
         }
         return function;
     }
