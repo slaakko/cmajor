@@ -68,21 +68,21 @@ enum class FunctionSymbolFlags: uint16_t
     none = 0,
     constructorOrDestructorSymbol = 1 << 0,
     memberFunctionSymbol = 1 << 1,
-    external = 1 << 2,
-    cdecl_ = 1 << 3,
-    virtual_ = 1 << 4,
-    abstract_ = 1 << 5,
-    override_ = 1 << 6,
+    cdecl_ = 1 << 2,
+    virtual_ = 1 << 3,
+    abstract_ = 1 << 4,
+    override_ = 1 << 5,
     virtuality = virtual_ | abstract_ | override_,
-    nothrow = 1 << 7,
-    inline_ = 1 << 8,
-    replicated = 1 << 9,
-    suppressed = 1 << 10,
-    default_ = 1 << 11,
-    explicit_ = 1 << 12,
-    conversion = 1 << 13,
-    templateSpecialization = 1 << 14,
-    memberOfTemplateType = 1 << 15
+    nothrow = 1 << 6,
+    inline_ = 1 << 7,
+    replicated = 1 << 8,
+    suppressed = 1 << 9,
+    default_ = 1 << 10,
+    explicit_ = 1 << 11,
+    conversion = 1 << 12,
+    templateSpecialization = 1 << 13,
+    memberOfTemplateType = 1 << 14,
+    memberOfClassTemplate = 1 << 15
 };
 
 std::string FunctionSymbolFlagString(FunctionSymbolFlags flags);
@@ -116,6 +116,9 @@ struct PersistentFunctionData
     std::string cmlFilePath;
     Cm::Ast::NodeList usingNodes;
     std::unique_ptr<FileScope> functionFileScope;
+    uint64_t functionPos;
+    uint64_t functionSize;
+    std::unique_ptr<Cm::Ast::FunctionNode> functionNode;
 };
 
 class FunctionSymbol : public ContainerSymbol
@@ -149,8 +152,6 @@ public:
     void SetConstructorOrDestructorSymbol() { SetFlag(FunctionSymbolFlags::constructorOrDestructorSymbol); }
     bool IsMemberFunctionSymbol() const { return GetFlag(FunctionSymbolFlags::memberFunctionSymbol); }
     void SetMemberFunctionSymbol() { SetFlag(FunctionSymbolFlags::memberFunctionSymbol); }
-    bool IsExternal() const { return GetFlag(FunctionSymbolFlags::external); }
-    void SetExternal() { SetFlag(FunctionSymbolFlags::external); }
     bool IsCDecl() const { return GetFlag(FunctionSymbolFlags::cdecl_); }
     void SetCDecl() { SetFlag(FunctionSymbolFlags::cdecl_); }
     bool IsAbstract() const { return GetFlag(FunctionSymbolFlags::abstract_); }
@@ -176,6 +177,8 @@ public:
     void SetExplicit() { SetFlag(FunctionSymbolFlags::explicit_); }
     bool IsMemberOfTemplateType() const { return GetFlag(FunctionSymbolFlags::memberOfTemplateType); }
     void SetMemberOfTemplateType() { SetFlag(FunctionSymbolFlags::memberOfTemplateType); }
+    bool IsMemberOfClassTemplate() const { return GetFlag(FunctionSymbolFlags::memberOfClassTemplate); }
+    void SetMemberOfClassTemplate() { SetFlag(FunctionSymbolFlags::memberOfClassTemplate); }
     bool IsConstructor() const;
     bool IsDefaultConstructor() const;
     bool IsCopyConstructor() const;
@@ -186,6 +189,8 @@ public:
     bool IsDestructor() const;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
+    void ReadFunctionNode(Cm::Sym::SymbolTable& symbolTable, int fileIndex);
+    void FreeFunctionNode(Cm::Sym::SymbolTable& symbolTable);
     void AddSymbol(Symbol* symbol) override;
     void SetType(TypeSymbol* type_, int index) override;
     void SetReturnType(TypeSymbol* returnType_);
@@ -216,6 +221,7 @@ public:
     void SetTypeArguments(const std::vector<Cm::Sym::TypeSymbol*>& typeArguments_) { typeArguments = typeArguments_; }
     void Dump(CodeFormatter& formatter) override;
     FileScope* GetFileScope(ContainerScope* containerScope);
+    void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
@@ -227,6 +233,7 @@ private:
     Cm::Ast::CompileUnitNode* compileUnit;
     Ir::Intf::Parameter* classObjectResultIrParam;
     std::unique_ptr<PersistentFunctionData> persistentFunctionData;
+    std::unique_ptr<Cm::Ast::NamespaceNode> globalNs;
     bool GetFlag(FunctionSymbolFlags flag) const
     {
         return (flags & flag) != FunctionSymbolFlags::none;

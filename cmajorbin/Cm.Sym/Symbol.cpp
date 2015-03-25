@@ -62,6 +62,14 @@ std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess)
         }
         s.append("static");
     }
+    if ((flags & SymbolFlags::external) != SymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("external");
+    }
     if ((flags & SymbolFlags::project) != SymbolFlags::none)
     {
         if (!s.empty())

@@ -23,6 +23,7 @@
 #include <Cm.Core/FunctionTemplateRepository.hpp>
 #include <Cm.Core/ConceptRepository.hpp>
 #include <Cm.Core/ExternalConstantRepository.hpp>
+#include <Cm.Core/InlineFunctionRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -36,6 +37,7 @@ public:
     void RemoveLastFileScope();
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& GetFileScopes() const { return fileScopes; }
     const std::string& IrFilePath() const { return irFilePath; }
+    const std::string& OptIrFilePath() const { return optIrFilePath; }
     const std::string& ObjectFilePath() const { return objectFilePath; }
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
@@ -51,6 +53,8 @@ public:
     void SetClassTemplateRepository(Cm::Core::ClassTemplateRepository* classTemplateRepository_);
     Cm::Core::ClassTemplateRepository& ClassTemplateRepository() { return *classTemplateRepository; }
     Cm::Core::FunctionTemplateRepository& FunctionTemplateRepository() { return functionTemplateRepository; }
+    Cm::Core::InlineFunctionRepository& InlineFunctionRepository() { return *inlineFunctionRepository; }
+    void SetInlineFunctionRepository(Cm::Core::InlineFunctionRepository* inlineFunctionRepository_);
     Cm::Core::DelegateTypeOpRepository& DelegateTypeOpRepository() { return *delegateTypeOpRepository; }
     void SetDelegateTypeOpRepository(Cm::Core::DelegateTypeOpRepository* delegateTypeOpRepository_);
     Cm::Core::ClassDelegateTypeOpRepository& ClassDelegateTypeOpRepository() { return *classDelegateTypeOpRepository; }
@@ -68,6 +72,7 @@ private:
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     std::string irFilePath;
     std::string objectFilePath;
+    std::string optIrFilePath;
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;
@@ -80,6 +85,7 @@ private:
     std::unique_ptr<Cm::Core::SynthesizedClassFunRepository> synthesizedClassFunRepository;
     std::unique_ptr<Cm::Core::ClassTemplateRepository> classTemplateRepository;
     Cm::Core::FunctionTemplateRepository functionTemplateRepository;
+    std::unique_ptr<Cm::Core::InlineFunctionRepository> inlineFunctionRepository;
     std::unique_ptr<Cm::Core::DelegateTypeOpRepository> delegateTypeOpRepository;
     std::unique_ptr<Cm::Core::ClassDelegateTypeOpRepository> classDelegateTypeOpRepository;
     Cm::Core::ConceptRepository conceptRepository;

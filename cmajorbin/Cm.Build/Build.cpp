@@ -28,6 +28,7 @@
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/ClassTemplateRepository.hpp>
+#include <Cm.Bind/InlineFunctionRepository.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
@@ -46,6 +47,13 @@
 #include <iostream>
 
 namespace Cm { namespace Build {
+
+Cm::Ast::Project* currentProject = nullptr;
+
+std::string GetCurrentProjectName()
+{
+    return currentProject ? currentProject->Name() : "";
+}
 
 char GetPlatformPathSeparatorChar()
 {
@@ -234,6 +242,33 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
     boost::filesystem::remove(llErrorFilePath);
 }
 
+void GenerateOptimizedLlvmCodeFile(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
+{
+    std::string optllErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".opt.ll.error").generic_string());
+    std::string command = "opt";
+    command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
+    command.append(" -S").append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.OptIrFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
+    try
+    {
+        Cm::Util::System(command, 2, optllErrorFilePath);
+    }
+    catch (const std::exception&)
+    {
+        Cm::Util::MappedInputFile file(optllErrorFilePath);
+        try
+        {
+            Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, optllErrorFilePath);
+            throw Cm::Core::ToolErrorExcecption(toolError);
+        }
+        catch (const std::exception&)
+        {
+            std::string errorText(file.Begin(), file.End());
+            throw std::runtime_error(errorText);
+        }
+    }
+    boost::filesystem::remove(optllErrorFilePath);
+}
+
 void CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
 {
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
@@ -327,6 +362,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
     std::string prebindCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__prebind__.ll")).generic_string());
     Cm::BoundTree::BoundCompileUnit prebindCompileUnit(syntaxTree.CompileUnits().front().get(), prebindCompileUnitIrFilePath, symbolTable);
     prebindCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
+    prebindCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(prebindCompileUnit));
     prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
     prebindCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(prebindCompileUnit));
     prebindCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(prebindCompileUnit));
@@ -373,6 +409,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
         Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable);
         boundCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
+        boundCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(boundCompileUnit));
         boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
         boundCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(boundCompileUnit));
         boundCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(boundCompileUnit));
@@ -384,6 +421,10 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         }
         Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
 		GenerateObjectCode(boundCompileUnit);
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+        {
+            GenerateOptimizedLlvmCodeFile(boundCompileUnit);
+        }
         objectFilePaths.push_back(boundCompileUnit.ObjectFilePath());
         ++index;
     }
@@ -502,10 +543,12 @@ void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::st
 
 void BuildProject(Cm::Ast::Project* project)
 {
+    currentProject = project;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
-        std::cout << "Building project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ")..." << std::endl;
+        std::cout << "Building project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << 
+            ") using " << Cm::Core::GetGlobalSettings()->Config() << " configuration..." << std::endl;
     }
     Cm::Parser::FileRegistry fileRegistry;
     Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
@@ -562,6 +605,7 @@ void BuildProject(Cm::Ast::Project* project)
     {
         std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ") built successfully" << std::endl;
     }
+    currentProject = nullptr;
 }
 
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;
@@ -599,7 +643,8 @@ void BuildSolution(const std::string& solutionFilePath)
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
-        std::cout << "Building solution '" << solution->Name() << "' (" << Cm::Util::GetFullPath(solution->FilePath()) << ")..." << std::endl;
+        std::cout << "Building solution '" << solution->Name() << "' (" << Cm::Util::GetFullPath(solution->FilePath()) << 
+            ") using " << Cm::Core::GetGlobalSettings()->Config() << " configuration..." << std::endl;
     }
     solution->ResolveDeclarations();
     if (!projectGrammar)

@@ -45,6 +45,8 @@ void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 {
     currentClass = &boundClass;
     Cm::Sym::ClassTypeSymbol* classTypeSymbol = boundClass.Symbol();
+    if (processedClasses.find(classTypeSymbol) != processedClasses.end()) return;
+    processedClasses.insert(classTypeSymbol);
     for (Cm::Sym::MemberVariableSymbol* staticMemberVarSymbol : classTypeSymbol->StaticMemberVariables())
     {
         staticMemberVariableRepository.Add(staticMemberVarSymbol);

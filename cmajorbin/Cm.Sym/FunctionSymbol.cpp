@@ -13,6 +13,7 @@
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
@@ -31,14 +32,6 @@ std::string FunctionSymbolFlagString(FunctionSymbolFlags flags)
             s.append(1, ' ');
         }
         s.append("member function");
-    }
-    if ((flags & FunctionSymbolFlags::external) != FunctionSymbolFlags::none)
-    {
-        if (!s.empty())
-        {
-            s.append(1, ' ');
-        }
-        s.append("external");
     }
     if ((flags & FunctionSymbolFlags::cdecl_) != FunctionSymbolFlags::none)
     {
@@ -143,7 +136,7 @@ FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lo
 {
 }
 
-PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), specifiers(), returnTypeExprNode(nullptr), groupId(nullptr), constraint(nullptr)
+PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), specifiers(), returnTypeExprNode(nullptr), groupId(nullptr), constraint(nullptr), functionPos(0), functionSize(0)
 {
 }
 
@@ -257,6 +250,7 @@ bool FunctionSymbol::IsExportSymbol() const
     if (IsFunctionTemplateSpecialization()) return false;
     if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;
+    if (IsReplica()) return false;
     return ContainerSymbol::IsExportSymbol(); 
 }
 
@@ -285,6 +279,10 @@ void FunctionSymbol::SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes
 
 const Cm::Ast::NodeList& FunctionSymbol::GetUsingNodes() const
 {
+    if (!persistentFunctionData)
+    {
+        throw std::runtime_error("no persistent function data");
+    }
     return persistentFunctionData->usingNodes;
 }
 
@@ -386,6 +384,47 @@ void FunctionSymbol::Write(Writer& writer)
             throw std::runtime_error("write: not function node");
         }
     }
+    else if (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate())
+    {
+        if (persistentFunctionData)
+        {
+            writer.GetBinaryWriter().Write(true);
+            persistentFunctionData->usingNodes.Write(writer.GetAstWriter());
+        }
+        else
+        {
+            writer.GetBinaryWriter().Write(false);
+        }
+        SymbolTable* symbolTable = writer.GetSymbolTable();
+        Cm::Ast::Node* node = symbolTable->GetNode(this);
+        if (!node)
+        {
+            throw std::runtime_error("write: function node not found from symbol table");
+        }
+        if (node->IsFunctionNode())
+        {
+            Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
+            uint64_t sizePos = writer.GetBinaryWriter().Pos();
+            writer.GetBinaryWriter().Write(uint64_t(0));
+            uint64_t functionPos = writer.GetBinaryWriter().Pos();
+            writer.GetAstWriter().Write(functionNode);
+            uint64_t functionEndPos = writer.GetBinaryWriter().Pos();
+            uint64_t functionSize = functionEndPos - functionPos;
+            writer.GetBinaryWriter().Seek(sizePos);
+            writer.GetBinaryWriter().Write(functionSize);
+            writer.GetBinaryWriter().Seek(functionEndPos);
+            bool hasReturnType = returnType != nullptr;
+            writer.GetBinaryWriter().Write(hasReturnType);
+            if (hasReturnType)
+            {
+                writer.Write(returnType->Id());
+            }
+        }
+        else
+        {
+            throw std::runtime_error("write: not function node");
+        }
+    }
     else
     {
         bool hasReturnType = returnType != nullptr;
@@ -428,6 +467,24 @@ void FunctionSymbol::Read(Reader& reader)
         persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
         reader.GetBinaryReader().Skip(persistentFunctionData->bodySize);
     }
+    else if (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate())
+    {
+        persistentFunctionData.reset(new PersistentFunctionData());
+        bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
+        if (hasUsingNodes)
+        {
+            persistentFunctionData->usingNodes.Read(reader.GetAstReader());
+        }
+        persistentFunctionData->functionSize = reader.GetBinaryReader().ReadULong();
+        persistentFunctionData->functionPos = reader.GetBinaryReader().GetPos();
+        persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
+        reader.GetBinaryReader().Skip(persistentFunctionData->functionSize);
+        bool hasReturnType = reader.GetBinaryReader().ReadBool();
+        if (hasReturnType)
+        {
+            reader.FetchTypeFor(this, 0);
+        }
+    }
     else
     {
         bool hasReturnType = reader.GetBinaryReader().ReadBool();
@@ -435,6 +492,42 @@ void FunctionSymbol::Read(Reader& reader)
         {
             reader.FetchTypeFor(this, 0);
         }
+    }
+}
+
+void FunctionSymbol::ReadFunctionNode(Cm::Sym::SymbolTable& symbolTable, int fileIndex)
+{
+    if (!persistentFunctionData)
+    {
+        throw std::runtime_error("no persistent function data");
+    }
+    const std::string& cmlFilePath = persistentFunctionData->cmlFilePath;
+    Cm::Ser::BinaryReader binaryReader(cmlFilePath);
+    binaryReader.SetPos(persistentFunctionData->functionPos);
+    Cm::Ast::Reader astReader(binaryReader);
+    astReader.SetReplaceFileIndex(fileIndex);
+    Cm::Ast::Node* node = astReader.ReadNode();
+    if (node->IsFunctionNode())
+    {
+        symbolTable.SetNode(this, node);
+        persistentFunctionData->functionNode.reset(static_cast<Cm::Ast::FunctionNode*>(node));
+    }
+    else
+    {
+        throw std::runtime_error("not function node");
+    }
+}
+
+void FunctionSymbol::FreeFunctionNode(Cm::Sym::SymbolTable& symbolTable)
+{
+    if (!persistentFunctionData)
+    {
+        throw std::runtime_error("no persistent function data");
+    }
+    if (persistentFunctionData->functionNode)
+    {
+        persistentFunctionData->functionNode.reset();
+        symbolTable.SetNode(this, nullptr);
     }
 }
 
@@ -618,6 +711,11 @@ FileScope* FunctionSymbol::GetFileScope(ContainerScope* containerScope)
         }
     }
     return persistentFunctionData->functionFileScope.get();
+}
+
+void FunctionSymbol::SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_)
+{
+    globalNs.reset(globalNs_);
 }
 
 } } // namespace Cm::Sym

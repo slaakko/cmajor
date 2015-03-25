@@ -20,6 +20,7 @@
 #include <Cm.Bind/Delegate.hpp>
 #include <Cm.Bind/Access.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Bind {
@@ -109,6 +110,11 @@ void Prebinder::EndVisit(Cm::Ast::ClassNode& classNode)
 void Prebinder::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
     currentFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &constructorNode, currentClass);
+    if (!currentClass->IsClassTemplateSymbol() && (constructorNode.GetSpecifiers() & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none && 
+        Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+    {
+        currentFunction->SetUsingNodes(usingNodes);
+    }
     BeginContainerScope(symbolTable.GetContainerScope(&constructorNode));
     parameterIndex = 0;
 }
@@ -125,6 +131,11 @@ void Prebinder::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
 void Prebinder::BeginVisit(Cm::Ast::DestructorNode& destructorNode)
 {
     currentFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &destructorNode, currentClass);
+    if (!currentClass->IsClassTemplateSymbol() && (destructorNode.GetSpecifiers() & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none && 
+        Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+    {
+        currentFunction->SetUsingNodes(usingNodes);
+    }
     BeginContainerScope(symbolTable.GetContainerScope(&destructorNode));
     parameterIndex = 0;
 }
@@ -141,6 +152,11 @@ void Prebinder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 void Prebinder::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
     currentFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &memberFunctionNode, currentClass);
+    if (!currentClass->IsClassTemplateSymbol() && (memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none && 
+        Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+    {
+        currentFunction->SetUsingNodes(usingNodes);
+    }
     BeginContainerScope(symbolTable.GetContainerScope(&memberFunctionNode));
     parameterIndex = 0;
 }
@@ -157,6 +173,11 @@ void Prebinder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 void Prebinder::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
     currentFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &conversionFunctionNode, currentClass);
+    if (!currentClass->IsClassTemplateSymbol() && (conversionFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none && 
+        Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+    {
+        currentFunction->SetUsingNodes(usingNodes);
+    }
     BeginContainerScope(symbolTable.GetContainerScope(&conversionFunctionNode));
     parameterIndex = 0;
 }
@@ -173,6 +194,11 @@ void Prebinder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode
 void Prebinder::BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
 {
     currentFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &staticConstructorNode, currentClass);
+    if (!currentClass->IsClassTemplateSymbol() && (staticConstructorNode.GetSpecifiers() & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none && 
+        Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+    {
+        currentFunction->SetUsingNodes(usingNodes);
+    }
     BeginContainerScope(symbolTable.GetContainerScope(&staticConstructorNode));
     parameterIndex = 0;
 }
@@ -238,6 +264,10 @@ void Prebinder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
     else
     {
         currentFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &functionNode, nullptr);
+        if ((functionNode.GetSpecifiers() & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+        {
+            currentFunction->SetUsingNodes(usingNodes);
+        }
         BeginContainerScope(symbolTable.GetContainerScope(&functionNode));
         parameterIndex = 0;
     }

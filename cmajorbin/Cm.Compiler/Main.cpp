@@ -7,6 +7,7 @@
 
  ========================================================================*/
 
+#include <Cm.Compiler/IdeError.hpp>
 #include <Cm.Build/Build.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
@@ -80,7 +81,7 @@ int main(int argc, const char** argv)
         std::vector<std::string> solutionOrProjectFilePaths;
         if (argc < 2)
         {
-            std::cout << "Cmajor " << CompilerMode() << " mode compiler " << " version " << version << std::endl;
+            std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
             std::cout << "Usage: " << CompilerName() << " [options] {file.cms | file.cmp}" << std::endl;
             std::cout << "Compile Cmajor solution file.cms or project file.cmp" << std::endl;
             std::cout << 
@@ -88,7 +89,8 @@ int main(int argc, const char** argv)
                 "-config=debug   : use debug configuration (default)\n" <<
                 "-config=release : use release configuration\n" <<
                 "-O=<n>          : set optimization level to <n> (default: debug:0, release:3)\n" << 
-                "-quiet          : generates no output for successful compiles\n" << 
+                "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
+                "-quiet          : write no output messages for successful compiles\n" << 
                 std::endl;
         }
         else
@@ -113,6 +115,10 @@ int main(int argc, const char** argv)
                                         throw std::runtime_error("unknown configuration '" + config + "'");
                                     }
                                     Cm::Core::GetGlobalSettings()->SetConfig(config);
+                                    if (config == "release")
+                                    {
+                                        Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::optimize);
+                                    }
                                 }
                                 else if (v[0] == "-O")
                                 {
@@ -129,6 +135,10 @@ int main(int argc, const char** argv)
                             {
                                 throw std::runtime_error("unknown argument '" + arg + "'");
                             }
+                        }
+                        else if (arg == "-emit-opt")
+                        {
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt);
                         }
                         else if (arg == "-quiet")
                         {
@@ -183,7 +193,7 @@ int main(int argc, const char** argv)
             auto dur = end - start;
             long long totalSecs = std::chrono::duration_cast<std::chrono::seconds>(dur).count() + 1;
             int hours = static_cast<int>(totalSecs / 3600);
-            int mins = static_cast<int>((totalSecs % 3600) / 60);
+            int mins = static_cast<int>((totalSecs / 60) % 60);
             int secs = static_cast<int>(totalSecs % 60);
             std::cout <<
                 (hours > 0 ? std::to_string(hours) + " hour" + ((hours != 1) ? "s " : " ") : "") <<
@@ -193,6 +203,11 @@ int main(int argc, const char** argv)
     }
     catch (const Cm::Parsing::CombinedParsingError& ex)
     {
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+        {
+            Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            std::cerr << errorCollection << std::endl;
+        }
         for (const Cm::Parsing::ExpectationFailure& exp : ex.Errors())
         {
             if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
@@ -210,6 +225,8 @@ int main(int argc, const char** argv)
     {
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
+            Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            std::cerr << errorCollection << std::endl;
             std::cout << ex.what() << std::endl;
         }
         else
@@ -221,6 +238,8 @@ int main(int argc, const char** argv)
     {
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
+            Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            std::cerr << errorCollection << std::endl;
             std::cout << ex.what() << std::endl;
         }
         else
@@ -233,6 +252,8 @@ int main(int argc, const char** argv)
         const Cm::Util::ToolError& error = ex.Error();
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
+            Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            std::cerr << errorCollection << std::endl;
             std::cout << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << std::endl;
         }
         else
@@ -245,6 +266,8 @@ int main(int argc, const char** argv)
     {
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
+            Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            std::cerr << errorCollection << std::endl;
             std::cout << ex.what() << std::endl;
         }
         else
@@ -257,6 +280,8 @@ int main(int argc, const char** argv)
     {
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
+            Cm::Compiler::IdeErrorCollection errorCollection("unknown exception occurred");
+            std::cerr << errorCollection << std::endl;
             std::cout << "unknown exception occurred" << std::endl;
         }
         else

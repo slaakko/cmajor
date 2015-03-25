@@ -43,6 +43,7 @@ private:
     Cm::Core::StaticMemberVariableRepository staticMemberVariableRepository;
 	Cm::Sym::FunctionSymbol* enterFrameFun;
 	Cm::Sym::FunctionSymbol* leaveFrameFun;
+    std::unordered_set<Cm::Sym::ClassTypeSymbol*> processedClasses;
 };
 
 } } // namespace Cm::Emit

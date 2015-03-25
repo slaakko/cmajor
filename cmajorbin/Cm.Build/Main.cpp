@@ -17,6 +17,7 @@
 #include <Cm.Bind/ClassTemplateRepository.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
+#include <Cm.Bind/InlineFunctionRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
@@ -44,6 +45,7 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     std::string mainCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__main__.ll")).generic_string());
     Cm::BoundTree::BoundCompileUnit mainCompileUnit(&syntaxUnit, mainCompileUnitIrFilePath, symbolTable);
     mainCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(mainCompileUnit));
+    mainCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(mainCompileUnit));
     mainCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(mainCompileUnit));
     mainCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(mainCompileUnit));
     mainCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(mainCompileUnit));

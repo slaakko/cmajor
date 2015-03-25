@@ -18,7 +18,8 @@ enum class GlobalFlags : uint8_t
     none = 0,
     optimize = 1 << 0,
     quiet = 1 << 1,
-    ide = 1 << 2
+    emitOpt = 1 << 2,
+    ide = 1 << 3
 };
 
 inline GlobalFlags operator|(GlobalFlags left, GlobalFlags right)

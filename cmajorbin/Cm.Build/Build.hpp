@@ -13,6 +13,7 @@
 
 namespace Cm { namespace Build {
 
+std::string GetCurrentProjectName();
 void BuildSolution(const std::string& solutionFilePath);
 void BuildProject(const std::string& projectFilePath);
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
