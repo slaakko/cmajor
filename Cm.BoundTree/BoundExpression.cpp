@@ -192,7 +192,6 @@ BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::
 
 void BoundCast::Accept(Visitor& visitor)
 {
-    operand->Accept(visitor);
     visitor.Visit(*this);
 }
 
