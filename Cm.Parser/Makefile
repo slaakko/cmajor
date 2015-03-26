@@ -9,6 +9,12 @@ Keyword.o Literal.o Parameter.o ParsingContext.o Project.o Solution.o Specifier.
 ../lib/libcmparser.a: $(OBJECTS)
 	$(AR) $(ARFLAGS) $@ $(OBJECTS)
 
+sources:
+	cmpg Cm.Parser.pp
+
+all_sources:
+	cmpg -F Cm.Parser.pp
+
 clean:
 	rm -f *.o
 	rm -f ../lib/libcmparser.a
