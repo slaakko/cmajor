@@ -10,6 +10,7 @@
 #ifndef CM_SYM_TYPE_REPOSITORY_INCLUDED
 #define CM_SYM_TYPE_REPOSITORY_INCLUDED
 #include <Cm.Sym/DerivedTypeSymbol.hpp>
+#include <Cm.Ast/Concept.hpp>
 
 namespace Cm {  namespace Sym {
 

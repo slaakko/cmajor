@@ -14,6 +14,7 @@
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <algorithm>
+#include <stdexcept>
 
 namespace Cm { namespace Sym {
 

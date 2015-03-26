@@ -54,7 +54,7 @@ struct FunctionMatch
     Cm::Ast::WhereConstraintNode* constraint;
     Cm::Sym::ContainerScope* containerScope;
     Cm::BoundTree::BoundCompileUnit* compileUnit;
-    std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
+    mutable std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
 };
 
 bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, const std::vector<Cm::Core::Argument>& arguments,

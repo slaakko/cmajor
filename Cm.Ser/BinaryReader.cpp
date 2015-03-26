@@ -8,6 +8,8 @@
 ========================================================================*/
 
 #include <Cm.Ser/BinaryReader.hpp>
+#include <stdexcept>
+#include <cstring>
 
 namespace Cm { namespace Ser {
 

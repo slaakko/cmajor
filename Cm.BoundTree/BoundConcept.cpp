@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.BoundTree/BoundConcept.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace BoundTree {
 

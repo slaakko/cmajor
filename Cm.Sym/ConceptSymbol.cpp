@@ -12,6 +12,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <algorithm>
+#include <stdexcept>
 
 namespace Cm { namespace Sym {
 

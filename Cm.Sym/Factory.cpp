@@ -24,6 +24,7 @@
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/ConceptSymbol.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Sym {
 

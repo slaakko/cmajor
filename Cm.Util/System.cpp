@@ -9,6 +9,7 @@
 
 #include <Cm.Util/System.hpp>
 #include <Cm.Util/Handle.hpp>
+#include <stdexcept>
 #include <sys/stat.h>
 #include <fcntl.h>
 #ifdef WIN32

@@ -10,6 +10,7 @@
 #ifndef CM_SYM_FACTORY_INCLUDED
 #define CM_SYM_FACTORY_INCLUDED
 #include <Cm.Sym/Value.hpp>
+#include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
 

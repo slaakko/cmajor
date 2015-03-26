@@ -16,6 +16,7 @@
 #include <Llvm.Ir/RefVar.hpp>
 #include <Llvm.Ir/Instruction.hpp>
 #include <Llvm.Ir/Constant.hpp>
+#include <stdexcept>
 
 namespace Llvm { 
 

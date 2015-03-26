@@ -10,6 +10,7 @@
 #include <Cm.Ast/IntrinsicConcept.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Visitor.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Ast {
 

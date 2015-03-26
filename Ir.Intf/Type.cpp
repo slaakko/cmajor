@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Ir.Intf/Type.hpp>
+#include <stdexcept>
 
 namespace Ir { namespace Intf {
 

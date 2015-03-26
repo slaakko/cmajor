@@ -11,6 +11,7 @@
 #include <Cm.Parsing/Namespace.hpp>
 #include <Cm.Parsing/Utility.hpp>
 #include <Cm.Util/TextUtils.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Parsing {
 

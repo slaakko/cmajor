@@ -11,6 +11,7 @@
 #define CM_SYM_NAME_MANGLING_INCLUDED
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
+#include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
 

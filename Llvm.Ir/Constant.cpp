@@ -10,6 +10,7 @@
 #include <Llvm.Ir/Constant.hpp>
 #include <Llvm.Ir/Type.hpp>
 #include <Ir.Intf/Factory.hpp>
+#include <stdexcept>
 
 namespace Llvm { 
 

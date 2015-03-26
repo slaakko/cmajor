@@ -19,6 +19,7 @@
 #include <Cm.Ast/Class.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Ast {
 

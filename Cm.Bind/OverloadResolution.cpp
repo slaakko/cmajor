@@ -65,7 +65,7 @@ bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& right)
 
 struct BetterFunctionMatch
 {
-    bool operator()(FunctionMatch& left, FunctionMatch& right) 
+    bool operator()(const FunctionMatch& left, const FunctionMatch& right)
     {
         int leftBetterArgumentMatches = 0;
         int rightBetterArgumentMatches = 0;

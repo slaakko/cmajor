@@ -21,7 +21,7 @@ TypeId::TypeId(const Cm::Util::Uuid& rep_) : rep(rep_), hashCodeValid(false), ha
 
 void TypeId::ComputeHashCode() const
 {
-#if defined(_WIN64)
+#if defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__)
     static_assert(sizeof(size_t) == 8, "This code is for 64-bit size_t.");
     const size_t offset_basis = 14695981039346656037ULL;
     const size_t prime = 1099511628211ULL;

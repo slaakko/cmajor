@@ -9,6 +9,7 @@
 
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace BoundTree {
 

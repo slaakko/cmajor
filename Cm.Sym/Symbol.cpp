@@ -13,6 +13,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Sym {
 

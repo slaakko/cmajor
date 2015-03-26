@@ -11,6 +11,7 @@
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Function.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Ast {
 

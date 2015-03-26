@@ -70,7 +70,7 @@ Cm::Sym::Value* UnaryEvaluate(Cm::Sym::Value* subject, Op op)
 template<typename ValueT>
 Cm::Sym::Value* Not(Cm::Sym::Value* subject, const Span& span)
 {
-    return UnaryEvaluate<ValueT>(subject, std::logical_not<ValueT::OperandType>());
+    return UnaryEvaluate<ValueT>(subject, std::logical_not<typename ValueT::OperandType>());
 }
 
 UnaryOperatorFun not_[uint8_t(Cm::Sym::ValueType::max)] =
@@ -78,10 +78,16 @@ UnaryOperatorFun not_[uint8_t(Cm::Sym::ValueType::max)] =
     NotSupported, Not<Cm::Sym::BoolValue>, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported
 };
 
+template <typename T>
+struct identity
+{
+    T operator()(const T& x) const { return x; }
+};
+
 template<typename ValueT>
 Cm::Sym::Value* UnaryPlus(Cm::Sym::Value* subject, const Span& span)
 {
-    return UnaryEvaluate<ValueT>(subject, std::identity<ValueT::OperandType>());
+    return UnaryEvaluate<ValueT>(subject, identity<typename ValueT::OperandType>());
 }
 
 UnaryOperatorFun unaryPlus[uint8_t(Cm::Sym::ValueType::max)] =
@@ -94,7 +100,7 @@ UnaryOperatorFun unaryPlus[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Negate(Cm::Sym::Value* subject, const Span& span)
 {
-    return UnaryEvaluate<ValueT>(subject, std::negate<ValueT::OperandType>());
+    return UnaryEvaluate<ValueT>(subject, std::negate<typename ValueT::OperandType>());
 }
 
 UnaryOperatorFun negate[uint8_t(Cm::Sym::ValueType::max)] =
@@ -104,10 +110,21 @@ UnaryOperatorFun negate[uint8_t(Cm::Sym::ValueType::max)] =
     Negate<Cm::Sym::LongValue>, Negate<Cm::Sym::ULongValue>, Negate<Cm::Sym::FloatValue>, Negate<Cm::Sym::DoubleValue>
 };
 
+template <typename T>
+struct bit_not
+{
+    typedef T result_type;
+    typedef T argument_type;
+    T operator()(const T& x) const
+    {
+        return ~x;
+    }
+};
+
 template<typename ValueT>
 Cm::Sym::Value* Complement(Cm::Sym::Value* subject, const Span& span)
 {
-    return UnaryEvaluate<ValueT>(subject, std::bit_not<ValueT::OperandType>());
+    return UnaryEvaluate<ValueT>(subject, bit_not<typename ValueT::OperandType>());
 }
 
 UnaryOperatorFun complement[uint8_t(Cm::Sym::ValueType::max)] =
@@ -151,7 +168,7 @@ struct shiftLeftFun : std::binary_function<T, T, T>
 template<typename ValueT>
 Cm::Sym::Value* ShiftLeft(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, shiftLeftFun<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, shiftLeftFun<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun shiftLeft[uint8_t(Cm::Sym::ValueType::max)] =
@@ -173,7 +190,7 @@ struct shiftRightFun : std::binary_function<T, T, T>
 template<typename ValueT>
 Cm::Sym::Value* ShiftRight(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, shiftRightFun<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, shiftRightFun<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun shiftRight[uint8_t(Cm::Sym::ValueType::max)] =
@@ -186,7 +203,7 @@ BinaryOperatorFun shiftRight[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Add(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::plus<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::plus<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun add[uint8_t(Cm::Sym::ValueType::max)] =
@@ -199,7 +216,7 @@ BinaryOperatorFun add[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Sub(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::minus<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::minus<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun sub[uint8_t(Cm::Sym::ValueType::max)] =
@@ -212,7 +229,7 @@ BinaryOperatorFun sub[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Mul(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::multiplies<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::multiplies<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun mul[uint8_t(Cm::Sym::ValueType::max)] =
@@ -225,7 +242,7 @@ BinaryOperatorFun mul[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Div(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::divides<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::divides<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun div[uint8_t(Cm::Sym::ValueType::max)] =
@@ -238,7 +255,7 @@ BinaryOperatorFun div[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Rem(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::modulus<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::modulus<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun rem[uint8_t(Cm::Sym::ValueType::max)] =
@@ -251,7 +268,7 @@ BinaryOperatorFun rem[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* BitAnd(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::bit_and<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::bit_and<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun bitAnd[uint8_t(Cm::Sym::ValueType::max)] =
@@ -264,7 +281,7 @@ BinaryOperatorFun bitAnd[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* BitOr(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::bit_or<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::bit_or<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun bitOr[uint8_t(Cm::Sym::ValueType::max)] =
@@ -277,7 +294,7 @@ BinaryOperatorFun bitOr[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* BitXor(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::bit_xor<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::bit_xor<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun bitXor[uint8_t(Cm::Sym::ValueType::max)] =
@@ -290,7 +307,7 @@ BinaryOperatorFun bitXor[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Disjunction(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::logical_or<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::logical_or<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun disjunction[uint8_t(Cm::Sym::ValueType::max)] =
@@ -302,7 +319,7 @@ BinaryOperatorFun disjunction[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Conjunction(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryEvaluate<ValueT>(left, right, std::logical_and<ValueT::OperandType>());
+    return BinaryEvaluate<ValueT>(left, right, std::logical_and<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun conjunction[uint8_t(Cm::Sym::ValueType::max)] =
@@ -340,7 +357,7 @@ Cm::Sym::Value* BinaryPredEvaluate(Cm::Sym::Value* left, Cm::Sym::Value* right, 
 template<typename ValueT>
 Cm::Sym::Value* Equal(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryPredEvaluate<ValueT>(left, right, std::equal_to<ValueT::OperandType>());
+    return BinaryPredEvaluate<ValueT>(left, right, std::equal_to<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun equal[uint8_t(Cm::Sym::ValueType::max)] =
@@ -353,7 +370,7 @@ BinaryOperatorFun equal[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* NotEqual(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryPredEvaluate<ValueT>(left, right, std::not_equal_to<ValueT::OperandType>());
+    return BinaryPredEvaluate<ValueT>(left, right, std::not_equal_to<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun notEqual[uint8_t(Cm::Sym::ValueType::max)] =
@@ -366,7 +383,7 @@ BinaryOperatorFun notEqual[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Less(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryPredEvaluate<ValueT>(left, right, std::less<ValueT::OperandType>());
+    return BinaryPredEvaluate<ValueT>(left, right, std::less<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun less[uint8_t(Cm::Sym::ValueType::max)] =
@@ -379,7 +396,7 @@ BinaryOperatorFun less[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* Greater(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryPredEvaluate<ValueT>(left, right, std::greater<ValueT::OperandType>());
+    return BinaryPredEvaluate<ValueT>(left, right, std::greater<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun greater[uint8_t(Cm::Sym::ValueType::max)] =
@@ -392,7 +409,7 @@ BinaryOperatorFun greater[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* LessOrEqual(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryPredEvaluate<ValueT>(left, right, std::less_equal<ValueT::OperandType>());
+    return BinaryPredEvaluate<ValueT>(left, right, std::less_equal<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun lessOrEqual[uint8_t(Cm::Sym::ValueType::max)] =
@@ -405,7 +422,7 @@ BinaryOperatorFun lessOrEqual[uint8_t(Cm::Sym::ValueType::max)] =
 template<typename ValueT>
 Cm::Sym::Value* GreaterOrEqual(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& span)
 {
-    return BinaryPredEvaluate<ValueT>(left, right, std::greater_equal<ValueT::OperandType>());
+    return BinaryPredEvaluate<ValueT>(left, right, std::greater_equal<typename ValueT::OperandType>());
 }
 
 BinaryOperatorFun greaterOrEqual[uint8_t(Cm::Sym::ValueType::max)] =
