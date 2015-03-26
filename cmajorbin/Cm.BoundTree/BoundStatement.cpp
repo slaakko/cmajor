@@ -10,6 +10,7 @@
 #include <Cm.BoundTree/BoundStatement.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace BoundTree {
 

@@ -12,6 +12,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Llvm.Ir/Type.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Core {
 

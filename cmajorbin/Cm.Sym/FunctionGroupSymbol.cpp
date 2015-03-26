@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Sym {
 

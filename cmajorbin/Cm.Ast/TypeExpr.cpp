@@ -12,6 +12,7 @@
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <algorithm>
+#include <stdexcept>
 
 namespace Cm { namespace Ast {
 

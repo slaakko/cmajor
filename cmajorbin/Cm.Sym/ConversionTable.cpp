@@ -10,6 +10,7 @@
 #include <Cm.Sym/ConversionTable.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Sym {
 

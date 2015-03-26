@@ -12,6 +12,7 @@
 #include <Cm.Ast/Specifier.hpp>
 #include <Cm.Ast/Parameter.hpp>
 #include <Cm.Ast/Template.hpp>
+#include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Ast {
 

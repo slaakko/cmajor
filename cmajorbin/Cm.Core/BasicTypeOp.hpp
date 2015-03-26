@@ -12,6 +12,7 @@
 #include <Cm.Core/GenData.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Ast/Statement.hpp>
 
 namespace Cm { namespace Core {
 

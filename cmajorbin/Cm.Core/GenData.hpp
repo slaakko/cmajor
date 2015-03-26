@@ -9,9 +9,9 @@
 
 #ifndef CM_CORE_GEN_DATA_INCLUDED
 #define CM_CORE_GEN_DATA_INCLUDED
-#include <Cm.Core/Emitter.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
+#include <Ir.Intf/Function.hpp>
 #include <stack>
 #include <unordered_set>
 

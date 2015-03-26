@@ -11,6 +11,7 @@
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Ir.Intf/Label.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Core {
 

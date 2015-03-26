@@ -10,6 +10,7 @@
 #ifndef CM_AST_SOLUTION_INCLUDED
 #define CM_AST_SOLUTION_INCLUDED
 #include <Cm.Ast/Project.hpp>
+#include <Cm.Ast/Identifier.hpp>
 #include <unordered_map>
 
 namespace Cm { namespace Ast {

@@ -11,6 +11,7 @@
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Core {
 

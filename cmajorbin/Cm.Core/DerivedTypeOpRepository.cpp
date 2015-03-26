@@ -13,6 +13,7 @@
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Core {
 

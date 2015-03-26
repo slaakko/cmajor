@@ -12,6 +12,7 @@
 #include <Cm.Util/CodeFormatter.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <fstream>
+#include <stdexcept>
 
 namespace Cm { namespace Sym {
 

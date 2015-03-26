@@ -10,6 +10,7 @@
 #ifndef CM_AST_SYNTAX_TREE_INCLUDED
 #define CM_AST_SYNTAX_TREE_INCLUDED
 #include <Cm.Ast/CompileUnit.hpp>
+#include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Ast {
 

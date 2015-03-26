@@ -11,8 +11,9 @@
 #include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
-#include <Cm.Sym/Namespace.hpp>
+#include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Core {
 

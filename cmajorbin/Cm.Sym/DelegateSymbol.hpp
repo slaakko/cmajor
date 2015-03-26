@@ -13,6 +13,7 @@
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Ast/Delegate.hpp>
+#include <Cm.Ast/Concept.hpp>
 
 namespace Cm { namespace Sym {
 

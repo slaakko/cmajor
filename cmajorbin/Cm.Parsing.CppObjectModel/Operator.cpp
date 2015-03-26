@@ -13,6 +13,11 @@
 
 namespace Cm { namespace Parsing { namespace CppObjectModel {
 
+struct OperatorHash
+{
+    size_t operator()(Operator op) const { return size_t(op); }
+};
+
 class OperatorTable
 {
 public:
@@ -28,7 +33,7 @@ private:
     static std::unique_ptr<OperatorTable> instance;
     OperatorTable();
     std::unordered_map<std::string, Operator> operatorMap;
-    std::unordered_map<Operator, std::string> operatorStrMap;
+    std::unordered_map<Operator, std::string, OperatorHash> operatorStrMap;
 };
 
 std::unique_ptr<OperatorTable>  OperatorTable::instance;
@@ -129,7 +134,7 @@ Operator OperatorTable::GetOperator(const std::string& operatorName)
 
 std::string OperatorTable::GetOperatorStr(Operator op)
 {
-    std::unordered_map<Operator, std::string>::const_iterator i = operatorStrMap.find(op);
+    std::unordered_map<Operator, std::string, OperatorHash>::const_iterator i = operatorStrMap.find(op);
     if (i != operatorStrMap.end())
     {
         return i->second;
