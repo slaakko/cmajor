@@ -188,36 +188,6 @@ Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr)
 
 Emitter::~Emitter()
 {
-    std::cout << "owned objects: " << ownedObjects.size() << std::endl;
-    std::cout << "owned types: " << ownedTypes.size() << std::endl;
-    std::cout << "owned funcction: " << ownedFuns.size() << std::endl;
-    std::cout << "deleting owned objects:" << std::endl;
-    int i = 0;
-    for (std::unique_ptr<Ir::Intf::Object>& o : ownedObjects)
-    {
-        std::cout << i << ": " << o->Name() << " : " << o->GetType()->Name() << std::endl;
-        o.reset();
-        ++i;
-    }
-    std::cout << "owned objects deleted" << std::endl;
-    std::cout << "deleting owned types:" << std::endl;
-    i = 0;
-    for (std::unique_ptr<Ir::Intf::Type>& t : ownedTypes)
-    {
-        std::cout << i << ": " << t->Name() << std::endl;
-        t.reset();
-        ++i;
-    }
-    std::cout << "owned types deleted" << std::endl;
-    std::cout << "deleting owned functions:" << std::endl;
-    i = 0;
-    for (std::unique_ptr<Ir::Intf::Function>& f : ownedFuns)
-    {
-        std::cout << i << ": " << f->Name() << std::endl;
-        f.reset();
-        ++i;
-    }
-    std::cout << "owned functions deleted" << std::endl;
 }
 
 void Emitter::RequestLabelFor(GenData& genData)

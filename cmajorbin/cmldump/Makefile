@@ -8,16 +8,22 @@ LIBRARIES = ../lib/libcmutil.a ../lib/libcmparsingcppobjectmodel.a ../lib/libcmp
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-../bin/cmldump: $(OBJECTS) $(LIBRARIES)
-	$(CXX) $(CXXFLAGS) -o ../bin/cmldump $(OBJECTS) \
+ifeq ($(config),debug)
+    exename=cmldumpd
+else
+    exename=cmldump
+endif
+
+../bin/$(exename): $(OBJECTS) $(LIBRARIES)
+	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) $(OBJECTS) \
 -lcmsym -lcmcore -lcmirintf -lcmparser -lcmast -lllvmir -ldwarf -lirintf -lcmser -lcmparsing -lcmparsingcppobjectmodel -lcmutil \
 -lboost_filesystem -lboost_iostreams -lboost_system
 
 install:
 	mkdir -p $(prefix)/bin
-	cp ../bin/cmldump $(prefix)/bin
+	cp ../bin/$(exename) $(prefix)/bin
 
 clean:
 	rm -f *.o
-	rm -f ../bin/cmldump
+	rm -f ../bin/$(exename)
 

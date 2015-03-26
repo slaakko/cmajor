@@ -8,16 +8,22 @@ LIBRARIES = ../lib/libcmutil.a ../lib/libcmparsingcppobjectmodel.a ../lib/libcmp
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-../bin/slines: $(OBJECTS) $(LIBRARIES)
-	$(CXX) $(CXXFLAGS) -o ../bin/slines $(OBJECTS) \
+ifeq ($(config),debug)
+    exename=slinesd
+else
+    exename=slines
+endif
+
+../bin/$(exename): $(OBJECTS) $(LIBRARIES)
+	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) $(OBJECTS) \
 -lcmparser -lcmast -lllvmir -ldwarf -lirintf -lcmser -lcmparsing -lcmparsingcppobjectmodel -lcmutil \
 -lboost_filesystem -lboost_iostreams -lboost_system
 
 install:
 	mkdir -p $(prefix)/bin
-	cp ../bin/slines $(prefix)/bin
+	cp ../bin/$(exename) $(prefix)/bin
 
 clean:
 	rm -f *.o
-	rm -f ../bin/slines
+	rm -f ../bin/$(exename)
 
