@@ -9,6 +9,7 @@
 
 #include <Cm.Parsing.CppObjectModel/Operator.hpp>
 #include <memory>
+#include <stdexcept>
 #include <unordered_map>
 
 namespace Cm { namespace Parsing { namespace CppObjectModel {

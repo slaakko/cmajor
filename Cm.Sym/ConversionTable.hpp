@@ -9,7 +9,7 @@
 
 #ifndef CM_SYM_CONVERSION_TABLE_INCLUDED
 #define CM_SYM_CONVERSION_TABLE_INCLUDED
-#include <Cm.Sym\TypeSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 

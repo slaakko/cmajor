@@ -71,7 +71,7 @@ public:
     bool Skipping() const { return skipping; }
     XmlLog* Log() const { return log; }
     void SetLog(XmlLog* log_) { log = log_; }
-    int Scanner::LineEndIndex();
+    int LineEndIndex();
     std::string RestOfLine();
     void AddException(const ExpectationFailure& exception);
     void AddInfo(const std::string& info);
