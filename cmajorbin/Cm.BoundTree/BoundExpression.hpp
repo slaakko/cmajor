@@ -250,6 +250,7 @@ public:
     Cm::Sym::FunctionSymbol* ConversionFun() const { return conversionFun; }
     void Accept(Visitor& visitor) override;
     bool IsCast() const override { return true; }
+    BoundExpression* Operand() const { return operand.get(); }
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* conversionFun;

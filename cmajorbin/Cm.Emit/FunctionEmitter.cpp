@@ -512,6 +512,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCast& boundCast)
     {
         result.SetGenJumpingBoolCode();
     }
+    boundCast.Operand()->Accept(*this);
     Cm::Core::GenResult operandResult = resultStack.Pop();
     Ir::Intf::LabelObject* resultLabel = operandResult.GetLabel();
     result.Merge(operandResult);
