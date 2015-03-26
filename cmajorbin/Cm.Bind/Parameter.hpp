@@ -21,4 +21,4 @@ void GenerateReceives(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
 
 } } // namespace Cm::Bind
 
-#endif CM_BIND_PARAMETER_INCLUDED
+#endif // CM_BIND_PARAMETER_INCLUDED

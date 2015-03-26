@@ -245,4 +245,4 @@ private:
 
 } } // namespace Cm::Bind
 
-#endif CM_BIND_STATEMENT_INCLUDED
+#endif // CM_BIND_STATEMENT_INCLUDED
