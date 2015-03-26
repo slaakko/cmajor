@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Ser/BinaryWriter.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Ser {
 

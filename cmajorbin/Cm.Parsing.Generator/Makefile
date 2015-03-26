@@ -15,6 +15,12 @@ install:
 	mkdir -p $(prefix)/bin
 	cp ../bin/cmpg $(prefix)/bin
 
+all_sources:
+	cmpg -F ../Cm.Parsing/StdLib.pp ../Cm.Parsing.Cpp/Cm.Parsing.Cpp.pp ../Cm.Parsing.Syntax/Cm.Parsing.Syntax.pp
+
+sources:
+	cmpg ../Cm.Parsing/StdLib.pp ../Cm.Parsing.Cpp/Cm.Parsing.Cpp.pp ../Cm.Parsing.Syntax/Cm.Parsing.Syntax.pp
+
 clean:
 	rm -f *.o
 	rm -f ../bin/cmpg
