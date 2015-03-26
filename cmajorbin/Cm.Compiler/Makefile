@@ -8,16 +8,22 @@ LIBRARIES = ../lib/libcmutil.a ../lib/libcmparsingcppobjectmodel.a ../lib/libcmp
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-../bin/cmc: $(OBJECTS) $(LIBRARIES)
-	$(CXX) $(CXXFLAGS) -o ../bin/cmc $(OBJECTS) \
+ifeq ($(config),debug)
+    exename=cmcd
+else
+    exename=cmc
+endif
+
+../bin/$(exename): $(OBJECTS) $(LIBRARIES)
+	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) $(OBJECTS) \
 -lcmbuild -lcmemit -lcmbind -lcmboundtree -lcmcore -lcmsym -lcmirintf -lcmparser -lcmast -lllvmir -ldwarf -lirintf -lcmser -lcmparsing -lcmparsingcppobjectmodel -lcmutil \
 -lboost_filesystem -lboost_iostreams -lboost_system
 
 install:
 	mkdir -p $(prefix)/bin
-	cp ../bin/cmc $(prefix)/bin
+	cp ../bin/$(exename) $(prefix)/bin
 
 clean:
 	rm -f *.o
-	rm -f ../bin/cmc
+	rm -f ../bin/$(exename)
 
