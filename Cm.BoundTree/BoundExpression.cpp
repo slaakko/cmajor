@@ -12,6 +12,7 @@
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <algorithm>
 #include <stdexcept>
 
 namespace Cm { namespace BoundTree {

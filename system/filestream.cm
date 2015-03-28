@@ -41,7 +41,7 @@ namespace System.IO
 
     public class IOBuffer
     {
-        public nothrow IOBuffer(uint size_): size(size_), mem(MemAlloc(size_))
+        public nothrow IOBuffer(ulong size_): size(size_), mem(MemAlloc(size_))
         {
         }
         suppress IOBuffer(const IOBuffer&);
@@ -60,11 +60,11 @@ namespace System.IO
         { 
             return mem; 
         }
-        public inline nothrow uint Size() const
+        public inline nothrow ulong Size() const
         {
             return size;
         }
-        private uint size;
+        private ulong size;
         private void* mem;
     }
 
@@ -168,7 +168,7 @@ namespace System.IO
             {
                 if (pos == end)
                 {
-                    int result = read(handle, buffer.Mem(), buffer.Size());
+                    int result = read_64(handle, buffer.Mem(), buffer.Size());
                     if (result == -1)
                     {
                         string reason = strerror(get_errno());
@@ -201,7 +201,7 @@ namespace System.IO
             string content;
             while (!endOfStream)
             {
-                int result = read(handle, buffer.Mem(), buffer.Size());
+                int result = read_64(handle, buffer.Mem(), buffer.Size());
                 if (result == -1)
                 {
                     string reason = strerror(get_errno());
@@ -354,7 +354,7 @@ namespace System.IO
         }
         public override void Write(const char* s)
         {
-            int result = write(handle, s, cast<uint>(StrLen(s)));
+            int result = write_64(handle, s, cast<ulong>(StrLen(s)));
             if (result == -1)
             {
                 string reason = strerror(get_errno());
@@ -363,7 +363,7 @@ namespace System.IO
         }
         public override void Write(const string& s)
         {
-            int result = write(handle, s.Chars(), cast<uint>(s.Length()));
+            int result = write_64(handle, s.Chars(), cast<ulong>(s.Length()));
             if (result == -1)
             {
                 string reason = strerror(get_errno());
@@ -582,18 +582,18 @@ namespace System.IO
                 throw CloseFileException("no file is open");
             }
         }
-        public void Write(void* buffer, int size)
+        public void Write(void* buffer, ulong size)
         {
-            int result = write(handle, buffer, cast<uint>(size));
+            int result = write_64(handle, buffer, size);
             if (result != size)
             {
                 string reason = strerror(get_errno());
                 throw IOException("could not write to file '" + fileName + "': " + reason);
             }
         }
-        public int Read(void* buffer, int size)
+        public int Read(void* buffer, ulong size)
         {
-            int result = read(handle, buffer, cast<uint>(size));
+            int result = read_64(handle, buffer, size);
             if (result == -1)
             {
                 string reason = strerror(get_errno());
@@ -601,7 +601,7 @@ namespace System.IO
             }
             return result;
         }
-        public void ReadSize(void* buffer, int size)
+        public void ReadSize(void* buffer, ulong size)
         {
             int bytesRead = Read(buffer, size);
             if (bytesRead != size)
@@ -627,140 +627,141 @@ namespace System.IO
         {
             int len = StrLen(s);
             Write(len);
-            Write(s, len);
+            Write(s, cast<ulong>(len));
         }
         public void Write(const string& s)
         {
             int len = s.Length();
             Write(len);
-            Write(s.Chars(), len);
+            Write(s.Chars(), cast<ulong>(len));
         }
         public string ReadString()
         {
             int len = 0;
-            ReadSize(&len, cast<int>(sizeof(len)));
-            IOBuffer buffer(cast<uint>(len));
-            ReadSize(buffer.Mem(), len);
+            ReadSize(&len, sizeof(len));
+            ulong size = cast<ulong>(len);
+            IOBuffer buffer(size);
+            ReadSize(buffer.Mem(), size);
             return string(cast<const char*>(buffer.Mem()), len);
         }
         public void Write(char c)
         {
-            Write(&c, cast<int>(sizeof(c)));
+            Write(&c, sizeof(c));
         }
         public char ReadChar()
         {
             char c = '\0';
-            ReadSize(&c, cast<int>(sizeof(c)));
+            ReadSize(&c, sizeof(c));
             return c;
         }
         public void Write(byte b)
         {
-            Write(&b, cast<int>(sizeof(b)));
+            Write(&b, sizeof(b));
         }
         public byte ReadByte()
         {
-            byte b = cast<byte>(0);
-            ReadSize(&b, cast<int>(sizeof(b)));
+            byte b = 0u;
+            ReadSize(&b, sizeof(b));
             return b;
         }
         public void Write(sbyte s)
         {
-            Write(&s, cast<int>(sizeof(s)));
+            Write(&s, sizeof(s));
         }
         public sbyte ReadSByte()
         {
-            sbyte s = cast<sbyte>(0);
-            ReadSize(&s, cast<int>(sizeof(s)));
+            sbyte s = 0;
+            ReadSize(&s, sizeof(s));
             return s;
         }
         public void Write(short s)
         {
-            Write(&s, cast<int>(sizeof(s)));
+            Write(&s, sizeof(s));
         }
         public short ReadShort()
         {
-            short s = cast<short>(0);
-            ReadSize(&s, cast<int>(sizeof(s)));
+            short s = 0;
+            ReadSize(&s, sizeof(s));
             return s;
         }
         public void Write(ushort u)
         {
-            Write(&u, cast<int>(sizeof(u)));
+            Write(&u, sizeof(u));
         }
         public ushort ReadUShort()
         {
-            ushort u = cast<ushort>(0);
-            ReadSize(&u, cast<int>(sizeof(u)));
+            ushort u = 0u;
+            ReadSize(&u, sizeof(u));
             return u;
         }
         public void Write(int i)
         {
-            Write(&i, cast<int>(sizeof(i)));
+            Write(&i, sizeof(i));
         }
         public int ReadInt()
         {
             int i = 0;
-            ReadSize(&i, cast<int>(sizeof(i)));
+            ReadSize(&i, sizeof(i));
             return i;
         }
         public void Write(uint u)
         {
-            Write(&u, cast<int>(sizeof(u)));
+            Write(&u, sizeof(u));
         }
         public uint ReadUInt()
         {
             uint u = 0u;
-            ReadSize(&u, cast<int>(sizeof(u)));
+            ReadSize(&u, sizeof(u));
             return u;
         }
         public void Write(long l)
         {
-            Write(&l, cast<int>(sizeof(l)));
+            Write(&l, sizeof(l));
         }
         public long ReadLong()
         {
             long l = 0;
-            ReadSize(&l, cast<int>(sizeof(l)));
+            ReadSize(&l, sizeof(l));
             return l;
         }
         public void Write(ulong u)
         {
-            Write(&u, cast<int>(sizeof(u)));
+            Write(&u, sizeof(u));
         }
         public ulong ReadULong()
         {
             ulong u = 0u;
-            ReadSize(&u, cast<int>(sizeof(u)));
+            ReadSize(&u, sizeof(u));
             return u;
         }
         public void Write(bool b)
         {
-            Write(&b, cast<int>(sizeof(b)));
+            Write(&b, sizeof(b));
         }
         public bool ReadBool()
         {
             bool b = false;
-            ReadSize(&b, cast<int>(sizeof(b)));
+            ReadSize(&b, sizeof(b));
             return b;
         }
         public void Write(float f)
         {
-            Write(&f, cast<int>(sizeof(f)));
+            Write(&f, sizeof(f));
         }
         public float ReadFloat()
         {
             float f = 0;
-            ReadSize(&f, cast<int>(sizeof(f)));
+            ReadSize(&f, sizeof(f));
             return f;
         }
         public void Write(double d)
         {
-            Write(&d, cast<int>(sizeof(d)));
+            Write(&d, sizeof(d));
         }
         public double ReadDouble()
         {
             double d = 0;
-            ReadSize(&d, cast<int>(sizeof(d)));
+            ReadSize(&d, sizeof(d));
             return d;
         }
         public long GetFileSize() 

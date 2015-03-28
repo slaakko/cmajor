@@ -94,7 +94,7 @@ namespace System.Support
 
     public nothrow int Write(int fd, const char* s)
     {
-        return write(fd, s, cast<uint>(StrLen(s)));
+        return write_64(fd, s, cast<ulong>(StrLen(s)));
     }
 
     public const int EXIT_INSUFFICIENT_MEMORY = 253;

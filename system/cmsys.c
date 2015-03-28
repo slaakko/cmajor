@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdint.h>
 #ifdef LINUX
 #include <unistd.h>
 #include <sys/types.h>
@@ -26,6 +27,16 @@
 typedef unsigned long long thread_t;
 typedef void* mutex_t;
 typedef void* cond_t;
+
+int read_64(int fd, void* buf, uint64_t size)
+{
+    return read(fd, buf, (size_t)size);
+}
+
+int write_64(int fd, const void* buf, uint64_t size)
+{
+    return write(fd, buf, (size_t)size);
+}
 
 int get_errno()
 {
