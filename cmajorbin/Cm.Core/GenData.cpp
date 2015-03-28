@@ -188,6 +188,14 @@ Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr)
 
 Emitter::~Emitter()
 {
+    for (std::unique_ptr<Ir::Intf::Object>& o : ownedObjects)
+    {
+        o.reset();
+    }
+    for (std::unique_ptr<Ir::Intf::Type>& t : ownedTypes)
+    {
+        t.reset();
+    }
 }
 
 void Emitter::RequestLabelFor(GenData& genData)

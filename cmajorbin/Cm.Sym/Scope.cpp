@@ -13,6 +13,7 @@
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Util/TextUtils.hpp>
+#include <algorithm>
 #include <unordered_set>
 
 namespace Cm { namespace Sym {

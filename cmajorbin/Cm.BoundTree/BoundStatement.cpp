@@ -244,9 +244,8 @@ void BoundConstructionStatement::ApplyConversions(const std::vector<Cm::Sym::Fun
         Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
         if (conversionFun)
         {
-            std::unique_ptr<BoundExpression>& argument = arguments[i];
-            BoundExpression* arg = argument.release();
-            argument.reset(CreateBoundConversion(SyntaxNode(), arg, conversionFun, currentFunction));
+            BoundExpression* arg = arguments[i].release();
+            arguments[i].reset(CreateBoundConversion(SyntaxNode(), arg, conversionFun, currentFunction));
         }
     }
 }

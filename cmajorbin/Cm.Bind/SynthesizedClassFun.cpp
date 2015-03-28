@@ -61,10 +61,9 @@ Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const 
         Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
         if (conversionFun)
         {
-            std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
-            Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            Cm::BoundTree::BoundExpression* arg = arguments[i].release();
+            arguments[i].reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+            arguments[i]->SetType(conversionFun->GetTargetType());
         }
     }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(nullptr, std::move(arguments));
@@ -121,10 +120,9 @@ Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableState
         Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
         if (conversionFun)
         {
-            std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
-            Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            Cm::BoundTree::BoundExpression* arg = arguments[i].release();
+            arguments[i].reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+            arguments[i]->SetType(conversionFun->GetTargetType());
         }
     }
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
@@ -174,10 +172,9 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::
         Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
         if (conversionFun)
         {
-            std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
-            Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            Cm::BoundTree::BoundExpression* arg = arguments[i].release();
+            arguments[i].reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+            arguments[i]->SetType(conversionFun->GetTargetType());
         }
     }
     Cm::BoundTree::BoundFunctionCallStatement* assignBaseClasObjectStatement = new Cm::BoundTree::BoundFunctionCallStatement(baseClassAssignment, std::move(arguments));
@@ -233,10 +230,9 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement
         Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
         if (conversionFun)
         {
-            std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
-            Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-            argument->SetType(conversionFun->GetTargetType());
+            Cm::BoundTree::BoundExpression* arg = arguments[i].release();
+            arguments[i].reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+            arguments[i]->SetType(conversionFun->GetTargetType());
         }
     }
     Cm::BoundTree::BoundFunctionCallStatement* assignMemberVariableStatement = new Cm::BoundTree::BoundFunctionCallStatement(memberAssignment, std::move(arguments));
@@ -913,10 +909,9 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
             Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
             if (conversionFun)
             {
-                std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
-                Cm::BoundTree::BoundExpression* arg = argument.release();
-                argument.reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
-                argument->SetType(conversionFun->GetTargetType());
+                Cm::BoundTree::BoundExpression* arg = arguments[i].release();
+                arguments[i].reset(new Cm::BoundTree::BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+                arguments[i]->SetType(conversionFun->GetTargetType());
             }
         }
         Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));

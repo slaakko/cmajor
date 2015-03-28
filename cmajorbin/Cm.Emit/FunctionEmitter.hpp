@@ -81,7 +81,7 @@ private:
 class FunctionEmitter : public Cm::BoundTree::Visitor
 {
 public:
-    FunctionEmitter(Cm::Core::Emitter* emitter_, Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
+    FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
         Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
         std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, 
         Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, 
@@ -143,7 +143,7 @@ public:
     void Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCaseStatement) override;
     void Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
 private:
-	Cm::Core::Emitter* emitter;
+	std::unique_ptr<Cm::Core::Emitter> emitter;
     Cm::Util::CodeFormatter& codeFormatter;
     Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::GenFlags genFlags;

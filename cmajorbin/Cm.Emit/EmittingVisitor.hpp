@@ -29,7 +29,6 @@ public:
     void BeginVisit(Cm::BoundTree::BoundClass& boundClass) override;
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 private:
-	std::unique_ptr<Cm::Core::Emitter> emitter;
 	Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;

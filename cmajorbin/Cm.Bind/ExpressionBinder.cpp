@@ -1393,7 +1393,8 @@ void ExpressionBinder::BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::Delegate
             Cm::Sym::FunctionSymbol* conversion = functionMatch.conversions[i];
             if (conversion)
             {
-                arguments[i].reset(Cm::BoundTree::CreateBoundConversion(node, arguments[i].release(), conversion, currentFunction));
+                Cm::BoundTree::BoundExpression* arg = arguments[i].release();
+                arguments[i].reset(Cm::BoundTree::CreateBoundConversion(node, arg, conversion, currentFunction));
             }
         }
         Cm::BoundTree::BoundDelegateCall* delegateCall = new Cm::BoundTree::BoundDelegateCall(delegateType, subject, node, std::move(arguments));
@@ -1821,9 +1822,8 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
         Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
         if (conversionFun)
         {
-            std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
-            Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(CreateBoundConversion(node, arg, conversionFun, currentFunction));
+            Cm::BoundTree::BoundExpression* arg = arguments[i].release();
+            arguments[i].reset(CreateBoundConversion(node, arg, conversionFun, currentFunction));
         }
     }
     PrepareFunctionArguments(ctor, containerScope, boundCompileUnit, currentFunction, arguments, false, boundCompileUnit.IrClassTypeRepository());
