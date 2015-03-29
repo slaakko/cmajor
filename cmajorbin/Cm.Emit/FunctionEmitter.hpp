@@ -147,7 +147,7 @@ private:
     Cm::Util::CodeFormatter& codeFormatter;
     Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::GenFlags genFlags;
-    Cm::Core::GenResult compoundResult;
+    std::shared_ptr<Cm::Core::GenResult> compoundResult;
     Cm::Core::GenResultStack compoundResultStack;
     Cm::Core::GenResultStack resultStack;
     bool firstStatementInCompound;
