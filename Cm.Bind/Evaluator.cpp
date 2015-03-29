@@ -488,6 +488,7 @@ public:
     void Visit(Cm::Ast::DerefNode& derefNode) override;
     void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) override;
     void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) override;
+    void BeginVisit(Cm::Ast::DotNode& dotNode) override;
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::ArrowNode& arrowNode) override;
     void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
@@ -510,13 +511,15 @@ private:
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes;
     Cm::Core::ClassTemplateRepository& classTemplateRepository;
     EvaluationStack stack;
+    Cm::Sym::SymbolTypeSetId lookupId;
+    Cm::Sym::LookupIdStack lookupIdStack;
     void EvaluateSymbol(Cm::Sym::Symbol* symbol);
 };
 
 Evaluator::Evaluator(Cm::Sym::ValueType targetType_, bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, 
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::Core::ClassTemplateRepository& classTemplateRepository_) :
     Visitor(true, true), targetType(targetType_), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), 
-    classTemplateRepository(classTemplateRepository_)
+    classTemplateRepository(classTemplateRepository_), lookupId(Cm::Sym::SymbolTypeSetId::lookupConstantAndEnumConstantSymbols)
 {
 }
 
@@ -782,15 +785,22 @@ void Evaluator::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
     stack.Push(new ScopedValue(scope->Container()));
 }
 
+void Evaluator::BeginVisit(Cm::Ast::DotNode& dotNode)
+{
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupContainerSymbols;
+}
+
 void Evaluator::EndVisit(Cm::Ast::DotNode& dotNode)
 {
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::Sym::Value> value(stack.Pop());
     if (value->IsScopedValue())
     {
         ScopedValue* scopedValue = static_cast<ScopedValue*>(value.get());
         Cm::Sym::ContainerSymbol* containerSymbol = scopedValue->ContainerSymbol();
         Cm::Sym::ContainerScope* scope = containerSymbol->GetContainerScope();
-        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str());
+        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str(), lookupId);
         if (symbol)
         {
             EvaluateSymbol(symbol);
@@ -902,12 +912,12 @@ void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
 
 void Evaluator::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
-    Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
+    Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, lookupId);
     if (!symbol)
     {
         for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
         {
-            symbol = fileScope->Lookup(identifierNode.Str());
+            symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
             if (symbol) break;
         }
     }
@@ -917,7 +927,7 @@ void Evaluator::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Cm::Core::Exception("constant or enumeration constant symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
 }
 
@@ -998,6 +1008,7 @@ public:
     void Visit(Cm::Ast::DerefNode& derefNode) override;
     void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) override;
     void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) override;
+    void BeginVisit(Cm::Ast::DotNode& dotNode) override;
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::ArrowNode& arrowNode) override;
     void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
@@ -1021,13 +1032,15 @@ private:
     Cm::Core::ClassTemplateRepository& classTemplateRepository;
     EvaluationStack stack;
     bool interrupted;
+    Cm::Sym::SymbolTypeSetId lookupId;
+    Cm::Sym::LookupIdStack lookupIdStack;
     void EvaluateSymbol(Cm::Sym::Symbol* symbol);
 };
 
 BooleanEvaluator::BooleanEvaluator(bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::Core::ClassTemplateRepository& classTemplateRepository_) :
     Visitor(true, true), targetType(Cm::Sym::ValueType::boolValue), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), 
-    classTemplateRepository(classTemplateRepository_), interrupted(false)
+    classTemplateRepository(classTemplateRepository_), interrupted(false), lookupId(Cm::Sym::SymbolTypeSetId::lookupConstantAndEnumConstantSymbols)
 {
 }
 
@@ -1311,15 +1324,22 @@ void BooleanEvaluator::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
     stack.Push(new ScopedValue(scope->Container()));
 }
 
+void BooleanEvaluator::BeginVisit(Cm::Ast::DotNode& dotNode)
+{
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupContainerSymbols;
+}
+
 void BooleanEvaluator::EndVisit(Cm::Ast::DotNode& dotNode)
 {
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::Sym::Value> value(stack.Pop());
     if (value->IsScopedValue())
     {
         ScopedValue* scopedValue = static_cast<ScopedValue*>(value.get());
         Cm::Sym::ContainerSymbol* containerSymbol = scopedValue->ContainerSymbol();
         Cm::Sym::ContainerScope* scope = containerSymbol->GetContainerScope();
-        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str());
+        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str(), lookupId);
         if (symbol)
         {
             EvaluateSymbol(symbol);
@@ -1431,12 +1451,12 @@ void BooleanEvaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
 
 void BooleanEvaluator::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
-    Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
+    Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, lookupId);
     if (!symbol)
     {
         for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
         {
-            symbol = fileScope->Lookup(identifierNode.Str());
+            symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
             if (symbol) break;
         }
     }

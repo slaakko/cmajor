@@ -18,7 +18,7 @@ namespace Cm { namespace Bind {
 Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstructionStatementNode* constructionStatementNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(constructionStatementNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(constructionStatementNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupLocalVariable);
     if (symbol)
     {
         if (symbol->IsLocalVariableSymbol())
@@ -33,7 +33,7 @@ Cm::Sym::LocalVariableSymbol* BindLocalVariable(Cm::Sym::SymbolTable& symbolTabl
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + constructionStatementNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("local variable symbol '" + constructionStatementNode->Id()->Str() + "' not found");
     }
 }
 

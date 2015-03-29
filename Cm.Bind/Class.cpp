@@ -20,7 +20,7 @@ namespace Cm { namespace Bind {
 Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(classNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(classNode->Id()->Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, Cm::Sym::SymbolTypeSetId::lookupClassSymbols);
     if (symbol)
     {
         if (symbol->IsClassTypeSymbol())

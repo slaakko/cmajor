@@ -41,6 +41,7 @@ public:
     void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) override;
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
+    void BeginVisit(Cm::Ast::DotNode& dotNode) override;
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
 private:
     Cm::Sym::SymbolTable& symbolTable;
@@ -50,18 +51,25 @@ private:
     TypeResolverFlags flags;
     Cm::Sym::TypeSymbol* typeSymbol;
     std::unique_ptr<Cm::Sym::TypeSymbol> nsTypeSymbol;
+    Cm::Sym::SymbolTypeSetId lookupId;
+    Cm::Sym::LookupIdStack lookupIdStack;
     void ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol);
 };
 
 TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository_, TypeResolverFlags flags_) :
-    Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), flags(flags_), typeSymbol(nullptr)
+    Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), 
+    flags(flags_), typeSymbol(nullptr), lookupId(Cm::Sym::SymbolTypeSetId::lookupTypeSymbols)
 {
 }
 
 Cm::Sym::TypeSymbol* TypeResolver::Resolve(Cm::Ast::Node* typeExpr)
 {
     typeExpr->Accept(*this);
+    if (typeSymbol && typeSymbol->IsNamespaceTypeSymbol() && (flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
+    {
+        throw Cm::Core::Exception("symbol '" + typeSymbol->FullName() + "' denotes a namespace (type symbol expected)", typeExpr->GetSpan());
+    }
     return typeSymbol;
 }
 
@@ -139,6 +147,10 @@ void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
         typeSymbol = nullptr;
         return;
     }
+    if (subjectType->IsNamespaceTypeSymbol() && (flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
+    {
+        throw Cm::Core::Exception("symbol '" + subjectType->FullName() + "' denotes a namespace (type symbol expected)", templateIdNode.GetSpan());
+    }
     for (const std::unique_ptr<Cm::Ast::Node>& templateArgNode : templateIdNode.TemplateArguments())
     {
         Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, templateArgNode.get(), flags);
@@ -146,6 +158,10 @@ void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
         {
             typeSymbol = nullptr;
             return;
+        }
+        if (argumentType->IsNamespaceTypeSymbol() && (flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
+        {
+            throw Cm::Core::Exception("symbol '" + argumentType->FullName() + "' denotes a namespace (type symbol expected)", templateArgNode->GetSpan());
         }
         typeArguments.push_back(argumentType);
     }
@@ -171,12 +187,12 @@ private:
 
 void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
-    Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
+    Cm::Sym::Symbol* symbol = currentContainerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, lookupId);
     if (!symbol)
     {
         for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
         {
-            symbol = fileScope->Lookup(identifierNode.Str());
+            symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
             if (symbol) break;
         }
     }
@@ -186,7 +202,7 @@ void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
     {
-        throw Cm::Core::Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Cm::Core::Exception("type symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
     else
     {
@@ -244,8 +260,15 @@ void TypeResolver::ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
     }
 }
 
+void TypeResolver::BeginVisit(Cm::Ast::DotNode& dotNode)
+{
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupClassAndNamespaceSymbols;
+}
+
 void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
 {
+    lookupId = lookupIdStack.Pop();
     if (!typeSymbol)
     {
         return;
@@ -271,14 +294,14 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
             containerScope = nsTypeSymbol->Ns()->GetContainerScope();
         }
         const std::string& memberName = dotNode.MemberId()->Str();
-        Cm::Sym::Symbol* symbol = containerScope->Lookup(memberName);
+        Cm::Sym::Symbol* symbol = containerScope->Lookup(memberName, lookupId);
         if (symbol)
         {
             ResolveSymbol(&dotNode, symbol);
         }
         else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
         {
-            throw Cm::Core::Exception("symbol '" + memberName + "' not found", dotNode.GetSpan());
+            throw Cm::Core::Exception("type symbol '" + memberName + "' not found", dotNode.GetSpan());
         }
         else
         {

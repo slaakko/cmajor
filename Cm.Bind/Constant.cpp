@@ -23,7 +23,7 @@ namespace Cm { namespace Bind {
 void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstantNode* constantNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(constantNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(constantNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupConstant);
     if (symbol)
     {
         if (symbol->IsConstantSymbol())
@@ -38,7 +38,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + constantNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("constant symbol '" + constantNode->Id()->Str() + "' not found");
     }
 }
 

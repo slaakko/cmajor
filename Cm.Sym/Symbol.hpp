@@ -35,6 +35,9 @@ enum class SymbolType : uint8_t
     maxSymbol
 };
 
+typedef std::unordered_set<SymbolType> SymbolTypeSet;
+typedef SymbolTypeSet::const_iterator SymbolTypeSetIt;
+
 std::string SymbolTypeStr(SymbolType st);
 
 inline bool IsBasicSymbolType(SymbolType st)

@@ -20,7 +20,7 @@ namespace Cm { namespace Bind {
 void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::MemberVariableNode* memberVariableNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(memberVariableNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(memberVariableNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupMemberVariable);
     if (symbol)
     {
         if (symbol->IsMemberVariableSymbol())
@@ -35,7 +35,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + memberVariableNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("member variable symbol '" + memberVariableNode->Id()->Str() + "' not found");
     }
 }
 

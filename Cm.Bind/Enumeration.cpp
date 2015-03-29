@@ -23,7 +23,7 @@ namespace Cm { namespace Bind {
 void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::EnumTypeNode* enumTypeNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(enumTypeNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(enumTypeNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupEnumType);
     if (symbol)
     {
         if (symbol->IsEnumTypeSymbol())
@@ -116,14 +116,14 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + enumTypeNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("enumerated type symbol '" + enumTypeNode->Id()->Str() + "' not found");
     }
 }
 
 void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::EnumConstantNode* enumConstantNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(enumConstantNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(enumConstantNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupEnumConstant);
     if (symbol)
     {
         if (symbol->IsEnumConstantSymbol())
@@ -158,7 +158,7 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + enumConstantNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("enumeration constant symbol '" + enumConstantNode->Id()->Str() + "' not found");
     }
 }
 

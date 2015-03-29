@@ -9,7 +9,7 @@
 
 #ifndef CM_SYM_SYMBOL_SCOPE_INCLUDED
 #define CM_SYM_SYMBOL_SCOPE_INCLUDED
-#include <Cm.Sym/Symbol.hpp>
+#include <Cm.Sym/SymbolTypeSet.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <unordered_map>
 #include <unordered_set>
@@ -48,7 +48,9 @@ class Scope
 public:
     virtual ~Scope();
     virtual Symbol* Lookup(const std::string& name) const = 0;
+    virtual Symbol* Lookup(const std::string& name, SymbolTypeSetId symbolTypeSetId) const = 0;
     virtual Symbol* Lookup(const std::string& name, ScopeLookup lookup) const = 0;
+    virtual Symbol* Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const = 0;
 };
 
 class ContainerScope : public Scope
@@ -62,7 +64,9 @@ public:
     void SetParent(ContainerScope* parent_) { parent = parent_; }
     void Install(Symbol* symbol);
     Symbol* Lookup(const std::string& name) const override;
+    Symbol* Lookup(const std::string& name, SymbolTypeSetId symbolTypeSetId) const override;
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const override;
+    Symbol* Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const override;
     void CollectViableFunctions(ScopeLookup lookup, const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
     ContainerSymbol* Container() { return container; }
     void SetContainer(ContainerSymbol* container_) { container = container_; }
@@ -77,7 +81,7 @@ private:
     ContainerScope* base;
     ContainerScope* parent;
     ContainerSymbol* container;
-    Symbol* LookupQualified(const std::vector<std::string>& components, ScopeLookup lookup) const;
+    Symbol* LookupQualified(const std::vector<std::string>& components, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const;
 };
 
 class SymbolTable;
@@ -90,7 +94,9 @@ public:
     void InstallAlias(ContainerScope* currenContainerScope, Cm::Ast::AliasNode* aliasNode);
     void InstallNamespaceImport(ContainerScope* currentContainerScope, Cm::Ast::NamespaceImportNode* namespaceImportNode);
     Symbol* Lookup(const std::string& name) const override;
+    Symbol* Lookup(const std::string& name, SymbolTypeSetId symbolTypeSetId) const override;
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const override;
+    Symbol* Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const override;
     FileScope* Clone() const;
     void CollectViableFunctions(const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
 private:

@@ -61,7 +61,7 @@ void SymbolTable::BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode)
     }
     else
     {
-        Symbol* symbol = container->GetContainerScope()->Lookup(namespaceNode->Id()->Str());
+        Symbol* symbol = container->GetContainerScope()->Lookup(namespaceNode->Id()->Str(), SymbolTypeSetId::lookupNamespace);
         if (symbol)
         {
             if (symbol->IsNamespaceSymbol())
@@ -102,7 +102,7 @@ void SymbolTable::BeginNamespaceScope(const std::string& namespaceName, const Sp
     }
     else
     {
-        Symbol* symbol = container->GetContainerScope()->Lookup(namespaceName);
+        Symbol* symbol = container->GetContainerScope()->Lookup(namespaceName, SymbolTypeSetId::lookupNamespace);
         if (symbol)
         {
             if (symbol->IsNamespaceSymbol())
@@ -488,7 +488,7 @@ void SymbolTable::InitVirtualFunctionTables()
 
 FunctionSymbol* SymbolTable::GetOverload(const std::string& fullOverloadGroupName) const
 {
-    Symbol* symbol = globalNs.GetContainerScope()->Lookup(fullOverloadGroupName);
+    Symbol* symbol = globalNs.GetContainerScope()->Lookup(fullOverloadGroupName, SymbolTypeSetId::lookupFunctionGroup);
     if (symbol)
     {
         if (symbol->IsFunctionGroupSymbol())
