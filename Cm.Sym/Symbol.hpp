@@ -35,7 +35,12 @@ enum class SymbolType : uint8_t
     maxSymbol
 };
 
-typedef std::unordered_set<SymbolType> SymbolTypeSet;
+struct SymbolTypeHash
+{
+    size_t operator()(SymbolType x) const { return static_cast<size_t>(x); }
+};
+
+typedef std::unordered_set<SymbolType, SymbolTypeHash> SymbolTypeSet;
 typedef SymbolTypeSet::const_iterator SymbolTypeSetIt;
 
 std::string SymbolTypeStr(SymbolType st);

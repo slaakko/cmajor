@@ -16,7 +16,7 @@
 #include <stdexcept>
 
 namespace Cm { namespace Sym {
-
+     
 const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
 {
     "boolSymbol", "charSymbol", "voidSymbol", "sbyteSymbol", "byteSymbol", "shortSymbol", "ushortSymbol", "intSymbol", "uintSymbol", "longSymbol", "ulongSymbol", "floatSymbol", "doubleSymbol", "nullptrSymbol",
