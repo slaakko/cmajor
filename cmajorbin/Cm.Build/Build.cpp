@@ -75,14 +75,14 @@ std::string GetOs()
 
 void GetLibraryDirectories(std::vector<std::string>& libraryDirectories)
 {
-    char* cmLibraryPath = getenv("CMBIN_LIBRARY_PATH");
+    char* cmLibraryPath = getenv("CM_LIBRARY_PATH");
     if (cmLibraryPath)
     {
         libraryDirectories = Cm::Util::Split(cmLibraryPath, GetPlatformPathSeparatorChar());
     }
     else
     {
-        throw std::runtime_error("please set CMBIN_LIBRARY_PATH environment variable to contain (at least) /path/to/system directory " +
+        throw std::runtime_error("please set CM_LIBRARY_PATH environment variable to contain (at least) /path/to/system directory " +
             std::string("(dirs separated by '") + std::string(1, GetPlatformPathSeparatorChar()) + "')");
     }
 }
