@@ -19,12 +19,12 @@ namespace Cm { namespace Bind {
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(typedefNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(typedefNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupTypedef);
     if (!symbol)
     {
         for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
         {
-            symbol = fileScope->Lookup(typedefNode->Id()->Str());
+            symbol = fileScope->Lookup(typedefNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupTypedef);
             if (symbol) break;
         }
     }
@@ -42,7 +42,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + typedefNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("typedef symbol '" + typedefNode->Id()->Str() + "' not found");
     }
 }
 

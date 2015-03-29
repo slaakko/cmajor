@@ -179,7 +179,7 @@ Cm::BoundTree::BoundExpressionList BoundExpressionStack::Pop(int numExpressions)
 ExpressionBinder::ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::BoundTree::BoundFunction* currentFunction_) :
     Cm::Ast::Visitor(true, true), boundCompileUnit(boundCompileUnit_), containerScope(containerScope_), 
-    fileScopes(fileScopes_), currentFunction(currentFunction_), expressionCount(0)
+    fileScopes(fileScopes_), currentFunction(currentFunction_), expressionCount(0), lookupId(Cm::Sym::SymbolTypeSetId::lookupAllSymbols)
 {
 }
 
@@ -490,7 +490,10 @@ void ExpressionBinder::EndVisit(Cm::Ast::ComplementNode& complementNode)
 
 void ExpressionBinder::Visit(Cm::Ast::AddrOfNode& addrOfNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     addrOfNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
     operand->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
     boundExpressionStack.Push(operand);
@@ -502,8 +505,11 @@ void ExpressionBinder::Visit(Cm::Ast::AddrOfNode& addrOfNode)
 
 void ExpressionBinder::Visit(Cm::Ast::DerefNode& derefNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     bool isDerefThis = derefNode.Subject()->IsThisNode();   // '*this' is special
     derefNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     BindUnaryOp(&derefNode, "operator*");
     if (isDerefThis)
     {
@@ -516,9 +522,15 @@ void ExpressionBinder::Visit(Cm::Ast::DerefNode& derefNode)
 
 void ExpressionBinder::Visit(Cm::Ast::PostfixIncNode& postfixIncNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     postfixIncNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     Cm::BoundTree::BoundExpression* value = boundExpressionStack.Pop();
     postfixIncNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     Cm::BoundTree::BoundExpression* incOperand = boundExpressionStack.Pop();
     incOperand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     boundExpressionStack.Push(incOperand);
@@ -533,9 +545,15 @@ void ExpressionBinder::Visit(Cm::Ast::PostfixIncNode& postfixIncNode)
 
 void ExpressionBinder::Visit(Cm::Ast::PostfixDecNode& postfixDecNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     postfixDecNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     Cm::BoundTree::BoundExpression* value = boundExpressionStack.Pop();
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     postfixDecNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     Cm::BoundTree::BoundExpression* decOperand = boundExpressionStack.Pop();
     decOperand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     boundExpressionStack.Push(decOperand);
@@ -800,8 +818,15 @@ void ExpressionBinder::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
     boundExpressionStack.Push(typeExpression);
 }
 
+void ExpressionBinder::BeginVisit(Cm::Ast::DotNode& dotNode)
+{
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupDotSubjectSymbols;
+}
+
 void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
 {
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::BoundTree::BoundExpression> expression(boundExpressionStack.Pop());
     if (expression->IsBoundNamespaceExpression() || expression->IsBoundTypeExpression())
     {
@@ -825,7 +850,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
             }
         }
         Cm::Sym::ContainerScope* containerScope = containerSymbol->GetContainerScope();
-        Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_and_base);
+        Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_and_base, lookupId);
         if (symbol)
         {
             BindSymbol(&dotNode, symbol);
@@ -847,7 +872,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         {
             Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
             Cm::Sym::ContainerScope* containerScope = classType->GetContainerScope();
-            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_and_base);
+            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_and_base, Cm::Sym::SymbolTypeSetId::lookupFunctionGroupAndMemberVariable);
             if (symbol)
             {
                 Cm::BoundTree::BoundExpression* classObject = expression.release();
@@ -928,7 +953,7 @@ void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberI
                 {
                     Cm::BoundTree::BoundExpression* classObject = boundUnaryOp->ReleaseOperand();
                     Cm::Sym::ContainerScope* containerScope = classTypeSymbol->GetContainerScope();
-                    Cm::Sym::Symbol* symbol = containerScope->Lookup(memberId, Cm::Sym::ScopeLookup::this_and_base);
+                    Cm::Sym::Symbol* symbol = containerScope->Lookup(memberId, Cm::Sym::ScopeLookup::this_and_base, Cm::Sym::SymbolTypeSetId::lookupFunctionGroupAndMemberVariable);
                     if (symbol)
                     {
                         BindSymbol(node, symbol);
@@ -990,13 +1015,19 @@ void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberI
 
 void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     arrowNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     BindArrow(&arrowNode, arrowNode.MemberId()->Str());
 }
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupInvokeSubject;
     invokeNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
     expressionCountStack.push(expressionCount);
     expressionCount = boundExpressionStack.ItemCount();
@@ -1015,9 +1046,15 @@ void ExpressionBinder::EndVisit(Cm::Ast::InvokeNode& invokeNode)
 
 void ExpressionBinder::Visit(Cm::Ast::IndexNode& indexNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     indexNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupArgumentSymbol;
     indexNode.Index()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::BoundTree::BoundExpression> index(boundExpressionStack.Pop());
     Cm::Sym::TypeSymbol* subjectType = subject->GetType();
     Cm::Sym::TypeSymbol* plainSubjectType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(subjectType);
@@ -1710,7 +1747,10 @@ void ExpressionBinder::BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::Functio
 
 void ExpressionBinder::Visit(Cm::Ast::SizeOfNode& sizeOfNode) 
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupSizeOfSubject;
     sizeOfNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
     Cm::BoundTree::BoundSizeOfExpression* boundSizeOfExpr = new Cm::BoundTree::BoundSizeOfExpression(&sizeOfNode, subject->GetType());
     boundSizeOfExpr->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)));
@@ -1720,7 +1760,10 @@ void ExpressionBinder::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Ast::Node* targetTypeExpr, Cm::Ast::Node* sourceExpr, const Cm::Parsing::Span& span)
 {
     Cm::Sym::TypeSymbol* toType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), targetTypeExpr);
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupCastSource;
     sourceExpr->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     Cm::BoundTree::BoundExpression* operand = boundExpressionStack.Pop();
     BindCast(node, toType, operand);
 }
@@ -1776,7 +1819,10 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
     for (int i = 0; i < n; ++i)
     {
         Cm::Ast::Node* argument = argumentNodes[i];
+        lookupIdStack.Push(lookupId);
+        lookupId = Cm::Sym::SymbolTypeSetId::lookupArgumentSymbol;
         argument->Accept(*this);
+        lookupId = lookupIdStack.Pop();
     }
     Cm::BoundTree::BoundExpressionList arguments = boundExpressionStack.Pop(n);
     if (allocationArg)
@@ -1862,7 +1908,10 @@ void ExpressionBinder::Visit(Cm::Ast::NewNode& newNode)
 
 void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupTypeAndFunctionGroupSymbols;
     templateIdNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::BoundTree::BoundExpression> subject(boundExpressionStack.Pop());
     if (subject->IsBoundFunctionGroup())
     {
@@ -1922,12 +1971,12 @@ void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
         boundExpressionStack.Push(exceptionTableConstant);
         return;
     }
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, lookupId);
     if (!symbol)
     {
         for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
         {
-            symbol = fileScope->Lookup(identifierNode.Str());
+            symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
             if (symbol) break;
         }
     }
@@ -1989,7 +2038,10 @@ void ExpressionBinder::Visit(Cm::Ast::BaseNode& baseNode)
 void ExpressionBinder::Visit(Cm::Ast::TypeNameNode& typeNameNode)
 {
     Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(typeNameNode.GetSpan());
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupTypenameSubject;
     typeNameNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     std::unique_ptr<Cm::BoundTree::BoundExpression> subject(Pop());
     Cm::Sym::TypeSymbol* subjectType = subject->GetType();
     Cm::Sym::TypeSymbol* plainType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(subjectType);

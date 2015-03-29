@@ -54,15 +54,18 @@ void ContainerScope::Install(Symbol* symbol)
     }
 }
 
-Symbol* ContainerScope::LookupQualified(const std::vector<std::string>& components, ScopeLookup lookup) const
+Symbol* ContainerScope::LookupQualified(const std::vector<std::string>& components, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const
 {
     const ContainerScope* scope = this;
     Symbol* s = nullptr;
-    for (const std::string& component : components)
+    int n = int(components.size());
+    for (int i = 0; i < n; ++i)
     {
+        const std::string& component = components[i];
         if (scope)
         {
-            s = scope->Lookup(component, ScopeLookup::this_);
+            SymbolTypeSetId lookupId = i == n - 1 ? symbolTypeSetId : SymbolTypeSetId::lookupDotSubjectSymbols;
+            s = scope->Lookup(component, ScopeLookup::this_, lookupId);
             if (s)
             {
                 scope = s->GetContainerScope();
@@ -75,7 +78,7 @@ Symbol* ContainerScope::LookupQualified(const std::vector<std::string>& componen
         {
             if (parent)
             {
-                return parent->LookupQualified(components, lookup);
+                return parent->LookupQualified(components, lookup, symbolTypeSetId);
             }
             else
             {
@@ -91,26 +94,41 @@ Symbol* ContainerScope::Lookup(const std::string& name) const
     return Lookup(name, ScopeLookup::this_);
 }
 
+Symbol* ContainerScope::Lookup(const std::string& name, SymbolTypeSetId symbolTypeSetId) const
+{
+    return Lookup(name, ScopeLookup::this_, symbolTypeSetId);
+}
+
 Symbol* ContainerScope::Lookup(const std::string& name, ScopeLookup lookup) const
+{
+    return Lookup(name, lookup, SymbolTypeSetId::lookupAllSymbols);
+}
+
+Symbol* ContainerScope::Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const
 {
     std::string::size_type dotPos = name.find('.');
     if (dotPos != std::string::npos)
     {
         std::vector<std::string> components = Cm::Util::Split(name, '.');
-        return LookupQualified(components, lookup);
+        return LookupQualified(components, lookup, symbolTypeSetId);
     }
     else
     {
         SymbolMapIt i = symbolMap.find(name);
         if (i != symbolMap.end())
         {
-            return i->second;
+            Symbol* s = i->second;
+            SymbolTypeSet& symbolTypeSet = GetSymbolTypeSetCollection()->GetSymbolTypeSet(symbolTypeSetId);
+            if (symbolTypeSet.find(s->GetSymbolType()) != symbolTypeSet.end())
+            {
+                return s;
+            }
         }
         if ((lookup & ScopeLookup::base) != ScopeLookup::none)
         {
             if (base)
             {
-                Symbol* s = base->Lookup(name, lookup);
+                Symbol* s = base->Lookup(name, lookup, symbolTypeSetId);
                 if (s)
                 {
                     return s;
@@ -121,7 +139,7 @@ Symbol* ContainerScope::Lookup(const std::string& name, ScopeLookup lookup) cons
         {
             if (parent)
             {
-                Symbol* s = parent->Lookup(name, lookup);
+                Symbol* s = parent->Lookup(name, lookup, symbolTypeSetId);
                 if (s)
                 {
                     return s;
@@ -159,7 +177,7 @@ void ContainerScope::CollectViableFunctions(ScopeLookup lookup, const std::strin
 {
     if ((lookup & ScopeLookup::this_) != ScopeLookup::none)
     {
-        Cm::Sym::Symbol* symbol = Lookup(groupName);
+        Cm::Sym::Symbol* symbol = Lookup(groupName, SymbolTypeSetId::lookupFunctionGroup);
         if (symbol && symbol->IsFunctionGroupSymbol())
         {
             FunctionGroupSymbol* functionGroupSymbol = static_cast<FunctionGroupSymbol*>(symbol);
@@ -189,7 +207,7 @@ NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsN
     std::vector<std::string> components = Cm::Util::Split(qualifiedNsName, '.');
     for (const std::string& component : components)
     {
-        Symbol* s = scope->Lookup(component);
+        Symbol* s = scope->Lookup(component, SymbolTypeSetId::lookupNamespace);
         if (s)
         {
             if (s->IsNamespaceSymbol())
@@ -242,7 +260,7 @@ void FileScope::InstallNamespaceImport(ContainerScope* currentContainerScope, Cm
 {
     if (currentContainerScope)
     {
-        Symbol* symbol = currentContainerScope->Lookup(namespaceImportNode->Ns()->Str(), ScopeLookup::this_and_parent);
+        Symbol* symbol = currentContainerScope->Lookup(namespaceImportNode->Ns()->Str(), ScopeLookup::this_and_parent, SymbolTypeSetId::lookupNamespace);
         if (symbol)
         {
             if (symbol->IsNamespaceSymbol())
@@ -274,7 +292,17 @@ Symbol* FileScope::Lookup(const std::string& name) const
     return Lookup(name, ScopeLookup::this_);
 }
 
+Symbol* FileScope::Lookup(const std::string& name, SymbolTypeSetId symbolTypeSetId) const
+{
+    return Lookup(name, ScopeLookup::this_, symbolTypeSetId);
+}
+
 Symbol* FileScope::Lookup(const std::string& name, ScopeLookup lookup) const
+{
+    return Lookup(name, lookup, SymbolTypeSetId::lookupAllSymbols);
+}
+
+Symbol* FileScope::Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const
 {
     if (lookup != ScopeLookup::this_)
     {
@@ -285,13 +313,17 @@ Symbol* FileScope::Lookup(const std::string& name, ScopeLookup lookup) const
     if (i != aliasSymbolMap.end())
     {
         Symbol* symbol = i->second;
-        foundSymbols.insert(symbol);
+        SymbolTypeSet& symbolTypeSet = GetSymbolTypeSetCollection()->GetSymbolTypeSet(symbolTypeSetId);
+        if (symbolTypeSet.find(symbol->GetSymbolType()) != symbolTypeSet.end())
+        {
+            foundSymbols.insert(symbol);
+        }
     }
     else
     {
         for (ContainerScope* containerScope : containerScopes)
         {
-            Symbol* symbol = containerScope->Lookup(name, ScopeLookup::this_);
+            Symbol* symbol = containerScope->Lookup(name, ScopeLookup::this_, symbolTypeSetId);
             if (symbol)
             {
                 foundSymbols.insert(symbol);

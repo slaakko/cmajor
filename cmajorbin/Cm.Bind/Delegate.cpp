@@ -20,7 +20,7 @@ namespace Cm { namespace Bind {
 Cm::Sym::DelegateTypeSymbol* BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::DelegateNode* delegateNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(delegateNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(delegateNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupDelegate);
     if (symbol->IsDelegateTypeSymbol())
     {
         Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol = static_cast<Cm::Sym::DelegateTypeSymbol*>(symbol);
@@ -94,7 +94,7 @@ void CompleteBindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
 Cm::Sym::ClassDelegateTypeSymbol* BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, 
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ClassDelegateNode* classDelegateNode)
 {
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(classDelegateNode->Id()->Str());
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(classDelegateNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupClassDelegate);
     if (symbol->IsClassDelegateTypeSymbol())
     {
         Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol = static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(symbol);

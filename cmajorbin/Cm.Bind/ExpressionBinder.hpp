@@ -80,6 +80,7 @@ public:
     void Visit(Cm::Ast::DerefNode& derefNode) override;
     void Visit(Cm::Ast::PostfixIncNode& postfixIncNode) override;
     void Visit(Cm::Ast::PostfixDecNode& postfixDecNode) override;
+    void BeginVisit(Cm::Ast::DotNode& dotNode) override;
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::ArrowNode& arrowNode) override;
     void BeginVisit(Cm::Ast::InvokeNode& invokeNode) override;
@@ -136,6 +137,8 @@ private:
     int expressionCount;
     std::stack<int> expressionCountStack;
     Cm::BoundTree::BoundFunction* currentFunction;
+    Cm::Sym::SymbolTypeSetId lookupId;
+    Cm::Sym::LookupIdStack lookupIdStack;
     void BindUnaryOp(Cm::Ast::Node* node, const std::string& opGroupName);
     void BindBinaryOp(Cm::Ast::Node* node, const std::string& opGroupName);
     void BindSymbol(Cm::Ast::Node* idNode, Cm::Sym::Symbol* symbol);

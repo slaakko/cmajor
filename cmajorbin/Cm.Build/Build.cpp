@@ -24,6 +24,7 @@
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/SymbolTypeSet.hpp>
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/Binder.hpp>
@@ -563,6 +564,8 @@ void BuildProject(Cm::Ast::Project* project)
     Cm::Core::GlobalConceptData globalConceptData;
     Cm::Core::SetGlobalConceptData(&globalConceptData);
     Cm::Sym::SymbolTable symbolTable;
+    Cm::Sym::SymbolTypeSetCollection symbolTypeSetCollection;
+    Cm::Sym::SetSymbolTypeSetCollection(&symbolTypeSetCollection);
     Cm::Sym::ExceptionTable exceptionTable;
     Cm::Sym::SetExceptionTable(&exceptionTable);
     Cm::Sym::MutexTable mutexTable;
@@ -601,6 +604,7 @@ void BuildProject(Cm::Ast::Project* project)
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);
     Cm::Sym::SetMutexTable(nullptr);
+    Cm::Sym::SetSymbolTypeSetCollection(nullptr);
     if (!quiet)
     {
         std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ") built successfully" << std::endl;

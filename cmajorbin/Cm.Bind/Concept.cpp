@@ -63,6 +63,7 @@ public:
     void Visit(Cm::Ast::MemberFunctionConstraintNode& memberFunctionConstraintNode) override;
     void Visit(Cm::Ast::FunctionConstraintNode& functionConstraintNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
+    void BeginVisit(Cm::Ast::DotNode& dotNode) override;
     void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::BoolNode& boolNode) override;
     void Visit(Cm::Ast::SByteNode& sbyteNode) override;
@@ -92,13 +93,15 @@ private:
     ConstraintCheckStack constraintCheckStack;
     Cm::Sym::TypeSymbol* type;
     Cm::Sym::ConceptGroupSymbol* conceptGroup;
+    Cm::Sym::SymbolTypeSetId lookupId;
+    Cm::Sym::LookupIdStack lookupIdStack;
     bool CheckConvertible(Cm::Sym::TypeSymbol* firstType, Cm::Sym::TypeSymbol* secondType, const Cm::Parsing::Span& span);
 };
 
 ConstraintChecker::ConstraintChecker(Cm::Sym::TypeSymbol* firstTypeArgument_, Cm::Sym::TypeSymbol* secondTypeArgument_, Cm::Sym::ContainerScope* containerScope_, 
     Cm::BoundTree::BoundCompileUnit* boundCompileUnit_, Cm::Sym::FileScope* functionFileScope_) :
     Cm::Ast::Visitor(false, true), containerScope(containerScope_), firstTypeArgument(firstTypeArgument_), secondTypeArgument(secondTypeArgument_), boundCompileUnit(boundCompileUnit_), 
-    functionFileScope(functionFileScope_), type(nullptr)
+    functionFileScope(functionFileScope_), type(nullptr), lookupId(Cm::Sym::SymbolTypeSetId::lookupTypeAndConceptSymbols)
 {
 }
 
@@ -129,7 +132,10 @@ void ConstraintChecker::Visit(Cm::Ast::ConceptNode& conceptNode)
 
 void ConstraintChecker::Visit(Cm::Ast::ConceptIdNode& conceptIdNode)
 {
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupConceptGroup;
     conceptIdNode.Id()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
     if (conceptGroup)
     {
         int n = conceptIdNode.TypeParameters().Count();
@@ -208,18 +214,18 @@ void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
     type = nullptr;
     conceptGroup = nullptr;
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, lookupId);
     if (!symbol)
     {
         for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : boundCompileUnit->GetFileScopes())
         {
-            symbol = fileScope->Lookup(identifierNode.Str());
+            symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
             if (symbol) break;
         }
     }
     if (!symbol && functionFileScope)
     {
-        symbol = functionFileScope->Lookup(identifierNode.Str());
+        symbol = functionFileScope->Lookup(identifierNode.Str(), lookupId);
     }
     if (symbol)
     {
@@ -244,19 +250,26 @@ void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     else
     {
-        throw Cm::Core::ConceptCheckException("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Cm::Core::ConceptCheckException("type or concept symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
+}
+
+void ConstraintChecker::BeginVisit(Cm::Ast::DotNode& dotNode)
+{
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupContainerSymbols;
 }
 
 void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
 {
+    lookupId = lookupIdStack.Pop();
     if (!type)
     {
         throw Cm::Core::ConceptCheckException("symbol '" + dotNode.Subject()->Name() + "' does not denot a type", dotNode.Subject()->GetSpan());
     }
     Cm::Sym::Scope* typeContainerScope = type->GetContainerScope();
     const std::string& memberName = dotNode.MemberId()->Str();
-    Cm::Sym::Symbol* symbol = typeContainerScope->Lookup(memberName);
+    Cm::Sym::Symbol* symbol = typeContainerScope->Lookup(memberName, lookupId);
     if (symbol)
     {
         if (symbol->IsBoundTypeParameterSymbol())
@@ -276,7 +289,7 @@ void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
     }
     else
     {
-        throw Cm::Core::ConceptCheckException("symbol '" + memberName + "' not found", dotNode.GetSpan());
+        throw Cm::Core::ConceptCheckException("type symbol '" + memberName + "' not found", dotNode.GetSpan());
     }
 }
 
@@ -849,7 +862,7 @@ Cm::Sym::InstantiatedConceptSymbol* Instantiate(Cm::Sym::ContainerScope* contain
         if (result)
         {
             Cm::Sym::InstantiatedConceptSymbol* instantiatedConceptSymbol = new Cm::Sym::InstantiatedConceptSymbol(conceptSymbol, typeArguments);
-            Cm::Sym::Symbol* commonType = instantiationScope.Lookup("CommonType");
+            Cm::Sym::Symbol* commonType = instantiationScope.Lookup("CommonType", Cm::Sym::SymbolTypeSetId::lookupTypeSymbols);
             if (commonType)
             {
                 containerScope->Install(commonType);
@@ -1049,18 +1062,18 @@ void ConstraintBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
     type = nullptr;
     conceptGroup = nullptr;
-    Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent);
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, Cm::Sym::SymbolTypeSetId::lookupTypeAndConceptSymbols);
     if (!symbol)
     {
         for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : boundCompileUnit->GetFileScopes())
         {
-            symbol = fileScope->Lookup(identifierNode.Str());
+            symbol = fileScope->Lookup(identifierNode.Str(), Cm::Sym::SymbolTypeSetId::lookupTypeAndConceptSymbols);
             if (symbol) break;
         }
     }
     if (!symbol)
     {
-        symbol = functionFileScope->Lookup(identifierNode.Str());
+        symbol = functionFileScope->Lookup(identifierNode.Str(), Cm::Sym::SymbolTypeSetId::lookupTypeAndConceptSymbols);
     }
     if (symbol)
     {
@@ -1080,7 +1093,7 @@ void ConstraintBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     else
     {
-        throw Cm::Core::ConceptCheckException("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Cm::Core::ConceptCheckException("type or concept symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
 }
 

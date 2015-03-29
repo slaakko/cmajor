@@ -25,11 +25,11 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
     Cm::Sym::Symbol* symbol = nullptr;
     if (parameterNode->Id())
     {
-        symbol = containerScope->Lookup(parameterNode->Id()->Str());
+        symbol = containerScope->Lookup(parameterNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupParameter);
     }
     else
     {
-        symbol = containerScope->Lookup("__parameter" + std::to_string(parameterIndex));
+        symbol = containerScope->Lookup("__parameter" + std::to_string(parameterIndex), Cm::Sym::SymbolTypeSetId::lookupParameter);
     }
     if (symbol)
     {
@@ -51,7 +51,7 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + parameterNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("parameter symbol '" + parameterNode->Id()->Str() + "' not found");
     }
 }
 
