@@ -58,26 +58,14 @@ inline void ResetFlag(GenFlags flag, GenFlags& flags)
     flags = flags & ~flag;
 }
 
-class LabelHolder
-{
-public:
-    LabelHolder(): label(nullptr) {}
-    LabelHolder(LabelHolder&& that) : label(that.label) {}
-    LabelHolder& operator=(LabelHolder&& that) { std::swap(label, that.label); }
-    void SetLabel(Ir::Intf::LabelObject* label_) { label = label_; }
-    Ir::Intf::LabelObject* GetLabel() const { return label; }
-private:
-    Ir::Intf::LabelObject* label;
-};
-
 class GenData
 {
 public:
     GenData();
     GenData(const GenData&) = delete;
     GenData& operator=(const GenData&) = delete;
-    GenData(GenData&& that);
-    GenData& operator=(GenData&& that);
+    GenData(GenData&& that) = delete;
+    GenData& operator=(GenData&& that) = delete;
     bool IsEmpty() const { return objects.empty(); }
     Ir::Intf::Object* MainObject() const;
     void SetMainObject(Ir::Intf::Object* mainObject);
@@ -95,16 +83,15 @@ public:
     std::vector<Ir::Intf::LabelObject*>& FalseTargets() { return falseTargets; }
     std::vector<Ir::Intf::LabelObject*>& ArgNextTargets() { return argNextTargets; }
     void MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets);
-    void MergeData(GenData& childData);
+    void MergeData(std::shared_ptr<GenData> childData);
     Ir::Intf::LabelObject* GetLabel() const;
-    void SetLabel(Ir::Intf::LabelObject* label);
-    LabelHolder* GetLabelHolder() const { return labelHolder.get(); }
-    void BackpatchTrueTargets(Ir::Intf::LabelObject* label);
-    void BackpatchFalseTargets(Ir::Intf::LabelObject* label);
-    void BackpatchNextTargets(Ir::Intf::LabelObject* label);
-    void BackpatchArgNextTargets(Ir::Intf::LabelObject* label);
+    void SetLabel(Ir::Intf::LabelObject* label_);
+    void BackpatchTrueTargets(Ir::Intf::LabelObject* label_);
+    void BackpatchFalseTargets(Ir::Intf::LabelObject* label_);
+    void BackpatchNextTargets(Ir::Intf::LabelObject* label_);
+    void BackpatchArgNextTargets(Ir::Intf::LabelObject* label_);
 private:
-    std::unique_ptr<LabelHolder> labelHolder;
+    Ir::Intf::LabelObject* label;
     std::vector<Ir::Intf::Object*> objects;
     std::vector<Ir::Intf::LabelObject*> nextTargets;
     std::vector<Ir::Intf::LabelObject*> trueTargets;
@@ -119,8 +106,8 @@ public:
     ~Emitter();
 	void SetIrFunction(Ir::Intf::Function* irFunction_) { irFunction = irFunction_; }
     Ir::Intf::Function* GetIrFunction() const { return irFunction; }
-    void RequestLabelFor(GenData& genData);
-    void RemoveLabelRequestFor(GenData& genData);
+    void RequestLabelFor(std::shared_ptr<GenData> genData);
+    void RemoveLabelRequestFor(std::shared_ptr<GenData> genData);
     void AddNextInstructionLabel(Ir::Intf::LabelObject* nextInstructionLabel) { nextInstructionLabels.insert(nextInstructionLabel); }
     void SetGotoTargetLabel(Ir::Intf::LabelObject* gotoTargetLabel_) { gotoTargetLabel = gotoTargetLabel_; }
     void Emit(Ir::Intf::Instruction* instruction) override;
@@ -129,7 +116,7 @@ public:
     void Own(Ir::Intf::Function* fun) override;
 private:
     Ir::Intf::Function* irFunction;
-    std::unordered_set<LabelHolder*> labelRequestSet;
+    std::unordered_set<std::shared_ptr<GenData>> labelRequestSet;
     Ir::Intf::LabelObject* gotoTargetLabel;
     std::unordered_set<Ir::Intf::LabelObject*> nextInstructionLabels;
     std::string nextInstructionComment;
@@ -146,30 +133,30 @@ public:
     GenResult(Emitter* emitter_, GenFlags flags_);
     GenResult(const GenResult&) = delete;
     GenResult& operator=(const GenResult&) = delete;
-    GenResult(GenResult&& that);
-    GenResult& operator=(GenResult&& that);
+    GenResult(GenResult&& that) = delete;
+    GenResult& operator=(GenResult&& that) = delete;
     GenFlags Flags() const { return flags; }
-    void AddChild(GenData&& child);
-    Ir::Intf::Object* MainObject() const { return genData.MainObject(); }
-    void SetMainObject(Ir::Intf::Object* mainObject) { genData.SetMainObject(mainObject); }
+    void AddChild(std::shared_ptr<GenData> child);
+    Ir::Intf::Object* MainObject() const { return genData->MainObject(); }
+    void SetMainObject(Ir::Intf::Object* mainObject) { genData->SetMainObject(mainObject); }
     void SetMainObject(Cm::Sym::TypeSymbol* type, Cm::Sym::TypeRepository& typeRepository);
-    void AddObject(Ir::Intf::Object* object) { genData.AddObject(object); }
-    Ir::Intf::Object* Arg1() const { return genData.Arg1(); }
-    Ir::Intf::Object* Arg2() const { return genData.Arg2(); }
-    std::vector<Ir::Intf::Object*> Args() const { return genData.Args(); }
-    const std::vector<Ir::Intf::Object*>& Objects() const { return genData.Objects(); }
-    void AddTrueTarget(Ir::Intf::LabelObject* trueTarget) { genData.AddTrueTarget(trueTarget); }
-    void AddFalseTarget(Ir::Intf::LabelObject* falseTarget) { genData.AddFalseTarget(falseTarget); }
-    void AddNextTarget(Ir::Intf::LabelObject* nextTarget) { genData.AddNextTarget(nextTarget);  }
-    void AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget) { genData.AddArgNextTarget(argNextTarget); }
-    std::vector<Ir::Intf::LabelObject*>& NextTargets() { return genData.NextTargets(); }
-    std::vector<Ir::Intf::LabelObject*>& TrueTargets() { return genData.TrueTargets(); }
-    std::vector<Ir::Intf::LabelObject*>& FalseTargets() { return genData.FalseTargets(); }
-    void MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets) { genData.MergeTargets(targets, fromTargets); }
-    void BackpatchTrueTargets(Ir::Intf::LabelObject* label) { genData.BackpatchTrueTargets(label); }
-    void BackpatchFalseTargets(Ir::Intf::LabelObject* label) { genData.BackpatchFalseTargets(label); }
-    void BackpatchNextTargets(Ir::Intf::LabelObject* label) { genData.BackpatchNextTargets(label); }
-    void BackpatchArgNextTargets(Ir::Intf::LabelObject* label) { genData.BackpatchArgNextTargets(label); }
+    void AddObject(Ir::Intf::Object* object) { genData->AddObject(object); }
+    Ir::Intf::Object* Arg1() const { return genData->Arg1(); }
+    Ir::Intf::Object* Arg2() const { return genData->Arg2(); }
+    std::vector<Ir::Intf::Object*> Args() const { return genData->Args(); }
+    const std::vector<Ir::Intf::Object*>& Objects() const { return genData->Objects(); }
+    void AddTrueTarget(Ir::Intf::LabelObject* trueTarget) { genData->AddTrueTarget(trueTarget); }
+    void AddFalseTarget(Ir::Intf::LabelObject* falseTarget) { genData->AddFalseTarget(falseTarget); }
+    void AddNextTarget(Ir::Intf::LabelObject* nextTarget) { genData->AddNextTarget(nextTarget);  }
+    void AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget) { genData->AddArgNextTarget(argNextTarget); }
+    std::vector<Ir::Intf::LabelObject*>& NextTargets() { return genData->NextTargets(); }
+    std::vector<Ir::Intf::LabelObject*>& TrueTargets() { return genData->TrueTargets(); }
+    std::vector<Ir::Intf::LabelObject*>& FalseTargets() { return genData->FalseTargets(); }
+    void MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets) { genData->MergeTargets(targets, fromTargets); }
+    void BackpatchTrueTargets(Ir::Intf::LabelObject* label) { genData->BackpatchTrueTargets(label); }
+    void BackpatchFalseTargets(Ir::Intf::LabelObject* label) { genData->BackpatchFalseTargets(label); }
+    void BackpatchNextTargets(Ir::Intf::LabelObject* label) { genData->BackpatchNextTargets(label); }
+    void BackpatchArgNextTargets(Ir::Intf::LabelObject* label) { genData->BackpatchArgNextTargets(label); }
     bool GenJumpingBoolCode() const { return GetFlag(GenFlags::genJumpingBoolCode, flags); }
     void SetGenJumpingBoolCode() { SetFlag(GenFlags::genJumpingBoolCode, flags); }
     void SetLvalue() { SetFlag(GenFlags::lvalue, flags); }
@@ -179,9 +166,9 @@ public:
     void SetClassTypeToPointerTypeConversion() { SetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
     bool GenerateVirtualCall() const { return GetFlag(GenFlags::virtualCall, flags); }
     void SetGenVirtualCall() { SetFlag(GenFlags::virtualCall, flags); }
-    GenData& GetChild(int index);
-    void Merge(GenResult& child);
-    void Merge(GenResult& child, bool insertFirst);
+    std::shared_ptr<GenData> GetChild(int index);
+    void Merge(std::shared_ptr<GenResult> child);
+    void Merge(std::shared_ptr<GenResult> child, bool insertFirst);
     Ir::Intf::LabelObject* GetLabel() const;
     void SetLabel(Ir::Intf::LabelObject* label);
     bool LabelSet() const { return GetFlag(GenFlags::labelSet, flags); }
@@ -189,18 +176,18 @@ public:
 private:
     Emitter* emitter;
     GenFlags flags;
-    GenData genData;
-    std::vector<GenData> children;
+    std::shared_ptr<GenData> genData;
+    std::vector<std::shared_ptr<GenData>> children;
 };
 
 class GenResultStack
 {
 public:
-    void Push(GenResult&& genResult) { stack.push_back(std::move(genResult)); }
-    GenResult Pop() { GenResult top = std::move(stack.back()); stack.pop_back(); return top; }
-    std::vector<GenResult>& Stack() { return stack; }
+    void Push(std::shared_ptr<GenResult> genResult) { stack.push_back(genResult); }
+    std::shared_ptr<GenResult> Pop() { std::shared_ptr<GenResult> top = stack.back(); stack.pop_back(); return top; }
+    std::vector<std::shared_ptr<GenResult>>& Stack() { return stack; }
 private:
-    std::vector<GenResult> stack;
+    std::vector<std::shared_ptr<GenResult>> stack;
 };
 
 } } // namespace Cm::Core

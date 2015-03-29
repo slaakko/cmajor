@@ -16,24 +16,8 @@
 
 namespace Cm { namespace Core {
 
-GenData::GenData() : labelHolder(new LabelHolder())
+GenData::GenData() : label(nullptr)
 {
-}
-
-GenData::GenData(GenData&& that) : labelHolder(std::move(that.labelHolder)), objects(std::move(that.objects)), nextTargets(std::move(that.nextTargets)), trueTargets(std::move(that.trueTargets)), 
-    falseTargets(std::move(that.falseTargets)), argNextTargets(std::move(that.argNextTargets))
-{
-}
-
-GenData& GenData::operator=(GenData&& that)
-{
-    std::swap(labelHolder, that.labelHolder);
-    std::swap(objects, that.objects);
-    std::swap(nextTargets, that.nextTargets);
-    std::swap(trueTargets, that.trueTargets);
-    std::swap(falseTargets, that.falseTargets);
-    std::swap(argNextTargets, that.argNextTargets);
-    return *this;
 }
 
 Ir::Intf::Object* GenData::MainObject() const
@@ -112,73 +96,65 @@ void GenData::MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::ve
     fromTargets.clear();
 }
 
-void GenData::MergeData(GenData& childData)
+void GenData::MergeData(std::shared_ptr<GenData> childData)
 {
-    if (!childData.IsEmpty())
+    if (!childData->IsEmpty())
     {
-        objects.push_back(childData.MainObject());
+        objects.push_back(childData->MainObject());
     }
-    Ir::Intf::Merge(nextTargets, childData.nextTargets);
-    Ir::Intf::Merge(trueTargets, childData.trueTargets);
-    Ir::Intf::Merge(falseTargets, childData.falseTargets);
-    Ir::Intf::Merge(argNextTargets, childData.argNextTargets);
+    Ir::Intf::Merge(nextTargets, childData->nextTargets);
+    Ir::Intf::Merge(trueTargets, childData->trueTargets);
+    Ir::Intf::Merge(falseTargets, childData->falseTargets);
+    Ir::Intf::Merge(argNextTargets, childData->argNextTargets);
 }
 
 Ir::Intf::LabelObject* GenData::GetLabel() const 
 { 
-    if (labelHolder)
-    {
-        return labelHolder->GetLabel();
-    }
-    return nullptr;
+    return label;
 }
 
-void GenData::SetLabel(Ir::Intf::LabelObject* label)
+void GenData::SetLabel(Ir::Intf::LabelObject* label_)
 {
-    if (!labelHolder)
-    {
-        labelHolder.reset(new LabelHolder());
-    }
-    labelHolder->SetLabel(label);
+    label = label_;
 }
 
-void GenData::BackpatchTrueTargets(Ir::Intf::LabelObject* label)
+void GenData::BackpatchTrueTargets(Ir::Intf::LabelObject* label_)
 {
-    if (!label)
+    if (!label_)
     {
         throw std::runtime_error("backpatch true targets got no label");
     }
-    Ir::Intf::Backpatch(trueTargets, label);
+    Ir::Intf::Backpatch(trueTargets, label_);
     trueTargets.clear();
 }
 
-void GenData::BackpatchFalseTargets(Ir::Intf::LabelObject* label)
+void GenData::BackpatchFalseTargets(Ir::Intf::LabelObject* label_)
 {
-    if (!label)
+    if (!label_)
     {
         throw std::runtime_error("backpatch false targets got no label");
     }
-    Ir::Intf::Backpatch(falseTargets, label);
+    Ir::Intf::Backpatch(falseTargets, label_);
     falseTargets.clear();
 }
 
-void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label)
+void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label_)
 {
-    if (!label)
+    if (!label_)
     {
         throw std::runtime_error("backpatch next targets got no label");
     }
-    Ir::Intf::Backpatch(nextTargets, label);
+    Ir::Intf::Backpatch(nextTargets, label_);
     nextTargets.clear();
 }
 
-void GenData::BackpatchArgNextTargets(Ir::Intf::LabelObject* label)
+void GenData::BackpatchArgNextTargets(Ir::Intf::LabelObject* label_)
 {
-    if (!label)
+    if (!label_)
     {
         throw std::runtime_error("backpatch arg next targets got no label");
     }
-    Ir::Intf::Backpatch(argNextTargets, label);
+    Ir::Intf::Backpatch(argNextTargets, label_);
     argNextTargets.clear();
 }
 
@@ -190,14 +166,14 @@ Emitter::~Emitter()
 {
 }
 
-void Emitter::RequestLabelFor(GenData& genData)
+void Emitter::RequestLabelFor(std::shared_ptr<GenData> genData)
 {
-    labelRequestSet.insert(genData.GetLabelHolder());
+    labelRequestSet.insert(genData);
 }
 
-void Emitter::RemoveLabelRequestFor(GenData& genData)
+void Emitter::RemoveLabelRequestFor(std::shared_ptr<GenData> genData)
 {
-    labelRequestSet.erase(genData.GetLabelHolder());
+    labelRequestSet.erase(genData);
 }
 
 void Emitter::Emit(Ir::Intf::Instruction* instruction)
@@ -222,9 +198,10 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
             }
         }
         instruction->SetLabel(label);
-        for (LabelHolder* labelHolder : labelRequestSet)
+
+        for (std::shared_ptr<GenData> genData : labelRequestSet)
         {
-            labelHolder->SetLabel(label);
+            genData->SetLabel(label);
         }
         labelRequestSet.clear();
         nextInstructionLabels.clear();
@@ -280,11 +257,11 @@ void Emitter::Own(Ir::Intf::Function* fun)
     ownedFuns.push_back(std::unique_ptr<Ir::Intf::Function>(fun));
 }
 
-GenResult::GenResult() : emitter(nullptr), flags()
+GenResult::GenResult() : emitter(nullptr), flags(), genData(new GenData())
 {
 }
 
-GenResult::GenResult(Emitter* emitter_, GenFlags flags_) : emitter(emitter_), flags(flags_)
+GenResult::GenResult(Emitter* emitter_, GenFlags flags_) : emitter(emitter_), flags(flags_), genData(new GenData())
 {
     emitter->RequestLabelFor(genData);
 } 
@@ -297,26 +274,12 @@ GenResult::~GenResult()
     }
 }
 
-GenResult::GenResult(GenResult&& that) : emitter(that.emitter), flags(that.flags), genData(std::move(that.genData)), children(std::move(that.children))
+void GenResult::AddChild(std::shared_ptr<GenData> child)
 {
-    that.emitter = nullptr;
+    children.push_back(child);
 }
 
-GenResult& GenResult::operator=(GenResult&& that)
-{
-    std::swap(emitter, that.emitter);
-    std::swap(flags, that.flags);
-    std::swap(genData, that.genData);
-    std::swap(children, that.children);
-    return *this;
-}
-
-void GenResult::AddChild(GenData&& child)
-{
-    children.push_back(std::move(child));
-}
-
-GenData& GenResult::GetChild(int index) 
+std::shared_ptr<GenData> GenResult::GetChild(int index) 
 { 
     if (int(children.size()) <= index)
     {
@@ -325,35 +288,35 @@ GenData& GenResult::GetChild(int index)
     return children[index]; 
 }
 
-void GenResult::Merge(GenResult& child, bool insertFirst)
+void GenResult::Merge(std::shared_ptr<GenResult> child, bool insertFirst)
 {
-    genData.MergeData(child.genData);
+    genData->MergeData(child->genData);
     if (insertFirst)
     {
-        children.insert(children.begin(), std::move(child.genData));
+        children.insert(children.begin(), child->genData);
     }
     else
     {
-        AddChild(std::move(child.genData));
+        AddChild(std::move(child->genData));
     }
 }
 
-void GenResult::Merge(GenResult& child)
+void GenResult::Merge(std::shared_ptr<GenResult> child)
 {
-    genData.MergeData(child.genData);
-    AddChild(std::move(child.genData));
+    genData->MergeData(child->genData);
+    AddChild(child->genData);
 }
 
 Ir::Intf::LabelObject* GenResult::GetLabel() const 
 { 
-    Ir::Intf::LabelObject* label = genData.GetLabel();
+    Ir::Intf::LabelObject* label = genData->GetLabel();
     if (label)
     {
         return label;
     }
-    for (const GenData& child : children)
+    for (std::shared_ptr<GenData> child : children)
     {
-        Ir::Intf::LabelObject* label = child.GetLabel();
+        Ir::Intf::LabelObject* label = child->GetLabel();
         if (label)
         {
             return label;
@@ -368,7 +331,7 @@ void GenResult::SetLabel(Ir::Intf::LabelObject* label)
     {
         emitter->RemoveLabelRequestFor(genData);
     }
-    genData.SetLabel(label);
+    genData->SetLabel(label);
 }
 
 void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type, Cm::Sym::TypeRepository& typeRepository)
@@ -382,13 +345,13 @@ void GenResult::SetMainObject(Cm::Sym::TypeSymbol* type, Cm::Sym::TypeRepository
             emitter->Own(rvalueRefType);
             Ir::Intf::RegVar* temp = Cm::IrIntf::CreateTemporaryRegVar(rvalueRefType);
             emitter->Own(temp);
-            genData.SetMainObject(temp);
+            genData->SetMainObject(temp);
             return;
         }
     }
     Ir::Intf::RegVar* temp = Cm::IrIntf::CreateTemporaryRegVar(type->GetIrType()->Clone());
     emitter->Own(temp);
-    genData.SetMainObject(temp);
+    genData->SetMainObject(temp);
 }
 
 } } // namespace Cm::Core
