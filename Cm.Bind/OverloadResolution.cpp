@@ -491,7 +491,16 @@ bool DeduceTypeParameter(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, cons
     {
         return true;
     }
-    return Bind(boundCompileUnit, parameterType, argument.Type(), templateArguments);
+    bool bindResult = Bind(boundCompileUnit, parameterType, argument.Type(), templateArguments);
+    if (bindResult)
+    {
+        return true;
+    }
+    else if (FindConversion(boundCompileUnit, span, Cm::Sym::ConversionType::implicit, parameterType, argument, conversionClassTypes, conversion, argumentMatch, numConversions))
+    {
+        return true;
+    }
+    return false;
 }
 
 bool DeduceTypeParameters(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::vector<Cm::Sym::TypeParameterSymbol*>& templateParameters,

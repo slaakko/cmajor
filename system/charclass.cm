@@ -17,7 +17,7 @@ using System.Collections;
 
 namespace System
 {
-    internal enum CharClass
+    public enum CharClass
     {
         none = 0,
         lower = 1,
@@ -35,7 +35,7 @@ namespace System
 
     public const int EXIT_CHAR_CLASS_TABLE_ALLOCATE = 249;
 
-    internal static class CharClassTable
+    public static class CharClassTable
     {
         static nothrow CharClassTable()
         {

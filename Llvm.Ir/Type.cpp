@@ -146,10 +146,6 @@ I32Type::I32Type() : IntegerType("i32")
 
 I32Type::~I32Type()
 {
-	if (debug)
-	{
-		int x = 0;
-	}
 }
 
 Ir::Intf::Type* I32Type::Clone() const

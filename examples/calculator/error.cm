@@ -1,0 +1,15 @@
+using System;
+
+namespace Calculator
+{
+    public class DivisionByZero: Exception
+    {
+        public DivisionByZero(const string& message_): base(message_) {}
+    }
+
+    public class ParsingError: Exception
+    {
+        public ParsingError(const string& message_): base(message_) {}
+    }
+}
+ 
