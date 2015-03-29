@@ -415,10 +415,6 @@ void ExpressionBinder::EndVisit(Cm::Ast::GreaterOrEqualNode& greaterOrEqualNode)
 
 void ExpressionBinder::EndVisit(Cm::Ast::ShiftLeftNode& shiftLeftNode)
 {
-	if (currentFunction->GetFunctionSymbol()->FullName() == "System.Text.CodeFormatter.WriteLine(CodeFormatter*)")
-	{
-		int x = 0;
-	}
     BindBinaryOp(&shiftLeftNode, "operator<<");
 }
 
@@ -1195,6 +1191,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
         boundTemporary->SetType(type);
         functionCall->SetTemporary(boundTemporary);
+        functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
         if (!fun->IsBasicTypeOp())
         {
             functionCall->SetTraceCallInfo(CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), node->GetSpan()));

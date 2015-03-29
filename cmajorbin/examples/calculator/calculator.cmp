@@ -1,0 +1,8 @@
+project Calculator;
+target=program;
+assembly <calculator.cma>;
+source <error.cm>;
+source <main.cm>;
+source <parser.cm>;
+source <scanner.cm>;
+source <token.cm>;

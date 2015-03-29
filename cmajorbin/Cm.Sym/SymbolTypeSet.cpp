@@ -75,6 +75,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     //  lookupClassEnumAndNamespaceSymbols:
     SymbolTypeSet dotSubjectSymbols;
     dotSubjectSymbols.insert(SymbolType::classSymbol);
+    dotSubjectSymbols.insert(SymbolType::typedefSymbol);
     dotSubjectSymbols.insert(SymbolType::enumTypeSymbol);
     dotSubjectSymbols.insert(SymbolType::namespaceSymbol);
     dotSubjectSymbols.insert(SymbolType::templateTypeSymbol);
@@ -87,6 +88,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
 //  lookupContainerSymbols:
     SymbolTypeSet containerSymbols;
     containerSymbols.insert(SymbolType::classSymbol);
+    containerSymbols.insert(SymbolType::typedefSymbol);
     containerSymbols.insert(SymbolType::enumTypeSymbol);
     containerSymbols.insert(SymbolType::namespaceSymbol);
     containerSymbols.insert(SymbolType::templateTypeSymbol);
@@ -96,6 +98,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
 //  lookupClassAndNamespaceSymbols:
     SymbolTypeSet classAndNamespaceSymbols;
     classAndNamespaceSymbols.insert(SymbolType::classSymbol);
+    classAndNamespaceSymbols.insert(SymbolType::typedefSymbol);
     classAndNamespaceSymbols.insert(SymbolType::namespaceSymbol);
     classAndNamespaceSymbols.insert(SymbolType::templateTypeSymbol);
     classAndNamespaceSymbols.insert(SymbolType::typeParameterSymbol);
@@ -104,6 +107,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
 //  lookupClassSymbols:
     SymbolTypeSet classSymbols;
     classSymbols.insert(SymbolType::classSymbol);
+    classSymbols.insert(SymbolType::typedefSymbol);
     classSymbols.insert(SymbolType::templateTypeSymbol);
     classSymbols.insert(SymbolType::typeParameterSymbol);
     classSymbols.insert(SymbolType::boundTypeParameterSymbol);

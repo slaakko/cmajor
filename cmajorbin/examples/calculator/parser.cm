@@ -1,0 +1,152 @@
+/*********************************************************
+ *  Calculator parser is based on the following grammar: *
+ *                                                       *
+ *  expr     ::= term ((+ | -) term)*                    *
+ *           ;                                           *
+ *  term     ::= factor ((* | /) factor)*                *
+ *           ;                                           *
+ *  factor   ::= (+ | -)? primary                        *
+ *           ;                                           *
+ *  primary  ::= NUMBER | ( expr )                       *
+ *           ;                                           *
+ *********************************************************/
+
+using System;
+
+namespace Calculator
+{
+    public static class Parser
+    {
+        public static double Parse(const string& input)
+        { 
+            Scanner scanner(input);
+            try
+            {
+                scanner.NextToken();
+                double value = Expr(scanner);
+                Token* next = scanner.GetToken();
+                if (next->IsEnd())
+                {
+                    return value;
+                }
+                else
+                {
+                    throw ParsingError("invalid expression");
+                }
+            }
+            catch (const ConversionException& ex)
+            {
+                throw ParsingError(ex.Message() + ":\n" + scanner.GetErrorLines());
+            }
+            catch (const DivisionByZero& ex)
+            {
+                throw ParsingError(ex.Message() + ":\n" + scanner.GetErrorLines());
+            }
+            catch (const ParsingError& ex)
+            {
+                throw ParsingError(ex.Message() + ":\n" + scanner.GetErrorLines());
+            }
+            return 0;
+        }
+        private static double Expr(Scanner& scanner)
+        {
+            double value = Term(scanner);
+            Token* next = scanner.GetToken();
+            while (next->IsAddOp())
+            {
+                Operator* op = cast<Operator*>(next);
+                char opChar = op->Ch();
+                scanner.NextToken();
+                double right = Term(scanner);
+                if (opChar == '+')
+                {
+                    value = value + right;
+                }
+                else
+                {
+                    #assert(opChar == '-');
+                    value = value - right;
+                }
+                next = scanner.GetToken();
+            }
+            return value;
+        }
+        private static double Term(Scanner& scanner)
+        {
+            double value = Factor(scanner);
+            Token* next = scanner.GetToken();
+            while (next->IsMulOp())
+            {
+                Operator* op = cast<Operator*>(next);
+                char opChar = op->Ch();
+                scanner.NextToken();
+                double right = Factor(scanner);
+                if (opChar == '*')
+                {
+                    value = value * right;
+                }
+                else
+                {
+                    #assert(opChar == '/');
+                    if (right == 0)
+                    {
+                        throw DivisionByZero("division by zero");
+                    }
+                    value = value / right;
+                }
+                next = scanner.GetToken();
+            }
+            return value;
+        }
+        private static double Factor(Scanner& scanner)
+        {
+            Token* next = scanner.GetToken();
+            bool neg = false;
+            if (next->IsAddOp())
+            {
+                Operator* op = cast<Operator*>(next);
+                if (op->Ch() == '-')
+                {
+                    neg = true;
+                }
+                scanner.NextToken();
+            }
+            double value = Primary(scanner);
+            if (neg)
+            {
+                return -value;
+            }
+            return value;
+        }
+        private static double Primary(Scanner& scanner)
+        {
+            Token* next = scanner.GetToken();
+            if (next->IsNumber())
+            {
+                Number* number = cast<Number*>(next);
+                double value = number->Value();
+                scanner.NextToken();
+                return value;
+            }
+            else if (next->IsLeftParen())
+            {
+                scanner.NextToken();
+                double value = Expr(scanner);
+                next = scanner.GetToken();
+                if (next->IsRightParen())
+                {
+                    scanner.NextToken();
+                    return value;
+                }
+                else
+                {
+                    throw ParsingError("')' expected");
+                }
+            }
+            else
+            {
+                throw ParsingError("number or subexpression expected");
+            }
+        }
+    }
+}

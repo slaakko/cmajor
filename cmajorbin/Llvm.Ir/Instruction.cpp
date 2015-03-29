@@ -363,10 +363,6 @@ GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object*
     Ir::Intf::Instruction("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
 {
 	indeces.push_back(index1_);
-	if (index1_->GetType()->IsLabelType())
-	{
-		int x = 0;
-	}
 }
 
 GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, const std::vector<Ir::Intf::Object*>& indeces_): 
@@ -376,10 +372,6 @@ GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object*
 
 GetElementPtrInst::~GetElementPtrInst()
 {
-	if (debug)
-	{
-		int x = 0;
-	}
 }
 
 Ir::Intf::Instruction* GetElementPtr(Ir::Intf::Type* ptrType, Ir::Intf::Object* result, Ir::Intf::Object* ptr, Ir::Intf::Object* index)
@@ -410,10 +402,6 @@ std::string GetElementPtrInst::ToString() const
     getElementPtr.append(ptrType->Name()).append(space).append(ptr->Name()).append(comma).append(index->GetType()->Name()).append(space).append(index->Name());   
     for (Ir::Intf::Object* idx : indeces)
     {
-		if (idx->GetType()->IsLabelType())
-		{
-			int x = 0;
-		}
         getElementPtr.append(comma).append(idx->GetType()->Name()).append(space).append(idx->Name());
     }
     return getElementPtr;
@@ -441,10 +429,6 @@ std::string CallInst::ToString() const
     bool first = true;
     for (Ir::Intf::Object* arg : args)
     {
-		if (arg->GetType()->Name() == "label")
-		{
-			int x = 0;
-		}
         if (first)
         {
             first = false;

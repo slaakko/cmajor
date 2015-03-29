@@ -1,0 +1,89 @@
+using System;
+
+namespace Calculator
+{
+    public class Scanner
+    {
+        public Scanner(const string& input_):
+            input(input_),
+            pos(input.Begin()),
+            end(input.End())
+        {
+        }
+        suppress Scanner(const Scanner&);
+        suppress void operator=(const Scanner&);
+        public void NextToken()
+        {
+            SkipWhiteSpace();
+            if (!AtEnd()) 
+            {
+                if (IsDigit(*pos))
+                {
+                    string numberStr(*pos);
+                    ++pos;
+                    while (!AtEnd() && (IsDigit(*pos) || *pos == '.'))
+                    {
+                        numberStr.Append(*pos);
+                        ++pos;
+                    }
+                    token = UniquePtr<Token>(new Number(ParseDouble(numberStr)));
+                }
+                else
+                {
+                    token = UniquePtr<Token>(new Operator(*pos));
+                    ++pos;
+                }
+            }
+            else
+            {
+                token = UniquePtr<Token>(new End());
+            }
+        }
+        public inline nothrow Token* GetToken() const
+        {
+            return token.GetPtr();
+        }
+        public inline nothrow bool AtEnd() const
+        {
+            return pos == end;
+        }
+        public string GetErrorLines()
+        {
+            string lines = input;
+            lines.Append('\n');
+            if (AtEnd())
+            {
+                string.Iterator e = end;
+                if (e != input.Begin())
+                {
+                    --e;
+                }
+                for (string.Iterator i = input.Begin(); i != e; ++i)
+                {
+                    lines.Append(' ');
+                }
+            }
+            else if (pos > input.Begin())
+            {
+                string.Iterator e = pos - 1;
+                for (string.Iterator i = input.Begin(); i != e; ++i)
+                {
+                    lines.Append(' ');
+                }
+            }
+            lines.Append('^');
+            return lines;
+        }
+        private void SkipWhiteSpace()
+        {
+            while (!AtEnd() && IsSpace(*pos))
+            {
+                ++pos;
+            }
+        }
+        private UniquePtr<Token> token;
+        private string input;
+        private string.Iterator pos;
+        private string.Iterator end;
+    }
+}

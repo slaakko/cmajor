@@ -1,0 +1,34 @@
+using System;
+using Calculator;
+
+void main()
+{
+    try 
+    {
+        Console.WriteLine("Enter arithmetic expression containing decimal numbers, operators +, -, *, and /, and subexpressions in parentheses, or 'exit'.");
+        while (true)
+        {
+            Console.Write("> ");
+            string input = Console.ReadLine();
+            if (input == "exit")
+            {
+                break;
+            }
+            try
+            {
+                double value = Parser.Parse(input);
+                Console.Write("= ");
+                Console.WriteLine(value);
+            }
+            catch (const ParsingError& ex)
+            {
+                Console.WriteLine(ex.Message());
+            }
+        }
+        Console.WriteLine("bye!");
+    }
+    catch (const Exception& ex)
+    {
+        Console.WriteLine(ex.ToString());
+    }
+}
