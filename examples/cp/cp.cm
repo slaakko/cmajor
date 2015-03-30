@@ -1,0 +1,37 @@
+using System;
+using System.IO;
+
+void main(int argc, const char** argv)
+{
+    try
+    {
+        if (argc < 3)
+        {
+            Console.WriteLine("Usage: cp file1 file2");
+            return;
+        }
+        string fileName1 = argv[1];
+        string fileName2 = argv[2];
+        BinaryFileStream file1(fileName1, OpenMode.readOnly);
+        BinaryFileStream file2(fileName2, OpenMode.writeOnly);
+        IOBuffer buffer(4096u);
+        bool endOfInput = false;
+        while (!endOfInput)
+        {
+            int bytesRead = file1.Read(buffer.Mem(), buffer.Size());
+            if (bytesRead > 0)
+            {
+                file2.Write(buffer.Mem(), cast<ulong>(bytesRead));
+            }
+            else
+            {
+                endOfInput = true;
+            }
+        }
+        Console.WriteLine(fileName1 + " -> " + fileName2);
+    }
+    catch (const Exception& ex)
+    {
+        Console.WriteLine(ex.Message());
+    }
+}

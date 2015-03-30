@@ -45,6 +45,10 @@ const char* LineEnd(const char* end, const char* pos)
 std::string GetErrorLines(const char* start, const char* end, const Span& span)
 {
     const char* startPos = start + span.Start();
+    if (startPos < start || startPos >= end)
+    {
+        return std::string();
+    }
     const char* lineStart = LineStart(start, startPos);
     int cols = static_cast<int>(startPos - lineStart);
     const char* lineEnd = LineEnd(end, startPos);

@@ -1,0 +1,4 @@
+project Hello;
+target=program;
+assembly <hello.cma>;
+source <hello.cm>;

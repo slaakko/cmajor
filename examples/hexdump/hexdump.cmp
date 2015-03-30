@@ -1,0 +1,4 @@
+project HexDump;
+target=program;
+assembly <hexdump.cma>;
+source <hexdump.cm>;

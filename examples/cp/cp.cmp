@@ -1,0 +1,4 @@
+project CopyFile;
+target=program;
+assembly <cp.cma>;
+source <cp.cm>;

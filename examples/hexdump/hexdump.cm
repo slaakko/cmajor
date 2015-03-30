@@ -1,0 +1,111 @@
+using System;
+using System.IO;
+
+const int bytesInLine = 16;
+const int bufferSize = 4096;
+
+string HexDumpLine(uint addr, byte* bytes, int numBytes)
+{
+    #assert(numBytes > 0 && numBytes <= bytesInLine);
+    string line(ToHexString(addr));
+    line.Append(": ");
+    for (int i = 0; i < bytesInLine; ++i)
+    {
+        if (i == bytesInLine / 2)
+        {
+            line.Append("- ");
+        }
+        if (i < numBytes)
+        {
+            line.Append(ToHexString(bytes[i]));
+        }
+        else
+        {
+            line.Append("  ");
+        }
+        line.Append(' ');
+    }
+    line.Append('|');
+    for (int i = 0; i < bytesInLine; ++i)
+    {
+        char c = ' ';
+        if (i < numBytes)
+        {
+            char b = cast<char>(bytes[i]);
+            if (IsPrintable(b))
+            {
+                c = b;
+            }
+        }
+        line.Append(c);
+    }
+    line.Append('|');
+    return line;
+}
+
+void HexDump(const string& inputFileName, const string& outputFileName)
+{
+    OutputFileStream outputFile(stdout);
+    if (!outputFileName.IsEmpty())
+    {
+        outputFile.Open(outputFileName);
+    }
+    BinaryFileStream inputFile(inputFileName, OpenMode.readOnly);
+    IOBuffer buffer(cast<ulong>(bufferSize));
+    uint addr = 0u;
+    bool endOfInput = false;
+    while (!endOfInput)
+    {
+        int bytesRead = inputFile.Read(buffer.Mem(), cast<ulong>(bufferSize));
+        if (bytesRead == 0)
+        {
+            endOfInput = true;
+        }
+        else
+        {
+            byte* bytes = cast<byte*>(buffer.Mem());
+            int numRows = bytesRead / bytesInLine;
+            for (int i = 0; i < numRows; ++i)
+            {
+                outputFile.WriteLine(HexDumpLine(addr, bytes, bytesInLine));
+                bytes = bytes + bytesInLine;
+                addr = cast<uint>(addr + bytesInLine);
+            }
+            int rest = bytesRead % bytesInLine;
+            if (rest != 0)
+            {
+                outputFile.WriteLine(HexDumpLine(addr, bytes, rest));
+                addr = cast<uint>(addr + rest);
+            }
+        }
+    }
+    uint size = addr;
+    string sizeLine = ToHexString(size);
+    sizeLine.Append(';');
+    outputFile.WriteLine(sizeLine);
+}
+
+int main(int argc, const char** argv)
+{
+    try
+    {
+        if (argc != 2 && argc != 3)
+        {
+            Console.WriteLine("usage: hexdump <inputfile> [<outputfile>]\n");
+            return 1;
+        }
+        string inputFileName = argv[1];
+        string outputFileName;
+        if (argc == 3)
+        {
+            outputFileName = argv[2];
+        }
+        HexDump(inputFileName, outputFileName);
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+        return 2;
+    }
+    return 0;
+}

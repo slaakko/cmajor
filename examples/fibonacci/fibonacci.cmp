@@ -1,0 +1,4 @@
+project Fibonacci;
+target=program;
+assembly <fibonacci.cma>;
+source <fibonacci.cm>;
