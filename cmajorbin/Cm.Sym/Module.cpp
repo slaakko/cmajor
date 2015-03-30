@@ -117,6 +117,7 @@ void Module::Import(SymbolTable& symbolTable)
     {
         fileIndexOffset = fileRegistry->GetNumberOfParsedFiles();
         reader.SetSpanFileIndexOffset(fileIndexOffset);
+        reader.GetAstReader().SetSpanFileIndexOffset(fileIndexOffset);
         int n = int(sourceFilePaths.size());
         for (int i = 0; i < n; ++i)
         {

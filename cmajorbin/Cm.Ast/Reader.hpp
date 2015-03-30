@@ -79,9 +79,11 @@ public:
     DerivationList ReadDerivationList();
     Specifiers ReadSpecifiers();
     void SetReplaceFileIndex(int replaceFileIndex_) { replaceFileIndex = replaceFileIndex_; }
+    void SetSpanFileIndexOffset(int spanFileIndexOffset_) { spanFileIndexOffset = spanFileIndexOffset_; }
 private:
     BinaryReader& binaryReader;
     int replaceFileIndex;
+    int spanFileIndexOffset;
 };
 
 } } // namespace Cm::Ast
