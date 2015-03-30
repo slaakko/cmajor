@@ -1,0 +1,176 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Text.Parsing
+{
+    public class Visitor
+    {
+        public virtual void Visit(CharParser& parser) 
+        {
+        }
+        public virtual void Visit(StringParser& parser)
+        {
+        }
+        public virtual void Visit(CharSetParser& parser)
+        {
+        }
+        public virtual void Visit(EmptyParser& parser)
+        {
+        }
+        public virtual void Visit(SpaceParser& parser)
+        {
+        }
+        public virtual void Visit(LetterParser& parser)
+        {
+        }
+        public virtual void Visit(DigitParser& parser)
+        {
+        }
+        public virtual void Visit(HexDigitParser& parser)
+        {
+        }
+        public virtual void Visit(PunctuationParser& parser)
+        {
+        }
+        public virtual void Visit(AnyCharParser& parser)
+        {
+        }
+        public virtual void BeginVisit(OptionalParser& parser)
+        {
+        }
+        public virtual void EndVisit(OptionalParser& parser)
+        {
+        }
+        public virtual void BeginVisit(PositiveParser& parser)
+        {
+        }
+        public virtual void EndVisit(PositiveParser& parser)
+        {
+        }
+        public virtual void BeginVisit(KleeneStarParser& parser)
+        {
+        }
+        public virtual void EndVisit(KleeneStarParser& parser)
+        {
+        }
+        public virtual void BeginVisit(ExpectationParser& parser)
+        {
+        }
+        public virtual void EndVisit(ExpectationParser& parser)
+        {
+        }
+        public virtual void BeginVisit(TokenParser& parser)
+        {
+        }
+        public virtual void EndVisit(TokenParser& parser)
+        {
+        }
+        public virtual void BeginVisit(SequenceParser& parser)
+        {
+        }
+        public virtual void Visit(SequenceParser& parser)
+        {
+        }
+        public virtual void EndVisit(SequenceParser& parser)
+        {
+        }
+        public virtual void BeginVisit(AlternativeParser& parser)
+        {
+        }
+        public virtual void Visit(AlternativeParser& parser)
+        {
+        }
+        public virtual void EndVisit(AlternativeParser& parser)
+        {
+        }
+        public virtual void BeginVisit(DifferenceParser& parser)
+        {
+        }
+        public virtual void Visit(DifferenceParser& parser)
+        {
+        }
+        public virtual void EndVisit(DifferenceParser& parser)
+        {
+        }
+        public virtual void BeginVisit(ExclusiveOrParser& parser)
+        {
+        }
+        public virtual void Visit(ExclusiveOrParser& parser)
+        {
+        }
+        public virtual void EndVisit(ExclusiveOrParser& parser)
+        {
+        }
+        public virtual void BeginVisit(IntersectionParser& parser)
+        {
+        }
+        public virtual void Visit(IntersectionParser& parser)
+        {
+        }
+        public virtual void EndVisit(IntersectionParser& parser)
+        {
+        }
+        public virtual void BeginVisit(ListParser& parser)
+        {
+        }
+        public virtual void Visit(ListParser& parser)
+        {
+        }
+        public virtual void EndVisit(ListParser& parser)
+        {
+        }
+        public virtual void BeginVisit(ActionParser& parser)
+        {
+        }
+        public virtual void EndVisit(ActionParser& parser)
+        {
+        }
+        public virtual void BeginVisit(Rule& parser)
+        {
+        }
+        public virtual void EndVisit(Rule& parser)
+        {
+        }
+        public virtual void BeginVisit(Grammar& grammar)
+        {
+        }
+        public virtual void EndVisit(Grammar& grammar)
+        {
+        }
+        public virtual void BeginVisit(Namespace& ns)
+        {
+        }
+        public virtual void EndVisit(Namespace& ns)
+        {
+        }
+        public virtual void Visit(UsingObject& object)
+        {
+        }
+        public virtual void Visit(RuleLink& link)
+        {
+        }
+        public virtual void Visit(NonterminalParser& parser)
+        {
+        }
+        public virtual void Visit(KeywordParser& parser)
+        {
+        }
+        public virtual void Visit(KeywordListParser& parser)
+        {
+        }
+    }
+}

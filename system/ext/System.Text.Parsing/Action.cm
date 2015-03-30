@@ -1,0 +1,140 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using CompoundStatementPtr = System.Text.Parsing.CmObjectModel.CompoundStatementPtr;
+using UniqueCompoundStatementPtr = System.Text.Parsing.CmObjectModel.UniqueCompoundStatementPtr;
+
+namespace System.Text.Parsing
+{
+    public class delegate void ParsingAction(const string& match, const string& content, const Position& position, const string& fileName, bool& pass);
+    
+    public class delegate void FailureAction();
+    
+    public class delegate void PreCall(ObjectStack& stack);
+    
+    public class delegate void PostCall(ObjectStack& stack, bool matched);
+    
+    public typedef ActionParser* ActionParserPtr;
+    
+    public class ActionParser: UnaryParser
+    {
+        public ActionParser(const string& name_, ParserPtr child_): 
+            base(name_, child_, child_->Info()), successCode(), failureCode(), action(), failureAction()
+        {
+        }
+        public ActionParser(const string& name_, CompoundStatementPtr successCode_, ParserPtr child_): 
+            base(name_, child_, child_->Info()), successCode(successCode_), failureCode(), action(), failureAction()
+        {
+            if (successCode != null)
+            {
+                successCode->SetOwned();
+            }            
+        }
+        public ActionParser(const string& name_, CompoundStatementPtr successCode_, CompoundStatementPtr failureCode_, ParserPtr child_): 
+            base(name_, child_, child_->Info()), successCode(successCode_), failureCode(failureCode_), action(), failureAction()
+        {
+            if (successCode != null)
+            {
+                successCode->SetOwned();
+            }
+            if (failureCode != null)
+            {
+                failureCode->SetOwned();
+            }            
+        }
+        public override ~ActionParser()
+        {
+            if (successCode != null)
+            {
+                delete successCode;
+            }
+            if (failureCode != null)
+            {
+                delete failureCode;
+            }
+        }
+        suppress ActionParser(const ActionParser&);
+        suppress void operator=(const ActionParser&);
+        suppress ActionParser(ActionParser&&);
+        suppress void operator=(ActionParser&&);
+        public override bool IsActionParser() const
+        {
+            return true;
+        }
+        public nothrow string MethodName() const
+        {
+            return Name() + "Action";
+        }
+        public nothrow string VariableName() const
+        {
+            const string& name = Name();
+            if (name.IsEmpty())
+            {
+                return "ActionParser";
+            }
+            return ToLower(name[0]) + name.Substring(1) + "ActionParser";
+        }
+        public nothrow CompoundStatementPtr SuccessCode() const
+        {
+            return successCode;
+        }
+        public nothrow CompoundStatementPtr FailureCode() const
+        {
+            return failureCode;
+        }
+        public nothrow void SetAction(ParsingAction action_)
+        {
+            action = action_;
+        }
+        public nothrow void SetFailureAction(FailureAction failureAction_)
+        {
+            failureAction = failureAction_;
+        }
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Position position = scanner.GetPosition();
+            Match match = Child()->Parse(scanner, stack);
+            if (match.Hit())
+            {
+                if (action != ParsingAction())
+                {
+                    bool pass = true;
+                    string m = scanner.GetMatch(position.Index());
+                    action(m, scanner.Content(), position, scanner.FileName(), pass);
+                    if (!pass)
+                    {
+                        return Match.Nothing();
+                    }
+                }
+            }
+            else if (failureAction != FailureAction())
+            {
+                failureAction();
+            }
+            return match;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Child()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        private CompoundStatementPtr successCode;
+        private CompoundStatementPtr failureCode;
+        private ParsingAction action;
+        private FailureAction failureAction;
+    }
+}

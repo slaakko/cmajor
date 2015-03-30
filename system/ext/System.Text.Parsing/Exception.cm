@@ -1,0 +1,136 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.IO;
+
+namespace System.Text.Parsing
+{
+    public class ParsingException: Exception
+    {
+        public nothrow ParsingException(const string& message_, const string& content_, const Position& position_, const string& fileName_):
+            base(message_ + " in file '" + fileName_ + "' at line " + ToString(position_.Line()) + ":\n" + GetErrorLines(content_, position_))
+        {
+        }
+        public default ParsingException(const ParsingException&);
+    }
+    
+    public class ExpectationFailure: Exception
+    {
+        public nothrow ExpectationFailure(const string& info_, const string& content_, const Position& position_, const string& fileName_):
+            base("Parsing file '" + fileName_ + "' failed at line " + ToString(position_.Line()) + ":\n" + info_ + " expected:\n" + 
+            GetErrorLines(content_, position_)), info(info_), content(content_), position(position_), fileName(fileName_)
+        {
+        }
+        public default ExpectationFailure(const ExpectationFailure&);
+        public nothrow const string& Info() const
+        {
+            return info;
+        }
+        public nothrow const string& Content() const
+        {
+            return content;
+        }
+        public nothrow const Position& GetPosition() const
+        {
+            return position;
+        }
+        public nothrow const string& FileName() const
+        {
+            return fileName;
+        }
+        private string info;
+        private string content;
+        private Position position;
+        private string fileName;
+    }
+    
+    public class FileInfo
+    {
+        static nothrow FileInfo(): instance(new FileInfo())
+        {
+        }
+        public nothrow default FileInfo();
+        suppress FileInfo(const FileInfo&);
+        suppress void operator=(const FileInfo&);
+        suppress FileInfo(FileInfo&&);
+        suppress void operator=(FileInfo&&);
+        public static nothrow FileInfo& Instance()
+        {
+            return *instance;
+        }
+        public void SetFiles(const List<string>& files_)
+        {
+            files = files_;
+        }
+        public nothrow string GetFilePath(int index) const
+        {
+            if (index >= 0 && index < files.Count())
+            {
+                return files[index];
+            }
+            return string();
+        }
+        private static UniquePtr<FileInfo> instance;
+        private List<string> files;
+    }
+    
+    public void ThrowException(const string& message, const Position& position)
+    {
+        string filePath = FileInfo.Instance().GetFilePath(position.File());
+        if (!filePath.IsEmpty())
+        {
+            string content = ReadFile(filePath);
+            throw ParsingException(message, content, position, filePath);
+        }
+        throw Exception(message);
+    }
+
+    public nothrow string GetErrorLines(const string& content, const Position& position)
+    {
+        int len = content.Length();
+        int pos = Min(position.Index(), len);
+        int lineStartIndex = pos;
+        while (lineStartIndex > 0 && (lineStartIndex == content.Length() || content[lineStartIndex] != '\n'))
+        {
+            --lineStartIndex;
+        }
+        if (lineStartIndex < len && content[lineStartIndex] == '\n')
+        {
+            ++lineStartIndex;
+        }
+        int lineEndIndex = pos;
+        while (lineEndIndex < len && content[lineEndIndex] != '\n' && content[lineEndIndex] != '\r')
+        {
+            ++lineEndIndex;
+        }
+        string errorLine = content.Substring(lineStartIndex, lineEndIndex - lineStartIndex);
+        string spaceLine;
+        int end = pos;
+        for (int i = lineStartIndex; i < end; ++i)
+        {
+            if (content[i] == '\t')
+            {
+                spaceLine.Append('\t');
+            }
+            else
+            {
+                spaceLine.Append(' ');
+            }
+        }
+        return errorLine + "\n" + spaceLine + "^";
+    }
+}

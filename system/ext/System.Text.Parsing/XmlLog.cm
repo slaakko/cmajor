@@ -1,0 +1,86 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.IO;
+
+namespace System.Text.Parsing
+{
+    public typedef XmlLog* XmlLogPtr;
+    public typedef UniquePtr<XmlLog> UniqueXmlLogPtr;
+
+    public class XmlLog
+    {
+        public nothrow XmlLog(OutputStream& stream_, int maxLineLength_): stream(stream_), maxLineLength(maxLineLength_), indent(0)
+        {
+        }
+        suppress XmlLog(const XmlLog&);
+        suppress void operator=(const XmlLog&);
+        suppress XmlLog(XmlLog&&);
+        suppress void operator=(XmlLog&&);
+        public nothrow inline void IncIndent()
+        {
+            ++indent;
+        }
+        public nothrow inline void DecIndent()
+        {
+            --indent;
+        }
+        public void WriteBeginRule(const string& ruleName)
+        {
+            Write("<" + ruleName + ">");
+        }
+        public void WriteEndRule(const string& ruleName)
+        {
+            Write("</" + ruleName + ">");
+        }
+        public void WriteTry(const string& s)
+        {
+            WriteElement("try", s);
+        }
+        public void WriteSuccess(const string& match)
+        {
+            WriteElement("success", match);
+        }
+        public void WriteFail()
+        {
+            Write("<fail/>");
+        }
+        public void WriteElement(const string& elementName, const string& elementContent)
+        {
+            string converted = XmlEscape(elementContent);
+            int convertedLength = converted.Length();
+            int lineLength = indent + 2 * elementName.Length() + 5 + convertedLength;
+            string s = converted;
+            if (lineLength > maxLineLength)
+            {
+                lineLength = lineLength + 3;
+                s = converted.Substring(0, Max(cast<int>(0), convertedLength - (lineLength - maxLineLength))) + "...";
+            }
+            Write("<" + elementName + ">" + s + "</" + elementName + ">");
+        }
+        public void Write(const string& s)
+        {
+            if (indent > 0)
+            {
+                stream << string(' ', indent);
+            }
+            stream << s << endl();
+        }
+        private OutputStream& stream;
+        private int maxLineLength;
+        private int indent;
+    }
+}

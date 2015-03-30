@@ -1,0 +1,93 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Text.Parsing.CmObjectModel
+{
+    public enum Operator
+    {
+        or_, and_, eq, neq, less, greater, lessOrEq, greaterOrEq, plus, minus, mul, div, mod, not_, const_, typename_, addressOf, deref, bitOr, bitXor, bitAnd, shiftLeft, shiftRight, complement, 
+        preInc, preDec, postInc, postDec
+    }
+    
+    public string MakePrefixOpName(Operator op)
+    {
+        switch (op)
+        {
+            case Operator.plus: return "+";
+            case Operator.minus: return "-";
+            case Operator.not_: return "!";
+            case Operator.addressOf: return "&";
+            case Operator.deref: return "*";
+            case Operator.complement: return "~";
+            case Operator.preInc: return "++";
+            case Operator.preDec: return "--";
+        }
+        return "";
+    }
+    
+    public string MakeBinOpName(Operator op)
+    {
+        switch (op)
+        {
+            case Operator.or_: return "||";
+            case Operator.and_: return "&&";
+            case Operator.eq: return "==";
+            case Operator.neq: return "!=";
+            case Operator.less: return "<";
+            case Operator.greater: return ">";
+            case Operator.lessOrEq: return "<=";
+            case Operator.greaterOrEq: return ">=";
+            case Operator.plus: return "+";
+            case Operator.minus: return "-";
+            case Operator.mul: return "*";
+            case Operator.div: return "/";
+            case Operator.mod: return "%";
+            case Operator.bitOr: return "|";
+            case Operator.bitXor: return "^";
+            case Operator.bitAnd: return "&";
+            case Operator.shiftLeft: return "<<";
+            case Operator.shiftRight: return ">>";
+        }
+        return "";
+    }
+    
+    public int GetBinOpRank(Operator op)
+    {
+        switch (op)
+        {
+            case Operator.or_: return 0;
+            case Operator.and_: return 1;
+            case Operator.eq: return 2;
+            case Operator.neq: return 2;
+            case Operator.less: return 2;
+            case Operator.greater: return 2;
+            case Operator.lessOrEq: return 2;
+            case Operator.greaterOrEq: return 2;
+            case Operator.plus: return 3;
+            case Operator.minus: return 3;
+            case Operator.mul: return 4;
+            case Operator.div: return 4;
+            case Operator.mod: return 4;
+            case Operator.bitOr: return 5;
+            case Operator.bitXor: return 6;
+            case Operator.bitAnd: return 7;
+            case Operator.shiftLeft: return 8;
+            case Operator.shiftRight: return 8;
+        }
+        return 100;
+    }
+}

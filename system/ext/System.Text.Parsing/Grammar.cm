@@ -1,0 +1,291 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.IO;
+
+namespace System.Text.Parsing
+{
+    public typedef Grammar* GrammarPtr;
+    public typedef Set<GrammarPtr> GrammarSet;
+    
+    public typedef List<RulePtr> RuleList;
+    public typedef Set<RuleLinkPtr> RuleLinkSet;
+    
+    public class Grammar: ParsingObject
+    {
+        public Grammar(const string& name_, ScopePtr enclosingScope_): 
+            base(name_, enclosingScope_), parsingDomain(new ParsingDomain()), linking(false), linked(false), maxLogLineLength(256), log(null)
+        {
+            RegisterParsingDomain(parsingDomain);
+            SetScope(new Scope(Name(), EnclosingScope()));
+        }
+        public Grammar(const string& name_, ScopePtr enclosingScope_, ParsingDomainPtr parsingDomain_):
+            base(name_, enclosingScope_), parsingDomain(parsingDomain_), linking(false), linked(false), maxLogLineLength(256), log(null)
+        {
+            SetScope(new Scope(Name(), EnclosingScope()));
+        }
+        public override ~Grammar()
+        {
+        }
+        suppress Grammar(const Grammar&);
+        suppress void operator=(const Grammar&);
+        suppress Grammar(Grammar&&);
+        suppress void operator=(Grammar&&);
+        public override bool IsGrammar() const 
+        { 
+            return true; 
+        }
+        public virtual void GetReferencedGrammars()
+        {
+            // derived grammar overrides...
+        }
+        public virtual void CreateRules()
+        {
+            // derived grammar overrides...
+        }
+        public virtual void Link()
+        {
+            if (!linking && !linked)
+            {
+                linking = true;
+                GetReferencedGrammars();
+                for (GrammarPtr grammarReference : grammarReferences)
+                {
+                    grammarReference->Link();
+                }
+                LinkerVisitor visitor;
+                Accept(visitor);
+                linking = false;
+                linked = true;
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            for (RuleLinkPtr ruleLink : ruleLinks)
+            {
+                ruleLink->Accept(visitor);
+            }
+            for (RulePtr rule : rules)
+            {
+                rule->Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        public void Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, skip);
+            UniqueXmlLogPtr xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, maxLogLineLength));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            ObjectStack stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                if (start == null)
+                {
+                    throw ParsingException("grammar '" + FullName() + "' has no starting rule", content, stop, fileName);
+                }
+                else
+                {
+                    throw ExpectationFailure(start->Info(), content, stop, fileName);
+                }
+            }
+        }
+        public Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (start != null)
+            {
+                if (contentParser == null)
+                {
+                    if (skip != null)
+                    {
+                        contentParser = new SequenceParser(new SequenceParser(new OptionalParser(skip), start), new OptionalParser(skip));
+                        Own(contentParser);
+                    }
+                    else
+                    {
+                        contentParser = start;
+                    }
+                }
+                return contentParser->Parse(scanner, stack);
+            }
+            return Match.Nothing();
+        }
+        public nothrow inline void SetStartRuleName(const string& startRuleName_)
+        {
+            startRuleName = startRuleName_;
+        }
+        public nothrow inline const string& StartRuleName() const
+        {
+            return startRuleName;
+        }
+        public nothrow inline void SetSkipRuleName(const string& skipRuleName_)
+        {
+            skipRuleName = skipRuleName_;
+        }
+        public nothrow inline const string& SkipRuleName() const
+        {
+            return skipRuleName;
+        }
+        public void AddRule(RulePtr rule)
+        {
+            Own(rule);
+            rule->SetGrammar(this);
+            rule->GetScope()->SetEnclosingScope(GetScope());
+            rule->SetEnclosingScope(GetScope());
+            rules.Add(rule);
+            try
+            {
+                GetScope()->Add(rule);
+            }
+            catch (const Exception& ex)
+            {
+                ThrowException(ex.Message(), GetPosition());
+            }
+        }
+        public RulePtr GetRule(const string& ruleName)
+        {
+            ParsingObjectPtr object = GetScope()->Get(ruleName);
+            if (object == null)
+            {
+                ThrowException("rule '" + ruleName + "' not found in grammar '" + FullName() + "'", GetPosition());
+            }
+            if (object->IsRule())
+            {
+                return cast<RulePtr>(object);
+            }
+            else if (object->IsRuleLink())
+            {
+                RuleLinkPtr ruleLink = cast<RuleLinkPtr>(object);
+                RulePtr rule = ruleLink->GetRule();
+                if (rule == null)
+                {
+                    ThrowException("rule link '" + ruleName + "' not bound in grammar '" + FullName() + "'", GetPosition());
+                }
+                return rule;
+            }
+            else
+            {
+                ThrowException("object '" + ruleName + "' is not rule or rule link", GetPosition());
+            }
+            return null;
+        }
+        public void AddRuleLink(RuleLinkPtr ruleLink)
+        {
+            Own(ruleLink);
+            ruleLinks.Insert(ruleLink);
+        }
+        public void AddGrammarReference(GrammarPtr grammarReference)
+        {
+            Own(grammarReference);
+            grammarReferences.Insert(grammarReference);
+        }
+        public nothrow const GrammarSet& GrammarReferences() const
+        {
+            return grammarReferences;
+        }
+        public nothrow inline RulePtr Start() const
+        {
+            return start;
+        }
+        public nothrow inline RulePtr Skip() const
+        {
+            return skip;
+        }
+        public nothrow inline OutputStream* Log() const
+        {
+            return log;
+        }
+        public nothrow inline void SetLog(OutputStream* log_)
+        {
+            log = log_;
+        }
+        public nothrow inline int MaxLogLineLength() const
+        {
+            return maxLogLineLength;
+        }
+        public nothrow inline void SetMaxLogLineLength(int maxLogLineLength_)
+        {
+            maxLogLineLength = maxLogLineLength_;
+        }
+        public nothrow inline ParsingDomainPtr GetParsingDomain() const
+        {
+            return parsingDomain;
+        }
+        public nothrow inline const RuleList& GetRules() const
+        {
+            return rules;
+        }
+        public nothrow inline NamespacePtr Ns() const
+        {
+            return ns;
+        }
+        public nothrow inline void SetNs(NamespacePtr ns_)
+        {
+            ns = ns_;
+        }
+        public void ResolveStart()
+        {
+            if (startRuleName.IsEmpty())
+            {
+                if (!rules.IsEmpty())
+                {
+                    start = rules.Front();
+                }
+                else
+                {
+                    ThrowException("cannot resolve start rule because grammar '" + FullName() + "' is empty", GetPosition());
+                }
+            }
+            else
+            {
+                start = GetRule(startRuleName);
+            }
+        }
+        public void ResolveSkip()
+        {
+            if (!skipRuleName.IsEmpty())
+            {
+                skip = GetRule(skipRuleName);
+            }
+        }
+        private ParsingDomainPtr parsingDomain;
+        private NamespacePtr ns;
+        private RuleList rules;
+        private RuleLinkSet ruleLinks;
+        private RulePtr start;
+        private RulePtr skip;
+        private ParserPtr contentParser;
+        private GrammarSet grammarReferences;
+        private bool linking;
+        private bool linked;
+        private int maxLogLineLength;
+        private OutputStream* log;
+        private string startRuleName;
+        private string skipRuleName;
+    }
+}

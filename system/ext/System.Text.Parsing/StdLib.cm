@@ -1,0 +1,1111 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace System.Text.Parsing
+{
+    public typedef stdlib* stdlibPtr;
+
+    public class stdlib: System.Text.Parsing.Grammar
+    {
+        public static stdlibPtr Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static stdlibPtr Create(ParsingDomainPtr parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            stdlibPtr grammar(new stdlib(parsingDomain));
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        suppress stdlib(const stdlib&);
+        suppress void operator=(const stdlib&);
+        suppress stdlib(stdlib&&);
+        suppress void operator=(stdlib&&);
+        private stdlib(ParsingDomainPtr parsingDomain): base("stdlib", parsingDomain->GetNamespaceScope("System.Text.Parsing"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        private class intRule: System.Text.Parsing.Rule
+        {
+            public intRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("int");
+            }
+            suppress intRule(const intRule&);
+            suppress void operator=(const intRule&);
+            suppress intRule(intRule&&);
+            suppress void operator=(intRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<int>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = ParseInt(match);
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public int value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class uintRule: System.Text.Parsing.Rule
+        {
+            public uintRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("uint");
+            }
+            suppress uintRule(const uintRule&);
+            suppress void operator=(const uintRule&);
+            suppress uintRule(uintRule&&);
+            suppress void operator=(uintRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<uint>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = ParseUInt(match);
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public uint value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class hexRule: System.Text.Parsing.Rule
+        {
+            public hexRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("ulong");
+            }
+            suppress hexRule(const hexRule&);
+            suppress void operator=(const hexRule&);
+            suppress hexRule(hexRule&&);
+            suppress void operator=(hexRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<ulong>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = ParseHex(match);
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public ulong value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class hex_literalRule: System.Text.Parsing.Rule
+        {
+            public hex_literalRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("ulong");
+            }
+            suppress hex_literalRule(const hex_literalRule&);
+            suppress void operator=(const hex_literalRule&);
+            suppress hex_literalRule(hex_literalRule&&);
+            suppress void operator=(hex_literalRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<ulong>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParserPtr hexNonterminalParser = GetNonterminal("hex");
+                hexNonterminalParser->SetPostCall(PostCall(Posthex));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromhex;
+            }
+            public throw void Posthex(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromhex_value = stack.Pop();
+                    context.fromhex = *cast<ValueObject<ulong>*>(fromhex_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public ulong value;
+                public ulong fromhex;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class octaldigitRule: System.Text.Parsing.Rule
+        {
+            public octaldigitRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("int");
+            }
+            suppress octaldigitRule(const octaldigitRule&);
+            suppress void operator=(const octaldigitRule&);
+            suppress octaldigitRule(octaldigitRule&&);
+            suppress void operator=(octaldigitRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<int>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = cast<int>(match[0]) - cast<int>('0');
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public int value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class realRule: System.Text.Parsing.Rule
+        {
+            public realRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("double");
+            }
+            suppress realRule(const realRule&);
+            suppress void operator=(const realRule&);
+            suppress realRule(realRule&&);
+            suppress void operator=(realRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<double>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = ParseDouble(match);
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public double value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class urealRule: System.Text.Parsing.Rule
+        {
+            public urealRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("double");
+            }
+            suppress urealRule(const urealRule&);
+            suppress void operator=(const urealRule&);
+            suppress urealRule(urealRule&&);
+            suppress void operator=(urealRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<double>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = ParseDouble(match);
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public double value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class numberRule: System.Text.Parsing.Rule
+        {
+            public numberRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("double");
+            }
+            suppress numberRule(const numberRule&);
+            suppress void operator=(const numberRule&);
+            suppress numberRule(numberRule&&);
+            suppress void operator=(numberRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<double>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParserPtr a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParserPtr rNonterminalParser = GetNonterminal("r");
+                rNonterminalParser->SetPostCall(PostCall(Postr));
+                NonterminalParserPtr iNonterminalParser = GetNonterminal("i");
+                iNonterminalParser->SetPostCall(PostCall(Posti));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromr;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromi;
+            }
+            public throw void Postr(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromr_value = stack.Pop();
+                    context.fromr = *cast<ValueObject<double>*>(fromr_value.GetPtr());
+                }
+            }
+            public throw void Posti(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromi_value = stack.Pop();
+                    context.fromi = *cast<ValueObject<int>*>(fromi_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public double value;
+                public double fromr;
+                public int fromi;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class boolRule: System.Text.Parsing.Rule
+        {
+            public boolRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("bool");
+            }
+            suppress boolRule(const boolRule&);
+            suppress void operator=(const boolRule&);
+            suppress boolRule(boolRule&&);
+            suppress void operator=(boolRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<bool>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParserPtr a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = true;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = false;
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public bool value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class identifierRule: System.Text.Parsing.Rule
+        {
+            public identifierRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            suppress identifierRule(const identifierRule&);
+            suppress void operator=(const identifierRule&);
+            suppress identifierRule(identifierRule&&);
+            suppress void operator=(identifierRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = match;
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public string value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class qualified_idRule: System.Text.Parsing.Rule
+        {
+            public qualified_idRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            suppress qualified_idRule(const qualified_idRule&);
+            suppress void operator=(const qualified_idRule&);
+            suppress qualified_idRule(qualified_idRule&&);
+            suppress void operator=(qualified_idRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParserPtr firstNonterminalParser = GetNonterminal("first");
+                firstNonterminalParser->SetPostCall(PostCall(Postfirst));
+                NonterminalParserPtr restNonterminalParser = GetNonterminal("rest");
+                restNonterminalParser->SetPostCall(PostCall(Postrest));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = match;
+            }
+            public throw void Postfirst(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromfirst_value = stack.Pop();
+                    context.fromfirst = *cast<ValueObject<string>*>(fromfirst_value.GetPtr());
+                }
+            }
+            public throw void Postrest(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromrest_value = stack.Pop();
+                    context.fromrest = *cast<ValueObject<string>*>(fromrest_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public string value;
+                public string fromfirst;
+                public string fromrest;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class escapeRule: System.Text.Parsing.Rule
+        {
+            public escapeRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("char");
+            }
+            suppress escapeRule(const escapeRule&);
+            suppress void operator=(const escapeRule&);
+            suppress escapeRule(escapeRule&&);
+            suppress void operator=(escapeRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<char>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParserPtr a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParserPtr a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParserPtr a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                NonterminalParserPtr xNonterminalParser = GetNonterminal("x");
+                xNonterminalParser->SetPostCall(PostCall(Postx));
+                NonterminalParserPtr o1NonterminalParser = GetNonterminal("o1");
+                o1NonterminalParser->SetPostCall(PostCall(Posto1));
+                NonterminalParserPtr o2NonterminalParser = GetNonterminal("o2");
+                o2NonterminalParser->SetPostCall(PostCall(Posto2));
+                NonterminalParserPtr o3NonterminalParser = GetNonterminal("o3");
+                o3NonterminalParser->SetPostCall(PostCall(Posto3));
+                NonterminalParserPtr decimalEscapeNonterminalParser = GetNonterminal("decimalEscape");
+                decimalEscapeNonterminalParser->SetPostCall(PostCall(PostdecimalEscape));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = cast<char>(context.fromx);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = cast<char>(64 * context.fromo1 + 8 * context.fromo2 + context.fromo3);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = cast<char>(context.fromdecimalEscape);
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                char c = match[0];
+                switch (c)
+                {
+                    case 'a':
+                    {
+                        context.value = '\a';
+                        break;
+                    }
+                    case 'b':
+                    {
+                        context.value = '\b';
+                        break;
+                    }
+                    case 'f':
+                    {
+                        context.value = '\f';
+                        break;
+                    }
+                    case 'n':
+                    {
+                        context.value = '\n';
+                        break;
+                    }
+                    case 'r':
+                    {
+                        context.value = '\r';
+                        break;
+                    }
+                    case 't':
+                    {
+                        context.value = '\t';
+                        break;
+                    }
+                    case 'v':
+                    {
+                        context.value = '\v';
+                        break;
+                    }
+                    case '0':
+                    {
+                        context.value = '\0';
+                        break;
+                    }
+                    default:
+                    {
+                        context.value = c;
+                        break;
+                    }
+                }
+            }
+            public throw void Postx(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromx_value = stack.Pop();
+                    context.fromx = *cast<ValueObject<ulong>*>(fromx_value.GetPtr());
+                }
+            }
+            public throw void Posto1(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromo1_value = stack.Pop();
+                    context.fromo1 = *cast<ValueObject<int>*>(fromo1_value.GetPtr());
+                }
+            }
+            public throw void Posto2(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromo2_value = stack.Pop();
+                    context.fromo2 = *cast<ValueObject<int>*>(fromo2_value.GetPtr());
+                }
+            }
+            public throw void Posto3(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromo3_value = stack.Pop();
+                    context.fromo3 = *cast<ValueObject<int>*>(fromo3_value.GetPtr());
+                }
+            }
+            public throw void PostdecimalEscape(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromdecimalEscape_value = stack.Pop();
+                    context.fromdecimalEscape = *cast<ValueObject<uint>*>(fromdecimalEscape_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public char value;
+                public ulong fromx;
+                public int fromo1;
+                public int fromo2;
+                public int fromo3;
+                public uint fromdecimalEscape;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class charRule: System.Text.Parsing.Rule
+        {
+            public charRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("char");
+            }
+            suppress charRule(const charRule&);
+            suppress void operator=(const charRule&);
+            suppress charRule(charRule&&);
+            suppress void operator=(charRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<char>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParserPtr a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParserPtr escapeNonterminalParser = GetNonterminal("escape");
+                escapeNonterminalParser->SetPostCall(PostCall(Postescape));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = match[0];
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromescape;
+            }
+            public throw void Postescape(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromescape_value = stack.Pop();
+                    context.fromescape = *cast<ValueObject<char>*>(fromescape_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public char value;
+                public char fromescape;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class stringRule: System.Text.Parsing.Rule
+        {
+            public stringRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            suppress stringRule(const stringRule&);
+            suppress void operator=(const stringRule&);
+            suppress stringRule(stringRule&&);
+            suppress void operator=(stringRule&&);
+            public override void Enter(ObjectStack& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniqueObjectPtr(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParserPtr a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParserPtr a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParserPtr escapeNonterminalParser = GetNonterminal("escape");
+                escapeNonterminalParser->SetPostCall(PostCall(Postescape));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value.Append(match);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value.Append(context.fromescape);
+            }
+            public throw void Postescape(ObjectStack& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniqueObjectPtr fromescape_value = stack.Pop();
+                    context.fromescape = *cast<ValueObject<char>*>(fromescape_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public default Context();
+                suppress Context(const Context&);
+                suppress void operator=(const Context&);
+                public default nothrow Context(Context&&);
+                public default nothrow void operator=(Context&&);
+                public default nothrow ~Context();
+                public string value;
+                public char fromescape;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+        }
+        public override void CreateRules()
+        {
+            AddRule(new Rule("spaces", GetScope(),
+                new PositiveParser(
+                    new SpaceParser())));
+            AddRule(new Rule("newline", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new StringParser("\r\n"),
+                        new StringParser("\n")),
+                    new StringParser("\r"))));
+            AddRule(new Rule("comment", GetScope(),
+                new AlternativeParser(
+                    new NonterminalParser("line_comment", "line_comment", 0),
+                    new NonterminalParser("block_comment", "block_comment", 0))));
+            AddRule(new Rule("line_comment", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new StringParser("//"),
+                        new KleeneStarParser(
+                            new CharSetParser("\r\n", true))),
+                    new NonterminalParser("newline", "newline", 0))));
+            AddRule(new Rule("block_comment", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new StringParser("/*"),
+                        new KleeneStarParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new NonterminalParser("string", "string", 0),
+                                    new NonterminalParser("char", "char", 0)),
+                                new DifferenceParser(
+                                    new AnyCharParser(),
+                                    new StringParser("*/"))
+                                ))),
+                    new StringParser("*/"))));
+            AddRule(new Rule("spaces_and_comments", GetScope(),
+                new PositiveParser(
+                    new AlternativeParser(
+                        new SpaceParser(),
+                        new NonterminalParser("comment", "comment", 0)))));
+            AddRule(new Rule("digit_sequence", GetScope(),
+                new TokenParser(
+                    new PositiveParser(
+                        new DigitParser()))));
+            AddRule(new Rule("sign", GetScope(),
+                new AlternativeParser(
+                    new CharParser('+'),
+                    new CharParser('-'))));
+            AddRule(new intRule("int", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new OptionalParser(
+                                new NonterminalParser("sign", "sign", 0)),
+                            new NonterminalParser("digit_sequence", "digit_sequence", 0))))));
+            AddRule(new uintRule("uint", GetScope(),
+                new ActionParser("A0",
+                    new NonterminalParser("digit_sequence", "digit_sequence", 0))));
+            AddRule(new hexRule("hex", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new PositiveParser(
+                            new HexDigitParser())))));
+            AddRule(new hex_literalRule("hex_literal", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new AlternativeParser(
+                                new StringParser("0x"),
+                                new StringParser("0X")),
+                            new ExpectationParser(
+                                new NonterminalParser("hex", "hex", 0)))))));
+            AddRule(new octaldigitRule("octaldigit", GetScope(),
+                new ActionParser("A0",
+                    new CharSetParser("0-7"))));
+            AddRule(new realRule("real", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new AlternativeParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new OptionalParser(
+                                        new NonterminalParser("sign", "sign", 0)),
+                                    new NonterminalParser("fractional_real", "fractional_real", 0)),
+                                new OptionalParser(
+                                    new NonterminalParser("exponent_part", "exponent_part", 0))),
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new OptionalParser(
+                                        new NonterminalParser("sign", "sign", 0)),
+                                    new NonterminalParser("digit_sequence", "digit_sequence", 0)),
+                                new NonterminalParser("exponent_part", "exponent_part", 0)))))));
+            AddRule(new urealRule("ureal", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new AlternativeParser(
+                            new SequenceParser(
+                                new NonterminalParser("fractional_real", "fractional_real", 0),
+                                new OptionalParser(
+                                    new NonterminalParser("exponent_part", "exponent_part", 0))),
+                            new SequenceParser(
+                                new NonterminalParser("digit_sequence", "digit_sequence", 0),
+                                new NonterminalParser("exponent_part", "exponent_part", 0)))))));
+            AddRule(new Rule("fractional_real", GetScope(),
+                new AlternativeParser(
+                    new TokenParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new OptionalParser(
+                                    new NonterminalParser("digit_sequence", "digit_sequence", 0)),
+                                new CharParser('.')),
+                            new NonterminalParser("digit_sequence", "digit_sequence", 0))),
+                    new TokenParser(
+                        new SequenceParser(
+                            new NonterminalParser("digit_sequence", "digit_sequence", 0),
+                            new CharParser('.'))))));
+            AddRule(new Rule("exponent_part", GetScope(),
+                new TokenParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharSetParser("eE"),
+                            new OptionalParser(
+                                new NonterminalParser("sign", "sign", 0))),
+                        new NonterminalParser("digit_sequence", "digit_sequence", 0)))));
+            AddRule(new numberRule("number", GetScope(),
+                new AlternativeParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("r", "real", 0)),
+                    new ActionParser("A1",
+                        new NonterminalParser("i", "int", 0)))));
+            AddRule(new boolRule("bool", GetScope(),
+                new AlternativeParser(
+                    new ActionParser("A0",
+                        new KeywordParser("true")),
+                    new ActionParser("A1",
+                        new KeywordParser("false")))));
+            AddRule(new identifierRule("identifier", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new AlternativeParser(
+                                new LetterParser(),
+                                new CharParser('_')),
+                            new KleeneStarParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new LetterParser(),
+                                        new DigitParser()),
+                                    new CharParser('_'))))))));
+            AddRule(new qualified_idRule("qualified_id", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new NonterminalParser("first", "identifier", 0),
+                            new KleeneStarParser(
+                                new SequenceParser(
+                                    new CharParser('.'),
+                                    new NonterminalParser("rest", "identifier", 0))))))));
+            AddRule(new escapeRule("escape", GetScope(),
+                new TokenParser(
+                    new SequenceParser(
+                        new CharParser('\\'),
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new SequenceParser(
+                                        new CharSetParser("xX"),
+                                        new ActionParser("A0",
+                                            new NonterminalParser("x", "hex", 0))),
+                                    new ActionParser("A1",
+                                        new SequenceParser(
+                                            new SequenceParser(
+                                                new NonterminalParser("o1", "octaldigit", 0),
+                                                new NonterminalParser("o2", "octaldigit", 0)),
+                                            new NonterminalParser("o3", "octaldigit", 0)))),
+                                new SequenceParser(
+                                    new CharSetParser("dD"),
+                                    new ActionParser("A2",
+                                        new NonterminalParser("decimalEscape", "uint", 0)))),
+                            new ActionParser("A3",
+                                new CharSetParser("dDxX", true)))))));
+            AddRule(new charRule("char", GetScope(),
+                new TokenParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('\''),
+                            new AlternativeParser(
+                                new ActionParser("A0",
+                                    new CharSetParser("\\\r\n", true)),
+                                new ActionParser("A1",
+                                    new NonterminalParser("escape", "escape", 0)))),
+                        new ExpectationParser(
+                            new CharParser('\''))))));
+            AddRule(new stringRule("string", GetScope(),
+                new TokenParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('"'),
+                            new KleeneStarParser(
+                                new AlternativeParser(
+                                    new ActionParser("A0",
+                                        new PositiveParser(
+                                            new CharSetParser("\"\\\r\n", true))),
+                                    new ActionParser("A1",
+                                        new NonterminalParser("escape", "escape", 0))))),
+                        new ExpectationParser(
+                            new CharParser('"'))))));
+        }
+    }
+}

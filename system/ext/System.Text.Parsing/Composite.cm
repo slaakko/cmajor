@@ -1,0 +1,439 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Text.Parsing
+{
+    public abstract class UnaryParser: Parser
+    {
+        public UnaryParser(const string& name_, ParserPtr child_, const string& info_): base(name_, info_), child(child_)
+        {
+            Own(child);
+        }
+        suppress UnaryParser(const UnaryParser&);
+        suppress void operator=(const UnaryParser&);
+        suppress UnaryParser(UnaryParser&&);
+        suppress void operator=(UnaryParser&&);
+        public nothrow inline ParserPtr Child() const
+        {
+            return child;
+        }
+        private ParserPtr child;
+    }
+    
+    public abstract class BinaryParser: Parser
+    {
+        public BinaryParser(const string& name_, ParserPtr left_, ParserPtr right_, const string& info_): base(name_, info_), left(left_), right(right_)
+        {
+            Own(left);
+            Own(right);
+        }
+        suppress BinaryParser(const BinaryParser&);
+        suppress void operator=(const BinaryParser&);
+        suppress BinaryParser(BinaryParser&&);
+        suppress void operator=(BinaryParser&&);
+        public nothrow inline ParserPtr Left() const
+        {
+            return left;
+        }
+        public nothrow inline ParserPtr Right() const
+        {
+            return right;
+        }
+        private ParserPtr left;
+        private ParserPtr right;
+    }
+    
+    public class OptionalParser: UnaryParser
+    {
+        public explicit OptionalParser(ParserPtr child_): base("optional", child_, child_->Info() + "?")
+        {
+        }
+        suppress OptionalParser(const OptionalParser&);
+        suppress void operator=(const OptionalParser&);
+        suppress OptionalParser(OptionalParser&&);
+        suppress void operator=(OptionalParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Position save = scanner.GetPosition();
+            Match match = Child()->Parse(scanner, stack);
+            if (match.Hit())
+            {
+                return match;
+            }
+            scanner.SetPosition(save);
+            return Match.Empty();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Child()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class PositiveParser: UnaryParser
+    {
+        public explicit PositiveParser(ParserPtr child_): base("positive", child_, child_->Info() + "+")
+        {
+        }
+        suppress PositiveParser(const PositiveParser&);
+        suppress void operator=(const PositiveParser&);
+        suppress PositiveParser(PositiveParser&&);
+        suppress void operator=(PositiveParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Match match = Child()->Parse(scanner, stack);
+            if (match.Hit())
+            {
+                for (;;)
+                {
+                    Position save = scanner.GetPosition();
+                    scanner.Skip();
+                    Match next = Child()->Parse(scanner, stack);
+                    if (next.Hit())
+                    {
+                        match.Concatenate(next);
+                    }
+                    else
+                    {
+                        scanner.SetPosition(save);
+                        break;
+                    }
+                }
+            }
+            return match;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Child()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class KleeneStarParser: UnaryParser
+    {
+        public explicit KleeneStarParser(ParserPtr child_): base("kleene", child_, child_->Info())
+        {
+        }
+        suppress KleeneStarParser(const KleeneStarParser&);
+        suppress void operator=(const KleeneStarParser&);
+        suppress KleeneStarParser(KleeneStarParser&&);
+        suppress void operator=(KleeneStarParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Match match = Match.Empty();
+            bool first = true;
+            for (;;)
+            {
+                Position save = scanner.GetPosition();
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    scanner.Skip();
+                }
+                Match next = Child()->Parse(scanner, stack);
+                if (next.Hit())
+                {
+                    match.Concatenate(next);
+                }
+                else
+                {
+                    scanner.SetPosition(save);
+                    break;
+                }
+            }
+            return match;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Child()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class ExpectationParser: UnaryParser
+    {
+        public explicit ExpectationParser(ParserPtr child_): base("expectation", child_, child_->Info() + "!")
+        {
+        }
+        suppress ExpectationParser(const ExpectationParser&);
+        suppress void operator=(const ExpectationParser&);
+        suppress ExpectationParser(ExpectationParser&&);
+        suppress void operator=(ExpectationParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Position position = scanner.GetPosition();
+            Match match = Match.Nothing();
+            try
+            {
+                match = Child()->Parse(scanner, stack);
+            }
+            catch (const ExpectationFailure& ex)
+            {
+                throw ExpectationFailure(Child()->Info() + ex.Info(), ex.Content(), ex.GetPosition(), ex.FileName());
+            }
+            if (match.Hit())
+            {
+                return match;
+            }
+            else
+            {
+                throw ExpectationFailure(Child()->Info(), scanner.Content(), position, scanner.FileName());
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Child()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class TokenParser: UnaryParser
+    {
+        public explicit TokenParser(ParserPtr child_): base("token", child_, child_->Info())
+        {
+        }
+        suppress TokenParser(const TokenParser&);
+        suppress void operator=(const TokenParser&);
+        suppress TokenParser(TokenParser&&);
+        suppress void operator=(TokenParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            scanner.BeginToken();
+            Match match = Child()->Parse(scanner, stack);
+            scanner.EndToken();
+            return match;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Child()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class SequenceParser: BinaryParser
+    {
+        public SequenceParser(ParserPtr left_, ParserPtr right_): base("sequence", left_, right_, left_->Info())
+        {
+        }
+        suppress SequenceParser(const SequenceParser&);
+        suppress void operator=(const SequenceParser&);
+        suppress SequenceParser(SequenceParser&&);
+        suppress void operator=(SequenceParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Match left = Left()->Parse(scanner, stack);
+            if (left.Hit())
+            {
+                scanner.Skip();
+                Match right = Right()->Parse(scanner, stack);
+                if (right.Hit())
+                {
+                    left.Concatenate(right);
+                    return left;
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Left()->Accept(visitor);
+            visitor.Visit(*this);
+            Right()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class AlternativeParser: BinaryParser
+    {
+        public AlternativeParser(ParserPtr left_, ParserPtr right_): base("alternative", left_, right_, left_->Info() + " | " + right_->Info())
+        {
+        }
+        suppress AlternativeParser(const AlternativeParser&);
+        suppress void operator=(const AlternativeParser&);
+        suppress AlternativeParser(AlternativeParser&&);
+        suppress void operator=(AlternativeParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {            
+            Position save = scanner.GetPosition();
+            Match left = Left()->Parse(scanner, stack);
+            if (left.Hit())
+            {
+                return left;
+            }
+            scanner.SetPosition(save);
+            return Right()->Parse(scanner, stack);
+        }
+        public override void Accept(Visitor& visitor)
+        {            
+            visitor.BeginVisit(*this);
+            Left()->Accept(visitor);
+            visitor.Visit(*this);
+            Right()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class DifferenceParser: BinaryParser
+    {
+        public DifferenceParser(ParserPtr left_, ParserPtr right_): base("difference", left_, right_, left_->Info() + " - " + right_->Info())
+        {
+        }
+        suppress DifferenceParser(const DifferenceParser&);
+        suppress void operator=(const DifferenceParser&);
+        suppress DifferenceParser(DifferenceParser&&);
+        suppress void operator=(DifferenceParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Position save = scanner.GetPosition();
+            Match left = Left()->Parse(scanner, stack);
+            if (left.Hit())
+            {
+                Position tmp = scanner.GetPosition();
+                scanner.SetPosition(save);
+                save = tmp;
+                Match right = Right()->Parse(scanner, stack);
+                if (!right.Hit() || right.Length() < left.Length())
+                {
+                    scanner.SetPosition(save);
+                    return left;
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Left()->Accept(visitor);
+            visitor.Visit(*this);
+            Right()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class ExclusiveOrParser: BinaryParser
+    {
+        public ExclusiveOrParser(ParserPtr left_, ParserPtr right_): base("exclusive_or", left_, right_, left_->Info() + " ^ " + right_->Info())
+        {
+        }
+        suppress ExclusiveOrParser(const ExclusiveOrParser&);
+        suppress void operator=(const ExclusiveOrParser&);
+        suppress ExclusiveOrParser(ExclusiveOrParser&&);
+        suppress void operator=(ExclusiveOrParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Position save = scanner.GetPosition();
+            Match left = Left()->Parse(scanner, stack);
+            Position tmp = scanner.GetPosition();
+            scanner.SetPosition(save);
+            save = tmp;
+            Match right = Right()->Parse(scanner, stack);
+            bool hit = right.Hit();
+            if (left.Hit())
+            {
+                hit = !right.Hit();
+            }
+            if (hit)
+            {
+                if (left.Hit())
+                {
+                    scanner.SetPosition(save);
+                    return left;
+                }
+                return right;
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Left()->Accept(visitor);
+            visitor.Visit(*this);
+            Right()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class IntersectionParser: BinaryParser
+    {
+        public IntersectionParser(ParserPtr left_, ParserPtr right_): base("intersection", left_, right_, left_->Info() + " & " + right_->Info())
+        {
+        }
+        suppress IntersectionParser(const IntersectionParser&);
+        suppress void operator=(const IntersectionParser&);
+        suppress IntersectionParser(IntersectionParser&&);
+        suppress void operator=(IntersectionParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Position save = scanner.GetPosition();
+            Match left = Left()->Parse(scanner, stack);
+            if (left.Hit())
+            {
+                scanner.SetPosition(save);
+                Match right = Right()->Parse(scanner, stack);
+                if (left.Length() == right.Length())
+                {
+                    return left;
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Left()->Accept(visitor);
+            visitor.Visit(*this);
+            Right()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class ListParser: UnaryParser
+    {
+        public ListParser(ParserPtr left_, ParserPtr right_): 
+            base("list", new SequenceParser(left_, new KleeneStarParser(new SequenceParser(right_, left_))),
+                left_->Info() + " % " + right_->Info()), left(left_), right(right_)
+        {
+        }
+        suppress ListParser(const ListParser&);
+        suppress void operator=(const ListParser&);
+        suppress ListParser(ListParser&&);
+        suppress void operator=(ListParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            return Child()->Parse(scanner, stack);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            left->Accept(visitor);
+            visitor.Visit(*this);
+            right->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        private ParserPtr left;
+        private ParserPtr right;
+    }
+}

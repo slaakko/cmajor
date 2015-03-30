@@ -1,0 +1,385 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using CompoundStatementPtr = System.Text.Parsing.CmObjectModel.CompoundStatementPtr;
+
+namespace System.Text.Parsing
+{
+    public class AttrOrVariable
+    {
+        public nothrow default AttrOrVariable();
+        public nothrow AttrOrVariable(const string& typeName_, const string& name_): typeName(typeName_), name(name_)
+        {
+        }
+        public nothrow default AttrOrVariable(const AttrOrVariable&);
+        public nothrow default void operator=(const AttrOrVariable&);
+        public nothrow default ~AttrOrVariable();
+        public nothrow inline const string& TypeName() const
+        {
+            return typeName;
+        }
+        public nothrow inline const string& Name() const
+        {
+            return name;
+        }
+        private string typeName;
+        private string name;
+    }
+
+    public typedef List<AttrOrVariable> AttrOrVariableList;
+    public typedef List<ActionParserPtr> ActionList;
+    public typedef List<NonterminalParserPtr> NonterminalList;
+
+    public typedef Rule* RulePtr;
+    public typedef UniquePtr<Rule> UniqueRulePtr;
+
+    public class Rule: Parser
+    {
+        public Rule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+            base(name_, "<" + name_ + ">"), definition(definition_), inheritedAttributes(), localVariables(), valueTypeName(), actions(), nonterminals()
+        {
+            SetScope(new Scope(Name(), EnclosingScope()));
+            Own(definition);
+        }
+        public Rule(const string& name_, ScopePtr enclosingScope_):
+            base(name_, "<" + name_ + ">"), definition(), inheritedAttributes(), localVariables(), valueTypeName(), actions(), nonterminals()
+        {
+            SetScope(new Scope(Name(), EnclosingScope()));
+            Own(definition);
+        }
+        suppress Rule(const Rule&);
+        suppress void operator=(const Rule&);
+        suppress Rule(Rule&&);
+        suppress void operator=(Rule&&);
+        public override bool IsRule() const
+        {
+            return true;
+        }
+        public virtual void Link()
+        {
+            // derived class overrides...
+        }
+        public virtual void Enter(ObjectStack& stack)
+        {
+            // derived class overrides...
+        }
+        public virtual void Leave(ObjectStack& stack, bool matched)
+        {
+            // derived class overrides...
+        }
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            bool writeToLog = !scanner.Skipping() && scanner.Log() != null;
+            if (writeToLog)
+            {
+                XmlLogPtr log = scanner.Log();
+                log->WriteBeginRule(Name());
+                log->IncIndent();
+                log->WriteTry(scanner.RestOfLine());
+                log->IncIndent();
+            }
+            int startIndex = scanner.GetPosition().Index();
+            Enter(stack);
+            Match match = Match.Nothing();
+            if (definition != null)
+            {
+                match = definition->Parse(scanner, stack);
+            }
+            Leave(stack, match.Hit());
+            if (writeToLog)
+            {
+                XmlLogPtr log = scanner.Log();
+                log->DecIndent();
+                if (match.Hit())
+                {
+                    log->WriteSuccess(scanner.GetMatch(startIndex));
+                }
+                else
+                {
+                    log->WriteFail();
+                }
+                log->DecIndent();
+                log->WriteEndRule(Name());
+            }
+            return match;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (definition != null)
+            {
+                definition->Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        public nothrow inline GrammarPtr GetGrammar() const
+        {
+            return grammar;
+        }
+        public nothrow inline void SetGrammar(GrammarPtr grammar_)
+        {
+            grammar = grammar_;
+        }
+        public nothrow inline ParserPtr Definition() const
+        {
+            return definition;
+        }
+        public void SetDefinition(ParserPtr definition_)
+        {
+            definition = definition_;
+            Own(definition);
+        }
+        public nothrow inline const AttrOrVariableList& InheritedAttributes() const
+        {
+            return inheritedAttributes;
+        }
+        public void AddInheritedAttribute(const AttrOrVariable& attr)
+        {
+            inheritedAttributes.Add(attr);
+        }
+        public nothrow inline const AttrOrVariableList& LocalVariables() const
+        {
+            return localVariables;
+        }
+        public void AddLocalVariable(const AttrOrVariable& var)
+        {
+            localVariables.Add(var);
+        }
+        public nothrow inline const string& ValueTypeName() const
+        {
+            return valueTypeName;
+        }
+        public nothrow inline void SetValueTypeName(const string& valueTypeName_)
+        {
+            valueTypeName = valueTypeName_;
+        }
+        public nothrow inline int NumberOfParameters() const
+        {
+            return inheritedAttributes.Count();
+        }
+        public nothrow inline const ActionList& Actions() const
+        {
+            return actions;
+        }
+        public void AddAction(ActionParserPtr action)
+        {
+            Own(action);
+            actions.Add(action);
+            action->SetEnclosingScope(GetScope());
+            action->AddToScope();
+        }
+        public ActionParserPtr GetAction(const string& actionName) const
+        {
+            ParsingObjectPtr object = GetScope()->Get(actionName);
+            if (object == null)
+            {
+                ThrowException("action '" + actionName + "' not found in rule '" + FullName() + "'", GetPosition());
+            }
+            else if (object->IsActionParser())
+            {
+                return cast<ActionParserPtr>(object);
+            }
+            else
+            {
+                ThrowException("'" + actionName + "' is not an action", GetPosition());
+            }
+            return null;
+        }
+        public nothrow inline const NonterminalList& Nonterminals() const
+        {
+            return nonterminals;
+        }
+        public void AddNonterminal(NonterminalParserPtr nonterminal)
+        {
+            Own(nonterminal);
+            nonterminals.Add(nonterminal);
+            nonterminal->SetEnclosingScope(GetScope());
+            nonterminal->AddToScope();
+        }
+        public NonterminalParserPtr GetNonterminal(const string& nonterminalName) const
+        {
+            ParsingObjectPtr object = GetScope()->Get(nonterminalName);
+            if (object == null)
+            {
+                ThrowException("nonterminal '" + nonterminalName + "' not found", GetPosition());
+            }
+            else if (object->IsNonterminalParser())
+            {
+                return cast<NonterminalParserPtr>(object);
+            }
+            else
+            {
+                ThrowException("'" + nonterminalName + "' is not a nonterminal", GetPosition());
+            }
+            return null;
+        }
+        public nothrow bool TakesOrReturnsValuesOrHasLocals() const
+        {
+            return !inheritedAttributes.IsEmpty() || !localVariables.IsEmpty() || !valueTypeName.IsEmpty();
+        }
+        public nothrow bool IsSpecialized() const
+        {
+            return TakesOrReturnsValuesOrHasLocals() || !actions.IsEmpty();
+        }
+        public nothrow string SpecializedTypeName() const
+        {
+            if (IsSpecialized())
+            {
+                return Name() + "Rule";
+            }
+            return "Rule";
+        }
+        public void ExpandCode()
+        {
+            Map<string, string> expandMap;
+            expandMap["value"] = "context.value";
+            for (NonterminalParserPtr nonterminal : nonterminals)
+            {
+                expandMap[nonterminal->Name()] = "context." + nonterminal->ValueFieldName();
+            }
+            for (const AttrOrVariable& attr : inheritedAttributes)
+            {
+                expandMap[attr.Name()] = "context." + attr.Name();
+            }
+            for (const AttrOrVariable& var : localVariables)
+            {
+                expandMap[var.Name()] = "context." + var.Name();
+            }
+            CodeExpandingVisitor visitor(expandMap);
+            for (ActionParserPtr action : actions)
+            {
+                CompoundStatementPtr successCode = action->SuccessCode();
+                successCode->Accept(visitor);
+                CompoundStatementPtr failureCode = action->FailureCode();
+                if (failureCode != null)
+                {
+                    failureCode->Accept(visitor);
+                }
+            }
+            for (NonterminalParserPtr nonterminal : nonterminals)
+            {
+                if (!nonterminal->Arguments().IsEmpty())
+                {
+                    for (System.Text.Parsing.CmObjectModel.CmObjectPtr arg : nonterminal->Arguments())
+                    {
+                        arg->Accept(visitor);
+                    }
+                }
+            }
+        }
+        private GrammarPtr grammar;
+        private ParserPtr definition;
+        private AttrOrVariableList inheritedAttributes;
+        private AttrOrVariableList localVariables;
+        private string valueTypeName;
+        private ActionList actions;
+        private NonterminalList nonterminals;
+    }
+
+    public nothrow string GetPrefix(const string& fullName)
+    {
+        int dotPos = fullName.Find('.');
+        if (dotPos != -1)
+        {
+            return fullName.Substring(0, dotPos);
+        }
+        return fullName;
+    }
+
+    public nothrow string GetCommonName(const string& qualifiedId)
+    {
+        int lastDotPos = qualifiedId.RFind('.');
+        if (lastDotPos != -1)
+        {
+            return qualifiedId.Substring(lastDotPos + 1);
+        }
+        return qualifiedId;
+    }
+
+    public typedef RuleLink* RuleLinkPtr;
+
+    public class RuleLink: ParsingObject
+    {
+        public nothrow RuleLink(const string& name_, GrammarPtr grammar_, const string& linkedRuleName_):
+            base(name_, grammar_->GetScope()), linkedRuleName(linkedRuleName_), grammar(grammar_)
+        {
+            string prefix = GetPrefix(linkedRuleName);
+            if (prefix == "stdlib")
+            {
+                linkedRuleName = "System.Text.Parsing.stdlib." + GetCommonName(linkedRuleName);
+            }
+        }
+        public nothrow RuleLink(GrammarPtr grammar_, const string& linkedRuleName_):
+            base(GetCommonName(linkedRuleName_), grammar_->GetScope()), linkedRuleName(linkedRuleName_), grammar(grammar_)
+        {
+            string prefix = GetPrefix(linkedRuleName);
+            if (prefix == "stdlib")
+            {
+                linkedRuleName = "System.Text.Parsing.stdlib." + GetCommonName(linkedRuleName);
+            }
+        }
+        suppress RuleLink(const RuleLink&);
+        suppress void operator=(const RuleLink&);
+        suppress RuleLink(RuleLink&&);
+        suppress void operator=(RuleLink&&);
+        public override bool IsRuleLink() const
+        {
+            return true;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline RulePtr GetRule() const
+        {
+            return rule;
+        }
+        public void SetRule(RulePtr rule_)
+        {
+            rule = rule_;
+            Own(rule);
+        }
+        public nothrow inline const string& LinkedRuleName() const
+        {
+            return linkedRuleName;
+        }
+        public override void AddToScope()
+        {
+            base->AddToScope();
+            grammar->AddRuleLink(this);
+        }
+        private string linkedRuleName;
+        private GrammarPtr grammar;
+        private RulePtr rule;
+    }
+
+    public class CodeExpandingVisitor: System.Text.Parsing.CmObjectModel.Visitor
+    {
+        public CodeExpandingVisitor(Map<string, string>& expandMap_): expandMap(expandMap_)
+        {
+        }
+        public override void Visit(System.Text.Parsing.CmObjectModel.Identifier& id)
+        {
+            Map<string, string>.Iterator i = expandMap.Find(id.Name());
+            if (i != expandMap.End())
+            {
+                id.SetName(i->second);
+            }
+        }
+        private Map<string, string>& expandMap;
+    }
+}

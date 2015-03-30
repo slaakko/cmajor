@@ -1,0 +1,213 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Text;
+
+namespace System.Text.Parsing.CmObjectModel
+{
+    public abstract class Literal: CmObject
+    {
+        public Literal(const string& name_): base(name_)
+        {
+        }
+        public override int Rank() const
+        {
+            return 50;
+        }
+    }
+    
+    public typedef Literal* LiteralPtr;
+    
+    public class IntLiteral: Literal
+    {
+        public IntLiteral(ulong value_, char suffix_): base("int_literal"), value(value_), suffix(suffix_)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            string s = ToString(value);
+            if (suffix != ' ')
+            {
+                s.Append(suffix);
+            }
+            formatter.Write(s);
+        }
+        public override string ToString() const
+        {
+            string s = ToString(value);
+            if (suffix != ' ')
+            {
+                s.Append(suffix);
+            }
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private ulong value;
+        private char suffix;
+    }
+    
+    public class HexLiteral: Literal
+    {
+        public HexLiteral(ulong value_, char suffix_): base("hex_literal"), value(value_), suffix(suffix_)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            string s = "0x";
+            s.Append(ToHexString(value));
+            if (suffix != ' ')
+            {
+                s.Append(suffix);
+            }
+            formatter.Write(s);
+        }
+        public override string ToString() const
+        {
+            string s = ToHexString(value);
+            if (suffix != ' ')
+            {
+                s.Append(suffix);
+            }
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private ulong value;
+        private char suffix;
+    }
+    
+    public class FloatingLiteral: Literal
+    {
+        public FloatingLiteral(double value_, char suffix_): base("floating_literal"), value(value_), suffix(suffix_)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            string s = ToString(value);
+            if (suffix != ' ')
+            {
+                s.Append(suffix);
+            }
+            formatter.Write(s);
+        }
+        public override string ToString() const
+        {
+            string s = ToString(value);
+            if (suffix != ' ')
+            {
+                s.Append(suffix);
+            }
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private double value;
+        private char suffix;
+    }
+    
+    public class BooleanLiteral: Literal
+    {
+        public BooleanLiteral(bool value_): base("boolean_literal"), value(value_)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            if (value)
+            {
+                formatter.Write("true");
+            }
+            else
+            {
+                formatter.Write("false");
+            }
+        }
+        public override string ToString() const
+        {
+            if (value)
+            {
+                return "true";
+            }
+            return "false";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private bool value;
+    }
+    
+    public class CharacterLiteral: Literal
+    {
+        public CharacterLiteral(char value_): base("character_literal"), value(value_)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write(MakeCharLiteral(value));
+        }
+        public override string ToString() const
+        {
+            return MakeCharLiteral(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private char value;
+    }
+    
+    public class StringLiteral: Literal
+    {
+        public StringLiteral(const string& value_): base("string_literal"), value(value_)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write(MakeStringLiteral(value));
+        }
+        public override string ToString() const
+        {
+            return MakeStringLiteral(value); 
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private string value;
+    }
+    
+    public class NullLiteral: Literal
+    {
+        public NullLiteral(): base("null")
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("null");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+}

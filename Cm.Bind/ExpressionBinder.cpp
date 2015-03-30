@@ -1302,7 +1302,12 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node,
         }
         else
         {
-            memberFunResolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+            Cm::Core::Argument resolutionArgument(argument->GetArgumentCategory(), argument->GetType());
+            if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
+            {
+                resolutionArgument.SetBindToRvalueRef();
+            }
+            memberFunResolutionArguments.push_back(resolutionArgument);
         }
         if (first)
         {
@@ -1359,7 +1364,12 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         }
         else
         {
-            resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+            Cm::Core::Argument resolutionArgument(argument->GetArgumentCategory(), argument->GetType());
+            if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
+            {
+                resolutionArgument.SetBindToRvalueRef();
+            }
+            resolutionArguments.push_back(resolutionArgument);
         }
         if (first)
         {
@@ -1395,7 +1405,12 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeOpApply(Cm::Ast::Node* node
     resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, subjectPtrType));
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
-        resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+        Cm::Core::Argument resolutionArgument(argument->GetArgumentCategory(), argument->GetType());
+        if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
+        {
+            resolutionArgument.SetBindToRvalueRef();
+        }
+        resolutionArguments.push_back(resolutionArgument);
     }
     Cm::Sym::FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, "operator()", resolutionArguments, functionLookups, node->GetSpan(), conversions);
     return fun;
@@ -1411,7 +1426,12 @@ void ExpressionBinder::BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::Delegate
     std::vector<Cm::Core::Argument> resolutionArguments;
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
-        resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+        Cm::Core::Argument resolutionArgument(argument->GetArgumentCategory(), argument->GetType());
+        if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
+        {
+            resolutionArgument.SetBindToRvalueRef();
+        }
+        resolutionArguments.push_back(resolutionArgument);
     }
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
     Cm::Bind::FunctionMatch functionMatch(nullptr, containerScope, &boundCompileUnit);
@@ -1453,7 +1473,12 @@ void ExpressionBinder::BindInvokeClassDelegate(Cm::Ast::Node* node, Cm::Sym::Cla
     std::vector<Cm::Core::Argument> resolutionArguments;
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
-        resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
+        Cm::Core::Argument resolutionArgument(argument->GetArgumentCategory(), argument->GetType());
+        if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
+        {
+            resolutionArgument.SetBindToRvalueRef();
+        }
+        resolutionArguments.push_back(resolutionArgument);
     }
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
     Cm::Bind::FunctionMatch functionMatch(nullptr, containerScope, &boundCompileUnit);
@@ -1853,7 +1878,12 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
     }
     for (int i = 1; i < n; ++i)
     {
-        resolutionArguments.push_back(Cm::Core::Argument(arguments[i]->GetArgumentCategory(), arguments[i]->GetType()));
+        Cm::Core::Argument resolutionArgument(arguments[i]->GetArgumentCategory(), arguments[i]->GetType());
+        if (arguments[i]->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary))
+        {
+            resolutionArgument.SetBindToRvalueRef();
+        }
+        resolutionArguments.push_back(resolutionArgument);
     }
     Cm::Sym::FunctionLookupSet functionLookups;
     functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, type->GetContainerScope()->ClassOrNsScope()));

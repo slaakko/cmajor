@@ -1,0 +1,344 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+
+namespace System.Text.Parsing
+{
+    public class CharParser: Parser
+    {
+        public nothrow explicit CharParser(char c_): base("char", "\"" + string(c) + "\""), c(c_)
+        {
+        }
+        suppress CharParser(const CharParser&);
+        suppress void operator=(const CharParser&);
+        suppress CharParser(CharParser&&);
+        suppress void operator=(CharParser&&);
+        public nothrow inline char GetChar() const
+        {
+            return c;
+        }
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (!scanner.AtEnd())
+            {
+                if (scanner.GetChar() == c)
+                {
+                    ++scanner;
+                    return Match.One();
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {        
+            visitor.Visit(*this);
+        }    
+        private char c;
+    }
+    
+    public class StringParser: Parser
+    {
+        public nothrow explicit StringParser(const string& s_): base("string", "\"" + s_ + "\""), s(s_)
+        {
+        }
+        suppress StringParser(const StringParser&);
+        suppress void operator=(const StringParser&);
+        suppress StringParser(StringParser&&);
+        suppress void operator=(StringParser&&);
+        public nothrow inline const string& GetString() const
+        {
+            return s;
+        }
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            Match match = Match.Empty();
+            int i = 0;
+            int n = s.Length();
+            while (i < n && !scanner.AtEnd() && scanner.GetChar() == s[i])
+            {
+                ++scanner;
+                ++i;
+                match.Concatenate(Match.One());
+            }
+            if (i == n)
+            {
+                return match;
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private string s;
+    }
+    
+    public class CharSetParser: Parser
+    {
+        public explicit CharSetParser(const string& s_): base("charset", "[" + s_ + "]"), s(s_), inverse(false), bits(256)
+        {
+            InitBits();
+        }
+        suppress CharSetParser(const CharSetParser&);
+        suppress void operator=(const CharSetParser&);
+        suppress CharSetParser(CharSetParser&&);
+        suppress void operator=(CharSetParser&&);
+        public CharSetParser(const string& s_, bool inverse_): base("charset", "[" + s_ + "]"), s(s_), inverse(inverse_), bits(256)
+        {
+            InitBits();
+        }
+        public nothrow inline const string& GetSet() const 
+        {
+            return s;
+        }
+        public nothrow inline bool Inverse() const
+        {
+            return inverse;
+        }
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (!scanner.AtEnd())
+            {
+                bool matched = bits[cast<byte>(scanner.GetChar())] != inverse;
+                if (matched)
+                {
+                    ++scanner;
+                    return Match.One();
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private void InitBits()
+        {
+            int i = 0;
+            int n = s.Length();
+            while (i < n)
+            {
+                byte first = cast<byte>(s[i]);
+                byte last = first;
+                ++i;
+                if (i < n)
+                {
+                    if (s[i] == '-')
+                    {
+                        ++i;
+                        if (i < n)
+                        {
+                            last = cast<byte>(s[i]);
+                            ++i;
+                        }
+                        else
+                        {
+                            bits.Set(first);
+                            first = cast<byte>('-');
+                            last = first;
+                        }
+                    }
+                }
+                for (byte b = first; b <= last; ++b)
+                {
+                    bits.Set(b);
+                }
+            }
+        }
+        private string s;
+        private bool inverse;
+        private BitSet bits;
+    }
+    
+    public class EmptyParser: Parser
+    {
+        public nothrow EmptyParser(): base("empty", "")
+        {
+        }
+        suppress EmptyParser(const EmptyParser&);
+        suppress void operator=(const EmptyParser&);
+        suppress EmptyParser(EmptyParser&&);
+        suppress void operator=(EmptyParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            return Match.Empty();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class SpaceParser: Parser
+    {
+        public nothrow SpaceParser(): base("space", "space")
+        {
+        }
+        suppress SpaceParser(const SpaceParser&);
+        suppress void operator=(const SpaceParser&);
+        suppress SpaceParser(SpaceParser&&);
+        suppress void operator=(SpaceParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (!scanner.AtEnd())
+            {
+                if (IsSpace(scanner.GetChar()))
+                {
+                    ++scanner;
+                    return Match.One();
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class LetterParser: Parser
+    {
+        public nothrow LetterParser(): base("letter", "letter")
+        {
+        }
+        suppress LetterParser(const LetterParser&);
+        suppress void operator=(const LetterParser&);
+        suppress LetterParser(LetterParser&&);
+        suppress void operator=(LetterParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (!scanner.AtEnd())
+            {
+                if (IsAlpha(scanner.GetChar()))
+                {
+                    ++scanner;
+                    return Match.One();
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class DigitParser: Parser
+    {
+        public nothrow DigitParser(): base("digit", "digit")
+        {
+        }
+        suppress DigitParser(const DigitParser&);
+        suppress void operator=(const DigitParser&);
+        suppress DigitParser(DigitParser&&);
+        suppress void operator=(DigitParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (!scanner.AtEnd())
+            {
+                if (IsDigit(scanner.GetChar()))
+                {
+                    ++scanner;
+                    return Match.One();
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class HexDigitParser: Parser
+    {
+        public nothrow HexDigitParser(): base("hexdigit", "hexdigit")
+        {
+        }
+        suppress HexDigitParser(const HexDigitParser&);
+        suppress void operator=(const HexDigitParser&);
+        suppress HexDigitParser(HexDigitParser&&);
+        suppress void operator=(HexDigitParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (!scanner.AtEnd())
+            {
+                if (IsHexDigit(scanner.GetChar()))
+                {
+                    ++scanner;
+                    return Match.One();
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class PunctuationParser: Parser
+    {
+        public nothrow PunctuationParser(): base("punctuation", "punctuation")
+        {
+        }
+        suppress PunctuationParser(const PunctuationParser&);
+        suppress void operator=(const PunctuationParser&);
+        suppress PunctuationParser(PunctuationParser&&);
+        suppress void operator=(PunctuationParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (!scanner.AtEnd())
+            {
+                if (IsPunctuation(scanner.GetChar()))
+                {
+                    ++scanner;
+                    return Match.One();
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class AnyCharParser: Parser
+    {
+        public nothrow AnyCharParser(): base("anychar", "anychar")
+        {
+        }
+        suppress AnyCharParser(const AnyCharParser&);
+        suppress void operator=(const AnyCharParser&);
+        suppress AnyCharParser(AnyCharParser&&);
+        suppress void operator=(AnyCharParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (!scanner.AtEnd())
+            {
+                ++scanner;
+                return Match.One();
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+}

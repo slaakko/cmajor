@@ -1,0 +1,10 @@
+using System;
+
+void main(int argc, const char** argv)
+{
+    Console.WriteLine(string("arguments to program '") + argv[0] + "' are:");
+    for (int i = 1; i < argc; ++i)
+    {
+        Console.Out() << "argument " << i << ": " << argv[i] << endl();
+    }
+}

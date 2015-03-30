@@ -1,0 +1,171 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Text.Parsing.CmObjectModel
+{
+    public abstract class Type: CmObject
+    {
+        public Type(const string& name_): base(name_)
+        {
+        }
+    }
+    
+    public typedef Type* TypePtr;
+    
+    public class BoolType: Type
+    {
+        public BoolType(): base("bool")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class SByteType: Type
+    {
+        public SByteType(): base("sbyte")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class ByteType: Type
+    {
+        public ByteType(): base("byte")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class UShortType: Type
+    {
+        public UShortType(): base("ushort")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class ShortType: Type
+    {
+        public ShortType(): base("short")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class UIntType: Type
+    {
+        public UIntType(): base("uint")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class IntType: Type
+    {
+        public IntType(): base("int")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class ULongType: Type
+    {
+        public ULongType(): base("ulong")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class LongType: Type
+    {
+        public LongType(): base("long")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class FloatType: Type
+    {
+        public FloatType(): base("float")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class DoubleType: Type
+    {
+        public DoubleType(): base("double")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class CharType: Type
+    {
+        public CharType(): base("char")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class VoidType: Type
+    {
+        public VoidType(): base("void")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+}

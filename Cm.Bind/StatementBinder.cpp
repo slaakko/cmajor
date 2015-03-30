@@ -20,7 +20,9 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
+#include <Cm.Parser/TypeExpr.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Expression.hpp>
 #include <Cm.Ast/Literal.hpp>
@@ -457,6 +459,20 @@ void ForStatementBinder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
     forStatement->SetCondition(condition);
 }
 
+Cm::Parser::TypeExprGrammar* typeExprGrammar = nullptr;
+
+Cm::Ast::Node* MakeTypeIdNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing::Span& span)
+{
+    if (!typeExprGrammar)
+    {
+        typeExprGrammar = Cm::Parser::TypeExprGrammar::Create();
+    }
+    std::string typeSymbolText = typeSymbol->FullName();
+    int n = int(typeSymbolText.size());
+    Cm::Parser::ParsingContext parsingContext;
+    return typeExprGrammar->Parse(&typeSymbolText[0], &typeSymbolText[n], 0, "", &parsingContext);
+}
+
 RangeForStatementBinder::RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_,
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::Ast::RangeForStatementNode& rangeForStatementNode, Binder& binder_) :
     StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
@@ -486,7 +502,7 @@ void RangeForStatementBinder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForS
     {
         iteratorTypeId = new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "Iterator");
     }
-    Cm::Ast::IdentifierNode* containerTypeId(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), plainContainerType->FullName()));
+    Cm::Ast::Node* containerTypeId = MakeTypeIdNode(plainContainerType, rangeForStatementNode.GetSpan());
     Cm::Ast::DotNode* containerIterator(new Cm::Ast::DotNode(rangeForStatementNode.GetSpan(), containerTypeId, iteratorTypeId));
     Cm::Ast::ConstructionStatementNode* initNode(new Cm::Ast::ConstructionStatementNode(rangeForStatementNode.GetSpan(), containerIterator, iteratorId));
     initNode->AddArgument(invokeContainerBeginNode);

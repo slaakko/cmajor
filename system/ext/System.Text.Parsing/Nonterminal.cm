@@ -1,0 +1,150 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using ArgumentList = System.Text.Parsing.CmObjectModel.ExpressionList;
+using CmObjectPtr = System.Text.Parsing.CmObjectModel.CmObjectPtr;
+
+namespace System.Text.Parsing
+{
+    public typedef NonterminalParser* NonterminalParserPtr;
+
+    public class NonterminalParser: Parser
+    {
+        public nothrow NonterminalParser(const string& name_, const string& ruleName_):
+            base(name_, "<" + name_ + ">"), name(name_), ruleName(ruleName_), numberOfArguments(0), preCall(), postCall()
+        {
+        }
+        public nothrow NonterminalParser(const string& name_, const string& ruleName_, int numberOfArguments_):
+            base(name_, "<" + name_ + ">"), name(name_), ruleName(ruleName_), numberOfArguments(numberOfArguments_), preCall(), postCall()
+        {
+        }
+        public override ~NonterminalParser()
+        {
+            for (CmObjectPtr arg : arguments)
+            {
+                delete arg;
+            }
+        }
+        suppress NonterminalParser(const NonterminalParser&);
+        suppress void operator=(const NonterminalParser&);
+        suppress NonterminalParser(NonterminalParser&&);
+        suppress void operator=(NonterminalParser&&);
+        public override bool IsNonterminalParser() const
+        {
+            return true;
+        }
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (rule != null)
+            {
+                if (preCall != PreCall())
+                {
+                    preCall(stack);
+                }
+                Match match = rule->Parse(scanner, stack);
+                if (postCall != PostCall())
+                {
+                    postCall(stack, match.Hit());
+                }
+                return match;
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline const string& RuleName() const
+        {
+            return ruleName;
+        }
+        public nothrow inline const ArgumentList& Arguments() const
+        {
+            return arguments;
+        }
+        public inline void SetArguments(const ArgumentList& arguments_)
+        {
+            arguments = arguments_;
+        }
+        public nothrow inline RulePtr GetRule() const
+        {
+            return rule;
+        }
+        public void SetRule(RulePtr rule_)
+        {
+            rule = rule_;
+            Own(rule);
+        }
+        public nothrow inline int NumberOfArguments() const
+        {
+            if (numberOfArguments != 0)
+            {
+                return numberOfArguments;
+            }
+            return arguments.Count();
+        }
+        public nothrow inline void SetPreCall(PreCall preCall_)
+        {
+            preCall = preCall_;
+        }
+        public nothrow inline void SetPostCall(PostCall postCall_)
+        {
+            postCall = postCall_;
+        }
+        public nothrow inline const Position& GetPosition() const
+        {
+            return position;
+        }
+        public nothrow inline void SetPosition(const Position& position_)
+        {
+            position = position_;
+        }
+        public nothrow string PreCallMethodName() const
+        {
+            return "Pre" + name;
+        }
+        public nothrow string PostCallMethodName() const
+        {
+            return "Post" + name;
+        }
+        public nothrow string ValueFieldName() const
+        {
+            return "from" + name;
+        }
+        public nothrow string VariableName() const
+        {
+            if (!name.IsEmpty())
+            {
+                char first = name[0];
+                return ToLower(first) + name.Substring(1) + "NonterminalParser";
+            }
+            return "NonterminalParser";
+        }
+        public nothrow bool IsSpecialized() const
+        {
+            return numberOfArguments > 0 || !arguments.IsEmpty() || rule != null && rule->TakesOrReturnsValuesOrHasLocals();
+        }
+        private string name;
+        private string ruleName;
+        private int numberOfArguments;
+        private ArgumentList arguments;
+        private PreCall preCall;
+        private PostCall postCall;
+        private Position position;
+        private RulePtr rule;
+    }
+}

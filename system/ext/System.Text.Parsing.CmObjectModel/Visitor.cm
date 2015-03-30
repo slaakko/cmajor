@@ -1,0 +1,91 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Text.Parsing.CmObjectModel
+{
+    public class Visitor
+    {
+        public virtual void Visit(BoolType& object) {}
+        public virtual void Visit(SByteType& object) {}
+        public virtual void Visit(ByteType& object) {}
+        public virtual void Visit(UShortType& object) {}
+        public virtual void Visit(ShortType& oject) {}
+        public virtual void Visit(UIntType& object) {}
+        public virtual void Visit(IntType& object) {}
+        public virtual void Visit(ULongType& object) {}
+        public virtual void Visit(LongType& object) {}
+        public virtual void Visit(FloatType& object) {}
+        public virtual void Visit(DoubleType& object) {}
+        public virtual void Visit(CharType& object) {}
+        public virtual void Visit(VoidType& object) {}
+        public virtual void Visit(ThisAccess& object) {}
+        public virtual void Visit(BaseAccess& object) {}
+        public virtual void Visit(NewExpression& object) {}
+        public virtual void Visit(ObjectConstructionExpression& object) {}
+        public virtual void Visit(SizeofExpression& object) {}
+        public virtual void Visit(CastExpression& object) {}
+        public virtual void Visit(TypenameExpression& object) {}
+        public virtual void Visit(PrefixExpression& object) {}
+        public virtual void Visit(PostfixInc& object) {}
+        public virtual void Visit(PostfixDec& object) {}
+        public virtual void Visit(Pointer& object) {}
+        public virtual void Visit(Reference& object) {}
+        public virtual void Visit(Member& object) {}
+        public virtual void Visit(PtrMember& object) {}
+        public virtual void Visit(Invoke& object) {}
+        public virtual void Visit(Indexing& object) {}
+        public virtual void Visit(PostfixExpression& object) {}
+        public virtual void Visit(BinaryExpression& object) {}
+        public virtual void Visit(Identifier& object) {}
+        public virtual void Visit(TemplateId& object) {}
+        public virtual void Visit(IntLiteral& object) {}
+        public virtual void Visit(HexLiteral& object) {}
+        public virtual void Visit(FloatingLiteral& object) {}
+        public virtual void Visit(BooleanLiteral& object) {}
+        public virtual void Visit(CharacterLiteral& object) {}
+        public virtual void Visit(StringLiteral& object) {}
+        public virtual void Visit(NullLiteral& object) {}
+        public virtual void Visit(NamespaceImport& object) {}
+        public virtual void Visit(Alias& object) {}
+        public virtual void Visit(SimpleStatement& object) {}
+        public virtual void Visit(EmptyStatement& object) {}
+        public virtual void Visit(ReturnStatement& object) {}
+        public virtual void Visit(ConditionalStatement& object) {}
+        public virtual void Visit(CompoundStatement& object) {}
+        public virtual void Visit(SwitchStatement& object) {}
+        public virtual void Visit(CaseStatement& object) {}
+        public virtual void Visit(DefaultStatement& object) {}
+        public virtual void Visit(WhileStatement& object) {}
+        public virtual void Visit(DoStatement& object) {}
+        public virtual void Visit(RangeForStatement& object) {}
+        public virtual void Visit(ForStatement& object) {}
+        public virtual void Visit(BreakStatement& object) {}
+        public virtual void Visit(ContinueStatement& object) {}
+        public virtual void Visit(GotoStatement& object) {}
+        public virtual void Visit(GotoCaseStatement& object) {}
+        public virtual void Visit(GotoDefaultStatement& object) {}
+        public virtual void Visit(TypedefStatement& object) {}
+        public virtual void Visit(AssignmentStatement& object) {}
+        public virtual void Visit(ConstructionStatement& object) {}
+        public virtual void Visit(DestroyStatement& object) {}
+        public virtual void Visit(DeleteStatement& object) {}
+        public virtual void Visit(ThrowStatement& object) {}
+        public virtual void Visit(ExceptionHandler& object) {}
+        public virtual void Visit(TryStatement& object) {}
+        public virtual void Visit(AssertStatement& object) {}
+    }
+}
