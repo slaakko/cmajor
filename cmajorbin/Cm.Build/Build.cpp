@@ -526,7 +526,12 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::string& 
     boost::filesystem::remove(exeErrorFilePath);
     if (!quiet)
     {
-        std::cout << "=> " << Cm::Util::GetFullPath(executableFilePath) << std::endl;
+#ifdef WIN32
+        std::string exePath = Cm::Util::GetFullPath(boost::filesystem::path(executableFilePath).replace_extension(".exe").generic_string());
+#else
+        std::string exePath = Cm::Util::GetFullPath(executableFilePath);
+#endif    
+        std::cout << "=> " << exePath << std::endl;
     }
 }
 

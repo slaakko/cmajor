@@ -167,23 +167,26 @@ void MergeDerivations(Cm::Ast::DerivationList& targetDerivations, const Cm::Ast:
 Cm::Ast::DerivationList RemoveDerivations(const Cm::Ast::DerivationList& targetDerivations, const Cm::Ast::DerivationList& sourceDerivations)
 {
     Cm::Ast::DerivationList result;
+    Cm::Ast::DerivationList srcDerivations = sourceDerivations;
     int n = targetDerivations.NumDerivations();
     for (int i = 0; i < n; ++i)
     {
         Cm::Ast::Derivation targetDerivation = targetDerivations[i];
-        int m = sourceDerivations.NumDerivations();
+        int m = srcDerivations.NumDerivations();
         bool found = false;
         for (int j = 0; j < m; ++j)
         {
-            Cm::Ast::Derivation sourceDerivation = sourceDerivations[j];
+            Cm::Ast::Derivation sourceDerivation = srcDerivations[j];
             if (targetDerivation == sourceDerivation)
             {
                 found = true;
+                srcDerivations[j] = Cm::Ast::Derivation::none;
                 break;
             }
             else if (targetDerivation == Cm::Ast::Derivation::reference && sourceDerivation == Cm::Ast::Derivation::rvalueRef)
             {
                 found = true;
+                srcDerivations[j] = Cm::Ast::Derivation::none;
                 break;
             }
         }

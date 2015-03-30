@@ -36,6 +36,7 @@ public:
     typedef const Derivation* const_iterator;
     uint8_t NumDerivations() const { return numDerivations; }
     Derivation operator[](int index) const { return derivations[index];  }
+    Derivation& operator[](int index) { return derivations[index]; }
     void Add(Derivation derivation);
     void InsertFront(Derivation derivation);
     const_iterator begin() const { return derivations; }

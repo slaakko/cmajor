@@ -1,0 +1,81 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.Text;
+
+namespace System.Text.Parsing.CmObjectModel
+{
+    public abstract class CmObject
+    {
+        public CmObject(const string& name_): name(name_), owned(false)
+        {
+        }
+        public virtual ~CmObject()
+        {
+        }
+        public nothrow inline const string& Name() const
+        {
+            return name;
+        }
+        public nothrow inline void SetName(const string& name_)
+        {
+            name = name_;
+        }
+        public virtual string ToString() const
+        {
+            return name;
+        }
+        public virtual void Print(CodeFormatter& formatter)
+        {
+            formatter.Write(name);
+        }
+        public virtual int Rank() const
+        {
+            return 100;
+        }
+        public virtual void AddConst()
+        {
+        }
+        public nothrow inline bool Owned() const
+        {
+            return owned;
+        }
+        public nothrow inline void SetOwned()
+        {
+            owned = true;
+        }
+        public nothrow inline void SetNotOwned()
+        {
+            owned = false;
+        }
+        public void Own(CmObject* object)
+        {
+            if (object != null)
+            {
+                if (!object->Owned())
+                {
+                    object->SetOwned();
+                    ownedObjects.Add(UniquePtr<CmObject>(object));
+                }
+            }
+        }
+        public abstract void Accept(Visitor& visitor);
+        private string name;
+        private bool owned;
+        private List<UniquePtr<CmObject>> ownedObjects;
+    }
+}

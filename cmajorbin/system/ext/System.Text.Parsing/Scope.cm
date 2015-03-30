@@ -1,0 +1,213 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+
+namespace System.Text.Parsing
+{
+    public typedef Scope* ScopePtr;
+    
+    public class Scope: ParsingObject
+    {
+        public Scope(const string& name_, ScopePtr enclosingScope_): base(name_, enclosingScope_), fullNameComputed(false)
+        {
+        }
+        suppress Scope(const Scope&);
+        suppress void operator=(const Scope&);
+        suppress Scope(Scope&&);
+        suppress void operator=(Scope&&);
+        public override void Accept(Visitor& visitor)
+        {
+            for (const Pair<string, ParsingObjectPtr>& p : fullNameMap)
+            {
+                ParsingObjectPtr object = p.second;
+                object->Accept(visitor);
+            }
+        }
+        public override string FullName()
+        {
+            if (!fullNameComputed)
+            {
+                ScopePtr parentScope = EnclosingScope();
+                string parentScopeFullName;
+                if (parentScope != null)
+                {
+                    parentScopeFullName = parentScope->FullName();
+                }
+                if (parentScopeFullName.IsEmpty())
+                {
+                    fullName = Name();
+                }
+                else 
+                {
+                    fullName = parentScopeFullName + "." + Name();
+                }
+                fullNameComputed = true;
+            }
+            return fullName;
+        }
+        public void SetNs(NamespacePtr ns_)
+        {
+            ns = ns_;
+            Own(ns);
+        }
+        public nothrow inline NamespacePtr Ns() const
+        {
+            return ns;
+        }
+        public void Add(ParsingObjectPtr object)
+        {
+            Own(object);
+            string objectFullName = object->FullName();
+            Pair<string, ParsingObjectPtr> full = MakePair(objectFullName, object);
+            if (!fullNameMap.Insert(full).second)
+            {
+                string msg = "object '" + objectFullName + "' already exists (detected in scope '" + FullName() + "')";
+                throw Exception(msg);
+            }
+            Pair<string, ParsingObjectPtr> short_ = MakePair(object->Name(), object);
+            if (!shortNameMap.Insert(short_).second)
+            {
+                string msg = "object '" + objectFullName + "' already exists (detected in scope '" + FullName() + "')";
+                throw Exception(msg);
+            }
+        }
+        public ParsingObjectPtr Get(const string& objectName) const
+        {
+            if (objectName.Find('.') != -1)
+            {
+                NameMapIt i = fullNameMap.Find(objectName);
+                if (i != fullNameMap.End())
+                {
+                    return i->second;
+                }
+                else
+                {
+                    ParsingObjectPtr object = GetQualifiedObject(objectName);
+                    if (object != null)
+                    {
+                        return object;
+                    }
+                }
+            }
+            else
+            {
+                NameMapIt i = shortNameMap.Find(objectName);
+                if (i != shortNameMap.End())
+                {
+                    return i->second;
+                }
+            }
+            return null;
+        }
+        public void AddNamespace(NamespacePtr ns)
+        {
+            Own(ns);
+            NamespacePtr parent = GetGlobalScope()->Ns();
+            List<string> nameComponents = ns->FullName().Split('.');
+            #assert(!nameComponents.IsEmpty());
+            int n = nameComponents.Count();
+            for (int i = 0; i < n - 1; ++i)
+            {
+                string namespaceName = nameComponents[i];
+                ScopePtr enclosingScope = parent->GetScope();
+                ParsingObjectPtr object = enclosingScope->Get(namespaceName);
+                if (object != null)
+                {
+                    if (object->IsNamespace())
+                    {
+                        parent = cast<NamespacePtr>(object);
+                    }
+                    else
+                    {
+                        throw Exception("object '" + namespaceName + "' is not a namespace");
+                    }
+                }
+                else
+                {
+                    parent = NamespacePtr(new Namespace(namespaceName, enclosingScope));
+                    Own(parent);
+                    parent->GetScope()->SetName(namespaceName);
+                    parent->GetScope()->SetNs(parent);
+                    enclosingScope->Add(parent);
+                }
+            }
+            string name = nameComponents[n - 1];
+            ns->SetName(name);
+            ns->GetScope()->SetName(name);
+            ns->SetEnclosingScope(parent->GetScope());
+            ns->GetScope()->SetEnclosingScope(parent->GetScope());
+            parent->GetScope()->Add(ns);
+        }
+        public NamespacePtr GetNamespace(const string& fullNamespaceName) const
+        {
+            ParsingObjectPtr object = GetQualifiedObject(fullNamespaceName);
+            if (object != null)
+            {
+                if (object->IsNamespace())
+                {
+                    return cast<NamespacePtr>(object);
+                }
+                else
+                {
+                    throw Exception("object '" + fullNamespaceName + "' is not a namespace");
+                }
+            }
+            return null;
+        }
+        private nothrow ScopePtr GetGlobalScope() const
+        {
+            ScopePtr globalScope = this;
+            while (globalScope->EnclosingScope() != null)
+            {
+                globalScope = globalScope->EnclosingScope();
+            }
+            return globalScope;
+        }
+        private ParsingObjectPtr GetQualifiedObject(const string& qualifiedObjectName) const
+        {
+            List<string> components = qualifiedObjectName.Split('.');
+            int n = components.Count();
+            ScopePtr scope = this;
+            while (scope != null)
+            {
+                ScopePtr subScope = scope;
+                int i = 0;
+                NameMapIt it = subScope->shortNameMap.Find(components[i]);
+                while (it != subScope->shortNameMap.End())
+                {
+                    ParsingObjectPtr object = it->second;
+                    if (i == n - 1)
+                    {
+                        return object;
+                    }
+                    ++i;
+                    subScope = object->GetScope();
+                    it = subScope->shortNameMap.Find(components[i]);
+                }
+                scope = scope->EnclosingScope();
+            }
+            return null;
+        }
+        private NamespacePtr ns;
+        private bool fullNameComputed;
+        private string fullName;
+        private typedef Map<string, ParsingObjectPtr> NameMap;
+        private typedef NameMap.Iterator NameMapIt;
+        private NameMap fullNameMap;
+        private NameMap shortNameMap;
+    }
+}

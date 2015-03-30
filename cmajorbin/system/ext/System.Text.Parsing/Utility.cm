@@ -1,0 +1,61 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Text.Parsing
+{
+    public nothrow string HexEscape(char c)
+    {
+        return "\\x" + ToHexString(cast<byte>(c));
+    }
+    public string XmlCharStr(char c)
+    {
+        switch (c)
+        {
+            case '&': return "&amp;";
+            case '<': return "&lt;";
+            case '>': return "&gt;";
+            case '\a': return "\\a";
+            case '\b': return "\\b";
+            case '\f': return "\\f";
+            case '\n': return "\\n";
+            case '\r': return "\\r";
+            case '\t': return "\\t";
+            case '\v': return "\\v";
+            default:
+            {
+                if (IsPrintable(c))
+                {
+                    return string(c);
+                }
+                else
+                {
+                    return HexEscape(c);
+                }
+            }
+        }        
+    }
+    public string XmlEscape(const string& s)
+    {
+        string result;
+        result.Reserve(2 * s.Length());
+        for (char c : s)
+        {
+            result.Append(XmlCharStr(c));
+        }
+        return result;
+    }
+}

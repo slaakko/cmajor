@@ -1,0 +1,178 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Text.Parsing
+{
+    public static class Stats
+    {
+        public nothrow static void SetCountSourceLines(bool countSourceLines_)
+        {
+            countSourceLines = countSourceLines_;
+        }
+        public nothrow static bool CountSourceLines() 
+        {
+            return countSourceLines;
+        }
+        public nothrow static void ResetSourceLines()
+        {
+            sourceLines = 0;
+        }
+        public nothrow static void IncSourceLines()
+        {
+            ++sourceLines;
+        }
+        public nothrow static int GetSourceLines() 
+        {
+            return sourceLines;
+        }
+        private static bool countSourceLines;
+        private static int sourceLines;
+    }
+    
+    public class Scanner
+    {
+        public nothrow Scanner(const string& content_, int fileIndex_, const string& fileName_, ParserPtr skipper_): 
+            content(content_), position(fileIndex_), fileName(fileName_), skipper(skipper_), skipping(false), tokenCounter(0), log(), 
+            countSourceLines(Stats.CountSourceLines()), topLevelRule(null), atBeginningOfLine(true)
+        {
+            if (countSourceLines)
+            {
+                Stats.ResetSourceLines();
+            }
+        }
+        public nothrow inline const string& Content() const
+        {
+            return content;
+        }
+        public nothrow inline const Position& GetPosition() const
+        {
+            return position;
+        }
+        public nothrow inline void SetPosition(const Position& position_)
+        {
+            position = position_;
+        }
+        public nothrow inline const string& FileName() const
+        {
+            return fileName;
+        }
+        public nothrow inline ParserPtr Skipper() const
+        {
+            return skipper;
+        }
+        public nothrow inline bool Skipping() const
+        {
+            return skipping;
+        }
+        public nothrow inline int TokenCounter() const
+        {
+            return tokenCounter;
+        }
+        public nothrow inline char GetChar() const
+        {
+            return content[position.Index()];
+        }
+        public nothrow string GetMatch(int startIndex) const
+        {
+            return content.Substring(startIndex, position.Index() - startIndex);
+        }
+        public nothrow inline bool AtEnd() const
+        {
+            return position.Index() >= content.Length();
+        }
+        public nothrow void operator++()
+        {
+            char c = GetChar();
+            if (countSourceLines)
+            {
+                if (!skipping && topLevelRule != skipper && atBeginningOfLine && !IsSpace(c))
+                {
+                    Stats.IncSourceLines();
+                    atBeginningOfLine = false;
+                }
+            }
+            position.SetIndex(position.Index() + 1);
+            if (c == '\n')
+            {
+                atBeginningOfLine = true;
+                position.SetLine(position.Line() + 1);
+                position.SetColumn(1);
+            }
+            else
+            {
+                position.SetColumn(position.Column() + 1);
+            }
+        }
+        public nothrow inline void BeginToken()
+        {
+            ++tokenCounter;
+        }
+        public nothrow inline void EndToken()
+        {
+            --tokenCounter;
+        }
+        public void Skip()
+        {
+            if (tokenCounter == 0 && skipper != null)
+            {
+                Position save = position;
+                BeginToken();
+                skipping = true;
+                ObjectStack stack;
+                Match match = skipper->Parse(*this, stack);
+                skipping = false;
+                EndToken();
+                if (!match.Hit())
+                {
+                    position = save;
+                }
+            }
+        }
+        public nothrow inline XmlLogPtr Log() const
+        {
+            return log;
+        }
+        public nothrow inline void SetLog(XmlLogPtr log_)
+        {
+            log = log_;
+        }
+        public nothrow int LineEndIndex() const
+        {
+            int lineEndIndex = position.Index();
+            int contentLength = content.Length();
+            while (lineEndIndex < contentLength && content[lineEndIndex] != '\n')
+            {
+                ++lineEndIndex;
+            }
+            return lineEndIndex;
+        }
+        public nothrow string RestOfLine() const
+        {
+            return content.Substring(position.Index(), LineEndIndex() - position.Index());
+        }
+        private string content;
+        private Position position;
+        private string fileName;
+        private ParserPtr skipper;
+        private bool skipping;
+        private int tokenCounter;
+        private XmlLogPtr log;
+        private bool countSourceLines;
+        private Rule* topLevelRule;
+        private bool atBeginningOfLine;
+    }
+}

@@ -1,0 +1,144 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+namespace System.Text.Parsing
+{
+    grammar stdlib
+    {
+        spaces                              ::= space+
+                                            ;
+
+        newline                             ::= "\r\n" | "\n" | "\r"
+                                            ;
+
+        comment                             ::= line_comment | block_comment
+                                            ;
+
+        line_comment                        ::= "//" [^\r\n]* newline
+                                            ;
+
+        block_comment                       ::= "/*" (string | char | (anychar - "*/"))* "*/"
+                                            ;
+
+        spaces_and_comments                 ::= (space | comment)+
+                                            ;
+
+        digit_sequence                      ::= token(digit+)
+                                            ;
+
+        sign                                ::= '+' | '-'
+                                            ;
+
+        int: int                            ::= token(sign? digit_sequence)
+                                            {
+                                                value = ParseInt(match);
+                                            }
+                                            ;
+
+        uint: uint                          ::= digit_sequence
+                                            {
+                                                value = ParseUInt(match);
+                                            }
+                                            ;
+
+        hex: ulong                          ::= token(hexdigit+)
+                                            {
+                                                value = ParseHex(match);
+                                            }
+                                            ;
+
+        hex_literal: ulong                  ::= token(("0x" | "0X") hex!){ value = hex; }
+                                            ;
+
+        octaldigit: int                     ::= [0-7]{ value = cast<int>(match[0]) - cast<int>('0'); }
+                                            ;
+
+        real: double                        ::= token(sign? fractional_real exponent_part? | sign? digit_sequence exponent_part)
+                                            {
+                                                value = ParseDouble(match);
+                                            }
+                                            ;
+
+        ureal: double                       ::= token(fractional_real exponent_part? | digit_sequence exponent_part)
+                                            {
+                                                value = ParseDouble(match);
+                                            }
+                                            ;
+
+        fractional_real                     ::= token(digit_sequence? '.' digit_sequence)
+                                            |   token(digit_sequence '.')
+                                            ;
+
+        exponent_part                       ::= token([eE] sign? digit_sequence)
+                                            ;
+
+        number: double                      ::= real:r{ value = r; } | int:i{ value = i; }
+                                            ;
+
+        bool: bool                          ::= keyword("true"){ value = true; } | keyword("false"){ value = false; }
+                                            ;
+
+        identifier: string                  ::= token((letter | '_') (letter | digit | '_')*)
+                                            {
+                                                value = match;
+                                            }
+                                            ;
+
+        qualified_id: string                ::= token(identifier:first ('.' identifier:rest)*)
+                                            {
+                                                value = match;
+                                            }
+                                            ;
+
+        escape: char                        ::= token('\\'
+                                            (
+                                                [xX] hex:x{ value = cast<char>(x); }
+                                            |   (octaldigit:o1 octaldigit:o2 octaldigit:o3){ value = cast<char>(64 * o1 + 8 * o2 + o3); }
+                                            |   [dD] uint:decimalEscape{ value = cast<char>(decimalEscape); }
+                                            |   [^dDxX]
+                                            {
+                                                char c = match[0];
+                                                switch (c)
+                                                {
+                                                    case 'a': value = '\a'; break;
+                                                    case 'b': value = '\b'; break;
+                                                    case 'f': value = '\f'; break;
+                                                    case 'n': value = '\n'; break;
+                                                    case 'r': value = '\r'; break;
+                                                    case 't': value = '\t'; break;
+                                                    case 'v': value = '\v'; break;
+                                                    case '0': value = '\0'; break;
+                                                    default:  value = c; break;
+                                                }
+                                            }
+                                            )
+                                            )
+                                            ;
+
+        char: char                          ::= token('\''
+                                            (   [^\\\r\n]{ value = match[0]; }
+                                            |   escape{ value = escape; }
+                                            )   '\''!)
+                                            ;
+
+        string: string                      ::= token('"'
+                                                (
+                                                    ([^"\\\r\n]+){ value.Append(match); }
+                                                |   escape{ value.Append(escape); }
+                                                )*
+                                            '"'!)
+                                            ;
+    }
+}

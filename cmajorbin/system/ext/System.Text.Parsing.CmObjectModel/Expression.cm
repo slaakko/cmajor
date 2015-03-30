@@ -1,0 +1,550 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.Text;
+
+namespace System.Text.Parsing.CmObjectModel
+{
+    public class ExpressionListHolder
+    {
+        public ExpressionListHolder()
+        {
+        }
+        suppress ExpressionListHolder(const ExpressionListHolder& that);
+        suppress void operator=(const ExpressionListHolder& that);
+        public default nothrow ExpressionListHolder(ExpressionListHolder&& that);
+        public default nothrow void operator=(ExpressionListHolder&& that);
+        public nothrow ~ExpressionListHolder()
+        {
+            for (CmObject* expr : ownedExprs)
+            {
+                delete expr;
+            }
+        }
+        public void Add(CmObject* expr)
+        {
+            ownedExprs.Add(expr);
+        }
+        public ExpressionList Release()
+        {
+            return Rvalue(ownedExprs);
+        }
+        private ExpressionList ownedExprs;
+    }
+
+    public abstract class Expression: CmObject
+    {
+        public Expression(const string& name_, int rank_): base(name_), rank(rank_)
+        {
+        }
+        public override int Rank() const
+        {
+            return rank;
+        }
+        private int rank;
+    }
+
+    public class ThisAccess: Expression
+    {
+        public ThisAccess(): base("this", 40)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("this");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class BaseAccess: Expression
+    {
+        public BaseAccess(): base("base", 40)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("base");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class NewExpression: Expression
+    {
+        public NewExpression(CmObject* typeExpr_, const ExpressionList& args_): base("new", 30), typeExpr(typeExpr_), args(args_)
+        {
+            Own(typeExpr);
+            for (CmObject* arg : args)
+            {
+                Own(arg);
+            }
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("new ");
+            typeExpr->Print(formatter);
+            formatter.Write("(");
+            bool first = true;
+            for (CmObject* arg : args)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(", ");
+                }
+                arg->Print(formatter);
+            }
+            formatter.Write(")");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            typeExpr->Accept(visitor);
+            for (CmObject* arg : args)
+            {
+                arg->Accept(visitor);
+            }
+        }
+        private CmObject* typeExpr;
+        private ExpressionList args;
+    }
+
+    public class ObjectConstructionExpression: Expression
+    {
+        public ObjectConstructionExpression(CmObject* typeExpr_, const ExpressionList& args_): base("new", 30), typeExpr(typeExpr_), args(args_)
+        {
+            Own(typeExpr);
+            for (CmObject* arg : args)
+            {
+                Own(arg);
+            }
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("construct<");
+            typeExpr->Print(formatter);
+            formatter.Write(">(");
+            bool first = true;
+            for (CmObject* arg : args)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(", ");
+                }
+                arg->Print(formatter);
+            }
+            formatter.Write(")");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            typeExpr->Accept(visitor);
+            for (CmObject* arg : args)
+            {
+                arg->Accept(visitor);
+            }
+        }
+        private CmObject* typeExpr;
+        private ExpressionList args;
+    }
+
+    public class SizeofExpression: Expression
+    {
+        public SizeofExpression(CmObject* subject_): base("sizeof", 30), subject(subject_)
+        {
+            Own(subject);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("sizeof(");
+            subject->Print(formatter);
+            formatter.Write(")");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            subject->Accept(visitor);
+        }
+        private CmObject* subject;
+    }
+
+    public class CastExpression: Expression
+    {
+        public CastExpression(CmObject* typeExpr_, CmObject* subject_): base("cast", 30), typeExpr(typeExpr_), subject(subject_)
+        {
+            Own(typeExpr);
+            Own(subject);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("cast<");
+            typeExpr->Print(formatter);
+            formatter.Write(">(");
+            subject->Print(formatter);
+            formatter.Write(")");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            typeExpr->Accept(visitor);
+            subject->Accept(visitor);
+        }
+        private CmObject* typeExpr;
+        private CmObject* subject;
+    }
+
+    public class TypenameExpression: Expression
+    {
+        public TypenameExpression(CmObject* expression_): base("typename", 30), expression(expression_)
+        {
+            Own(expression);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("typename(");
+            expression->Print(formatter);
+            formatter.Write(")");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            expression->Accept(visitor);
+        }
+        private CmObject* expression;
+    }
+
+    public class PrefixExpression: Expression
+    {
+        public PrefixExpression(Operator op_, CmObject* child_): base(MakePrefixOpName(op_), 25), child(child_)
+        {
+            Own(child);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write(Name());
+            child->Print(formatter);
+        }
+        public override string ToString() const
+        {
+            return Name() + child->ToString();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            child->Accept(visitor);
+        }
+        private CmObject* child;
+    }
+
+    public abstract class PostfixOp: CmObject
+    {
+        public PostfixOp(const string& name_): base(name_)
+        {
+        }
+    }
+
+    public class PostfixInc: PostfixOp
+    {
+        public PostfixInc(): base("++")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class PostfixDec: PostfixOp
+    {
+        public PostfixDec(): base("--")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class Pointer: PostfixOp
+    {
+        public Pointer(): base("*")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class Reference: PostfixOp
+    {
+        public Reference(): base("&")
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class Member: PostfixOp
+    {
+        public Member(const string& memberName_): base("." + memberName_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class PtrMember: PostfixOp
+    {
+        public PtrMember(const string& memberName_): base("->" + memberName_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class Invoke: PostfixOp
+    {
+        public Invoke(const List<CmObject*>& args_): base("()"), args(args_)
+        {
+            for (CmObject* arg : args)
+            {
+                Own(arg);
+            }
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("(");
+            bool first = true;
+            for (CmObject* arg : args)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(", ");
+                }
+                arg->Print(formatter);
+            }
+            formatter.Write(")");
+        }
+        public override string ToString() const
+        {
+            string s = "(";
+            bool first = true;
+            for (CmObject* arg : args)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    s.Append(", ");
+                }
+                s.Append(arg->ToString());
+            }
+            s.Append(")");
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            for (CmObject* arg : args)
+            {
+                arg->Accept(visitor);
+            }
+        }
+        private List<CmObject*> args;
+    }
+
+    public class Indexing: PostfixOp
+    {
+        public Indexing(CmObject* index_): base("[]"), index(index_)
+        {
+            Own(index);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("[");
+            index->Print(formatter);
+            formatter.Write("]");
+        }
+        public override string ToString() const
+        {
+            return "[" + index->ToString() + "]";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            index->Accept(visitor);
+        }
+        private CmObject* index;
+    }
+
+    public class PostfixExpression: Expression
+    {
+        public PostfixExpression(CmObject* subject_): base("postfix", 24), subject(subject_), isConst(false)
+        {
+            Own(subject);
+        }
+        public void OwnSubject()
+        {
+            Own(subject);
+        }
+        public void AddOp(PostfixOp* op)
+        {
+            ops.Add(op);
+            Own(op);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            if (isConst)
+            {
+                formatter.Write("const ");
+            }
+            subject->Print(formatter);
+            for (PostfixOp* op : ops)
+            {
+                op->Print(formatter);
+            }
+        }
+        public override string ToString() const
+        {
+            string s = subject->ToString();
+            for (PostfixOp* op : ops)
+            {
+                s.Append(op->ToString());
+            }
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            subject->Accept(visitor);
+            for (PostfixOp* op : ops)
+            {
+                op->Accept(visitor);
+            }
+        }
+        public override void AddConst()
+        {
+            isConst = true;
+        }
+        private CmObject* subject;
+        private List<PostfixOp*> ops;
+        private bool isConst;
+    }
+
+    public typedef PostfixExpression* PostfixExpressionPtr;
+    public typedef UniquePtr<PostfixExpression> UniquePostfixExpressionPtr;
+
+    public class BinaryExpression: Expression
+    {
+        public BinaryExpression(Operator op_, CmObject* left_, CmObject* right_): base(MakeBinOpName(op_), GetBinOpRank(op_)), left(left_), right(right_)
+        {
+            Own(left);
+            Own(right);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            bool leftLess = false;
+            if (left->Rank() < Rank())
+            {
+                leftLess = true;
+                formatter.Write("(");
+            }
+            left->Print(formatter);
+            if (leftLess)
+            {
+                formatter.Write(")");
+            }
+            formatter.Write(" ");
+            formatter.Write(Name());
+            formatter.Write(" ");
+            bool rightLess = false;
+            if (right->Rank() < Rank())
+            {
+                rightLess = true;
+                formatter.Write("(");
+            }
+            right->Print(formatter);
+            if (rightLess)
+            {
+                formatter.Write(")");
+            }
+        }
+        public override string ToString() const
+        {
+            string s;
+            bool leftLess = false;
+            if (left->Rank() < Rank())
+            {
+                leftLess = true;
+                s.Append("(");
+            }
+            s.Append(left->ToString());
+            if (leftLess)
+            {
+                s.Append(")");
+            }
+            s.Append(" ");
+            s.Append(Name());
+            s.Append(" ");
+            bool rightLess = false;
+            if (right->Rank() < Rank())
+            {
+                rightLess = true;
+                s.Append("(");
+            }
+            s.Append(right->ToString());
+            if (rightLess)
+            {
+                s.Append(")");
+            }
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            left->Accept(visitor);
+            right->Accept(visitor);
+        }
+        private CmObject* left;
+        private CmObject* right;
+    }
+}

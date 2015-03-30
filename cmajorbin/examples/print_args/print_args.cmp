@@ -1,0 +1,4 @@
+project PrintArgs;
+target=program;
+assembly <print_args.cma>;
+source <print_args.cm>;

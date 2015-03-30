@@ -1,0 +1,55 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Text.Parsing
+{
+    public class Match
+    {
+        public nothrow default Match();
+        public nothrow default Match(const Match&);
+        public nothrow default void operator=(const Match&);
+        public nothrow inline Match(bool hit_, int length_): hit(hit_), length(length_)
+        {
+        }
+        public nothrow inline bool Hit() const
+        {
+            return hit;
+        }
+        public nothrow inline int Length() const
+        {
+            return length;
+        }
+        public nothrow inline void Concatenate(const Match& that)
+        {
+            length = length + that.length;
+        }
+        public nothrow inline static Match Empty()
+        {
+            return Match(true, 0);
+        }
+        public nothrow inline static Match One()
+        {
+            return Match(true, 1);
+        }
+        public nothrow inline static Match Nothing()
+        {
+            return Match(false, -1);
+        }
+        private bool hit;
+        private int length;
+    }
+}

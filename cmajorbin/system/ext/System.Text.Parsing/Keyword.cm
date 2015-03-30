@@ -1,0 +1,181 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+
+namespace System.Text.Parsing
+{
+    internal class IdentifierCharsRuleHolder
+    {
+        static IdentifierCharsRuleHolder(): instance(new IdentifierCharsRuleHolder())
+        {
+        }
+        public static IdentifierCharsRuleHolder& Instance()
+        {
+            return *instance;
+        }
+        suppress IdentifierCharsRuleHolder(const IdentifierCharsRuleHolder&);
+        suppress void operator=(const IdentifierCharsRuleHolder&);
+        suppress IdentifierCharsRuleHolder(IdentifierCharsRuleHolder&&);
+        suppress void operator=(IdentifierCharsRuleHolder&&);
+        public IdentifierCharsRuleHolder():
+            rule(new Rule("identifier_chars", null,
+                new PositiveParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new LetterParser(),
+                                new DigitParser()),
+                            new CharParser('_')),
+                        new CharParser('.')))))
+        {
+            rule->SetOwned();
+        }
+        public nothrow RulePtr GetRule() const
+        {
+            return rule.GetPtr();
+        }
+        private static UniquePtr<IdentifierCharsRuleHolder> instance;
+        private UniqueRulePtr rule;
+    }
+    
+    public class KeywordParser: Parser
+    {
+        public KeywordParser(const string& keyword_):
+            base("keyword", "\"" + keyword_ + "\""), keyword(keyword_), continuationRuleName()
+        {
+            continuationRule = IdentifierCharsRuleHolder.Instance().GetRule();
+            keywordStringParser = new StringParser(keyword);
+            Own(keywordStringParser);
+            CreateKeywordRule();
+        }
+        public KeywordParser(const string& keyword_, const string& continuationRuleName_):
+            base("keyword", "\"" + keyword_ + "\""), keyword(keyword_), continuationRuleName(continuationRuleName_)
+        {
+            continuationRule = IdentifierCharsRuleHolder.Instance().GetRule();
+            keywordStringParser = new StringParser(keyword);
+            Own(keywordStringParser);
+            CreateKeywordRule();
+        }
+        suppress KeywordParser(const KeywordParser&);
+        suppress void operator=(const KeywordParser&);
+        suppress KeywordParser(KeywordParser&&);
+        suppress void operator=(KeywordParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            return keywordRule->Parse(scanner, stack);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline const string& Keyword() const
+        {
+            return keyword;
+        }
+        public nothrow inline const string& ContinuationRuleName() const
+        {
+            return continuationRuleName;
+        }
+        public void SetContinuationRule(RulePtr continuationRule_)
+        {
+            continuationRule = continuationRule_;
+            Own(continuationRule);
+        }
+        private void CreateKeywordRule()
+        {
+            keywordRule = new Rule(keyword, null,
+                new DifferenceParser(
+                    keywordStringParser,
+                    new TokenParser(
+                        new SequenceParser(
+                            keywordStringParser,
+                            continuationRule))));
+            Own(keywordRule);
+        }
+        private string keyword;
+        private string continuationRuleName;
+        private RulePtr continuationRule;
+        private ParserPtr keywordStringParser;
+        private RulePtr keywordRule;
+    }
+    
+    public typedef List<string> KeywordList;
+    public typedef Set<string> KeywordSet;
+    
+    public class KeywordListParser: Parser
+    {
+        public KeywordListParser(const string& selectorRuleName_, const KeywordList& keywords_):
+            base("keyword_list", "keyword_list"), selectorRuleName(selectorRuleName_), keywords()
+        {
+            for (const string& keyword : keywords_)
+            {
+                keywords.Insert(keyword);
+            }
+        }
+        suppress KeywordListParser(const KeywordListParser&);
+        suppress void operator=(const KeywordListParser&);
+        suppress KeywordListParser(KeywordListParser&&);
+        suppress void operator=(KeywordListParser&&);
+        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        {
+            if (selectorRule != null)
+            {
+                Position save = scanner.GetPosition();
+                Match match = selectorRule->Parse(scanner, stack);
+                if (match.Hit())
+                {
+                    string keyword = scanner.GetMatch(save.Index());
+                    if (keywords.Find(keyword) != keywords.End())
+                    {
+                        return match;
+                    }
+                    scanner.SetPosition(save);
+                }
+            }
+            return Match.Nothing();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline const string& SelectorRuleName() const
+        {
+            return selectorRuleName;
+        }
+        public nothrow inline const string& KeywordListName() const
+        {
+            return keywordListName;
+        }
+        public nothrow inline void SetKeywordListName(const string& keywordListName_)
+        {
+            keywordListName = keywordListName_;
+        }
+        public void SetSelectorRule(RulePtr selectorRule_)
+        {
+            selectorRule = selectorRule_;
+            Own(selectorRule);
+        }
+        public nothrow inline const KeywordSet& Keywords() const
+        {
+            return keywords;
+        }
+        private string selectorRuleName;
+        private string keywordListName;
+        private RulePtr selectorRule;
+        private KeywordSet keywords;
+    }
+}

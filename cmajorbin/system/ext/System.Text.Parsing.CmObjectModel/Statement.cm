@@ -1,0 +1,804 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.Text;
+
+namespace System.Text.Parsing.CmObjectModel
+{
+    public abstract class Statement: CmObject
+    {
+        public Statement(): base("statement")
+        {
+        }
+        public virtual bool IsCompoundStatement() const
+        {
+            return false;
+        }
+    }
+    
+    public class SimpleStatement: Statement
+    {
+        public SimpleStatement(CmObject* expression_): base(), expression(expression_)
+        {
+            Own(expression);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            expression->Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            expression->Accept(visitor);
+        }
+        private CmObject* expression;
+    }
+    
+    public class EmptyStatement: Statement
+    {
+        public EmptyStatement(): base()
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class ReturnStatement: Statement
+    {
+        public ReturnStatement(CmObject* expression_): base(), expression(expression_)
+        {
+            Own(expression);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            if (expression == null)
+            {
+                formatter.WriteLine("return;");
+            }
+            else
+            {
+                formatter.Write("return ");
+                expression->Print(formatter);
+                formatter.WriteLine(";");
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            if (expression != null)
+            {
+                expression->Accept(visitor);
+            }
+        }
+        private CmObject* expression;
+    }
+    
+    public class ConditionalStatement: Statement
+    {
+        public ConditionalStatement(CmObject* expression_, Statement* thenStatement_, Statement* elseStatement_): base(), expression(expression_), thenStatement(thenStatement_), elseStatement(elseStatement_)
+        {
+            Own(expression);
+            Own(thenStatement);
+            Own(elseStatement);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("if (");
+            expression->Print(formatter);
+            if (thenStatement->IsCompoundStatement())
+            {
+                formatter.WriteLine(")");
+            }
+            else
+            {
+                formatter.Write(") ");
+            }            
+            thenStatement->Print(formatter);
+            if (elseStatement != null)
+            {
+                if (elseStatement->IsCompoundStatement())
+                {
+                    formatter.WriteLine("else");
+                }
+                else
+                {
+                    formatter.Write("else ");
+                }
+                elseStatement->Print(formatter);
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            expression->Accept(visitor);
+            thenStatement->Accept(visitor);
+            if (elseStatement != null)
+            {
+                elseStatement->Accept(visitor);
+            }
+        }
+        private CmObject* expression;
+        private Statement* thenStatement;
+        private Statement* elseStatement;
+    }
+    
+    public class CompoundStatement: Statement
+    {
+        public CompoundStatement(): base() 
+        {
+        }
+        public override bool IsCompoundStatement() const
+        {
+            return true;
+        }
+        public void AddStatement(Statement* statement)
+        {
+            statements.Add(statement);
+            Own(statement);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            for (Statement* statement : statements)
+            {
+                statement->Print(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            for (Statement* statement : statements)
+            {
+                statement->Accept(visitor);
+            }
+        }        
+        private List<Statement*> statements;
+    }
+    
+    public typedef SwitchStatement* SwitchStatementPtr;
+
+    public class SwitchStatement: Statement
+    {
+        public SwitchStatement(CmObject* expression_): base(), expression(expression_)
+        {
+            Own(expression);
+        }
+        public void AddCase(Statement* caseStatement)
+        {
+            caseStatements.Add(caseStatement);
+            Own(caseStatement);
+        }
+        public void SetDefault(Statement* defaultStatement_)
+        {
+            defaultStatement = defaultStatement_;
+            Own(defaultStatement);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("switch (");
+            expression->Print(formatter);
+            formatter.WriteLine(")");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            for (Statement* caseStatement : caseStatements)
+            {
+                caseStatement->Print(formatter);
+            }
+            if (defaultStatement != null)
+            {
+                defaultStatement->Print(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            expression->Accept(visitor);
+            for (Statement* caseStatement : caseStatements)
+            {
+                caseStatement->Accept(visitor);
+            }
+            if (defaultStatement != null)
+            {
+                defaultStatement->Accept(visitor);
+            }
+        }        
+        private CmObject* expression;
+        private List<Statement*> caseStatements;
+        private Statement* defaultStatement;
+    }
+    
+    public typedef List<CmObject*> ExpressionList;
+    
+    public typedef CaseStatement* CaseStatementPtr;
+    
+    public class CaseStatement: CompoundStatement
+    {
+        public CaseStatement(const ExpressionList& caseExpressions_): base(), caseExpressions(caseExpressions_)
+        {
+            for (CmObject* caseExpr : caseExpressions)
+            {
+                Own(caseExpr);
+            }
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            bool first = true;
+            for (CmObject* caseExpression: caseExpressions)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(" ");
+                }
+                formatter.Write("case ");
+                caseExpression->Print(formatter);
+                formatter.Write(":");
+            }
+            formatter.WriteLine();
+            base->Print(formatter);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            for (CmObject* caseExpr : caseExpressions)
+            {
+                caseExpr->Accept(visitor);
+            }
+            base->Accept(visitor);
+        }        
+        private ExpressionList caseExpressions;
+    }
+    
+    public typedef DefaultStatement* DefaultStatementPtr;
+    
+    public class DefaultStatement: CompoundStatement
+    {
+        public DefaultStatement(): base()
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("default:");
+            base->Print(formatter);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            base->Accept(visitor);
+        }                
+    }
+    
+    public class WhileStatement: Statement
+    {
+        public WhileStatement(CmObject* expression_, Statement* statement_): base(), expression(expression_), statement(statement_)
+        {
+            Own(expression);
+            Own(statement);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("while (");
+            expression->Print(formatter);
+            if (statement->IsCompoundStatement())
+            {
+                formatter.WriteLine(")");
+            }
+            else
+            {
+                formatter.Write(") ");
+            }
+            statement->Print(formatter);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            expression->Accept(visitor);
+            statement->Accept(visitor);
+        }                
+        private CmObject* expression;
+        private Statement* statement;
+    }
+    
+    public class DoStatement: Statement
+    {
+        public DoStatement(Statement* statement_, CmObject* expression_): base(), statement(statement_), expression(expression_)
+        {
+            Own(statement);
+            Own(expression);
+        }    
+        public override void Print(CodeFormatter& formatter)
+        {
+            if (statement->IsCompoundStatement())
+            {
+                formatter.WriteLine("do");
+            }
+            else
+            {
+                formatter.Write("do ");
+            }
+            statement->Print(formatter);
+            formatter.Write("while (");
+            expression->Print(formatter);
+            formatter.WriteLine(");");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            statement->Accept(visitor);
+            expression->Accept(visitor);
+        }                
+        private Statement* statement;
+        private CmObject* expression;
+    }
+    
+    public typedef RangeForStatement* RangeForStatementPtr;
+    public typedef UniquePtr<RangeForStatement> UniqueRangeForStatementPtr;
+    
+    public class RangeForStatement: Statement
+    {
+        public RangeForStatement(): base(), varTypeExpr(null), varName(), container(null), action(null)
+        {
+        }
+        public void SetContent(CmObject* varTypeExpr_, const string& varName_, CmObject* container_, Statement* action_)
+        {
+            varTypeExpr = varTypeExpr_;
+            Own(varTypeExpr);
+            varName = varName_;
+            container = container_;
+            Own(container);
+            action = action_;
+            Own(action);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("for (");
+            varTypeExpr->Print(formatter);
+            formatter.Write(" " + varName + " : ");
+            container->Print(formatter);
+            if (action->IsCompoundStatement())
+            {
+                formatter.WriteLine(")");
+            }            
+            else
+            {
+                formatter.Write(") ");
+            }
+            action->Print(formatter);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            varTypeExpr->Accept(visitor);
+            container->Accept(visitor);
+            action->Accept(visitor);
+        }        
+        private CmObject* varTypeExpr;
+        private string varName;
+        private CmObject* container;
+        private Statement* action;
+    }
+    
+    public typedef ForStatement* ForStatementPtr;
+    
+    public class ForStatement: Statement
+    {
+        public ForStatement(): base(), initialization(null), condition(null), increment(null), action(null)
+        {
+        }
+        public void SetContent(Statement* initialization_, CmObject* condition_, CmObject* increment_, Statement* action_)
+        {
+            initialization = initialization_;
+            Own(initialization);
+            condition = condition_;
+            Own(condition);
+            increment = increment_;
+            Own(increment);
+            action = action_;
+            Own(action);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("for (");
+            if (initialization == null)
+            {
+                formatter.Write(";");
+            }
+            else
+            {
+                initialization->Print(formatter);
+            }
+            if (condition != null)
+            {
+                condition->Print(formatter);
+            }            
+            formatter.Write(";");
+            if (increment != null)
+            {
+                increment->Print(formatter);
+            }
+            if (action->IsCompoundStatement())
+            {
+                formatter.WriteLine(")");
+            }
+            else
+            {
+                formatter.Write(") ");
+            }
+            action->Print(formatter);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            if (initialization != null)
+            {
+                initialization->Accept(visitor);
+            }
+            if (condition != null)
+            {
+                condition->Accept(visitor);
+            }
+            if (increment != null)
+            {
+                increment->Accept(visitor);
+            }
+            action->Accept(visitor);
+        }        
+        private Statement* initialization;
+        private CmObject* condition;
+        private CmObject* increment;
+        private Statement* action;
+    }
+    
+    public class BreakStatement: Statement
+    {
+        public BreakStatement(): base()
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("break;");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }        
+    }
+    
+    public class ContinueStatement: Statement
+    {
+        public ContinueStatement(): base()
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("continue;");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }        
+    }
+    
+    public class GotoStatement: Statement
+    {
+        public GotoStatement(const string& target_): base(), target(target_)
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("goto " + target + ";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }        
+        private string target;
+    }
+    
+    public class GotoCaseStatement: Statement
+    {
+        public GotoCaseStatement(CmObject* expression_): base(), expression(expression_)
+        {
+            Own(expression);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("goto case ");
+            expression->Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            expression->Accept(visitor);
+        }        
+        private CmObject* expression;
+    }
+    
+    public class GotoDefaultStatement: Statement
+    {
+        public GotoDefaultStatement(): base()
+        {
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("goto default;");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }        
+    }
+    
+    public class TypedefStatement: Statement
+    {
+        public TypedefStatement(CmObject* typeExpr_, const string& typeName_):
+            base(), typeExpr(typeExpr_), typeName(typeName_)
+        {
+            Own(typeExpr);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("typedef ");
+            typeExpr->Print(formatter);
+            formatter.WriteLine(" " + typeName + ";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            typeExpr->Accept(visitor);
+        }        
+        private CmObject* typeExpr;
+        private string typeName;
+    }
+    
+    public class AssignmentStatement: Statement
+    {
+        public AssignmentStatement(CmObject* targetExpr_, CmObject* sourceExpr_):
+            base(), targetExpr(targetExpr_), sourceExpr(sourceExpr_)
+        {
+            Own(targetExpr);
+            Own(sourceExpr);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            targetExpr->Print(formatter);
+            formatter.Write(" = ");
+            sourceExpr->Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            targetExpr->Accept(visitor);
+            sourceExpr->Accept(visitor);
+        }        
+        private CmObject* targetExpr;
+        private CmObject* sourceExpr;
+    }
+    
+    public class ConstructionStatement: Statement
+    {
+        public ConstructionStatement(CmObject* typeExpr_, const string& identifier_, const ExpressionList& initExprs_):
+            base(), typeExpr(typeExpr_), identifier(identifier_), initExprs(initExprs_)
+        {
+            Own(typeExpr);
+            for (CmObject* initExpr : initExprs)
+            {
+                Own(initExpr);
+            }
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            typeExpr->Print(formatter);
+            formatter.Write(" " + identifier);
+            if (!initExprs.IsEmpty())
+            {
+                if (initExprs.Count() == 1)
+                {
+                    formatter.Write(" = ");
+                    initExprs[0]->Print(formatter);
+                }
+                else
+                {
+                    bool first = true;
+                    formatter.Write("(");
+                    for (CmObject* expr : initExprs)
+                    {
+                        if (first)
+                        {
+                            first = false;
+                        }
+                        else
+                        {
+                            formatter.Write(", ");
+                        }
+                        expr->Print(formatter);
+                    }
+                    formatter.Write(")");
+                }
+            }            
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            typeExpr->Accept(visitor);
+            for (CmObject* expr : initExprs)
+            {
+                expr->Accept(visitor);
+            }
+        }        
+        private CmObject* typeExpr;
+        private string identifier;
+        private ExpressionList initExprs;
+    }
+    
+    public class DestroyStatement: Statement
+    {
+        public DestroyStatement(CmObject* ptr_): base(), ptr(ptr_)
+        {
+            Own(ptr);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("destroy ");
+            ptr->Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            ptr->Accept(visitor);
+        }        
+        private CmObject* ptr;
+    }
+    
+    public class DeleteStatement: Statement
+    {
+        public DeleteStatement(CmObject* ptr_): base(), ptr(ptr_)
+        {
+            Own(ptr);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("delete ");
+            ptr->Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            ptr->Accept(visitor);
+        }        
+        private CmObject* ptr;
+    }
+    
+    public class ThrowStatement: Statement
+    {
+        public ThrowStatement(CmObject* exception_): base(), exception(exception_)
+        {
+            Own(exception);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("throw ");
+            exception->Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            exception->Accept(visitor);
+        }        
+        private CmObject* exception;
+    }
+    
+    public class ExceptionHandler: CmObject
+    {
+        public ExceptionHandler(CmObject* typeExpr_, const string& exception_, CompoundStatement* catchBlock_): 
+            base("handler"), typeExpr(typeExpr_), exception(exception_), catchBlock(catchBlock_)
+        {
+            Own(typeExpr);
+            Own(catchBlock);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("catch (");
+            typeExpr->Print(formatter);
+            formatter.WriteLine(" " + exception + ")");
+            catchBlock->Print(formatter);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            typeExpr->Accept(visitor);
+            catchBlock->Accept(visitor);
+        }        
+        private CmObject* typeExpr;
+        private string exception;
+        private CompoundStatement* catchBlock;
+    }
+    
+    public class TryStatement: Statement
+    {
+        public TryStatement(CompoundStatement* tryBlock_, const List<ExceptionHandler*>& handlers_):
+            base(), tryBlock(tryBlock_), handlers(handlers_)
+        {
+            Own(tryBlock);
+            for (ExceptionHandler* handler : handlers)
+            {
+                Own(handler);
+            }
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("try");
+            tryBlock->Print(formatter);
+            for (ExceptionHandler* handler : handlers)
+            {
+                handler->Print(formatter);
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            tryBlock->Accept(visitor);
+            for (ExceptionHandler* handler : handlers)
+            {
+                handler->Accept(visitor);
+            }
+        }        
+        private CompoundStatement* tryBlock;
+        private List<ExceptionHandler*> handlers;
+    }
+    
+    public class AssertStatement: Statement
+    {
+        public AssertStatement(CmObject* expression_): base(), expression(expression_)
+        {
+            Own(expression);
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write("#assert(");
+            expression->Print(formatter);
+            formatter.WriteLine(");");
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            expression->Accept(visitor);
+        }        
+        private CmObject* expression;
+    }
+}

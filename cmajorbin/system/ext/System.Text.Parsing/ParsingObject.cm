@@ -1,0 +1,178 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+
+namespace System.Text.Parsing
+{
+    public typedef ParsingObject* ParsingObjectPtr;
+    public typedef UniquePtr<ParsingObject> UniqueParsingObjectPtr;
+    
+    public abstract class ParsingObject
+    {
+        public nothrow ParsingObject(const string& name_): owned(false), name(name_), enclosingScope(null), owner(external)
+        {
+        }
+        public nothrow ParsingObject(const string& name_, ScopePtr enclosingScope_): owned(false), name(name_), enclosingScope(enclosingScope_), owner(external)
+        {
+        }
+        suppress ParsingObject(const ParsingObject&);
+        suppress void operator=(const ParsingObject&);
+        suppress ParsingObject(ParsingObject&&);
+        suppress void operator=(ParsingObject&&);
+        public virtual ~ParsingObject()
+        {
+        }
+        public virtual bool IsGrammar() const
+        {
+            return false;
+        }
+        public nothrow inline bool IsExternal() const
+        {
+            return owner == external;
+        }
+        public nothrow inline void SetExternal()
+        {
+            owner = external;
+        }
+        public abstract void Accept(Visitor& visitor);
+        public nothrow inline const string& Name() const
+        {
+            return name;
+        }
+        public nothrow inline void SetName(const string& name_)
+        {
+            name = name_;
+        }
+        public virtual string FullName()
+        {
+            ScopePtr s = enclosingScope;
+            string scopeName = "";
+            if (s != null)
+            {
+                scopeName = s->FullName();
+            }
+            if (!scopeName.IsEmpty())
+            {
+                return scopeName + "." + name;
+            }
+            return name;
+        }
+        public nothrow inline ScopePtr EnclosingScope() const
+        {
+            return enclosingScope;
+        }
+        public nothrow inline void SetEnclosingScope(ScopePtr enclosingScope_)
+        {
+            enclosingScope = enclosingScope_;
+        }
+        public virtual void AddToScope()
+        {
+            ScopePtr es = EnclosingScope();
+            if (es != null)
+            {
+                try
+                {
+                    es->Add(this);
+                }
+                catch (const Exception& ex)
+                {
+                    ThrowException(ex.Message(), GetPosition());
+                }
+                if (scope != null)
+                {
+                    scope->SetEnclosingScope(es);
+                }
+            }
+        }
+        public nothrow ScopePtr GetScope() const
+        {
+            if (scope == null)
+            {
+                return EnclosingScope();
+            }
+            return scope;
+        }
+        public void SetScope(ScopePtr scope_)
+        {
+            scope = scope_;
+            Own(scope);
+        }
+        public virtual bool IsActionParser() const
+        {
+            return false;
+        }
+        public virtual bool IsNonterminalParser() const
+        {
+            return false;
+        }
+        public virtual bool IsRule() const
+        {
+            return false;
+        }
+        public virtual bool IsRuleLink() const
+        {
+            return false;
+        }
+        public virtual bool IsNamespace() const
+        {
+            return false;
+        }
+        public nothrow inline void SetOwner(int owner_)
+        {
+            owner = owner_;
+        }
+        public nothrow inline int Owner() const
+        {
+            return owner;
+        }
+        public nothrow inline void SetPosition(const Position& position_)
+        {
+            position = position_;
+        }
+        public nothrow inline const Position& GetPosition() const
+        {
+            return position;
+        }
+        public nothrow inline bool Owned() const
+        {
+            return owned;
+        }
+        public nothrow inline void SetOwned()
+        {
+            owned = true;
+        }
+        public void Own(ParsingObjectPtr object)
+        {
+            if (object != null)
+            {
+                if (!object->Owned())
+                {
+                    object->SetOwned();
+                    ownedObjects.Add(UniqueParsingObjectPtr(object));
+                }
+            }
+        }
+        private const int external = -1;
+        private bool owned;
+        private string name;
+        private ScopePtr enclosingScope;
+        private ScopePtr scope;
+        private int owner;
+        private Position position;
+        private List<UniqueParsingObjectPtr> ownedObjects;
+    }
+}

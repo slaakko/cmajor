@@ -18,6 +18,7 @@ namespace Cm { namespace Core {
 
 void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
+    if (classTypes.find(classTypeSymbol) != classTypes.end()) return;
     classTypes.insert(classTypeSymbol);
     if (classTypeSymbol->BaseClass())
     {
@@ -25,9 +26,28 @@ void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymb
     }
     for (Cm::Sym::MemberVariableSymbol* memberVar : classTypeSymbol->MemberVariables())
     {
-        if (memberVar->GetType()->IsClassTypeSymbol())
+        Cm::Sym::TypeSymbol* memberVariableBaseType = memberVar->GetType()->GetBaseType();
+        if (memberVariableBaseType->IsClassTypeSymbol())
         {
-            AddClassType(static_cast<Cm::Sym::ClassTypeSymbol*>(memberVar->GetType()));
+            AddClassType(static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableBaseType));
+        }
+    }
+    if (classTypeSymbol->IsVirtual())
+    {
+        for (Cm::Sym::FunctionSymbol* virtualFunction : classTypeSymbol->Vtbl())
+        {
+            if (virtualFunction)
+            {
+                for (Cm::Sym::ParameterSymbol* parameter : virtualFunction->Parameters())
+                {
+                    Cm::Sym::TypeSymbol* parameterBaseType = parameter->GetType()->GetBaseType();
+                    if (parameterBaseType->IsClassTypeSymbol())
+                    {
+                        Cm::Sym::ClassTypeSymbol* parameterClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(parameterBaseType);
+                        AddClassType(parameterClassType);
+                    }
+                }
+            }
         }
     }
 }
