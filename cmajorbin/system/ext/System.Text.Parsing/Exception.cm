@@ -64,10 +64,6 @@ namespace System.Text.Parsing
         public nothrow FileInfo()
         {
         }
-        suppress FileInfo(const FileInfo&);
-        suppress void operator=(const FileInfo&);
-        suppress FileInfo(FileInfo&&);
-        suppress void operator=(FileInfo&&);
         public static nothrow FileInfo& Instance()
         {
             return *instance;

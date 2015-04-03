@@ -24,10 +24,6 @@ namespace System.Text.Parsing
         {
             SetScope(new Scope(Name(), EnclosingScope()));
         }
-        suppress Namespace(const Namespace&);
-        suppress void operator=(const Namespace&);
-        suppress Namespace(Namespace&&);
-        suppress void operator=(Namespace&&);
         public override bool IsNamespace() const
         {
             return true;
@@ -51,10 +47,6 @@ namespace System.Text.Parsing
                 ownedSubject.Reset(subject);
             }
         }
-        suppress UsingObject(const UsingObject&);
-        suppress void operator=(const UsingObject&);
-        suppress UsingObject(UsingObject&&);
-        suppress void operator=(UsingObject&&);
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);

@@ -40,10 +40,6 @@ namespace System.Text.Parsing
         public override ~Grammar()
         {
         }
-        suppress Grammar(const Grammar&);
-        suppress void operator=(const Grammar&);
-        suppress Grammar(Grammar&&);
-        suppress void operator=(Grammar&&);
         public override bool IsGrammar() const 
         { 
             return true; 
