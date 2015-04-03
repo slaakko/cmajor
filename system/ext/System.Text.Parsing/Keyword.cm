@@ -27,10 +27,6 @@ namespace System.Text.Parsing
         {
             return *instance;
         }
-        suppress IdentifierCharsRuleHolder(const IdentifierCharsRuleHolder&);
-        suppress void operator=(const IdentifierCharsRuleHolder&);
-        suppress IdentifierCharsRuleHolder(IdentifierCharsRuleHolder&&);
-        suppress void operator=(IdentifierCharsRuleHolder&&);
         public IdentifierCharsRuleHolder():
             rule(new Rule("identifier_chars", null,
                 new PositiveParser(
@@ -70,10 +66,6 @@ namespace System.Text.Parsing
             Own(keywordStringParser);
             CreateKeywordRule();
         }
-        suppress KeywordParser(const KeywordParser&);
-        suppress void operator=(const KeywordParser&);
-        suppress KeywordParser(KeywordParser&&);
-        suppress void operator=(KeywordParser&&);
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             return keywordRule->Parse(scanner, stack);
@@ -126,10 +118,6 @@ namespace System.Text.Parsing
                 keywords.Insert(keyword);
             }
         }
-        suppress KeywordListParser(const KeywordListParser&);
-        suppress void operator=(const KeywordListParser&);
-        suppress KeywordListParser(KeywordListParser&&);
-        suppress void operator=(KeywordListParser&&);
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (selectorRule != null)

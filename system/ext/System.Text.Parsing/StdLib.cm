@@ -19,10 +19,6 @@ namespace System.Text.Parsing
             grammar->Link();
             return grammar;
         }
-        suppress stdlib(const stdlib&);
-        suppress void operator=(const stdlib&);
-        suppress stdlib(stdlib&&);
-        suppress void operator=(stdlib&&);
         private stdlib(ParsingDomain* parsingDomain): base("stdlib", parsingDomain->GetNamespaceScope("System.Text.Parsing"), parsingDomain)
         {
             SetOwner(0);
@@ -34,10 +30,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("int");
             }
-            suppress intRule(const intRule&);
-            suppress void operator=(const intRule&);
-            suppress intRule(intRule&&);
-            suppress void operator=(intRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -62,12 +54,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public int value;
             }
             private Stack<Context> contextStack;
@@ -80,10 +66,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("uint");
             }
-            suppress uintRule(const uintRule&);
-            suppress void operator=(const uintRule&);
-            suppress uintRule(uintRule&&);
-            suppress void operator=(uintRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -108,12 +90,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public uint value;
             }
             private Stack<Context> contextStack;
@@ -126,10 +102,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("ulong");
             }
-            suppress hexRule(const hexRule&);
-            suppress void operator=(const hexRule&);
-            suppress hexRule(hexRule&&);
-            suppress void operator=(hexRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -154,12 +126,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public ulong value;
             }
             private Stack<Context> contextStack;
@@ -172,10 +138,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("ulong");
             }
-            suppress hex_literalRule(const hex_literalRule&);
-            suppress void operator=(const hex_literalRule&);
-            suppress hex_literalRule(hex_literalRule&&);
-            suppress void operator=(hex_literalRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -210,12 +172,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public ulong value;
                 public ulong fromhex;
             }
@@ -229,10 +185,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("int");
             }
-            suppress octaldigitRule(const octaldigitRule&);
-            suppress void operator=(const octaldigitRule&);
-            suppress octaldigitRule(octaldigitRule&&);
-            suppress void operator=(octaldigitRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -257,12 +209,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public int value;
             }
             private Stack<Context> contextStack;
@@ -275,10 +221,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("double");
             }
-            suppress realRule(const realRule&);
-            suppress void operator=(const realRule&);
-            suppress realRule(realRule&&);
-            suppress void operator=(realRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -303,12 +245,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public double value;
             }
             private Stack<Context> contextStack;
@@ -321,10 +257,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("double");
             }
-            suppress urealRule(const urealRule&);
-            suppress void operator=(const urealRule&);
-            suppress urealRule(urealRule&&);
-            suppress void operator=(urealRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -349,12 +281,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public double value;
             }
             private Stack<Context> contextStack;
@@ -367,10 +293,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("double");
             }
-            suppress numberRule(const numberRule&);
-            suppress void operator=(const numberRule&);
-            suppress numberRule(numberRule&&);
-            suppress void operator=(numberRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -421,12 +343,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public double value;
                 public double fromr;
                 public int fromi;
@@ -441,10 +357,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("bool");
             }
-            suppress boolRule(const boolRule&);
-            suppress void operator=(const boolRule&);
-            suppress boolRule(boolRule&&);
-            suppress void operator=(boolRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -475,12 +387,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public bool value;
             }
             private Stack<Context> contextStack;
@@ -493,10 +399,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("string");
             }
-            suppress identifierRule(const identifierRule&);
-            suppress void operator=(const identifierRule&);
-            suppress identifierRule(identifierRule&&);
-            suppress void operator=(identifierRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -521,12 +423,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public string value;
             }
             private Stack<Context> contextStack;
@@ -539,10 +435,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("string");
             }
-            suppress qualified_idRule(const qualified_idRule&);
-            suppress void operator=(const qualified_idRule&);
-            suppress qualified_idRule(qualified_idRule&&);
-            suppress void operator=(qualified_idRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -587,12 +479,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public string value;
                 public string fromfirst;
                 public string fromrest;
@@ -607,10 +493,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("char");
             }
-            suppress escapeRule(const escapeRule&);
-            suppress void operator=(const escapeRule&);
-            suppress escapeRule(escapeRule&&);
-            suppress void operator=(escapeRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -751,12 +633,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public char value;
                 public ulong fromx;
                 public int fromo1;
@@ -774,10 +650,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("char");
             }
-            suppress charRule(const charRule&);
-            suppress void operator=(const charRule&);
-            suppress charRule(charRule&&);
-            suppress void operator=(charRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -818,12 +690,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public char value;
                 public char fromescape;
             }
@@ -837,10 +703,6 @@ namespace System.Text.Parsing
             {
                 SetValueTypeName("string");
             }
-            suppress stringRule(const stringRule&);
-            suppress void operator=(const stringRule&);
-            suppress stringRule(stringRule&&);
-            suppress void operator=(stringRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -881,12 +743,6 @@ namespace System.Text.Parsing
             }
             private class Context
             {
-                public default Context();
-                suppress Context(const Context&);
-                suppress void operator=(const Context&);
-                public default nothrow Context(Context&&);
-                public default nothrow void operator=(Context&&);
-                public default nothrow ~Context();
                 public string value;
                 public char fromescape;
             }

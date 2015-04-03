@@ -125,10 +125,6 @@ namespace System.Text.Parsing
         private nothrow ParsingDomainRepository()
         {
         }
-        suppress ParsingDomainRepository(const ParsingDomainRepository&);
-        suppress void operator=(const ParsingDomainRepository&);
-        suppress ParsingDomainRepository(ParsingDomainRepository&&);
-        suppress void operator=(ParsingDomainRepository&&);
         public void Register(ParsingDomain* parsingDomain)
         {
             if (!parsingDomain->Owned())
