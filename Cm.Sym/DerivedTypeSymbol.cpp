@@ -204,7 +204,6 @@ void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
 void DerivedTypeSymbol::MakeIrType()
 {
     if (IrTypeMade()) return;
-    SetIrTypeMade();
     baseType->MakeIrType();
     SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
     if (IsPointerType())

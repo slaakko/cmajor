@@ -84,6 +84,7 @@ private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
     ClassTypeSymbol* currentClass;
+    std::stack<ClassTypeSymbol*> currentClassStack;
     FunctionSymbol* currentFunction;
     std::stack<ContainerSymbol*> containerStack;
     typedef std::unordered_map<Cm::Ast::Node*, ContainerScope*> NodeScopeMap;

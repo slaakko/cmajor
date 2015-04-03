@@ -45,14 +45,22 @@ private:
     Cm::Sym::FunctionSymbol* functionSymbol;
 };
 
+class ClassDelegateEqualOp : public Cm::Sym::FunctionSymbol
+{
+public:
+    ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType);
+};
+
 class ClassDelegateTypeOpCache
 {
 public:
     Cm::Sym::FunctionSymbol* GetClassDelegateFromFunCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType, Cm::Sym::FunctionSymbol* fun);
     Cm::Sym::FunctionSymbol* GetClassDelegateFromFunAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType, Cm::Sym::FunctionSymbol* fun);
+    Cm::Sym::FunctionSymbol* GetClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType);
 private:
     std::unique_ptr<Cm::Sym::FunctionSymbol> classDelegateFromFunCtor;
     std::unique_ptr<Cm::Sym::FunctionSymbol> classDelegateFromFunAssignment;
+    std::unique_ptr<Cm::Sym::FunctionSymbol> classDelegateEqualOp;
 };
 
 typedef std::unordered_map<Cm::Sym::TypeSymbol*, ClassDelegateTypeOpCache>  ClassDelegateTypeOpCacheMap;
@@ -82,6 +90,14 @@ public:
         Cm::Sym::TypeRepository& typeRepository, ClassDelegateTypeOpCacheMap& delegateTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
 };
 
+class ClassDelegateEqualOpGroup : public ClassDelegateTypeOpGroup
+{
+public:
+    void CollectViableFunctions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, const Cm::Parsing::Span& span,
+        int arity, std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable,
+        Cm::Sym::TypeRepository& typeRepository, ClassDelegateTypeOpCacheMap& delegateTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
+};
+
 class ClassDelegateTypeOpRepository : public Cm::Core::ClassDelegateTypeOpRepository
 {
 public:
@@ -97,6 +113,7 @@ private:
     ClassDelegateTypeOpGroupMap classDelegateTypeOpGroupMap;
     ClassDelegateConstructorOpGroup classDelegateConstructorOpGroup;
     ClassDelegateAssignmentOpGroup classDelegateAssignmentOpGroup;
+    ClassDelegateEqualOpGroup classDelegateEqualOpGroup;
 };
 
 } } // namespace Cm::Bind

@@ -25,8 +25,9 @@
 
 namespace Cm { namespace Bind {
 
-void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, 
-    Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, Cm::Core::IrClassTypeRepository& irClassTypeRepository);
+void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, 
+    Cm::Sym::TypeSymbol* returnType, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, 
+    Cm::Core::IrClassTypeRepository& irClassTypeRepository, bool isBasicTypeOp);
 
 class BoundExpressionStack
 {

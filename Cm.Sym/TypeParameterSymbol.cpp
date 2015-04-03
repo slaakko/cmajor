@@ -12,7 +12,7 @@
 
 namespace Cm { namespace Sym {
 
-TypeParameterSymbol::TypeParameterSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), index(-1)
+TypeParameterSymbol::TypeParameterSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), index(-1)
 {
 }
 

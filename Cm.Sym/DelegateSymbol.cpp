@@ -70,7 +70,6 @@ void DelegateTypeSymbol::SetReturnType(TypeSymbol* returnType_)
 void DelegateTypeSymbol::MakeIrType() 
 {
     if (IrTypeMade()) return;
-    SetIrTypeMade();
     returnType->MakeIrType();
     Ir::Intf::Type* irReturnType = returnType->GetIrType()->Clone();
     std::vector<Ir::Intf::Type*> irParameterTypes;

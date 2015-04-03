@@ -23,6 +23,7 @@
 #include <Cm.Sym/Module.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/MutexTable.hpp>
+#include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/SymbolTypeSet.hpp>
 #include <Cm.Bind/Prebinder.hpp>
@@ -362,6 +363,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
     boost::filesystem::path outputBase(outputBasePath);
     std::string prebindCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__prebind__.ll")).generic_string());
     Cm::BoundTree::BoundCompileUnit prebindCompileUnit(syntaxTree.CompileUnits().front().get(), prebindCompileUnitIrFilePath, symbolTable);
+    prebindCompileUnit.SetPrebindCompileUnit();
     prebindCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
     prebindCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(prebindCompileUnit));
     prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
@@ -575,6 +577,8 @@ void BuildProject(Cm::Ast::Project* project)
     Cm::Sym::SetExceptionTable(&exceptionTable);
     Cm::Sym::MutexTable mutexTable;
     Cm::Sym::SetMutexTable(&mutexTable);
+    Cm::Sym::ClassCounter classCounter;
+    Cm::Sym::SetClassCounter(&classCounter);
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
     BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths);
@@ -609,7 +613,7 @@ void BuildProject(Cm::Ast::Project* project)
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);
     Cm::Sym::SetMutexTable(nullptr);
-    Cm::Sym::SetSymbolTypeSetCollection(nullptr);
+    Cm::Sym::SetClassCounter(nullptr);
     if (!quiet)
     {
         std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ") built successfully" << std::endl;

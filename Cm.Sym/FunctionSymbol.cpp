@@ -243,7 +243,12 @@ bool FunctionSymbol::IsStaticConstructor() const
 
 bool FunctionSymbol::IsConvertingConstructor() const
 {
-    return GetFlag(FunctionSymbolFlags::conversion);
+    return IsConstructor() && GetFlag(FunctionSymbolFlags::conversion);
+}
+
+bool FunctionSymbol::IsConversionFunction() const
+{
+    return !IsConstructor() && GetFlag(FunctionSymbolFlags::conversion);
 }
 
 bool FunctionSymbol::IsExportSymbol() const 
@@ -256,6 +261,11 @@ bool FunctionSymbol::IsExportSymbol() const
 }
 
 void FunctionSymbol::SetConvertingConstructor()
+{
+    SetFlag(FunctionSymbolFlags::conversion);
+}
+
+void FunctionSymbol::SetConversionFunction()
 {
     SetFlag(FunctionSymbolFlags::conversion);
 }
@@ -540,6 +550,10 @@ void FunctionSymbol::SetType(TypeSymbol* type_, int index)
 void FunctionSymbol::ComputeName()
 {
     std::string s;
+    if (IsConversionFunction())
+    {
+        groupName = "operator_" + GetReturnType()->FullName();
+    }
     s.append(groupName);
     if (!typeArguments.empty())
     {
@@ -592,7 +606,34 @@ void FunctionSymbol::ComputeName()
 
 TypeSymbol* FunctionSymbol::GetTargetType() const
 {
-    return parameters[0]->GetType()->GetBaseType();
+    if (IsConvertingConstructor())
+    {
+        return parameters[0]->GetType()->GetBaseType();
+    }
+    else if (IsConversionFunction())
+    {
+        return returnType;
+    }
+    else
+    {
+        throw std::runtime_error("not converting constructor or conversion function");
+    }
+}
+
+TypeSymbol* FunctionSymbol::GetSourceType() const
+{
+    if (IsConvertingConstructor())
+    {
+        return parameters[1]->GetType()->GetBaseType();
+    }
+    else if (IsConversionFunction())
+    {
+        return parameters[0]->GetType()->GetBaseType();
+    }
+    else
+    {
+        throw std::runtime_error("not converting constructor or conversion function");
+    }
 }
 
 void FunctionSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)

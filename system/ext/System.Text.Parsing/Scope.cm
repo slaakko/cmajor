@@ -18,22 +18,16 @@ using System.Collections;
 
 namespace System.Text.Parsing
 {
-    public typedef Scope* ScopePtr;
-    
     public class Scope: ParsingObject
     {
-        public Scope(const string& name_, ScopePtr enclosingScope_): base(name_, enclosingScope_), fullNameComputed(false)
+        public Scope(const string& name_, Scope* enclosingScope_): base(name_, enclosingScope_), fullNameComputed(false)
         {
         }
-        suppress Scope(const Scope&);
-        suppress void operator=(const Scope&);
-        suppress Scope(Scope&&);
-        suppress void operator=(Scope&&);
         public override void Accept(Visitor& visitor)
         {
-            for (const Pair<string, ParsingObjectPtr>& p : fullNameMap)
+            for (const Pair<string, ParsingObject*>& p : fullNameMap)
             {
-                ParsingObjectPtr object = p.second;
+                ParsingObject* object = p.second;
                 object->Accept(visitor);
             }
         }
@@ -41,7 +35,7 @@ namespace System.Text.Parsing
         {
             if (!fullNameComputed)
             {
-                ScopePtr parentScope = EnclosingScope();
+                Scope* parentScope = EnclosingScope();
                 string parentScopeFullName;
                 if (parentScope != null)
                 {
@@ -59,33 +53,33 @@ namespace System.Text.Parsing
             }
             return fullName;
         }
-        public void SetNs(NamespacePtr ns_)
+        public void SetNs(Namespace* ns_)
         {
             ns = ns_;
             Own(ns);
         }
-        public nothrow inline NamespacePtr Ns() const
+        public nothrow inline Namespace* Ns() const
         {
             return ns;
         }
-        public void Add(ParsingObjectPtr object)
+        public void Add(ParsingObject* object)
         {
             Own(object);
             string objectFullName = object->FullName();
-            Pair<string, ParsingObjectPtr> full = MakePair(objectFullName, object);
+            Pair<string, ParsingObject*> full = MakePair(objectFullName, object);
             if (!fullNameMap.Insert(full).second)
             {
                 string msg = "object '" + objectFullName + "' already exists (detected in scope '" + FullName() + "')";
                 throw Exception(msg);
             }
-            Pair<string, ParsingObjectPtr> short_ = MakePair(object->Name(), object);
+            Pair<string, ParsingObject*> short_ = MakePair(object->Name(), object);
             if (!shortNameMap.Insert(short_).second)
             {
                 string msg = "object '" + objectFullName + "' already exists (detected in scope '" + FullName() + "')";
                 throw Exception(msg);
             }
         }
-        public ParsingObjectPtr Get(const string& objectName) const
+        public ParsingObject* Get(const string& objectName) const
         {
             if (objectName.Find('.') != -1)
             {
@@ -96,7 +90,7 @@ namespace System.Text.Parsing
                 }
                 else
                 {
-                    ParsingObjectPtr object = GetQualifiedObject(objectName);
+                    ParsingObject* object = GetQualifiedObject(objectName);
                     if (object != null)
                     {
                         return object;
@@ -113,23 +107,23 @@ namespace System.Text.Parsing
             }
             return null;
         }
-        public void AddNamespace(NamespacePtr ns)
+        public void AddNamespace(Namespace* ns)
         {
             Own(ns);
-            NamespacePtr parent = GetGlobalScope()->Ns();
+            Namespace* parent = GetGlobalScope()->Ns();
             List<string> nameComponents = ns->FullName().Split('.');
             #assert(!nameComponents.IsEmpty());
             int n = nameComponents.Count();
             for (int i = 0; i < n - 1; ++i)
             {
                 string namespaceName = nameComponents[i];
-                ScopePtr enclosingScope = parent->GetScope();
-                ParsingObjectPtr object = enclosingScope->Get(namespaceName);
+                Scope* enclosingScope = parent->GetScope();
+                ParsingObject* object = enclosingScope->Get(namespaceName);
                 if (object != null)
                 {
                     if (object->IsNamespace())
                     {
-                        parent = cast<NamespacePtr>(object);
+                        parent = cast<Namespace*>(object);
                     }
                     else
                     {
@@ -138,7 +132,7 @@ namespace System.Text.Parsing
                 }
                 else
                 {
-                    parent = NamespacePtr(new Namespace(namespaceName, enclosingScope));
+                    parent = new Namespace(namespaceName, enclosingScope);
                     Own(parent);
                     parent->GetScope()->SetName(namespaceName);
                     parent->GetScope()->SetNs(parent);
@@ -152,14 +146,14 @@ namespace System.Text.Parsing
             ns->GetScope()->SetEnclosingScope(parent->GetScope());
             parent->GetScope()->Add(ns);
         }
-        public NamespacePtr GetNamespace(const string& fullNamespaceName) const
+        public Namespace* GetNamespace(const string& fullNamespaceName) const
         {
-            ParsingObjectPtr object = GetQualifiedObject(fullNamespaceName);
+            ParsingObject* object = GetQualifiedObject(fullNamespaceName);
             if (object != null)
             {
                 if (object->IsNamespace())
                 {
-                    return cast<NamespacePtr>(object);
+                    return cast<Namespace*>(object);
                 }
                 else
                 {
@@ -168,28 +162,28 @@ namespace System.Text.Parsing
             }
             return null;
         }
-        private nothrow ScopePtr GetGlobalScope() const
+        private nothrow Scope* GetGlobalScope() const
         {
-            ScopePtr globalScope = this;
+            Scope* globalScope = this;
             while (globalScope->EnclosingScope() != null)
             {
                 globalScope = globalScope->EnclosingScope();
             }
             return globalScope;
         }
-        private ParsingObjectPtr GetQualifiedObject(const string& qualifiedObjectName) const
+        private ParsingObject* GetQualifiedObject(const string& qualifiedObjectName) const
         {
             List<string> components = qualifiedObjectName.Split('.');
             int n = components.Count();
-            ScopePtr scope = this;
+            Scope* scope = this;
             while (scope != null)
             {
-                ScopePtr subScope = scope;
+                Scope* subScope = scope;
                 int i = 0;
                 NameMapIt it = subScope->shortNameMap.Find(components[i]);
                 while (it != subScope->shortNameMap.End())
                 {
-                    ParsingObjectPtr object = it->second;
+                    ParsingObject* object = it->second;
                     if (i == n - 1)
                     {
                         return object;
@@ -202,10 +196,10 @@ namespace System.Text.Parsing
             }
             return null;
         }
-        private NamespacePtr ns;
+        private Namespace* ns;
         private bool fullNameComputed;
         private string fullName;
-        private typedef Map<string, ParsingObjectPtr> NameMap;
+        private typedef Map<string, ParsingObject*> NameMap;
         private typedef NameMap.Iterator NameMapIt;
         private NameMap fullNameMap;
         private NameMap shortNameMap;

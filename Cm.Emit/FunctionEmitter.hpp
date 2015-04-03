@@ -83,9 +83,9 @@ class FunctionEmitter : public Cm::BoundTree::Visitor
 public:
     FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
         Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
-        std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, 
-        Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, 
-		Cm::Sym::FunctionSymbol* leaveFrameFun_);
+        std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
+        Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, 
+        Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
@@ -165,6 +165,7 @@ private:
     Cm::BoundTree::BoundClass* currentClass;
     Cm::BoundTree::BoundFunction* currentFunction;
     Cm::Sym::ParameterSymbol* thisParam;
+    std::unordered_set<std::string>& internalFunctionNames;
     std::unordered_set<Ir::Intf::Function*>& externalFunctions;
     std::vector<std::unique_ptr<Cm::BoundTree::BoundStatement>> postfixIncDecStatements;
     Cm::BoundTree::BoundStatement* continueTargetStatement;

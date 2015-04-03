@@ -147,16 +147,16 @@ CompoundDestructionStack FunctionDestructionStack::Pop()
 
 FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
-    std::unordered_set<Ir::Intf::Function*>& externalFunctions_, Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, 
-    Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, 
-	Cm::Sym::FunctionSymbol* leaveFrameFun_) :
+    std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
+    Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, 
+    Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_) :
     Cm::BoundTree::Visitor(true), emitter(new Cm::Core::Emitter()), codeFormatter(codeFormatter_), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_),
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), localVariableIrObjectRepository(&irFunctionRepository), 
     compoundResult(), currentCompileUnit(currentCompileUnit_),
-    currentClass(currentClass_), currentFunction(nullptr), thisParam(nullptr), externalFunctions(externalFunctions_), staticMemberVariableRepository(staticMemberVariableRepository_), 
-    externalConstantRepository(externalConstantRepository_),
-    executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), currentSwitchCaseConstantMap(nullptr), 
-    switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_)
+    currentClass(currentClass_), currentFunction(nullptr), thisParam(nullptr), internalFunctionNames(internalFunctionNames_), externalFunctions(externalFunctions_), 
+    staticMemberVariableRepository(staticMemberVariableRepository_), externalConstantRepository(externalConstantRepository_),
+    executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), 
+    currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_)
 {
 }
 
@@ -165,6 +165,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     currentFunction = &boundFunction;
     Cm::IrIntf::ResetLocalLabelCounter();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->GetFunctionSymbol());
+    internalFunctionNames.insert(irFunction->Name());
     emitter->SetIrFunction(irFunction);
 
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
@@ -450,6 +451,20 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     Ir::Intf::Object* temporary = nullptr;
+    Cm::Sym::FunctionSymbol* conversionFun = boundConversion.ConversionFun();
+    Ir::Intf::LabelObject* resultLabel = nullptr;
+    if (conversionFun->IsConversionFunction())
+    {
+        result->SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
+        boundConversion.Operand()->Accept(*this);
+        std::shared_ptr<Cm::Core::GenResult> operandResult = resultStack.Pop();
+        if (boundConversion.Operand()->GetFlag(Cm::BoundTree::BoundNodeFlags::addrArg))
+        {
+            result->SetAddrArg();
+        }
+        resultLabel = operandResult->GetLabel();
+        result->Merge(operandResult);
+    }
     Cm::BoundTree::BoundExpression* boundTemporary = boundConversion.BoundTemporary();
     if (boundTemporary)
     {
@@ -475,15 +490,17 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
     {
         result->SetGenJumpingBoolCode();
     }
-    boundConversion.Operand()->Accept(*this);
-    std::shared_ptr<Cm::Core::GenResult> operandResult = resultStack.Pop();
-    if (boundConversion.Operand()->GetFlag(Cm::BoundTree::BoundNodeFlags::addrArg))
+    if (!conversionFun->IsConversionFunction())
     {
-        result->SetAddrArg();
+        boundConversion.Operand()->Accept(*this);
+        std::shared_ptr<Cm::Core::GenResult> operandResult = resultStack.Pop();
+        if (boundConversion.Operand()->GetFlag(Cm::BoundTree::BoundNodeFlags::addrArg))
+        {
+            result->SetAddrArg();
+        }
+        resultLabel = operandResult->GetLabel();
+        result->Merge(operandResult);
     }
-    Ir::Intf::LabelObject* resultLabel = operandResult->GetLabel();
-    result->Merge(operandResult);
-    Cm::Sym::FunctionSymbol* conversionFun = boundConversion.ConversionFun();
     if (boundConversion.Operand()->GetType()->IsClassTypeSymbol() && (boundConversion.GetType()->IsPointerType() || boundConversion.GetType()->IsReferenceType() || boundConversion.GetType()->IsRvalueRefType()))
     {
         result->SetClassTypeToPointerTypeConversion();
@@ -2231,15 +2248,14 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::
 		}
         if (result.GenerateVirtualCall())
         {
+            Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(fun);
+            externalFunctions.insert(irFunction);
             GenerateVirtualCall(fun, traceCallInfo, result);
         }
         else
         {
             Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(fun);
-            if (fun->CompileUnit() != currentCompileUnit && !fun->IsReplicated())
-            {
-                externalFunctions.insert(irFunction);
-            }
+            externalFunctions.insert(irFunction);
             GenerateCall(fun, irFunction, traceCallInfo, result, fun->IsConstructorOrDestructorSymbol());
         }
         bool boolResult = false;

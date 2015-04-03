@@ -9,6 +9,7 @@
 
 #ifndef IR_INTF_TYPE_INCLUDED
 #define IR_INTF_TYPE_INCLUDED
+#include <Cm.Util/Uuid.hpp>
 #include <string>
 
 namespace Ir { namespace Intf {
@@ -42,9 +43,11 @@ public:
     virtual uint8_t NumPointers() const { return 0; }
     bool Owned() const { return owned; }
     void SetOwned() { owned = true; }
+    void SetId(const Cm::Util::Uuid& id_) { id = id_; }
 private:
     std::string name;
     bool owned;
+    Cm::Util::Uuid id;
 };
 
 } } // namespace Ir::Intf

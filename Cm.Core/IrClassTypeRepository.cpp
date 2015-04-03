@@ -38,6 +38,12 @@ void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymb
         {
             if (virtualFunction)
             {
+                Cm::Sym::TypeSymbol* returnType = virtualFunction->GetReturnType();
+                if (returnType && returnType->GetBaseType()->IsClassTypeSymbol())
+                {
+                    Cm::Sym::ClassTypeSymbol* returnClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(returnType->GetBaseType());
+                    AddClassType(returnClassType);
+                }
                 for (Cm::Sym::ParameterSymbol* parameter : virtualFunction->Parameters())
                 {
                     Cm::Sym::TypeSymbol* parameterBaseType = parameter->GetType()->GetBaseType();
@@ -167,10 +173,7 @@ void IrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::U
             else
             {
                 Ir::Intf::Function* irFun = irFunctionRepository.CreateIrFunction(virtualFunction);
-                if (virtualFunction->CompileUnit() != syntaxUnit && !virtualFunction->IsReplicated())
-                {
-                    externalFunctions.insert(irFun);
-                }
+                externalFunctions.insert(irFun);
                 Ir::Intf::Type* irFunPtrType = irFunctionRepository.GetFunPtrIrType(virtualFunction);
                 line.append("bitcast (").append(irFunPtrType->Name()).append(" @").append(irFun->Name()).append(" to ").append(i8ptrType->Name()).append(")");
             }

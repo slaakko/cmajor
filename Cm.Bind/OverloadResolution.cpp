@@ -307,7 +307,7 @@ bool FindConversion(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm:
         conversionClassType2 = static_cast<Cm::Sym::ClassTypeSymbol*>(plainParameterType);
         if (conversionClassTypes.find(conversionClassType2) != conversionClassTypes.end())
         {
-            conversionClassType1 = nullptr;
+            conversionClassType2 = nullptr;
         }
     }
     if (conversionClassType1)
@@ -329,17 +329,12 @@ bool FindConversion(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm:
     Cm::Sym::FunctionSymbol* otherConversion = boundCompileUnit.ConversionTable().GetConversion(plainArgumentType, plainParameterType);
     if (otherConversion)
     {
-        if (otherConversion->IsConvertingConstructor())
+        if (otherConversion->IsConvertingConstructor() || otherConversion->IsConversionFunction())
         {
             argumentMatch = ArgumentMatch(otherConversion->GetConversionRank(), otherConversion->GetConversionDistance(),
                 parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
             conversion = otherConversion;
             ++numConversions;
-            return true;
-        }
-        else
-        {
-            // todo: conversion function
             return true;
         }
     }
@@ -614,6 +609,17 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
     Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags)
 {
+    for (const Cm::Core::Argument& argument : arguments)
+    {
+        if (argument.Type()->GetBaseType()->IsTemplateTypeSymbol())
+        {
+            Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(argument.Type()->GetBaseType());
+            if (!templateTypeSymbol->Bound())
+            {
+                boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, boundCompileUnit.GetFileScopes());
+            }
+        }
+    }
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> conversionClassTypes;
     conversions.clear();
     int arity = int(arguments.size());
@@ -636,6 +642,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     if (viableFunctions.empty())
     {
         bool fileScopesLookedUp = false;
+        std::unordered_set<Cm::Sym::ContainerScope*> processedContainerScopes;
         for (const Cm::Sym::FunctionLookup& functionLookup : functionLookups)
         {
             Cm::Sym::ScopeLookup lookup = functionLookup.Lookup();
@@ -643,14 +650,32 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
             if (scope)
             {
                 scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+                processedContainerScopes.insert(scope);
             }
             if ((lookup & Cm::Sym::ScopeLookup::fileScopes) != Cm::Sym::ScopeLookup::none && !fileScopesLookedUp)
             {
                 fileScopesLookedUp = true;
                 for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : boundCompileUnit.GetFileScopes())
                 {
-                    fileScope->CollectViableFunctions(groupName, arity, viableFunctions);
+                    fileScope->CollectViableFunctions(groupName, arity, viableFunctions, processedContainerScopes);
                 }
+            }
+        }
+    }
+    if (arguments.size() == 2 && arguments[1].Type()->GetBaseType()->IsClassTypeSymbol())
+    {
+        Cm::Sym::ClassTypeSymbol* cls = static_cast<Cm::Sym::ClassTypeSymbol*>(arguments[1].Type()->GetBaseType());
+        for (Cm::Sym::FunctionSymbol* conversion : cls->Conversions())
+        {
+            if (conversion->IsConversionFunction())
+            {
+                Cm::Sym::TypeSymbol* targetType = conversion->GetTargetType();
+                Cm::Sym::TypeSymbol* ptrTargetType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(targetType, span);
+                Cm::Sym::TypeSymbol* constRefTargetType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(targetType, span);
+                std::vector<Cm::Core::Argument> args;
+                args.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, ptrTargetType));
+                args.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, constRefTargetType));
+                boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, args, span, containerScope, viableFunctions, exception);
             }
         }
     }
@@ -677,7 +702,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     std::vector<Cm::Core::ConceptCheckException> conceptCheckExceptions;
     for (Cm::Sym::FunctionSymbol* viableFunction : viableFunctions)
     {
-        if (viableFunction->IsConvertingConstructor())
+        if (viableFunction->IsConvertingConstructor() || viableFunction->IsConversionFunction())
         {
             if (viableFunction->GetConversionType() == Cm::Sym::ConversionType::explicit_ && conversionType == Cm::Sym::ConversionType::implicit)
             {

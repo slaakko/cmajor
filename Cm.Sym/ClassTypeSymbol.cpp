@@ -16,6 +16,7 @@
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -25,13 +26,33 @@ PersistentClassData::PersistentClassData() : classNodePos(0), classNodeSize(0)
 {
 }
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), 
-    destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
+TypeId GetNextClassTypeId()
+{
+    uint32_t nextClassNumber = GetClassCounter()->GetNextClassNumber();
+    TypeId id;
+    uint8_t n = uint8_t(id.Rep().Tag().size());
+    for (uint8_t i = 0; i < sizeof(nextClassNumber); ++i)
+    {
+        uint8_t b = *(reinterpret_cast<uint8_t*>(&nextClassNumber) + i);
+        uint8_t p = (n - uint8_t(sizeof(nextClassNumber))) + i;
+        id.Rep().Tag().data[p] = b;
+    }
+    id.InvalidateHashCode();
+    return id;
+}
+
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
 {
 }
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : TypeSymbol(span_, name_, id_), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1),
-    destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_) : TypeSymbol(span_, name_, getNextId_ ? GetNextClassTypeId() : TypeId()),
+    flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
+{
+}
+
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : TypeSymbol(span_, name_, id_), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
 {
 }
 
@@ -319,7 +340,7 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
         {
             if (f->IsOverride())
             {
-                throw Exception("no suitable function to override", f->GetSpan());
+                throw Exception("no suitable function to override ('" + f->FullName() + "')", f->GetSpan());
             }
             f->SetVtblIndex(m);
             vtblToInit.push_back(f);
@@ -357,6 +378,10 @@ void ClassTypeSymbol::AddSymbol(Symbol* symbol)
         { 
             AddConversion(functionSymbol);
         }
+        else if (functionSymbol->IsConversionFunction())
+        {
+            AddConversion(functionSymbol);
+        }
     }
     else if (symbol->IsTypeParameterSymbol())
     {
@@ -372,7 +397,6 @@ void ClassTypeSymbol::AddConversion(FunctionSymbol* functionSymbol)
 void ClassTypeSymbol::MakeIrType()
 {
     if (IrTypeMade()) return;
-    SetIrTypeMade();
     SetIrType(Cm::IrIntf::CreateClassTypeName(FullName()));
 }
 

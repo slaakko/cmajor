@@ -24,11 +24,11 @@ namespace System.Text.Parsing
         public virtual ~Object()
         {
         }
+        public default Object(const Object&);
+        public default void operator=(const Object&);
+        public default Object(Object&&);
+        public default void operator=(Object&&);
     }
-
-    public typedef UniquePtr<Object> UniqueObjectPtr;
-    
-    public typedef Stack<UniqueObjectPtr> ObjectStack;
 
     public class ValueObject<T>: Object where T is Semiregular
     {
@@ -39,17 +39,6 @@ namespace System.Text.Parsing
         public void operator=(const T& value_)
         {
             value = value_;
-        }
-        public default ValueObject(const ValueObject<T>&);
-        public default ValueObject(ValueObject<T>&&);
-        public default void operator=(const ValueObject<T>&);
-        public default void operator=(ValueObject<T>&&);
-        public default nothrow ValueObject(ValueObject<T>&& that);
-        public default nothrow void operator=(ValueObject<T>&& that);
-        public override default ~ValueObject();
-        public nothrow operator T&() const
-        {
-            return value;
         }
         public operator T() const
         {

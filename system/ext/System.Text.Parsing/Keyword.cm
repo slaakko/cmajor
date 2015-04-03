@@ -44,12 +44,12 @@ namespace System.Text.Parsing
         {
             rule->SetOwned();
         }
-        public nothrow RulePtr GetRule() const
+        public nothrow Rule* GetRule() const
         {
             return rule.GetPtr();
         }
         private static UniquePtr<IdentifierCharsRuleHolder> instance;
-        private UniqueRulePtr rule;
+        private UniquePtr<Rule> rule;
     }
     
     public class KeywordParser: Parser
@@ -74,7 +74,7 @@ namespace System.Text.Parsing
         suppress void operator=(const KeywordParser&);
         suppress KeywordParser(KeywordParser&&);
         suppress void operator=(KeywordParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             return keywordRule->Parse(scanner, stack);
         }
@@ -90,7 +90,7 @@ namespace System.Text.Parsing
         {
             return continuationRuleName;
         }
-        public void SetContinuationRule(RulePtr continuationRule_)
+        public void SetContinuationRule(Rule* continuationRule_)
         {
             continuationRule = continuationRule_;
             Own(continuationRule);
@@ -108,9 +108,9 @@ namespace System.Text.Parsing
         }
         private string keyword;
         private string continuationRuleName;
-        private RulePtr continuationRule;
-        private ParserPtr keywordStringParser;
-        private RulePtr keywordRule;
+        private Rule* continuationRule;
+        private Parser* keywordStringParser;
+        private Rule* keywordRule;
     }
     
     public typedef List<string> KeywordList;
@@ -130,7 +130,7 @@ namespace System.Text.Parsing
         suppress void operator=(const KeywordListParser&);
         suppress KeywordListParser(KeywordListParser&&);
         suppress void operator=(KeywordListParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (selectorRule != null)
             {
@@ -164,7 +164,7 @@ namespace System.Text.Parsing
         {
             keywordListName = keywordListName_;
         }
-        public void SetSelectorRule(RulePtr selectorRule_)
+        public void SetSelectorRule(Rule* selectorRule_)
         {
             selectorRule = selectorRule_;
             Own(selectorRule);
@@ -175,7 +175,7 @@ namespace System.Text.Parsing
         }
         private string selectorRuleName;
         private string keywordListName;
-        private RulePtr selectorRule;
+        private Rule* selectorRule;
         private KeywordSet keywords;
     }
 }

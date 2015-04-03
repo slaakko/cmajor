@@ -240,9 +240,9 @@ bool Symbol::IsSameParentOrAncestorOf(Symbol* that) const
     {
         return true;
     }
-    else if (parent)
+    else if (that->parent)
     {
-        return parent->IsSameParentOrAncestorOf(that);
+        return IsSameParentOrAncestorOf(that->parent);
     }
     else
     {

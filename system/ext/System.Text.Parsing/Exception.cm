@@ -25,7 +25,6 @@ namespace System.Text.Parsing
             base(message_ + " in file '" + fileName_ + "' at line " + ToString(position_.Line()) + ":\n" + GetErrorLines(content_, position_))
         {
         }
-        public default ParsingException(const ParsingException&);
     }
     
     public class ExpectationFailure: Exception
@@ -35,7 +34,6 @@ namespace System.Text.Parsing
             GetErrorLines(content_, position_)), info(info_), content(content_), position(position_), fileName(fileName_)
         {
         }
-        public default ExpectationFailure(const ExpectationFailure&);
         public nothrow const string& Info() const
         {
             return info;
@@ -63,7 +61,9 @@ namespace System.Text.Parsing
         static nothrow FileInfo(): instance(new FileInfo())
         {
         }
-        public nothrow default FileInfo();
+        public nothrow FileInfo()
+        {
+        }
         suppress FileInfo(const FileInfo&);
         suppress void operator=(const FileInfo&);
         suppress FileInfo(FileInfo&&);

@@ -22,8 +22,19 @@
 
 namespace Cm { namespace Bind {
 
-void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope)
+void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes)
 {
+    std::vector<Cm::Sym::FileScope*> clonedFileScopes;
+    for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
+    {
+        clonedFileScopes.push_back(fileScope->Clone());
+    }
+    int numAddedFileScopes = int(clonedFileScopes.size());
+    for (Cm::Sym::FileScope* fileScope : clonedFileScopes)
+    {
+        boundCompileUnit.AddFileScope(fileScope);
+    }
     Cm::Sym::TypeSymbol* subjectTypeSymbol = templateTypeSymbol->GetSubjectType();
     if (!subjectTypeSymbol->IsClassTypeSymbol())
     {
@@ -52,6 +63,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     currentNs->AddMember(classInstanceNode);
     int n = int(subjectClassTypeSymbol->TypeParameters().size());
     int m = int(templateTypeSymbol->TypeArguments().size());
+    std::vector<Cm::Sym::TypeSymbol*> constraintCheckTypeArguments;
     if (n < m)
     {
         throw Cm::Core::Exception("too many template arguments", templateTypeSymbol->GetSpan());
@@ -81,6 +93,11 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
         }
         boundTypeParam->SetType(typeArgument);
         templateTypeSymbol->AddSymbol(boundTypeParam);
+        constraintCheckTypeArguments.push_back(typeArgument);
+    }
+    for (int i = 0; i < numAddedFileScopes; ++i)
+    {
+        boundCompileUnit.RemoveLastFileScope();
     }
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     declarationVisitor.SetTemplateType(classInstanceNode, templateTypeSymbol);
@@ -94,8 +111,8 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     if (classNode->Constraint())
     {
         Cm::Core::ConceptCheckException exception;
-        bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(),
-            templateTypeSymbol->TypeArguments(), exception);
+        bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(), constraintCheckTypeArguments, 
+            exception);
         if (!constraintSatisfied)
         {
             throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.Referenced());
@@ -139,7 +156,7 @@ void ClassTemplateRepository::CollectViableFunctions(const std::string& groupNam
     Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(leftArgType->GetBaseType());
     if (!templateTypeSymbol->Bound())
     {
-        BindTemplateTypeSymbol(templateTypeSymbol, containerScope);
+        BindTemplateTypeSymbol(templateTypeSymbol, containerScope, std::vector<std::unique_ptr<Cm::Sym::FileScope>>());
     }
 }
 

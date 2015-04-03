@@ -292,11 +292,14 @@ public:
     Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
     TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
+    Cm::Core::ArgumentCategory GetArgumentCategory() const override { return argumentCategory; }
+    void SetArgumentCategory(Cm::Core::ArgumentCategory argumentCategory_) { argumentCategory = argumentCategory_; }
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* fun;
     Cm::Sym::LocalVariableSymbol* classObjectResultVar;
     std::unique_ptr<TraceCallInfo> traceCallInfo;
+    Cm::Core::ArgumentCategory argumentCategory;
 };
 
 class BoundBinaryOp : public BoundExpression

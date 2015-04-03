@@ -18,21 +18,14 @@ using System.Collections;
 
 namespace System.Text.Parsing
 {
-    public typedef ParsingObject* ParsingObjectPtr;
-    public typedef UniquePtr<ParsingObject> UniqueParsingObjectPtr;
-    
     public abstract class ParsingObject
     {
         public nothrow ParsingObject(const string& name_): owned(false), name(name_), enclosingScope(null), owner(external)
         {
         }
-        public nothrow ParsingObject(const string& name_, ScopePtr enclosingScope_): owned(false), name(name_), enclosingScope(enclosingScope_), owner(external)
+        public nothrow ParsingObject(const string& name_, Scope* enclosingScope_): owned(false), name(name_), enclosingScope(enclosingScope_), owner(external)
         {
         }
-        suppress ParsingObject(const ParsingObject&);
-        suppress void operator=(const ParsingObject&);
-        suppress ParsingObject(ParsingObject&&);
-        suppress void operator=(ParsingObject&&);
         public virtual ~ParsingObject()
         {
         }
@@ -59,7 +52,7 @@ namespace System.Text.Parsing
         }
         public virtual string FullName()
         {
-            ScopePtr s = enclosingScope;
+            Scope* s = enclosingScope;
             string scopeName = "";
             if (s != null)
             {
@@ -71,17 +64,17 @@ namespace System.Text.Parsing
             }
             return name;
         }
-        public nothrow inline ScopePtr EnclosingScope() const
+        public nothrow inline Scope* EnclosingScope() const
         {
             return enclosingScope;
         }
-        public nothrow inline void SetEnclosingScope(ScopePtr enclosingScope_)
+        public nothrow inline void SetEnclosingScope(Scope* enclosingScope_)
         {
             enclosingScope = enclosingScope_;
         }
         public virtual void AddToScope()
         {
-            ScopePtr es = EnclosingScope();
+            Scope* es = EnclosingScope();
             if (es != null)
             {
                 try
@@ -98,7 +91,7 @@ namespace System.Text.Parsing
                 }
             }
         }
-        public nothrow ScopePtr GetScope() const
+        public nothrow Scope* GetScope() const
         {
             if (scope == null)
             {
@@ -106,7 +99,7 @@ namespace System.Text.Parsing
             }
             return scope;
         }
-        public void SetScope(ScopePtr scope_)
+        public void SetScope(Scope* scope_)
         {
             scope = scope_;
             Own(scope);
@@ -155,24 +148,24 @@ namespace System.Text.Parsing
         {
             owned = true;
         }
-        public void Own(ParsingObjectPtr object)
+        public void Own(ParsingObject* object)
         {
             if (object != null)
             {
                 if (!object->Owned())
                 {
                     object->SetOwned();
-                    ownedObjects.Add(UniqueParsingObjectPtr(object));
+                    ownedObjects.Add(UniquePtr<ParsingObject>(object));
                 }
             }
         }
         private const int external = -1;
         private bool owned;
         private string name;
-        private ScopePtr enclosingScope;
-        private ScopePtr scope;
+        private Scope* enclosingScope;
+        private Scope* scope;
         private int owner;
         private Position position;
-        private List<UniqueParsingObjectPtr> ownedObjects;
+        private List<UniquePtr<ParsingObject>> ownedObjects;
     }
 }

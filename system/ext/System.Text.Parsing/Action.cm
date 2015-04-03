@@ -14,6 +14,7 @@
 // Copyright (c) 2009 Alexander Stepanov and Paul McJones
 
 using System;
+using System.Collections;
 using CompoundStatementPtr = System.Text.Parsing.CmObjectModel.CompoundStatementPtr;
 using UniqueCompoundStatementPtr = System.Text.Parsing.CmObjectModel.UniqueCompoundStatementPtr;
 
@@ -23,19 +24,17 @@ namespace System.Text.Parsing
     
     public class delegate void FailureAction();
     
-    public class delegate void PreCall(ObjectStack& stack);
+    public class delegate void PreCall(Stack<UniquePtr<Object>>& stack);
     
-    public class delegate void PostCall(ObjectStack& stack, bool matched);
-    
-    public typedef ActionParser* ActionParserPtr;
+    public class delegate void PostCall(Stack<UniquePtr<Object>>& stack, bool matched);
     
     public class ActionParser: UnaryParser
     {
-        public ActionParser(const string& name_, ParserPtr child_): 
+        public ActionParser(const string& name_, Parser* child_): 
             base(name_, child_, child_->Info()), successCode(), failureCode(), action(), failureAction()
         {
         }
-        public ActionParser(const string& name_, CompoundStatementPtr successCode_, ParserPtr child_): 
+        public ActionParser(const string& name_, CompoundStatementPtr successCode_, Parser* child_): 
             base(name_, child_, child_->Info()), successCode(successCode_), failureCode(), action(), failureAction()
         {
             if (successCode != null)
@@ -43,7 +42,7 @@ namespace System.Text.Parsing
                 successCode->SetOwned();
             }            
         }
-        public ActionParser(const string& name_, CompoundStatementPtr successCode_, CompoundStatementPtr failureCode_, ParserPtr child_): 
+        public ActionParser(const string& name_, CompoundStatementPtr successCode_, CompoundStatementPtr failureCode_, Parser* child_): 
             base(name_, child_, child_->Info()), successCode(successCode_), failureCode(failureCode_), action(), failureAction()
         {
             if (successCode != null)
@@ -103,7 +102,7 @@ namespace System.Text.Parsing
         {
             failureAction = failureAction_;
         }
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Position position = scanner.GetPosition();
             Match match = Child()->Parse(scanner, stack);

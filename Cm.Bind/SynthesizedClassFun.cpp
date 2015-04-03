@@ -50,7 +50,7 @@ Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const 
     Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(nullptr, boundThisParam, conversionFun);
     thisAsBase->SetType(baseClassPtrType);
     arguments.InsertFront(thisAsBase); // insert 'this' to front
-    PrepareFunctionArguments(baseClassCtor, containerScope, compileUnit, nullptr, arguments, false, compileUnit.IrClassTypeRepository());
+    PrepareArguments(containerScope, compileUnit, nullptr, nullptr, baseClassCtor->Parameters(), arguments, false, compileUnit.IrClassTypeRepository(), baseClassCtor->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -109,7 +109,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableState
     boundThisParam->SetType(thisParam->GetType());
     boundMemberVariable->SetClassObject(boundThisParam);
     arguments.InsertFront(boundMemberVariable);
-    PrepareFunctionArguments(memberCtor, containerScope, compileUnit, nullptr, arguments, true, compileUnit.IrClassTypeRepository());
+    PrepareArguments(containerScope, compileUnit, nullptr, nullptr, memberCtor->Parameters(), arguments, true, compileUnit.IrClassTypeRepository(), memberCtor->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -126,6 +126,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableState
         }
     }
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
+    initMemberVariableStatement->SetMemberVariableSymbol(memberVariableSymbol);
     return initMemberVariableStatement;
 }
 
@@ -161,7 +162,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::
     Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(nullptr, boundThisParam, conversionFun);
     thisAsBase->SetType(baseClassPtrType);
     arguments.InsertFront(thisAsBase); // insert 'this' to front
-    PrepareFunctionArguments(baseClassAssignment, containerScope, compileUnit, nullptr, arguments, false, compileUnit.IrClassTypeRepository());
+    PrepareArguments(containerScope, compileUnit, nullptr, baseClassAssignment->GetReturnType(), baseClassAssignment->Parameters(), arguments, false, compileUnit.IrClassTypeRepository(), baseClassAssignment->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -219,7 +220,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement
     boundThisParam->SetType(thisParam->GetType());
     boundMemberVariable->SetClassObject(boundThisParam);
     arguments.InsertFront(boundMemberVariable);
-    PrepareFunctionArguments(memberAssignment, containerScope, compileUnit, nullptr, arguments, true, compileUnit.IrClassTypeRepository());
+    PrepareArguments(containerScope, compileUnit, nullptr, memberAssignment->GetReturnType(), memberAssignment->Parameters(), arguments, true, compileUnit.IrClassTypeRepository(), memberAssignment->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -765,7 +766,7 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
         boundThisParam->SetType(thisParam->GetType());
         thisMemberVarArg->SetClassObject(boundThisParam);
         arguments.Add(thisMemberVarArg);
-        PrepareFunctionArguments(memberDtor, containerScope, compileUnit, nullptr, arguments, true, compileUnit.IrClassTypeRepository());
+        PrepareArguments(containerScope, compileUnit, nullptr, nullptr, memberDtor->Parameters(), arguments, true, compileUnit.IrClassTypeRepository(), memberDtor->IsBasicTypeOp());
         Cm::BoundTree::BoundFunctionCallStatement* destroyMemberVariableStatement = new Cm::BoundTree::BoundFunctionCallStatement(memberDtor, std::move(arguments));
         destructor->Body()->AddStatement(destroyMemberVariableStatement);
     }
@@ -782,7 +783,7 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
         thisAsBase->SetType(baseClassPtrType);
         Cm::BoundTree::BoundExpressionList arguments;
         arguments.Add(thisAsBase);
-        PrepareFunctionArguments(baseClassDtor, containerScope, compileUnit, nullptr, arguments, true, compileUnit.IrClassTypeRepository());
+        PrepareArguments(containerScope, compileUnit, nullptr, nullptr, baseClassDtor->Parameters(), arguments, true, compileUnit.IrClassTypeRepository(), baseClassDtor->IsBasicTypeOp());
         Cm::BoundTree::BoundFunctionCallStatement* destroyBaseClassObjectStatement = new Cm::BoundTree::BoundFunctionCallStatement(baseClassDtor, std::move(arguments));
         destructor->Body()->AddStatement(destroyBaseClassObjectStatement);
     }
@@ -809,7 +810,8 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
 		throw std::runtime_error("System.Support.MtxGuard is not of class type");
 	}
 	Cm::Sym::ClassTypeSymbol* mutexGuardClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(mutexGuardSymbol);
-	std::vector<Cm::Core::Argument> mutexGuardResolutionArguments;
+    compileUnit.IrClassTypeRepository().AddClassType(mutexGuardClassType);
+    std::vector<Cm::Core::Argument> mutexGuardResolutionArguments;
 	Cm::Sym::TypeSymbol* mutexGuardPointerType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(mutexGuardClassType, span);
 	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, mutexGuardPointerType));
 	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
@@ -826,7 +828,8 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
 	Cm::BoundTree::BoundExpressionList constructMutexGuardArguments;
 	constructMutexGuardArguments.Add(mutexIdLiteral);
 	Cm::Sym::LocalVariableSymbol* mutexGuardVar = new Cm::Sym::LocalVariableSymbol(span, "mtxGuard");
-	mutexGuardVar->SetType(mutexGuardClassType);
+    staticConstructor->AddLocalVariable(mutexGuardVar);
+    mutexGuardVar->SetType(mutexGuardClassType);
 	constructMutexGuardStatement->SetLocalVariable(mutexGuardVar);
 	constructMutexGuardStatement->SetArguments(std::move(constructMutexGuardArguments));
 	constructMutexGuardStatement->SetConstructor(mutexGuardConstructor);
@@ -848,9 +851,10 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
     checkInitializedStatement->AddStatement(returnStatement);
     staticConstructor->Body()->AddStatement(checkInitializedStatement);
     Cm::BoundTree::BoundMemberVariable* boundInitializedVarLeft = new Cm::BoundTree::BoundMemberVariable(nullptr, initializedVar);
+    boundInitializedVarLeft->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     Cm::BoundTree::BoundLiteral* boundTrue = new Cm::BoundTree::BoundLiteral(nullptr);
-    boundTrue->SetType(boolType);
     boundTrue->SetValue(new Cm::Sym::BoolValue(true));
+    boundTrue->SetType(boolType);
     std::vector<Cm::Sym::FunctionSymbol*> boolAssignConversions;
     std::vector<Cm::Core::Argument> boolAssignArgs;
     boolAssignArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, compileUnit.SymbolTable().GetTypeRepository().MakePointerType(boolType, span)));
@@ -898,7 +902,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
         boundMemberVariable->SetType(memberVariableSymbol->GetType());
         Cm::BoundTree::BoundExpressionList arguments;
         arguments.Add(boundMemberVariable);
-        PrepareFunctionArguments(memberCtor, containerScope, compileUnit, nullptr, arguments, true, compileUnit.IrClassTypeRepository());
+        PrepareArguments(containerScope, compileUnit, nullptr, nullptr, memberCtor->Parameters(), arguments, true, compileUnit.IrClassTypeRepository(), memberCtor->IsBasicTypeOp());
         int n = int(conversions.size());
         if (n != arguments.Count())
         {

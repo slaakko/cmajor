@@ -33,9 +33,12 @@ void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 
 void EmittingVisitor::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
-    for (Ir::Intf::Function* externalFunction : externalFunctions)
+    for (Ir::Intf::Function* function : externalFunctions)
     {
-        externalFunction->WriteDeclaration(codeFormatter, false, false);
+        if (internalFunctionNames.find(function->Name()) == internalFunctionNames.end())
+        {
+            function->WriteDeclaration(codeFormatter, false, false);
+        }
     }
     staticMemberVariableRepository.Write(codeFormatter);
     externalConstantRepository.Write(codeFormatter);
@@ -60,7 +63,7 @@ void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
-	FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, externalFunctions, 
+	FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, internalFunctionNames, externalFunctions, 
 		staticMemberVariableRepository, externalConstantRepository, currentCompileUnit, enterFrameFun, leaveFrameFun);
 	boundFunction.Accept(functionEmitter);
 }

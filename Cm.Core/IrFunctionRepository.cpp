@@ -52,7 +52,8 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     IrFunctionMapIt i = irFunctionMap.find(function);
     if (i != irFunctionMap.end())
     {
-        return i->second;
+        Ir::Intf::Function* irFun = i->second;
+        return irFun;
     }
     std::string functionName;
     std::string functionGroupName;
@@ -63,6 +64,15 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     {
         functionName = "__sc_" + function->Class()->GetMangleId();
         irReturnType = Cm::IrIntf::Void();
+        if (function->CanThrow())
+        {
+            Ir::Intf::Type* exceptionCodeParamType = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI32(), 1);
+            Own(exceptionCodeParamType);
+            exceptionCodeParam = Cm::IrIntf::CreateParameter(Cm::IrIntf::GetExceptionCodeParamName(), exceptionCodeParamType);
+            Own(exceptionCodeParam);
+            irParameters.push_back(exceptionCodeParam);
+            irParameterTypes.push_back(exceptionCodeParamType->Clone());
+        }
         Own(irReturnType);
     }
     else
@@ -120,7 +130,14 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     }
     if (!function->IsCDecl() && !function->IsStaticConstructor())
     {
-        functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, function->TypeArguments(), function->Parameters());
+        if (function->IsConversionFunction())
+        {
+            functionName = Cm::Sym::MangleName(function->Ns()->FullName(), "cv_" + Cm::Sym::MakeAssemblyName(function->GetReturnType()->FullName()), function->TypeArguments(),  function->Parameters());
+        }
+        else
+        {
+            functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, function->TypeArguments(), function->Parameters());
+        }
     }
     Ir::Intf::Function* irFunction = Cm::IrIntf::CreateFunction(functionName, irReturnType, irParameters);
     ownedIrFunctions.push_back(std::unique_ptr<Ir::Intf::Function>(irFunction));

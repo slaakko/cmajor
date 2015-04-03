@@ -69,6 +69,7 @@ private:
     std::stack<Cm::Sym::ContainerScope*> containerScopeStack;
     int parameterIndex;
     Cm::Sym::ClassTypeSymbol* currentClass;
+    std::stack<Cm::Sym::ClassTypeSymbol*> currentClassStack;
     Cm::Sym::FunctionSymbol* currentFunction;
     Cm::Sym::DelegateTypeSymbol* currentDelegate;
     Cm::Sym::ClassDelegateTypeSymbol* currentClassDelegate;

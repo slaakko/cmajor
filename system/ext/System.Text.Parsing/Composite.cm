@@ -14,59 +14,48 @@
 // Copyright (c) 2009 Alexander Stepanov and Paul McJones
 
 using System;
+using System.Collections;
 
 namespace System.Text.Parsing
 {
     public abstract class UnaryParser: Parser
     {
-        public UnaryParser(const string& name_, ParserPtr child_, const string& info_): base(name_, info_), child(child_)
+        public UnaryParser(const string& name_, Parser* child_, const string& info_): base(name_, info_), child(child_)
         {
             Own(child);
         }
-        suppress UnaryParser(const UnaryParser&);
-        suppress void operator=(const UnaryParser&);
-        suppress UnaryParser(UnaryParser&&);
-        suppress void operator=(UnaryParser&&);
-        public nothrow inline ParserPtr Child() const
+        public nothrow inline Parser* Child() const
         {
             return child;
         }
-        private ParserPtr child;
+        private Parser* child;
     }
     
     public abstract class BinaryParser: Parser
     {
-        public BinaryParser(const string& name_, ParserPtr left_, ParserPtr right_, const string& info_): base(name_, info_), left(left_), right(right_)
+        public BinaryParser(const string& name_, Parser* left_, Parser* right_, const string& info_): base(name_, info_), left(left_), right(right_)
         {
             Own(left);
             Own(right);
         }
-        suppress BinaryParser(const BinaryParser&);
-        suppress void operator=(const BinaryParser&);
-        suppress BinaryParser(BinaryParser&&);
-        suppress void operator=(BinaryParser&&);
-        public nothrow inline ParserPtr Left() const
+        public nothrow inline Parser* Left() const
         {
             return left;
         }
-        public nothrow inline ParserPtr Right() const
+        public nothrow inline Parser* Right() const
         {
             return right;
         }
-        private ParserPtr left;
-        private ParserPtr right;
+        private Parser* left;
+        private Parser* right;
     }
     
     public class OptionalParser: UnaryParser
     {
-        public explicit OptionalParser(ParserPtr child_): base("optional", child_, child_->Info() + "?")
+        public explicit OptionalParser(Parser* child_): base("optional", child_, child_->Info() + "?")
         {
         }
-        suppress OptionalParser(const OptionalParser&);
-        suppress void operator=(const OptionalParser&);
-        suppress OptionalParser(OptionalParser&&);
-        suppress void operator=(OptionalParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Position save = scanner.GetPosition();
             Match match = Child()->Parse(scanner, stack);
@@ -87,14 +76,10 @@ namespace System.Text.Parsing
     
     public class PositiveParser: UnaryParser
     {
-        public explicit PositiveParser(ParserPtr child_): base("positive", child_, child_->Info() + "+")
+        public explicit PositiveParser(Parser* child_): base("positive", child_, child_->Info() + "+")
         {
         }
-        suppress PositiveParser(const PositiveParser&);
-        suppress void operator=(const PositiveParser&);
-        suppress PositiveParser(PositiveParser&&);
-        suppress void operator=(PositiveParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Match match = Child()->Parse(scanner, stack);
             if (match.Hit())
@@ -127,14 +112,10 @@ namespace System.Text.Parsing
     
     public class KleeneStarParser: UnaryParser
     {
-        public explicit KleeneStarParser(ParserPtr child_): base("kleene", child_, child_->Info())
+        public explicit KleeneStarParser(Parser* child_): base("kleene", child_, child_->Info())
         {
         }
-        suppress KleeneStarParser(const KleeneStarParser&);
-        suppress void operator=(const KleeneStarParser&);
-        suppress KleeneStarParser(KleeneStarParser&&);
-        suppress void operator=(KleeneStarParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Match match = Match.Empty();
             bool first = true;
@@ -172,14 +153,10 @@ namespace System.Text.Parsing
     
     public class ExpectationParser: UnaryParser
     {
-        public explicit ExpectationParser(ParserPtr child_): base("expectation", child_, child_->Info() + "!")
+        public explicit ExpectationParser(Parser* child_): base("expectation", child_, child_->Info() + "!")
         {
         }
-        suppress ExpectationParser(const ExpectationParser&);
-        suppress void operator=(const ExpectationParser&);
-        suppress ExpectationParser(ExpectationParser&&);
-        suppress void operator=(ExpectationParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Position position = scanner.GetPosition();
             Match match = Match.Nothing();
@@ -210,14 +187,10 @@ namespace System.Text.Parsing
     
     public class TokenParser: UnaryParser
     {
-        public explicit TokenParser(ParserPtr child_): base("token", child_, child_->Info())
+        public explicit TokenParser(Parser* child_): base("token", child_, child_->Info())
         {
         }
-        suppress TokenParser(const TokenParser&);
-        suppress void operator=(const TokenParser&);
-        suppress TokenParser(TokenParser&&);
-        suppress void operator=(TokenParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             scanner.BeginToken();
             Match match = Child()->Parse(scanner, stack);
@@ -234,14 +207,10 @@ namespace System.Text.Parsing
     
     public class SequenceParser: BinaryParser
     {
-        public SequenceParser(ParserPtr left_, ParserPtr right_): base("sequence", left_, right_, left_->Info())
+        public SequenceParser(Parser* left_, Parser* right_): base("sequence", left_, right_, left_->Info())
         {
         }
-        suppress SequenceParser(const SequenceParser&);
-        suppress void operator=(const SequenceParser&);
-        suppress SequenceParser(SequenceParser&&);
-        suppress void operator=(SequenceParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Match left = Left()->Parse(scanner, stack);
             if (left.Hit())
@@ -268,14 +237,10 @@ namespace System.Text.Parsing
     
     public class AlternativeParser: BinaryParser
     {
-        public AlternativeParser(ParserPtr left_, ParserPtr right_): base("alternative", left_, right_, left_->Info() + " | " + right_->Info())
+        public AlternativeParser(Parser* left_, Parser* right_): base("alternative", left_, right_, left_->Info() + " | " + right_->Info())
         {
         }
-        suppress AlternativeParser(const AlternativeParser&);
-        suppress void operator=(const AlternativeParser&);
-        suppress AlternativeParser(AlternativeParser&&);
-        suppress void operator=(AlternativeParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {            
             Position save = scanner.GetPosition();
             Match left = Left()->Parse(scanner, stack);
@@ -298,14 +263,10 @@ namespace System.Text.Parsing
     
     public class DifferenceParser: BinaryParser
     {
-        public DifferenceParser(ParserPtr left_, ParserPtr right_): base("difference", left_, right_, left_->Info() + " - " + right_->Info())
+        public DifferenceParser(Parser* left_, Parser* right_): base("difference", left_, right_, left_->Info() + " - " + right_->Info())
         {
         }
-        suppress DifferenceParser(const DifferenceParser&);
-        suppress void operator=(const DifferenceParser&);
-        suppress DifferenceParser(DifferenceParser&&);
-        suppress void operator=(DifferenceParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Position save = scanner.GetPosition();
             Match left = Left()->Parse(scanner, stack);
@@ -335,14 +296,10 @@ namespace System.Text.Parsing
     
     public class ExclusiveOrParser: BinaryParser
     {
-        public ExclusiveOrParser(ParserPtr left_, ParserPtr right_): base("exclusive_or", left_, right_, left_->Info() + " ^ " + right_->Info())
+        public ExclusiveOrParser(Parser* left_, Parser* right_): base("exclusive_or", left_, right_, left_->Info() + " ^ " + right_->Info())
         {
         }
-        suppress ExclusiveOrParser(const ExclusiveOrParser&);
-        suppress void operator=(const ExclusiveOrParser&);
-        suppress ExclusiveOrParser(ExclusiveOrParser&&);
-        suppress void operator=(ExclusiveOrParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Position save = scanner.GetPosition();
             Match left = Left()->Parse(scanner, stack);
@@ -378,14 +335,10 @@ namespace System.Text.Parsing
     
     public class IntersectionParser: BinaryParser
     {
-        public IntersectionParser(ParserPtr left_, ParserPtr right_): base("intersection", left_, right_, left_->Info() + " & " + right_->Info())
+        public IntersectionParser(Parser* left_, Parser* right_): base("intersection", left_, right_, left_->Info() + " & " + right_->Info())
         {
         }
-        suppress IntersectionParser(const IntersectionParser&);
-        suppress void operator=(const IntersectionParser&);
-        suppress IntersectionParser(IntersectionParser&&);
-        suppress void operator=(IntersectionParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Position save = scanner.GetPosition();
             Match left = Left()->Parse(scanner, stack);
@@ -412,16 +365,12 @@ namespace System.Text.Parsing
     
     public class ListParser: UnaryParser
     {
-        public ListParser(ParserPtr left_, ParserPtr right_): 
+        public ListParser(Parser* left_, Parser* right_): 
             base("list", new SequenceParser(left_, new KleeneStarParser(new SequenceParser(right_, left_))),
                 left_->Info() + " % " + right_->Info()), left(left_), right(right_)
         {
         }
-        suppress ListParser(const ListParser&);
-        suppress void operator=(const ListParser&);
-        suppress ListParser(ListParser&&);
-        suppress void operator=(ListParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             return Child()->Parse(scanner, stack);
         }
@@ -433,7 +382,7 @@ namespace System.Text.Parsing
             right->Accept(visitor);
             visitor.EndVisit(*this);
         }
-        private ParserPtr left;
-        private ParserPtr right;
+        private Parser* left;
+        private Parser* right;
     }
 }

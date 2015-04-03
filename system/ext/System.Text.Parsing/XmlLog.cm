@@ -18,8 +18,7 @@ using System.IO;
 
 namespace System.Text.Parsing
 {
-    public typedef XmlLog* XmlLogPtr;
-    public typedef UniquePtr<XmlLog> UniqueXmlLogPtr;
+    public const int zero = 0;
 
     public class XmlLog
     {
@@ -67,7 +66,7 @@ namespace System.Text.Parsing
             if (lineLength > maxLineLength)
             {
                 lineLength = lineLength + 3;
-                s = converted.Substring(0, Max(cast<int>(0), convertedLength - (lineLength - maxLineLength))) + "...";
+                s = converted.Substring(0, Max(zero, convertedLength - (lineLength - maxLineLength))) + "...";
             }
             Write("<" + elementName + ">" + s + "</" + elementName + ">");
         }

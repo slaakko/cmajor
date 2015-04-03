@@ -373,6 +373,12 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
                 currentClass->SetHasUserDefinedDestructor();
             }
         }
+        else if (functionNode->GetNodeType() == Cm::Ast::NodeType::conversionFunctionNode)
+        {
+            functionSymbol->SetConversionFunction();
+            currentClass->AddConversion(functionSymbol);
+            functionSymbol->ComputeName();
+        }
     }
 }
 
@@ -484,6 +490,7 @@ void CheckFunctionReturnPaths(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::Contai
 
 void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol)
 {
+    if (functionSymbol->IsMemberOfTemplateType() || functionSymbol->IsFunctionTemplateSpecialization()) return;
     Cm::Sym::TypeSymbol* returnType = functionSymbol->GetReturnType();
     if (returnType)
     {

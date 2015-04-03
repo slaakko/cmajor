@@ -104,12 +104,66 @@ Symbol* ContainerScope::Lookup(const std::string& name, ScopeLookup lookup) cons
     return Lookup(name, lookup, SymbolTypeSetId::lookupAllSymbols);
 }
 
+std::vector<std::string> ParseQualifiedName(const std::string& qualifiedName)
+{
+    std::vector<std::string> components;
+    int state = 0;
+    std::string component;
+    int angleBracketCount = 0;
+    for (char c : qualifiedName)
+    {
+        switch (state)
+        {
+            case 0:
+            {
+                if (c == '.')
+                {
+                    components.push_back(component);
+                    component.clear();
+                }
+                else if (c == '<')
+                {
+                    component.append(1, c);
+                    angleBracketCount = 1;
+                    state = 1;
+                }
+                else
+                {
+                    component.append(1, c);
+                }
+                break;
+            }
+            case 1:
+            {
+                component.append(1, c);
+                if (c == '<')
+                {
+                    ++angleBracketCount;
+                }
+                else if (c == '>')
+                {
+                    --angleBracketCount;
+                    if (angleBracketCount == 0)
+                    {
+                        state = 0;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    if (!component.empty())
+    {
+        components.push_back(component);
+    }
+    return components;
+}
+
 Symbol* ContainerScope::Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const
 {
-    std::string::size_type dotPos = name.find('.');
-    if (dotPos != std::string::npos)
+    std::vector<std::string> components = ParseQualifiedName(name);
+    if (components.size() > 1)
     {
-        std::vector<std::string> components = Cm::Util::Split(name, '.');
         return LookupQualified(components, lookup, symbolTypeSetId);
     }
     else
@@ -363,11 +417,15 @@ FileScope* FileScope::Clone() const
     return new FileScope(*this);
 }
 
-void FileScope::CollectViableFunctions(const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions)
+void FileScope::CollectViableFunctions(const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions, std::unordered_set<ContainerScope*>& processedScopes)
 {
     for (ContainerScope* containerScope : containerScopes)
     {
-        containerScope->CollectViableFunctions(Cm::Sym::ScopeLookup::this_, groupName, arity, viableFunctions);
+        if (processedScopes.find(containerScope) == processedScopes.end())
+        {
+            processedScopes.insert(containerScope);
+            containerScope->CollectViableFunctions(Cm::Sym::ScopeLookup::this_, groupName, arity, viableFunctions);
+        }
     }
 }
 
