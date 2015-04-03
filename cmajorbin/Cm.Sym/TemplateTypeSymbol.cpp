@@ -29,7 +29,7 @@ std::string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const std::vecto
         {
             s.append(", ");
         }
-        s.append(typeArguments[i]->Name());
+        s.append(typeArguments[i]->FullName());
     }
     s.append(1, '>');
     return s;
@@ -138,7 +138,6 @@ void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
 void TemplateTypeSymbol::MakeIrType()
 {
     if (IrTypeMade()) return;
-    SetIrTypeMade();
     SetIrType(Cm::IrIntf::CreateClassTypeName(FullName()));
 }
 

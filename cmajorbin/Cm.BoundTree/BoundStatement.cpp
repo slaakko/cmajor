@@ -121,7 +121,7 @@ void BoundInitVPtrStatement::Accept(Visitor& visitor)
 }
 
 BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::FunctionSymbol* ctor_, BoundExpressionList&& arguments_) : 
-    BoundStatement(nullptr), ctor(ctor_), arguments(std::move(arguments_)), registerDestructor(false)
+    BoundStatement(nullptr), ctor(ctor_), arguments(std::move(arguments_)), registerDestructor(false), memberVarSymbol(nullptr)
 {
 }
 

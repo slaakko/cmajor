@@ -19,21 +19,20 @@ using System.IO;
 
 namespace System.Text.Parsing
 {
-    public typedef Grammar* GrammarPtr;
-    public typedef Set<GrammarPtr> GrammarSet;
+    public typedef Set<Grammar*> GrammarSet;
     
-    public typedef List<RulePtr> RuleList;
-    public typedef Set<RuleLinkPtr> RuleLinkSet;
+    public typedef List<Rule*> RuleList;
+    public typedef Set<RuleLink*> RuleLinkSet;
     
     public class Grammar: ParsingObject
     {
-        public Grammar(const string& name_, ScopePtr enclosingScope_): 
+        public Grammar(const string& name_, Scope* enclosingScope_): 
             base(name_, enclosingScope_), parsingDomain(new ParsingDomain()), linking(false), linked(false), maxLogLineLength(256), log(null)
         {
             RegisterParsingDomain(parsingDomain);
             SetScope(new Scope(Name(), EnclosingScope()));
         }
-        public Grammar(const string& name_, ScopePtr enclosingScope_, ParsingDomainPtr parsingDomain_):
+        public Grammar(const string& name_, Scope* enclosingScope_, ParsingDomain* parsingDomain_):
             base(name_, enclosingScope_), parsingDomain(parsingDomain_), linking(false), linked(false), maxLogLineLength(256), log(null)
         {
             SetScope(new Scope(Name(), EnclosingScope()));
@@ -63,7 +62,7 @@ namespace System.Text.Parsing
             {
                 linking = true;
                 GetReferencedGrammars();
-                for (GrammarPtr grammarReference : grammarReferences)
+                for (Grammar* grammarReference : grammarReferences)
                 {
                     grammarReference->Link();
                 }
@@ -76,11 +75,11 @@ namespace System.Text.Parsing
         public override void Accept(Visitor& visitor)
         {
             visitor.BeginVisit(*this);
-            for (RuleLinkPtr ruleLink : ruleLinks)
+            for (RuleLink* ruleLink : ruleLinks)
             {
                 ruleLink->Accept(visitor);
             }
-            for (RulePtr rule : rules)
+            for (Rule* rule : rules)
             {
                 rule->Accept(visitor);
             }
@@ -89,14 +88,14 @@ namespace System.Text.Parsing
         public void Parse(const string& content, int fileIndex, const string& fileName)
         {
             Scanner scanner(content, fileIndex, fileName, skip);
-            UniqueXmlLogPtr xmlLog;
+            UniquePtr<XmlLog> xmlLog;
             if (log != null)
             {
                 xmlLog.Reset(new XmlLog(*log, maxLogLineLength));
                 scanner.SetLog(xmlLog.GetPtr());
                 xmlLog->WriteBeginRule("parse");
             }
-            ObjectStack stack;
+            Stack<UniquePtr<Object>> stack;
             Match match = Parse(scanner, stack);
             Position stop = scanner.GetPosition();
             if (log != null)
@@ -115,7 +114,7 @@ namespace System.Text.Parsing
                 }
             }
         }
-        public Match Parse(Scanner& scanner, ObjectStack& stack)
+        public Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (start != null)
             {
@@ -151,7 +150,7 @@ namespace System.Text.Parsing
         {
             return skipRuleName;
         }
-        public void AddRule(RulePtr rule)
+        public void AddRule(Rule* rule)
         {
             Own(rule);
             rule->SetGrammar(this);
@@ -167,21 +166,21 @@ namespace System.Text.Parsing
                 ThrowException(ex.Message(), GetPosition());
             }
         }
-        public RulePtr GetRule(const string& ruleName)
+        public Rule* GetRule(const string& ruleName)
         {
-            ParsingObjectPtr object = GetScope()->Get(ruleName);
+            ParsingObject* object = GetScope()->Get(ruleName);
             if (object == null)
             {
                 ThrowException("rule '" + ruleName + "' not found in grammar '" + FullName() + "'", GetPosition());
             }
             if (object->IsRule())
             {
-                return cast<RulePtr>(object);
+                return cast<Rule*>(object);
             }
             else if (object->IsRuleLink())
             {
-                RuleLinkPtr ruleLink = cast<RuleLinkPtr>(object);
-                RulePtr rule = ruleLink->GetRule();
+                RuleLink* ruleLink = cast<RuleLink*>(object);
+                Rule* rule = ruleLink->GetRule();
                 if (rule == null)
                 {
                     ThrowException("rule link '" + ruleName + "' not bound in grammar '" + FullName() + "'", GetPosition());
@@ -194,12 +193,12 @@ namespace System.Text.Parsing
             }
             return null;
         }
-        public void AddRuleLink(RuleLinkPtr ruleLink)
+        public void AddRuleLink(RuleLink* ruleLink)
         {
             Own(ruleLink);
             ruleLinks.Insert(ruleLink);
         }
-        public void AddGrammarReference(GrammarPtr grammarReference)
+        public void AddGrammarReference(Grammar* grammarReference)
         {
             Own(grammarReference);
             grammarReferences.Insert(grammarReference);
@@ -208,11 +207,11 @@ namespace System.Text.Parsing
         {
             return grammarReferences;
         }
-        public nothrow inline RulePtr Start() const
+        public nothrow inline Rule* Start() const
         {
             return start;
         }
-        public nothrow inline RulePtr Skip() const
+        public nothrow inline Rule* Skip() const
         {
             return skip;
         }
@@ -232,7 +231,7 @@ namespace System.Text.Parsing
         {
             maxLogLineLength = maxLogLineLength_;
         }
-        public nothrow inline ParsingDomainPtr GetParsingDomain() const
+        public nothrow inline ParsingDomain* GetParsingDomain() const
         {
             return parsingDomain;
         }
@@ -240,11 +239,11 @@ namespace System.Text.Parsing
         {
             return rules;
         }
-        public nothrow inline NamespacePtr Ns() const
+        public nothrow inline Namespace* Ns() const
         {
             return ns;
         }
-        public nothrow inline void SetNs(NamespacePtr ns_)
+        public nothrow inline void SetNs(Namespace* ns_)
         {
             ns = ns_;
         }
@@ -273,13 +272,13 @@ namespace System.Text.Parsing
                 skip = GetRule(skipRuleName);
             }
         }
-        private ParsingDomainPtr parsingDomain;
-        private NamespacePtr ns;
+        private ParsingDomain* parsingDomain;
+        private Namespace* ns;
         private RuleList rules;
         private RuleLinkSet ruleLinks;
-        private RulePtr start;
-        private RulePtr skip;
-        private ParserPtr contentParser;
+        private Rule* start;
+        private Rule* skip;
+        private Parser* contentParser;
         private GrammarSet grammarReferences;
         private bool linking;
         private bool linked;

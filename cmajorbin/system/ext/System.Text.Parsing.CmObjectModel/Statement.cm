@@ -143,6 +143,9 @@ namespace System.Text.Parsing.CmObjectModel
         private Statement* elseStatement;
     }
     
+    public typedef CompoundStatement* CompoundStatementPtr;
+    public typedef UniquePtr<CompoundStatement> UniqueCompoundStatementPtr;
+
     public class CompoundStatement: Statement
     {
         public CompoundStatement(): base() 

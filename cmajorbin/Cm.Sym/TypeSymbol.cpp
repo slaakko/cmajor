@@ -76,12 +76,18 @@ void TypeSymbol::Read(Reader& reader)
 
 void TypeSymbol::SetIrType(Ir::Intf::Type* irType_)
 {
+    if (IrTypeMade())
+    {
+        throw std::runtime_error("ir type already made");
+    }
     if (irType_->Owned())
     {
         throw std::runtime_error("ir type already owned");
     }
     irType_->SetOwned();
     irType.reset(irType_);
+    irType->SetId(id.Rep());
+    SetIrTypeMade();
 }
 
 Ir::Intf::Type* TypeSymbol::GetIrType() const

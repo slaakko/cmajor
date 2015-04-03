@@ -148,7 +148,19 @@ void StackVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::
 
 void StackVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf::RegVar& regVar)
 {
-    emitter.Emit(Store(type, &regVar, this));
+    PointerType* ptrType = MakePointerType(type);
+    emitter.Own(ptrType);
+    if (TypesEqual(regVar.GetType(), ptrType))
+    {
+        Ir::Intf::RegVar* reg = CreateTemporaryRegVar(type);
+        emitter.Own(reg);
+        emitter.Emit(Load(ptrType, reg, &regVar));
+        emitter.Emit(Store(type, reg, this));
+    }
+    else
+    {
+        emitter.Emit(Store(type, &regVar, this));
+    }
 }
 
 void StackVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf::StackVar& stackVar)

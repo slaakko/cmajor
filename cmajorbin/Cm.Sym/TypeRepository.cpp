@@ -358,9 +358,9 @@ TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std:
         return typeSymbol;
     }
     std::unique_ptr<TemplateTypeSymbol> templateTypeSymbol(new TemplateTypeSymbol(subjectType->GetSpan(), MakeTemplateTypeSymbolName(subjectType, typeArguments), subjectType, typeArguments, typeId));
+    templateTypeSymbol->SetParent(subjectType->Ns());
     templateTypeSymbol->MakeIrType();
     templateTypeSymbol->SetAccess(SymbolAccess::public_);
-    templateTypeSymbol->SetParent(subjectType->Ns());
     types.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol.get()));
     AddType(templateTypeSymbol.get());
     return templateTypeSymbol.release();

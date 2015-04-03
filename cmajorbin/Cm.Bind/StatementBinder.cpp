@@ -22,12 +22,13 @@
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
-#include <Cm.Parser/TypeExpr.hpp>
+#include <Cm.Parser/Expression.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Expression.hpp>
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/BasicType.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <Cm.Util/TextUtils.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -116,7 +117,8 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
         boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(classDelegateFromFunCtor->DelegateType(), constructionStatementNode.GetSpan()));
         constructionStatement->Arguments()[2].reset(boundFunctionId);
     }
-    PrepareFunctionArguments(ctor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository());
+    PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), nullptr, ctor->Parameters(), constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository(),
+        ctor->IsBasicTypeOp());
     if (localVariableType->IsReferenceType())
     {
         constructionStatement->Arguments()[1]->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
@@ -146,7 +148,7 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
         right = Pop();
         left = Pop();
     }
-    if (left->GetType()->IsClassDelegateTypeSymbol())
+    if (left->GetType()->IsClassDelegateTypeSymbol() && right->GetType()->IsFunctionGroupTypeSymbol())
     {
         if (!functionGroup)
         {
@@ -211,7 +213,7 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
         boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(classDelegateFromFunAssignment->DelegateType(), assignmentStatementNode.GetSpan()));
         arguments.Add(boundFunctionId);
     }
-    PrepareFunctionArguments(assignment, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, true, BoundCompileUnit().IrClassTypeRepository());
+    PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), assignment->GetReturnType(), assignment->Parameters(), arguments, true, BoundCompileUnit().IrClassTypeRepository(), assignment->IsBasicTypeOp());
     if (assignment->IsClassDelegateFromFunAssignment())
     {
         Cm::BoundTree::BoundFunctionCallStatement* functionCallStatement = new Cm::BoundTree::BoundFunctionCallStatement(assignment, std::move(arguments));
@@ -459,18 +461,18 @@ void ForStatementBinder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
     forStatement->SetCondition(condition);
 }
 
-Cm::Parser::TypeExprGrammar* typeExprGrammar = nullptr;
+Cm::Parser::ExpressionGrammar* expressionGrammar = nullptr;
 
 Cm::Ast::Node* MakeTypeIdNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing::Span& span)
 {
-    if (!typeExprGrammar)
+    if (!expressionGrammar)
     {
-        typeExprGrammar = Cm::Parser::TypeExprGrammar::Create();
+        expressionGrammar = Cm::Parser::ExpressionGrammar::Create();
     }
-    std::string typeSymbolText = typeSymbol->FullName();
+    std::string typeSymbolText = Cm::Util::Trim(typeSymbol->FullName());
     int n = int(typeSymbolText.size());
     Cm::Parser::ParsingContext parsingContext;
-    return typeExprGrammar->Parse(&typeSymbolText[0], &typeSymbolText[n], 0, "", &parsingContext);
+    return expressionGrammar->Parse(&typeSymbolText[0], &typeSymbolText[n], 0, "", &parsingContext);
 }
 
 RangeForStatementBinder::RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_,

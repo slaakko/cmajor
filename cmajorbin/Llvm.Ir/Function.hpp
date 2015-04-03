@@ -22,6 +22,7 @@ class Function : public Ir::Intf::Function
 {
 public:
     Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_);
+    ~Function();
     virtual void AddInstruction(Ir::Intf::Instruction* instruction);
     virtual void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_);
     virtual void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_);

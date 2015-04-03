@@ -14,6 +14,7 @@
 // Copyright (c) 2009 Alexander Stepanov and Paul McJones
 
 using System;
+using System.Collections;
 
 namespace System.Text.Parsing
 {
@@ -45,7 +46,7 @@ namespace System.Text.Parsing
     
     public class Scanner
     {
-        public nothrow Scanner(const string& content_, int fileIndex_, const string& fileName_, ParserPtr skipper_): 
+        public nothrow Scanner(const string& content_, int fileIndex_, const string& fileName_, Parser* skipper_): 
             content(content_), position(fileIndex_), fileName(fileName_), skipper(skipper_), skipping(false), tokenCounter(0), log(), 
             countSourceLines(Stats.CountSourceLines()), topLevelRule(null), atBeginningOfLine(true)
         {
@@ -70,7 +71,7 @@ namespace System.Text.Parsing
         {
             return fileName;
         }
-        public nothrow inline ParserPtr Skipper() const
+        public nothrow inline Parser* Skipper() const
         {
             return skipper;
         }
@@ -132,7 +133,7 @@ namespace System.Text.Parsing
                 Position save = position;
                 BeginToken();
                 skipping = true;
-                ObjectStack stack;
+                Stack<UniquePtr<Object>> stack;
                 Match match = skipper->Parse(*this, stack);
                 skipping = false;
                 EndToken();
@@ -142,11 +143,11 @@ namespace System.Text.Parsing
                 }
             }
         }
-        public nothrow inline XmlLogPtr Log() const
+        public nothrow inline XmlLog* Log() const
         {
             return log;
         }
-        public nothrow inline void SetLog(XmlLogPtr log_)
+        public nothrow inline void SetLog(XmlLog* log_)
         {
             log = log_;
         }
@@ -167,10 +168,10 @@ namespace System.Text.Parsing
         private string content;
         private Position position;
         private string fileName;
-        private ParserPtr skipper;
+        private Parser* skipper;
         private bool skipping;
         private int tokenCounter;
-        private XmlLogPtr log;
+        private XmlLog* log;
         private bool countSourceLines;
         private Rule* topLevelRule;
         private bool atBeginningOfLine;

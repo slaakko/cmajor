@@ -98,7 +98,7 @@ public:
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const override;
     Symbol* Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const override;
     FileScope* Clone() const;
-    void CollectViableFunctions(const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
+    void CollectViableFunctions(const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions, std::unordered_set<ContainerScope*>& processedScopes);
 private:
     std::vector<ContainerScope*> containerScopes;
     typedef std::unordered_map<std::string, Symbol*> AliasSymbolMap;

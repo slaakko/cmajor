@@ -19,6 +19,7 @@ namespace System.Text.Parsing.CmObjectModel
 {
     public class Visitor
     {
+        public virtual ~Visitor() {}
         public virtual void Visit(BoolType& object) {}
         public virtual void Visit(SByteType& object) {}
         public virtual void Visit(ByteType& object) {}

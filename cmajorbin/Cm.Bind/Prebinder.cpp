@@ -96,6 +96,7 @@ void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
     {
         classTypeSymbol->SetUsingNodes(usingNodes);
     }
+    currentClassStack.push(currentClass);
     currentClass = classTypeSymbol;
     Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&classNode);
     BeginContainerScope(containerScope);
@@ -104,7 +105,8 @@ void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
 void Prebinder::EndVisit(Cm::Ast::ClassNode& classNode)
 {
     EndContainerScope();
-    currentClass = nullptr;
+    currentClass = currentClassStack.top();
+    currentClassStack.pop();
 }
 
 void Prebinder::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)

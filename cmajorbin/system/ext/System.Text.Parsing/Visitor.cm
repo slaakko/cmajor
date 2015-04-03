@@ -19,6 +19,9 @@ namespace System.Text.Parsing
 {
     public class Visitor
     {
+        public virtual ~Visitor()
+        {
+        }
         public virtual void Visit(CharParser& parser) 
         {
         }

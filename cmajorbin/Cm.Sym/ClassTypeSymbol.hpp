@@ -73,6 +73,7 @@ class ClassTypeSymbol : public TypeSymbol
 {
 public:
     ClassTypeSymbol(const Span& span_, const std::string& name_);
+    ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId);
     ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
     std::string TypeString() const override { return "class"; };

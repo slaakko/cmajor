@@ -67,6 +67,8 @@ public:
     void AddToInstantiated(Cm::Sym::FunctionSymbol* functionSymbol);
     void SetHasGotos() { hasGotos = true; }
     bool HasGotos() const { return hasGotos; }
+    bool IsPrebindCompileUnit() const { return isPrebindCompileUnit; }
+    void SetPrebindCompileUnit() { isPrebindCompileUnit = true; }
 private:
     Cm::Ast::CompileUnitNode* syntaxUnit;
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
@@ -93,6 +95,7 @@ private:
     std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionSymbols;
     std::unordered_set<Cm::Sym::FunctionSymbol*> instantiatedFunctions;
     bool hasGotos;
+    bool isPrebindCompileUnit;
 };
 
 } } // namespace Cm::BoundTree

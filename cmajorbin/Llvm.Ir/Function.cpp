@@ -23,6 +23,10 @@ Function::Function(const std::string& name_, Ir::Intf::Type* returnType_, const 
 {
 }
 
+Function::~Function()
+{
+}
+
 std::string Function::ParameterListStr() const
 {
     std::string parameterList("(");

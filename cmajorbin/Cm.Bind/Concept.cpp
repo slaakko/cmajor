@@ -269,7 +269,7 @@ void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
     }
     Cm::Sym::Scope* typeContainerScope = type->GetContainerScope();
     const std::string& memberName = dotNode.MemberId()->Str();
-    Cm::Sym::Symbol* symbol = typeContainerScope->Lookup(memberName, lookupId);
+    Cm::Sym::Symbol* symbol = typeContainerScope->Lookup(memberName, Cm::Sym::ScopeLookup::this_and_base, lookupId);
     if (symbol)
     {
         if (symbol->IsBoundTypeParameterSymbol())

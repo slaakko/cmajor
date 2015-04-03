@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicTypeSymbol.hpp" />
+    <ClInclude Include="ClassCounter.hpp" />
     <ClInclude Include="ClassTypeSymbol.hpp" />
     <ClInclude Include="ConceptGroupSymbol.hpp" />
     <ClInclude Include="ConceptSymbol.hpp" />
@@ -61,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicTypeSymbol.cpp" />
+    <ClCompile Include="ClassCounter.cpp" />
     <ClCompile Include="ClassTypeSymbol.cpp" />
     <ClCompile Include="ConceptGroupSymbol.cpp" />
     <ClCompile Include="ConceptSymbol.cpp" />

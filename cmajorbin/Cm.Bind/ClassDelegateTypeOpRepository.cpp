@@ -9,6 +9,9 @@
 
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Bind/OverloadResolution.hpp>
+#include <Cm.Bind/Parameter.hpp>
+#include <Cm.Bind/ExpressionBinder.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 
@@ -73,6 +76,105 @@ void ClassDelegateFromFunAssignment::Generate(Cm::Core::Emitter& emitter, Cm::Co
     // implementation is provided by FunctionEmitter
 }
 
+ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType) : 
+    Cm::Sym::FunctionSymbol(classDelegateType->GetSpan(), "*class_delegate_equal*")
+{
+    SetGroupName("operator==");
+    Cm::Sym::TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+    SetReturnType(boolType);
+    Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
+    leftParam->SetType(classDelegateType);
+    AddSymbol(leftParam);
+    Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
+    rightParam->SetType(classDelegateType);
+    AddSymbol(rightParam);
+    ComputeName();
+    SetAccess(Cm::Sym::SymbolAccess::public_);
+    SetReplicated();
+    SetNothrow();
+    SetParent(classDelegateType->Ns());
+    std::unique_ptr<Cm::BoundTree::BoundFunction> opEqual(new Cm::BoundTree::BoundFunction(nullptr, this));
+    opEqual->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
+    GenerateReceives(containerScope, boundCompileUnit, opEqual.get());
+    Cm::Sym::TypeSymbol* classDelegateTypePointer = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classDelegateType, classDelegateType->GetSpan());
+    std::vector<Cm::Core::Argument> boolCopyCtorArgs;
+    Cm::Sym::TypeSymbol* boolPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(boolType, classDelegateType->GetSpan());
+    boolCopyCtorArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boolPtrType));
+    boolCopyCtorArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boolType));
+    Cm::Sym::FunctionLookupSet boolCopyCtorLookups;
+    boolCopyCtorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, boundCompileUnit.SymbolTable().GlobalScope()));
+    std::vector<Cm::Sym::FunctionSymbol*> boolCopyCtorConversions;
+    Cm::Sym::FunctionSymbol* boolCopyCtor = Cm::Bind::ResolveOverload(boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit, "@constructor", boolCopyCtorArgs, boolCopyCtorLookups,
+        classDelegateType->GetSpan(), boolCopyCtorConversions);
+    for (Cm::Sym::MemberVariableSymbol* memberVariableSymbol : classDelegateType->MemberVariables())
+    {
+        Cm::Sym::TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
+        std::vector<Cm::Core::Argument> resolutionArguments;
+        Cm::BoundTree::BoundParameter* boundLeftParam = new Cm::BoundTree::BoundParameter(nullptr, leftParam);
+        boundLeftParam->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        boundLeftParam->SetType(leftParam->GetType());
+        Cm::BoundTree::BoundMemberVariable* boundLeftMemberVar = new Cm::BoundTree::BoundMemberVariable(nullptr, memberVariableSymbol);
+        boundLeftMemberVar->SetType(memberVariableType);
+        boundLeftMemberVar->SetClassObject(boundLeftParam);
+        resolutionArguments.push_back(Cm::Core::Argument(boundLeftMemberVar->GetArgumentCategory(), boundLeftMemberVar->GetType()));
+
+        Cm::BoundTree::BoundParameter* boundRightParam = new Cm::BoundTree::BoundParameter(nullptr, rightParam);
+        boundRightParam->SetType(rightParam->GetType());
+        boundRightParam->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        Cm::BoundTree::BoundMemberVariable* boundRightMemberVar = new Cm::BoundTree::BoundMemberVariable(nullptr, memberVariableSymbol);
+        boundRightMemberVar->SetType(memberVariableType);
+        boundRightMemberVar->SetClassObject(boundRightParam);
+        resolutionArguments.push_back(Cm::Core::Argument(boundRightMemberVar->GetArgumentCategory(), boundRightMemberVar->GetType()));
+
+        Cm::Sym::FunctionLookupSet functionLookups;
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
+        std::vector<Cm::Sym::FunctionSymbol*> conversions;
+        Cm::Sym::FunctionSymbol* memberVarOpEqual = ResolveOverload(containerScope, boundCompileUnit, "operator==", resolutionArguments, functionLookups, classDelegateType->GetSpan(), 
+            conversions);
+        Cm::BoundTree::BoundExpressionList arguments;
+        arguments.Add(boundLeftMemberVar);
+        arguments.Add(boundRightMemberVar);
+        PrepareArguments(containerScope, boundCompileUnit, opEqual.get(), memberVarOpEqual->GetReturnType(), memberVarOpEqual->Parameters(), arguments, false, 
+            boundCompileUnit.IrClassTypeRepository(), memberVarOpEqual->IsBasicTypeOp());
+        Cm::BoundTree::BoundExpression* leftArg = arguments[0].release();
+        Cm::BoundTree::BoundExpression* rightArg = arguments[1].release();
+        Cm::BoundTree::BoundBinaryOp* eq = new Cm::BoundTree::BoundBinaryOp(nullptr, leftArg, rightArg);
+        eq->SetType(boolType);
+        eq->SetFunction(memberVarOpEqual);
+        Cm::BoundTree::BoundUnaryOp* notEq = new Cm::BoundTree::BoundUnaryOp(nullptr, eq);
+        notEq->SetType(boolType);
+        std::vector<Cm::Core::Argument> notBoolArgs;
+        notBoolArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boolType));
+        Cm::Sym::FunctionLookupSet notBoolLookups;
+        notBoolLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, boundCompileUnit.SymbolTable().GlobalScope()));
+        std::vector<Cm::Sym::FunctionSymbol*> notBoolConversions;
+        Cm::Sym::FunctionSymbol* notBool = Cm::Bind::ResolveOverload(boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit, "operator!", notBoolArgs, notBoolLookups, 
+            classDelegateType->GetSpan(), notBoolConversions);
+        notEq->SetFunction(notBool);
+        notEq->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
+        Cm::BoundTree::BoundConditionalStatement* ifNotEqReturnFalse = new Cm::BoundTree::BoundConditionalStatement(nullptr);
+        Cm::BoundTree::BoundReturnStatement* returnFalse = new Cm::BoundTree::BoundReturnStatement(nullptr);
+        Cm::BoundTree::BoundLiteral* falseLiteral = new Cm::BoundTree::BoundLiteral(nullptr);
+        falseLiteral->SetValue(new Cm::Sym::BoolValue(false));
+        falseLiteral->SetType(boolType);
+        returnFalse->SetExpression(falseLiteral);
+        returnFalse->SetReturnType(boolType);
+        returnFalse->SetConstructor(boolCopyCtor);
+        ifNotEqReturnFalse->SetCondition(notEq);
+        ifNotEqReturnFalse->AddStatement(returnFalse);
+        opEqual->Body()->AddStatement(ifNotEqReturnFalse);
+    }
+    Cm::BoundTree::BoundLiteral* trueLiteral = new Cm::BoundTree::BoundLiteral(nullptr);
+    trueLiteral->SetValue(new Cm::Sym::BoolValue(true));
+    trueLiteral->SetType(boolType);
+    Cm::BoundTree::BoundReturnStatement* returnTrue = new Cm::BoundTree::BoundReturnStatement(nullptr);
+    returnTrue->SetReturnType(boolType);
+    returnTrue->SetExpression(trueLiteral);
+    returnTrue->SetConstructor(boolCopyCtor);
+    opEqual->Body()->AddStatement(returnTrue);
+    boundCompileUnit.AddBoundNode(opEqual.release());
+}
+
 Cm::Sym::FunctionSymbol* ResolveClassDelegateOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
     Cm::Sym::ClassDelegateTypeSymbol* classDelegateType, Cm::Sym::TypeSymbol* classObjectType, const std::string& groupName, const Cm::Parsing::Span& span)
 {
@@ -122,6 +224,16 @@ Cm::Sym::FunctionSymbol* ClassDelegateTypeOpCache::GetClassDelegateFromFunAssign
         classDelegateFromFunAssignment.reset(new ClassDelegateFromFunAssignment(typeRepository, classDelegateType, fun));
     }
     return classDelegateFromFunAssignment.get();
+}
+
+Cm::Sym::FunctionSymbol* ClassDelegateTypeOpCache::GetClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
+    Cm::Sym::ClassDelegateTypeSymbol* classDelegateType)
+{
+    if (!classDelegateEqualOp)
+    {
+        classDelegateEqualOp.reset(new ClassDelegateEqualOp(containerScope, boundCompileUnit, classDelegateType));
+    }
+    return classDelegateEqualOp.get();
 }
 
 ClassDelegateTypeOpGroup::~ClassDelegateTypeOpGroup()
@@ -214,10 +326,30 @@ void ClassDelegateAssignmentOpGroup::CollectViableFunctions(Cm::BoundTree::Bound
     }
 }
 
+void ClassDelegateEqualOpGroup::CollectViableFunctions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, const Cm::Parsing::Span& span,
+    int arity, std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable,
+    Cm::Sym::TypeRepository& typeRepository, ClassDelegateTypeOpCacheMap& delegateTypeOpCacheMap, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions)
+{
+    if (arity != 2) return;
+    Cm::Sym::TypeSymbol* type = arguments[0].Type();
+    if (type->IsClassDelegateTypeSymbol())
+    {
+        Cm::Sym::ClassDelegateTypeSymbol* classDelegateType = static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(type);
+        Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
+        if (rightType->IsClassDelegateTypeSymbol() && Cm::Sym::TypesEqual(classDelegateType, rightType))
+        {
+            ClassDelegateTypeOpCache& cache = delegateTypeOpCacheMap[classDelegateType];
+            Cm::Sym::FunctionSymbol* viableFun = cache.GetClassDelegateEqualOp(containerScope, boundCompileUnit, classDelegateType);
+            viableFunctions.insert(viableFun);
+        }
+    }
+}
+
 ClassDelegateTypeOpRepository::ClassDelegateTypeOpRepository(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
 {
     classDelegateTypeOpGroupMap["@constructor"] = &classDelegateConstructorOpGroup;
     classDelegateTypeOpGroupMap["operator="] = &classDelegateAssignmentOpGroup;
+    classDelegateTypeOpGroupMap["operator=="] = &classDelegateEqualOpGroup;
 }
 
 void ClassDelegateTypeOpRepository::CollectViableFunctions(Cm::Sym::ContainerScope* containerScope, const std::string& groupName,
@@ -228,7 +360,7 @@ void ClassDelegateTypeOpRepository::CollectViableFunctions(Cm::Sym::ContainerSco
     {
         throw std::runtime_error("wrong number of arguments");
     }
-    if (arity != 3) return;
+    if (arity < 2 || arity > 3) return;
     ClassDelegateTypeOpGroupMapIt i = classDelegateTypeOpGroupMap.find(groupName);
     if (i != classDelegateTypeOpGroupMap.end())
     {

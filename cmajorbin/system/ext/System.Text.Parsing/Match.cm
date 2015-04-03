@@ -19,9 +19,6 @@ namespace System.Text.Parsing
 {
     public class Match
     {
-        public nothrow default Match();
-        public nothrow default Match(const Match&);
-        public nothrow default void operator=(const Match&);
         public nothrow inline Match(bool hit_, int length_): hit(hit_), length(length_)
         {
         }

@@ -60,7 +60,6 @@ struct TypeIdHash
     }
 };
 
-
 } } // namespace Cm::Sym
 
 #endif // CM_SYM_TYPE_ID_INCLUDED

@@ -280,7 +280,7 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
             if (!typeSymbol->Bound())
             {
                 Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(typeSymbol);
-                classTemplateRepository.BindTemplateTypeSymbol(templateTypeSymbol, currentContainerScope);
+                classTemplateRepository.BindTemplateTypeSymbol(templateTypeSymbol, currentContainerScope, fileScopes);
             }
         }
         Cm::Sym::Scope* containerScope = nullptr;
@@ -294,7 +294,7 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
             containerScope = nsTypeSymbol->Ns()->GetContainerScope();
         }
         const std::string& memberName = dotNode.MemberId()->Str();
-        Cm::Sym::Symbol* symbol = containerScope->Lookup(memberName, lookupId);
+        Cm::Sym::Symbol* symbol = containerScope->Lookup(memberName, Cm::Sym::ScopeLookup::this_and_base, lookupId);
         if (symbol)
         {
             ResolveSymbol(&dotNode, symbol);

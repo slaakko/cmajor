@@ -14,7 +14,8 @@
 
 namespace Cm { namespace Sym {
 
-ConversionTypes::ConversionTypes(TypeSymbol* sourceType_, TypeSymbol* targetType_) : sourceType(sourceType_), targetType(targetType_), hashCode(sourceType->Id().GetHashCode() ^ targetType->Id().GetHashCode())
+ConversionTypes::ConversionTypes(TypeSymbol* sourceType_, TypeSymbol* targetType_) : sourceType(sourceType_), targetType(targetType_), 
+    hashCode(sourceType->Id().GetHashCode() ^ targetType->Id().GetHashCode())
 {
 }
 
@@ -29,18 +30,40 @@ ConversionTable::ConversionTable(TypeRepository& typeRepository_) : typeReposito
 
 void ConversionTable::AddConversion(FunctionSymbol* conversion)
 {
-    if (conversion->Parameters().size() != 2)
+    if (conversion->IsConvertingConstructor())
     {
-        throw std::runtime_error("conversion function parameter count != 2");
+        if (conversion->Parameters().size() != 2)
+        {
+            throw std::runtime_error("converting constructor parameter count != 2");
+        }
+        Cm::Sym::ParameterSymbol* targetParam = conversion->Parameters()[0];
+        Cm::Sym::TypeSymbol* targetParamType = targetParam->GetType();
+        Cm::Sym::TypeSymbol* targetType = typeRepository.MakePlainTypeWithOnePointerRemoved(targetParamType);
+        Cm::Sym::ParameterSymbol* sourceParam = conversion->Parameters()[1];
+        Cm::Sym::TypeSymbol* sourceParamType = sourceParam->GetType();
+        Cm::Sym::TypeSymbol* sourceType = typeRepository.MakePlainType(sourceParamType);
+        ConversionTypes key(sourceType, targetType);
+        conversionMap[key] = conversion;
     }
-    Cm::Sym::ParameterSymbol* targetParam = conversion->Parameters()[0];
-    Cm::Sym::TypeSymbol* targetParamType = targetParam->GetType();
-    Cm::Sym::TypeSymbol* targetType = typeRepository.MakePlainTypeWithOnePointerRemoved(targetParamType);
-    Cm::Sym::ParameterSymbol* sourceParam = conversion->Parameters()[1];
-    Cm::Sym::TypeSymbol* sourceParamType = sourceParam->GetType();
-    Cm::Sym::TypeSymbol* sourceType = typeRepository.MakePlainType(sourceParamType);
-    ConversionTypes key(sourceType, targetType);
-    conversionMap[key] = conversion;
+    else if (conversion->IsConversionFunction())
+    {
+        if (conversion->Parameters().size() != 1)
+        {
+            throw std::runtime_error("conversion function parameter count != 1");
+        }
+        if (!conversion->GetReturnType() || conversion->GetReturnType()->IsVoidTypeSymbol())
+        {
+            throw std::runtime_error("conversion function does not return valid type");
+        }
+        Cm::Sym::TypeSymbol* sourceType = conversion->GetSourceType();
+        Cm::Sym::TypeSymbol* targetType = conversion->GetTargetType();
+        ConversionTypes key(sourceType, targetType);
+        conversionMap[key] = conversion;
+    }
+    else
+    {
+        throw std::runtime_error("not converting constructor or conversion function");
+    }
 }
 
 FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const

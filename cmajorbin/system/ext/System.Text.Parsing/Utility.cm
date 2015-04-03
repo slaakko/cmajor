@@ -17,10 +17,6 @@ using System;
 
 namespace System.Text.Parsing
 {
-    public nothrow string HexEscape(char c)
-    {
-        return "\\x" + ToHexString(cast<byte>(c));
-    }
     public string XmlCharStr(char c)
     {
         switch (c)

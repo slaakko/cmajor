@@ -85,7 +85,11 @@ void Binder::BeginVisit(Cm::Ast::ClassNode& classNode)
     {
         Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&classNode);
         Cm::Sym::ClassTypeSymbol* classTypeSymbol = containerScope->Class();
-        boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+        if (!boundCompileUnit.IsPrebindCompileUnit())
+        {
+            boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+        }
+        boundClassStack.push(std::move(boundClass));
         boundClass.reset(new Cm::BoundTree::BoundClass(classTypeSymbol, &classNode));
         BeginContainerScope(containerScope);
     }
@@ -116,18 +120,26 @@ void Binder::EndVisit(Cm::Ast::ClassNode& classNode)
             }
         }
         boundCompileUnit.AddBoundNode(boundClass.release());
+        boundClass = std::move(boundClassStack.top());
+        boundClassStack.pop();
     }
 }
 
 void Binder::BeginClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
-    boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+    if (!boundCompileUnit.IsPrebindCompileUnit())
+    {
+        boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+    }
+    boundClassStack.push(std::move(boundClass));
     boundClass.reset(new Cm::BoundTree::BoundClass(classTypeSymbol, nullptr));
 }
 
 void Binder::EndClass()
 {
     boundCompileUnit.AddBoundNode(boundClass.release());
+    boundClass = std::move(boundClassStack.top());
+    boundClassStack.pop();
 }
 
 void Binder::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)

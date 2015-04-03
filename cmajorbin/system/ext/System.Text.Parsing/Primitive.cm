@@ -23,15 +23,11 @@ namespace System.Text.Parsing
         public nothrow explicit CharParser(char c_): base("char", "\"" + string(c) + "\""), c(c_)
         {
         }
-        suppress CharParser(const CharParser&);
-        suppress void operator=(const CharParser&);
-        suppress CharParser(CharParser&&);
-        suppress void operator=(CharParser&&);
         public nothrow inline char GetChar() const
         {
             return c;
         }
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (!scanner.AtEnd())
             {
@@ -55,15 +51,11 @@ namespace System.Text.Parsing
         public nothrow explicit StringParser(const string& s_): base("string", "\"" + s_ + "\""), s(s_)
         {
         }
-        suppress StringParser(const StringParser&);
-        suppress void operator=(const StringParser&);
-        suppress StringParser(StringParser&&);
-        suppress void operator=(StringParser&&);
         public nothrow inline const string& GetString() const
         {
             return s;
         }
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Match match = Match.Empty();
             int i = 0;
@@ -93,10 +85,6 @@ namespace System.Text.Parsing
         {
             InitBits();
         }
-        suppress CharSetParser(const CharSetParser&);
-        suppress void operator=(const CharSetParser&);
-        suppress CharSetParser(CharSetParser&&);
-        suppress void operator=(CharSetParser&&);
         public CharSetParser(const string& s_, bool inverse_): base("charset", "[" + s_ + "]"), s(s_), inverse(inverse_), bits(256)
         {
             InitBits();
@@ -109,7 +97,7 @@ namespace System.Text.Parsing
         {
             return inverse;
         }
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (!scanner.AtEnd())
             {
@@ -169,11 +157,7 @@ namespace System.Text.Parsing
         public nothrow EmptyParser(): base("empty", "")
         {
         }
-        suppress EmptyParser(const EmptyParser&);
-        suppress void operator=(const EmptyParser&);
-        suppress EmptyParser(EmptyParser&&);
-        suppress void operator=(EmptyParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             return Match.Empty();
         }
@@ -188,11 +172,7 @@ namespace System.Text.Parsing
         public nothrow SpaceParser(): base("space", "space")
         {
         }
-        suppress SpaceParser(const SpaceParser&);
-        suppress void operator=(const SpaceParser&);
-        suppress SpaceParser(SpaceParser&&);
-        suppress void operator=(SpaceParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (!scanner.AtEnd())
             {
@@ -215,11 +195,7 @@ namespace System.Text.Parsing
         public nothrow LetterParser(): base("letter", "letter")
         {
         }
-        suppress LetterParser(const LetterParser&);
-        suppress void operator=(const LetterParser&);
-        suppress LetterParser(LetterParser&&);
-        suppress void operator=(LetterParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (!scanner.AtEnd())
             {
@@ -242,11 +218,7 @@ namespace System.Text.Parsing
         public nothrow DigitParser(): base("digit", "digit")
         {
         }
-        suppress DigitParser(const DigitParser&);
-        suppress void operator=(const DigitParser&);
-        suppress DigitParser(DigitParser&&);
-        suppress void operator=(DigitParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (!scanner.AtEnd())
             {
@@ -269,11 +241,7 @@ namespace System.Text.Parsing
         public nothrow HexDigitParser(): base("hexdigit", "hexdigit")
         {
         }
-        suppress HexDigitParser(const HexDigitParser&);
-        suppress void operator=(const HexDigitParser&);
-        suppress HexDigitParser(HexDigitParser&&);
-        suppress void operator=(HexDigitParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (!scanner.AtEnd())
             {
@@ -296,11 +264,7 @@ namespace System.Text.Parsing
         public nothrow PunctuationParser(): base("punctuation", "punctuation")
         {
         }
-        suppress PunctuationParser(const PunctuationParser&);
-        suppress void operator=(const PunctuationParser&);
-        suppress PunctuationParser(PunctuationParser&&);
-        suppress void operator=(PunctuationParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (!scanner.AtEnd())
             {
@@ -323,11 +287,7 @@ namespace System.Text.Parsing
         public nothrow AnyCharParser(): base("anychar", "anychar")
         {
         }
-        suppress AnyCharParser(const AnyCharParser&);
-        suppress void operator=(const AnyCharParser&);
-        suppress AnyCharParser(AnyCharParser&&);
-        suppress void operator=(AnyCharParser&&);
-        public override Match Parse(Scanner& scanner, ObjectStack& stack)
+        public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             if (!scanner.AtEnd())
             {

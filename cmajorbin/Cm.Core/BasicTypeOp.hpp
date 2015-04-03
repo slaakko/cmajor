@@ -212,6 +212,7 @@ public:
     bool IsConvertingConstructor() const override { return true; }
     void Generate(Emitter& emitter, GenResult& result) override;
     Cm::Sym::TypeSymbol* GetTargetType() const override { return targetType; }
+    Cm::Sym::TypeSymbol* GetSourceType() const override { return sourceType; }
     Cm::Sym::ConversionRank GetConversionRank() const override { return conversionRank; }
     int GetConversionDistance() const override { return conversionDistance; }
 private:

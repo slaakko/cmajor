@@ -100,6 +100,7 @@ private:
     Cm::Sym::ContainerScope* currentContainerScope;
     std::stack<Cm::Sym::ContainerScope*> containerScopeStack;
     std::unique_ptr<Cm::BoundTree::BoundFunction> boundFunction;
+    std::stack<std::unique_ptr<Cm::BoundTree::BoundClass>> boundClassStack;
     std::unique_ptr<Cm::BoundTree::BoundClass> boundClass;
     std::unique_ptr<Cm::BoundTree::BoundParentStatement> currentParent;
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;

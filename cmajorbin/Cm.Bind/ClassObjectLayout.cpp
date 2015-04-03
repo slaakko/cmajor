@@ -71,7 +71,8 @@ void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpres
     Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(nullptr, boundThisParam, conversionFun);
     thisAsBase->SetType(baseClassPtrType);
     arguments.InsertFront(thisAsBase); // insert 'this' to front
-    PrepareFunctionArguments(baseClassCtor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, false, BoundCompileUnit().IrClassTypeRepository());
+    PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), nullptr, baseClassCtor->Parameters(), arguments, false, BoundCompileUnit().IrClassTypeRepository(), 
+        baseClassCtor->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -153,7 +154,8 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
     Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
     boundThisParam->SetType(thisParam->GetType());
     arguments.InsertFront(boundThisParam); // insert 'this' to front
-    PrepareFunctionArguments(thisClassCtor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, false, BoundCompileUnit().IrClassTypeRepository());
+    PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), nullptr, thisClassCtor->Parameters(), arguments, false, BoundCompileUnit().IrClassTypeRepository(), 
+        thisClassCtor->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -290,7 +292,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     boundThisParam->SetType(thisParam->GetType());
     boundMemberVariable->SetClassObject(boundThisParam);
     arguments.InsertFront(boundMemberVariable);
-    PrepareFunctionArguments(memberCtor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, true, BoundCompileUnit().IrClassTypeRepository());
+    PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), nullptr, memberCtor->Parameters(), arguments, true, BoundCompileUnit().IrClassTypeRepository(), memberCtor->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -393,7 +395,7 @@ void GenerateMemberVariableDestructionStatements(Cm::BoundTree::BoundCompileUnit
         boundMemberVariable->SetClassObject(boundThisParam);
         Cm::BoundTree::BoundExpressionList arguments;
         arguments.Add(boundMemberVariable);
-        PrepareFunctionArguments(memberDtor, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
+        PrepareArguments(containerScope, boundCompileUnit, currentFunction, nullptr, memberDtor->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), memberDtor->IsBasicTypeOp());
         Cm::BoundTree::BoundFunctionCallStatement* destroyMemberVariableStatement = new Cm::BoundTree::BoundFunctionCallStatement(memberDtor, std::move(arguments));
         destroyMemberVariableStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), destructorNode->GetSpan()));
         currentFunction->Body()->AddStatement(destroyMemberVariableStatement);
@@ -416,7 +418,7 @@ void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boun
     thisAsBase->SetType(baseClassPtrType);
     Cm::BoundTree::BoundExpressionList arguments;
     arguments.Add(thisAsBase); 
-    PrepareFunctionArguments(baseClassDtor, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
+    PrepareArguments(containerScope, boundCompileUnit, currentFunction, nullptr, baseClassDtor->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), baseClassDtor->IsBasicTypeOp());
     Cm::BoundTree::BoundFunctionCallStatement* destroyBaseClassObjectStatement = new Cm::BoundTree::BoundFunctionCallStatement(baseClassDtor, std::move(arguments));
     destroyBaseClassObjectStatement->SetTraceCallInfo(Cm::Bind::CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), destructorNode->GetSpan()));
     currentFunction->Body()->AddStatement(destroyBaseClassObjectStatement);
@@ -459,7 +461,8 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
 	constructMutexGuardStatement->InsertLocalVariableToArguments();
 	constructMutexGuardStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
 	constructMutexGuardStatement->ApplyConversions(mutexGuardConversions, currentFunction);
-	PrepareFunctionArguments(mutexGuardConstructor, containerScope, boundCompileUnit, currentFunction, constructMutexGuardStatement->Arguments(), true, boundCompileUnit.IrClassTypeRepository());
+	PrepareArguments(containerScope, boundCompileUnit, currentFunction, nullptr, mutexGuardConstructor->Parameters(), constructMutexGuardStatement->Arguments(), true, 
+        boundCompileUnit.IrClassTypeRepository(), mutexGuardConstructor->IsBasicTypeOp());
 	currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, constructMutexGuardStatement);
 	++classObjectLayoutFunIndex;
 	currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
@@ -571,7 +574,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializer
     Cm::BoundTree::BoundMemberVariable* boundMemberVariable = new Cm::BoundTree::BoundMemberVariable(node, memberVariableSymbol);
     boundMemberVariable->SetType(memberVariableSymbol->GetType());
     arguments.InsertFront(boundMemberVariable);
-    PrepareFunctionArguments(memberCtor, ContainerScope(), BoundCompileUnit(), CurrentFunction(), arguments, true, BoundCompileUnit().IrClassTypeRepository());
+    PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), nullptr, memberCtor->Parameters(), arguments, true, BoundCompileUnit().IrClassTypeRepository(), memberCtor->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {

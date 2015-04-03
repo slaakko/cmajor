@@ -14,14 +14,12 @@
 // Copyright (c) 2009 Alexander Stepanov and Paul McJones
 
 using System;
-using CmUsingObjectPtr = System.Text.Parsing.CmObjectModel.UsingObjectPtr;
-using UniqueCmUsingObjectPtr = System.Text.Parsing.CmObjectModel.UniqueUsingObjectPtr;
 
 namespace System.Text.Parsing
 {
     public class Namespace: ParsingObject
     {
-        public Namespace(const string& qualifiedName_, ScopePtr enclosingScope_):
+        public Namespace(const string& qualifiedName_, Scope* enclosingScope_):
             base(qualifiedName_, enclosingScope_)
         {
             SetScope(new Scope(Name(), EnclosingScope()));
@@ -42,12 +40,9 @@ namespace System.Text.Parsing
         }
     }
     
-    public typedef Namespace* NamespacePtr;
-    public typedef UsingObject* UsingObjectPtr;
-    
     public class UsingObject: ParsingObject
     {
-        public UsingObject(CmUsingObjectPtr subject_, ScopePtr enclosingScope_):
+        public UsingObject(System.Text.Parsing.CmObjectModel.UsingObject* subject_, Scope* enclosingScope_):
             base(subject_->Name(), enclosingScope_), subject(subject_)
         {
             if (!subject->Owned())
@@ -64,11 +59,11 @@ namespace System.Text.Parsing
         {
             visitor.Visit(*this);
         }
-        public CmUsingObjectPtr Subject() const
+        public System.Text.Parsing.CmObjectModel.UsingObject* Subject() const
         {
             return subject;
         }
-        private CmUsingObjectPtr subject;
-        private UniqueCmUsingObjectPtr ownedSubject;
+        private System.Text.Parsing.CmObjectModel.UsingObject* subject;
+        private UniquePtr<System.Text.Parsing.CmObjectModel.UsingObject> ownedSubject;
     }
 }

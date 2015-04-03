@@ -40,32 +40,47 @@ namespace Cm { namespace Bind {
 
 using Cm::Parsing::Span;
 
-void PrepareFunctionArguments(Cm::Sym::FunctionSymbol* fun, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, 
-    Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, Cm::Core::IrClassTypeRepository& irClassTypeRepository)
+void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, 
+    Cm::Sym::TypeSymbol* returnType, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, 
+    Cm::Core::IrClassTypeRepository& irClassTypeRepository, bool isBasicTypeOp)
 {
-    if (int(fun->Parameters().size()) != arguments.Count())
+    if (int(parameters.size()) != arguments.Count())
     {
         throw std::runtime_error("wrong number of arguments");
+    }
+    if (!boundCompileUnit.IsPrebindCompileUnit())
+    {
+        if (returnType && returnType->GetBaseType()->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* returnClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(returnType->GetBaseType());
+            irClassTypeRepository.AddClassType(returnClassType);
+        }
     }
     int n = arguments.Count();
     for (int i = 0; i < n; ++i)
     {
-        Cm::Sym::ParameterSymbol* parameter = fun->Parameters()[i];
+        Cm::Sym::ParameterSymbol* parameter = parameters[i];
         Cm::Sym::TypeSymbol* paramType = parameter->GetType();
         Cm::Sym::TypeSymbol* paramBaseType = paramType->GetBaseType();
-        if (paramBaseType->IsClassTypeSymbol())
+        if (!boundCompileUnit.IsPrebindCompileUnit())
         {
-            Cm::Sym::ClassTypeSymbol* paramClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(paramBaseType);
-            irClassTypeRepository.AddClassType(paramClassType);
+            if (paramBaseType->IsClassTypeSymbol())
+            {
+                Cm::Sym::ClassTypeSymbol* paramClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(paramBaseType);
+                irClassTypeRepository.AddClassType(paramClassType);
+            }
         }
         Cm::BoundTree::BoundExpression* argument = arguments[i].get();
         Cm::Sym::TypeSymbol* argumentBaseType = argument->GetType()->GetBaseType();
-        if (argumentBaseType->IsClassTypeSymbol())
+        if (!boundCompileUnit.IsPrebindCompileUnit())
         {
-            Cm::Sym::ClassTypeSymbol* argumentClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(argumentBaseType);
-            irClassTypeRepository.AddClassType(argumentClassType);
+            if (argumentBaseType->IsClassTypeSymbol())
+            {
+                Cm::Sym::ClassTypeSymbol* argumentClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(argumentBaseType);
+                irClassTypeRepository.AddClassType(argumentClassType);
+            }
         }
-        if (!fun->IsBasicTypeOp())
+        if (!isBasicTypeOp)
         {
             if (paramType->IsNonConstReferenceType())
             {
@@ -228,7 +243,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     }
 	Cm::BoundTree::BoundExpressionList arguments;
 	arguments.Add(unaryOperand);
-	PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, firstArgByRef, boundCompileUnit.IrClassTypeRepository());
+	PrepareArguments(containerScope, boundCompileUnit, currentFunction, fun->GetReturnType(), fun->Parameters(), arguments, firstArgByRef, boundCompileUnit.IrClassTypeRepository(), fun->IsBasicTypeOp());
 	unaryOperand = arguments[0].release();
 	Cm::BoundTree::BoundUnaryOp* op = new Cm::BoundTree::BoundUnaryOp(node, unaryOperand);
     op->SetFunction(fun);
@@ -297,7 +312,7 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
 	Cm::BoundTree::BoundExpressionList arguments;
 	arguments.Add(leftOperand);
 	arguments.Add(rightOperand);
-	PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, firstArgByRef, boundCompileUnit.IrClassTypeRepository());
+	PrepareArguments(containerScope, boundCompileUnit, currentFunction, fun->GetReturnType(), fun->Parameters(), arguments, firstArgByRef, boundCompileUnit.IrClassTypeRepository(), fun->IsBasicTypeOp());
 	leftOperand = arguments[0].release();
 	rightOperand = arguments[1].release();
     Cm::BoundTree::BoundBinaryOp* op = new Cm::BoundTree::BoundBinaryOp(node, leftOperand, rightOperand);
@@ -507,13 +522,22 @@ void ExpressionBinder::Visit(Cm::Ast::DerefNode& derefNode)
     derefNode.Subject()->Accept(*this);
     lookupId = lookupIdStack.Pop();
     BindUnaryOp(&derefNode, "operator*");
+    Cm::BoundTree::BoundExpression* derefExpr = boundExpressionStack.Pop();
     if (isDerefThis)
     {
-        Cm::BoundTree::BoundExpression* derefExpr = boundExpressionStack.Pop();
         Cm::Sym::TypeSymbol* type = derefExpr->GetType();
         derefExpr->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().MakeReferenceType(type, derefNode.GetSpan()));
-        boundExpressionStack.Push(derefExpr);
     }
+    if (!derefExpr->IsBoundUnaryOp())
+    {
+        throw std::runtime_error("not bound unary op");
+    }
+    Cm::BoundTree::BoundUnaryOp* unaryOp = static_cast<Cm::BoundTree::BoundUnaryOp*>(derefExpr);
+    if (!unaryOp->GetFunction()->GetReturnType()->IsConstType())
+    {
+        unaryOp->SetArgumentCategory(Cm::Core::ArgumentCategory::lvalue);
+    }
+    boundExpressionStack.Push(derefExpr);
 }
 
 void ExpressionBinder::Visit(Cm::Ast::PostfixIncNode& postfixIncNode)
@@ -862,7 +886,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         if (type->IsTemplateTypeSymbol() && !type->Bound())
         {
             Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(type);
-            boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope);
+            boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, fileScopes);
         }
         if (type->IsClassTypeSymbol())
         {
@@ -1081,7 +1105,8 @@ void ExpressionBinder::BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::B
     Cm::Sym::FunctionGroupSymbol subscriptFunctionGroup(indexNode->GetSpan(), "operator[]", boundCompileUnit.SymbolTable().GetContainerScope(indexNode));
     Cm::BoundTree::BoundFunctionGroup* boundSubscriptFunctionGroup = new Cm::BoundTree::BoundFunctionGroup(indexNode, &subscriptFunctionGroup);
     boundExpressionStack.Push(boundSubscriptFunctionGroup);
-    subject->SetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg | Cm::BoundTree::BoundNodeFlags::lvalue);
+    subject->SetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg);
+    subject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     boundExpressionStack.Push(subject);
     boundExpressionStack.Push(index);
     expressionCountStack.push(expressionCount);
@@ -1201,7 +1226,8 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     }
     else
     {
-        PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, firstArgByRef && fun->IsMemberFunctionSymbol() && !fun->IsStatic(), boundCompileUnit.IrClassTypeRepository());
+        PrepareArguments(containerScope, boundCompileUnit, currentFunction, fun->GetReturnType(), fun->Parameters(), arguments, firstArgByRef && fun->IsMemberFunctionSymbol() && !fun->IsStatic(), 
+            boundCompileUnit.IrClassTypeRepository(), fun->IsBasicTypeOp());
     }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
     functionCall->SetFunction(fun);
@@ -1273,7 +1299,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
         boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(classDelegateFromFunCtor->DelegateType(), node->GetSpan()));
         arguments[2].reset(boundFunctionId);
     }
-    PrepareFunctionArguments(fun, containerScope, boundCompileUnit, currentFunction, arguments, true, boundCompileUnit.IrClassTypeRepository());
+    PrepareArguments(containerScope, boundCompileUnit, currentFunction, fun->GetReturnType(), fun->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), fun->IsBasicTypeOp());
     return fun;
 }
 
@@ -1359,7 +1385,14 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
             }
             if (first)
             {
-                firstArgByRef = true;
+                if (argumentType->IsReferenceType())
+                {
+                    argument->ResetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+                }
+                else
+                {
+                    firstArgByRef = true;
+                }
             }
         }
         else
@@ -1451,6 +1484,7 @@ void ExpressionBinder::BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::Delegate
                 arguments[i].reset(Cm::BoundTree::CreateBoundConversion(node, arg, conversion, currentFunction));
             }
         }
+        PrepareArguments(containerScope, boundCompileUnit, currentFunction, delegateType->GetReturnType(), delegateType->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(), false);
         Cm::BoundTree::BoundDelegateCall* delegateCall = new Cm::BoundTree::BoundDelegateCall(delegateType, subject, node, std::move(arguments));
         delegateCall->SetType(delegateType->GetReturnType());
         boundExpressionStack.Push(delegateCall);
@@ -1465,6 +1499,7 @@ void ExpressionBinder::BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::Delegate
 void ExpressionBinder::BindInvokeClassDelegate(Cm::Ast::Node* node, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType, Cm::BoundTree::BoundExpression* subject, 
     Cm::BoundTree::BoundExpressionList& arguments)
 {
+    subject->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
     int numParams = int(classDelegateType->Parameters().size());
     if (arguments.Count() != numParams)
     {
@@ -1497,6 +1532,7 @@ void ExpressionBinder::BindInvokeClassDelegate(Cm::Ast::Node* node, Cm::Sym::Cla
                 arguments[i].reset(Cm::BoundTree::CreateBoundConversion(node, arguments[i].release(), conversion, currentFunction));
             }
         }
+        PrepareArguments(containerScope, boundCompileUnit, currentFunction, classDelegateType->GetReturnType(), classDelegateType->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), false);
         Cm::BoundTree::BoundClassDelegateCall* classDelegateCall = new Cm::BoundTree::BoundClassDelegateCall(classDelegateType, subject, node, std::move(arguments));
         classDelegateCall->SetType(classDelegateType->GetReturnType());
         boundExpressionStack.Push(classDelegateCall);
@@ -1899,7 +1935,7 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
             arguments[i].reset(CreateBoundConversion(node, arg, conversionFun, currentFunction));
         }
     }
-    PrepareFunctionArguments(ctor, containerScope, boundCompileUnit, currentFunction, arguments, false, boundCompileUnit.IrClassTypeRepository());
+    PrepareArguments(containerScope, boundCompileUnit, currentFunction, nullptr, ctor->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(), ctor->IsBasicTypeOp());
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
     functionCall->SetFunction(ctor);
     functionCall->SetType(returnType);

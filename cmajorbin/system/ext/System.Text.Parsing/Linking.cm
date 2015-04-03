@@ -45,12 +45,12 @@ namespace System.Text.Parsing
         {
             if (currentGrammar != null)
             {
-                ParsingObjectPtr object = currentGrammar->GetScope()->Get(link.LinkedRuleName());
+                ParsingObject* object = currentGrammar->GetScope()->Get(link.LinkedRuleName());
                 if (object != null)
                 {
                     if (object->IsRule())
                     {
-                        RulePtr rule = cast<RulePtr>(object);
+                        Rule* rule = cast<Rule*>(object);
                         link.SetRule(rule);
                         currentGrammar->AddGrammarReference(rule->GetGrammar());
                         link.AddToScope();
@@ -99,11 +99,11 @@ namespace System.Text.Parsing
             {
                 try
                 {
-                    RulePtr rule = currentGrammar->GetRule(parser.RuleName());
+                    Rule* rule = currentGrammar->GetRule(parser.RuleName());
                     parser.SetRule(rule);
                     if (parser.IsSpecialized())
                     {
-                        currentRule->AddNonterminal(cast<NonterminalParserPtr>(&parser));
+                        currentRule->AddNonterminal(cast<NonterminalParser*>(&parser));
                     }
                 }
                 catch (const ParsingException& ex)
@@ -143,7 +143,7 @@ namespace System.Text.Parsing
         private int actionNumber;
     }
     
-    public void Link(ParsingDomainPtr parsingDomain)
+    public void Link(ParsingDomain* parsingDomain)
     {
         LinkerVisitor visitor;
         parsingDomain->GlobalNamespace()->Accept(visitor);
@@ -155,7 +155,7 @@ namespace System.Text.Parsing
         {
             if (!grammar.IsExternal())
             {
-                for (RulePtr rule : grammar.GetRules())
+                for (Rule* rule : grammar.GetRules())
                 {
                     rule->ExpandCode();
                 }
@@ -163,7 +163,7 @@ namespace System.Text.Parsing
         }
     }
 
-    public void ExpandCode(ParsingDomainPtr parsingDomain)
+    public void ExpandCode(ParsingDomain* parsingDomain)
     {
         ExpandCodeVisitor visitor;
         parsingDomain->GlobalNamespace()->Accept(visitor);

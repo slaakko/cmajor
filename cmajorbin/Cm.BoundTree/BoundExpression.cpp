@@ -224,7 +224,8 @@ void BoundNamespaceExpression::Accept(Visitor& visitor)
     throw std::runtime_error("member function not applicable");
 }
 
-BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_) : BoundExpression(syntaxNode_), operand(operand_), fun(nullptr), classObjectResultVar(nullptr)
+BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_) : 
+    BoundExpression(syntaxNode_), operand(operand_), fun(nullptr), classObjectResultVar(nullptr), argumentCategory(Cm::Core::ArgumentCategory::rvalue)
 {
 }
 
@@ -345,8 +346,7 @@ void BoundConjunction::Accept(Visitor& visitor)
 BoundConversion* CreateBoundConversion(Cm::Ast::Node* node, BoundExpression* operand, Cm::Sym::FunctionSymbol* conversionFun, BoundFunction* currentFunction)
 {
     BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, operand, conversionFun);
-	Cm::Sym::ParameterSymbol* parameter = conversionFun->Parameters()[1];
-	Cm::Sym::TypeSymbol* paramType = parameter->GetType();
+    Cm::Sym::TypeSymbol* paramType = conversionFun->GetSourceType();
 	Cm::BoundTree::BoundExpression* argument = operand;
 	if (!conversionFun->IsBasicTypeOp())
 	{

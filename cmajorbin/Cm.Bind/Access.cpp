@@ -10,6 +10,7 @@
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -62,6 +63,18 @@ void CheckAccess(Cm::Sym::Symbol* fromSymbol, const Span& fromSpan, Cm::Sym::Sym
     {
         Cm::Sym::FunctionSymbol* fromFunction = fromSymbol->Function();
         if (fromFunction == toContainingFunction)
+        {
+            return;
+        }
+    }
+    if (fromSymbol->IsFunctionSymbol())
+    {
+        Cm::Sym::FunctionSymbol* fromFun = static_cast<Cm::Sym::FunctionSymbol*>(fromSymbol);
+        if (fromFun->IsFunctionTemplateSpecialization())
+        {
+            return;
+        }
+        if (fromFun->IsMemberOfTemplateType())
         {
             return;
         }

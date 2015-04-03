@@ -137,15 +137,17 @@ public:
     virtual bool IsDelegateFromFunAssignment() const { return false; }
     virtual bool IsClassDelegateFromFunAssignment() const { return false; }
     virtual bool IsConvertingConstructor() const;
+    virtual bool IsConversionFunction() const;
     bool IsExportSymbol() const override;
     void SetConvertingConstructor();
+    void SetConversionFunction();
     bool CheckIfConvertingConstructor() const;
     bool IsFunctionTemplate() const { return !typeParameters.empty(); }
     void SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes_);
     const Cm::Ast::NodeList& GetUsingNodes() const;
     virtual ConversionType GetConversionType() const { return IsExplicit() ? Cm::Sym::ConversionType::explicit_ : Cm::Sym::ConversionType::implicit; }
-    virtual ConversionRank GetConversionRank() const { return IsConvertingConstructor() ? Cm::Sym::ConversionRank::conversion : Cm::Sym::ConversionRank::exactMatch; }
-    virtual int GetConversionDistance() const { return IsConvertingConstructor() ? 100 : 0; }
+    virtual ConversionRank GetConversionRank() const { return (IsConvertingConstructor() || IsConversionFunction()) ? Cm::Sym::ConversionRank::conversion : Cm::Sym::ConversionRank::exactMatch; }
+    virtual int GetConversionDistance() const { return (IsConvertingConstructor() || IsConversionFunction()) ? 100 : 0; }
     bool IsFunctionTemplateSpecialization() const { return GetFlag(FunctionSymbolFlags::templateSpecialization); }
     void SetFunctionTemplateSpecialization() { SetFlag(FunctionSymbolFlags::templateSpecialization); }
     bool IsConstructorOrDestructorSymbol() const { return GetFlag(FunctionSymbolFlags::constructorOrDestructorSymbol); }
@@ -210,6 +212,7 @@ public:
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void ComputeName();
     virtual TypeSymbol* GetTargetType() const;
+    virtual TypeSymbol* GetSourceType() const;
     Cm::Ast::CompileUnitNode* CompileUnit() const { return compileUnit; }
     void SetCompileUnit(Cm::Ast::CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     void CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;

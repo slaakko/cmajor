@@ -53,7 +53,6 @@ void EnumTypeSymbol::SetUnderlyingType(TypeSymbol* underlyingType_)
 void EnumTypeSymbol::MakeIrType()
 {
     if (IrTypeMade()) return;
-    SetIrTypeMade();
     SetIrType(GetUnderlyingType()->GetIrType()->Clone());
     SetDefaultIrValue(GetUnderlyingType()->GetIrType()->CreateDefaultValue());
 }

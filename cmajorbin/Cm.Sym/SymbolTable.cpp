@@ -125,7 +125,7 @@ void SymbolTable::BeginNamespaceScope(const std::string& namespaceName, const Sp
 void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
 {
     Cm::Ast::IdentifierNode* classId = classNode->Id();
-    ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str());
+    ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true);
     typeRepository.AddType(classSymbol);
     ContainerScope* classScope = classSymbol->GetContainerScope();
     nodeScopeMap[classNode] = classScope;
@@ -134,13 +134,18 @@ void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
     classScope->SetParent(containerScope);
     container->AddSymbol(classSymbol);
     BeginContainer(classSymbol);
-    classSymbol->SetIrType(Cm::IrIntf::CreateClassTypeName(classSymbol->FullName()));
+    if (!classSymbol->IrTypeMade())
+    {
+        classSymbol->SetIrType(Cm::IrIntf::CreateClassTypeName(classSymbol->FullName()));
+    }
+    currentClassStack.push(currentClass);
     currentClass = classSymbol; 
 }
 
 void SymbolTable::EndClassScope()
 {
-    currentClass = nullptr;
+    currentClass = currentClassStack.top();
+    currentClassStack.pop();
     EndContainer();
 }
 
@@ -153,12 +158,13 @@ void SymbolTable::BeginTemplateTypeScope(Cm::Ast::ClassNode* templateClassNode, 
     container->AddSymbol(templateTypeSymbol);
     templateTypeScope->SetParent(containerScope);
     BeginContainer(templateTypeSymbol);
+    currentClassStack.push(currentClass);
     currentClass = templateTypeSymbol;
 }
 
 void SymbolTable::EndTemplateTypeScope()
 {
-    currentClass = nullptr;
+    currentClass = currentClassStack.top();
     EndContainer();
 }
 
