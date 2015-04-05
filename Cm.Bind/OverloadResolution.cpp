@@ -675,7 +675,15 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 std::vector<Cm::Core::Argument> args;
                 args.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, ptrTargetType));
                 args.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, constRefTargetType));
+                if ((flags & OverloadResolutionFlags::bindOnlyMemberFunctions) == OverloadResolutionFlags::none)
+                {
+                    boundCompileUnit.DerivedTypeOpRepository().CollectViableFunctions(groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
+                    boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
+                    boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
+                }
+                boundCompileUnit.ClassTemplateRepository().CollectViableFunctions(groupName, arity, args, span, containerScope, viableFunctions);
                 boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, args, span, containerScope, viableFunctions, exception);
+                boundCompileUnit.ClassDelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
             }
         }
     }

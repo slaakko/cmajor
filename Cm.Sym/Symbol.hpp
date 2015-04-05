@@ -175,7 +175,7 @@ public:
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
     virtual void Dump(CodeFormatter& formatter);
-    virtual void CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes);
+    virtual void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes);
     virtual void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes);
     virtual void InitVirtualFunctionTables();
     virtual void MakeIrType();

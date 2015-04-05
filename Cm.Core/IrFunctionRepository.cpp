@@ -134,6 +134,10 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
         {
             functionName = Cm::Sym::MangleName(function->Ns()->FullName(), "cv_" + Cm::Sym::MakeAssemblyName(function->GetReturnType()->FullName()), function->TypeArguments(),  function->Parameters());
         }
+        else if (function->IsStatic())
+        {
+            functionName = Cm::Sym::MangleName(function->Class()->FullName(), functionGroupName, function->TypeArguments(), function->Parameters());
+        }
         else
         {
             functionName = Cm::Sym::MangleName(function->Ns()->FullName(), functionGroupName, function->TypeArguments(), function->Parameters());

@@ -101,7 +101,8 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
                         argumentIsConversion = true;
                     }
                 }
-                if ((argument->GetType()->IsBasicTypeSymbol() || argument->GetType()->IsEnumTypeSymbol()) && 
+                if ((argument->GetType()->IsBasicTypeSymbol() || argument->GetType()->IsEnumTypeSymbol() || argument->GetType()->IsNonReferencePointerType() || 
+                    argument->GetType()->IsDelegateTypeSymbol()) &&
                     (argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argumentIsConversion || argument->IsBoundUnaryOp() || argument->IsBoundBinaryOp() || 
                     argument->IsBoundFunctionCall()))
                 {

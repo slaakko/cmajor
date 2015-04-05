@@ -42,4 +42,22 @@ void TypedefSymbol::SetType(TypeSymbol* type_, int index)
     type = type_; 
 }
 
+void TypedefSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+{
+    if (collected.find(type) == collected.end())
+    {
+        collected.insert(type);
+        type->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+    }
+}
+
+void TypedefSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    if (collected.find(type) == collected.end())
+    {
+        collected.insert(type);
+        type->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+    }
+}
+
 } } // namespace Cm::Sym

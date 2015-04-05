@@ -29,6 +29,7 @@ bool DelegateTypeSymbol::IsExportSymbol() const
 {
     if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;
+    if (Parent()->IsClassDelegateTypeSymbol()) return true;
     return TypeSymbol::IsExportSymbol();
 }
 
@@ -91,6 +92,41 @@ void DelegateTypeSymbol::MakeIrType()
     SetDefaultIrValue(Cm::IrIntf::Null(irDelegateType));
 }
 
+void DelegateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+{
+    if (returnType)
+    {
+        if (returnType->IsDerivedTypeSymbol())
+        {
+            if (collected.find(returnType) == collected.end())
+            {
+                collected.insert(returnType);
+                returnType->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
+        }
+    }
+    for (ParameterSymbol* parameter : parameters)
+    {
+        parameter->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+    }
+}
+
+void DelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    if (returnType)
+    {
+        if (collected.find(returnType) == collected.end())
+        {
+            collected.insert(returnType);
+            returnType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+        }
+    }
+    for (ParameterSymbol* parameter : parameters)
+    {
+        parameter->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+    }
+}
+
 ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : ClassTypeSymbol(span_, name_), flags(ClassDelegateTypeSymbolFlags::none), returnType(nullptr)
 {
 }
@@ -98,6 +134,7 @@ ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::s
 std::string ClassDelegateTypeSymbol::GetMangleId() const
 {
     return MakeAssemblyName(FullName());
+
 }
 
 bool ClassDelegateTypeSymbol::IsExportSymbol() const
@@ -140,6 +177,41 @@ void ClassDelegateTypeSymbol::Read(Reader& reader)
     flags = ClassDelegateTypeSymbolFlags(reader.GetBinaryReader().ReadByte());
     reader.FetchTypeFor(this, 0);
     reader.EnqueueMakeIrTypeFor(this);
+}
+
+void ClassDelegateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+{
+    if (returnType)
+    {
+        if (returnType->IsDerivedTypeSymbol())
+        {
+            if (collected.find(returnType) == collected.end())
+            {
+                collected.insert(returnType);
+                returnType->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
+        }
+    }
+    for (ParameterSymbol* parameter : parameters)
+    {
+        parameter->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+    }
+}
+
+void ClassDelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    if (returnType)
+    {
+        if (collected.find(returnType) == collected.end())
+        {
+            collected.insert(returnType);
+            returnType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+        }
+    }
+    for (ParameterSymbol* parameter : parameters)
+    {
+        parameter->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+    }
 }
 
 } } // namespace Cm::Sym

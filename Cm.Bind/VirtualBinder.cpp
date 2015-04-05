@@ -25,11 +25,13 @@ void VirtualBinder::EndVisit(Cm::Ast::ClassNode& classNode)
     if (classTypeSymbol->DoGenerateDestructor())
     {
         Cm::Sym::FunctionSymbol* destructor = GenerateDestructorSymbol(symbolTable, classNode.GetSpan(), classTypeSymbol, compileUnit);
+        destructor->SetPublic();
         classTypeSymbol->AddSymbol(destructor);
     }
     if (classTypeSymbol->DoGenerateStaticConstructor())
     {
         Cm::Sym::FunctionSymbol* staticConstructor = GenerateStaticConstructorSymbol(symbolTable, classNode.GetSpan(), classTypeSymbol, compileUnit);
+        staticConstructor->SetPublic();
         classTypeSymbol->AddSymbol(staticConstructor);
     }
     classTypeSymbol->InitVtbl();

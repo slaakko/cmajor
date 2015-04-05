@@ -719,6 +719,7 @@ Cm::Sym::FunctionSymbol* GenerateDestructorSymbol(Cm::Sym::SymbolTable& symbolTa
     destructorSymbol->AddSymbol(thisParam);
     destructorSymbol->ComputeName();
     destructorSymbol->SetNothrow();
+    destructorSymbol->SetPublic();
     return destructorSymbol; 
 }
 
@@ -733,6 +734,7 @@ Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& s
     staticConstructorSymbol->SetMemberFunctionSymbol();
     staticConstructorSymbol->ComputeName();
     staticConstructorSymbol->SetNothrow();
+    staticConstructorSymbol->SetPublic();
     return staticConstructorSymbol;
 }
 
@@ -774,6 +776,10 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
     {
         Cm::Sym::ClassTypeSymbol* baseClass = classTypeSymbol->BaseClass();
         Cm::Sym::FunctionSymbol* baseClassDtor = baseClass->Destructor();
+        if (!baseClassDtor)
+        {
+            throw std::runtime_error("could not generate destructor because base class has no destructor");
+        }
         Cm::Sym::ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
         Cm::Sym::TypeSymbol* baseClassPtrType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
         Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);

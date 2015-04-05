@@ -14,9 +14,11 @@
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/ClassCounter.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Core/InitSymbolTable.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
+#include <Cm.Util/Path.hpp>
 #include <iostream>
 
 namespace Cm { namespace Sym {
@@ -41,6 +43,11 @@ void Module::SetSourceFilePaths(const std::vector<std::string>& sourceFilePaths_
     sourceFilePaths = sourceFilePaths_;
 }
 
+void Module::SetReferenceFilePaths(const std::vector<std::string>& referenceFilePaths_)
+{
+    referenceFilePaths = referenceFilePaths_;
+}
+
 void Module::WriteModuleFileId(Writer& writer)
 {
     for (int i = 0; i < 4; ++i)
@@ -59,11 +66,22 @@ void Module::WriteSourceFilePaths(Writer& writer)
     }
 }
 
+void Module::WriteReferenceFilePaths(Writer& writer)
+{
+    int32_t n = int32_t(referenceFilePaths.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        writer.GetBinaryWriter().Write(referenceFilePaths[i]);
+    }
+}
+
 void Module::Export(SymbolTable& symbolTable)
 {
     Writer writer(filePath, &symbolTable);
     WriteModuleFileId(writer);
     WriteSourceFilePaths(writer);
+    WriteReferenceFilePaths(writer);
     symbolTable.Export(writer);
     ExportExceptionTable(writer);
 	writer.GetBinaryWriter().Write(int32_t(GetMutexTable()->GetNumberOfMutexesInThisProject()));
@@ -108,11 +126,32 @@ void Module::ReadSourceFilePaths(Reader& reader)
     }
 }
 
-void Module::Import(SymbolTable& symbolTable)
+void Module::ReadReferenceFilePaths(Reader& reader)
 {
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        std::string referenceFilePath = reader.GetBinaryReader().ReadString();
+        referenceFilePaths.push_back(referenceFilePath);
+    }
+}
+
+void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& allReferenceFilePaths)
+{
+    bool quiet = GetGlobalFlag(GlobalFlags::quiet);
     Reader reader(filePath, symbolTable);
     CheckModuleFileId(reader);
     ReadSourceFilePaths(reader);
+    ReadReferenceFilePaths(reader);
+    for (const std::string& referenceFilePath : referenceFilePaths)
+    {
+        if (importedModules.find(referenceFilePath) == importedModules.end())
+        {
+            importedModules.insert(referenceFilePath);
+            Module referencedModule(referenceFilePath);
+            referencedModule.Import(symbolTable, importedModules, allReferenceFilePaths, assemblyFilePaths);
+        }
+    }
     Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::GetCurrentFileRegistry();
     int fileIndexOffset = 0;
     if (fileRegistry)
@@ -133,6 +172,14 @@ void Module::Import(SymbolTable& symbolTable)
 	GetMutexTable()->AddLibraryMutexes(numLibraryMutexes);
     uint32_t numLibraryClasses = reader.GetBinaryReader().ReadUInt();
     GetClassCounter()->AddLibryClasses(numLibraryClasses);
+    allReferenceFilePaths.push_back(filePath);
+    if (!quiet)
+    {
+        std::cout << "> " << filePath << std::endl;
+    }
+    boost::filesystem::path afp = filePath;
+    afp.replace_extension(".cma");
+    assemblyFilePaths.push_back(Cm::Util::GetFullPath(afp.generic_string()));
 }
 
 void Module::ExportExceptionTable(Writer& writer)

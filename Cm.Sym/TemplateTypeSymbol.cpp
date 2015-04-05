@@ -39,15 +39,16 @@ TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymb
 {
     TypeId id = subjectType->Id();
 	uint8_t n = uint8_t(typeArguments.size());
-	if (n >= id.Rep().Tag().size())
+    uint8_t m = uint8_t(id.Rep().Tag().size());
+	if (n >= m)
 	{
-		throw std::runtime_error("only " + std::to_string(id.Rep().Tag().size() - 1) + " supported");
+		throw std::runtime_error("only " + std::to_string(id.Rep().Tag().size() - 1) + " template arguments supported");
 	}
 	for (uint8_t i = 0; i < n; ++i)
     {
 		TypeSymbol* typeArgument = typeArguments[i];
 		Cm::Util::Uuid argumentId = typeArgument->Id().Rep();
-		uint8_t positionCode = i;
+		uint8_t positionCode = (i + (m / 2)) % m;
 		std::rotate(argumentId.Tag().begin(), argumentId.Tag().begin() + positionCode, argumentId.Tag().end());
 		id.Rep() = id.Rep() ^ argumentId;
     }
@@ -156,12 +157,20 @@ void TemplateTypeSymbol::SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_)
     globalNs.reset(globalNs_);
 }
 
-void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
-    subjectType->CollectExportedDerivedTypes(exportedDerivedTypes);
+    if (collected.find(subjectType) == collected.end())
+    {
+        collected.insert(subjectType);
+        subjectType->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+    }
     for (TypeSymbol* typeArgument : typeArguments)
     {
-        typeArgument->CollectExportedDerivedTypes(exportedDerivedTypes);
+        if (collected.find(typeArgument) == collected.end())
+        {
+            collected.insert(typeArgument);
+            typeArgument->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+        }
     }
 }
 

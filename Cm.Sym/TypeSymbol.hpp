@@ -57,6 +57,7 @@ public:
     virtual bool IsRvalueRefType() const { return false; }
     virtual bool IsConstReferenceType() const { return false; }
     virtual bool IsNonClassReferenceType() const { return false; }
+    virtual bool IsNonReferencePointerType() const { return false; }
     virtual bool IsVoidPtrType() const { return false; }
     virtual bool IsNullPtrType() const { return false; }
     virtual bool IsConstPointerType() const { return false; }

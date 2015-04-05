@@ -37,7 +37,7 @@ SourceFileDeclaration::SourceFileDeclaration(const Span& span_, SourceFileType f
 }
 
 ReferenceFileDeclaration::ReferenceFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& basePath_, const Properties& properties_) :
-    ProjectDeclaration(span_, properties_), filePath(boost::filesystem::absolute(filePath_, basePath_).generic_string())
+    ProjectDeclaration(span_, properties_), filePath(filePath_)
 {
 }
 

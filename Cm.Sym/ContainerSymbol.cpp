@@ -136,13 +136,17 @@ void ContainerSymbol::Dump(CodeFormatter& formatter)
     formatter.DecIndent();
 }
 
-void ContainerSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+void ContainerSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
     for (const std::unique_ptr<Symbol>& symbol : symbols)
     {
         if (symbol->IsExportSymbol())
         {
-            symbol->CollectExportedDerivedTypes(exportedDerivedTypes);
+            if (collected.find(symbol.get()) == collected.end())
+            {
+                collected.insert(symbol.get());
+                symbol->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
         }
     }
 }

@@ -67,6 +67,8 @@ public:
         SetFlag(DelegateTypeSymbolFlags::throw_);
     }
     void MakeIrType() override;
+    void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
 private:
     DelegateTypeSymbolFlags flags;
     TypeSymbol* returnType;
@@ -130,6 +132,8 @@ public:
     {
         SetFlag(ClassDelegateTypeSymbolFlags::throw_);
     }
+    void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
 private:
     ClassDelegateTypeSymbolFlags flags;
     TypeSymbol* returnType;
