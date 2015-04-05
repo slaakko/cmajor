@@ -53,6 +53,7 @@ public:
     { 
         return HasPureReferenceDerivation(derivations) && !baseType->IsClassTypeSymbol() || HasReferenceDerivation(derivations) && HasPointertDerivation(derivations);
     }
+    bool IsNonReferencePointerType() const override { return IsPointerType() && GetPointerCount() == 1 && !HasReferenceDerivation(derivations); }
     bool IsConstPointerType() const { return HasConstPointerDerivation(derivations); }
     bool IsConstPointerPointerType() const { return HasConstPointerPointerDerivation(derivations); }
     DerivationCounts GetDerivationCounts() const override { return CountDerivations(derivations); }
@@ -60,7 +61,7 @@ public:
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type, int index) override;
     void MakeIrType() override;
-    void CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
+    void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
 private:
     TypeSymbol* baseType;

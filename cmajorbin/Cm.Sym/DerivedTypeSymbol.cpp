@@ -212,7 +212,7 @@ void DerivedTypeSymbol::MakeIrType()
     }
 }
 
-void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
     if (Source() == SymbolSource::project)
     {

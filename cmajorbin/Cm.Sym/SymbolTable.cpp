@@ -438,14 +438,15 @@ FunctionSymbol* SymbolTable::GetFunctionSymbol(Cm::Ast::Node* functionNode) cons
 void SymbolTable::Export(Writer& writer)
 {
     std::unordered_set<TemplateTypeSymbol*> exportedTemplateTypes;
-    std::unordered_set<Symbol*> collected;
-    globalNs.CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+    std::unordered_set<Symbol*> collectedTemplateTypes;
+    globalNs.CollectExportedTemplateTypes(collectedTemplateTypes, exportedTemplateTypes);
+    std::unordered_set<Symbol*> collectedDerivedTypes;
     std::unordered_set<TypeSymbol*> exportedDerivedTypes;
     for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
     {
-        exportedTemplateType->CollectExportedDerivedTypes(exportedDerivedTypes);
+        exportedTemplateType->CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
     }
-    globalNs.CollectExportedDerivedTypes(exportedDerivedTypes);
+    globalNs.CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
     writer.Write(&globalNs);
     writer.GetBinaryWriter().Write(int(exportedTemplateTypes.size()));
     for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)

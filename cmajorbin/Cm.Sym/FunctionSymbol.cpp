@@ -636,18 +636,22 @@ TypeSymbol* FunctionSymbol::GetSourceType() const
     }
 }
 
-void FunctionSymbol::CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+void FunctionSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
     if (returnType)
     {
         if (returnType->IsDerivedTypeSymbol())
         {
-            returnType->CollectExportedDerivedTypes(exportedDerivedTypes);
+            if (collected.find(returnType) == collected.end())
+            {
+                collected.insert(returnType);
+                returnType->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
         }
     }
     for (ParameterSymbol* parameter : parameters)
     {
-        parameter->CollectExportedDerivedTypes(exportedDerivedTypes);
+        parameter->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
     }
 }
 

@@ -31,7 +31,7 @@ public:
     ConceptGroupSymbol* MakeConceptGroupSymbol(const std::string& groupName, const Span& span);
     std::vector<std::unique_ptr<Symbol>>& Symbols() { return symbols; }
     void Dump(CodeFormatter& formatter) override;
-    void CollectExportedDerivedTypes(std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
+    void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     void InitVirtualFunctionTables();
 private:

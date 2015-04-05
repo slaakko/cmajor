@@ -10,6 +10,7 @@
 #ifndef CM_SYM_MODULE_INCLUDED
 #define CM_SYM_MODULE_INCLUDED
 #include <Cm.Ast/Project.hpp>
+#include <unordered_set>
 #include <stdexcept>
 #include <string>
 
@@ -39,16 +40,20 @@ class Module
 public:
     Module(const std::string& filePath_);
     void SetSourceFilePaths(const std::vector<std::string>& sourceFilePaths_);
+    void SetReferenceFilePaths(const std::vector<std::string>& referenceFilePaths_);
     void Export(SymbolTable& symbolTable);
-    void Import(SymbolTable& symbolTable);
+    void Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& allReferenceFilePaths);
     void Dump();
 private:
     std::string filePath;
     std::vector<std::string> sourceFilePaths;
+    std::vector<std::string> referenceFilePaths;
     void WriteModuleFileId(Writer& writer);
     void WriteSourceFilePaths(Writer& writer);
+    void WriteReferenceFilePaths(Writer& writer);
     void CheckModuleFileId(Reader& reader);
     void ReadSourceFilePaths(Reader& reader);
+    void ReadReferenceFilePaths(Reader& reader);
     void ExportExceptionTable(Writer& writer);
     void ImportExceptionTable(SymbolTable& symbolTable, Reader& reader);
 };
