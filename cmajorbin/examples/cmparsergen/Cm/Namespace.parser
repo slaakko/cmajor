@@ -1,0 +1,40 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using NamespaceImport = System.Text.Parsing.CmObjectModel.NamespaceImport;
+using Alias = System.Text.Parsing.CmObjectModel.Alias;
+
+namespace Cm
+{
+    grammar NamespaceGrammar
+    {
+        using IdentifierGrammar.QualifiedId;
+        using IdentifierGrammar.Identifier;
+
+        NamespaceImport: System.Text.Parsing.CmObjectModel.UsingObjectPtr
+                    ::= keyword("using") QualifiedId ';'
+                    {
+                        value = new NamespaceImport(QualifiedId);
+                    }
+                    ;
+
+        Alias: System.Text.Parsing.CmObjectModel.UsingObjectPtr
+                    ::= keyword("using") Identifier '=' QualifiedId ';'
+                    {
+                        value = new Alias(Identifier, QualifiedId);
+                    }
+                    ;
+    }
+}

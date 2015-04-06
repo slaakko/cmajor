@@ -105,9 +105,10 @@ void Symbol::Read(Reader& reader)
 std::string Symbol::FullName() const
 {
     std::string parentFullName;
-    if (parent)
+    Symbol* p = Parent();   // Parent(): derived type returns base type's parent if it has not parent of its own
+    if (p)
     {
-        parentFullName = parent->FullName();
+        parentFullName = p->FullName();
     }
     if (parentFullName.empty())
     {
@@ -122,7 +123,7 @@ std::string Symbol::FullName() const
 SymbolAccess Symbol::EffectiveAccess() const
 {
     SymbolAccess effectiveAccess = Access();
-    Symbol* p = parent;
+    Symbol* p = Parent();
     while (p)
     {
         if (p->DeclaredAccess() < effectiveAccess)
@@ -142,11 +143,6 @@ void Symbol::SetType(TypeSymbol* typeSymbol, int index)
 bool Symbol::IsExportSymbol() const 
 { 
     return Source() == SymbolSource::project && Access() == SymbolAccess::public_; 
-}
-
-bool Symbol::WillBeExported() const
-{
-    return IsExportSymbol() && (!parent || parent && parent->WillBeExported());
 }
 
 NamespaceSymbol* Symbol::Ns() const

@@ -1,0 +1,202 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Cm
+{
+    public typedef NamespaceGrammar* NamespaceGrammarPtr;
+
+    public class NamespaceGrammar: System.Text.Parsing.Grammar
+    {
+        public static NamespaceGrammarPtr Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static NamespaceGrammarPtr Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            NamespaceGrammarPtr grammar(new NamespaceGrammar(parsingDomain));
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private NamespaceGrammar(ParsingDomain* parsingDomain): base("NamespaceGrammar", parsingDomain->GetNamespaceScope("Cm"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public System.Text.Parsing.CmObjectModel.UsingObjectPtr Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            System.Text.Parsing.CmObjectModel.UsingObjectPtr result = *cast<ValueObject<System.Text.Parsing.CmObjectModel.UsingObjectPtr>*>(value.GetPtr());
+            return result;
+        }
+        private class NamespaceImportRule: System.Text.Parsing.Rule
+        {
+            public NamespaceImportRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("System.Text.Parsing.CmObjectModel.UsingObject*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<System.Text.Parsing.CmObjectModel.UsingObject*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
+                qualifiedIdNonterminalParser->SetPostCall(PostCall(PostQualifiedId));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new NamespaceImport(context.fromQualifiedId);
+            }
+            public throw void PostQualifiedId(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromQualifiedId_value = stack.Pop();
+                    context.fromQualifiedId = *cast<ValueObject<string>*>(fromQualifiedId_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public System.Text.Parsing.CmObjectModel.UsingObject* value;
+                public string fromQualifiedId;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class AliasRule: System.Text.Parsing.Rule
+        {
+            public AliasRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("System.Text.Parsing.CmObjectModel.UsingObject*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<System.Text.Parsing.CmObjectModel.UsingObject*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+                NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
+                qualifiedIdNonterminalParser->SetPostCall(PostCall(PostQualifiedId));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new Alias(context.fromIdentifier, context.fromQualifiedId);
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            public throw void PostQualifiedId(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromQualifiedId_value = stack.Pop();
+                    context.fromQualifiedId = *cast<ValueObject<string>*>(fromQualifiedId_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public System.Text.Parsing.CmObjectModel.UsingObject* value;
+                public string fromIdentifier;
+                public string fromQualifiedId;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = Cm.IdentifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRule(new NamespaceImportRule("NamespaceImport", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new KeywordParser("using"),
+                        new NonterminalParser("QualifiedId", "QualifiedId", 0)),
+                    new ActionParser("A0",
+                        new CharParser(';')))));
+            AddRule(new AliasRule("Alias", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("using"),
+                                new NonterminalParser("Identifier", "Identifier", 0)),
+                            new CharParser('=')),
+                        new NonterminalParser("QualifiedId", "QualifiedId", 0)),
+                    new ActionParser("A0",
+                        new CharParser(';')))));
+        }
+    }
+}

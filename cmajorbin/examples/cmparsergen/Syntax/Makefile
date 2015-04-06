@@ -1,0 +1,3 @@
+sources:
+	cmparsergen Syntax.pp
+

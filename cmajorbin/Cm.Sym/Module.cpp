@@ -149,7 +149,7 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
         {
             importedModules.insert(referenceFilePath);
             Module referencedModule(referenceFilePath);
-            referencedModule.Import(symbolTable, importedModules, allReferenceFilePaths, assemblyFilePaths);
+            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, allReferenceFilePaths);
         }
     }
     Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::GetCurrentFileRegistry();

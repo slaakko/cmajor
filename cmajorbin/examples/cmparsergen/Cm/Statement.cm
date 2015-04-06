@@ -1,0 +1,3116 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Cm
+{
+    public typedef StatementGrammar* StatementGrammarPtr;
+
+    public class StatementGrammar: System.Text.Parsing.Grammar
+    {
+        public static StatementGrammarPtr Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static StatementGrammarPtr Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            StatementGrammarPtr grammar(new StatementGrammar(parsingDomain));
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private StatementGrammar(ParsingDomain* parsingDomain): base("StatementGrammar", parsingDomain->GetNamespaceScope("Cm"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public Statement* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            Statement* result = *cast<ValueObject<Statement*>*>(value.GetPtr());
+            return result;
+        }
+        private class StatementRule: System.Text.Parsing.Rule
+        {
+            public StatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+                ActionParser* a5ActionParser = GetAction("A5");
+                a5ActionParser->SetAction(ParsingAction(A5Action));
+                ActionParser* a6ActionParser = GetAction("A6");
+                a6ActionParser->SetAction(ParsingAction(A6Action));
+                ActionParser* a7ActionParser = GetAction("A7");
+                a7ActionParser->SetAction(ParsingAction(A7Action));
+                ActionParser* a8ActionParser = GetAction("A8");
+                a8ActionParser->SetAction(ParsingAction(A8Action));
+                ActionParser* a9ActionParser = GetAction("A9");
+                a9ActionParser->SetAction(ParsingAction(A9Action));
+                NonterminalParser* controlStatementNonterminalParser = GetNonterminal("ControlStatement");
+                controlStatementNonterminalParser->SetPreCall(PreCall(PreControlStatement));
+                controlStatementNonterminalParser->SetPostCall(PostCall(PostControlStatement));
+                NonterminalParser* typedefStatementNonterminalParser = GetNonterminal("TypedefStatement");
+                typedefStatementNonterminalParser->SetPreCall(PreCall(PreTypedefStatement));
+                typedefStatementNonterminalParser->SetPostCall(PostCall(PostTypedefStatement));
+                NonterminalParser* simpleStatementNonterminalParser = GetNonterminal("SimpleStatement");
+                simpleStatementNonterminalParser->SetPreCall(PreCall(PreSimpleStatement));
+                simpleStatementNonterminalParser->SetPostCall(PostCall(PostSimpleStatement));
+                NonterminalParser* assignmentStatementNonterminalParser = GetNonterminal("AssignmentStatement");
+                assignmentStatementNonterminalParser->SetPreCall(PreCall(PreAssignmentStatement));
+                assignmentStatementNonterminalParser->SetPostCall(PostCall(PostAssignmentStatement));
+                NonterminalParser* constructionStatementNonterminalParser = GetNonterminal("ConstructionStatement");
+                constructionStatementNonterminalParser->SetPreCall(PreCall(PreConstructionStatement));
+                constructionStatementNonterminalParser->SetPostCall(PostCall(PostConstructionStatement));
+                NonterminalParser* deleteStatementNonterminalParser = GetNonterminal("DeleteStatement");
+                deleteStatementNonterminalParser->SetPreCall(PreCall(PreDeleteStatement));
+                deleteStatementNonterminalParser->SetPostCall(PostCall(PostDeleteStatement));
+                NonterminalParser* destroyStatementNonterminalParser = GetNonterminal("DestroyStatement");
+                destroyStatementNonterminalParser->SetPreCall(PreCall(PreDestroyStatement));
+                destroyStatementNonterminalParser->SetPostCall(PostCall(PostDestroyStatement));
+                NonterminalParser* throwStatementNonterminalParser = GetNonterminal("ThrowStatement");
+                throwStatementNonterminalParser->SetPreCall(PreCall(PreThrowStatement));
+                throwStatementNonterminalParser->SetPostCall(PostCall(PostThrowStatement));
+                NonterminalParser* tryStatementNonterminalParser = GetNonterminal("TryStatement");
+                tryStatementNonterminalParser->SetPreCall(PreCall(PreTryStatement));
+                tryStatementNonterminalParser->SetPostCall(PostCall(PostTryStatement));
+                NonterminalParser* assertStatementNonterminalParser = GetNonterminal("AssertStatement");
+                assertStatementNonterminalParser->SetPreCall(PreCall(PreAssertStatement));
+                assertStatementNonterminalParser->SetPostCall(PostCall(PostAssertStatement));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromControlStatement;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromTypedefStatement;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromSimpleStatement;
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromAssignmentStatement;
+            }
+            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromConstructionStatement;
+            }
+            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromDeleteStatement;
+            }
+            public throw void A6Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromDestroyStatement;
+            }
+            public throw void A7Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromThrowStatement;
+            }
+            public throw void A8Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromTryStatement;
+            }
+            public throw void A9Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromAssertStatement;
+            }
+            public throw void PreControlStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostControlStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromControlStatement_value = stack.Pop();
+                    context.fromControlStatement = *cast<ValueObject<Statement*>*>(fromControlStatement_value.GetPtr());
+                }
+            }
+            public throw void PreTypedefStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTypedefStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTypedefStatement_value = stack.Pop();
+                    context.fromTypedefStatement = *cast<ValueObject<Statement*>*>(fromTypedefStatement_value.GetPtr());
+                }
+            }
+            public throw void PreSimpleStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostSimpleStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromSimpleStatement_value = stack.Pop();
+                    context.fromSimpleStatement = *cast<ValueObject<Statement*>*>(fromSimpleStatement_value.GetPtr());
+                }
+            }
+            public throw void PreAssignmentStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostAssignmentStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromAssignmentStatement_value = stack.Pop();
+                    context.fromAssignmentStatement = *cast<ValueObject<Statement*>*>(fromAssignmentStatement_value.GetPtr());
+                }
+            }
+            public throw void PreConstructionStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostConstructionStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromConstructionStatement_value = stack.Pop();
+                    context.fromConstructionStatement = *cast<ValueObject<Statement*>*>(fromConstructionStatement_value.GetPtr());
+                }
+            }
+            public throw void PreDeleteStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostDeleteStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromDeleteStatement_value = stack.Pop();
+                    context.fromDeleteStatement = *cast<ValueObject<Statement*>*>(fromDeleteStatement_value.GetPtr());
+                }
+            }
+            public throw void PreDestroyStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostDestroyStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromDestroyStatement_value = stack.Pop();
+                    context.fromDestroyStatement = *cast<ValueObject<Statement*>*>(fromDestroyStatement_value.GetPtr());
+                }
+            }
+            public throw void PreThrowStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostThrowStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromThrowStatement_value = stack.Pop();
+                    context.fromThrowStatement = *cast<ValueObject<Statement*>*>(fromThrowStatement_value.GetPtr());
+                }
+            }
+            public throw void PreTryStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTryStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTryStatement_value = stack.Pop();
+                    context.fromTryStatement = *cast<ValueObject<Statement*>*>(fromTryStatement_value.GetPtr());
+                }
+            }
+            public throw void PreAssertStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostAssertStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromAssertStatement_value = stack.Pop();
+                    context.fromAssertStatement = *cast<ValueObject<Statement*>*>(fromAssertStatement_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public Statement* fromControlStatement;
+                public Statement* fromTypedefStatement;
+                public Statement* fromSimpleStatement;
+                public Statement* fromAssignmentStatement;
+                public Statement* fromConstructionStatement;
+                public Statement* fromDeleteStatement;
+                public Statement* fromDestroyStatement;
+                public Statement* fromThrowStatement;
+                public Statement* fromTryStatement;
+                public Statement* fromAssertStatement;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ControlStatementRule: System.Text.Parsing.Rule
+        {
+            public ControlStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+                ActionParser* a5ActionParser = GetAction("A5");
+                a5ActionParser->SetAction(ParsingAction(A5Action));
+                ActionParser* a6ActionParser = GetAction("A6");
+                a6ActionParser->SetAction(ParsingAction(A6Action));
+                ActionParser* a7ActionParser = GetAction("A7");
+                a7ActionParser->SetAction(ParsingAction(A7Action));
+                ActionParser* a8ActionParser = GetAction("A8");
+                a8ActionParser->SetAction(ParsingAction(A8Action));
+                ActionParser* a9ActionParser = GetAction("A9");
+                a9ActionParser->SetAction(ParsingAction(A9Action));
+                ActionParser* a10ActionParser = GetAction("A10");
+                a10ActionParser->SetAction(ParsingAction(A10Action));
+                NonterminalParser* returnStatementNonterminalParser = GetNonterminal("ReturnStatement");
+                returnStatementNonterminalParser->SetPreCall(PreCall(PreReturnStatement));
+                returnStatementNonterminalParser->SetPostCall(PostCall(PostReturnStatement));
+                NonterminalParser* conditionalStatementNonterminalParser = GetNonterminal("ConditionalStatement");
+                conditionalStatementNonterminalParser->SetPreCall(PreCall(PreConditionalStatement));
+                conditionalStatementNonterminalParser->SetPostCall(PostCall(PostConditionalStatement));
+                NonterminalParser* switchStatementNonterminalParser = GetNonterminal("SwitchStatement");
+                switchStatementNonterminalParser->SetPreCall(PreCall(PreSwitchStatement));
+                switchStatementNonterminalParser->SetPostCall(PostCall(PostSwitchStatement));
+                NonterminalParser* whileStatementNonterminalParser = GetNonterminal("WhileStatement");
+                whileStatementNonterminalParser->SetPreCall(PreCall(PreWhileStatement));
+                whileStatementNonterminalParser->SetPostCall(PostCall(PostWhileStatement));
+                NonterminalParser* doStatementNonterminalParser = GetNonterminal("DoStatement");
+                doStatementNonterminalParser->SetPreCall(PreCall(PreDoStatement));
+                doStatementNonterminalParser->SetPostCall(PostCall(PostDoStatement));
+                NonterminalParser* rangeForStatementNonterminalParser = GetNonterminal("RangeForStatement");
+                rangeForStatementNonterminalParser->SetPreCall(PreCall(PreRangeForStatement));
+                rangeForStatementNonterminalParser->SetPostCall(PostCall(PostRangeForStatement));
+                NonterminalParser* forStatementNonterminalParser = GetNonterminal("ForStatement");
+                forStatementNonterminalParser->SetPreCall(PreCall(PreForStatement));
+                forStatementNonterminalParser->SetPostCall(PostCall(PostForStatement));
+                NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
+                compoundStatementNonterminalParser->SetPreCall(PreCall(PreCompoundStatement));
+                compoundStatementNonterminalParser->SetPostCall(PostCall(PostCompoundStatement));
+                NonterminalParser* breakStatementNonterminalParser = GetNonterminal("BreakStatement");
+                breakStatementNonterminalParser->SetPreCall(PreCall(PreBreakStatement));
+                breakStatementNonterminalParser->SetPostCall(PostCall(PostBreakStatement));
+                NonterminalParser* continueStatementNonterminalParser = GetNonterminal("ContinueStatement");
+                continueStatementNonterminalParser->SetPreCall(PreCall(PreContinueStatement));
+                continueStatementNonterminalParser->SetPostCall(PostCall(PostContinueStatement));
+                NonterminalParser* gotoStatementNonterminalParser = GetNonterminal("GotoStatement");
+                gotoStatementNonterminalParser->SetPreCall(PreCall(PreGotoStatement));
+                gotoStatementNonterminalParser->SetPostCall(PostCall(PostGotoStatement));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromReturnStatement;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromConditionalStatement;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromSwitchStatement;
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromWhileStatement;
+            }
+            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromDoStatement;
+            }
+            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromRangeForStatement;
+            }
+            public throw void A6Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromForStatement;
+            }
+            public throw void A7Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromCompoundStatement;
+            }
+            public throw void A8Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromBreakStatement;
+            }
+            public throw void A9Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromContinueStatement;
+            }
+            public throw void A10Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromGotoStatement;
+            }
+            public throw void PreReturnStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostReturnStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromReturnStatement_value = stack.Pop();
+                    context.fromReturnStatement = *cast<ValueObject<Statement*>*>(fromReturnStatement_value.GetPtr());
+                }
+            }
+            public throw void PreConditionalStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostConditionalStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromConditionalStatement_value = stack.Pop();
+                    context.fromConditionalStatement = *cast<ValueObject<Statement*>*>(fromConditionalStatement_value.GetPtr());
+                }
+            }
+            public throw void PreSwitchStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostSwitchStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromSwitchStatement_value = stack.Pop();
+                    context.fromSwitchStatement = *cast<ValueObject<SwitchStatementPtr>*>(fromSwitchStatement_value.GetPtr());
+                }
+            }
+            public throw void PreWhileStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostWhileStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromWhileStatement_value = stack.Pop();
+                    context.fromWhileStatement = *cast<ValueObject<Statement*>*>(fromWhileStatement_value.GetPtr());
+                }
+            }
+            public throw void PreDoStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostDoStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromDoStatement_value = stack.Pop();
+                    context.fromDoStatement = *cast<ValueObject<Statement*>*>(fromDoStatement_value.GetPtr());
+                }
+            }
+            public throw void PreRangeForStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostRangeForStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromRangeForStatement_value = stack.Pop();
+                    context.fromRangeForStatement = *cast<ValueObject<RangeForStatementPtr>*>(fromRangeForStatement_value.GetPtr());
+                }
+            }
+            public throw void PreForStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostForStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromForStatement_value = stack.Pop();
+                    context.fromForStatement = *cast<ValueObject<ForStatementPtr>*>(fromForStatement_value.GetPtr());
+                }
+            }
+            public throw void PreCompoundStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostCompoundStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromCompoundStatement_value = stack.Pop();
+                    context.fromCompoundStatement = *cast<ValueObject<CompoundStatementPtr>*>(fromCompoundStatement_value.GetPtr());
+                }
+            }
+            public throw void PreBreakStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostBreakStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromBreakStatement_value = stack.Pop();
+                    context.fromBreakStatement = *cast<ValueObject<Statement*>*>(fromBreakStatement_value.GetPtr());
+                }
+            }
+            public throw void PreContinueStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostContinueStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromContinueStatement_value = stack.Pop();
+                    context.fromContinueStatement = *cast<ValueObject<Statement*>*>(fromContinueStatement_value.GetPtr());
+                }
+            }
+            public throw void PreGotoStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostGotoStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromGotoStatement_value = stack.Pop();
+                    context.fromGotoStatement = *cast<ValueObject<Statement*>*>(fromGotoStatement_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public Statement* fromReturnStatement;
+                public Statement* fromConditionalStatement;
+                public SwitchStatementPtr fromSwitchStatement;
+                public Statement* fromWhileStatement;
+                public Statement* fromDoStatement;
+                public RangeForStatement* fromRangeForStatement;
+                public ForStatement* fromForStatement;
+                public CompoundStatement* fromCompoundStatement;
+                public Statement* fromBreakStatement;
+                public Statement* fromContinueStatement;
+                public Statement* fromGotoStatement;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ReturnStatementRule: System.Text.Parsing.Rule
+        {
+            public ReturnStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new ReturnStatement(context.fromExpression);
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromExpression;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ConditionalStatementRule: System.Text.Parsing.Rule
+        {
+            public ConditionalStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+                NonterminalParser* thenstatNonterminalParser = GetNonterminal("thenstat");
+                thenstatNonterminalParser->SetPreCall(PreCall(Prethenstat));
+                thenstatNonterminalParser->SetPostCall(PostCall(Postthenstat));
+                NonterminalParser* elsestatNonterminalParser = GetNonterminal("elsestat");
+                elsestatNonterminalParser->SetPreCall(PreCall(Preelsestat));
+                elsestatNonterminalParser->SetPostCall(PostCall(Postelsestat));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new ConditionalStatement(context.fromExpression, context.fromthenstat, context.fromelsestat);
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            public throw void Prethenstat(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postthenstat(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromthenstat_value = stack.Pop();
+                    context.fromthenstat = *cast<ValueObject<Statement*>*>(fromthenstat_value.GetPtr());
+                }
+            }
+            public throw void Preelsestat(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postelsestat(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromelsestat_value = stack.Pop();
+                    context.fromelsestat = *cast<ValueObject<Statement*>*>(fromelsestat_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromExpression;
+                public Statement* fromthenstat;
+                public Statement* fromelsestat;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class SwitchStatementRule: System.Text.Parsing.Rule
+        {
+            public SwitchStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("SwitchStatementPtr");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<SwitchStatementPtr>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+                NonterminalParser* caseStatementNonterminalParser = GetNonterminal("CaseStatement");
+                caseStatementNonterminalParser->SetPreCall(PreCall(PreCaseStatement));
+                caseStatementNonterminalParser->SetPostCall(PostCall(PostCaseStatement));
+                NonterminalParser* defaultStatementNonterminalParser = GetNonterminal("DefaultStatement");
+                defaultStatementNonterminalParser->SetPreCall(PreCall(PreDefaultStatement));
+                defaultStatementNonterminalParser->SetPostCall(PostCall(PostDefaultStatement));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new SwitchStatement(context.fromExpression);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddCase(context.fromCaseStatement);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->SetDefault(context.fromDefaultStatement);
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            public throw void PreCaseStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostCaseStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromCaseStatement_value = stack.Pop();
+                    context.fromCaseStatement = *cast<ValueObject<CaseStatementPtr>*>(fromCaseStatement_value.GetPtr());
+                }
+            }
+            public throw void PreDefaultStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostDefaultStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromDefaultStatement_value = stack.Pop();
+                    context.fromDefaultStatement = *cast<ValueObject<DefaultStatementPtr>*>(fromDefaultStatement_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public SwitchStatement* value;
+                public CmObject* fromExpression;
+                public CaseStatement* fromCaseStatement;
+                public DefaultStatement* fromDefaultStatement;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class CaseStatementRule: System.Text.Parsing.Rule
+        {
+            public CaseStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("CaseStatementPtr");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<CaseStatementPtr>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                NonterminalParser* caseExprListNonterminalParser = GetNonterminal("CaseExprList");
+                caseExprListNonterminalParser->SetPreCall(PreCall(PreCaseExprList));
+                caseExprListNonterminalParser->SetPostCall(PostCall(PostCaseExprList));
+                NonterminalParser* gotoCaseStatementNonterminalParser = GetNonterminal("GotoCaseStatement");
+                gotoCaseStatementNonterminalParser->SetPreCall(PreCall(PreGotoCaseStatement));
+                gotoCaseStatementNonterminalParser->SetPostCall(PostCall(PostGotoCaseStatement));
+                NonterminalParser* gotoDefaultStatementNonterminalParser = GetNonterminal("GotoDefaultStatement");
+                gotoDefaultStatementNonterminalParser->SetPreCall(PreCall(PreGotoDefaultStatement));
+                gotoDefaultStatementNonterminalParser->SetPostCall(PostCall(PostGotoDefaultStatement));
+                NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+                statementNonterminalParser->SetPreCall(PreCall(PreStatement));
+                statementNonterminalParser->SetPostCall(PostCall(PostStatement));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new CaseStatement(context.fromCaseExprList);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddStatement(context.fromGotoCaseStatement);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddStatement(context.fromGotoDefaultStatement);
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddStatement(context.fromStatement);
+            }
+            public throw void PreCaseExprList(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostCaseExprList(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromCaseExprList_value = stack.Pop();
+                    context.fromCaseExprList = *cast<ValueObject<ExpressionList>*>(fromCaseExprList_value.GetPtr());
+                }
+            }
+            public throw void PreGotoCaseStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostGotoCaseStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromGotoCaseStatement_value = stack.Pop();
+                    context.fromGotoCaseStatement = *cast<ValueObject<Statement*>*>(fromGotoCaseStatement_value.GetPtr());
+                }
+            }
+            public throw void PreGotoDefaultStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostGotoDefaultStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromGotoDefaultStatement_value = stack.Pop();
+                    context.fromGotoDefaultStatement = *cast<ValueObject<Statement*>*>(fromGotoDefaultStatement_value.GetPtr());
+                }
+            }
+            public throw void PreStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStatement_value = stack.Pop();
+                    context.fromStatement = *cast<ValueObject<Statement*>*>(fromStatement_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public CaseStatement* value;
+                public ExpressionList fromCaseExprList;
+                public Statement* fromGotoCaseStatement;
+                public Statement* fromGotoDefaultStatement;
+                public Statement* fromStatement;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class CaseExprListRule: System.Text.Parsing.Rule
+        {
+            public CaseExprListRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("ExpressionList");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ExpressionList>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value.Add(context.fromExpression);
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public ExpressionList value;
+                public CmObject* fromExpression;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class DefaultStatementRule: System.Text.Parsing.Rule
+        {
+            public DefaultStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("DefaultStatementPtr");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<DefaultStatementPtr>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* gotoCaseStatementNonterminalParser = GetNonterminal("GotoCaseStatement");
+                gotoCaseStatementNonterminalParser->SetPreCall(PreCall(PreGotoCaseStatement));
+                gotoCaseStatementNonterminalParser->SetPostCall(PostCall(PostGotoCaseStatement));
+                NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+                statementNonterminalParser->SetPreCall(PreCall(PreStatement));
+                statementNonterminalParser->SetPostCall(PostCall(PostStatement));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new DefaultStatement();
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddStatement(context.fromGotoCaseStatement);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddStatement(context.fromStatement);
+            }
+            public throw void PreGotoCaseStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostGotoCaseStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromGotoCaseStatement_value = stack.Pop();
+                    context.fromGotoCaseStatement = *cast<ValueObject<Statement*>*>(fromGotoCaseStatement_value.GetPtr());
+                }
+            }
+            public throw void PreStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStatement_value = stack.Pop();
+                    context.fromStatement = *cast<ValueObject<Statement*>*>(fromStatement_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public DefaultStatement* value;
+                public Statement* fromGotoCaseStatement;
+                public Statement* fromStatement;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class GotoCaseStatementRule: System.Text.Parsing.Rule
+        {
+            public GotoCaseStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new GotoCaseStatement(context.fromExpression);
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromExpression;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class GotoDefaultStatementRule: System.Text.Parsing.Rule
+        {
+            public GotoDefaultStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new GotoDefaultStatement();
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class WhileStatementRule: System.Text.Parsing.Rule
+        {
+            public WhileStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+                NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+                statementNonterminalParser->SetPreCall(PreCall(PreStatement));
+                statementNonterminalParser->SetPostCall(PostCall(PostStatement));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new WhileStatement(context.fromExpression, context.fromStatement);
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            public throw void PreStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStatement_value = stack.Pop();
+                    context.fromStatement = *cast<ValueObject<Statement*>*>(fromStatement_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromExpression;
+                public Statement* fromStatement;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class DoStatementRule: System.Text.Parsing.Rule
+        {
+            public DoStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+                statementNonterminalParser->SetPreCall(PreCall(PreStatement));
+                statementNonterminalParser->SetPostCall(PostCall(PostStatement));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new DoStatement(context.fromStatement, context.fromExpression);
+            }
+            public throw void PreStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStatement_value = stack.Pop();
+                    context.fromStatement = *cast<ValueObject<Statement*>*>(fromStatement_value.GetPtr());
+                }
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public Statement* fromStatement;
+                public CmObject* fromExpression;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class RangeForStatementRule: System.Text.Parsing.Rule
+        {
+            public RangeForStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("RangeForStatementPtr");
+                AddLocalVariable(AttrOrVariable("UniquePtr<RangeForStatement>", "holder"));
+                AddLocalVariable(AttrOrVariable("UniquePtr<CmObject>", "varTypeHolder"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<RangeForStatementPtr>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* varTypeNonterminalParser = GetNonterminal("varType");
+                varTypeNonterminalParser->SetPreCall(PreCall(PrevarType));
+                varTypeNonterminalParser->SetPostCall(PostCall(PostvarType));
+                NonterminalParser* varNameNonterminalParser = GetNonterminal("varName");
+                varNameNonterminalParser->SetPostCall(PostCall(PostvarName));
+                NonterminalParser* containerNonterminalParser = GetNonterminal("container");
+                containerNonterminalParser->SetPreCall(PreCall(Precontainer));
+                containerNonterminalParser->SetPostCall(PostCall(Postcontainer));
+                NonterminalParser* actionNonterminalParser = GetNonterminal("action");
+                actionNonterminalParser->SetPreCall(PreCall(Preaction));
+                actionNonterminalParser->SetPostCall(PostCall(Postaction));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.holder.Release();
+                context.value->SetContent(context.varTypeHolder.Release(), context.fromvarName, context.fromcontainer, context.fromaction);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.holder.Reset(new RangeForStatement());
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.varTypeHolder.Reset(context.fromvarType);
+            }
+            public throw void PrevarType(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostvarType(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromvarType_value = stack.Pop();
+                    context.fromvarType = *cast<ValueObject<CmObject*>*>(fromvarType_value.GetPtr());
+                }
+            }
+            public throw void PostvarName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromvarName_value = stack.Pop();
+                    context.fromvarName = *cast<ValueObject<string>*>(fromvarName_value.GetPtr());
+                }
+            }
+            public throw void Precontainer(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postcontainer(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromcontainer_value = stack.Pop();
+                    context.fromcontainer = *cast<ValueObject<CmObject*>*>(fromcontainer_value.GetPtr());
+                }
+            }
+            public throw void Preaction(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postaction(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromaction_value = stack.Pop();
+                    context.fromaction = *cast<ValueObject<Statement*>*>(fromaction_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public RangeForStatement* value;
+                public UniquePtr<RangeForStatement> holder;
+                public UniquePtr<CmObject> varTypeHolder;
+                public CmObject* fromvarType;
+                public string fromvarName;
+                public CmObject* fromcontainer;
+                public Statement* fromaction;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ForStatementRule: System.Text.Parsing.Rule
+        {
+            public ForStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("ForStatementPtr");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ForStatementPtr>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* initNonterminalParser = GetNonterminal("init");
+                initNonterminalParser->SetPreCall(PreCall(Preinit));
+                initNonterminalParser->SetPostCall(PostCall(Postinit));
+                NonterminalParser* conditionNonterminalParser = GetNonterminal("condition");
+                conditionNonterminalParser->SetPreCall(PreCall(Precondition));
+                conditionNonterminalParser->SetPostCall(PostCall(Postcondition));
+                NonterminalParser* incrementNonterminalParser = GetNonterminal("increment");
+                incrementNonterminalParser->SetPreCall(PreCall(Preincrement));
+                incrementNonterminalParser->SetPostCall(PostCall(Postincrement));
+                NonterminalParser* actionNonterminalParser = GetNonterminal("action");
+                actionNonterminalParser->SetPreCall(PreCall(Preaction));
+                actionNonterminalParser->SetPostCall(PostCall(Postaction));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->SetContent(context.frominit, context.fromcondition, context.fromincrement, context.fromaction);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new ForStatement();
+            }
+            public throw void Preinit(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postinit(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> frominit_value = stack.Pop();
+                    context.frominit = *cast<ValueObject<Statement*>*>(frominit_value.GetPtr());
+                }
+            }
+            public throw void Precondition(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postcondition(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromcondition_value = stack.Pop();
+                    context.fromcondition = *cast<ValueObject<CmObject*>*>(fromcondition_value.GetPtr());
+                }
+            }
+            public throw void Preincrement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postincrement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromincrement_value = stack.Pop();
+                    context.fromincrement = *cast<ValueObject<CmObject*>*>(fromincrement_value.GetPtr());
+                }
+            }
+            public throw void Preaction(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postaction(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromaction_value = stack.Pop();
+                    context.fromaction = *cast<ValueObject<Statement*>*>(fromaction_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public ForStatement* value;
+                public Statement* frominit;
+                public CmObject* fromcondition;
+                public CmObject* fromincrement;
+                public Statement* fromaction;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ForInitStatementRule: System.Text.Parsing.Rule
+        {
+            public ForInitStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* assignmentStatementNonterminalParser = GetNonterminal("AssignmentStatement");
+                assignmentStatementNonterminalParser->SetPreCall(PreCall(PreAssignmentStatement));
+                assignmentStatementNonterminalParser->SetPostCall(PostCall(PostAssignmentStatement));
+                NonterminalParser* constructionStatementNonterminalParser = GetNonterminal("ConstructionStatement");
+                constructionStatementNonterminalParser->SetPreCall(PreCall(PreConstructionStatement));
+                constructionStatementNonterminalParser->SetPostCall(PostCall(PostConstructionStatement));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromAssignmentStatement;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromConstructionStatement;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new EmptyStatement();
+            }
+            public throw void PreAssignmentStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostAssignmentStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromAssignmentStatement_value = stack.Pop();
+                    context.fromAssignmentStatement = *cast<ValueObject<Statement*>*>(fromAssignmentStatement_value.GetPtr());
+                }
+            }
+            public throw void PreConstructionStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostConstructionStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromConstructionStatement_value = stack.Pop();
+                    context.fromConstructionStatement = *cast<ValueObject<Statement*>*>(fromConstructionStatement_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public Statement* fromAssignmentStatement;
+                public Statement* fromConstructionStatement;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class CompoundStatementRule: System.Text.Parsing.Rule
+        {
+            public CompoundStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("CompoundStatementPtr");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<CompoundStatementPtr>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+                statementNonterminalParser->SetPreCall(PreCall(PreStatement));
+                statementNonterminalParser->SetPostCall(PostCall(PostStatement));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new CompoundStatement();
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddStatement(context.fromStatement);
+            }
+            public throw void PreStatement(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostStatement(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStatement_value = stack.Pop();
+                    context.fromStatement = *cast<ValueObject<Statement*>*>(fromStatement_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public CompoundStatement* value;
+                public Statement* fromStatement;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class BreakStatementRule: System.Text.Parsing.Rule
+        {
+            public BreakStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new BreakStatement();
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ContinueStatementRule: System.Text.Parsing.Rule
+        {
+            public ContinueStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new ContinueStatement();
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class GotoStatementRule: System.Text.Parsing.Rule
+        {
+            public GotoStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new GotoStatement(context.fromIdentifier);
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public string fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class TypedefStatementRule: System.Text.Parsing.Rule
+        {
+            public TypedefStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
+                typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new TypedefStatement(context.fromTypeExpr, context.fromIdentifier);
+            }
+            public throw void PreTypeExpr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTypeExpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTypeExpr_value = stack.Pop();
+                    context.fromTypeExpr = *cast<ValueObject<CmObject*>*>(fromTypeExpr_value.GetPtr());
+                }
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromTypeExpr;
+                public string fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class SimpleStatementRule: System.Text.Parsing.Rule
+        {
+            public SimpleStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+                AddLocalVariable(AttrOrVariable("UniquePtr<CmObject>", "expr"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                a2ActionParser->SetFailureAction(FailureAction(A2ActionFail));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                NonterminalParser* eNonterminalParser = GetNonterminal("e");
+                eNonterminalParser->SetPreCall(PreCall(Pree));
+                eNonterminalParser->SetPostCall(PostCall(Poste));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.ctx->BeginParsingSimpleStatement();
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new SimpleStatement(context.expr.Release());
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.ctx->EndParsingSimpleStatement();
+                context.expr.Reset(context.frome);
+            }
+            public throw void A2ActionFail()
+            {
+                context.ctx->EndParsingSimpleStatement();
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new EmptyStatement();
+            }
+            public throw void Pree(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Poste(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> frome_value = stack.Pop();
+                    context.frome = *cast<ValueObject<CmObject*>*>(frome_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public UniquePtr<CmObject> expr;
+                public CmObject* frome;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class AssignmentStatementRule: System.Text.Parsing.Rule
+        {
+            public AssignmentStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+                AddLocalVariable(AttrOrVariable("UniquePtr<CmObject>", "targetHolder"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                a2ActionParser->SetFailureAction(FailureAction(A2ActionFail));
+                NonterminalParser* targetNonterminalParser = GetNonterminal("target");
+                targetNonterminalParser->SetPreCall(PreCall(Pretarget));
+                targetNonterminalParser->SetPostCall(PostCall(Posttarget));
+                NonterminalParser* sourceNonterminalParser = GetNonterminal("source");
+                sourceNonterminalParser->SetPreCall(PreCall(Presource));
+                sourceNonterminalParser->SetPostCall(PostCall(Postsource));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new AssignmentStatement(context.targetHolder.Release(), context.fromsource);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.ctx->BeginParsingLValue();
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.ctx->EndParsingLValue();
+                context.targetHolder.Reset(context.fromtarget);
+            }
+            public throw void A2ActionFail()
+            {
+                context.ctx->EndParsingLValue();
+            }
+            public throw void Pretarget(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Posttarget(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromtarget_value = stack.Pop();
+                    context.fromtarget = *cast<ValueObject<CmObject*>*>(fromtarget_value.GetPtr());
+                }
+            }
+            public throw void Presource(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postsource(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromsource_value = stack.Pop();
+                    context.fromsource = *cast<ValueObject<CmObject*>*>(fromsource_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public UniquePtr<CmObject> targetHolder;
+                public CmObject* fromtarget;
+                public CmObject* fromsource;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ConstructionStatementRule: System.Text.Parsing.Rule
+        {
+            public ConstructionStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
+                typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+                NonterminalParser* initializationNonterminalParser = GetNonterminal("Initialization");
+                initializationNonterminalParser->SetPreCall(PreCall(PreInitialization));
+                initializationNonterminalParser->SetPostCall(PostCall(PostInitialization));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new ConstructionStatement(context.fromTypeExpr, context.fromIdentifier, context.fromInitialization);
+            }
+            public throw void PreTypeExpr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTypeExpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTypeExpr_value = stack.Pop();
+                    context.fromTypeExpr = *cast<ValueObject<CmObject*>*>(fromTypeExpr_value.GetPtr());
+                }
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            public throw void PreInitialization(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostInitialization(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromInitialization_value = stack.Pop();
+                    context.fromInitialization = *cast<ValueObject<ExpressionList>*>(fromInitialization_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromTypeExpr;
+                public string fromIdentifier;
+                public ExpressionList fromInitialization;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class InitializationRule: System.Text.Parsing.Rule
+        {
+            public InitializationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("ExpressionList");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ExpressionList>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* expressionListNonterminalParser = GetNonterminal("ExpressionList");
+                expressionListNonterminalParser->SetPreCall(PreCall(PreExpressionList));
+                expressionListNonterminalParser->SetPostCall(PostCall(PostExpressionList));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromExpressionList;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value.Add(context.fromExpression);
+            }
+            public throw void PreExpressionList(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpressionList(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpressionList_value = stack.Pop();
+                    context.fromExpressionList = *cast<ValueObject<ExpressionList>*>(fromExpressionList_value.GetPtr());
+                }
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public ExpressionList value;
+                public ExpressionList fromExpressionList;
+                public CmObject* fromExpression;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class DeleteStatementRule: System.Text.Parsing.Rule
+        {
+            public DeleteStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* ptrNonterminalParser = GetNonterminal("ptr");
+                ptrNonterminalParser->SetPreCall(PreCall(Preptr));
+                ptrNonterminalParser->SetPostCall(PostCall(Postptr));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new DeleteStatement(context.fromptr);
+            }
+            public throw void Preptr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postptr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromptr_value = stack.Pop();
+                    context.fromptr = *cast<ValueObject<CmObject*>*>(fromptr_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromptr;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class DestroyStatementRule: System.Text.Parsing.Rule
+        {
+            public DestroyStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* ptrNonterminalParser = GetNonterminal("ptr");
+                ptrNonterminalParser->SetPreCall(PreCall(Preptr));
+                ptrNonterminalParser->SetPostCall(PostCall(Postptr));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new DestroyStatement(context.fromptr);
+            }
+            public throw void Preptr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postptr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromptr_value = stack.Pop();
+                    context.fromptr = *cast<ValueObject<CmObject*>*>(fromptr_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromptr;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ThrowStatementRule: System.Text.Parsing.Rule
+        {
+            public ThrowStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* exceptionNonterminalParser = GetNonterminal("exception");
+                exceptionNonterminalParser->SetPreCall(PreCall(Preexception));
+                exceptionNonterminalParser->SetPostCall(PostCall(Postexception));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new ThrowStatement(context.fromexception);
+            }
+            public throw void Preexception(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postexception(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromexception_value = stack.Pop();
+                    context.fromexception = *cast<ValueObject<CmObject*>*>(fromexception_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromexception;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class TryStatementRule: System.Text.Parsing.Rule
+        {
+            public TryStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* tryBlockNonterminalParser = GetNonterminal("tryBlock");
+                tryBlockNonterminalParser->SetPreCall(PreCall(PretryBlock));
+                tryBlockNonterminalParser->SetPostCall(PostCall(PosttryBlock));
+                NonterminalParser* handlersNonterminalParser = GetNonterminal("handlers");
+                handlersNonterminalParser->SetPreCall(PreCall(Prehandlers));
+                handlersNonterminalParser->SetPostCall(PostCall(Posthandlers));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new TryStatement(context.fromtryBlock, context.fromhandlers);
+            }
+            public throw void PretryBlock(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PosttryBlock(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromtryBlock_value = stack.Pop();
+                    context.fromtryBlock = *cast<ValueObject<CompoundStatementPtr>*>(fromtryBlock_value.GetPtr());
+                }
+            }
+            public throw void Prehandlers(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Posthandlers(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromhandlers_value = stack.Pop();
+                    context.fromhandlers = *cast<ValueObject<List<ExceptionHandler*>>*>(fromhandlers_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CompoundStatementPtr fromtryBlock;
+                public List<ExceptionHandler*> fromhandlers;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ExceptionHandlersRule: System.Text.Parsing.Rule
+        {
+            public ExceptionHandlersRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("List<ExceptionHandler*>");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<List<ExceptionHandler*>>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                NonterminalParser* exceptionHandlerNonterminalParser = GetNonterminal("ExceptionHandler");
+                exceptionHandlerNonterminalParser->SetPreCall(PreCall(PreExceptionHandler));
+            }
+            public throw void PreExceptionHandler(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<List<ExceptionHandler*>*>(&context.value)));
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public List<ExceptionHandler*> value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ExceptionHandlerRule: System.Text.Parsing.Rule
+        {
+            public ExceptionHandlerRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("List<ExceptionHandler*>*", "handlers"));
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+                UniquePtr<Object> handlers_value = stack.Pop();
+                context.handlers = *cast<ValueObject<List<ExceptionHandler*>*>*>(handlers_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* exceptionTypeNonterminalParser = GetNonterminal("exceptionType");
+                exceptionTypeNonterminalParser->SetPreCall(PreCall(PreexceptionType));
+                exceptionTypeNonterminalParser->SetPostCall(PostCall(PostexceptionType));
+                NonterminalParser* exceptionNonterminalParser = GetNonterminal("exception");
+                exceptionNonterminalParser->SetPostCall(PostCall(Postexception));
+                NonterminalParser* catchBlockNonterminalParser = GetNonterminal("catchBlock");
+                catchBlockNonterminalParser->SetPreCall(PreCall(PrecatchBlock));
+                catchBlockNonterminalParser->SetPostCall(PostCall(PostcatchBlock));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.handlers->Add(new System.Text.Parsing.CmObjectModel.ExceptionHandler(context.fromexceptionType, context.fromexception, context.fromcatchBlock));
+            }
+            public throw void PreexceptionType(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostexceptionType(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromexceptionType_value = stack.Pop();
+                    context.fromexceptionType = *cast<ValueObject<CmObject*>*>(fromexceptionType_value.GetPtr());
+                }
+            }
+            public throw void Postexception(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromexception_value = stack.Pop();
+                    context.fromexception = *cast<ValueObject<string>*>(fromexception_value.GetPtr());
+                }
+            }
+            public throw void PrecatchBlock(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostcatchBlock(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromcatchBlock_value = stack.Pop();
+                    context.fromcatchBlock = *cast<ValueObject<CompoundStatementPtr>*>(fromcatchBlock_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public List<ExceptionHandler*>* handlers;
+                public ParsingContext* ctx;
+                public CmObject* fromexceptionType;
+                public string fromexception;
+                public CompoundStatement* fromcatchBlock;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class AssertStatementRule: System.Text.Parsing.Rule
+        {
+            public AssertStatementRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Statement*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Statement*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* exprNonterminalParser = GetNonterminal("expr");
+                exprNonterminalParser->SetPreCall(PreCall(Preexpr));
+                exprNonterminalParser->SetPostCall(PostCall(Postexpr));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new AssertStatement(context.fromexpr);
+            }
+            public throw void Preexpr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void Postexpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromexpr_value = stack.Pop();
+                    context.fromexpr = *cast<ValueObject<CmObject*>*>(fromexpr_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Statement* value;
+                public CmObject* fromexpr;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = Cm.IdentifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.ExpressionGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = Cm.ExpressionGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar1);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("TypeExpr", this, "ExpressionGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
+            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+            AddRule(new StatementRule("Statement", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new AlternativeParser(
+                                            new AlternativeParser(
+                                                new AlternativeParser(
+                                                    new ActionParser("A0",
+                                                        new NonterminalParser("ControlStatement", "ControlStatement", 1)),
+                                                    new ActionParser("A1",
+                                                        new NonterminalParser("TypedefStatement", "TypedefStatement", 1))),
+                                                new ActionParser("A2",
+                                                    new NonterminalParser("SimpleStatement", "SimpleStatement", 1))),
+                                            new ActionParser("A3",
+                                                new NonterminalParser("AssignmentStatement", "AssignmentStatement", 1))),
+                                        new ActionParser("A4",
+                                            new NonterminalParser("ConstructionStatement", "ConstructionStatement", 1))),
+                                    new ActionParser("A5",
+                                        new NonterminalParser("DeleteStatement", "DeleteStatement", 1))),
+                                new ActionParser("A6",
+                                    new NonterminalParser("DestroyStatement", "DestroyStatement", 1))),
+                            new ActionParser("A7",
+                                new NonterminalParser("ThrowStatement", "ThrowStatement", 1))),
+                        new ActionParser("A8",
+                            new NonterminalParser("TryStatement", "TryStatement", 1))),
+                    new ActionParser("A9",
+                        new NonterminalParser("AssertStatement", "AssertStatement", 1)))));
+            AddRule(new ControlStatementRule("ControlStatement", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new AlternativeParser(
+                                            new AlternativeParser(
+                                                new AlternativeParser(
+                                                    new AlternativeParser(
+                                                        new ActionParser("A0",
+                                                            new NonterminalParser("ReturnStatement", "ReturnStatement", 1)),
+                                                        new ActionParser("A1",
+                                                            new NonterminalParser("ConditionalStatement", "ConditionalStatement", 1))),
+                                                    new ActionParser("A2",
+                                                        new NonterminalParser("SwitchStatement", "SwitchStatement", 1))),
+                                                new ActionParser("A3",
+                                                    new NonterminalParser("WhileStatement", "WhileStatement", 1))),
+                                            new ActionParser("A4",
+                                                new NonterminalParser("DoStatement", "DoStatement", 1))),
+                                        new ActionParser("A5",
+                                            new NonterminalParser("RangeForStatement", "RangeForStatement", 1))),
+                                    new ActionParser("A6",
+                                        new NonterminalParser("ForStatement", "ForStatement", 1))),
+                                new ActionParser("A7",
+                                    new NonterminalParser("CompoundStatement", "CompoundStatement", 1))),
+                            new ActionParser("A8",
+                                new NonterminalParser("BreakStatement", "BreakStatement", 1))),
+                        new ActionParser("A9",
+                            new NonterminalParser("ContinueStatement", "ContinueStatement", 1))),
+                    new ActionParser("A10",
+                        new NonterminalParser("GotoStatement", "GotoStatement", 1)))));
+            AddRule(new ReturnStatementRule("ReturnStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("return"),
+                            new ExpectationParser(
+                                new OptionalParser(
+                                    new NonterminalParser("Expression", "Expression", 1)))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new ConditionalStatementRule("ConditionalStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new KeywordParser("if"),
+                                        new ExpectationParser(
+                                            new CharParser('('))),
+                                    new ExpectationParser(
+                                        new NonterminalParser("Expression", "Expression", 1))),
+                                new ExpectationParser(
+                                    new CharParser(')'))),
+                            new ExpectationParser(
+                                new NonterminalParser("thenstat", "Statement", 1))),
+                        new OptionalParser(
+                            new SequenceParser(
+                                new KeywordParser("else"),
+                                new ExpectationParser(
+                                    new NonterminalParser("elsestat", "Statement", 1))))))));
+            AddRule(new SwitchStatementRule("SwitchStatement", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new ActionParser("A0",
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new KeywordParser("switch"),
+                                            new ExpectationParser(
+                                                new CharParser('('))),
+                                        new ExpectationParser(
+                                            new NonterminalParser("Expression", "Expression", 1)))),
+                                new ExpectationParser(
+                                    new CharParser(')'))),
+                            new ExpectationParser(
+                                new CharParser('{'))),
+                        new KleeneStarParser(
+                            new AlternativeParser(
+                                new ActionParser("A1",
+                                    new NonterminalParser("CaseStatement", "CaseStatement", 1)),
+                                new ActionParser("A2",
+                                    new NonterminalParser("DefaultStatement", "DefaultStatement", 1))))),
+                    new ExpectationParser(
+                        new CharParser('}')))));
+            AddRule(new CaseStatementRule("CaseStatement", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("CaseExprList", "CaseExprList", 1)),
+                    new KleeneStarParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new ActionParser("A1",
+                                    new NonterminalParser("GotoCaseStatement", "GotoCaseStatement", 1)),
+                                new ActionParser("A2",
+                                    new NonterminalParser("GotoDefaultStatement", "GotoDefaultStatement", 1))),
+                            new ActionParser("A3",
+                                new NonterminalParser("Statement", "Statement", 1)))))));
+            AddRule(new CaseExprListRule("CaseExprList", GetScope(),
+                new PositiveParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("case"),
+                            new ActionParser("A0",
+                                new ExpectationParser(
+                                    new NonterminalParser("Expression", "Expression", 1)))),
+                        new ExpectationParser(
+                            new CharParser(':'))))));
+            AddRule(new DefaultStatementRule("DefaultStatement", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new SequenceParser(
+                            new KeywordParser("default"),
+                            new ExpectationParser(
+                                new CharParser(':')))),
+                    new KleeneStarParser(
+                        new AlternativeParser(
+                            new ActionParser("A1",
+                                new NonterminalParser("GotoCaseStatement", "GotoCaseStatement", 1)),
+                            new ActionParser("A2",
+                                new NonterminalParser("Statement", "Statement", 1)))))));
+            AddRule(new GotoCaseStatementRule("GotoCaseStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("goto"),
+                                new KeywordParser("case")),
+                            new ExpectationParser(
+                                new NonterminalParser("Expression", "Expression", 1))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new GotoDefaultStatementRule("GotoDefaultStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("goto"),
+                            new KeywordParser("default")),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new WhileStatementRule("WhileStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new KeywordParser("while"),
+                                    new ExpectationParser(
+                                        new CharParser('('))),
+                                new ExpectationParser(
+                                    new NonterminalParser("Expression", "Expression", 1))),
+                            new ExpectationParser(
+                                new CharParser(')'))),
+                        new ExpectationParser(
+                            new NonterminalParser("Statement", "Statement", 1))))));
+            AddRule(new DoStatementRule("DoStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new KeywordParser("do"),
+                                            new ExpectationParser(
+                                                new NonterminalParser("Statement", "Statement", 1))),
+                                        new ExpectationParser(
+                                            new KeywordParser("while"))),
+                                    new ExpectationParser(
+                                        new CharParser('('))),
+                                new ExpectationParser(
+                                    new NonterminalParser("Expression", "Expression", 1))),
+                            new ExpectationParser(
+                                new CharParser(')'))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new RangeForStatementRule("RangeForStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new SequenceParser(
+                                                new ActionParser("A1",
+                                                    new KeywordParser("for")),
+                                                new CharParser('(')),
+                                            new ActionParser("A2",
+                                                new NonterminalParser("varType", "TypeExpr", 1))),
+                                        new NonterminalParser("varName", "Identifier", 0)),
+                                    new CharParser(':')),
+                                new ExpectationParser(
+                                    new NonterminalParser("container", "Expression", 1))),
+                            new ExpectationParser(
+                                new CharParser(')'))),
+                        new ExpectationParser(
+                            new NonterminalParser("action", "Statement", 1))))));
+            AddRule(new ForStatementRule("ForStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new SequenceParser(
+                                                new ActionParser("A1",
+                                                    new KeywordParser("for")),
+                                                new ExpectationParser(
+                                                    new CharParser('('))),
+                                            new ExpectationParser(
+                                                new NonterminalParser("init", "ForInitStatement", 1))),
+                                        new OptionalParser(
+                                            new NonterminalParser("condition", "Expression", 1))),
+                                    new ExpectationParser(
+                                        new CharParser(';'))),
+                                new OptionalParser(
+                                    new NonterminalParser("increment", "Expression", 1))),
+                            new ExpectationParser(
+                                new CharParser(')'))),
+                        new ExpectationParser(
+                            new NonterminalParser("action", "Statement", 1))))));
+            AddRule(new ForInitStatementRule("ForInitStatement", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new ActionParser("A0",
+                            new NonterminalParser("AssignmentStatement", "AssignmentStatement", 1)),
+                        new ActionParser("A1",
+                            new NonterminalParser("ConstructionStatement", "ConstructionStatement", 1))),
+                    new ActionParser("A2",
+                        new CharParser(';')))));
+            AddRule(new CompoundStatementRule("CompoundStatement", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new ActionParser("A0",
+                            new CharParser('{')),
+                        new KleeneStarParser(
+                            new ActionParser("A1",
+                                new NonterminalParser("Statement", "Statement", 1)))),
+                    new ExpectationParser(
+                        new CharParser('}')))));
+            AddRule(new BreakStatementRule("BreakStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new KeywordParser("break"),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new ContinueStatementRule("ContinueStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new KeywordParser("continue"),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new GotoStatementRule("GotoStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("goto"),
+                            new ExpectationParser(
+                                new NonterminalParser("Identifier", "Identifier", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new TypedefStatementRule("TypedefStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("typedef"),
+                                new ExpectationParser(
+                                    new NonterminalParser("TypeExpr", "TypeExpr", 1))),
+                            new ExpectationParser(
+                                new NonterminalParser("Identifier", "Identifier", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new SimpleStatementRule("SimpleStatement", GetScope(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new ActionParser("A0",
+                            new EmptyParser()),
+                        new ActionParser("A1",
+                            new SequenceParser(
+                                new ActionParser("A2",
+                                    new NonterminalParser("e", "Expression", 1)),
+                                new CharParser(';')))),
+                    new ActionParser("A3",
+                        new CharParser(';')))));
+            AddRule(new AssignmentStatementRule("AssignmentStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new ActionParser("A1",
+                                        new EmptyParser()),
+                                    new ActionParser("A2",
+                                        new NonterminalParser("target", "Expression", 1))),
+                                new CharParser('=')),
+                            new NonterminalParser("source", "Expression", 1)),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new ConstructionStatementRule("ConstructionStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new NonterminalParser("TypeExpr", "TypeExpr", 1),
+                                new ExpectationParser(
+                                    new NonterminalParser("Identifier", "Identifier", 0))),
+                            new ExpectationParser(
+                                new OptionalParser(
+                                    new NonterminalParser("Initialization", "Initialization", 1)))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new InitializationRule("Initialization", GetScope(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('('),
+                            new ExpectationParser(
+                                new NonterminalParser("ExpressionList", "ExpressionList", 1))),
+                        new ActionParser("A0",
+                            new ExpectationParser(
+                                new CharParser(')')))),
+                    new SequenceParser(
+                        new CharParser('='),
+                        new ActionParser("A1",
+                            new ExpectationParser(
+                                new NonterminalParser("Expression", "Expression", 1)))))));
+            AddRule(new DeleteStatementRule("DeleteStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("delete"),
+                            new NonterminalParser("ptr", "Expression", 1)),
+                        new CharParser(';')))));
+            AddRule(new DestroyStatementRule("DestroyStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("destroy"),
+                            new NonterminalParser("ptr", "Expression", 1)),
+                        new CharParser(';')))));
+            AddRule(new ThrowStatementRule("ThrowStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("throw"),
+                            new ExpectationParser(
+                                new NonterminalParser("exception", "Expression", 1))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new TryStatementRule("TryStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("try"),
+                            new ExpectationParser(
+                                new NonterminalParser("tryBlock", "CompoundStatement", 1))),
+                        new ExpectationParser(
+                            new NonterminalParser("handlers", "ExceptionHandlers", 1))))));
+            AddRule(new ExceptionHandlersRule("ExceptionHandlers", GetScope(),
+                new PositiveParser(
+                    new NonterminalParser("ExceptionHandler", "ExceptionHandler", 2))));
+            AddRule(new ExceptionHandlerRule("ExceptionHandler", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new KeywordParser("catch"),
+                                        new ExpectationParser(
+                                            new CharParser('('))),
+                                    new ExpectationParser(
+                                        new NonterminalParser("exceptionType", "TypeExpr", 1))),
+                                new OptionalParser(
+                                    new NonterminalParser("exception", "Identifier", 0))),
+                            new ExpectationParser(
+                                new CharParser(')'))),
+                        new ExpectationParser(
+                            new NonterminalParser("catchBlock", "CompoundStatement", 1))))));
+            AddRule(new AssertStatementRule("AssertStatement", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new CharParser('#'),
+                                        new KeywordParser("assert")),
+                                    new CharParser('(')),
+                                new NonterminalParser("expr", "Expression", 1)),
+                            new CharParser(')')),
+                        new CharParser(';')))));
+        }
+    }
+}

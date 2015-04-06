@@ -1,0 +1,111 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using LiteralPtr = System.Text.Parsing.CmObjectModel.LiteralPtr;
+using BooleanLiteral = System.Text.Parsing.CmObjectModel.BooleanLiteral;
+using FloatingLiteral = System.Text.Parsing.CmObjectModel.FloatingLiteral;
+using HexLiteral = System.Text.Parsing.CmObjectModel.HexLiteral;
+using IntLiteral = System.Text.Parsing.CmObjectModel.IntLiteral;
+using CharacterLiteral = System.Text.Parsing.CmObjectModel.CharacterLiteral;
+using StringLiteral = System.Text.Parsing.CmObjectModel.StringLiteral;
+using NullLiteral = System.Text.Parsing.CmObjectModel.NullLiteral;
+
+namespace Cm
+{
+    grammar LiteralGrammar
+    {
+        using stdlib.bool;
+        using stdlib.ureal;
+        using stdlib.char;
+        using stdlib.string;
+        
+        Literal: LiteralPtr
+                ::= bool:b{ value = new BooleanLiteral(b); }
+                |   FloatingLiteral:f{ value = new FloatingLiteral(f.first, f.second); }
+                |   HexLiteral:h{ value = new HexLiteral(h.first, h.second); }
+                |   IntLiteral:i{ value = new IntLiteral(i.first, i.second); }
+                |   char:c{ value = new CharacterLiteral(c); }
+                |   string:s{ value = new StringLiteral(s); }
+                |   Null:n{ value = new NullLiteral(); }
+                ;
+                
+        FloatingLiteral(var double val, var char floatSuffix): Pair<double, char>
+                ::= token(ureal:u
+                    {
+                        val = u;
+                    }
+                    (('f' | 'F'){ floatSuffix = match[0]; } | empty{ floatSuffix = ' '; })
+                )
+                {
+                    value = MakePair(val, floatSuffix);
+                }
+                ;
+                
+        IntLiteral(var ulong val, var char unsignedSuffix): Pair<ulong, char>
+                ::= token((digit+)
+                    {
+                        int n = match.Length();
+                        val = 0u;
+                        unsignedSuffix = ' ';
+                        for (int i = 0; i < n; ++i)
+                        {
+                            val = 10u * val + (cast<ulong>(match[i]) - cast<ulong>('0'));
+                        }
+                    }
+                    (('u' | 'U'){ unsignedSuffix = match[0]; })?
+                )
+                {
+                    value = MakePair(val, unsignedSuffix);
+                }
+                ;
+                
+        HexLiteral(var ulong val, var char unsignedSuffix): Pair<ulong, char>
+                ::= token((("0x" | "0X")
+                    (hexdigit+)
+                    {
+                        val = 0u;
+                        unsignedSuffix = ' ';
+                        int n = match.Length();
+                        for (int i = 0; i < n; ++i)
+                        {
+                            char c = match[i];
+                            ulong b = 0u;
+                            if (c >= '0' && c <= '9')
+                            {
+                                b = cast<ulong>(c) - cast<ulong>('0');
+                            }
+                            if (c >= 'a' && c <= 'f')
+                            {
+                                b = 10u + cast<ulong>(c) - cast<ulong>('a');
+                            }
+                            else 
+                            {
+                                b = 10u + cast<ulong>(c) - cast<ulong>('A');
+                            }
+                            val = 16u * val + b;
+                        }
+                    }
+                    (('u' | 'U'){ unsignedSuffix = match[0]; })?)
+                )
+                {
+                    value = MakePair(val, unsignedSuffix);
+                }
+                ;
+                
+        Null    ::= keyword("null")
+                ;
+
+    }
+}

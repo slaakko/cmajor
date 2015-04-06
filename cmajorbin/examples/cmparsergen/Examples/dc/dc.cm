@@ -1,0 +1,438 @@
+using System;
+using System.Collections;
+using Soul.Parsing;
+
+public typedef DcGrammar* DcGrammarPtr;
+
+public class DcGrammar: Soul.Parsing.Grammar
+{
+    public static DcGrammarPtr Create()
+    {
+        return Create(new ParsingDomain());
+    }
+    public static DcGrammarPtr Create(ParsingDomainPtr parsingDomain)
+    {
+        RegisterParsingDomain(parsingDomain);
+        DcGrammarPtr grammar(new DcGrammar(parsingDomain));
+        parsingDomain->AddGrammar(grammar);
+        grammar->CreateRules();
+        grammar->Link();
+        return grammar;
+    }
+    suppress DcGrammar(const DcGrammar&);
+    suppress void operator=(const DcGrammar&);
+    private DcGrammar(ParsingDomainPtr parsingDomain): base("DcGrammar", parsingDomain->GetNamespaceScope(""), parsingDomain)
+    {
+        SetOwner(0);
+    }
+    public double Parse(const string& content, int fileIndex, const string& fileName)
+    {
+        Scanner scanner(content, fileIndex, fileName, Skip());
+        System.IO.OutputStream* log = Log();
+        UniqueXmlLogPtr xmlLog;
+        if (log != null)
+        {
+            xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+            scanner.SetLog(xmlLog.GetPtr());
+            xmlLog->WriteBeginRule("parse");
+        }
+        ObjectStack stack;
+        Match match = Parse(scanner, stack);
+        Position stop = scanner.GetPosition();
+        if (log != null)
+        {
+            xmlLog->WriteEndRule("parse");
+        }
+        if (!match.Hit() || stop.Index() != content.Length())
+        {
+            RulePtr start = Start();
+            if (start != null)
+            {
+                throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+            }
+            else
+            {
+                throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+            }
+        }
+        return *PtrCast<ValueObject<double>>(stack.Pop());
+    }
+    private class exprRule: Soul.Parsing.Rule
+    {
+        public exprRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+            base(name_, enclosingScope_, definition_), contextStack(), context()
+        {
+            SetValueTypeName("double");
+        }
+        suppress exprRule(const exprRule&);
+        suppress void operator=(const exprRule&);
+        public override void Enter(ObjectStack& stack)
+        {
+            contextStack.Push(context);
+            context = ContextPtr(new Context());
+        }
+        public override void Leave(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                stack.Push(ObjectPtr(new ValueObject<double>(context->value)));
+            }
+            context = contextStack.Pop();
+        }
+        public override void Link()
+        {
+            ActionParserPtr a0ActionParser = GetAction("A0");
+            a0ActionParser->SetAction(ParsingAction(A0Action));
+            ActionParserPtr a1ActionParser = GetAction("A1");
+            a1ActionParser->SetAction(ParsingAction(A1Action));
+            ActionParserPtr a2ActionParser = GetAction("A2");
+            a2ActionParser->SetAction(ParsingAction(A2Action));
+            NonterminalParserPtr tNonterminalParser = GetNonterminal("t");
+            tNonterminalParser->SetPostCall(PostCall(Postt));
+            NonterminalParserPtr ptNonterminalParser = GetNonterminal("pt");
+            ptNonterminalParser->SetPostCall(PostCall(Postpt));
+            NonterminalParserPtr mtNonterminalParser = GetNonterminal("mt");
+            mtNonterminalParser->SetPostCall(PostCall(Postmt));
+        }
+        public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->fromt;
+        }
+        public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->value + context->frompt;
+        }
+        public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->value - context->frommt;
+        }
+        public throw void Postt(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->fromt = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        public throw void Postpt(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->frompt = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        public throw void Postmt(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->frommt = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        private class Context
+        {
+            public Context(): value(), fromt(), frompt(), frommt()
+            {
+            }
+            suppress Context(const Context&);
+            suppress void operator=(const Context&);
+            public default ~Context();
+            public double value;
+            public double fromt;
+            public double frompt;
+            public double frommt;
+        }
+        private typedef SharedPtr<Context> ContextPtr;
+        private Stack<ContextPtr> contextStack;
+        private ContextPtr context;
+    }
+    private class termRule: Soul.Parsing.Rule
+    {
+        public termRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+            base(name_, enclosingScope_, definition_), contextStack(), context()
+        {
+            SetValueTypeName("double");
+        }
+        suppress termRule(const termRule&);
+        suppress void operator=(const termRule&);
+        public override void Enter(ObjectStack& stack)
+        {
+            contextStack.Push(context);
+            context = ContextPtr(new Context());
+        }
+        public override void Leave(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                stack.Push(ObjectPtr(new ValueObject<double>(context->value)));
+            }
+            context = contextStack.Pop();
+        }
+        public override void Link()
+        {
+            ActionParserPtr a0ActionParser = GetAction("A0");
+            a0ActionParser->SetAction(ParsingAction(A0Action));
+            ActionParserPtr a1ActionParser = GetAction("A1");
+            a1ActionParser->SetAction(ParsingAction(A1Action));
+            ActionParserPtr a2ActionParser = GetAction("A2");
+            a2ActionParser->SetAction(ParsingAction(A2Action));
+            NonterminalParserPtr fNonterminalParser = GetNonterminal("f");
+            fNonterminalParser->SetPostCall(PostCall(Postf));
+            NonterminalParserPtr tfNonterminalParser = GetNonterminal("tf");
+            tfNonterminalParser->SetPostCall(PostCall(Posttf));
+            NonterminalParserPtr dfNonterminalParser = GetNonterminal("df");
+            dfNonterminalParser->SetPostCall(PostCall(Postdf));
+        }
+        public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->fromf;
+        }
+        public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->value * context->fromtf;
+        }
+        public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->value / context->fromdf;
+        }
+        public throw void Postf(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->fromf = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        public throw void Posttf(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->fromtf = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        public throw void Postdf(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->fromdf = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        private class Context
+        {
+            public Context(): value(), fromf(), fromtf(), fromdf()
+            {
+            }
+            suppress Context(const Context&);
+            suppress void operator=(const Context&);
+            public default ~Context();
+            public double value;
+            public double fromf;
+            public double fromtf;
+            public double fromdf;
+        }
+        private typedef SharedPtr<Context> ContextPtr;
+        private Stack<ContextPtr> contextStack;
+        private ContextPtr context;
+    }
+    private class factorRule: Soul.Parsing.Rule
+    {
+        public factorRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+            base(name_, enclosingScope_, definition_), contextStack(), context()
+        {
+            SetValueTypeName("double");
+        }
+        suppress factorRule(const factorRule&);
+        suppress void operator=(const factorRule&);
+        public override void Enter(ObjectStack& stack)
+        {
+            contextStack.Push(context);
+            context = ContextPtr(new Context());
+        }
+        public override void Leave(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                stack.Push(ObjectPtr(new ValueObject<double>(context->value)));
+            }
+            context = contextStack.Pop();
+        }
+        public override void Link()
+        {
+            ActionParserPtr a0ActionParser = GetAction("A0");
+            a0ActionParser->SetAction(ParsingAction(A0Action));
+            ActionParserPtr a1ActionParser = GetAction("A1");
+            a1ActionParser->SetAction(ParsingAction(A1Action));
+            NonterminalParserPtr mpNonterminalParser = GetNonterminal("mp");
+            mpNonterminalParser->SetPostCall(PostCall(Postmp));
+            NonterminalParserPtr pNonterminalParser = GetNonterminal("p");
+            pNonterminalParser->SetPostCall(PostCall(Postp));
+        }
+        public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = -context->frommp;
+        }
+        public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->fromp;
+        }
+        public throw void Postmp(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->frommp = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        public throw void Postp(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->fromp = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        private class Context
+        {
+            public Context(): value(), frommp(), fromp()
+            {
+            }
+            suppress Context(const Context&);
+            suppress void operator=(const Context&);
+            public default ~Context();
+            public double value;
+            public double frommp;
+            public double fromp;
+        }
+        private typedef SharedPtr<Context> ContextPtr;
+        private Stack<ContextPtr> contextStack;
+        private ContextPtr context;
+    }
+    private class primaryRule: Soul.Parsing.Rule
+    {
+        public primaryRule(const string& name_, ScopePtr enclosingScope_, ParserPtr definition_):
+            base(name_, enclosingScope_, definition_), contextStack(), context()
+        {
+            SetValueTypeName("double");
+        }
+        suppress primaryRule(const primaryRule&);
+        suppress void operator=(const primaryRule&);
+        public override void Enter(ObjectStack& stack)
+        {
+            contextStack.Push(context);
+            context = ContextPtr(new Context());
+        }
+        public override void Leave(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                stack.Push(ObjectPtr(new ValueObject<double>(context->value)));
+            }
+            context = contextStack.Pop();
+        }
+        public override void Link()
+        {
+            ActionParserPtr a0ActionParser = GetAction("A0");
+            a0ActionParser->SetAction(ParsingAction(A0Action));
+            ActionParserPtr a1ActionParser = GetAction("A1");
+            a1ActionParser->SetAction(ParsingAction(A1Action));
+            NonterminalParserPtr eNonterminalParser = GetNonterminal("e");
+            eNonterminalParser->SetPostCall(PostCall(Poste));
+            NonterminalParserPtr nNonterminalParser = GetNonterminal("n");
+            nNonterminalParser->SetPostCall(PostCall(Postn));
+        }
+        public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->frome;
+        }
+        public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        {
+            context->value = context->fromn;
+        }
+        public throw void Poste(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->frome = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        public throw void Postn(ObjectStack& stack, bool matched)
+        {
+            if (matched)
+            {
+                context->fromn = *PtrCast<ValueObject<double>>(stack.Pop());
+            }
+        }
+        private class Context
+        {
+            public Context(): value(), frome(), fromn()
+            {
+            }
+            suppress Context(const Context&);
+            suppress void operator=(const Context&);
+            public default ~Context();
+            public double value;
+            public double frome;
+            public double fromn;
+        }
+        private typedef SharedPtr<Context> ContextPtr;
+        private Stack<ContextPtr> contextStack;
+        private ContextPtr context;
+    }
+    public override void GetReferencedGrammars()
+    {
+        ParsingDomainPtr parsingDomain = GetParsingDomain();
+        GrammarPtr grammar0 = parsingDomain->GetGrammar("Soul.Parsing.stdlib");
+        if (grammar0 == null)
+        {
+            grammar0 = Soul.Parsing.stdlib.Create(parsingDomain);
+        }
+        AddGrammarReference(grammar0);
+    }
+    public override void CreateRules()
+    {
+        AddRuleLink(new RuleLink("number", this, "Soul.Parsing.stdlib.number"));
+        AddRuleLink(new RuleLink("spaces", this, "Soul.Parsing.stdlib.spaces"));
+        AddRule(new exprRule("expr", GetScope(),
+            new SequenceParser(
+                new ActionParser("A0",
+                    new NonterminalParser("t", "term", 0)),
+                new KleeneStarParser(
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new CharParser('+'),
+                            new ActionParser("A1",
+                                new NonterminalParser("pt", "term", 0))),
+                        new SequenceParser(
+                            new CharParser('-'),
+                            new ActionParser("A2",
+                                new NonterminalParser("mt", "term", 0))))))));
+        AddRule(new termRule("term", GetScope(),
+            new SequenceParser(
+                new ActionParser("A0",
+                    new NonterminalParser("f", "factor", 0)),
+                new KleeneStarParser(
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new CharParser('*'),
+                            new ActionParser("A1",
+                                new NonterminalParser("tf", "factor", 0))),
+                        new SequenceParser(
+                            new CharParser('/'),
+                            new ActionParser("A2",
+                                new NonterminalParser("df", "factor", 0))))))));
+        AddRule(new factorRule("factor", GetScope(),
+            new AlternativeParser(
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new CharParser('-'),
+                        new NonterminalParser("mp", "primary", 0))),
+                new ActionParser("A1",
+                    new NonterminalParser("p", "primary", 0)))));
+        AddRule(new primaryRule("primary", GetScope(),
+            new AlternativeParser(
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('('),
+                        new ActionParser("A0",
+                            new NonterminalParser("e", "expr", 0))),
+                    new CharParser(')')),
+                new ActionParser("A1",
+                    new NonterminalParser("n", "number", 0)))));
+        SetSkipRuleName("spaces");
+    }
+}

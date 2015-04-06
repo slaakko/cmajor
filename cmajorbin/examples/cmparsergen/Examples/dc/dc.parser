@@ -1,0 +1,28 @@
+/*******************
+ * Desk Calculator *
+ *******************/
+
+grammar DcGrammar
+{
+    using stdlib.number;
+    using stdlib.spaces;
+    skip spaces;
+
+    expr: double
+        ::= term:t{ value = t; } ('+' term:pt{ value = value + pt; } | '-' term:mt{ value = value - mt; })*
+        ;
+
+    term: double
+        ::= factor:f{ value = f; } ('*' factor:tf{ value = value * tf; } | '/' factor:df{ value = value / df; })*
+        ;
+
+    factor: double
+        ::= ('-' primary:mp){ value = -mp; }
+        |   primary:p{ value = p; }
+        ;
+
+    primary: double
+        ::= '(' expr:e{ value = e; } ')'
+        |   number:n{ value = n; }
+        ;
+}

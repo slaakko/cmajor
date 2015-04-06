@@ -1,0 +1,38 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using Cm;
+
+namespace Syntax
+{
+    grammar RuleGrammar
+    {
+        using ElementGrammar.Identifier;
+        using ElementGrammar.Signature;
+        using CompositeGrammar.Alternative;
+
+        Rule(Scope* enclosingScope, ParsingContext* ctx): Rule*
+                    ::= RuleHeader(enclosingScope, ctx){ value = RuleHeader; } "::=" RuleBody(value, ctx)
+                    ;
+
+        RuleHeader(Scope* enclosingScope, ParsingContext* ctx): Rule*
+                    ::= Identifier:name{value = new Rule(name, enclosingScope); value->SetPosition(position); } Signature(value, ctx)
+                    ;
+
+        RuleBody(Rule* rule, ParsingContext* ctx)
+                    ::= (Alternative(rule->GetScope(), ctx):definition! ';'!){ rule->SetDefinition(definition); }
+                    ;
+    }
+}

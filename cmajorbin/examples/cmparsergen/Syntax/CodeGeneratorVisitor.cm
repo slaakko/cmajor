@@ -1,0 +1,647 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.Text;
+using System.Text.Parsing;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Syntax
+{
+    internal class KeywordListCreator: System.Text.Parsing.Visitor
+    {
+        public KeywordListCreator(CodeFormatter& formatter_): formatter(formatter_), keywordListNumber(0)
+        {
+        }
+        public override void Visit(KeywordListParser& parser)
+        {
+            string keywordListName = "keywords" + ToString(keywordListNumber++);
+            keywordListNames.Add(keywordListName);
+            for (const string& keyword : parser.Keywords())
+            {
+                string keywordStr = MakeStringLiteral(keyword);
+                formatter.WriteLine(keywordListName + ".Add(" + keywordStr + ");");
+            }
+            parser.SetKeywordListName(keywordListName);
+        }
+        public nothrow const List<string>& KeywordListNames() const
+        {
+            return keywordListNames;
+        }
+        private CodeFormatter& formatter;
+        private int keywordListNumber;
+        private List<string> keywordListNames;
+    }
+    
+    internal class CodeGeneratorVisitor: System.Text.Parsing.Visitor
+    {
+        public CodeGeneratorVisitor(CodeFormatter& formatter_): formatter(formatter_)
+        {
+        }
+        public override void BeginVisit(Grammar& grammar)
+        {
+            string grammarPtrType = grammar.Name() + "*";
+            formatter.WriteLine("public class " + grammar.Name() + ": System.Text.Parsing.Grammar");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            string valueTypeName;
+            string parameters;
+            Rule* start = grammar.Start();
+            if (start != null)
+            {
+                if (!start->ValueTypeName().IsEmpty())
+                {
+                    valueTypeName = grammar.Start()->ValueTypeName();
+                }
+                else
+                {
+                    valueTypeName = "void";
+                }
+                if (start->TakesOrReturnsValuesOrHasLocals())
+                {
+                    for (const AttrOrVariable& attr : grammar.Start()->InheritedAttributes())
+                    {
+                        parameters.Append(", " + attr.TypeName() + " " + attr.Name());
+                    }
+                }
+            }
+            formatter.WriteLine("public static " + grammarPtrType + " Create()");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            formatter.WriteLine("return Create(new ParsingDomain());");
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            formatter.WriteLine("public static " + grammarPtrType + " Create(ParsingDomain* parsingDomain)");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            formatter.WriteLine("RegisterParsingDomain(parsingDomain);");
+            formatter.WriteLine(grammarPtrType + " grammar(new " + grammar.Name() + "(parsingDomain));");
+            formatter.WriteLine("parsingDomain->AddGrammar(grammar);");
+            formatter.WriteLine("grammar->CreateRules();");
+            formatter.WriteLine("grammar->Link();");
+            formatter.WriteLine("return grammar;");
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            string grammarNamespaceName = grammar.Ns()->FullName();
+            formatter.WriteLine("private " + grammar.Name() + "(ParsingDomain* parsingDomain): base(\"" + grammar.Name() +
+                "\", parsingDomain->GetNamespaceScope(\"" + grammarNamespaceName + "\"), parsingDomain)");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            formatter.WriteLine("SetOwner(0);");
+            KeywordListCreator creator(formatter);
+            for (Rule* rule : grammar.GetRules())
+            {
+                rule->Accept(creator);
+            }
+            keywordListNames = creator.KeywordListNames();
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            if (start != null)
+            {
+                if (start->TakesOrReturnsValuesOrHasLocals())
+                {
+                    formatter.WriteLine("public " + valueTypeName + " Parse(const string& content, int fileIndex, const string& fileName" + parameters + ")");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    formatter.WriteLine("Scanner scanner(content, fileIndex, fileName, Skip());");
+                    formatter.WriteLine("System.IO.OutputStream* log = Log();");
+                    formatter.WriteLine("UniquePtr<XmlLog> xmlLog;");
+                    formatter.WriteLine("if (log != null)");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    formatter.WriteLine("xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));");
+                    formatter.WriteLine("scanner.SetLog(xmlLog.GetPtr());");
+                    formatter.WriteLine("xmlLog->WriteBeginRule(\"parse\");");
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    formatter.WriteLine("Stack<UniquePtr<Object>> stack;");
+                    
+                    for (const AttrOrVariable& attr : grammar.Start()->InheritedAttributes())
+                    {
+                        formatter.WriteLine("stack.Push(UniquePtr<Object>(new ValueObject<" + attr.TypeName() + ">(" + attr.Name() + ")));");
+                    }
+                    
+                    formatter.WriteLine("Match match = Parse(scanner, stack);");
+                    formatter.WriteLine("Position stop = scanner.GetPosition();");
+                    formatter.WriteLine("if (log != null)");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    formatter.WriteLine("xmlLog->WriteEndRule(\"parse\");");
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    formatter.WriteLine("if (!match.Hit() || stop.Index() != content.Length())");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    formatter.WriteLine("Rule* start = Start();");
+                    formatter.WriteLine("if (start != null)");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    formatter.WriteLine("throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);");
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    formatter.WriteLine("else");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    formatter.WriteLine("throw ParsingException(\"grammar '\" + Name() + \"' has no start rule\", content, scanner.GetPosition(), fileName);");
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    if (valueTypeName != "void")
+                    {
+                        formatter.WriteLine("UniquePtr<Object> value = stack.Pop();");
+                        formatter.WriteLine(valueTypeName + " result = *cast<ValueObject<" + valueTypeName + ">*>(value.GetPtr());");
+                        formatter.WriteLine("return result;");                        
+                    }
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                }
+            }
+            for (Rule* rule : grammar.GetRules())
+            {
+                if (rule->IsSpecialized())
+                {
+                    formatter.WriteLine("private class " + rule->SpecializedTypeName() + ": System.Text.Parsing.Rule");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    // constructor:
+                    formatter.WriteLine("public " + rule->SpecializedTypeName() + "(const string& name_, Scope* enclosingScope_, Parser* definition_):");
+                    formatter.IncIndent();
+                    formatter.WriteLine("base(name_, enclosingScope_, definition_), contextStack(), context()");
+                    formatter.DecIndent();
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    for (const AttrOrVariable& attr : rule->InheritedAttributes())
+                    {
+                        formatter.WriteLine("AddInheritedAttribute(AttrOrVariable(\"" + attr.TypeName() + "\", \"" + attr.Name() + "\"));");
+                    }
+                    if (!rule->ValueTypeName().IsEmpty())
+                    {
+                        formatter.WriteLine("SetValueTypeName(\"" + rule->ValueTypeName() + "\");");
+                    }
+                    for (const AttrOrVariable& var : rule->LocalVariables())
+                    {
+                        formatter.WriteLine("AddLocalVariable(AttrOrVariable(\"" + var.TypeName() + "\", \"" + var.Name() + "\"));");
+                    }
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    // enter:
+                    formatter.WriteLine("public override void Enter(Stack<UniquePtr<Object>>& stack)");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    formatter.WriteLine("contextStack.Push(Rvalue(context));");
+                    formatter.WriteLine("context = Context();");
+                    int n = rule->InheritedAttributes().Count();
+                    for (int i = n - 1; i >= 0; --i)
+                    {
+                        const AttrOrVariable& attr = rule->InheritedAttributes()[i];
+                        formatter.WriteLine("UniquePtr<Object> " + attr.Name() + "_value = stack.Pop();");
+                        formatter.WriteLine("context." + attr.Name() + " = *cast<ValueObject<" + attr.TypeName() + ">*>(" + attr.Name() + "_value.GetPtr());");
+                    }
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    // leave:
+                    formatter.WriteLine("public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    if (!rule->ValueTypeName().IsEmpty())
+                    {
+                        formatter.WriteLine("if (matched)");
+                        formatter.WriteLine("{");
+                        formatter.IncIndent();
+                        formatter.WriteLine("stack.Push(UniquePtr<Object>(new ValueObject<" + rule->ValueTypeName() + ">(context.value)));");
+                        formatter.DecIndent();
+                        formatter.WriteLine("}");
+                    }
+                    formatter.WriteLine("context = contextStack.Pop();");
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    // link:
+                    formatter.WriteLine("public override void Link()");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    for (ActionParser* action : rule->Actions())
+                    {
+                        formatter.WriteLine("ActionParser* " + action->VariableName() + " = GetAction(\"" + action->Name() + "\");");
+                        formatter.WriteLine(action->VariableName() + "->SetAction(ParsingAction(" + action->MethodName() + "));");
+                        CompoundStatement* failureCode = action->FailureCode();
+                        if (failureCode != null)
+                        {
+                            formatter.WriteLine(action->VariableName() + "->SetFailureAction(FailureAction(" + action->MethodName() + "Fail));");
+                        }
+                    }
+                    for (NonterminalParser* nonterminal : rule->Nonterminals())
+                    {
+                        if (nonterminal->IsSpecialized())
+                        {
+                            formatter.WriteLine("NonterminalParser* " + nonterminal->VariableName() + " = GetNonterminal(\""  + nonterminal->Name() + "\");");
+                            if (!nonterminal->Arguments().IsEmpty())
+                            {
+                                formatter.WriteLine(nonterminal->VariableName() + "->SetPreCall(PreCall(" + nonterminal->PreCallMethodName() + "));");
+                            }
+                            if (!nonterminal->GetRule()->ValueTypeName().IsEmpty())
+                            {
+                                formatter.WriteLine(nonterminal->VariableName() + "->SetPostCall(PostCall(" + nonterminal->PostCallMethodName() + "));");
+                            }
+                        }
+                    }
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    // action methods:
+                    for (ActionParser* action : rule->Actions())
+                    {
+                        formatter.WriteLine("public throw void " + action->MethodName() + 
+                            "(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)");
+                        action->SuccessCode()->Print(formatter);
+                        CompoundStatement* failureCode = action->FailureCode();
+                        if (failureCode != null)
+                        {
+                            formatter.WriteLine("public throw void " + action->MethodName() + "Fail()");
+                            failureCode->Print(formatter);
+                        }
+                    }
+                    // pre & post calls:
+                    for (NonterminalParser* nonterminal : rule->Nonterminals())
+                    {
+                        if (nonterminal->IsSpecialized())
+                        {
+                            if (!nonterminal->Arguments().IsEmpty())
+                            {
+                                formatter.WriteLine("public throw void " + nonterminal->PreCallMethodName() + "(Stack<UniquePtr<Object>>& stack)");
+                                formatter.WriteLine("{");
+                                formatter.IncIndent();
+                                int n = nonterminal->Arguments().Count();
+                                for (int i = 0; i < n; ++i)
+                                {
+                                    CmObject* argument = nonterminal->Arguments()[i];
+                                    string argumentTypeName = nonterminal->GetRule()->InheritedAttributes()[i].TypeName();
+                                    formatter.Write("stack.Push(UniquePtr<Object>(new ValueObject<" + argumentTypeName + ">(");
+                                    argument->Print(formatter);
+                                    formatter.WriteLine(")));");
+                                }                            
+                                formatter.DecIndent();
+                                formatter.WriteLine("}");
+                            }
+                            if (!nonterminal->GetRule()->ValueTypeName().IsEmpty())
+                            {
+                                formatter.WriteLine("public throw void " + nonterminal->PostCallMethodName() + "(Stack<UniquePtr<Object>>& stack, bool matched)");
+                                formatter.WriteLine("{");
+                                formatter.IncIndent();
+                                formatter.WriteLine("if (matched)");
+                                formatter.WriteLine("{");
+                                formatter.IncIndent();
+                                formatter.WriteLine("UniquePtr<Object> " + nonterminal->ValueFieldName() + "_value = stack.Pop();");
+                                formatter.WriteLine("context." + nonterminal->ValueFieldName() + " = *cast<ValueObject<" + 
+                                    nonterminal->GetRule()->ValueTypeName() + ">*>(" + nonterminal->ValueFieldName() + "_value.GetPtr());");
+                                formatter.DecIndent();
+                                formatter.WriteLine("}");
+                                formatter.DecIndent();
+                                formatter.WriteLine("}");
+                            }
+                        }
+                    }
+                    // Context:
+                    formatter.WriteLine("private class Context");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    for (const AttrOrVariable& attr : rule->InheritedAttributes())
+                    {
+                        formatter.WriteLine("public " + attr.TypeName() + " " + attr.Name() + ";");
+                    }
+                    if (!rule->ValueTypeName().IsEmpty())
+                    {
+                        formatter.WriteLine("public " + rule->ValueTypeName() + " value;");
+                    }
+                    for (const AttrOrVariable& var : rule->LocalVariables())
+                    {
+                        formatter.WriteLine("public " + var.TypeName() + " " + var.Name() + ";");
+                    }
+                    for (NonterminalParser* nonterminal : rule->Nonterminals())
+                    {
+                        if (!nonterminal->GetRule()->ValueTypeName().IsEmpty())
+                        {
+                            formatter.WriteLine("public " + nonterminal->GetRule()->ValueTypeName() + " " + nonterminal->ValueFieldName() + ";");
+                        }                        
+                    }
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    formatter.WriteLine("private Stack<Context> contextStack;");
+                    formatter.WriteLine("private Context context;");
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                }
+            }
+            formatter.WriteLine("public override void GetReferencedGrammars()");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            if (!grammar.GrammarReferences().IsEmpty())
+            {
+                formatter.WriteLine("ParsingDomain* parsingDomain = GetParsingDomain();");
+                int grammarIndex = 0;
+                for (Grammar* grammarReference : grammar.GrammarReferences())
+                {
+                    string grammarReferenceName = grammarReference->FullName();
+                    string grammarVar = "grammar" + ToString(grammarIndex++);
+                    formatter.WriteLine("Grammar* " + grammarVar + " = parsingDomain->GetGrammar(\"" + grammarReferenceName + "\");");
+                    formatter.WriteLine("if (" + grammarVar + " == null)");
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                    formatter.WriteLine(grammarVar + " = " + grammarReferenceName + ".Create(parsingDomain);");
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                    formatter.WriteLine("AddGrammarReference(" + grammarVar + ");");
+                }
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            formatter.WriteLine("public override void CreateRules()");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+        }    
+        public override void EndVisit(Grammar& grammar)
+        {
+            if (!grammar.StartRuleName().IsEmpty())
+            {
+                formatter.WriteLine("SetStartRuleName(\"" + grammar.StartRuleName() + "\");");
+            }
+            if (!grammar.SkipRuleName().IsEmpty())
+            {
+                formatter.WriteLine("SetSkipRuleName(\"" + grammar.SkipRuleName() + "\");");
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            if (!keywordListNames.IsEmpty())
+            {
+                for (const string& keywordListName : keywordListNames)
+                {
+                    formatter.WriteLine("private List<string> " + keywordListName + ";");
+                }
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void Visit(CharParser& parser)
+        {
+            formatter.Write("new CharParser(");
+            formatter.Write(MakeCharLiteral(parser.GetChar()));
+            formatter.Write(")");
+        }
+        public override void Visit(StringParser& parser)
+        {
+            formatter.Write("new StringParser(" + MakeStringLiteral(parser.GetString()) + ")");
+        }
+        public override void Visit(CharSetParser& parser)
+        {
+            formatter.Write("new CharSetParser(" + MakeStringLiteral(parser.GetSet()) + "");
+            if (parser.Inverse())
+            {
+                formatter.Write(", true)");
+            }
+            else
+            {
+                formatter.Write(")");
+            }
+        }
+        public override void Visit(KeywordParser& parser)
+        {
+            if (parser.ContinuationRuleName().IsEmpty())
+            {
+                formatter.Write("new KeywordParser(" + MakeStringLiteral(parser.Keyword()) + ")");
+            }
+            else
+            {
+                formatter.Write("new KeywordParser(" + MakeStringLiteral(parser.Keyword()) + ", \"" + parser.ContinuationRuleName() + "\")");
+            }
+        }
+        public override void Visit(KeywordListParser& parser)
+        {
+            formatter.Write("new KeywordListParser(" + MakeStringLiteral(parser.SelectorRuleName()) + ", " + parser.KeywordListName() + ")");
+        }
+        public override void Visit(EmptyParser& parser)
+        {
+            formatter.Write("new EmptyParser()");
+        }
+        public override void Visit(SpaceParser& parser)
+        {
+            formatter.Write("new SpaceParser()");
+        }
+        public override void Visit(LetterParser& parser)
+        {
+            formatter.Write("new LetterParser()");
+        }
+        public override void Visit(DigitParser& parser)
+        {
+            formatter.Write("new DigitParser()");
+        }
+        public override void Visit(HexDigitParser& parser)
+        {
+            formatter.Write("new HexDigitParser()");
+        }
+        public override void Visit(PunctuationParser& parser)
+        {
+            formatter.Write("new PunctuationParser()");
+        }
+        public override void Visit(AnyCharParser& parser)
+        {
+            formatter.Write("new AnyCharParser()");
+        }
+        public override void Visit(NonterminalParser& parser)
+        {
+            formatter.Write("new NonterminalParser(\"" + parser.Name() + "\", \"" + parser.RuleName()  + "\", " + ToString(parser.NumberOfArguments()) + ")");
+        }
+        public override void Visit(RuleLink& link)
+        {
+            formatter.WriteLine("AddRuleLink(new RuleLink(\"" + link.Name() + "\", this, \""  + link.LinkedRuleName() + "\"));");
+        }
+        public override void BeginVisit(Rule& parser)
+        {
+            if (parser.IsSpecialized())
+            {
+                formatter.Write("AddRule(new " + parser.SpecializedTypeName() + "(\""  + parser.Name() + "\", GetScope(),");
+            }
+            else
+            {
+                formatter.Write("AddRule(new Rule(\"" + parser.Name() + "\", GetScope(),");
+            }
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void EndVisit(Rule& parser)
+        {
+            formatter.Write("));");
+            formatter.DecIndent();
+            formatter.WriteLine();
+        }
+        public override void BeginVisit(OptionalParser& parser)
+        {
+            formatter.Write("new OptionalParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void EndVisit(OptionalParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(PositiveParser& parser)
+        {
+            formatter.Write("new PositiveParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void EndVisit(PositiveParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(KleeneStarParser& parser)
+        {
+            formatter.Write("new KleeneStarParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void EndVisit(KleeneStarParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(ActionParser& parser)
+        {
+            formatter.Write("new ActionParser(\"" + parser.Name() + "\",");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void EndVisit(ActionParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(ExpectationParser& parser)
+        {
+            formatter.Write("new ExpectationParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void EndVisit(ExpectationParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(TokenParser& parser)
+        {
+            formatter.Write("new TokenParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void EndVisit(TokenParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(SequenceParser& parser)
+        {
+            formatter.Write("new SequenceParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void Visit(SequenceParser& parser)
+        {
+            formatter.WriteLine(",");
+        }
+        public override void EndVisit(SequenceParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(AlternativeParser& parser)
+        {
+            formatter.Write("new AlternativeParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void Visit(AlternativeParser& parser)
+        {
+            formatter.WriteLine(",");
+        }
+        public override void EndVisit(AlternativeParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(DifferenceParser& parser)
+        {
+            formatter.Write("new DifferenceParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void Visit(DifferenceParser& parser)
+        {
+            formatter.WriteLine(",");
+        }
+        public override void EndVisit(DifferenceParser& parser)
+        {
+            formatter.WriteLine(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(IntersectionParser& parser)
+        {
+            formatter.Write("new IntersectionParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void Visit(IntersectionParser& parser)
+        {
+            formatter.WriteLine(",");
+        }
+        public override void EndVisit(IntersectionParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(ExclusiveOrParser& parser)
+        {
+            formatter.Write("new ExclusiveOrParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void Visit(ExclusiveOrParser& parser)
+        {
+            formatter.WriteLine(",");
+        }
+        public override void EndVisit(ExclusiveOrParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        public override void BeginVisit(ListParser& parser)
+        {
+            formatter.Write("new ListParser(");
+            formatter.IncIndent();
+            formatter.WriteLine();
+        }
+        public override void Visit(ListParser& parser)
+        {
+            formatter.WriteLine(",");
+        }
+        public override void EndVisit(ListParser& parser)
+        {
+            formatter.Write(")");
+            formatter.DecIndent();
+        }
+        private CodeFormatter& formatter;
+        private List<string> keywordListNames;
+    }
+}

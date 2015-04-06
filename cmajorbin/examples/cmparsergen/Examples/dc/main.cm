@@ -1,0 +1,31 @@
+using System;
+
+void main()
+{
+    try
+    {
+        DcGrammarPtr grammar = DcGrammar.Create();
+        while (true)
+        {
+            Console.Out() << "> ";
+            string line  = Console.ReadLine();
+            if (line == "exit")
+            {
+                break;
+            }
+            try
+            {
+                double value = grammar->Parse(line, 0, "");
+                Console.Out() << "= " << value << endl();
+            }
+            catch (const Exception& ex)
+            {
+                Console.Error() << ex.Message() << endl();
+            }
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+    }
+}

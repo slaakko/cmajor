@@ -25,6 +25,10 @@ namespace Cm { namespace Bind {
 void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes)
 {
+    if (templateTypeSymbol->Name() == "List<UsingObject*>")
+    {
+        int x = 0;
+    }
     std::vector<Cm::Sym::FileScope*> clonedFileScopes;
     for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
     {

@@ -1,0 +1,115 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace Cm
+{
+    public typedef KeywordGrammar* KeywordGrammarPtr;
+
+    public class KeywordGrammar: System.Text.Parsing.Grammar
+    {
+        public static KeywordGrammarPtr Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static KeywordGrammarPtr Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            KeywordGrammarPtr grammar(new KeywordGrammar(parsingDomain));
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private KeywordGrammar(ParsingDomain* parsingDomain): base("KeywordGrammar", parsingDomain->GetNamespaceScope("Cm"), parsingDomain)
+        {
+            SetOwner(0);
+            keywords0.Add("abstract");
+            keywords0.Add("and");
+            keywords0.Add("axiom");
+            keywords0.Add("base");
+            keywords0.Add("bool");
+            keywords0.Add("break");
+            keywords0.Add("byte");
+            keywords0.Add("case");
+            keywords0.Add("cast");
+            keywords0.Add("catch");
+            keywords0.Add("cdecl");
+            keywords0.Add("char");
+            keywords0.Add("class");
+            keywords0.Add("concept");
+            keywords0.Add("const");
+            keywords0.Add("construct");
+            keywords0.Add("continue");
+            keywords0.Add("default");
+            keywords0.Add("delegate");
+            keywords0.Add("delete");
+            keywords0.Add("destroy");
+            keywords0.Add("do");
+            keywords0.Add("double");
+            keywords0.Add("else");
+            keywords0.Add("enum");
+            keywords0.Add("explicit");
+            keywords0.Add("extern");
+            keywords0.Add("false");
+            keywords0.Add("float");
+            keywords0.Add("for");
+            keywords0.Add("goto");
+            keywords0.Add("if");
+            keywords0.Add("inline");
+            keywords0.Add("int");
+            keywords0.Add("internal");
+            keywords0.Add("is");
+            keywords0.Add("long");
+            keywords0.Add("namespace");
+            keywords0.Add("new");
+            keywords0.Add("not");
+            keywords0.Add("nothrow");
+            keywords0.Add("null");
+            keywords0.Add("operator");
+            keywords0.Add("or");
+            keywords0.Add("override");
+            keywords0.Add("private");
+            keywords0.Add("protected");
+            keywords0.Add("public");
+            keywords0.Add("return");
+            keywords0.Add("sbyte");
+            keywords0.Add("short");
+            keywords0.Add("sizeof");
+            keywords0.Add("static");
+            keywords0.Add("suppress");
+            keywords0.Add("switch");
+            keywords0.Add("this");
+            keywords0.Add("throw");
+            keywords0.Add("true");
+            keywords0.Add("try");
+            keywords0.Add("typedef");
+            keywords0.Add("typename");
+            keywords0.Add("uint");
+            keywords0.Add("ulong");
+            keywords0.Add("ushort");
+            keywords0.Add("using");
+            keywords0.Add("virtual");
+            keywords0.Add("void");
+            keywords0.Add("where");
+            keywords0.Add("while");
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRule(new Rule("Keyword", GetScope(),
+                new KeywordListParser("identifier", keywords0)));
+        }
+        private List<string> keywords0;
+    }
+}

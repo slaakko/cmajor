@@ -1,0 +1,3 @@
+sources:
+	cmparsergen Cm.pp
+
