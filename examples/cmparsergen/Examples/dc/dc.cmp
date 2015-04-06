@@ -1,0 +1,11 @@
+project dc;
+target=program;
+assembly <dc.cma>;
+reference <../../Soul.CmObjectModel/Soul.CmObjectModel.cml>;
+reference <../../Soul.Parsing/Soul.Parsing.cml>;
+reference <../../Soul.StdLib/Soul.StdLib.cml>;
+source <dc.cm>;
+text <dc.sll>;
+text <dc.slp>;
+text <dc.soul>;
+source <main.cm>;

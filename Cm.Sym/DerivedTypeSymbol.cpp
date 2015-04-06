@@ -181,6 +181,21 @@ std::string DerivedTypeSymbol::GetMangleId() const
     return MakeMangleId(derivations) + baseType->GetMangleId();
 }
 
+std::string DerivedTypeSymbol::FullName() const
+{
+    return Cm::Ast::MakeDerivedTypeName(derivations, baseType->FullName());
+}
+
+Symbol* DerivedTypeSymbol::Parent() const 
+{
+    Symbol* parent = TypeSymbol::Parent();
+    if (!parent)
+    {
+        parent = baseType->Parent();
+    }
+    return parent;
+}
+
 void DerivedTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);

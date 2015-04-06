@@ -36,7 +36,9 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::derivedTypeSymbol; }
     std::string TypeString() const override { return "derived type"; };
     std::string GetMangleId() const override;
+    std::string FullName() const override;
     const Cm::Ast::DerivationList& Derivations() const override { return derivations; }
+    Symbol* Parent() const override;
     bool IsDerivedTypeSymbol() const override { return true; }
     TypeSymbol* GetBaseType() const override { return baseType; }
     bool IsPointerType() const override { return HasPointertDerivation(derivations); }

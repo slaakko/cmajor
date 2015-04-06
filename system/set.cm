@@ -31,11 +31,6 @@ namespace System.Collections
         public Set(): tree()
         {
         }
-        public default Set(const Self& that) where T is Copyable;
-        public default void operator=(const Self& that) where T is Copyable;
-        public default nothrow Set(Self&& that) where T is Movable;
-        public default nothrow void operator=(Self&& that) where T is Movable;
-        public default nothrow ~Set();
         public nothrow inline Iterator Begin() 
         {
             return tree.Begin();

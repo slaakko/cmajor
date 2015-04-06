@@ -1,0 +1,484 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Cm
+{
+    public typedef LiteralGrammar* LiteralGrammarPtr;
+
+    public class LiteralGrammar: System.Text.Parsing.Grammar
+    {
+        public static LiteralGrammarPtr Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static LiteralGrammarPtr Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            LiteralGrammarPtr grammar(new LiteralGrammar(parsingDomain));
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private LiteralGrammar(ParsingDomain* parsingDomain): base("LiteralGrammar", parsingDomain->GetNamespaceScope("Cm"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public LiteralPtr Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            LiteralPtr result = *cast<ValueObject<LiteralPtr>*>(value.GetPtr());
+            return result;
+        }
+        private class LiteralRule: System.Text.Parsing.Rule
+        {
+            public LiteralRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Literal*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<LiteralPtr>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+                ActionParser* a5ActionParser = GetAction("A5");
+                a5ActionParser->SetAction(ParsingAction(A5Action));
+                ActionParser* a6ActionParser = GetAction("A6");
+                a6ActionParser->SetAction(ParsingAction(A6Action));
+                NonterminalParser* bNonterminalParser = GetNonterminal("b");
+                bNonterminalParser->SetPostCall(PostCall(Postb));
+                NonterminalParser* fNonterminalParser = GetNonterminal("f");
+                fNonterminalParser->SetPostCall(PostCall(Postf));
+                NonterminalParser* hNonterminalParser = GetNonterminal("h");
+                hNonterminalParser->SetPostCall(PostCall(Posth));
+                NonterminalParser* iNonterminalParser = GetNonterminal("i");
+                iNonterminalParser->SetPostCall(PostCall(Posti));
+                NonterminalParser* cNonterminalParser = GetNonterminal("c");
+                cNonterminalParser->SetPostCall(PostCall(Postc));
+                NonterminalParser* sNonterminalParser = GetNonterminal("s");
+                sNonterminalParser->SetPostCall(PostCall(Posts));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new BooleanLiteral(context.fromb);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new FloatingLiteral(context.fromf.first, context.fromf.second);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new HexLiteral(context.fromh.first, context.fromh.second);
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new IntLiteral(context.fromi.first, context.fromi.second);
+            }
+            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new CharacterLiteral(context.fromc);
+            }
+            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new StringLiteral(context.froms);
+            }
+            public throw void A6Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new NullLiteral();
+            }
+            public throw void Postb(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromb_value = stack.Pop();
+                    context.fromb = *cast<ValueObject<bool>*>(fromb_value.GetPtr());
+                }
+            }
+            public throw void Postf(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromf_value = stack.Pop();
+                    context.fromf = *cast<ValueObject<Pair<double, char>>*>(fromf_value.GetPtr());
+                }
+            }
+            public throw void Posth(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromh_value = stack.Pop();
+                    context.fromh = *cast<ValueObject<Pair<ulong, char>>*>(fromh_value.GetPtr());
+                }
+            }
+            public throw void Posti(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromi_value = stack.Pop();
+                    context.fromi = *cast<ValueObject<Pair<ulong, char>>*>(fromi_value.GetPtr());
+                }
+            }
+            public throw void Postc(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromc_value = stack.Pop();
+                    context.fromc = *cast<ValueObject<char>*>(fromc_value.GetPtr());
+                }
+            }
+            public throw void Posts(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> froms_value = stack.Pop();
+                    context.froms = *cast<ValueObject<string>*>(froms_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Literal* value;
+                public bool fromb;
+                public Pair<double, char> fromf;
+                public Pair<ulong, char> fromh;
+                public Pair<ulong, char> fromi;
+                public char fromc;
+                public string froms;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class FloatingLiteralRule: System.Text.Parsing.Rule
+        {
+            public FloatingLiteralRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Pair<double, char>");
+                AddLocalVariable(AttrOrVariable("double", "val"));
+                AddLocalVariable(AttrOrVariable("char", "floatSuffix"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Pair<double, char>>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                NonterminalParser* uNonterminalParser = GetNonterminal("u");
+                uNonterminalParser->SetPostCall(PostCall(Postu));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = MakePair(context.val, context.floatSuffix);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.val = context.fromu;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.floatSuffix = match[0];
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.floatSuffix = ' ';
+            }
+            public throw void Postu(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromu_value = stack.Pop();
+                    context.fromu = *cast<ValueObject<double>*>(fromu_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Pair<double, char> value;
+                public double val;
+                public char floatSuffix;
+                public double fromu;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class IntLiteralRule: System.Text.Parsing.Rule
+        {
+            public IntLiteralRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Pair<ulong, char>");
+                AddLocalVariable(AttrOrVariable("ulong", "val"));
+                AddLocalVariable(AttrOrVariable("char", "unsignedSuffix"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Pair<ulong, char>>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = MakePair(context.val, context.unsignedSuffix);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                int n = match.Length();
+                context.val = 0u;
+                context.unsignedSuffix = ' ';
+                for (int i = 0;
+                i < n;++i)
+                {
+                    context.val = 10u * context.val + cast<ulong>(match[i]) - cast<ulong>('0');
+                }
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.unsignedSuffix = match[0];
+            }
+            private class Context
+            {
+                public Pair<ulong, char> value;
+                public ulong val;
+                public char unsignedSuffix;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class HexLiteralRule: System.Text.Parsing.Rule
+        {
+            public HexLiteralRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Pair<ulong, char>");
+                AddLocalVariable(AttrOrVariable("ulong", "val"));
+                AddLocalVariable(AttrOrVariable("char", "unsignedSuffix"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Pair<ulong, char>>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = MakePair(context.val, context.unsignedSuffix);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.val = 0u;
+                context.unsignedSuffix = ' ';
+                int n = match.Length();
+                for (int i = 0;
+                i < n;++i)
+                {
+                    char c = match[i];
+                    ulong b = 0u;
+                    if (c >= '0' && c <= '9')
+                    {
+                        b = cast<ulong>(c) - cast<ulong>('0');
+                    }
+                    if (c >= 'a' && c <= 'f')
+                    {
+                        b = 10u + cast<ulong>(c) - cast<ulong>('a');
+                    }
+                    else
+                    {
+                        b = 10u + cast<ulong>(c) - cast<ulong>('A');
+                    }
+                    context.val = 16u * context.val + b;
+                }
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.unsignedSuffix = match[0];
+            }
+            private class Context
+            {
+                public Pair<ulong, char> value;
+                public ulong val;
+                public char unsignedSuffix;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
+            AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
+            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
+            AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
+            AddRule(new LiteralRule("Literal", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new ActionParser("A0",
+                                            new NonterminalParser("b", "bool", 0)),
+                                        new ActionParser("A1",
+                                            new NonterminalParser("f", "FloatingLiteral", 0))),
+                                    new ActionParser("A2",
+                                        new NonterminalParser("h", "HexLiteral", 0))),
+                                new ActionParser("A3",
+                                    new NonterminalParser("i", "IntLiteral", 0))),
+                            new ActionParser("A4",
+                                new NonterminalParser("c", "char", 0))),
+                        new ActionParser("A5",
+                            new NonterminalParser("s", "string", 0))),
+                    new ActionParser("A6",
+                        new NonterminalParser("n", "Null", 0)))));
+            AddRule(new FloatingLiteralRule("FloatingLiteral", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new ActionParser("A1",
+                                new NonterminalParser("u", "ureal", 0)),
+                            new AlternativeParser(
+                                new ActionParser("A2",
+                                    new AlternativeParser(
+                                        new CharParser('f'),
+                                        new CharParser('F'))),
+                                new ActionParser("A3",
+                                    new EmptyParser())))))));
+            AddRule(new IntLiteralRule("IntLiteral", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new ActionParser("A1",
+                                new PositiveParser(
+                                    new DigitParser())),
+                            new OptionalParser(
+                                new ActionParser("A2",
+                                    new AlternativeParser(
+                                        new CharParser('u'),
+                                        new CharParser('U')))))))));
+            AddRule(new HexLiteralRule("HexLiteral", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new AlternativeParser(
+                                    new StringParser("0x"),
+                                    new StringParser("0X")),
+                                new ActionParser("A1",
+                                    new PositiveParser(
+                                        new HexDigitParser()))),
+                            new OptionalParser(
+                                new ActionParser("A2",
+                                    new AlternativeParser(
+                                        new CharParser('u'),
+                                        new CharParser('U')))))))));
+            AddRule(new Rule("Null", GetScope(),
+                new KeywordParser("null")));
+        }
+    }
+}

@@ -887,6 +887,16 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 throw Cm::Core::Exception("cannot call suppressed member function", span, function->GetSpan());
             }
         }
+        for (Cm::Sym::FunctionSymbol* conversion : conversions)
+        {
+            if (conversion && conversion->IsMemberOfTemplateType())
+            {
+                if ((flags & OverloadResolutionFlags::dontInstantiate) == OverloadResolutionFlags::none)
+                {
+                    boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, conversion);
+                }
+            }
+        }
         if (function->IsFunctionTemplate())
         {
             if ((flags & OverloadResolutionFlags::dontInstantiate) != OverloadResolutionFlags::none)

@@ -487,8 +487,18 @@ void RangeForStatementBinder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForS
     std::unique_ptr<Cm::BoundTree::BoundExpression> container(Pop());
     Cm::Sym::TypeSymbol* containerType = container->GetType();
     Cm::Sym::TypeSymbol* plainContainerType = SymbolTable().GetTypeRepository().MakePlainType(containerType);
-    Cm::Ast::IdentifierNode* beginNode(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "Begin"));
-    Cm::Ast::IdentifierNode* endNode(new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "End"));
+    Cm::Ast::IdentifierNode* beginNode = nullptr;
+    Cm::Ast::IdentifierNode* endNode = nullptr;
+    if (containerType->IsConstType())
+    {
+        beginNode = new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "CBegin");
+        endNode = new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "CEnd");
+    }
+    else
+    {
+        beginNode = new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "Begin");
+        endNode = new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "End");
+    }
     Cm::Ast::CloneContext cloneContext;
     Cm::Ast::DotNode* containerBeginNode(new Cm::Ast::DotNode(rangeForStatementNode.GetSpan(), rangeForStatementNode.Container()->Clone(cloneContext), beginNode));
     Cm::Ast::InvokeNode* invokeContainerBeginNode(new Cm::Ast::InvokeNode(rangeForStatementNode.GetSpan(), containerBeginNode));
@@ -511,6 +521,7 @@ void RangeForStatementBinder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForS
     Cm::Ast::NotEqualNode* iteratorNotEqualToEnd(new Cm::Ast::NotEqualNode(rangeForStatementNode.GetSpan(), iteratorId->Clone(cloneContext), invokeContainerEndNode));
     Cm::Ast::PrefixIncNode* incIterator(new Cm::Ast::PrefixIncNode(rangeForStatementNode.GetSpan(), iteratorId->Clone(cloneContext)));
     Cm::Ast::CompoundStatementNode* action(new Cm::Ast::CompoundStatementNode(rangeForStatementNode.GetSpan()));
+    action->SetParent(rangeForStatementNode.Parent());
     Cm::Ast::DerefNode* derefIterator(new Cm::Ast::DerefNode(rangeForStatementNode.GetSpan(), iteratorId->Clone(cloneContext)));
     Cm::Ast::ConstructionStatementNode* initVariable(new Cm::Ast::ConstructionStatementNode(rangeForStatementNode.GetSpan(), rangeForStatementNode.VarTypeExpr()->Clone(cloneContext), 
         static_cast<Cm::Ast::IdentifierNode*>(rangeForStatementNode.VarId()->Clone(cloneContext))));
@@ -519,6 +530,7 @@ void RangeForStatementBinder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForS
     Cm::Sym::DeclarationVisitor declarationVisitor(SymbolTable());
     action->AddStatement(static_cast<Cm::Ast::StatementNode*>(rangeForStatementNode.Action()->Clone(cloneContext)));
     Cm::Ast::ForStatementNode* forStatementNode = new Cm::Ast::ForStatementNode(rangeForStatementNode.GetSpan(), initNode, iteratorNotEqualToEnd, incIterator, action);
+    forStatementNode->SetParent(rangeForStatementNode.Parent());
     CurrentFunction()->Own(forStatementNode);
     forStatementNode->Accept(declarationVisitor);
     Cm::Sym::ContainerScope* containerScope = SymbolTable().GetContainerScope(forStatementNode);

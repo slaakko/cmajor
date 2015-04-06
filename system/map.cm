@@ -32,11 +32,6 @@ namespace System.Collections
         public Map(): tree()
         {
         }
-        public default Map(const Self& that) where ValueType is Copyable;
-        public default void operator=(const Self& that) where ValueType is Copyable;
-        public default nothrow Map(Self&& that) where ValueType is Movable;
-        public default nothrow void operator=(Self&& that) where ValueType is Movable;
-        public default nothrow ~Map();
         public nothrow inline Iterator Begin()
         {
             return tree.Begin();

@@ -1,0 +1,118 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace Syntax
+{
+    grammar PrimitiveGrammar
+    {
+        using stdlib.char;
+        using stdlib.string;
+        using stdlib.escape;
+        using ElementGrammar.QualifiedId;
+        using ElementGrammar.StringArray;
+
+        Primitive: Parser*
+                        ::= Char{ value = Char; }
+                        |   String{ value = String; }
+                        |   CharSet{ value = CharSet; }
+                        |   Keyword{ value = Keyword; }
+                        |   KeywordList{ value = KeywordList; }
+                        |   Empty{ value = Empty; }
+                        |   Space{ value = Space; }
+                        |   AnyChar{ value = AnyChar; }
+                        |   Letter{ value = Letter; }
+                        |   Digit{ value = Digit; }
+                        |   HexDigit{ value = HexDigit; }
+                        |   Punctuation{ value = Punctuation; }
+                        ;
+
+        Char: Parser* ::= char:chr{ value = new CharParser(chr); }
+                        ;
+
+        String: Parser*
+                        ::= string:str{ value = new StringParser(str); }
+                        ;
+
+        CharSet(var bool inverse, var string s): Parser*
+                        ::= token
+                            (   '['
+                                ('^'{ inverse = true; })?
+                                (CharSetRange{ s.Append(CharSetRange); })*
+                                ']'!
+                            )
+                            {
+                                value = new CharSetParser(s, inverse);
+                            }
+                            ;
+
+        CharSetRange: string
+                        ::= CharSetChar:first
+                            ('-' CharSetChar:last
+                                {
+                                    value.Append(first);
+                                    value.Append('-');
+                                    value.Append(last);
+                                }
+                            |   empty{ value.Append(first); }
+                            )
+                            ;
+
+        CharSetChar: char   ::= [^\\\]]{ value = match[0]; }
+                            |   escape{ value = escape; }
+                            ;
+
+        Keyword: Parser*  ::= keyword("keyword") '('! KeywordBody! ')'!{ value = KeywordBody; }
+                            ;
+
+        KeywordBody: Parser*
+                            ::= string:str
+                            (   ',' QualifiedId:continuation!{ value = new KeywordParser(str, continuation); }
+                            |   empty{ value = new KeywordParser(str); }
+                            )
+                            ;
+
+        KeywordList: Parser*
+                            ::= keyword("keyword_list") '('! KeywordListBody! ')'!{ value = KeywordListBody; }
+                            ;
+
+        KeywordListBody(var List<string> keywords): Parser*
+                            ::= QualifiedId:selector! ','! StringArray(&keywords)!{ value = new KeywordListParser(selector, keywords); }
+                            ;
+
+        Empty: Parser*    ::= keyword("empty"){ value = new EmptyParser(); }
+                            ;
+
+        Space: Parser*    ::= keyword("space"){ value = new SpaceParser(); }
+                            ;
+
+        AnyChar: Parser*  ::= keyword("anychar"){ value = new AnyCharParser(); }
+                            ;
+
+        Letter: Parser*   ::= keyword("letter"){ value = new LetterParser(); }
+                            ;
+
+        Digit: Parser*    ::= keyword("digit"){ value = new DigitParser(); }
+                            ;
+
+        HexDigit: Parser* ::= keyword("hexdigit"){ value = new HexDigitParser(); }
+                            ;
+
+        Punctuation: Parser*
+                            ::= keyword("punctuation"){ value = new PunctuationParser(); }
+                            ;
+    }
+}

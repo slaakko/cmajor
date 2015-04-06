@@ -1,0 +1,60 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using Cm;
+
+namespace Syntax
+{
+    grammar LibraryFileGrammar
+    {
+        using stdlib.identifier;
+        using stdlib.qualified_id;
+        using stdlib.spaces_and_comments;
+        using ElementGrammar.Identifier;
+        using ElementGrammar.Signature;
+
+        skip spaces_and_comments;
+
+        LibraryFile(ParsingDomain* parsingDomain, var ParsingContext* ctx)
+                        ::= empty{ ctx = new ParsingContext(); }
+                            NamespaceContent(parsingDomain, ctx)
+                        ;
+
+        NamespaceContent(ParsingDomain* parsingDomain, ParsingContext* ctx)
+                        ::=
+                        (   Grammar(parsingDomain->CurrentNamespace()->GetScope(), ctx){ parsingDomain->AddGrammar(Grammar); }
+                        |   Namespace(parsingDomain, ctx)
+                        )*
+                        ;
+
+        Namespace(ParsingDomain* parsingDomain, ParsingContext* ctx)
+                        ::= keyword("namespace") qualified_id:ns!{ parsingDomain->BeginNamespace(ns); } '{'! NamespaceContent(parsingDomain, ctx) '}'!{ parsingDomain->EndNamespace(); }
+                        ;
+
+        Grammar(Scope* enclosingScope, ParsingContext* ctx): Grammar*
+                        ::= keyword("grammar")
+                            Identifier:grammarName!{ value = new Grammar(grammarName, enclosingScope); value->SetNs(enclosingScope->Ns()); }
+                            '{'! GrammarContent(value, ctx) '}'!
+                        ;
+
+        GrammarContent(Grammar* grammar, ParsingContext* ctx)
+                        ::= (Rule(grammar->GetScope(), ctx){ grammar->AddRule(Rule); })*
+                        ;
+
+        Rule(Scope* enclosingScope, ParsingContext* ctx): Rule*
+                        ::= Identifier:ruleName{ value = new Rule(ruleName, enclosingScope); } Signature(value, ctx) ';'
+                        ;
+    }
+}

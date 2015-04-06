@@ -105,7 +105,7 @@ public:
     virtual void Read(Reader& reader);
     const std::string& Name() const { return name; }
     void SetName(const std::string& name_) { name = name_; }
-    std::string FullName() const;
+    virtual std::string FullName() const;
     const Span& GetSpan() const { return span; }
     void SetSpan(const Span& span_) { span = span_; }
     SymbolAccess Access() const { return SymbolAccess(flags & SymbolFlags::access); }
@@ -120,7 +120,7 @@ public:
     void SetPublic() { SetAccess(SymbolAccess::public_); }
     SymbolSource Source() const { return GetFlag(SymbolFlags::project) ? SymbolSource::project : SymbolSource::library; }
     void SetSource(SymbolSource source) { if (source == SymbolSource::project) SetFlag(SymbolFlags::project); else ResetFlag(SymbolFlags::project); }
-    Symbol* Parent() const { return parent; }
+    virtual Symbol* Parent() const { return parent; }
     void SetParent(Symbol* parent_) { parent = parent_; }
     bool IsReplica() const { return GetFlag(SymbolFlags::replica); }
     void SetReplica() { SetFlag(SymbolFlags::replica); }
@@ -128,7 +128,6 @@ public:
     virtual void SetType(TypeSymbol* typeSymbol, int index);
     virtual ContainerScope* GetContainerScope() const { return nullptr; }
     virtual bool IsExportSymbol() const;
-    virtual bool WillBeExported() const;
     virtual bool IsNamespaceSymbol() const { return false; }
     virtual bool IsContainerSymbol() const { return false; }
     virtual bool IsTypeSymbol() const { return false; }

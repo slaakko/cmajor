@@ -1,0 +1,4 @@
+solution dc;
+project <dc.cmp>;
+activeProject dc;
+dependency dc();

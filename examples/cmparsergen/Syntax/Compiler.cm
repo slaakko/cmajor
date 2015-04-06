@@ -1,0 +1,91 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.IO;
+using System.Text.Parsing;
+
+namespace Syntax
+{
+    internal string ResolveReferenceFilePath(const string& relativeReferenceFilePath, const string& projectBasePath, const List<string>& libraryDirectories)
+    {
+        string referenceFilePath = GetFullPath(Path.Combine(projectBasePath, relativeReferenceFilePath));
+        if (FileExists(referenceFilePath))
+        {
+            return referenceFilePath;
+        }
+        for (const string& libraryDir : libraryDirectories)
+        {
+            referenceFilePath = GetFullPath(Path.Combine(libraryDir, relativeReferenceFilePath));
+            Console.Out() << "< " << referenceFilePath << endl();
+            if (FileExists(referenceFilePath))
+            {
+                return referenceFilePath;
+            }
+        }
+        throw Exception("library file '" + relativeReferenceFilePath + "' not found");
+    }
+    
+    public void Compile(const string& projectFilePath, const List<string>& libraryDirectories, bool debug)
+    {
+        Console.WriteLine("Parsing project file '" + projectFilePath + "'...");
+        UniquePtr<ParsingDomain> projectParsingDomain(new ParsingDomain());
+        projectParsingDomain->SetOwned();
+        ProjectFileGrammarPtr projectFileGrammar = ProjectFileGrammar.Create(projectParsingDomain.GetPtr());
+        LibraryFileGrammarPtr libraryFileGrammar = LibraryFileGrammar.Create(projectParsingDomain.GetPtr());
+        ParserFileGrammarPtr parserFileGrammar = ParserFileGrammar.Create(projectParsingDomain.GetPtr());
+        if (debug)
+        {
+            parserFileGrammar->SetLog(&Console.Error());
+        }
+        string projectFileContent = ReadFile(projectFilePath);
+        UniquePtr<Project> project = projectFileGrammar->Parse(projectFileContent, 0, projectFilePath);
+        Console.WriteLine("Compiling project '" + project->Name() + "'...");
+        Console.WriteLine("Parsing library files...");
+        int libraryFileIndex = 0;
+        UniquePtr<ParsingDomain> parsingDomain(new ParsingDomain());
+        parsingDomain->SetOwned();
+        for (const string& relativeReferenceFilePath : project->ReferenceFiles())
+        {
+            string referenceFilePath = ResolveReferenceFilePath(relativeReferenceFilePath, project->BasePath(), libraryDirectories);
+            Console.Out() << "> " << referenceFilePath << endl();
+            string libraryFileContent = ReadFile(referenceFilePath);
+            libraryFileGrammar->Parse(libraryFileContent, libraryFileIndex, referenceFilePath, parsingDomain.GetPtr());
+            ++libraryFileIndex;
+        }
+        Console.WriteLine("Parsing source files...");
+        List<UniquePtr<ParserFileContent>> parserFiles;
+        const List<string>& sourceFiles = project->SourceFiles();
+        System.Text.Parsing.FileInfo.Instance().SetFiles(sourceFiles);
+        int sourceFileIndex = 0;
+        for (const string& sourceFilePath : sourceFiles)
+        {
+            Console.Out() << "> " << sourceFilePath << endl();
+            string sourceFileContent = ReadFile(sourceFilePath);
+            UniquePtr<ParserFileContent> parserFileContent = parserFileGrammar->Parse(sourceFileContent, sourceFileIndex, sourceFilePath, sourceFileIndex, parsingDomain.GetPtr());
+            parserFiles.Add(Rvalue(parserFileContent));
+            ++sourceFileIndex;
+        }
+        Console.WriteLine("Linking...");
+        System.Text.Parsing.Link(parsingDomain.GetPtr());
+        Console.WriteLine("Expanding code...");
+        System.Text.Parsing.ExpandCode(parsingDomain.GetPtr());
+        Console.WriteLine("Generating source code...");
+        GenerateCode(parserFiles);
+        Console.WriteLine("Generating library file...");
+        GenerateLibraryFile(project, parsingDomain.GetPtr());
+    }
+}

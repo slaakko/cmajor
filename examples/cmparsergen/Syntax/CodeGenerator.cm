@@ -1,0 +1,148 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.IO;
+using System.Text;
+using System.Text.Parsing;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Syntax
+{
+    public class NamespaceContent
+    {
+        public void AddUsingObject(System.Text.Parsing.UsingObject* usingObject)
+        {
+            usingObjects.Add(usingObject);
+        }
+        public void AddGrammar(Grammar* grammar)
+        {
+            grammars.Add(grammar);
+        }
+        public nothrow inline const List<System.Text.Parsing.UsingObject*>& UsingObjects() const
+        {
+            return usingObjects;
+        }
+        public nothrow inline const List<Grammar*>& Grammars() const
+        {
+            return grammars;
+        }
+        private List<System.Text.Parsing.UsingObject*> usingObjects;
+        private List<Grammar*> grammars;
+    }
+    
+    internal typedef Map<Namespace*, NamespaceContent> NamespaceContentMap;
+    internal typedef NamespaceContentMap.ConstIterator NamespaceContentMapIt;
+    
+    internal class ObjectSelectorVisitor: System.Text.Parsing.Visitor
+    {
+        public ObjectSelectorVisitor(int id_): id(id_)
+        {
+        }
+        public override void Visit(System.Text.Parsing.UsingObject& object)
+        {
+            if (object.Owner() == id)
+            {
+                Namespace* ns = object.EnclosingScope()->Ns();
+                NamespaceContent& nsContent = nsContentMap[ns];
+                nsContent.AddUsingObject(&object);
+            }
+        }
+        public override void BeginVisit(Grammar& grammar)
+        {
+            if (grammar.Owner() == id)
+            {
+                Namespace* ns = grammar.Ns();
+                NamespaceContent& nsContent = nsContentMap[ns];
+                nsContent.AddGrammar(&grammar);
+            }
+        }
+        public nothrow inline const NamespaceContentMap& NsContentMap() const
+        {
+            return nsContentMap;
+        }
+        private int id;
+        private NamespaceContentMap nsContentMap;
+    }
+    
+    internal void GenerateCode(const UniquePtr<ParserFileContent>& parserFile)
+    {
+        const string& filePath = parserFile->FilePath();
+        string cmFilePath = Path.ChangeExtension(filePath, ".cm");
+        OutputFileStream cmFile(cmFilePath);
+        CodeFormatter formatter(cmFile);
+        formatter.WriteLine("using System;");
+        formatter.WriteLine("using System.Collections;");
+        formatter.WriteLine("using System.Text.Parsing;");
+        
+        ObjectSelectorVisitor selectorVisitor(parserFile->Id());
+        for (System.Text.Parsing.UsingObject* usingObject : parserFile->UsingObjects())
+        {
+            if (usingObject->Name() != "System" && usingObject->Name() != "System.Collections" && usingObject->Name() != "System.Text.Parsing")
+            {
+                selectorVisitor.Visit(*usingObject);
+            }
+        }
+        parserFile->ParsingDomain()->GlobalNamespace()->Accept(selectorVisitor);
+        const NamespaceContentMap& nsContent = selectorVisitor.NsContentMap();
+
+        NamespaceContentMapIt e = nsContent.CEnd();
+        for (NamespaceContentMapIt i = nsContent.CBegin(); i != e; ++i)
+        {
+            Namespace* ns = i->first;
+            const NamespaceContent& content = i->second;
+            for (System.Text.Parsing.UsingObject* usingObject : content.UsingObjects())
+            {
+                System.Text.Parsing.CmObjectModel.UsingObject* subject = usingObject->Subject();
+                subject->Print(formatter);
+            }
+        }     
+        formatter.WriteLine();               
+        
+        for (NamespaceContentMapIt i = nsContent.CBegin(); i != e; ++i)
+        {
+            Namespace* ns = i->first;
+            const NamespaceContent& content = i->second;
+            string nsFullName = ns->FullName();
+            if (!nsFullName.IsEmpty())
+            {
+                formatter.WriteLine("namespace " + nsFullName);
+                formatter.WriteLine("{");
+                formatter.IncIndent();
+            }
+            for (Grammar* grammar : content.Grammars())
+            {
+                CodeGeneratorVisitor visitor(formatter);
+                grammar->Accept(visitor);
+            }
+            if (!nsFullName.IsEmpty())
+            {
+                formatter.DecIndent();
+                formatter.WriteLine("}");
+            }
+        }
+        
+        Console.Out() << "=> " << cmFilePath << endl();
+    }
+    
+    internal void GenerateCode(const List<UniquePtr<ParserFileContent>>& parserFiles)
+    {
+        for (const UniquePtr<ParserFileContent>& parserFile : parserFiles)
+        {
+            GenerateCode(parserFile);
+        }
+    }
+}

@@ -1,0 +1,88 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+using System.Text.Parsing;
+ 
+namespace Syntax
+{
+    public class ParserFileContent
+    {
+        public ParserFileContent(int id_, ParsingDomain* parsingDomain_): id(id_), parsingDomain(parsingDomain_)
+        {
+        }
+        public ~ParserFileContent()
+        {
+            for (UsingObject* usingObject : ownedUsingObjects)
+            {
+                delete usingObject;
+            }
+        }
+        public inline int Id() const
+        {
+            return id;
+        }
+        public inline ParsingDomain* ParsingDomain() const
+        {
+            return parsingDomain;
+        }
+        public inline void SetFilePath(const string& filePath_)
+        {
+            filePath = filePath_;
+        }
+        public inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public void AddUsingObject(System.Text.Parsing.CmObjectModel.UsingObject* usingObjectSubject)
+        {
+            UsingObject* usingObject(new UsingObject(usingObjectSubject, CurrentScope()));
+            usingObject->SetOwner(id);
+            usingObjects.Add(usingObject);
+            if (!usingObject->Owned())
+            {
+                usingObject->SetOwned();
+                ownedUsingObjects.Add(usingObject);
+            }
+        }
+        public inline const List<UsingObject*>& UsingObjects() const
+        {
+            return usingObjects;
+        }
+        public void AddGrammar(Grammar* grammar)
+        {
+            grammar->SetOwner(id);
+            parsingDomain->AddGrammar(grammar);
+        }    
+        public inline Scope* CurrentScope() const 
+        { 
+            return parsingDomain->CurrentScope(); 
+        }
+        public inline void BeginNamespace(const string& ns)
+        {
+            parsingDomain->BeginNamespace(ns);
+        }
+        public inline void EndNamespace()
+        {
+            parsingDomain->EndNamespace();
+        }
+        private int id;
+        private ParsingDomain* parsingDomain;
+        private string filePath;
+        private List<UsingObject*> usingObjects;
+        private List<UsingObject*> ownedUsingObjects;
+    }
+}

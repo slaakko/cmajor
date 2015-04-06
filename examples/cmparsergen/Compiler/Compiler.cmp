@@ -1,0 +1,8 @@
+project Compiler;
+target=program;
+assembly <Compiler.cma>;
+executable <cmparsergen>;
+reference <../Cm/Cm.cml>;
+reference <../Syntax/Syntax.cml>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+source <Main.cm>;
