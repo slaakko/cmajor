@@ -39,6 +39,10 @@ void InlineFunctionRepository::Instantiate(Cm::Sym::ContainerScope* containerSco
     if (functionSymbol->CompileUnit() == boundCompileUnit.SyntaxUnit()) return;
     if (instantiatedFunctions.find(functionSymbol) != instantiatedFunctions.end()) return;
     instantiatedFunctions.insert(functionSymbol);
+    if (functionSymbol->Name() == "SetColor(System.Collections.RedBlackTreeNodeBase*, System.Collections.RedBlackTreeNodeBase.Color)")
+    {
+        int x = 0;
+    }
     Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(functionSymbol, false);
     if (!node)
     {
@@ -63,6 +67,13 @@ void InlineFunctionRepository::Instantiate(Cm::Sym::ContainerScope* containerSco
     }
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     globalNs->Accept(declarationVisitor);
+    Cm::Sym::FunctionSymbol* functionInstanceSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
+    functionInstanceSymbol->SetReplica();
+    if (classTypeSymbol)
+    {
+        functionInstanceSymbol->SetParent(classTypeSymbol);
+        functionInstanceSymbol->GetContainerScope()->SetParent(classTypeSymbol->GetContainerScope());
+    }
     Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
     if (classTypeSymbol)
     {
@@ -73,13 +84,6 @@ void InlineFunctionRepository::Instantiate(Cm::Sym::ContainerScope* containerSco
     prebinder.EndCompileUnit();
     Cm::Sym::FileScope* fileScope = prebinder.ReleaseFileScope();
     boundCompileUnit.AddFileScope(fileScope);
-    Cm::Sym::FunctionSymbol* functionInstanceSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
-    functionInstanceSymbol->SetReplica();
-    if (classTypeSymbol)
-    {
-        functionInstanceSymbol->SetParent(classTypeSymbol);
-        functionInstanceSymbol->GetContainerScope()->SetParent(classTypeSymbol->GetContainerScope());
-    }
     Binder binder(boundCompileUnit);
     if (classTypeSymbol)
     {
