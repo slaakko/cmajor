@@ -12,6 +12,7 @@
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Visitor.hpp>
+#include <Cm.Ast/TypeExpr.hpp>
 
 namespace Cm { namespace Ast {
 

@@ -1,3 +1,4 @@
+
 /*========================================================================
     Copyright (c) 2012-2015 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
@@ -98,6 +99,8 @@ public:
     virtual bool IsTypedefNode() const { return false; }
     virtual bool IsThisNode() const { return false; }
     virtual bool IsUnsignedTypeNode() const { return false; }
+    virtual bool IsIdentifierNode() const { return false; }
+    virtual bool IsDerivedTypeExprNode() const { return false; }
     virtual Rank GetRank() const { return Rank::primary; }
     virtual std::string ToString() const { return std::string(); }
     virtual std::string GetOpStr() const { return std::string(); }

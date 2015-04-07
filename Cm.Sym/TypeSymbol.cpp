@@ -55,18 +55,10 @@ bool operator<(const DerivationCounts& left, const DerivationCounts& right)
 
 TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_)
 {
-    if (Name() == "List<UsingObject*>")
-    {
-        int x = 0;
-    }
 }
 
 TypeSymbol::TypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : ContainerSymbol(span_, name_), id(id_)
 {
-    if (Name() == "List<UsingObject*>")
-    {
-        int x = 0;
-    }
 }
 
 void TypeSymbol::Write(Writer& writer)

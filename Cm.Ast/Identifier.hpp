@@ -20,6 +20,7 @@ public:
     IdentifierNode(const Span& span_, const std::string& identifier_);
     NodeType GetNodeType() const override { return NodeType::identifierNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    bool IsIdentifierNode() const override { return true; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Accept(Visitor& visitor) override;
