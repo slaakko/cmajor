@@ -26,7 +26,7 @@ namespace Syntax
         }
         public ~ParserFileContent()
         {
-            for (UsingObject* usingObject : ownedUsingObjects)
+            for (System.Text.Parsing.UsingObject* usingObject : ownedUsingObjects)
             {
                 delete usingObject;
             }
@@ -58,7 +58,7 @@ namespace Syntax
                 ownedUsingObjects.Add(usingObject);
             }
         }
-        public inline const List<UsingObject*>& UsingObjects() const
+        public inline const List<System.Text.Parsing.UsingObject*>& UsingObjects() const
         {
             return usingObjects;
         }
@@ -82,7 +82,7 @@ namespace Syntax
         private int id;
         private ParsingDomain* parsingDomain;
         private string filePath;
-        private List<UsingObject*> usingObjects;
-        private List<UsingObject*> ownedUsingObjects;
+        private List<System.Text.Parsing.UsingObject*> usingObjects;
+        private List<System.Text.Parsing.UsingObject*> ownedUsingObjects;
     }
 }

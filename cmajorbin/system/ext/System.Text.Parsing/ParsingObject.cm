@@ -159,7 +159,7 @@ namespace System.Text.Parsing
                 }
             }
         }
-        private const int external = -1;
+        public const int external = -1;
         private bool owned;
         private string name;
         private Scope* enclosingScope;

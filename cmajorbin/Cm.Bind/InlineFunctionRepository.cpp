@@ -39,10 +39,6 @@ void InlineFunctionRepository::Instantiate(Cm::Sym::ContainerScope* containerSco
     if (functionSymbol->CompileUnit() == boundCompileUnit.SyntaxUnit()) return;
     if (instantiatedFunctions.find(functionSymbol) != instantiatedFunctions.end()) return;
     instantiatedFunctions.insert(functionSymbol);
-    if (functionSymbol->Name() == "SetColor(System.Collections.RedBlackTreeNodeBase*, System.Collections.RedBlackTreeNodeBase.Color)")
-    {
-        int x = 0;
-    }
     Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(functionSymbol, false);
     if (!node)
     {
