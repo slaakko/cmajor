@@ -149,14 +149,15 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
     std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, 
-    Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_) :
+    Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCallFun_, Cm::Sym::FunctionSymbol* leaveTracedCallFun_) :
     Cm::BoundTree::Visitor(true), emitter(new Cm::Core::Emitter()), codeFormatter(codeFormatter_), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_),
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), localVariableIrObjectRepository(&irFunctionRepository), 
     compoundResult(), currentCompileUnit(currentCompileUnit_),
     currentClass(currentClass_), currentFunction(nullptr), thisParam(nullptr), internalFunctionNames(internalFunctionNames_), externalFunctions(externalFunctions_), 
     staticMemberVariableRepository(staticMemberVariableRepository_), externalConstantRepository(externalConstantRepository_),
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), 
-    currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_)
+    currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_),
+    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_)
 {
 }
 
@@ -2093,7 +2094,7 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::
     }
     if (traceCallInfo)
     {
-        CallLeaveFrame();
+        CallLeaveFrame(traceCallInfo);
     }
     if (functionSymbol && functionSymbol->CanThrow())
     {
@@ -2165,7 +2166,7 @@ void FunctionEmitter::GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Boun
     emitter->Emit(Cm::IrIntf::IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args()));
     if (traceCallInfo)
     {
-        CallLeaveFrame();
+        CallLeaveFrame(traceCallInfo);
     }
     if (fun->CanThrow())
     {
@@ -2303,15 +2304,40 @@ void FunctionEmitter::CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo
 	args.push_back(lineResult->MainObject());
 	Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(nullptr, enterFrameIrFun, args);
 	emitter->Emit(callInst);
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::trace))
+    {
+        Ir::Intf::Function* enterTracedCallIrFun = irFunctionRepository.CreateIrFunction(enterTracedCallFun);
+        externalFunctions.insert(enterTracedCallIrFun);
+        Ir::Intf::Instruction* enterTracedCallInst = Cm::IrIntf::Call(nullptr, enterTracedCallIrFun, args);
+        emitter->Emit(enterTracedCallInst);
+    }
 }
 
-void FunctionEmitter::CallLeaveFrame()
+void FunctionEmitter::CallLeaveFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo)
 {
 	Ir::Intf::Function* leaveFrameIrFun = irFunctionRepository.CreateIrFunction(leaveFrameFun);
 	std::vector<Ir::Intf::Object*> args;
 	externalFunctions.insert(leaveFrameIrFun);
 	Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(nullptr, leaveFrameIrFun, args);
 	emitter->Emit(callInst);
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::trace))
+    {
+        Ir::Intf::Function* leaveTracedCallIrFun = irFunctionRepository.CreateIrFunction(leaveTracedCallFun);
+        externalFunctions.insert(leaveTracedCallIrFun);
+        std::vector<Ir::Intf::Object*> traceCallArgs;
+        traceCallInfo->Fun()->Accept(*this);
+        std::shared_ptr<Cm::Core::GenResult> funResult = resultStack.Pop();
+        traceCallArgs.push_back(funResult->MainObject());
+        traceCallInfo->File()->Accept(*this);
+        std::shared_ptr<Cm::Core::GenResult> fileResult = resultStack.Pop();
+        traceCallArgs.push_back(fileResult->MainObject());
+        traceCallInfo->Line()->Accept(*this);
+        std::shared_ptr<Cm::Core::GenResult> lineResult = resultStack.Pop();
+        traceCallArgs.push_back(lineResult->MainObject());
+
+        Ir::Intf::Instruction* leaveTracedCallInst = Cm::IrIntf::Call(nullptr, leaveTracedCallIrFun, traceCallArgs);
+        emitter->Emit(leaveTracedCallInst);
+    }
 }
 
 void FunctionEmitter::GenerateTestExceptionResult()

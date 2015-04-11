@@ -490,7 +490,6 @@ namespace System.Collections
         public typedef T ValueType;
 
         public RedBlackTreeNode(const ValueType& value_, Node* parent_): base(parent_), value(value_) {}
-        public nothrow RedBlackTreeNode(ValueType&& value_, Node* parent_): base(parent_), value(value_) {}
         public nothrow const ValueType& Value() const { return value; }
         public nothrow ValueType& Value() { return value; }
         private ValueType value;
@@ -737,70 +736,6 @@ namespace System.Collections
             ++count;
             return Iterator(n);
         }
-        public Pair<Iterator, bool> Insert(ValueType&& value) where ValueType is Movable
-        {
-            Node* x = Root();
-            Node* p = header.GetPtr();
-            bool comp = true;
-            while (x != null)
-            {
-                p = x;
-                comp = Comp(KeyOf(value), KeyOf(x->Value()));
-                if (comp)
-                {
-                    x = cast<Node*>(x->Left());
-                }
-                else 
-                {
-                    x = cast<Node*>(x->Right());
-                }
-            }
-            Iterator j = p;
-            if (comp)
-            {
-                if (j == Begin())
-                {
-                    return MakePair(Insert(x, p, value), true);
-                }
-                else
-                {
-                    --j;
-                }
-            }
-            if (Comp(KeyOf(j.GetNode()->Value()), KeyOf(value)))
-            {
-                return MakePair(Insert(x, p, value), true);
-            }
-            return MakePair(j, false);
-        }
-        private Iterator Insert(Node* x, Node* p, ValueType&& value) where ValueType is Movable
-        {
-            Node* n = new Node(value, p);
-            if (p == header.GetPtr() || x != null || Comp(KeyOf(value), KeyOf(p->Value())))
-            {
-                p->SetLeft(n);
-                if (p == header.GetPtr())
-                {
-                    SetRoot(n);
-                    SetRightmost(n);
-                }
-                else if (p == Leftmost())
-                {
-                    SetLeftmost(n);
-                }
-            }
-            else
-            {
-                p->SetRight(n);
-                if (p == Rightmost())
-                {
-                    SetRightmost(n);
-                }
-            }
-            Node.RebalanceAfterInsert(n, RootRef());
-            ++count;
-            return Iterator(n);
-        }
         public nothrow bool Remove(const KeyType& key)
         {
             Node* n = Root();
@@ -840,11 +775,6 @@ namespace System.Collections
             toRemove->SetRight(null);
             delete toRemove;
             --count;
-        }
-        public nothrow inline void Swap(Self& that)
-        {
-            header.Swap(that.header);
-            Swap(count, that.count);
         }
         private nothrow inline const KeyType& KeyOf(const ValueType& value) const
         {

@@ -20,12 +20,14 @@
 #include <Cm.Bind/InlineFunctionRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/MutexTable.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.Parsing/Scanner.hpp>
@@ -98,6 +100,14 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 
     if (userMainFunction->GetReturnType()->IsVoidTypeSymbol())
     {
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap))
+        {
+            Cm::Sym::FunctionSymbol* dbgHeapInit = symbolTable.GetOverload("dbgheap_init");
+            Cm::BoundTree::BoundExpressionList dbgHeapInitArgs;
+            Cm::BoundTree::BoundFunctionCallStatement* dbgHeapInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(dbgHeapInit, std::move(dbgHeapInitArgs));
+            mainBody->AddStatement(dbgHeapInitStatement);
+        }
+
         Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
         Cm::Sym::FunctionSymbol* threadTblInit = symbolTable.GetOverload("threadtbl_init");
         Cm::BoundTree::BoundExpressionList threadTblInitArguments;
@@ -179,6 +189,19 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundFunctionCallStatement* callThreadTblDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblDone, std::move(threadTblDoneArguments));
         mainBody->AddStatement(callThreadTblDoneStatement);
 
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap))
+        {
+            Cm::Sym::FunctionSymbol* dbgHeapReport = symbolTable.GetOverload("dbgheap_report");
+            Cm::BoundTree::BoundExpressionList dbgHeapReportArgs;
+            Cm::BoundTree::BoundFunctionCallStatement* dbgHeapReportStatement = new Cm::BoundTree::BoundFunctionCallStatement(dbgHeapReport, std::move(dbgHeapReportArgs));
+            mainBody->AddStatement(dbgHeapReportStatement);
+
+            Cm::Sym::FunctionSymbol* dbgHeapDone = symbolTable.GetOverload("dbgheap_done");
+            Cm::BoundTree::BoundExpressionList dbgHeapDoneArgs;
+            Cm::BoundTree::BoundFunctionCallStatement* dbgHeapDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(dbgHeapDone, std::move(dbgHeapDoneArgs));
+            mainBody->AddStatement(dbgHeapDoneStatement);
+        }
+
         Cm::BoundTree::BoundLiteral* zero = new Cm::BoundTree::BoundLiteral(nullptr);
         zero->SetValue(new Cm::Sym::IntValue(0));
         zero->SetType(intType);
@@ -196,6 +219,13 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         {
             arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argcParam));
             arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argvParam));
+        }
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap))
+        {
+            Cm::Sym::FunctionSymbol* dbgHeapInit = symbolTable.GetOverload("dbgheap_init");
+            Cm::BoundTree::BoundExpressionList dbgHeapInitArgs;
+            Cm::BoundTree::BoundFunctionCallStatement* dbgHeapInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(dbgHeapInit, std::move(dbgHeapInitArgs));
+            mainBody->AddStatement(dbgHeapInitStatement);
         }
 
         Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
@@ -274,6 +304,19 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundExpressionList threadTblDoneArguments;
         Cm::BoundTree::BoundFunctionCallStatement* callThreadTblDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(threadTblDone, std::move(threadTblDoneArguments));
         mainBody->AddStatement(callThreadTblDoneStatement);
+
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap))
+        {
+            Cm::Sym::FunctionSymbol* dbgHeapReport = symbolTable.GetOverload("dbgheap_report");
+            Cm::BoundTree::BoundExpressionList dbgHeapReportArgs;
+            Cm::BoundTree::BoundFunctionCallStatement* dbgHeapReportStatement = new Cm::BoundTree::BoundFunctionCallStatement(dbgHeapReport, std::move(dbgHeapReportArgs));
+            mainBody->AddStatement(dbgHeapReportStatement);
+
+            Cm::Sym::FunctionSymbol* dbgHeapDone = symbolTable.GetOverload("dbgheap_done");
+            Cm::BoundTree::BoundExpressionList dbgHeapDoneArgs;
+            Cm::BoundTree::BoundFunctionCallStatement* dbgHeapDoneStatement = new Cm::BoundTree::BoundFunctionCallStatement(dbgHeapDone, std::move(dbgHeapDoneArgs));
+            mainBody->AddStatement(dbgHeapDoneStatement);
+        }
     }
 
     Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(nullptr);

@@ -138,7 +138,11 @@ void Module::ReadReferenceFilePaths(Reader& reader)
 
 void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& allReferenceFilePaths)
 {
+    boost::filesystem::path afp = filePath;
+    afp.replace_extension(".cma");
+    assemblyFilePaths.push_back(Cm::Util::GetFullPath(afp.generic_string()));
     bool quiet = GetGlobalFlag(GlobalFlags::quiet);
+    allReferenceFilePaths.push_back(filePath);
     Reader reader(filePath, symbolTable);
     CheckModuleFileId(reader);
     ReadSourceFilePaths(reader);
@@ -172,14 +176,10 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
 	GetMutexTable()->AddLibraryMutexes(numLibraryMutexes);
     uint32_t numLibraryClasses = reader.GetBinaryReader().ReadUInt();
     GetClassCounter()->AddLibryClasses(numLibraryClasses);
-    allReferenceFilePaths.push_back(filePath);
     if (!quiet)
     {
         std::cout << "> " << filePath << std::endl;
     }
-    boost::filesystem::path afp = filePath;
-    afp.replace_extension(".cma");
-    assemblyFilePaths.push_back(Cm::Util::GetFullPath(afp.generic_string()));
 }
 
 void Module::ExportExceptionTable(Writer& writer)

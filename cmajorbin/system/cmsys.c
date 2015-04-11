@@ -396,3 +396,19 @@ int get_current_date(char* dateBuf)
     timeInfo = localtime(&rawTime);
     return strftime(dateBuf, 11, "%Y-%m-%d", timeInfo);
 }
+
+static int traceLevel = 0;
+
+void enter_traced_call(const char* fun, const char* file, int line)
+{
+    fprintf(stderr, "+%04d:%s[%s:%d]\n", traceLevel, fun, file, line);
+    ++traceLevel;
+    fflush(stderr);
+}
+
+void leave_traced_call(const char* fun, const char* file, int line)
+{
+    --traceLevel;
+    fprintf(stderr, "-%04d:%s[%s:%d]\n", traceLevel, fun, file, line);
+    fflush(stderr);
+}

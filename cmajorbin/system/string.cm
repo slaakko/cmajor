@@ -18,14 +18,23 @@ using System.Collections;
 
 namespace System
 {
+    public static class EmptyStrHolder
+    {
+        public static nothrow EmptyStrHolder(): emptyStr("")
+        {
+        }
+        public static nothrow const char* GetEmptyStr() 
+        {
+            return emptyStr;
+        }
+        private static const char* emptyStr;
+    }
+
     public class String
     {
         public typedef RandomAccessIter<char, const char&, const char*> ConstIterator;
         public typedef RandomAccessIter<char, char&, char*> Iterator;
 
-        static nothrow String(): emptyStr("")
-        {
-        }
         public nothrow String(): chars(null), len(0), res(0)
         {
         }
@@ -110,7 +119,7 @@ namespace System
             {
                 return chars;
             }
-            return emptyStr;
+            return EmptyStrHolder.GetEmptyStr();
         }
         public nothrow char operator[](int index) const
         {
@@ -412,7 +421,6 @@ namespace System
             }
             chars = null;
         }
-        private static const char* emptyStr;
         private int len;
         private int res;
         private char* chars;

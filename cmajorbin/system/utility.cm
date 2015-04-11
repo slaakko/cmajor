@@ -115,9 +115,9 @@ namespace System.Support
         free(block);
     }
 
-    public nothrow void* DebugHeapMemAlloc(ulong size, const char* file, int line)
+    public nothrow void* DebugHeapMemAlloc(ulong size)
     {
-        void* block = dbgheap_malloc(size, file, line);
+        void* block = dbgheap_malloc(size);
         if (block == null)
         {
             Write(stderr, "insufficient memory\n");

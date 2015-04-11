@@ -1,8 +1,8 @@
 project system;
 target=library;
 assembly <system.cma>;
-reference <os.cml>;
 reference <support.cml>;
+reference <os.cml>;
 source <algorithm.cm>;
 source <bitset.cm>;
 source <charclass.cm>;

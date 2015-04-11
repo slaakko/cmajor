@@ -43,6 +43,8 @@ private:
     Cm::Core::StaticMemberVariableRepository staticMemberVariableRepository;
 	Cm::Sym::FunctionSymbol* enterFrameFun;
 	Cm::Sym::FunctionSymbol* leaveFrameFun;
+    Cm::Sym::FunctionSymbol* enterTracedCallFun;
+    Cm::Sym::FunctionSymbol* leaveTracedCallFun;
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> processedClasses;
 };
 

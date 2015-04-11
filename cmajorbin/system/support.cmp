@@ -7,7 +7,7 @@ source <cs.cm>;
 source <eh.cm>;
 csource <exit.c>[backend=c];
 asmsource <exit.ll>[backend=llvm];
-source <supportintf.cm>;
 source <mtx.cm>;
 source <nupo.cm>;
+source <supportintf.cm>;
 source <utility.cm>;

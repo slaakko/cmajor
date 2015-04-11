@@ -29,6 +29,7 @@
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Expression.hpp>
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -1956,7 +1957,15 @@ void ExpressionBinder::Visit(Cm::Ast::ConstructNode& constructNode)
 
 void ExpressionBinder::Visit(Cm::Ast::NewNode& newNode)
 {
-    Cm::Sym::FunctionSymbol* memAlloc = boundCompileUnit.SymbolTable().GetOverload("System.Support.MemAlloc");
+    Cm::Sym::FunctionSymbol* memAlloc = nullptr;
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap))
+    {
+        memAlloc = boundCompileUnit.SymbolTable().GetOverload("System.Support.DebugHeapMemAlloc");
+    }
+    else
+    {
+        memAlloc = boundCompileUnit.SymbolTable().GetOverload("System.Support.MemAlloc");
+    }
     Cm::BoundTree::BoundExpressionList memAllocArguments;
     Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), newNode.TypeExpr());
     Cm::BoundTree::BoundSizeOfExpression* boundSizeOfExpr = new Cm::BoundTree::BoundSizeOfExpression(&newNode, type);

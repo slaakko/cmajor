@@ -29,9 +29,6 @@ namespace System.Collections
         public typedef TreeType.ConstIterator ConstIterator;
         public typedef TreeType.Iterator Iterator;
         
-        public Map(): tree()
-        {
-        }
         public nothrow inline Iterator Begin()
         {
             return tree.Begin();
@@ -75,10 +72,6 @@ namespace System.Collections
         {
             return tree.Insert(value);
         }
-        public inline Pair<Iterator, bool> Insert(ValueType&& value) where ValueType is Movable
-        {
-            return tree.Insert(value);
-        }
         public nothrow inline bool Remove(const KeyType& key)
         {
             return tree.Remove(key);
@@ -86,10 +79,6 @@ namespace System.Collections
         public nothrow inline void Remove(Iterator pos)
         {
             tree.Remove(pos);
-        }
-        public nothrow inline void Swap(Self& that)
-        {
-            tree.Swap(that.tree);
         }
         private TreeType tree;
     }

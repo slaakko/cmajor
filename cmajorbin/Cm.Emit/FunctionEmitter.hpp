@@ -85,7 +85,8 @@ public:
         Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
         std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, 
-        Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_);
+        Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_, 
+        Cm::Sym::FunctionSymbol* leaveTracedCallFun_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
@@ -185,6 +186,8 @@ private:
     std::vector<Ir::Intf::Object*> switchCaseConstants;
 	Cm::Sym::FunctionSymbol* enterFrameFun;
 	Cm::Sym::FunctionSymbol* leaveFrameFun;
+    Cm::Sym::FunctionSymbol* enterTracedCallFun;
+    Cm::Sym::FunctionSymbol* leaveTracedCallFun;
 	void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
     void ExitCompound(Cm::Core::GenResult& result, const CompoundDestructionStack& compoundDestructionStack, bool& first);
     void ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromCompound, Cm::BoundTree::BoundCompoundStatement* targetCompound, Cm::Core::GenResult& result);
@@ -200,7 +203,7 @@ private:
     void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
     void CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
-    void CallLeaveFrame();
+    void CallLeaveFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol);
     void GenerateTestExceptionResult();
     void CreateLandingPad(int landingPadId);
