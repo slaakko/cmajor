@@ -49,6 +49,7 @@ int main(int argc, const char** argv)
             Console.Out() << "options:" << endl();
             Console.Out() << "-L <dir1>;<dir2>;...  : add <dir1>, <dir2>, ... to library directories" << endl();
             Console.Out() << "-debug                : write parsing debug output to stderr" << endl();
+            Console.Out() << "-watch_alloc=SERIAL   : watch allocation serial SERIAL (compiled with -debug_heap)" << endl();
             return 1;
         }
         List<string> projectFilePaths;
@@ -70,13 +71,36 @@ int main(int argc, const char** argv)
         for (int i = 1; i < argc; ++i)
         {
             string arg = argv[i];
-            if (arg == "-L")
+            if (arg.StartsWith("-"))
             {
-                prevWasL = true;
-            }
-            else if (arg == "-debug")
-            {
-                debug = true;
+                if (arg.Find('=') != -1)
+                {
+                    List<string> components = arg.Split('=');
+                    if (components.Count() == 2)
+                    {
+                        if (components[0] == "-watch_alloc")
+                        {
+                            int serial = ParseInt(components[1]);
+                            dbgheap_watch(serial);
+                        }
+                        else
+                        {
+                            throw Exception("invalid argument '" + arg + "'");
+                        }
+                    }
+                    else
+                    {
+                        throw Exception("invalid argument '" + arg + "'");
+                    }
+                }
+                else if (arg == "-L")
+                {
+                    prevWasL = true;
+                }
+                else if (arg == "-debug")
+                {
+                    debug = true;
+                }
             }
             else if (prevWasL)
             {

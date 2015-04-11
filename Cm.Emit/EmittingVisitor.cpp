@@ -18,7 +18,8 @@ namespace Cm { namespace Emit {
 EmittingVisitor::EmittingVisitor(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
     Cm::BoundTree::Visitor(false), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_),
-    externalConstantRepository(externalConstantRepository_), irFile(irFilePath), codeFormatter(irFile), currentClass(nullptr), enterFrameFun(nullptr), leaveFrameFun(nullptr)
+    externalConstantRepository(externalConstantRepository_), irFile(irFilePath), codeFormatter(irFile), currentClass(nullptr), enterFrameFun(nullptr), leaveFrameFun(nullptr),
+    enterTracedCallFun(nullptr), leaveTracedCallFun(nullptr)
 {
     stringRepository.Write(codeFormatter);
 }
@@ -29,6 +30,8 @@ void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     currentCompileUnit = compileUnit.SyntaxUnit();
 	enterFrameFun = compileUnit.SymbolTable().GetOverload("enter_frame");
 	leaveFrameFun = compileUnit.SymbolTable().GetOverload("leave_frame");
+    enterTracedCallFun = compileUnit.SymbolTable().GetOverload("enter_traced_call");
+    leaveTracedCallFun = compileUnit.SymbolTable().GetOverload("leave_traced_call");
 }
 
 void EmittingVisitor::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
@@ -64,7 +67,7 @@ void EmittingVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
 	FunctionEmitter functionEmitter(codeFormatter, typeRepository, irFunctionRepository, irClassTypeRepository, stringRepository, currentClass, internalFunctionNames, externalFunctions, 
-		staticMemberVariableRepository, externalConstantRepository, currentCompileUnit, enterFrameFun, leaveFrameFun);
+		staticMemberVariableRepository, externalConstantRepository, currentCompileUnit, enterFrameFun, leaveFrameFun, enterTracedCallFun, leaveTracedCallFun);
 	boundFunction.Accept(functionEmitter);
 }
 

@@ -924,6 +924,25 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         {
             boundCompileUnit.InlineFunctionRepository().Instantiate(containerScope, function);
         }
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap))
+        {
+            if (function->FullName() == "System.Support.MemAlloc(ulong)")
+            {
+                function = boundCompileUnit.SymbolTable().GetOverload("System.Support.DebugHeapMemAlloc");
+                if (!function)
+                {
+                    throw std::runtime_error("System.Support.DebugHeapMemAlloc not found");
+                }
+            }
+            else if (function->FullName() == "System.Support.MemFree(void*)")
+            {
+                function = boundCompileUnit.SymbolTable().GetOverload("System.Support.DebugHeapMemFree");
+                if (!function)
+                {
+                    throw std::runtime_error("System.Support.DebugHeapMemFree not found");
+                }
+            }
+        }
         return function;
     }
 }

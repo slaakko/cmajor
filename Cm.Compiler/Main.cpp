@@ -91,6 +91,8 @@ int main(int argc, const char** argv)
                 "-O=<n>          : set optimization level to <n> (default: debug:0, release:3)\n" << 
                 "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
                 "-quiet          : write no output messages for successful compiles\n" << 
+                "-trace          : instrument program/library with tracing enabled\n" <<
+                "-debug_heap     : instrument program/library with debug heap enabled\n" <<
                 std::endl;
         }
         else
@@ -143,6 +145,14 @@ int main(int argc, const char** argv)
                         else if (arg == "-quiet")
                         {
                             Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+                        }
+                        else if (arg == "-trace")
+                        {
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::trace);
+                        }
+                        else if (arg == "-debug_heap")
+                        {
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap);
                         }
                         else if (arg == "-ide")
                         {

@@ -20,19 +20,16 @@ const char* capture_call_stack();
 
 #define ALLOC_HASH_TABLE_SIZE 196613
 
-static int allocationNumber = 0;
-static int stopOnAllocation = -1;
+static int allocation_serial = 0;
+static int watch_allocation = -1;
+static int free_disabled = 0;
 
-typedef struct Alloc { void* mem; unsigned long long size; int serial; int allocated; const char* file; int line; struct Alloc* next; } Allocation;
-
-static char alloc_line[1024];
+typedef struct Alloc { void* mem; unsigned long long size; int serial; int allocated; struct Alloc* next; } Allocation;
 
 void print_alloc(Allocation* alloc)
 {
-    snprintf(alloc_line, sizeof(alloc_line) - 1, 
-        "serial=%d, mem=%p, size=%llu, file=%s, line=%d\n", 
-        alloc->serial, alloc->mem, alloc->size, alloc->file, alloc->line);
-    write(2, alloc_line, strlen(alloc_line));
+    fprintf(stderr, "serial=%d, mem=%p, size=%llu\n", alloc->serial, alloc->mem, alloc->size);
+    fflush(stderr);
 }
 
 static Allocation** dbgheap = NULL;
@@ -72,12 +69,25 @@ void dbgheap_done()
     dbgheap = NULL;
 }
 
-void dbgheap_stop(int allocation)
+void dbgheap_watch(int serial)
 {
-    stopOnAllocation = allocation;
+    watch_allocation = serial;
 }
 
-int dbgheap_get_serial(void* mem)
+void dbgheap_enable_free()
+{
+    free_disabled = 0;
+}
+
+void dbgheap_disable_free()
+{
+    free_disabled = 1;
+}
+
+const char* alive = "alive";
+const char* freed = "freed!";
+
+void dbgheap_print_info(void* mem)
 {
     int index = hash(mem);
     Allocation* alloc = dbgheap[index];
@@ -85,11 +95,14 @@ int dbgheap_get_serial(void* mem)
     {
         if (alloc->mem == mem)
         {
-            return alloc->serial;
+            fprintf(stderr, "DBGHEAP> object %p: serial=%d, object is %s\n", mem, alloc->serial, (alloc->allocated ? alive : freed));
+            fflush(stderr);
+            return;
         }
         alloc = alloc->next;
     }
-    return -1;
+    fprintf(stderr, "DBGHEAP> object %p not found\n", mem);
+    fflush(stderr);
 }
 
 int compare_alloc(const void* left, const void* right)
@@ -121,7 +134,7 @@ void dbgheap_report()
     }
     if (numLeaks > 0)
     {
-	    write(2, "DBGHEAP: memory leaks detected...\n", strlen("DBGHEAP: memory leaks detected...\n"));
+	    fprintf(stderr, "DBGHEAP> memory leaks detected...\n");
         leaks = (Allocation**)malloc(numLeaks * sizeof(Allocation*));
         leak = 0;
         for (i = 0; i < ALLOC_HASH_TABLE_SIZE; ++i)
@@ -144,44 +157,39 @@ void dbgheap_report()
         }
         free(leaks);
     }
+    fflush(stderr);
 }
 
-
-void* dbgheap_malloc(unsigned long long size, const char* file, int line)
+void* dbgheap_malloc(unsigned long long size)
 {
     if (dbgheap == NULL)
     {
         return malloc(size);
     }
-
-    if (stopOnAllocation == allocationNumber)
+    if (size >= 8192)
+    {
+        fprintf(stderr, "DBGHEAP> allocation size >= 8192 (%ull), serial=%d", size, allocation_serial);
+        fflush(stderr);
+    }
+    if (watch_allocation == allocation_serial)
     {
         begin_capture_call_stack();
-        const char* callStack = capture_call_stack();
-        char* buf = (char*)malloc(65536);
-        snprintf(buf, 65535, "DBGHEAP> stop: serial=%d, file=%s, line=%d, %s", allocationNumber, file, line, callStack);
-        write(2, buf, strlen(buf));
-        free(buf);
+        const char* call_stack = capture_call_stack();
+        fprintf(stderr, "DBGHEAP> allocating serial=%d:\ncall stack:\n%s", allocation_serial, call_stack);
+        fflush(stderr);
         end_capture_call_stack();
-        exit(255);
-        return NULL;
     }
-    else
-    {
-        void* mem = malloc(size);
-        int index = hash(mem);
-        Allocation* next = dbgheap[index];
-        Allocation* alloc = (Allocation*)malloc(sizeof(Allocation));
-        alloc->mem = mem;
-        alloc->size = size;
-        alloc->serial = allocationNumber++;
-        alloc->allocated = 1;
-        alloc->file = file;
-        alloc->line = line;
-        alloc->next = next;
-        dbgheap[index] = alloc;
-        return mem;
-    }
+    void* mem = malloc(size);
+    int index = hash(mem);
+    Allocation* next = dbgheap[index];
+    Allocation* alloc = (Allocation*)malloc(sizeof(Allocation));
+    alloc->mem = mem;
+    alloc->size = size;
+    alloc->serial = allocation_serial++;
+    alloc->allocated = 1;
+    alloc->next = next;
+    dbgheap[index] = alloc;
+    return mem;
 }
 
 void dbgheap_free(void* mem)
@@ -191,7 +199,6 @@ void dbgheap_free(void* mem)
         free(mem);
         return;
     }
-
     int index = hash(mem);
     Allocation* alloc = dbgheap[index];
     while (alloc && alloc->mem != mem)
@@ -200,13 +207,22 @@ void dbgheap_free(void* mem)
     }
     if (alloc != NULL)
     {
+        if (watch_allocation == alloc->serial)
+        {
+            begin_capture_call_stack();
+            const char* call_stack = capture_call_stack();
+            fprintf(stderr, "DBGHEAP> deallocating serial=%d:\ncall stack:\n%s", alloc->serial, call_stack);
+            fflush(stderr);
+            end_capture_call_stack();
+        }
         if (!alloc->allocated)
         {
-            write(2, "DBGHEAP> double free detected:\n", strlen("DBGHEAP> double free detected:\n"));
-            print_alloc(alloc);
             begin_capture_call_stack();
-            const char* callStack = capture_call_stack();
-            write(2, callStack, strlen(callStack));
+            const char* call_stack = capture_call_stack();
+            fprintf(stderr, "DBGHEAP> double free detected:\n");
+            print_alloc(alloc);
+            fprintf(stderr, "\ncall stack:\n%s", call_stack);
+            fflush(stderr);
             end_capture_call_stack();
             exit(255);
         }
@@ -215,6 +231,8 @@ void dbgheap_free(void* mem)
             alloc->allocated = 0;
         }
     }
-    free(mem);
+    if (!free_disabled)
+    {
+        free(mem);
+    }
 }
-

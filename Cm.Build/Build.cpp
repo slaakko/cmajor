@@ -137,24 +137,16 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
 {
     boost::filesystem::path projectBase = project->BasePath();
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
-    if (project->Name() != "system" && project->Name() != "support" && project->Name() != "os")
-    {
-        referenceFilePaths.insert(referenceFilePaths.begin(), "system.cml");
-    }
-    if (project->Name() != "support" && project->Name() != "os")
-    {
-        referenceFilePaths.insert(referenceFilePaths.begin(), "support.cml");
-    }
-    if (project->Name() != "os")
-    {
-        referenceFilePaths.insert(referenceFilePaths.begin(), "os.cml");
-    }
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !referenceFilePaths.empty())
     {
         std::cout << "Importing libraries..." << std::endl;
     }
     std::unordered_set<std::string> importedModules;
+    if (project->Name() != "system" && project->Name() != "support" && project->Name() != "os")
+    {
+        referenceFilePaths.push_back("system.cml");
+    } 
     for (const std::string& referenceFilePath : referenceFilePaths)
     {
         std::string libraryReferencePath = ResolveLibraryReference(project->OutputBasePath(), Cm::Core::GetGlobalSettings()->Config(), libraryDirs, referenceFilePath);
@@ -315,10 +307,15 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
     {
         std::cout << "Compiling C files..." << std::endl;
     }
+    std::string gFlag;
+    if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+    {
+        gFlag = "-g ";
+    }
     for (const std::string& cSourceFilePath : project->CSourceFilePaths())
     {
         std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cSourceFilePath).filename().replace_extension(".o")).generic_string());
-        std::string ccCommand = "gcc -O" + std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel());
+        std::string ccCommand = "gcc " + gFlag + "-O" + std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel());
         ccCommand.append(" -pthread -c ").append(Cm::Util::QuotedPath(cSourceFilePath)).append(" -o ").append(Cm::Util::QuotedPath(objectFilePath));
         objectFilePaths.push_back(objectFilePath);
         std::string ccErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(objectFilePath).replace_extension(".c.error").generic_string());
