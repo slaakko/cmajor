@@ -133,7 +133,7 @@ Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const s
 }
 
 void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths,
-    std::vector<std::string>& allReferenceFilePaths)
+    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths)
 {
     boost::filesystem::path projectBase = project->BasePath();
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
@@ -154,16 +154,16 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
         {
             importedModules.insert(libraryReferencePath);
             Cm::Sym::Module module(libraryReferencePath);
-            module.Import(symbolTable, importedModules, assemblyFilePaths, allReferenceFilePaths);
+            module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths);
         }
     }
 }
 
-void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, 
-    std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& allReferenceFilePaths)
+void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 
+    const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths)
 {
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
-    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, allReferenceFilePaths);
+    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths);
     symbolTable.InitVirtualFunctionTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
@@ -469,7 +469,7 @@ void Archive(const std::vector<std::string>& objectFilePaths, const std::string&
     boost::filesystem::remove(arErrorFilePath);
 }
 
-void Link(const std::vector<std::string>& assemblyFilePaths, const std::string& executableFilePath)
+void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<std::string>& cLibs, const std::string& executableFilePath)
 {
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !assemblyFilePaths.empty())
@@ -487,16 +487,14 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::string& 
             std::cout << "> " << Cm::Util::GetFullPath(assemblyFilePath) << std::endl;
         }
     }
-/*
     for (const std::string& clib : cLibs)
     {
         ccCommand.append(" -l").append(clib);
-        if (genOutput)
+        if (!quiet)
         {
             std::cout << "> " << clib << std::endl;
         }
     }
-*/
     ccCommand.append(" -Xlinker --end-group");
     ccCommand.append(" -o ").append(Cm::Util::QuotedPath(executableFilePath));
     std::string exeErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(executableFilePath).replace_extension(".exe.error").generic_string());
@@ -561,6 +559,8 @@ void BuildProject(Cm::Ast::Project* project)
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
     std::vector<std::string> assemblyFilePaths;
     assemblyFilePaths.push_back(project->AssemblyFilePath());
+    std::vector<std::string> cLibs;
+    cLibs.insert(cLibs.end(), project->CLibraryFilePaths().begin(), project->CLibraryFilePaths().end());
     Cm::Core::GlobalConceptData globalConceptData;
     Cm::Core::SetGlobalConceptData(&globalConceptData);
     Cm::Sym::SymbolTable symbolTable;
@@ -575,7 +575,7 @@ void BuildProject(Cm::Ast::Project* project)
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
-    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, allReferenceFilePaths);
+    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths);
     boost::filesystem::create_directories(project->OutputBasePath());
     Cm::Sym::FunctionSymbol* userMainFunction = nullptr;
     std::vector<std::string> objectFilePaths;
@@ -591,7 +591,7 @@ void BuildProject(Cm::Ast::Project* project)
     Archive(objectFilePaths, project->AssemblyFilePath());
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
-        Link(assemblyFilePaths, project->ExecutableFilePath());
+        Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
     }
     boost::filesystem::path outputBasePath = project->OutputBasePath();
     std::string cmlFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".cml")).generic_string());
@@ -603,6 +603,7 @@ void BuildProject(Cm::Ast::Project* project)
     Cm::Sym::Module projectModule(cmlFilePath);
     projectModule.SetSourceFilePaths(project->SourceFilePaths());
     projectModule.SetReferenceFilePaths(allReferenceFilePaths);
+    projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
     projectModule.Export(symbolTable);
     Cm::Parser::SetCurrentFileRegistry(nullptr);
     Cm::Core::SetGlobalConceptData(nullptr);

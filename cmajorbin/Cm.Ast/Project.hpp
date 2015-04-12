@@ -49,6 +49,7 @@ public:
     virtual bool IsAssemblyFileDeclaration() const { return false; }
     virtual bool IsExecutableFileDeclaration() const { return false; }
     virtual bool IsReferenceFileDeclaration() const { return false; }
+    virtual bool IsCLibraryDeclaration() const { return false; }
     const Span& GetSpan() const { return span; }
     const Properties& GetProperties() const { return properties; }
 private:
@@ -103,6 +104,7 @@ class CLibraryDeclaration : public ProjectDeclaration
 public:
     CLibraryDeclaration(const Span& span_, const std::string& filePath_, const Properties& properties_);
     const std::string& FilePath() const { return filePath; }
+    bool IsCLibraryDeclaration() const override { return true; }
 private:
     std::string filePath;
 };
@@ -133,6 +135,7 @@ public:
     const std::vector<std::string>& CSourceFilePaths() const { return cSourceFilePaths; }
     const std::vector<std::string>& TextFilePaths() const { return textFilePaths; }
     const std::vector<std::string>& ReferenceFilePaths() const { return referenceFilePaths; }
+    const std::vector<std::string>& CLibraryFilePaths() const { return cLibraryFilePaths; }
     const std::string& AssemblyFilePath() const { return assemblyFilePath; }
     const std::string& LibraryFilePath() const { return libraryFilePath; }
     const std::string& ExecutableFilePath() const { return executableFilePath; }
@@ -151,6 +154,7 @@ private:
     std::vector<std::string> cSourceFilePaths;
     std::vector<std::string> textFilePaths;
     std::vector<std::string> referenceFilePaths;
+    std::vector<std::string> cLibraryFilePaths;
     std::string assemblyFilePath;
     std::string libraryFilePath;
     std::string executableFilePath;

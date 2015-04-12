@@ -48,6 +48,11 @@ void Module::SetReferenceFilePaths(const std::vector<std::string>& referenceFile
     referenceFilePaths = referenceFilePaths_;
 }
 
+void Module::SetCLibraryFilePaths(const std::vector<std::string>& cLibraryFilePaths_)
+{
+    cLibraryFilePaths = cLibraryFilePaths_;
+}
+
 void Module::WriteModuleFileId(Writer& writer)
 {
     for (int i = 0; i < 4; ++i)
@@ -76,12 +81,23 @@ void Module::WriteReferenceFilePaths(Writer& writer)
     }
 }
 
+void Module::WriteCLibraryFilePaths(Writer& writer)
+{
+    int32_t n = int32_t(cLibraryFilePaths.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        writer.GetBinaryWriter().Write(cLibraryFilePaths[i]);
+    }
+}
+
 void Module::Export(SymbolTable& symbolTable)
 {
     Writer writer(filePath, &symbolTable);
     WriteModuleFileId(writer);
     WriteSourceFilePaths(writer);
     WriteReferenceFilePaths(writer);
+    WriteCLibraryFilePaths(writer);
     symbolTable.Export(writer);
     ExportExceptionTable(writer);
 	writer.GetBinaryWriter().Write(int32_t(GetMutexTable()->GetNumberOfMutexesInThisProject()));
@@ -136,7 +152,18 @@ void Module::ReadReferenceFilePaths(Reader& reader)
     }
 }
 
-void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& allReferenceFilePaths)
+void Module::ReadCLibraryFilePaths(Reader& reader)
+{
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        std::string cLibraryFilePath = reader.GetBinaryReader().ReadString();
+        cLibraryFilePaths.push_back(cLibraryFilePath);
+    }
+}
+
+void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, 
+    std::vector<std::string>& allReferenceFilePaths)
 {
     boost::filesystem::path afp = filePath;
     afp.replace_extension(".cma");
@@ -147,13 +174,15 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
     CheckModuleFileId(reader);
     ReadSourceFilePaths(reader);
     ReadReferenceFilePaths(reader);
+    ReadCLibraryFilePaths(reader);
+    cLibs.insert(cLibs.end(), cLibraryFilePaths.begin(), cLibraryFilePaths.end());
     for (const std::string& referenceFilePath : referenceFilePaths)
     {
         if (importedModules.find(referenceFilePath) == importedModules.end())
         {
             importedModules.insert(referenceFilePath);
             Module referencedModule(referenceFilePath);
-            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, allReferenceFilePaths);
+            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths);
         }
     }
     Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::GetCurrentFileRegistry();
