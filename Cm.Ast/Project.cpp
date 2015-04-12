@@ -169,6 +169,18 @@ void Project::ResolveDeclarations()
             }
             referenceFilePaths.push_back(rfd->FilePath());
         }
+        else if (declaration->IsCLibraryDeclaration())
+        {
+            CLibraryDeclaration* clib = static_cast<CLibraryDeclaration*>(declaration.get());
+            for (const std::string& prev : cLibraryFilePaths)
+            {
+                if (prev == clib->FilePath())
+                {
+                    throw std::runtime_error("C library file '" + prev + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(clib->GetSpan().LineNumber()) + ")");
+                }
+            }
+            cLibraryFilePaths.push_back(clib->FilePath());
+        }
         else if (declaration->IsTargetDeclaration())
         {
             TargetDeclaration* td = static_cast<TargetDeclaration*>(declaration.get());
