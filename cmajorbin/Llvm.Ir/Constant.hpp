@@ -94,8 +94,6 @@ public:
     I32Constant(int32_t value_);
 };
 
-typedef unsigned int uint;
-
 class UI32Constant: public Constant
 {
 public:

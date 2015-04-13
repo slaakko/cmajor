@@ -15,10 +15,6 @@
 
 namespace Llvm { 
 
-extern bool debug;
-void PushDebug(bool debug_);
-void PopDebug();
-
 class VoidType : public Ir::Intf::Type
 {
 public:
