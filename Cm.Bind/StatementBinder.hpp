@@ -243,6 +243,9 @@ private:
     Binder& binder;
 };
 
+Cm::BoundTree::BoundConstructionStatement* CreateTracedFunConstructionStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundFunction* boundFunction, const Cm::Parsing::Span& span);
+
 } } // namespace Cm::Bind
 
 #endif // CM_BIND_STATEMENT_INCLUDED

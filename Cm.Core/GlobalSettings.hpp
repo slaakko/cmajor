@@ -21,9 +21,12 @@ public:
     void SetConfig(const std::string& config_);
     int OptimizationLevel() const;
     void SetOptimizationLevel(int optimizationLevel_);
+    void SetCurrentProjectName(const std::string& currentProjectName_);
+    const std::string& CurrentProjectName() const { return currentProjectName; }
 private:
     std::string config;
     int optimizationLevel;
+    std::string currentProjectName;
 };
 
 GlobalSettings* GetGlobalSettings();

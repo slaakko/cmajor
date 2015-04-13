@@ -630,15 +630,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
         boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
     }
-    std::unique_ptr<Cm::Core::Exception> ownedException = nullptr;
-    Cm::Core::Exception* exception = nullptr;
+    std::unique_ptr<Cm::Core::Exception> exception = nullptr;
     boundCompileUnit.ClassTemplateRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions);
     boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions, exception);
     boundCompileUnit.ClassDelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
-    if (exception)
-    {
-        ownedException.reset(exception);
-    }
     if (viableFunctions.empty())
     {
         bool fileScopesLookedUp = false;

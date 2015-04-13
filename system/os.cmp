@@ -7,3 +7,4 @@ csource <mutextbl.c>;
 source <os.cm>;
 csource <threadtbl.c>;
 clib <rt>[os=linux];
+clib <m>[os=linux];

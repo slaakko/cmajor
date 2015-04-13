@@ -23,14 +23,14 @@ class Function : public Ir::Intf::Function
 public:
     Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_);
     ~Function();
-    virtual void AddInstruction(Ir::Intf::Instruction* instruction);
-    virtual void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_);
-    virtual void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_);
-    virtual bool ContainsExceptionCodeParam() const;
+    void AddInstruction(Ir::Intf::Instruction* instruction) override;
+    void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_) override;
+    void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_) override;
+    bool ContainsExceptionCodeParam() const override;
     bool IsDoNothingFunction() const override { return isDoNothingFunction; }
     void SetDoNothingFunction() { isDoNothingFunction = true; }
 protected:
-    virtual std::string ParameterListStr() const;
+    std::string ParameterListStr() const override;
 private:
     bool isDoNothingFunction;
 };

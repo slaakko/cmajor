@@ -14,7 +14,6 @@
 #include <Llvm.Ir/RefVar.hpp>
 #include <Llvm.Ir/StackVar.hpp>
 #include <Llvm.Ir/MemberVar.hpp>
-#include <Llvm.Ir/Temporary.hpp>
 #include <Llvm.Ir/Util.hpp>
 #include <Llvm.Ir/Instruction.hpp>
 #include <Ir.Intf/Factory.hpp>

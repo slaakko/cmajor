@@ -59,7 +59,6 @@ public:
     virtual Ir::Intf::Function* CreateDoNothingFunction() = 0;
     virtual Ir::Intf::Function* CreateDbgDeclareFunction() = 0;
     virtual void ResetLocalLabelCounter() = 0;
-    virtual void ResetTemporaryCounter() = 0;
     virtual std::string MakeAssemblyName(const std::string& name) = 0;
     virtual std::string MakeClassNameAssemblyName(const std::string& fullClassName) = 0;
     virtual Ir::Intf::Type* CreateClassTypeName(const std::string& fullClassName) = 0;

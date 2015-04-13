@@ -14,7 +14,6 @@
 #include <Llvm.Ir/RegVar.hpp>
 #include <Llvm.Ir/RefVar.hpp>
 #include <Llvm.Ir/MemberVar.hpp>
-#include <Llvm.Ir/Temporary.hpp>
 #include <Llvm.Ir/Instruction.hpp>
 
 namespace Llvm { 

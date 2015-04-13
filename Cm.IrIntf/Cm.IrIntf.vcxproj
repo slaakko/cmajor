@@ -20,11 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackEnd.cpp" />
+    <ClCompile Include="CBackEnd.cpp" />
     <ClCompile Include="LlvmBackEnd.cpp" />
     <ClCompile Include="Rep.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackEnd.hpp" />
+    <ClInclude Include="CBackEnd.hpp" />
     <ClInclude Include="Fwd.hpp" />
     <ClInclude Include="LlvmBackEnd.hpp" />
     <ClInclude Include="Rep.hpp" />

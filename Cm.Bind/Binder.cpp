@@ -21,6 +21,7 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/ClassObjectLayout.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -331,8 +332,25 @@ void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
 void Binder::BeginVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
 {
     BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&compoundStatementNode));
+    bool functionBlock = currentParent == nullptr;
     parentStack.push(currentParent.release());
     currentParent.reset(new Cm::BoundTree::BoundCompoundStatement(&compoundStatementNode));
+    if (functionBlock)
+    {
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::trace))
+        {
+            Cm::BoundTree::BoundStatement* tracedFunConstructionStatement = CreateTracedFunConstructionStatement(boundCompileUnit, currentContainerScope, boundFunction.get(),
+                compoundStatementNode.GetSpan());
+            if (tracedFunConstructionStatement)
+            {
+                int classObjectLayoutFunIndex = boundFunction->GetClassObjectLayoutFunIndex();
+                Cm::BoundTree::BoundCompoundStatement* functionCompound = static_cast<Cm::BoundTree::BoundCompoundStatement*>(currentParent.get());
+                functionCompound->InsertStatement(classObjectLayoutFunIndex, tracedFunConstructionStatement);
+                ++classObjectLayoutFunIndex;
+                boundFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
+            }
+        }
+    }
 }
 
 void Binder::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)

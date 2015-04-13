@@ -168,7 +168,7 @@ void* dbgheap_malloc(unsigned long long size)
     }
     if (size >= 8192)
     {
-        fprintf(stderr, "DBGHEAP> allocation size >= 8192 (%ull), serial=%d", size, allocation_serial);
+        fprintf(stderr, "DBGHEAP> allocation size >= 8192 (%ull), serial=%d\n", size, allocation_serial);
         fflush(stderr);
     }
     if (watch_allocation == allocation_serial)

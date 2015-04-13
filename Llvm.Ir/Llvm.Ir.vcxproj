@@ -31,7 +31,6 @@
     <ClCompile Include="RefVar.cpp" />
     <ClCompile Include="RegVar.cpp" />
     <ClCompile Include="StackVar.cpp" />
-    <ClCompile Include="Temporary.cpp" />
     <ClCompile Include="Type.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..;C:\Programming\boost_1_57_0</AdditionalIncludeDirectories>
@@ -54,7 +53,6 @@
     <ClInclude Include="RefVar.hpp" />
     <ClInclude Include="RegVar.hpp" />
     <ClInclude Include="StackVar.hpp" />
-    <ClInclude Include="Temporary.hpp" />
     <ClInclude Include="Type.hpp" />
     <ClInclude Include="Util.hpp" />
   </ItemGroup>

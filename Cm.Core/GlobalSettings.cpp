@@ -53,6 +53,11 @@ void GlobalSettings::SetConfig(const std::string& config_)
     config = config_;
 }
 
+void GlobalSettings::SetCurrentProjectName(const std::string& currentProjectName_)
+{
+    currentProjectName = currentProjectName_;
+}
+
 GlobalSettings* globalSettings = nullptr;
 
 GlobalSettings* GetGlobalSettings()

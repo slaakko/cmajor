@@ -21,7 +21,7 @@ class SynthesizedClassFunRepository
 public:
     virtual ~SynthesizedClassFunRepository();
     virtual void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
-        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, Exception*& exception) = 0;
+        std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, std::unique_ptr<Exception>& exception) = 0;
 };
 
 } } // namespace Cm::Core

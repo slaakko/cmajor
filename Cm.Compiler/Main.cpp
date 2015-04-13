@@ -19,6 +19,7 @@
 #include <Cm.Parsing/InitDone.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <Cm.Util/Path.hpp>
+#include <Cm.IrIntf/BackEnd.hpp>
 #include <chrono>
 #include <iostream>
 
@@ -70,7 +71,7 @@ int main(int argc, const char** argv)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;
     _CrtSetDbgFlag(dbgFlags);
-    //_CrtSetBreakAlloc(496148);
+   _CrtSetBreakAlloc(60768235);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     Cm::Core::GlobalSettings globalSettings;
@@ -79,16 +80,19 @@ int main(int argc, const char** argv)
     {
         InitDone initDone;
         std::vector<std::string> solutionOrProjectFilePaths;
+        Cm::IrIntf::BackEnd backend = Cm::IrIntf::BackEnd::llvm;
         if (argc < 2)
         {
             std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
             std::cout << "Usage: " << CompilerName() << " [options] {file.cms | file.cmp}" << std::endl;
             std::cout << "Compile Cmajor solution file.cms or project file.cmp" << std::endl;
-            std::cout << 
+            std::cout <<
                 "options:\n" <<
                 "-config=debug   : use debug configuration (default)\n" <<
                 "-config=release : use release configuration\n" <<
-                "-O=<n>          : set optimization level to <n> (default: debug:0, release:3)\n" << 
+                "-O=<n>          : set optimization level to <n> (default: debug:0, release:3)\n" <<
+                "-backend=llvm   : use LLVM backend (default)\n" <<
+                "-backend=c      : use C backend\n" <<
                 "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
                 "-quiet          : write no output messages for successful compiles\n" << 
                 "-trace          : instrument program/library with tracing enabled\n" <<
@@ -127,6 +131,22 @@ int main(int argc, const char** argv)
                                     std::string levelStr = v[1];
                                     int level = std::stoi(levelStr);
                                     Cm::Core::GetGlobalSettings()->SetOptimizationLevel(level);
+                                }
+                                else if (v[0] == "-backend")
+                                {
+                                    std::string backendStr = v[1];
+                                    if (backendStr == "llvm")
+                                    {
+                                        backend = Cm::IrIntf::BackEnd::llvm;
+                                    }
+                                    else if (backendStr == "c")
+                                    {
+                                        backend = Cm::IrIntf::BackEnd::c;
+                                    }
+                                    else
+                                    {
+                                        throw std::runtime_error("unknown backend '" + backendStr + "'");
+                                    }
                                 }
                                 else
                                 {
@@ -174,6 +194,7 @@ int main(int argc, const char** argv)
                     }
                 }
             }
+            Cm::IrIntf::SetBackEnd(backend);
             bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
             if (!quiet)
             {
