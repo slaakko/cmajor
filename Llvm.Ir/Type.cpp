@@ -16,21 +16,6 @@
 
 namespace Llvm { 
 
-bool debug = false;
-std::stack<bool> debugStack;
-
-void PushDebug(bool debug_)
-{
-	debugStack.push(debug);
-	debug = debug_;
-}
-
-void PopDebug()
-{
-	debug = debugStack.top();
-	debugStack.pop();
-}
-
 VoidType::VoidType(): Ir::Intf::Type("void")
 {
 }
@@ -428,7 +413,7 @@ FunctionType::FunctionType(Ir::Intf::Type* returnType_, const std::vector<Ir::In
         parameterType->SetOwned();
         parameterTypes.push_back(std::unique_ptr<Ir::Intf::Type>(parameterType));
     }
-    s.append(" )");
+    s.append(")");
     SetName(s);
 }
 
