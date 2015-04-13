@@ -543,6 +543,7 @@ void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::st
 void BuildProject(Cm::Ast::Project* project)
 {
     currentProject = project;
+    Cm::Core::GetGlobalSettings()->SetCurrentProjectName(project->Name());
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
@@ -615,6 +616,7 @@ void BuildProject(Cm::Ast::Project* project)
         std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ") built successfully" << std::endl;
     }
     currentProject = nullptr;
+    Cm::Core::GetGlobalSettings()->SetCurrentProjectName("");
 }
 
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;

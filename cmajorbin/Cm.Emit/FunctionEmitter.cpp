@@ -2290,7 +2290,9 @@ void FunctionEmitter::GenJumpingBoolCode(Cm::Core::GenResult& result)
 
 void FunctionEmitter::CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo)
 {
-	Ir::Intf::Function* enterFrameIrFun = irFunctionRepository.CreateIrFunction(enterFrameFun);
+    if (currentFunction->GetFunctionSymbol()->FullName() == "System.TracedFun.@constructor(System.TracedFun*, const char*, const char*, int)") return;
+    if (currentFunction->GetFunctionSymbol()->FullName() == "System.TracedFun.@destructor(System.TracedFun*)") return;
+    Ir::Intf::Function* enterFrameIrFun = irFunctionRepository.CreateIrFunction(enterFrameFun);
 	externalFunctions.insert(enterFrameIrFun);
 	std::vector<Ir::Intf::Object*> args;
     traceCallInfo->Fun()->Accept(*this);
@@ -2315,7 +2317,9 @@ void FunctionEmitter::CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo
 
 void FunctionEmitter::CallLeaveFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo)
 {
-	Ir::Intf::Function* leaveFrameIrFun = irFunctionRepository.CreateIrFunction(leaveFrameFun);
+    if (currentFunction->GetFunctionSymbol()->FullName() == "System.TracedFun.@constructor(System.TracedFun*, const char*, const char*, int)") return;
+    if (currentFunction->GetFunctionSymbol()->FullName() == "System.TracedFun.@destructor(System.TracedFun*)") return;
+    Ir::Intf::Function* leaveFrameIrFun = irFunctionRepository.CreateIrFunction(leaveFrameFun);
 	std::vector<Ir::Intf::Object*> args;
 	externalFunctions.insert(leaveFrameIrFun);
 	Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(nullptr, leaveFrameIrFun, args);

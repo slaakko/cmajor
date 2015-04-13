@@ -8,7 +8,6 @@
  ========================================================================*/
 
 #include <Llvm.Ir/Function.hpp>
-#include <Llvm.Ir/Temporary.hpp>
 #include <Llvm.Ir/Metadata.hpp>
 #include <Llvm.Ir/Instruction.hpp>
 #include <Llvm.Ir/Parameter.hpp>

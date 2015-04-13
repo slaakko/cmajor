@@ -47,7 +47,6 @@ public:
     Ir::Intf::Function* CreateDoNothingFunction() override;
     Ir::Intf::Function* CreateDbgDeclareFunction() override;
     void ResetLocalLabelCounter() override;
-    void ResetTemporaryCounter() override;
     std::string MakeAssemblyName(const std::string& name) override;
     std::string MakeClassNameAssemblyName(const std::string& fullClassName) override;
     Ir::Intf::Type* CreateClassTypeName(const std::string& fullClassName) override;

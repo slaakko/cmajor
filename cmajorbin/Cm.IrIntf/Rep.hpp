@@ -45,7 +45,6 @@ Ir::Intf::Function* CreateFunction(const std::string& name, Ir::Intf::Type* retu
 Ir::Intf::Function* CreateDoNothingFunction();
 Ir::Intf::Function* CreateDbgDeclareFunction();
 void ResetLocalLabelCounter();
-void ResetTemporaryCounter();
 bool TypesEqual(Ir::Intf::Type* left, Ir::Intf::Type* right);
 std::string MakeAssemblyName(const std::string& name);
 std::string MakeClassNameAssemblyName(const std::string& fullClassName);

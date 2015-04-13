@@ -16,7 +16,6 @@
 #include <Llvm.Ir/Global.hpp>
 #include <Llvm.Ir/MemberVar.hpp>
 #include <Llvm.Ir/Metadata.hpp>
-#include <Llvm.Ir/Temporary.hpp>
 #include <Llvm.Ir/StackVar.hpp>
 #include <Llvm.Ir/RefVar.hpp>
 #include <Llvm.Ir/Constant.hpp>
@@ -190,11 +189,6 @@ Ir::Intf::Function* LlvmBackEnd::CreateDbgDeclareFunction()
 void LlvmBackEnd::ResetLocalLabelCounter()
 {
     Llvm::ResetLocalLabelCounter();
-}
-
-void LlvmBackEnd::ResetTemporaryCounter()
-{
-    Llvm::ResetTemporaryCounter();
 }
 
 std::string LlvmBackEnd::MakeAssemblyName(const std::string& name)

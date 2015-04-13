@@ -18,16 +18,4 @@ using System.Collections;
 
 namespace System.Text.Parsing
 {
-    public abstract class Parser: ParsingObject
-    {
-        public nothrow Parser(const string& name_, const string& info_): base(name_), info(info_)
-        {
-        }
-        public nothrow inline const string& Info() const
-        {
-            return info;
-        }
-        public abstract Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack);
-        private string info;
-    }
 }

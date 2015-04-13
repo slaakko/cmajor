@@ -22,9 +22,13 @@ public:
     Ir::Intf::Type* GetMetadataType() override;
     Ir::Intf::Type* GetI1() override;
     Ir::Intf::Type* GetI8() override;
+    Ir::Intf::Type* GetUI8() override;
     Ir::Intf::Type* GetI16() override;
+    Ir::Intf::Type* GetUI16() override;
     Ir::Intf::Type* GetI32() override;
+    Ir::Intf::Type* GetUI32() override;
     Ir::Intf::Type* GetI64() override;
+    Ir::Intf::Type* GetUI64() override;
     Ir::Intf::Type* GetFloat() override;
     Ir::Intf::Type* GetDouble() override;
     Ir::Intf::Type* GetVoid() override;

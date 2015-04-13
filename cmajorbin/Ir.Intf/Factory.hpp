@@ -22,9 +22,13 @@ public:
     virtual Type* GetMetadataType() = 0;
     virtual Type* GetI1() = 0;
     virtual Type* GetI8() = 0;
+    virtual Type* GetUI8() = 0;
     virtual Type* GetI16() = 0;
+    virtual Type* GetUI16() = 0;
     virtual Type* GetI32() = 0;
+    virtual Type* GetUI32() = 0;
     virtual Type* GetI64() = 0;
+    virtual Type* GetUI64() = 0;
     virtual Type* GetFloat() = 0;
     virtual Type* GetDouble() = 0;
     virtual Type* GetVoid() = 0;

@@ -24,8 +24,8 @@ public:
     BinOpInstruction(Ir::Intf::Type* type_, const std::string& name_, Ir::Intf::Object* result_, Ir::Intf::Object* operand1_, Ir::Intf::Object* operand2_);
     virtual std::string ToString() const;
     Ir::Intf::Type* GetType() const { return type; }
-    virtual bool ReturnsResult() const { return true; }
-    virtual Ir::Intf::Object* GetResult() const { return result; }
+    bool ReturnsResult() const override { return true; }
+    Ir::Intf::Object* GetResult() const override { return result; }
     Ir::Intf::Object* GetOperand1() const { return operand1; }
     Ir::Intf::Object* GetOperand2() const { return operand2; }
 private:
@@ -39,7 +39,7 @@ class IntegerBinOpInstruction: public BinOpInstruction
 {
 public:
     IntegerBinOpInstruction(Ir::Intf::Type* type_, const std::string& name_, Ir::Intf::Object* result_, Ir::Intf::Object* operand1_, Ir::Intf::Object* operand2_);
-    virtual bool Valid() const;
+    bool Valid() const override;
 };
 
 class AddInst: public IntegerBinOpInstruction
@@ -150,7 +150,7 @@ class FloatingPointBinOpInstruction: public BinOpInstruction
 {
 public:
     FloatingPointBinOpInstruction(Ir::Intf::Type* type_, const std::string& name_, Ir::Intf::Object* result_, Ir::Intf::Object* operand1_, Ir::Intf::Object* operand2_);
-    virtual bool Valid() const;
+    bool Valid() const override;
 };
 
 class FAddInst: public FloatingPointBinOpInstruction
@@ -198,9 +198,9 @@ class RetInst: public Ir::Intf::Instruction
 public:
     RetInst();
     RetInst(Ir::Intf::Object* value_);
-    virtual std::string ToString() const;
-    virtual bool IsTerminator() const { return true; }
-    virtual bool IsRet() const { return true; }
+    std::string ToString() const override;
+    bool IsTerminator() const override { return true; }
+    bool IsRet() const override { return true; }
 private:
     Ir::Intf::Object* value;
 };
@@ -213,11 +213,11 @@ class BrInst: public Ir::Intf::Instruction
 public:
     BrInst(Ir::Intf::LabelObject* dest_);
     BrInst(Ir::Intf::Object* cond_, Ir::Intf::LabelObject* trueLabel_, Ir::Intf::LabelObject* falseLabel_);
-    virtual std::string ToString() const;
-    virtual void AddTargetLabels(std::set<std::string>& targetLabels);
-    virtual bool IsTerminator() const { return true; }
-    virtual Ir::Intf::LabelObject* GetTargetLabel() const { return dest; }
-    virtual bool IsUnconditionalBr() const;
+    std::string ToString() const override;
+    void AddTargetLabels(std::set<std::string>& targetLabels) override;
+    bool IsTerminator() const override { return true; }
+    Ir::Intf::LabelObject* GetTargetLabel() const override { return dest; }
+    bool IsUnconditionalBr() const override;
 private:
     Ir::Intf::LabelObject* dest;
     Ir::Intf::Object* cond;
@@ -232,10 +232,10 @@ class SwitchInst: public Ir::Intf::Instruction
 {
 public:
     SwitchInst(Ir::Intf::Type* integerType_, Ir::Intf::Object* value_, Ir::Intf::LabelObject* defaultDest_, const std::vector<std::pair<Ir::Intf::Object*, Ir::Intf::LabelObject*>>& destinations_);
-    virtual std::string ToString() const;
-    virtual void AddTargetLabels(std::set<std::string>& targetLabels);
-    virtual Ir::Intf::Object* GetResult() const { return value; }
-    virtual bool IsTerminator() const { return true; }
+    std::string ToString() const override;
+    void AddTargetLabels(std::set<std::string>& targetLabels) override;
+    Ir::Intf::Object* GetResult() const override { return value; }
+    bool IsTerminator() const override { return true; }
 private:
     Ir::Intf::Type* integerType;
     Ir::Intf::Object* value;
@@ -250,9 +250,9 @@ class AllocaInst: public Ir::Intf::Instruction
 public:
     AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_);
     AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Type* elementType_, int numElements_);
-    virtual void SetAlignment(int alignment_);
-    virtual std::string ToString() const;
-    virtual Ir::Intf::Object* GetResult() const { return result; }
+    void SetAlignment(int alignment_) override;
+    std::string ToString() const override;
+    Ir::Intf::Object* GetResult() const override { return result; }
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
@@ -268,10 +268,10 @@ class LoadInst: public Ir::Intf::Instruction
 {
 public:
     LoadInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_);
-    virtual void SetAlignment(int alignment_);
-    virtual std::string ToString() const;
-    virtual bool ReturnsResult() const { return true; }
-    virtual Ir::Intf::Object* GetResult() const { return result; }
+    void SetAlignment(int alignment_) override;
+    std::string ToString() const override;
+    bool ReturnsResult() const override { return true; }
+    Ir::Intf::Object* GetResult() const override { return result; }
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
@@ -285,8 +285,8 @@ class StoreInst: public Ir::Intf::Instruction
 {
 public:
     StoreInst(Ir::Intf::Type* type_, Ir::Intf::Object* value_, Ir::Intf::Object* ptr_);
-    virtual void SetAlignment(int alignment_);
-    virtual std::string ToString() const;
+    void SetAlignment(int alignment_) override;
+    std::string ToString() const override;
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* value;
@@ -303,10 +303,10 @@ public:
     GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, Ir::Intf::Object* index1_);
     GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, const std::vector<Ir::Intf::Object*>& indeces_);
 	~GetElementPtrInst();
-    virtual void SetInbounds() { inbounds = true; }
-    virtual std::string ToString() const;
-    virtual bool ReturnsResult() const { return true; }
-    virtual Ir::Intf::Object* GetResult() const { return result; }
+    void SetInbounds() override { inbounds = true; }
+    std::string ToString() const override;
+    bool ReturnsResult() const override { return true; }
+    Ir::Intf::Object* GetResult() const override { return result; }
 private:
     Ir::Intf::Type* ptrType;
     Ir::Intf::Object* result;
@@ -324,10 +324,10 @@ class CallInst: public Ir::Intf::Instruction
 {
 public:
     CallInst(Ir::Intf::Object* result_, Ir::Intf::Function* fun_, const std::vector<Ir::Intf::Object*>& args_);
-    virtual std::string ToString() const;
-    virtual bool ReturnsResult() const { return result && !result->GetType()->IsVoidType(); }
-    virtual Ir::Intf::Object* GetResult() const { return result; }
-    virtual bool IsCall() const { return true; }
+    std::string ToString() const override;
+    bool ReturnsResult() const override { return result && !result->GetType()->IsVoidType(); }
+    Ir::Intf::Object* GetResult() const override { return result; }
+    bool IsCall() const override { return true; }
 private:
     Ir::Intf::Object* result;
     Ir::Intf::Function* fun;
@@ -340,10 +340,10 @@ class IndirectCallInst: public Ir::Intf::Instruction
 {
 public:
     IndirectCallInst(Ir::Intf::Object* result_, Ir::Intf::Object* funPtr_, const std::vector<Ir::Intf::Object*>& args_);
-    virtual std::string ToString() const;
-    virtual bool ReturnsResult() const { return result && !result->GetType()->IsVoidType(); }
-    virtual Ir::Intf::Object* GetResult() const { return result; }
-    virtual bool IsCall() const { return true; }
+    std::string ToString() const override;
+    bool ReturnsResult() const override { return result && !result->GetType()->IsVoidType(); }
+    Ir::Intf::Object* GetResult() const override { return result; }
+    bool IsCall() const override { return true; }
 private:
     Ir::Intf::Object* result;
     Ir::Intf::Object* funPtr;
@@ -356,9 +356,9 @@ class ICmpInst: public Ir::Intf::Instruction
 {
 public:
     ICmpInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::IConditionCode cond_, Ir::Intf::Object* operand1_, Ir::Intf::Object* operand2_);
-    virtual std::string ToString() const;
-    virtual bool ReturnsResult() const { return true; }
-    virtual Ir::Intf::Object* GetResult() const { return result; }
+    std::string ToString() const override;
+    bool ReturnsResult() const override { return true; }
+    Ir::Intf::Object* GetResult() const override { return result; }
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
@@ -373,9 +373,9 @@ class FCmpInst: public Ir::Intf::Instruction
 {
 public:
     FCmpInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::FConditionCode cond_, Ir::Intf::Object* operand1_, Ir::Intf::Object* operand2_);
-    virtual std::string ToString() const;
-    virtual bool ReturnsResult() const { return true; }
-    virtual Ir::Intf::Object* GetResult() const { return result; }
+    std::string ToString() const override;
+    bool ReturnsResult() const override { return true; }
+    Ir::Intf::Object* GetResult() const override { return result; }
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
@@ -399,9 +399,9 @@ class ConversionInstruction: public Ir::Intf::Instruction
 {
 public:
     ConversionInstruction(const std::string& name_, Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Object* value_, Ir::Intf::Type* toType_);
-    virtual std::string ToString() const;
-    virtual bool ReturnsResult() const { return true; }
-    virtual Ir::Intf::Object* GetResult() const { return result; }
+    std::string ToString() const override;
+    bool ReturnsResult() const override { return true; }
+    Ir::Intf::Object* GetResult() const override { return result; }
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
@@ -509,7 +509,7 @@ class DbgDeclareInst: public Ir::Intf::Instruction
 {
 public:
     DbgDeclareInst(Ir::Intf::Object* variable_, Ir::Intf::MetadataNode* descriptor_);
-    virtual std::string ToString() const;
+    std::string ToString() const override;
 private:
     Ir::Intf::Object* variable;
     Ir::Intf::MetadataNode* descriptor;
@@ -520,4 +520,3 @@ Ir::Intf::Instruction* DbgDeclare(Ir::Intf::Object* variable, Ir::Intf::Metadata
 } // namespace Llvm
 
 #endif // LLVM_IR_INSTRUCTION_INCLUDED
-

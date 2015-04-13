@@ -111,5 +111,7 @@ extern public cdecl int mutextbl_lock_mtx(int mid);
 extern public cdecl int mutextbl_unlock_mtx(int mid);
 extern public cdecl int get_current_date(char* dateBuf);
 extern public cdecl double pow(double x, double y);
+extern public cdecl void enter_traced_fun(const char* fun, const char* file, int line);
+extern public cdecl void leave_traced_fun(const char* fun, const char* file, int line);
 extern public cdecl void enter_traced_call(const char* fun, const char* file, int line);
 extern public cdecl void leave_traced_call(const char* fun, const char* file, int line);

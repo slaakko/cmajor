@@ -204,7 +204,7 @@ public:
     Ir::Intf::Type* ReturnType() const { return returnType.get(); }
     const std::vector<std::unique_ptr<Ir::Intf::Type>>& ParameterTypes() const { return parameterTypes; }
     Ir::Intf::Type* Clone() const override;
-    virtual bool IsFunctionType() const { return true; }
+    bool IsFunctionType() const override { return true; }
 private:
     std::unique_ptr<Ir::Intf::Type> returnType;
     std::vector<std::unique_ptr<Ir::Intf::Type>> parameterTypes;

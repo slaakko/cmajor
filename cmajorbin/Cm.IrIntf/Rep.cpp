@@ -173,11 +173,6 @@ void ResetLocalLabelCounter()
     GetBackEndImpl()->ResetLocalLabelCounter();
 }
 
-void ResetTemporaryCounter()
-{
-    GetBackEndImpl()->ResetTemporaryCounter();
-}
-
 std::string MakeAssemblyName(const std::string& name)
 {
     return GetBackEndImpl()->MakeAssemblyName(name);

@@ -45,4 +45,19 @@ namespace System
         }
         private string s;
     }
+
+    public class TracedFun
+    {
+        public nothrow TracedFun(const char* fun_, const char* file_, int line_): fun(fun_), file(file_), line(line_)
+        {
+            enter_traced_fun(fun, file, line);
+        }
+        public nothrow ~TracedFun()
+        {
+            leave_traced_fun(fun, file, line);
+        }
+        private const char* fun;
+        private const char* file;
+        private int line;
+    }
 }

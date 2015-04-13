@@ -18,9 +18,11 @@
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Core/Exception.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parser/Expression.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -1265,6 +1267,73 @@ void ExitTryBinder::Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode)
     Cm::Ast::TryStatementNode* tryNode = exitTryStatementNode.TryNode();
     Cm::BoundTree::BoundCompoundStatement* tryCompound = CurrentFunction()->GetTryCompound(tryNode);
     binder.AddBoundStatement(new Cm::BoundTree::BoundExitBlocksStatement(&exitTryStatementNode, tryCompound));
+}
+
+Cm::BoundTree::BoundConstructionStatement* CreateTracedFunConstructionStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, 
+    Cm::BoundTree::BoundFunction* boundFunction, const Cm::Parsing::Span& span)
+{
+    if (boundFunction->GetFunctionSymbol()->FullName() == "System.TracedFun.@constructor(System.TracedFun*, const char*, const char*, int)")
+    {
+        return nullptr;
+    }
+    if (boundFunction->GetFunctionSymbol()->FullName() == "System.TracedFun.@destructor(System.TracedFun*)")
+    {
+        return nullptr;
+    }
+    const std::string& currentProjectName = Cm::Core::GetGlobalSettings()->CurrentProjectName();
+    if (currentProjectName.empty() || currentProjectName == "os" || currentProjectName == "support")
+    {
+        return nullptr;
+    }
+    Cm::BoundTree::BoundConstructionStatement* boundConstructionStatement = new Cm::BoundTree::BoundConstructionStatement(nullptr);
+    Cm::Ast::IdentifierNode* tracedFunTypeExprNode = new Cm::Ast::IdentifierNode(span, "System.TracedFun");
+    Cm::Sym::TypeSymbol* tracedFunType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(),
+        tracedFunTypeExprNode);
+    boundFunction->Own(tracedFunTypeExprNode);
+    if (!tracedFunType->IsClassTypeSymbol())
+    {
+        throw std::runtime_error("not class type");
+    }
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(tracedFunType);
+    boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+    Cm::Sym::TypeSymbol* tracedFunPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(tracedFunType, span);
+    Cm::Sym::LocalVariableSymbol* tracedFunVar = boundFunction->CreateTempLocalVariable(tracedFunType);
+    boundConstructionStatement->SetLocalVariable(tracedFunVar);
+    Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);
+    Cm::Sym::TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+    std::vector<Cm::Core::Argument> resolutionArguments;
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, tracedFunPtrType));
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, constCharPtrType));
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, constCharPtrType));
+    resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
+    Cm::Sym::FunctionLookupSet resolutionLookups;
+    resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, tracedFunType->GetContainerScope()));
+    std::vector<Cm::Sym::FunctionSymbol*> conversions;
+    Cm::Sym::FunctionSymbol* tracedFunCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, resolutionLookups, span, conversions);
+    boundConstructionStatement->SetConstructor(tracedFunCtor);
+    Cm::BoundTree::BoundExpressionList arguments;
+    Cm::Sym::FunctionSymbol* fun = boundFunction->GetFunctionSymbol();
+    std::string funFullName = fun->FullName();
+    int funId = boundCompileUnit.StringRepository().Install(funFullName);
+    Cm::BoundTree::BoundStringLiteral* funLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, funId);
+    funLiteral->SetType(constCharPtrType);
+    arguments.Add(funLiteral);
+    std::string filePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(span.FileIndex());
+    int fileId = boundCompileUnit.StringRepository().Install(filePath);
+    Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, fileId);
+    fileLiteral->SetType(constCharPtrType);
+    arguments.Add(fileLiteral);
+    Cm::Sym::Value* value = new Cm::Sym::IntValue(span.LineNumber());
+    Cm::BoundTree::BoundLiteral* lineLiteral = new Cm::BoundTree::BoundLiteral(nullptr);
+    lineLiteral->SetValue(value);
+    lineLiteral->SetType(intType);
+    arguments.Add(lineLiteral);
+    boundConstructionStatement->SetArguments(std::move(arguments));
+    boundConstructionStatement->InsertLocalVariableToArguments();
+    boundConstructionStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
+    PrepareArguments(containerScope, boundCompileUnit, boundFunction, nullptr, tracedFunCtor->Parameters(), boundConstructionStatement->Arguments(), true, 
+        boundCompileUnit.IrClassTypeRepository(), false);
+    return boundConstructionStatement;
 }
 
 } } // namespace Cm::Bind

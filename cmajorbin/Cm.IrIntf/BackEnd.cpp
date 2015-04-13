@@ -9,7 +9,7 @@
 
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <Cm.IrIntf/LlvmBackEnd.hpp>
-//#include <Cm.IrIntf/CBackEnd.hpp>
+#include <Cm.IrIntf/CBackEnd.hpp>
 #include <Ir.Intf/Factory.hpp>
 
 namespace Cm { namespace IrIntf {
@@ -34,14 +34,12 @@ void SetBackEnd(BackEnd backEnd)
             Ir::Intf::SetFactory(GetLlvmFactory());
             break;
         }
-/*
         case BackEnd::c: 
         {
             backEndImpl = GetCBackEnd();
             Ir::Intf::SetFactory(GetCFactory());
             break;
         }
-*/
     }
 }
 

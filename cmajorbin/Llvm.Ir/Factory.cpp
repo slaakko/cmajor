@@ -46,7 +46,17 @@ Ir::Intf::Type* Factory::GetI8()
     return i8.get();
 }
 
+Ir::Intf::Type* Factory::GetUI8()
+{
+    return i8.get();
+}
+
 Ir::Intf::Type* Factory::GetI16()
+{
+    return i16.get();
+}
+
+Ir::Intf::Type* Factory::GetUI16()
 {
     return i16.get();
 }
@@ -56,7 +66,17 @@ Ir::Intf::Type* Factory::GetI32()
     return i32.get();
 }
 
+Ir::Intf::Type* Factory::GetUI32()
+{
+    return i32.get();
+}
+
 Ir::Intf::Type* Factory::GetI64()
+{
+    return i64.get();
+}
+
+Ir::Intf::Type* Factory::GetUI64()
 {
     return i64.get();
 }
