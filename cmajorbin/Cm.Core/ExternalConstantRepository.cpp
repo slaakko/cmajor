@@ -16,6 +16,10 @@ ExternalConstantRepository::ExternalConstantRepository() : exceptionBaseIdTable(
 {
 }
 
+ExternalConstantRepository::~ExternalConstantRepository()
+{
+}
+
 Ir::Intf::Global* ExternalConstantRepository::GetExceptionBaseIdTable()
 {
     exceptionBaseIdTable = Cm::IrIntf::CreateGlobal(Cm::IrIntf::GetExceptionBaseIdTableName(), Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI32(), 2));
@@ -23,11 +27,19 @@ Ir::Intf::Global* ExternalConstantRepository::GetExceptionBaseIdTable()
     return exceptionBaseIdTable;
 }
 
-void ExternalConstantRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
+void LlvmExternalConstantRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
 {
-    if (exceptionBaseIdTable)
+    if (ExceptionBaseIdTable())
     {
         codeFormatter.WriteLine("@" + Cm::IrIntf::GetExceptionBaseIdTableName() + " = external constant i32*");
+    }
+}
+
+void CExternalConstantRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
+{
+    if (ExceptionBaseIdTable())
+    {
+        codeFormatter.WriteLine("extern const i32* " + Cm::IrIntf::GetExceptionBaseIdTableName() + ";");
     }
 }
 

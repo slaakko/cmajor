@@ -18,16 +18,31 @@ namespace Cm { namespace Core {
 class StringRepository
 {
 public:
+    virtual ~StringRepository();
     int Install(const std::string& str);
     Ir::Intf::Object* GetStringConstant(int id) const;
     Ir::Intf::Object* GetStringObject(int id) const;
-    void Write(Cm::Util::CodeFormatter& codeFormatter);
+    virtual void Write(Cm::Util::CodeFormatter& codeFormatter) = 0;
+    const std::vector<std::unique_ptr<Ir::Intf::Object>>& StringObjects() const { return stringObjects; }
+    const std::vector<std::unique_ptr<Ir::Intf::Object>>& StringConstants() const { return stringConstants; }
 private:
     typedef std::unordered_map<std::string, int> StringIntMap;
     typedef StringIntMap::const_iterator StringIntMapIt;
     StringIntMap stringIntMap;
     std::vector<std::unique_ptr<Ir::Intf::Object>> stringConstants;
     std::vector<std::unique_ptr<Ir::Intf::Object>> stringObjects;
+};
+
+class LlvmStringRepository : public StringRepository
+{
+public:
+    void Write(Cm::Util::CodeFormatter& codeFormatter) override;
+};
+
+class CStringRepository : public StringRepository
+{
+public:
+    void Write(Cm::Util::CodeFormatter& codeFormatter) override;
 };
 
 } } // namespace Cm::Core

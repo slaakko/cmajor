@@ -90,39 +90,95 @@ std::string MakeAssemblyName(const std::string& name)
 std::string MangleName(const std::string& namespaceName, const std::string& functionGroupName, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments, 
     const std::vector<Cm::Sym::ParameterSymbol*>& parameters)
 {
-    std::string mangledNs = namespaceName;
-    int nm = int(mangledNs.size());
-    if (nm > 0)
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
     {
-        mangledNs.append(1, '.');
-    }
-    std::string mangledName(mangledNs + FunctionGroupMangleMap::Instance().MangleFunctionGroupName(functionGroupName));
-    if (!templateArguments.empty())
-    {
-        mangledName.append("$$");
-        int n = int(templateArguments.size());
+        std::string mangledNs = namespaceName;
+        int nm = int(mangledNs.size());
+        if (nm > 0)
+        {
+            mangledNs.append(1, '.');
+        }
+        std::string mangledName(mangledNs + FunctionGroupMangleMap::Instance().MangleFunctionGroupName(functionGroupName));
+        if (!templateArguments.empty())
+        {
+            mangledName.append("$$");
+            int n = int(templateArguments.size());
+            for (int i = 0; i < n; ++i)
+            {
+                if (i > 0)
+                {
+                    mangledName.append(1, '.');
+                }
+                mangledName.append(MakeAssemblyName(templateArguments[i]->FullName()));
+            }
+            mangledName.append("$$");
+        }
+        int n = int(parameters.size());
+        if (n > 0)
+        {
+            mangledName.append("$");
+        }
         for (int i = 0; i < n; ++i)
         {
-            if (i > 0)
-            {
-                mangledName.append(1, '.');
-            }
-            mangledName.append(MakeAssemblyName(templateArguments[i]->FullName()));
+            Cm::Sym::ParameterSymbol* parameter = parameters[i];
+            Cm::Sym::TypeSymbol* type = parameter->GetType();
+            mangledName.append(type->GetMangleId());
         }
-        mangledName.append("$$");
+        return mangledName;
     }
-    int n = int(parameters.size());
-    if (n > 0)
+    else if (backend == Cm::IrIntf::BackEnd::c)
     {
-        mangledName.append("$");
+        std::string mangledNs;
+        int n = int(namespaceName.size());
+        for (int i = 0; i < n; ++i)
+        {
+            if (namespaceName[i] == '.')
+            {
+                mangledNs.append("_N_");
+            }
+            else
+            {
+                mangledNs.append(1, namespaceName[i]);
+            }
+        }
+        int nm = int(mangledNs.size());
+        if (nm > 0)
+        {
+            mangledNs.append("_N_");
+        }
+        std::string mangledName(mangledNs + FunctionGroupMangleMap::Instance().MangleFunctionGroupName(functionGroupName));
+        if (!templateArguments.empty())
+        {
+            mangledName.append("_B_");
+            int n = int(templateArguments.size());
+            for (int i = 0; i < n; ++i)
+            {
+                if (i > 0)
+                {
+                    mangledName.append(1, '_');
+                }
+                mangledName.append(MakeAssemblyName(templateArguments[i]->FullName()));
+            }
+            mangledName.append("_E_");
+        }
+        int np = int(parameters.size());
+        if (np > 0)
+        {
+            mangledName.append("_T_");
+        }
+        for (int i = 0; i < np; ++i)
+        {
+            ParameterSymbol* parameter = parameters[i];
+            TypeSymbol* type = parameter->GetType();
+            mangledName.append(type->GetMangleId());
+        }
+        return mangledName;
     }
-    for (int i = 0; i < n; ++i)
+    else
     {
-        Cm::Sym::ParameterSymbol* parameter = parameters[i];
-        Cm::Sym::TypeSymbol* type = parameter->GetType();
-        mangledName.append(type->GetMangleId());
+        return "";
     }
-    return mangledName;
 }
 
 void InitNameMangling()

@@ -93,9 +93,17 @@ Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& 
         EnumTypeSymbol* enumType = static_cast<EnumTypeSymbol*>(baseType);
         baseType = enumType->GetUnderlyingType();
     }
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
     if (baseType->IsVoidTypeSymbol())
     {
-        baseIrType = Ir::Intf::GetFactory()->GetI8();
+        if (backend == Cm::IrIntf::BackEnd::llvm)
+        {
+            baseIrType = Ir::Intf::GetFactory()->GetI8();
+        }
+        else if (backend == Cm::IrIntf::BackEnd::c)
+        {
+            baseIrType = Ir::Intf::GetFactory()->GetVoid();
+        }
     }
     else
     {

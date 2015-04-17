@@ -18,12 +18,28 @@ class ExternalConstantRepository
 {
 public:
     ExternalConstantRepository();
+    virtual ~ExternalConstantRepository();
     Ir::Intf::Global* GetExceptionBaseIdTable();
-    void Write(Cm::Util::CodeFormatter& codeFormatter);
+    virtual void Write(Cm::Util::CodeFormatter& codeFormatter) = 0;
+protected:
+    Ir::Intf::Global* ExceptionBaseIdTable() const { return exceptionBaseIdTable; }
 private:
     Ir::Intf::Global* exceptionBaseIdTable;
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedObjects;
 };
+
+class LlvmExternalConstantRepository : public ExternalConstantRepository
+{
+public:
+    void Write(Cm::Util::CodeFormatter& codeFormatter) override;
+};
+
+class CExternalConstantRepository : public ExternalConstantRepository
+{
+public:
+    void Write(Cm::Util::CodeFormatter& codeFormatter) override;
+};
+
 
 } } // namespace Cm::Core
 

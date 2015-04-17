@@ -10,6 +10,8 @@
 #include <Cm.Util/TextUtils.hpp>
 #include <cctype>
 #include <sstream>
+#include <fstream>
+#include <iterator>
 
 namespace Cm { namespace Util {
 
@@ -173,6 +175,30 @@ std::string QuotedPath(const std::string& path)
         return std::string("\"") + path + "\"";
     }
     return path;
+}
+
+std::string ReadFile(const std::string& fileName)
+{
+    std::string content;
+    content.reserve(4096);
+    std::ifstream file(fileName.c_str());
+    if (!file)
+    {
+        throw std::runtime_error("Error: Could not open input file: " + fileName);
+    }
+    file.unsetf(std::ios::skipws);
+    std::copy(
+        std::istream_iterator<char>(file),
+        std::istream_iterator<char>(),
+        std::back_inserter(content));
+    int start = 0;
+    if (content.size() >= 3)
+    {
+        if ((unsigned char)content[0] == (unsigned char)0xEF) ++start;
+        if ((unsigned char)content[1] == (unsigned char)0xBB) ++start;
+        if ((unsigned char)content[2] == (unsigned char)0xBF) ++start;
+    }
+    return start == 0 ? content : content.substr(start);
 }
 
 } } // namespace Cm::Util

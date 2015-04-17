@@ -18,7 +18,7 @@ class LabelObject : public Ir::Intf::LabelObject
 public:
     LabelObject();
     LabelObject(const std::string& label_);
-    std::string Target() const override { return GetLabelName() + ":"; }
+    std::string Target() const override { return Name() + ":"; }
     void Set(Ir::Intf::LabelObject* from) override;
     void InitTo(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf::Object* to) override;
     void InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf::Constant& constant) override;

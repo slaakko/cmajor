@@ -29,12 +29,12 @@ public:
 private:
     typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Function*> IrFunctionMap;
     typedef IrFunctionMap::const_iterator IrFunctionMapIt;
-    typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Type*> IrFunPtrMap;
-    typedef IrFunPtrMap::const_iterator IrFunPtrMapIt;
+    typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Type*> IrFunTypeMap;
+    typedef IrFunTypeMap::const_iterator IrFunTypeMapIt;
     typedef std::unordered_map<Cm::Sym::FunctionSymbol*, Ir::Intf::Object*> FunctionIdMap;
     typedef FunctionIdMap::const_iterator FunctionIdMapIt;
     IrFunctionMap irFunctionMap;
-    IrFunPtrMap irFunPtrMap;
+    IrFunTypeMap irFunPtrMap;
     FunctionIdMap functionIdMap;
     std::unique_ptr<Ir::Intf::Function> doNothingFunction;
     std::vector<std::unique_ptr<Ir::Intf::Function>> ownedIrFunctions;

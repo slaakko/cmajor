@@ -44,10 +44,10 @@ public:
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
     Cm::Core::DerivedTypeOpRepository& DerivedTypeOpRepository() { return derivedTypeOpRepository; }
     Cm::Core::EnumTypeOpRepository& EnumTypeOpRepository() {return enumTypeOpRepository; }
-    Cm::Core::StringRepository& StringRepository() { return stringRepository; }
+    Cm::Core::StringRepository& StringRepository() { return *stringRepository; }
     Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
-    Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
-    Cm::Core::ExternalConstantRepository& ExternalConstantRepository() { return externalConstantRepository; }
+    Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return *irClassTypeRepository; }
+    Cm::Core::ExternalConstantRepository& ExternalConstantRepository() { return *externalConstantRepository; }
     void SetSynthesizedClassFunRepository(Cm::Core::SynthesizedClassFunRepository* synthesizedClassFunRepository_);
     Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return *synthesizedClassFunRepository; }
     void SetClassTemplateRepository(Cm::Core::ClassTemplateRepository* classTemplateRepository_);
@@ -80,10 +80,10 @@ private:
     Cm::Core::ClassConversionTable classConversionTable;
     Cm::Core::DerivedTypeOpRepository derivedTypeOpRepository;
     Cm::Core::EnumTypeOpRepository enumTypeOpRepository;
-    Cm::Core::StringRepository stringRepository;
+    std::unique_ptr<Cm::Core::StringRepository> stringRepository;
     Cm::Core::IrFunctionRepository irFunctionRepository;
-    Cm::Core::IrClassTypeRepository irClassTypeRepository;
-    Cm::Core::ExternalConstantRepository externalConstantRepository;
+    std::unique_ptr<Cm::Core::IrClassTypeRepository> irClassTypeRepository;
+    std::unique_ptr<Cm::Core::ExternalConstantRepository> externalConstantRepository;
     std::unique_ptr<Cm::Core::SynthesizedClassFunRepository> synthesizedClassFunRepository;
     std::unique_ptr<Cm::Core::ClassTemplateRepository> classTemplateRepository;
     Cm::Core::FunctionTemplateRepository functionTemplateRepository;

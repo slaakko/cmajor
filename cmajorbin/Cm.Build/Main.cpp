@@ -24,7 +24,6 @@
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
-#include <Cm.Emit/EmittingVisitor.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>

@@ -21,8 +21,7 @@ BinOpInstruction::BinOpInstruction(Ir::Intf::Type* type_, const std::string& nam
 std::string BinOpInstruction::ToString() const
 {
     std::string s;
-    std::string space(1, ' ');
-    s.append(result->Name()).append(" = ").append(Name()).append(space).append(type->Name()).append(space).append(operand1->Name()).append(", ").append(operand2->Name());
+    s.append(result->Name()).append(" = ").append(operand1->Name()).append(" ").append(Name()).append(" ").append(operand2->Name());
     return s;
 }
 
@@ -175,10 +174,6 @@ std::string RetInst::ToString() const
     if (value)
     {
         ret.append(space).append(value->Name());
-    }
-    else
-    {
-        ret.append(space).append(Ir::Intf::GetFactory()->GetVoid()->Name());
     }
     return ret;
 }

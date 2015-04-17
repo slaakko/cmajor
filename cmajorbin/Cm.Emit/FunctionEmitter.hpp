@@ -11,6 +11,7 @@
 #define CM_EMIT_FUNCTION_EMITTER_INCLUDED
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.BoundTree/BoundExpression.hpp>
+#include <Cm.BoundTree/BoundStatement.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Core/GenData.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
@@ -87,6 +88,13 @@ public:
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, 
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_, 
         Cm::Sym::FunctionSymbol* leaveTracedCallFun_);
+
+    virtual void EmitDummyVar(Cm::Core::Emitter* emitter) = 0;
+    virtual void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) = 0;
+    virtual void DoNothing(Cm::Core::GenResult& genResult) = 0;
+    virtual void GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) = 0;
+    virtual Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) = 0;
+
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
 
@@ -101,7 +109,6 @@ public:
     void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
     void Visit(Cm::BoundTree::BoundCast& boundCast) override;
     void Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExpr) override;
-    void Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamiceTypeNameExpression) override;
     void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& functionCall) override;
@@ -116,7 +123,7 @@ public:
     void EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
     void Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveStatement) override;
     void Visit(Cm::BoundTree::BoundInitClassObjectStatement& boundInitClassObjectStatement) override;
-    void Visit(Cm::BoundTree::BoundInitVPtrStatement& boundInitVPtrStatement) override;
+    virtual void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) = 0;
     void Visit(Cm::BoundTree::BoundInitMemberVariableStatement& boundInitMemberVariableStatement) override;
     void Visit(Cm::BoundTree::BoundFunctionCallStatement& boundFunctionCallStatement) override;
     void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) override;
@@ -143,6 +150,14 @@ public:
     void Visit(Cm::BoundTree::BoundDefaultStatement& boundDefaultStatement) override;
     void Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCaseStatement) override;
     void Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
+protected:
+    Cm::Core::Emitter* Emitter() { return emitter.get(); }
+    Cm::Core::GenFlags GenFlags() { return genFlags; }
+    Cm::Core::GenResultStack& ResultStack() { return resultStack; }
+    Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
+    void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
+    Cm::Sym::ParameterSymbol* ThisParam() { return thisParam; }
+    Cm::Core::StaticMemberVariableRepository& StaticMemberVariableRepository() { return staticMemberVariableRepository; }
 private:
 	std::unique_ptr<Cm::Core::Emitter> emitter;
     Cm::Util::CodeFormatter& codeFormatter;
@@ -200,11 +215,9 @@ private:
     void ExecutePostfixIncDecStatements(Cm::Core::GenResult& result);
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
     void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
-    void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
     void CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
     void CallLeaveFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
-    void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol);
     void GenerateTestExceptionResult();
     void CreateLandingPad(int landingPadId);
     void GenerateLandingPadCode();
