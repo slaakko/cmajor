@@ -33,7 +33,10 @@ Ir::Intf::Parameter* IrFunctionRepository::CreateIrParameter(Cm::Sym::ParameterS
         irParameterType = parameter->GetType()->GetIrType();
     }
     std::string parameterName = parameter->Name();
-    parameterName.append(Cm::IrIntf::GetPrivateSeparator()).append("p");
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
+    {
+        parameterName.append(Cm::IrIntf::GetPrivateSeparator()).append("p");
+    }
     Ir::Intf::Parameter* irParameter = Cm::IrIntf::CreateParameter(parameterName, irParameterType);
     return irParameter;
 }
@@ -193,7 +196,7 @@ Ir::Intf::Type* IrFunctionRepository::CreateIrPointerToDelegateType(Cm::Sym::Del
 Ir::Intf::Type* IrFunctionRepository::GetFunPtrIrType(Cm::Sym::FunctionSymbol* fun)
 {
     CreateIrFunction(fun);
-    IrFunPtrMapIt i = irFunPtrMap.find(fun);
+    IrFunTypeMapIt i = irFunPtrMap.find(fun);
     if (i != irFunPtrMap.end())
     {
         return i->second;

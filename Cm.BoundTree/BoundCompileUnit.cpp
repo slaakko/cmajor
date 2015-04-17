@@ -10,6 +10,7 @@
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Util/Path.hpp>
+#include <Cm.IrIntf/BackEnd.hpp>
 #include <boost/filesystem.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -20,6 +21,22 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
     optIrFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".opt.ll").generic_string());
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
+    {
+        stringRepository.reset(new Cm::Core::LlvmStringRepository());
+        irClassTypeRepository.reset(new Cm::Core::LlvmIrClassTypeRepository());
+        externalConstantRepository.reset(new Cm::Core::LlvmExternalConstantRepository());
+    }
+    else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
+    {
+        stringRepository.reset(new Cm::Core::CStringRepository());
+        irClassTypeRepository.reset(new Cm::Core::CIrClassTypeRepository());
+        externalConstantRepository.reset(new Cm::Core::CExternalConstantRepository());
+    }
+    else
+    {
+        throw std::runtime_error("backend not set");
+    }
 }
 
 void BoundCompileUnit::AddFileScope(Cm::Sym::FileScope* fileScope_)

@@ -15,6 +15,10 @@
 
 namespace Cm { namespace Core {
 
+StaticMemberVariableRepository::~StaticMemberVariableRepository()
+{
+}
+
 void StaticMemberVariableRepository::Add(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol)
 {
     std::string assemblyName = Cm::Sym::MakeAssemblyName(staticMemberVariableSymbol->Class()->FullName() + "." + staticMemberVariableSymbol->Name());
@@ -55,9 +59,9 @@ Ir::Intf::Object* StaticMemberVariableRepository::GetDestructionNode(Cm::Sym::Me
     throw Cm::Core::Exception("destruction node for '" + staticMemberVariableSymbol->FullName() + "' not found in repository", staticMemberVariableSymbol->GetSpan());
 }
 
-void StaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
+void LlvmStaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
 {
-    for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : staticMemberVariableMap)
+    for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : GetStaticMemberVariableMap())
     {
         Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol = p.first;
         Ir::Intf::Object* irObject = p.second;
@@ -74,11 +78,30 @@ void StaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeFormatte
         }
         codeFormatter.WriteLine(declaration);
     }
-    for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : destructionNodeMap)
+    for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : GetDestructionNodeMap())
     {
         Ir::Intf::Object* destructionNode = p.second;
         std::string destructionNodeDeclaration(destructionNode->Name());
         destructionNodeDeclaration.append(" = global %" + Cm::IrIntf::GetDestructionNodeTypeName() + " zeroinitializer");
+        codeFormatter.WriteLine(destructionNodeDeclaration);
+    }
+}
+
+void CStaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
+{
+    for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : GetStaticMemberVariableMap())
+    {
+        Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol = p.first;
+        Ir::Intf::Object* irObject = p.second;
+        std::string declaration = staticMemberVariableSymbol->GetType()->GetIrType()->Name();
+        declaration.append(" ").append(irObject->Name()).append(";");
+        codeFormatter.WriteLine(declaration);
+    }
+    for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : GetDestructionNodeMap())
+    {
+        Ir::Intf::Object* destructionNode = p.second;
+        std::string destructionNodeDeclaration = Cm::IrIntf::GetDestructionNodeTypeName();
+        destructionNodeDeclaration.append(" ").append(destructionNode->Name()).append(";");
         codeFormatter.WriteLine(destructionNodeDeclaration);
     }
 }

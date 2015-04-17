@@ -12,6 +12,10 @@
 
 namespace Cm { namespace Core {
 
+StringRepository::~StringRepository()
+{
+}
+
 int StringRepository::Install(const std::string& str)
 {
     StringIntMapIt i = stringIntMap.find(str);
@@ -23,7 +27,7 @@ int StringRepository::Install(const std::string& str)
     Ir::Intf::Object* stringConstant = Cm::IrIntf::CreateStringConstant(str);
 	stringConstant->SetOwned();
     stringConstants.push_back(std::unique_ptr<Ir::Intf::Object>(stringConstant));
-    std::string stringObjectName = ".s" + std::to_string(id);
+    std::string stringObjectName = Cm::IrIntf::GetStringValuePrefix() + std::to_string(id);
 	Ir::Intf::Object* stringObject = Cm::IrIntf::CreateGlobal(stringObjectName, stringConstant->GetType());
 	stringObject->SetOwned();
     stringObjects.push_back(std::unique_ptr<Ir::Intf::Object>(stringObject));
@@ -41,14 +45,25 @@ Ir::Intf::Object* StringRepository::GetStringObject(int id) const
     return stringObjects[id].get();
 }
 
-void StringRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
+void LlvmStringRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
 {
-    int n = int(stringObjects.size());
+    int n = int(StringObjects().size());
     for (int i = 0; i < n; ++i)
     {
-        Ir::Intf::Object* stringObject = stringObjects[i].get();
-        Ir::Intf::Object* stringConstant = stringConstants[i].get();
+        Ir::Intf::Object* stringObject = StringObjects()[i].get();
+        Ir::Intf::Object* stringConstant = StringConstants()[i].get();
         codeFormatter.WriteLine(stringObject->Name() + " = private unnamed_addr constant " + stringConstant->GetType()->Name() + " " + stringConstant->Name());
+    }
+}
+
+void CStringRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
+{
+    int n = int(StringObjects().size());
+    for (int i = 0; i < n; ++i)
+    {
+        Ir::Intf::Object* stringObject = StringObjects()[i].get();
+        Ir::Intf::Object* stringConstant = StringConstants()[i].get();
+        codeFormatter.WriteLine("static " + stringConstant->GetType()->Name() + " " + stringObject->Name() + " = " + stringConstant->Name() + ";");
     }
 }
 

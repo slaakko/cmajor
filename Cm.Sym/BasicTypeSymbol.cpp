@@ -40,7 +40,15 @@ BoolTypeSymbol::BoolTypeSymbol() : BasicTypeSymbol("bool", ShortBasicTypeId::boo
 
 CharTypeSymbol::CharTypeSymbol() : BasicTypeSymbol("char", ShortBasicTypeId::charId)
 {
-    SetIrType(Cm::IrIntf::I8());
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        SetIrType(Cm::IrIntf::I8());
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        SetIrType(Cm::IrIntf::Char());
+    }
     SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 
@@ -111,7 +119,15 @@ DoubleTypeSymbol::DoubleTypeSymbol() : BasicTypeSymbol("double", ShortBasicTypeI
 
 NullPtrTypeSymbol::NullPtrTypeSymbol() : BasicTypeSymbol("@nullptrtype", ShortBasicTypeId::nullPtrId)
 {
-    SetIrType(Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 1));
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        SetIrType(Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 1));
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        SetIrType(Cm::IrIntf::Pointer(Cm::IrIntf::Void(), 1));
+    }
     SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }
 

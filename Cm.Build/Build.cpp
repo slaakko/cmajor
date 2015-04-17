@@ -38,7 +38,8 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
-#include <Cm.Emit/EmittingVisitor.hpp>
+#include <Cm.Emit/LlvmEmitter.hpp>
+#include <Cm.Emit/CEmitter.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
 #include <Cm.Util/TextUtils.hpp>
@@ -198,19 +199,47 @@ void AnalyzeControlFlow(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    Cm::Emit::EmittingVisitor emittingVisitor(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), 
-        boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
-    boundCompileUnit.Accept(emittingVisitor);
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
+    {
+        Cm::Emit::LlvmEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(),
+            boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
+        boundCompileUnit.Accept(emitter);
+    }
+    else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
+    {
+        Cm::Emit::CEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(),
+            boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
+        boundCompileUnit.Accept(emitter);
+    }
+    else
+    {
+        throw std::runtime_error("emitter not set");
+    }
 }
 
 Cm::Parser::ToolErrorGrammar* toolErrorGrammar = nullptr;
 
 void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    std::string llErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".ll.error").generic_string());
-    std::string command = "llc";
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    std::string llErrorFilePath = backend == Cm::IrIntf::BackEnd::llvm ? Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".ll.error").generic_string()) :
+        backend == Cm::IrIntf::BackEnd::c ? Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".c.error").generic_string()) :
+        "";
+    std::string command = backend == Cm::IrIntf::BackEnd::llvm ? "llc" : backend == Cm::IrIntf::BackEnd::c ? "gcc" : "";
     command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
-    command.append(" -filetype=obj").append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        command.append(" -filetype=obj");
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        command.append(" -c");
+        if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+        {
+            command.append(" -g");
+        }
+    }
+    command.append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
     try
     {
         Cm::Util::System(command, 2, llErrorFilePath);
@@ -402,7 +431,9 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         {
             std::cout << "> " << Cm::Util::GetFullPath(compileUnit->FilePath()) << std::endl;
         }
-        std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".ll")).generic_string());
+        Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+        std::string ext = backend == Cm::IrIntf::BackEnd::llvm ? ".ll" : backend == Cm::IrIntf::BackEnd::c ? ".c" : "";
+        std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(ext)).generic_string());
         Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable);
         boundCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
         boundCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(boundCompileUnit));
@@ -556,7 +587,6 @@ void BuildProject(Cm::Ast::Project* project)
     {
         toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
     }
-    Cm::IrIntf::SetBackEnd(Cm::IrIntf::BackEnd::llvm);
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
     std::vector<std::string> assemblyFilePaths;
     assemblyFilePaths.push_back(project->AssemblyFilePath());
@@ -632,7 +662,8 @@ void BuildProject(const std::string& projectFilePath)
     {
         projectGrammar = Cm::Parser::ProjectGrammar::Create();
     }
-    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), "llvm", GetOs()));
+    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), 
+        Cm::IrIntf::GetBackEndStr(), GetOs()));
     project->ResolveDeclarations();
     BuildProject(project.get());
 }
@@ -670,7 +701,8 @@ void BuildSolution(const std::string& solutionFilePath)
             throw std::runtime_error("project file '" + projectFilePath + "' not found");
         }
         Cm::Util::MappedInputFile projectFile(projectFilePath);
-        std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), "llvm", GetOs()));
+        std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), 
+            Cm::IrIntf::GetBackEndStr(), GetOs()));
         project->ResolveDeclarations();
         solution->AddProject(std::move(project));
     }

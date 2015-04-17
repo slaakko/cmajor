@@ -23,6 +23,7 @@ std::string HexEscape(char c);
 std::string CharStr(char c);
 std::string StringStr(const std::string& s);
 std::string QuotedPath(const std::string& path);
+std::string ReadFile(const std::string& fileName);
 
 } } // namespace Cm::Util
 
