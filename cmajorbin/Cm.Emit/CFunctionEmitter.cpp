@@ -145,6 +145,7 @@ void CFunctionEmitter::RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticM
     emitter->Own(voidPtr);
     Ir::Intf::MemberVar* objectField = Cm::IrIntf::CreateMemberVar("cls", destructionNode, 1, voidPtr);
     objectField->SetDotMember();
+    emitter->Own(objectField);
     emitter->Emit(Cm::IrIntf::Store(voidPtr, irObject, objectField, Ir::Intf::Indirection::addr, Ir::Intf::Indirection::none));
     Cm::Sym::TypeSymbol* type = staticMemberVariableSymbol->GetType();
     if (type->IsClassTypeSymbol())
@@ -240,6 +241,19 @@ Ir::Intf::LabelObject* CFunctionEmitter::CreateLandingPadLabel(int landingPadId)
 void CFunctionEmitter::MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun)
 {
     (*functionMap)[irFun] = fun;
+}
+
+Ir::Intf::Object* CFunctionEmitter::MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source)
+{
+    if (type->IsClassTypeSymbol())
+    {
+        Ir::Intf::Object* target = Cm::IrIntf::CreateTemporaryRegVar(Cm::IrIntf::Pointer(type->GetIrType(), 1));
+        Cm::Core::Emitter* emitter = Emitter();
+        emitter->Own(target);
+        Cm::IrIntf::Init(*emitter, type->GetIrType(), source, target);
+        return target;
+    }
+    return source;
 }
 
 } } // namespace Cm::Emit

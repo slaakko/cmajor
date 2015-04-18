@@ -203,6 +203,8 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     currentFunction = &boundFunction;
     Cm::IrIntf::ResetLocalLabelCounter();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->GetFunctionSymbol());
+    externalFunctions.insert(irFunction);
+    MapIrFunToFun(irFunction, boundFunction.GetFunctionSymbol());
     internalFunctionNames.insert(irFunction->Name());
     emitter->SetIrFunction(irFunction);
 
@@ -359,7 +361,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariabl
     }
     if (byRefOrClassType || boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable))
     {
-        result->SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundLocalVariable.Symbol()));
+        result->SetMainObject(MakeLocalVarIrObject(type, localVariableIrObjectRepository.GetLocalVariableIrObject(boundLocalVariable.Symbol())));
     }
     else
     {
@@ -1356,6 +1358,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundExitBlocksStatement& boundExitBl
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement)
 {
+    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Text.Parsing.Grammar.Link(System.Text.Parsing.Grammar*)")
+    {
+        int x = 0;
+    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     int n = boundConstructionStatement.Arguments().Count();
     Ir::Intf::LabelObject* resultLabel = nullptr;
