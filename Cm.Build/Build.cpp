@@ -564,7 +564,17 @@ void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::st
     boost::filesystem::path outputBase(projectOutputBasePath);
     Cm::Parsing::Span span;
     Cm::Ast::CompileUnitNode syntaxUnit(span);
-    std::string exceptionTableCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__exception_table__.ll")).generic_string());
+    std::string ext;
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        ext = ".ll";
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        ext = ".c";
+    }
+    std::string exceptionTableCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__exception_table__" + ext)).generic_string());
     Cm::BoundTree::BoundCompileUnit exceptionTableCompileUnit(&syntaxUnit, exceptionTableCompileUnitIrFilePath, symbolTable);
     Cm::Sym::GetExceptionTable()->GenerateExceptionTableUnit(exceptionTableCompileUnitIrFilePath);
     GenerateObjectCode(exceptionTableCompileUnit);

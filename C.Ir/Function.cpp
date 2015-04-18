@@ -14,7 +14,7 @@
 
 namespace C {
 
-const char* exceptionCodeParamName = "_X_ex";
+const char* exceptionCodeParamName = "_X_ex_p";
 const char* classObjectResultParamName = "_X_result";
 
 Function::Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_) : Ir::Intf::Function(name_, returnType_, parameters_)
