@@ -21,7 +21,8 @@ enum class GlobalFlags : uint8_t
     emitOpt = 1 << 2,
     ide = 1 << 3,
     trace = 1 << 4,
-    debug_heap = 1 << 5
+    debug_heap = 1 << 5,
+    clean = 1 << 6
 };
 
 inline GlobalFlags operator|(GlobalFlags left, GlobalFlags right)
