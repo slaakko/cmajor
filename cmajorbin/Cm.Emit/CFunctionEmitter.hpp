@@ -22,6 +22,7 @@ public:
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_,
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
         Cm::Sym::FunctionSymbol* leaveTracedCallFun_);
+    void SetFunctionMap(std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap_) { functionMap = functionMap_; }
     void EmitDummyVar(Cm::Core::Emitter* emitter) override;
     void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) override;
     void Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamiceTypeNameExpression) override;
@@ -30,6 +31,8 @@ public:
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) override;
     void GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) override;
     Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) override;
+    void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) override;
+    std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap;
 };
 
 } } // namespace Cm::Emit

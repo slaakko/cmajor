@@ -46,7 +46,7 @@ class IrObjectRepository
 {
 public:
     IrObjectRepository();
-    Ir::Intf::Object* MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr);
+    Ir::Intf::MemberVar* MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr);
     void Write(Cm::Util::CodeFormatter& codeFormatter);
 private:
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;
@@ -94,6 +94,7 @@ public:
     virtual void DoNothing(Cm::Core::GenResult& genResult) = 0;
     virtual void GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) = 0;
     virtual Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) = 0;
+    virtual void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) = 0;
 
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;

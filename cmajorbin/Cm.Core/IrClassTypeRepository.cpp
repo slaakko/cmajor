@@ -249,15 +249,22 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::A
     std::unordered_map<Cm::Sym::ClassTypeSymbol*, std::vector<Cm::Sym::ClassTypeSymbol*>> dependencyMap;
     for (Cm::Sym::ClassTypeSymbol* classType : ClassTypes())
     {
+        std::unordered_set<Cm::Sym::ClassTypeSymbol*> added;
         std::vector<Cm::Sym::ClassTypeSymbol*>& dependencies = dependencyMap[classType];
         if (classType->BaseClass())
         {
             dependencies.push_back(classType->BaseClass());
-            for (Cm::Sym::MemberVariableSymbol* memberVariable : classType->MemberVariables())
+            added.insert(classType->BaseClass());
+        }
+        for (Cm::Sym::MemberVariableSymbol* memberVariable : classType->MemberVariables())
+        {
+            if (memberVariable->GetType()->IsClassTypeSymbol())
             {
-                if (memberVariable->GetType()->IsClassTypeSymbol())
+                Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariable->GetType());
+                if (added.find(memberVarClassType) == added.end())
                 {
-                    dependencies.push_back(static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariable->GetType()));
+                    added.insert(memberVarClassType);
+                    dependencies.push_back(memberVarClassType);
                 }
             }
         }
@@ -265,7 +272,8 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::A
     std::vector<Cm::Sym::ClassTypeSymbol*> classOrder = CreateClassOrder(dependencyMap);
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
     {
-        codeFormatter.WriteLine("typedef struct " + classType->GetMangleId() + "_ class_" + classType->GetMangleId() + ";");
+        std::unique_ptr<Ir::Intf::Type> typeName(Cm::IrIntf::CreateClassTypeName(classType->FullName()));
+        codeFormatter.WriteLine("typedef struct " + classType->GetMangleId() + "_ " + typeName->Name() + ";");
     }
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
     {
@@ -274,6 +282,19 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::A
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
     {
         WriteVtbl(classType, codeFormatter, syntaxUnit, externalFunctions, irFunctionRepository);
+    }
+    bool exitDeclarationsGenerated = false;
+    for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
+    {
+        for (Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol : classType->StaticMemberVariables())
+        {
+            if (staticMemberVariableSymbol->GetType()->IsClassTypeSymbol() && static_cast<Cm::Sym::ClassTypeSymbol*>(staticMemberVariableSymbol->GetType())->Destructor() &&
+                !exitDeclarationsGenerated)
+            {
+                exitDeclarationsGenerated = true;
+                WriteDestructionNodeDef(codeFormatter);
+            }
+        }
     }
 }
 
@@ -319,7 +340,8 @@ void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, 
         }
     }
     std::unique_ptr<Ir::Intf::Type> irTypeDeclaration(Cm::IrIntf::Structure(tagName, memberTypes, memberNames));
-    codeFormatter.WriteLine("typedef " + irTypeDeclaration->Name() + " class_" + classType->GetMangleId() + ";");
+    std::unique_ptr<Ir::Intf::Type> typeName(Cm::IrIntf::CreateClassTypeName(classType->FullName()));
+    codeFormatter.WriteLine("typedef " + irTypeDeclaration->Name() + " " + typeName->Name() + ";");
 }
 
 void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit,
@@ -341,7 +363,7 @@ void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::
     std::string vtblName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "vtbl");
     std::unique_ptr<Ir::Intf::Object> vtblIrObject(Cm::IrIntf::CreateGlobal(vtblName, vtblIrType.get()));
     vtblIrObject->SetOwned();
-    std::string vtblHeader = "static const void* ";
+    std::string vtblHeader = "static void* ";
     vtblHeader.append(vtblIrObject->Name()).append("[").append(std::to_string(classType->Vtbl().size())).append("] =");
     codeFormatter.WriteLine(vtblHeader);
     codeFormatter.WriteLine("{");
@@ -350,7 +372,6 @@ void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::
     for (Cm::Sym::FunctionSymbol* virtualFunction : classType->Vtbl())
     {
         std::string line;
-        line.append(voidptrType->Name()).append(" ");
         if (first)
         {
             line.append("\"").append(Cm::Util::StringStr(classType->FullName())).append("\""); 
@@ -378,12 +399,13 @@ void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::
     }
     codeFormatter.WriteLine();
     codeFormatter.DecIndent();
-    codeFormatter.WriteLine("}");
+    codeFormatter.WriteLine("};");
 }
 
 void CIrClassTypeRepository::WriteDestructionNodeDef(Cm::Util::CodeFormatter& codeFormatter)
 {
-    // nothing to do for C backend
+    codeFormatter.WriteLine("typedef struct destruction_X_node_ { struct destruction_X_node_* next; void* cls; void (*destructor)(void*); } destruction_X_node;");
+    codeFormatter.WriteLine("void register_X_destructor(destruction_X_node* node);");
 }
 
 } } // namespace Cm::Core

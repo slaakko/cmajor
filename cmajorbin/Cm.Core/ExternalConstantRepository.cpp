@@ -39,7 +39,7 @@ void CExternalConstantRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
 {
     if (ExceptionBaseIdTable())
     {
-        codeFormatter.WriteLine("extern const i32* " + Cm::IrIntf::GetExceptionBaseIdTableName() + ";");
+        codeFormatter.WriteLine("extern i32* " + Cm::IrIntf::GetExceptionBaseIdTableName() + ";");
     }
 }
 

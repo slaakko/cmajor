@@ -950,7 +950,17 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                             ownerTry->SetFirstCatchId(catchId);
                         }
                         exitTryStatement = new Cm::Ast::ExitTryStatementNode(throwStatementNode.GetSpan(), ownerTry);
-                        Cm::Ast::GotoStatementNode* gotoCatch = new Cm::Ast::GotoStatementNode(throwStatementNode.GetSpan(), new Cm::Ast::LabelNode(throwStatementNode.GetSpan(), "$C" + std::to_string(catchId)));
+                        std::string continueLabelPrefix;
+                        Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+                        if (backend == Cm::IrIntf::BackEnd::llvm)
+                        {
+                            continueLabelPrefix = "$C";
+                        }
+                        else if (backend == Cm::IrIntf::BackEnd::c)
+                        {
+                            continueLabelPrefix = "_C_";
+                        }
+                        Cm::Ast::GotoStatementNode* gotoCatch = new Cm::Ast::GotoStatementNode(throwStatementNode.GetSpan(), new Cm::Ast::LabelNode(throwStatementNode.GetSpan(), continueLabelPrefix + std::to_string(catchId)));
                         gotoCatch->SetExceptionHandlingGoto();
                         endOfThrowStatement = gotoCatch;
                     }
@@ -1039,7 +1049,17 @@ void TryBinder::Visit(Cm::Ast::TryStatementNode& tryStatementNode)
     CurrentFunction()->AddTryCompound(&tryStatementNode, binder.GetCurrentCompound());
     binder.AddBoundStatement(new Cm::BoundTree::BoundBeginTryStatement(&tryStatementNode, firstHandler->CatchId()));
     int continueId = CurrentFunction()->GetNextCatchId();
-    std::string continueLabel = "$C" + std::to_string(continueId);
+    std::string continueLabelPrefix;
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        continueLabelPrefix = "$C";
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        continueLabelPrefix = "_C_";
+    }
+    std::string continueLabel = continueLabelPrefix + std::to_string(continueId);
     Cm::Sym::DeclarationVisitor declarationVisitor(SymbolTable());
     tryStatementNode.TryBlock()->Accept(declarationVisitor);
     Cm::Sym::ContainerScope* containerScope = SymbolTable().GetContainerScope(tryStatementNode.TryBlock());
@@ -1099,7 +1119,17 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         int32_t catchedExceptionId = exceptionTable->GetExceptionId(catchedExceptionClassType);
                         Cm::Ast::IdentifierNode* handleVarId = new Cm::Ast::IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
                         Cm::Ast::ConstructionStatementNode* handleThisExStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), new Cm::Ast::BoolNode(catchNode.GetSpan()), handleVarId);
-                        handleThisExStatement->SetLabelNode(new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(catchNode.CatchId())));
+                        std::string continueLabelPrefix;
+                        Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+                        if (backend == Cm::IrIntf::BackEnd::llvm)
+                        {
+                            continueLabelPrefix = "$C";
+                        }
+                        else if (backend == Cm::IrIntf::BackEnd::c)
+                        {
+                            continueLabelPrefix = "_C_";
+                        }
+                        handleThisExStatement->SetLabelNode(new Cm::Ast::LabelNode(catchNode.GetSpan(), continueLabelPrefix + std::to_string(catchNode.CatchId())));
                         Cm::Ast::InvokeNode* handleThisExCall = new Cm::Ast::InvokeNode(catchNode.GetSpan(), new Cm::Ast::IdentifierNode(catchNode.GetSpan(), "System.Support.HandleThisEx"));
                         handleThisExCall->AddArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExceptionBaseIdTableName()));
                         handleThisExCall->AddArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()));
@@ -1131,8 +1161,18 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                                 }
                                 Cm::Ast::ExitTryStatementNode* exitTryStatement = new Cm::Ast::ExitTryStatementNode(catchNode.GetSpan(), parentTry);
                                 propagateExStatement->AddStatement(exitTryStatement);
+                                std::string continueLabelPrefix;
+                                Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+                                if (backend == Cm::IrIntf::BackEnd::llvm)
+                                {
+                                    continueLabelPrefix = "$C";
+                                }
+                                else if (backend == Cm::IrIntf::BackEnd::c)
+                                {
+                                    continueLabelPrefix = "_C_";
+                                }
                                 Cm::Ast::GotoStatementNode* gotoOuterCatch = new Cm::Ast::GotoStatementNode(catchNode.GetSpan(),
-                                    new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(outerHandler->CatchId())));
+                                    new Cm::Ast::LabelNode(catchNode.GetSpan(), continueLabelPrefix + std::to_string(outerHandler->CatchId())));
                                 gotoOuterCatch->SetExceptionHandlingGoto();
                                 propagateExStatement->AddStatement(gotoOuterCatch);
                             }
@@ -1171,7 +1211,17 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                                 nextCatchId = CurrentFunction()->GetNextCatchId();
                                 nextHandler->SetCatchId(nextCatchId);
                             }
-                            Cm::Ast::GotoStatementNode* gotoNextHandler = new Cm::Ast::GotoStatementNode(catchNode.GetSpan(), new Cm::Ast::LabelNode(catchNode.GetSpan(), "$C" + std::to_string(nextCatchId)));
+                            std::string continueLabelPrefix;
+                            Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+                            if (backend == Cm::IrIntf::BackEnd::llvm)
+                            {
+                                continueLabelPrefix = "$C";
+                            }
+                            else if (backend == Cm::IrIntf::BackEnd::c)
+                            {
+                                continueLabelPrefix = "_C_";
+                            }
+                            Cm::Ast::GotoStatementNode* gotoNextHandler = new Cm::Ast::GotoStatementNode(catchNode.GetSpan(), new Cm::Ast::LabelNode(catchNode.GetSpan(), continueLabelPrefix + std::to_string(nextCatchId)));
                             gotoNextHandler->SetExceptionHandlingGoto();
                             Cm::Ast::ConditionalStatementNode* dontHandleTest = new Cm::Ast::ConditionalStatementNode(catchNode.GetSpan(),
                                 new Cm::Ast::NotNode(catchNode.GetSpan(), handleVarId->Clone(cloneContext)), gotoNextHandler, nullptr);

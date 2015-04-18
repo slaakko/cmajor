@@ -70,6 +70,7 @@ public:
     UI8Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
+    Ir::Intf::Object* CreateMinusOne() const override;
     Ir::Intf::Object* CreatePlusOne() const override;
 };
 
@@ -93,6 +94,7 @@ public:
     UI16Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
+    Ir::Intf::Object* CreateMinusOne() const override;
     Ir::Intf::Object* CreatePlusOne() const override;
 };
 
@@ -116,6 +118,7 @@ public:
     UI32Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
+    Ir::Intf::Object* CreateMinusOne() const override;
     Ir::Intf::Object* CreatePlusOne() const override;
 };
 
@@ -139,6 +142,7 @@ public:
     UI64Type();
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
+    Ir::Intf::Object* CreateMinusOne() const override;
     Ir::Intf::Object* CreatePlusOne() const override;
 };
 

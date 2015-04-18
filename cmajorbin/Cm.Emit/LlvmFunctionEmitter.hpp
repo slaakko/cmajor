@@ -30,6 +30,7 @@ public:
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) override;
     void GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) override;
     Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) override;
+    void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) override;
 };
 
 } } // namespace Cm::Emit

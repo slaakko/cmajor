@@ -89,7 +89,6 @@ Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(
 
 Symbol::~Symbol()
 {
-    int x = 0;
 }
 
 void Symbol::Write(Writer& writer)
