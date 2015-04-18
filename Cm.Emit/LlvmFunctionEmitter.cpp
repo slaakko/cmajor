@@ -253,4 +253,9 @@ void LlvmFunctionEmitter::MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::Func
     // nothing to do for LLVM backend
 }
 
+Ir::Intf::Object* LlvmFunctionEmitter::MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source)
+{
+    return source;
+}
+
 } } // namespace Cm::Emit
