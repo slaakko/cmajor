@@ -581,6 +581,20 @@ void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::st
     objectFilePaths.push_back(exceptionTableCompileUnit.ObjectFilePath());
 }
 
+void CleanProject(Cm::Ast::Project* project)
+{
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+    if (!quiet)
+    {
+        std::cout << "Cleaning project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->OutputBasePath().generic_string()) << ")";
+    }
+    boost::filesystem::remove_all(project->OutputBasePath());
+    if (!quiet)
+    {
+        std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->OutputBasePath().generic_string()) << ") cleaned successfully" << std::endl;
+    }
+}
+
 void BuildProject(Cm::Ast::Project* project)
 {
     currentProject = project;
@@ -675,7 +689,14 @@ void BuildProject(const std::string& projectFilePath)
     std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), 
         Cm::IrIntf::GetBackEndStr(), GetOs()));
     project->ResolveDeclarations();
-    BuildProject(project.get());
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean))
+    {
+        CleanProject(project.get());
+    }
+    else
+    {
+        BuildProject(project.get());
+    }
 }
 
 Cm::Parser::SolutionGrammar* solutionGrammar = nullptr;
@@ -693,9 +714,15 @@ void BuildSolution(const std::string& solutionFilePath)
     }
     std::unique_ptr<Cm::Ast::Solution> solution(solutionGrammar->Parse(solutionFile.Begin(), solutionFile.End(), 0, solutionFilePath));
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+    bool clean = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean);
     if (!quiet)
     {
-        std::cout << "Building solution '" << solution->Name() << "' (" << Cm::Util::GetFullPath(solution->FilePath()) << 
+        std::string work = "Building";
+        if (clean)
+        {
+            work = "Cleaning";
+        }
+        std::cout << work << " solution '" << solution->Name() << "' (" << Cm::Util::GetFullPath(solution->FilePath()) << 
             ") using " << Cm::Core::GetGlobalSettings()->Config() << " configuration..." << std::endl;
     }
     solution->ResolveDeclarations();
@@ -719,11 +746,25 @@ void BuildSolution(const std::string& solutionFilePath)
     std::vector<Cm::Ast::Project*> buildOrder = solution->CreateBuildOrder();
     for (Cm::Ast::Project* project : buildOrder)
     {
-        BuildProject(project);
+        if (clean)
+        {
+            CleanProject(project);
+        }
+        else
+        {
+            BuildProject(project);
+        }
     }
     if (!quiet)
     {
-        std::cout << "Solution '" << solution->Name() + "' (" << Cm::Util::GetFullPath(solution->FilePath()) << ") built successfully" << std::endl;
+        if (clean)
+        {
+            std::cout << "Solution '" << solution->Name() + "' (" << Cm::Util::GetFullPath(solution->FilePath()) << ") cleaned successfully" << std::endl;
+        }
+        else
+        {
+            std::cout << "Solution '" << solution->Name() + "' (" << Cm::Util::GetFullPath(solution->FilePath()) << ") built successfully" << std::endl;
+        }
     }
 }
 

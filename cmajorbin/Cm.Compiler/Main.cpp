@@ -88,6 +88,7 @@ int main(int argc, const char** argv)
             std::cout << "Compile Cmajor solution file.cms or project file.cmp" << std::endl;
             std::cout <<
                 "options:\n" <<
+                "-clean          : clean project or solution\n" <<
                 "-config=debug   : use debug configuration (default)\n" <<
                 "-config=release : use release configuration\n" <<
                 "-O=<n>          : set optimization level to <n> (default: debug:0, release:3)\n" <<
@@ -157,6 +158,10 @@ int main(int argc, const char** argv)
                             {
                                 throw std::runtime_error("unknown argument '" + arg + "'");
                             }
+                        }
+                        else if (arg == "-clean")
+                        {
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::clean);
                         }
                         else if (arg == "-emit-opt")
                         {
