@@ -29,6 +29,7 @@ void Assign(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf::Object* 
 Ir::Intf::Object* SizeOf(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type)
 {
     Ir::Intf::Object* result = CreateTemporaryRegVar(I64());
+    emitter.Own(result);
     emitter.Emit(CreateSizeOf(result, type));
     return result;
 }

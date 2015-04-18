@@ -30,6 +30,7 @@
 #include <Cm.Ast/CompileUnit.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.Parsing/Scanner.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 #include <boost/filesystem.hpp>
 
 namespace Cm { namespace Build {
@@ -43,7 +44,17 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     boost::filesystem::path outputBase(outputBasePath);
     Cm::Parsing::Span span;
     Cm::Ast::CompileUnitNode syntaxUnit(span);
-    std::string mainCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__main__.ll")).generic_string());
+    std::string ext;
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        ext = ".ll";
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        ext = ".c";
+    }
+    std::string mainCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__main__" + ext)).generic_string());
     Cm::BoundTree::BoundCompileUnit mainCompileUnit(&syntaxUnit, mainCompileUnitIrFilePath, symbolTable);
     mainCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(mainCompileUnit));
     mainCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(mainCompileUnit));
