@@ -110,6 +110,11 @@ Ir::Intf::Object* UI8Type::CreateDefaultValue() const
     return CreateUI8Constant(uint8_t(0));
 }
 
+Ir::Intf::Object* UI8Type::CreateMinusOne() const
+{
+    return CreateUI8Constant(uint8_t(-1));
+}
+
 Ir::Intf::Object* UI8Type::CreatePlusOne() const
 {
     return CreateUI8Constant(uint8_t(1));
@@ -161,6 +166,11 @@ Ir::Intf::Type* UI16Type::Clone() const
 Ir::Intf::Object* UI16Type::CreateDefaultValue() const
 {
     return CreateUI16Constant(uint16_t(0));
+}
+
+Ir::Intf::Object* UI16Type::CreateMinusOne() const
+{
+    return CreateUI16Constant(uint16_t(-1));
 }
 
 Ir::Intf::Object* UI16Type::CreatePlusOne() const
@@ -216,6 +226,11 @@ Ir::Intf::Object* UI32Type::CreateDefaultValue() const
     return CreateUI32Constant(uint32_t(0));
 }
 
+Ir::Intf::Object* UI32Type::CreateMinusOne() const
+{
+    return CreateUI32Constant(uint32_t(-1));
+}
+
 Ir::Intf::Object* UI32Type::CreatePlusOne() const
 {
     return CreateUI32Constant(uint32_t(1));
@@ -267,6 +282,11 @@ Ir::Intf::Type* UI64Type::Clone() const
 Ir::Intf::Object* UI64Type::CreateDefaultValue() const
 {
     return CreateUI64Constant(uint64_t(0));
+}
+
+Ir::Intf::Object* UI64Type::CreateMinusOne() const
+{
+    return CreateUI64Constant(uint64_t(-1));
 }
 
 Ir::Intf::Object* UI64Type::CreatePlusOne() const
@@ -436,6 +456,10 @@ PointerType::PointerType(Ir::Intf::Type* baseType_, uint8_t numPointers_) : Ir::
         baseType->SetOwned();
         ownedBaseType.reset(baseType);
     }
+    if (IsFunctionPointerType() || IsFunctionPtrPtrType())
+    {
+        SetName(Prefix() + Suffix());
+    }
 }
 
 Ir::Intf::Type* PointerType::Clone() const
@@ -462,8 +486,7 @@ std::string PointerType::Prefix() const
     }
     else if (IsFunctionPtrPtrType())
     {
-        PointerType* ptrType = static_cast<PointerType*>(baseType);
-        FunctionType* funType = static_cast<FunctionType*>(ptrType->baseType);
+        FunctionType* funType = static_cast<FunctionType*>(baseType);
         return funType->ReturnType()->Name() + " (**";
     }
     return Ir::Intf::Type::Prefix();
@@ -474,12 +497,7 @@ std::string PointerType::Suffix() const
     if (IsFunctionPointerType() || IsFunctionPtrPtrType())
     {
         std::string parameterList = ")(";
-        Ir::Intf::Type* f = baseType;
-        if (f->IsPointerType())
-        {
-            f = static_cast<PointerType*>(f)->baseType;
-        }
-        FunctionType* funType = static_cast<FunctionType*>(f);
+        FunctionType* funType = static_cast<FunctionType*>(baseType);
         bool first = true;
         for (const std::unique_ptr<Ir::Intf::Type>& paramType : funType->ParameterTypes())
         {

@@ -27,6 +27,7 @@ private:
     Cm::Core::CStaticMemberVariableRepository staticMemberVariableRepository;
     std::string funFilePath;
     std::ofstream funFile;
+    std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*> functionMap;
 };
 
 } } // namespace Cm::Emit

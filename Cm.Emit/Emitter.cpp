@@ -34,5 +34,4 @@ void Emitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     leaveTracedCallFun = compileUnit.SymbolTable().GetOverload("leave_traced_call");
 }
 
-
 } } // namespace Cm::Emit

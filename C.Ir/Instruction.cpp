@@ -537,7 +537,7 @@ std::string FCmpInst::ToString() const
     return fcmp;
 }
 
-DoNothingInst::DoNothingInst() : Instruction("_X_dummy = true")
+DoNothingInst::DoNothingInst() : Instruction("_V__X_dummy = true")
 {
 }
 

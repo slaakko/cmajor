@@ -18,7 +18,7 @@
 
 namespace C {
 
-StackVar::StackVar(const std::string& name_, Ir::Intf::Type* pointerType_) : Ir::Intf::StackVar("_S_" + name_, pointerType_)
+StackVar::StackVar(const std::string& name_, Ir::Intf::Type* pointerType_) : Ir::Intf::StackVar("_V_" + name_, pointerType_)
 {
 }
 

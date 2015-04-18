@@ -248,4 +248,9 @@ Ir::Intf::LabelObject* LlvmFunctionEmitter::CreateLandingPadLabel(int landingPad
     return Cm::IrIntf::CreateLabel("$P" + std::to_string(landingPadId));
 }
 
+void LlvmFunctionEmitter::MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun)
+{
+    // nothing to do for LLVM backend
+}
+
 } } // namespace Cm::Emit

@@ -510,7 +510,7 @@ OpIncrement::OpIncrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
 
 void OpIncrement::Generate(Emitter& emitter, GenResult& result)
 {
-    Ir::Intf::RegVar* arg1 = Cm::IrIntf::CreateTemporaryRegVar(result.Arg1()->GetType());
+    Ir::Intf::RegVar* arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType()); // arg1->GetType() changed to GetIrType() 
     emitter.Own(arg1);
     Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
     Ir::Intf::Object* one = GetIrType()->CreatePlusOne();
@@ -531,7 +531,7 @@ OpDecrement::OpDecrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
 
 void OpDecrement::Generate(Emitter& emitter, GenResult& result)
 {
-    Ir::Intf::RegVar* arg1 = Cm::IrIntf::CreateTemporaryRegVar(result.Arg1()->GetType());
+    Ir::Intf::RegVar* arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType()); // arg1->GetType() changed to GetIrType() 
     emitter.Own(arg1);
     Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
     Ir::Intf::Object* one = GetIrType()->CreatePlusOne();

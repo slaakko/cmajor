@@ -19,7 +19,7 @@ CFunctionEmitter::CFunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::
     Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
     Cm::Sym::FunctionSymbol* leaveTracedCallFun_) : FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
     internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_, externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCalllFun_,
-    leaveTracedCallFun_)
+    leaveTracedCallFun_), functionMap(nullptr)
 {
 }
 
@@ -155,10 +155,11 @@ void CFunctionEmitter::RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticM
             Cm::Sym::FunctionSymbol* destructor = classType->Destructor();
             Ir::Intf::Function* destructorIrFun = IrFunctionRepository().CreateIrFunction(destructor);
             Ir::Intf::Type* destructorPtrType = IrFunctionRepository().GetFunPtrIrType(destructor);
-            std::vector<Ir::Intf::Type*> dtorParamTypes(1, voidPtr);
-            Ir::Intf::Type* destructorFieldType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(Cm::IrIntf::Void(), dtorParamTypes), 1);
+            std::vector<Ir::Intf::Type*> dtorParamTypes1(1, voidPtr->Clone());
+            Ir::Intf::Type* destructorFieldType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(Cm::IrIntf::Void(), dtorParamTypes1), 1);
             emitter->Own(destructorFieldType);
-            Ir::Intf::Type* destructorFieldPtrType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(Cm::IrIntf::Void(), dtorParamTypes), 2);
+            std::vector<Ir::Intf::Type*> dtorParamTypes2(1, voidPtr->Clone());
+            Ir::Intf::Type* destructorFieldPtrType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateFunctionType(Cm::IrIntf::Void(), dtorParamTypes2), 2);
             emitter->Own(destructorFieldPtrType);
             Ir::Intf::MemberVar* destructorField = Cm::IrIntf::CreateMemberVar("destructor", destructionNode, 2, destructorFieldPtrType);
             destructorField->SetDotMember();
@@ -234,6 +235,11 @@ void CFunctionEmitter::GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::Ge
 Ir::Intf::LabelObject* CFunctionEmitter::CreateLandingPadLabel(int landingPadId)
 {
     return Cm::IrIntf::CreateLabel("_P_" + std::to_string(landingPadId));
+}
+
+void CFunctionEmitter::MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun)
+{
+    (*functionMap)[irFun] = fun;
 }
 
 } } // namespace Cm::Emit

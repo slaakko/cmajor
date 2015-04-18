@@ -127,7 +127,7 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
             }
             else if (backend == Cm::IrIntf::BackEnd::c)
             {
-                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount()));
+                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, type->GetIrType());
             }
         }
     }
@@ -150,7 +150,7 @@ IrObjectRepository::IrObjectRepository()
 {
 }
 
-Ir::Intf::Object* IrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr)
+Ir::Intf::MemberVar* IrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr)
 {
     Ir::Intf::MemberVar* memberVar = Cm::IrIntf::CreateMemberVar(boundMemberVariable->Symbol()->Name(), ptr, boundMemberVariable->Symbol()->LayoutIndex(),
         boundMemberVariable->Symbol()->GetType()->GetIrType());
@@ -207,7 +207,16 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     emitter->SetIrFunction(irFunction);
 
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
-    Ir::Intf::Object* exceptionCodeVariable = Cm::IrIntf::CreateStackVar(Cm::IrIntf::GetExCodeVarName(), Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI32(), 1));
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    Ir::Intf::Object* exceptionCodeVariable = nullptr;
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        exceptionCodeVariable = Cm::IrIntf::CreateStackVar(Cm::IrIntf::GetExCodeVarName(), Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI32(), 1));
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        exceptionCodeVariable = Cm::IrIntf::CreateStackVar(Cm::IrIntf::GetExCodeVarName(), Ir::Intf::GetFactory()->GetI32());
+    }
     emitter->Own(exceptionCodeVariable);
     emitter->Emit(Cm::IrIntf::Alloca(Ir::Intf::GetFactory()->GetI32(), exceptionCodeVariable));
     localVariableIrObjectRepository.SetExceptionCodeVariable(exceptionCodeVariable);
@@ -449,7 +458,11 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
         }
         std::shared_ptr<Cm::Core::GenResult> ptrResult = resultStack.Pop();
         Cm::Sym::TypeSymbol* type = boundMemberVariable.Symbol()->GetType();
-        Ir::Intf::Object* memberVariableIrObject = irObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult->MainObject());
+        Ir::Intf::MemberVar *memberVariableIrObject = irObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult->MainObject());
+        if (!ptrResult->MainObject()->GetType()->IsPointerType())
+        {
+            memberVariableIrObject->SetDotMember();
+        }
         if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
         {
             result->SetMainObject(memberVariableIrObject->CreateAddr(*emitter, type->GetIrType()));
@@ -2086,12 +2099,14 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::
         {
             Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(fun);
             externalFunctions.insert(irFunction);
+            MapIrFunToFun(irFunction, fun);
             GenerateVirtualCall(fun, traceCallInfo, result);
         }
         else
         {
             Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(fun);
             externalFunctions.insert(irFunction);
+            MapIrFunToFun(irFunction, fun);
             GenerateCall(fun, irFunction, traceCallInfo, result, fun->IsConstructorOrDestructorSymbol());
         }
         bool boolResult = false;
@@ -2129,6 +2144,7 @@ void FunctionEmitter::CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo
     if (currentFunction->GetFunctionSymbol()->FullName() == "System.TracedFun.@destructor(System.TracedFun*)") return;
     Ir::Intf::Function* enterFrameIrFun = irFunctionRepository.CreateIrFunction(enterFrameFun);
 	externalFunctions.insert(enterFrameIrFun);
+    MapIrFunToFun(enterFrameIrFun, enterFrameFun);
 	std::vector<Ir::Intf::Object*> args;
     traceCallInfo->Fun()->Accept(*this);
     std::shared_ptr<Cm::Core::GenResult> funResult = resultStack.Pop();
@@ -2145,6 +2161,7 @@ void FunctionEmitter::CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo
     {
         Ir::Intf::Function* enterTracedCallIrFun = irFunctionRepository.CreateIrFunction(enterTracedCallFun);
         externalFunctions.insert(enterTracedCallIrFun);
+        MapIrFunToFun(enterTracedCallIrFun, enterTracedCallFun);
         Ir::Intf::Instruction* enterTracedCallInst = Cm::IrIntf::Call(nullptr, enterTracedCallIrFun, args);
         emitter->Emit(enterTracedCallInst);
     }
@@ -2157,12 +2174,14 @@ void FunctionEmitter::CallLeaveFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo
     Ir::Intf::Function* leaveFrameIrFun = irFunctionRepository.CreateIrFunction(leaveFrameFun);
 	std::vector<Ir::Intf::Object*> args;
 	externalFunctions.insert(leaveFrameIrFun);
+    MapIrFunToFun(leaveFrameIrFun, leaveFrameFun);
 	Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(nullptr, leaveFrameIrFun, args);
 	emitter->Emit(callInst);
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::trace))
     {
         Ir::Intf::Function* leaveTracedCallIrFun = irFunctionRepository.CreateIrFunction(leaveTracedCallFun);
         externalFunctions.insert(leaveTracedCallIrFun);
+        MapIrFunToFun(leaveTracedCallIrFun, leaveTracedCallFun);
         std::vector<Ir::Intf::Object*> traceCallArgs;
         traceCallInfo->Fun()->Accept(*this);
         std::shared_ptr<Cm::Core::GenResult> funResult = resultStack.Pop();
@@ -2183,7 +2202,17 @@ void FunctionEmitter::GenerateTestExceptionResult()
 {
     if (currentFunction->IsMainFunction()) return;  // in real main() exception code is tested explicitly after call to user$main()
     int landingPadId = currentFunction->GetNextLandingPadId();
-    Ir::Intf::LabelObject* landingPadLabel = Cm::IrIntf::CreateLabel("$P" + std::to_string(landingPadId));
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    std::string labelPrefix;
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        labelPrefix = "$P";
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        labelPrefix = "_P_";
+    }
+    Ir::Intf::LabelObject* landingPadLabel = Cm::IrIntf::CreateLabel(labelPrefix + std::to_string(landingPadId));
     emitter->Own(landingPadLabel);
     Ir::Intf::LabelObject* nextLabel = Cm::IrIntf::CreateNextLocalLabel();
     emitter->Own(nextLabel);
@@ -2248,7 +2277,17 @@ void FunctionEmitter::GenerateLandingPadCode()
         int jumpToCatchId = landingPad->JumpToCatchId();
         if (jumpToCatchId != -1)    // got handler to jump to...
         {
-            Ir::Intf::LabelObject* catchIdLabel = Cm::IrIntf::CreateLabel("$C" + std::to_string(jumpToCatchId));
+            std::string continueLabelPrefix;
+            Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+            if (backend == Cm::IrIntf::BackEnd::llvm)
+            {
+                continueLabelPrefix = "$C";
+            }
+            else if (backend == Cm::IrIntf::BackEnd::c)
+            {
+                continueLabelPrefix = "_C_";
+            }
+            Ir::Intf::LabelObject* catchIdLabel = Cm::IrIntf::CreateLabel(continueLabelPrefix + std::to_string(jumpToCatchId));
             emitter->Own(catchIdLabel);
             emitter->Emit(Cm::IrIntf::Br(catchIdLabel));
         }

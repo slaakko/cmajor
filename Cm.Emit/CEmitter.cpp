@@ -11,6 +11,7 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Emit/CFunctionEmitter.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <boost/filesystem.hpp>
@@ -51,10 +52,17 @@ void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     for (Ir::Intf::Function* function : ExternalFunctions())
     {
-        if (InternalFunctionNames().find(function->Name()) == InternalFunctionNames().end())
+        std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>::iterator i = functionMap.find(function);
+        bool isInline = false;
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
         {
-            function->WriteDeclaration(CodeFormatter(), false, false);
+            if (i != functionMap.end())
+            {
+                Cm::Sym::FunctionSymbol* fun = i->second;
+                isInline = fun->IsInline();
+            }
         }
+        function->WriteDeclaration(CodeFormatter(), false, isInline);
     }
     staticMemberVariableRepository.Write(CodeFormatter());
     ExternalConstantRepository().Write(CodeFormatter());
@@ -86,6 +94,7 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     Cm::Util::CodeFormatter funFormatter(funFile);
     CFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(),
         ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun());
+    functionEmitter.SetFunctionMap(&functionMap);
     boundFunction.Accept(functionEmitter);
 }
 

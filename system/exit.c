@@ -1,4 +1,4 @@
-typedef struct destruction_X_node { struct destruction_X_node* next; void* cls; void (*destructor)(void*); } destruction_X_node;
+typedef struct destruction_X_node_ { struct destruction_X_node_* next; void* cls; void (*destructor)(void*); } destruction_X_node;
 
 static destruction_X_node* destruction_X_list = 0;
 

@@ -317,10 +317,19 @@ void OpIncPtr::Generate(Emitter& emitter, GenResult& result)
     }
     else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
     {
+        /*
         Ir::Intf::Object* one = Cm::IrIntf::CreateI32Constant(1);
         emitter.Own(one);
         emitter.Emit(Cm::IrIntf::Add(ptrType, result.MainObject(), result.Arg1(), one));
         Cm::IrIntf::Assign(emitter, ptrType, result.MainObject(), result.Arg1());
+        */
+        Ir::Intf::RegVar* arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType());
+        emitter.Own(arg1);
+        Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
+        Ir::Intf::Object* one = Cm::IrIntf::CreateI32Constant(1);
+        emitter.Own(one);
+        emitter.Emit(Cm::IrIntf::Add(GetIrType(), result.MainObject(), arg1, one));
+        Cm::IrIntf::Assign(emitter, GetIrType(), result.MainObject(), result.Arg1());
     }
 }
 
@@ -358,10 +367,19 @@ void OpDecPtr::Generate(Emitter& emitter, GenResult& result)
     }
     else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
     {
+        /*
         Ir::Intf::Object* minusOne = Cm::IrIntf::CreateI32Constant(-1);
         emitter.Own(minusOne);
         emitter.Emit(Cm::IrIntf::Add(ptrType, result.MainObject(), result.Arg1(), minusOne));
         Cm::IrIntf::Assign(emitter, ptrType, result.MainObject(), result.Arg1());
+        */
+        Ir::Intf::RegVar* arg1 = Cm::IrIntf::CreateTemporaryRegVar(GetIrType()); // arg1->GetType() changed to GetIrType() 
+        emitter.Own(arg1);
+        Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), arg1);
+        Ir::Intf::Object* one = Cm::IrIntf::CreateI32Constant(1);
+        emitter.Own(one);
+        emitter.Emit(Cm::IrIntf::Sub(GetIrType(), result.MainObject(), arg1, one));
+        Cm::IrIntf::Assign(emitter, GetIrType(), result.MainObject(), result.Arg1());
     }
 }
 
