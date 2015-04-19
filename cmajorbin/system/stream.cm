@@ -159,13 +159,11 @@ namespace System.IO
         return s;
     }
 
-/*
     public OutputStream& operator<<(OutputStream& s, Date date)
     {
         s.Write(ToString(date));
         return s;
     }
-*/
 
     public OutputStream& operator<<(OutputStream& s, EndLine)
     {
