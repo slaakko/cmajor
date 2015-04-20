@@ -347,8 +347,7 @@ public:
     virtual void Visit(TryStatementNode& tryStatementNode) {}
     virtual void Visit(CatchNode& catchNode) {}
     virtual void Visit(ExitTryStatementNode& exitTryStatementNode) {}
-    virtual void BeginVisit(AssertStatementNode& assertStatementNode) {}
-    virtual void EndVisit(AssertStatementNode& assertStatementNode) {}
+    virtual void Visit(AssertStatementNode& assertStatementNode) {}
     virtual void BeginVisit(CondCompDisjunctionNode& condCompDisjunctionNode) {}
     virtual void EndVisit(CondCompDisjunctionNode& condCompDisjunctionNode) {}
     virtual void BeginVisit(CondCompConjunctionNode& condCompDisjunctionNode) {}

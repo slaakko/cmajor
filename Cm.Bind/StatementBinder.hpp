@@ -246,6 +246,14 @@ private:
 Cm::BoundTree::BoundConstructionStatement* CreateTracedFunConstructionStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, 
     Cm::BoundTree::BoundFunction* boundFunction, const Cm::Parsing::Span& span);
 
+class AssertBinder : public StatementBinder
+{
+public:
+    AssertBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::BoundTree::BoundFunction* currentFunction_);
+    void Visit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
+};
+
 } } // namespace Cm::Bind
 
 #endif // CM_BIND_STATEMENT_INCLUDED
