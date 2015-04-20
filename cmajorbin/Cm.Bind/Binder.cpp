@@ -19,6 +19,7 @@
 #include <Cm.Bind/StatementBinder.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Core/Exception.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Bind/ClassObjectLayout.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
@@ -729,12 +730,14 @@ void Binder::Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode)
     exitTryStatementNode.Accept(binder);
 }
 
-void Binder::BeginVisit(Cm::Ast::AssertStatementNode& assertStatementNode)
+void Binder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
 {
-}
-
-void Binder::EndVisit(Cm::Ast::AssertStatementNode& assertStatementNode)
-{
+    if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+    {
+        AssertBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
+        assertStatementNode.Accept(binder);
+        currentParent->AddStatement(binder.Result());
+    }
 }
 
 void Binder::BeginVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode)

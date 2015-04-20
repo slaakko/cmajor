@@ -1386,4 +1386,54 @@ Cm::BoundTree::BoundConstructionStatement* CreateTracedFunConstructionStatement(
     return boundConstructionStatement;
 }
 
+AssertBinder::AssertBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+    Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+{
+}
+
+void AssertBinder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
+{
+    Cm::Sym::TypeSymbol* constCharPtrType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakeConstCharPtrType(assertStatementNode.GetSpan());
+    assertStatementNode.AssertExpr()->Accept(*this);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> expr(Pop());
+    Cm::BoundTree::BoundExpressionList failAssertionArguments;
+    std::string assertExpr = assertStatementNode.AssertExpr()->ToString();
+    int assertExprId = BoundCompileUnit().StringRepository().Install(assertExpr);
+    Cm::BoundTree::BoundStringLiteral* assertExprLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, assertExprId);
+    assertExprLiteral->SetType(constCharPtrType);
+    failAssertionArguments.Add(assertExprLiteral);
+    std::string filePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
+    int fileId = BoundCompileUnit().StringRepository().Install(filePath);
+    Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, fileId);
+    fileLiteral->SetType(constCharPtrType);
+    failAssertionArguments.Add(fileLiteral);
+    std::string line = std::to_string(assertStatementNode.GetSpan().LineNumber());
+    int lineId = BoundCompileUnit().StringRepository().Install(line);
+    Cm::BoundTree::BoundStringLiteral* lineLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, lineId);
+    lineLiteral->SetType(constCharPtrType);
+    failAssertionArguments.Add(lineLiteral);
+    Cm::BoundTree::BoundUnaryOp* notAssertExpr = new Cm::BoundTree::BoundUnaryOp(&assertStatementNode, expr.release());
+    Cm::Sym::TypeSymbol* boolType = BoundCompileUnit().SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+    notAssertExpr->SetType(boolType);
+    std::vector<Cm::Core::Argument> notAssertExprArgs;
+    notAssertExprArgs.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boolType));
+    Cm::Sym::FunctionLookupSet notAssertExprLookups;
+    notAssertExprLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, BoundCompileUnit().SymbolTable().GlobalScope()));
+    std::vector<Cm::Sym::FunctionSymbol*> notAssertExprConversions;
+    Cm::Sym::FunctionSymbol* notAssertFun = Cm::Bind::ResolveOverload(BoundCompileUnit().SymbolTable().GlobalScope(), BoundCompileUnit(), "operator!", notAssertExprArgs, notAssertExprLookups, 
+        assertStatementNode.GetSpan(), notAssertExprConversions);
+    notAssertExpr->SetFunction(notAssertFun);
+    notAssertExpr->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
+    Cm::BoundTree::BoundFunctionCall* failAssertionExpr = new Cm::BoundTree::BoundFunctionCall(&assertStatementNode, std::move(failAssertionArguments));
+    failAssertionExpr->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+    Cm::Sym::FunctionSymbol* failAssertionFun = BoundCompileUnit().SymbolTable().GetOverload("System.Support.FailAssertion");
+    failAssertionExpr->SetFunction(failAssertionFun);
+    Cm::BoundTree::BoundConditionalStatement* testAssertExprStatement = new Cm::BoundTree::BoundConditionalStatement(&assertStatementNode);
+    testAssertExprStatement->SetCondition(notAssertExpr);
+    Cm::BoundTree::BoundSimpleStatement* callFailAssertionStatement = new Cm::BoundTree::BoundSimpleStatement(&assertStatementNode);
+    callFailAssertionStatement->SetExpression(failAssertionExpr);
+    testAssertExprStatement->AddStatement(callFailAssertionStatement);
+    SetResult(testAssertExprStatement);
+}
+
 } } // namespace Cm::Bind

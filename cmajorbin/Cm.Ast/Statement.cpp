@@ -1663,12 +1663,7 @@ void AssertStatementNode::Print(CodeFormatter& formatter)
 
 void AssertStatementNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    if (visitor.VisitExpressions())
-    {
-        assertExpr->Accept(visitor);
-    }
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
 CondCompSymbolNode::CondCompSymbolNode(const Span& span_) : Node(span_)

@@ -553,6 +553,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
+    Node* AssertExpr() { return assertExpr.get(); }
 private:
     std::unique_ptr<Node> assertExpr;
 };

@@ -76,8 +76,7 @@ public:
     void Visit(Cm::Ast::TryStatementNode& tryStatementNode) override;
     void Visit(Cm::Ast::CatchNode& catchNode) override;
     void Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode) override;
-    void BeginVisit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
-    void EndVisit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
+    void Visit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
     void BeginVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode) override;
     void EndVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode) override;
     void BeginVisit(Cm::Ast::CondCompConjunctionNode& condCompDisjunctionNode) override;
