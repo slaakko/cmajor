@@ -12,6 +12,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <stdexcept>
 
@@ -121,13 +122,16 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
             irParameterTypes.push_back(exceptionCodeParamType->Clone());
         }
         functionGroupName = function->GroupName();
-        if (functionGroupName.empty())
+        if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::unit_test))
         {
-            functionGroupName = "main";
-        }
-        else if (functionGroupName == "main")
-        {
-            functionGroupName = "user" + Cm::IrIntf::GetPrivateSeparator() + "main";
+            if (functionGroupName.empty())
+            {
+                functionGroupName = "main";
+            }
+            else if (functionGroupName == "main")
+            {
+                functionGroupName = "user" + Cm::IrIntf::GetPrivateSeparator() + "main";
+            }
         }
         functionName = functionGroupName;
     }

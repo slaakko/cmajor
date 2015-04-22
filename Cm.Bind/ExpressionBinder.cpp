@@ -2021,6 +2021,10 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 
 void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
+    if (identifierNode.Str() == "Test.System.Support.Utility.AlignTest")
+    {
+        int x = 0;
+    }
     if (identifierNode.Str() == Cm::IrIntf::GetExCodeVarName())
     {
         Cm::BoundTree::BoundExceptionCodeVariable* exceptionCodeVariable = new Cm::BoundTree::BoundExceptionCodeVariable();
@@ -2177,6 +2181,7 @@ void ExpressionBinder::PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const
 
 Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span)
 {
+    if (fun->FullName() == "main()" && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::unit_test)) return nullptr;
     std::string funFullName = fun->FullName();
     Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);
     int funId = boundCompileUnit.StringRepository().Install(funFullName);

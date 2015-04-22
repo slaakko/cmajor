@@ -8,11 +8,22 @@
 ========================================================================*/
 
 #include <Cm.Ast/Clone.hpp>
+#include <Cm.Ast/Function.hpp>
 
 namespace Cm { namespace Ast {
 
-CloneContext::CloneContext() : instantiateClassNode(false) 
+CloneContext::CloneContext() : instantiateClassNode(false) , makeTestUnits(false)
 {
+}
+
+void CloneContext::AddUnitTestFunction(Cm::Ast::FunctionNode* unitTestFunction)
+{
+    unitTestFunctions.push_back(std::unique_ptr<Cm::Ast::FunctionNode>(unitTestFunction));
+}
+
+std::vector<std::unique_ptr<FunctionNode>>& CloneContext::UnitTestFunctions()
+{ 
+    return unitTestFunctions; 
 }
 
 } } // namespace Cm::Ast

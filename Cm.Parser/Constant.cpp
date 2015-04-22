@@ -197,34 +197,34 @@ private:
 void ConstantGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::stdlib::Create(pd);
+        grammar0 = Cm::Parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::ExpressionGrammar::Create(pd);
+        grammar2 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar3 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar4 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar4);
 }

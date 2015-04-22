@@ -383,7 +383,17 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         std::cout << "Compiling..." << std::endl;
     }
     boost::filesystem::path outputBase(outputBasePath);
-    std::string prebindCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__prebind__.ll")).generic_string());
+    std::string ext;
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        ext = ".ll";
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        ext = ".c";
+    }
+    std::string prebindCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__prebind__" + ext)).generic_string());
     Cm::BoundTree::BoundCompileUnit prebindCompileUnit(syntaxTree.CompileUnits().front().get(), prebindCompileUnitIrFilePath, symbolTable);
     prebindCompileUnit.SetPrebindCompileUnit();
     prebindCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
@@ -707,11 +717,11 @@ void BuildSolution(const std::string& solutionFilePath)
     {
         throw std::runtime_error("solution file '" + solutionFilePath + "' not found");
     }
-    Cm::Util::MappedInputFile solutionFile(solutionFilePath);
     if (!solutionGrammar)
     {
         solutionGrammar = Cm::Parser::SolutionGrammar::Create();
     }
+    Cm::Util::MappedInputFile solutionFile(solutionFilePath);
     std::unique_ptr<Cm::Ast::Solution> solution(solutionGrammar->Parse(solutionFile.Begin(), solutionFile.End(), 0, solutionFilePath));
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     bool clean = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean);

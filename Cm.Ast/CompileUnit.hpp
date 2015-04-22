@@ -28,6 +28,7 @@ public:
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     const std::string& FilePath() const { return filePath; }
+    NamespaceNode* GetNamespace(const std::string& fulllNamespaceName) const;
 private:
     std::string filePath;
     std::unique_ptr<NamespaceNode> globalNs;

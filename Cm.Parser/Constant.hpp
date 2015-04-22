@@ -1,5 +1,5 @@
-#ifndef Constant_hpp_22112
-#define Constant_hpp_22112
+#ifndef Constant_hpp_3809
+#define Constant_hpp_3809
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -23,4 +23,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Constant_hpp_22112
+#endif // Constant_hpp_3809

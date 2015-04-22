@@ -177,6 +177,8 @@ public:
         a14ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A14Action));
         Cm::Parsing::ActionParser* a15ActionParser = GetAction("A15");
         a15ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A15Action));
+        Cm::Parsing::ActionParser* a16ActionParser = GetAction("A16");
+        a16ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A16Action));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -242,6 +244,10 @@ public:
     {
         context.value = Specifiers::throw_;
     }
+    void A16Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Specifiers::unit_test;
+    }
 private:
     struct Context
     {
@@ -278,38 +284,41 @@ void SpecifierGrammar::CreateRules()
                                                         new Cm::Parsing::AlternativeParser(
                                                             new Cm::Parsing::AlternativeParser(
                                                                 new Cm::Parsing::AlternativeParser(
-                                                                    new Cm::Parsing::ActionParser("A0",
-                                                                        new Cm::Parsing::KeywordParser("public")),
-                                                                    new Cm::Parsing::ActionParser("A1",
-                                                                        new Cm::Parsing::KeywordParser("protected"))),
-                                                                new Cm::Parsing::ActionParser("A2",
-                                                                    new Cm::Parsing::KeywordParser("private"))),
-                                                            new Cm::Parsing::ActionParser("A3",
-                                                                new Cm::Parsing::KeywordParser("internal"))),
-                                                        new Cm::Parsing::ActionParser("A4",
-                                                            new Cm::Parsing::KeywordParser("static"))),
-                                                    new Cm::Parsing::ActionParser("A5",
-                                                        new Cm::Parsing::KeywordParser("virtual"))),
-                                                new Cm::Parsing::ActionParser("A6",
-                                                    new Cm::Parsing::KeywordParser("override"))),
-                                            new Cm::Parsing::ActionParser("A7",
-                                                new Cm::Parsing::KeywordParser("abstract"))),
-                                        new Cm::Parsing::ActionParser("A8",
-                                            new Cm::Parsing::KeywordParser("suppress"))),
-                                    new Cm::Parsing::ActionParser("A9",
-                                        new Cm::Parsing::KeywordParser("default"))),
-                                new Cm::Parsing::ActionParser("A10",
-                                    new Cm::Parsing::KeywordParser("explicit"))),
-                            new Cm::Parsing::ActionParser("A11",
-                                new Cm::Parsing::KeywordParser("extern"))),
-                        new Cm::Parsing::ActionParser("A12",
-                            new Cm::Parsing::KeywordParser("inline"))),
-                    new Cm::Parsing::ActionParser("A13",
-                        new Cm::Parsing::KeywordParser("cdecl"))),
-                new Cm::Parsing::ActionParser("A14",
-                    new Cm::Parsing::KeywordParser("nothrow"))),
-            new Cm::Parsing::ActionParser("A15",
-                new Cm::Parsing::KeywordParser("throw")))));
+                                                                    new Cm::Parsing::AlternativeParser(
+                                                                        new Cm::Parsing::ActionParser("A0",
+                                                                            new Cm::Parsing::KeywordParser("public")),
+                                                                        new Cm::Parsing::ActionParser("A1",
+                                                                            new Cm::Parsing::KeywordParser("protected"))),
+                                                                    new Cm::Parsing::ActionParser("A2",
+                                                                        new Cm::Parsing::KeywordParser("private"))),
+                                                                new Cm::Parsing::ActionParser("A3",
+                                                                    new Cm::Parsing::KeywordParser("internal"))),
+                                                            new Cm::Parsing::ActionParser("A4",
+                                                                new Cm::Parsing::KeywordParser("static"))),
+                                                        new Cm::Parsing::ActionParser("A5",
+                                                            new Cm::Parsing::KeywordParser("virtual"))),
+                                                    new Cm::Parsing::ActionParser("A6",
+                                                        new Cm::Parsing::KeywordParser("override"))),
+                                                new Cm::Parsing::ActionParser("A7",
+                                                    new Cm::Parsing::KeywordParser("abstract"))),
+                                            new Cm::Parsing::ActionParser("A8",
+                                                new Cm::Parsing::KeywordParser("suppress"))),
+                                        new Cm::Parsing::ActionParser("A9",
+                                            new Cm::Parsing::KeywordParser("default"))),
+                                    new Cm::Parsing::ActionParser("A10",
+                                        new Cm::Parsing::KeywordParser("explicit"))),
+                                new Cm::Parsing::ActionParser("A11",
+                                    new Cm::Parsing::KeywordParser("extern"))),
+                            new Cm::Parsing::ActionParser("A12",
+                                new Cm::Parsing::KeywordParser("inline"))),
+                        new Cm::Parsing::ActionParser("A13",
+                            new Cm::Parsing::KeywordParser("cdecl"))),
+                    new Cm::Parsing::ActionParser("A14",
+                        new Cm::Parsing::KeywordParser("nothrow"))),
+                new Cm::Parsing::ActionParser("A15",
+                    new Cm::Parsing::KeywordParser("throw"))),
+            new Cm::Parsing::ActionParser("A16",
+                new Cm::Parsing::KeywordParser("unit_test")))));
 }
 
 } } // namespace Cm.Parser

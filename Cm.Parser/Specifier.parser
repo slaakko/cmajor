@@ -36,6 +36,7 @@ namespace Cm.Parser
             |   keyword("cdecl"){ value = Specifiers::cdecl_; }
             |   keyword("nothrow"){ value = Specifiers::nothrow_; }
             |   keyword("throw"){ value = Specifiers::throw_; }
+            |   keyword("unit_test"){ value = Specifiers::unit_test; }
             ;
     }
 }

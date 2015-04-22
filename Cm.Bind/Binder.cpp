@@ -732,7 +732,13 @@ void Binder::Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode)
 
 void Binder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
 {
-    if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::unit_test))
+    {
+        UnitTestAssertBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
+        assertStatementNode.Accept(binder);
+        currentParent->AddStatement(binder.Result());
+    }
+    else if (Cm::Core::GetGlobalSettings()->Config() == "debug")
     {
         AssertBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
         assertStatementNode.Accept(binder);

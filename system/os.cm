@@ -115,3 +115,7 @@ extern public cdecl void enter_traced_fun(const char* fun, const char* file, int
 extern public cdecl void leave_traced_fun(const char* fun, const char* file, int line);
 extern public cdecl void enter_traced_call(const char* fun, const char* file, int line);
 extern public cdecl void leave_traced_call(const char* fun, const char* file, int line);
+extern public cdecl void begin_unit_test(const char* unitTestName);
+extern public cdecl void end_unit_test(const char* unitTestName);
+extern public cdecl void pass_unit_test_assertion(const char* expression);
+extern public cdecl void fail_unit_test_assertion(const char* expression, const char* file, int line);

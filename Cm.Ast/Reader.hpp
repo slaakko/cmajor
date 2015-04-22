@@ -35,7 +35,7 @@ class WhereConstraintNode;
 class InitializerNode;
 class NamespaceNode;
 class CompileUnitNode;
-enum class Specifiers : uint16_t;
+enum class Specifiers : uint32_t;
 
 class Reader
 {

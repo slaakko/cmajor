@@ -27,7 +27,7 @@ namespace System.Collections
             }            
             catch (const Exception& ex)
             {
-                exit(255);
+                exit(1);
             }
         }
         public BitSet(int numBits_): numBits(0), bits()

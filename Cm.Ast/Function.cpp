@@ -10,6 +10,7 @@
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/Concept.hpp>
 #include <Cm.Ast/Statement.hpp>
+#include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Visitor.hpp>
@@ -190,6 +191,18 @@ std::string FunctionNode::Name() const
     std::string name = groupId->Str();
     name.append(parameters.ToString());
     return name;
+}
+
+std::string FunctionNode::FullGroupName() const
+{
+    if (Parent()->IsNamespaceNode())
+    {
+        return static_cast<NamespaceNode*>(Parent())->FullName() + "." + groupId->Str();
+    }
+    else
+    {
+        return groupId->Str();
+    }
 }
 
 void FunctionNode::Accept(Visitor& visitor)
