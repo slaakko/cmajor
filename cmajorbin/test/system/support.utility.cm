@@ -1,0 +1,211 @@
+using System;
+using System.Support;
+
+namespace Test.System.Support.Utility
+{
+    public unit_test void AlignTest()
+    {
+        #assert(Align(0u, 64u) == 0u);
+        #assert(Align(1u, 64u) == 64u);
+        #assert(Align(63u, 64u) == 64u);
+        #assert(Align(64u, 64u) == 64u);
+        #assert(Align(65u, 64u) == 128u);
+        #assert(Align(127u, 64u) == 128u);
+        #assert(Align(128u, 64u) == 128u);
+        #assert(Align(0u, 4096u) == 0u);
+        #assert(Align(1u, 4096u) == 4096u);
+        #assert(Align(100u, 4096u) == 4096u);
+        #assert(Align(4095u, 4096u) == 4096u);
+        #assert(Align(4096u, 4096u) == 4096u);
+        #assert(Align(4097u, 4096u) == 8192u);
+        #assert(Align(8191u, 4096u) == 8192u);
+        #assert(Align(8192u, 4096u) == 8192u);
+    }
+
+    public unit_test void StrLenTest()
+    {
+        #assert(StrLen(null) == 0);
+        #assert(StrLen("") == 0);
+        #assert(StrLen("a") == 1);
+        #assert(StrLen("ab") == 2);
+        #assert(StrLen("abc") == 3);
+        string s;
+        for (int i = 0; i < 4096; ++i)
+        {
+            s.Append('x');
+        }
+        #assert(StrLen(s.Chars()) == 4096);
+    }
+
+    public unit_test void StrCopyTest()
+    {
+        UniquePtr<char> mem(cast<char*>(MemAlloc(4096u)));
+        char* buf = mem.GetPtr();
+        StrCopy(buf, null);
+        #assert(StrLen(buf) == 0);
+        StrCopy(buf, "");
+        #assert(StrLen(buf) == 0);
+        #assert(buf[0] == '\0');
+        StrCopy(buf, "a");
+        #assert(StrLen(buf) == 1);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == '\0');
+        StrCopy(buf, "ab");
+        #assert(StrLen(buf) == 2);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == 'b');
+        #assert(buf[2] == '\0');
+        StrCopy(buf, "abc");
+        #assert(StrLen(buf) == 3);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == 'b');
+        #assert(buf[2] == 'c');
+        #assert(buf[3] == '\0');
+        string s;
+        for (int i = 0; i < 4095; ++i)
+        {
+            s.Append('x');
+        }
+        StrCopy(buf, s.Chars());
+        #assert(StrLen(buf) == 4095);
+        for (int i = 0; i < 4095; ++i)
+        {
+            if (buf[i] != 'x')
+            {
+                #assert(false);
+            }
+        }
+        #assert(buf[4095] == '\0');
+    }
+
+    public unit_test void StrCopyLenTest()
+    {
+        UniquePtr<char> mem(cast<char*>(MemAlloc(4096u)));
+        char* buf = mem.GetPtr();
+        #assert(StrCopy(buf, null, 0) == 0);
+        #assert(StrLen(buf) == 0);
+        #assert(StrCopy(buf, "", 0) == 0);
+        #assert(StrLen(buf) == 0);
+        #assert(buf[0] == '\0');
+        #assert(StrCopy(buf, "a", 0) == 0);
+        #assert(StrLen(buf) == 0);
+        #assert(buf[0] == '\0');
+        #assert(StrCopy(buf, "a", 1) == 1);
+        #assert(StrLen(buf) == 1);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == '\0');
+        #assert(StrCopy(buf, "a", 2) == 1);
+        #assert(StrLen(buf) == 1);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == '\0');
+
+        #assert(StrCopy(buf, "ab", 0) == 0);
+        #assert(StrLen(buf) == 0);
+        #assert(buf[0] == '\0');
+        #assert(StrCopy(buf, "ab", 1) == 1);
+        #assert(StrLen(buf) == 1);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == '\0');
+        #assert(StrCopy(buf, "ab", 2) == 2);
+        #assert(StrLen(buf) == 2);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == 'b');
+        #assert(buf[2] == '\0');
+        #assert(StrCopy(buf, "ab", 3) == 2);
+        #assert(StrLen(buf) == 2);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == 'b');
+        #assert(buf[2] == '\0');
+
+        #assert(StrCopy(buf, "abc", 0) == 0);
+        #assert(StrLen(buf) == 0);
+        #assert(buf[0] == '\0');
+        #assert(StrCopy(buf, "abc", 1) == 1);
+        #assert(StrLen(buf) == 1);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == '\0');
+        #assert(StrCopy(buf, "abc", 2) == 2);
+        #assert(StrLen(buf) == 2);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == 'b');
+        #assert(buf[2] == '\0');
+        #assert(StrCopy(buf, "abc", 3) == 3);
+        #assert(StrLen(buf) == 3);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == 'b');
+        #assert(buf[2] == 'c');
+        #assert(buf[3] == '\0');
+        #assert(StrCopy(buf, "abc", 4) == 3);
+        #assert(StrLen(buf) == 3);
+        #assert(buf[0] == 'a');
+        #assert(buf[1] == 'b');
+        #assert(buf[2] == 'c');
+        #assert(buf[3] == '\0');
+
+        string s;
+        for (int i = 0; i < 4095; ++i)
+        {
+            s.Append('x');
+        }
+        #assert(StrCopy(buf, s.Chars(), 0) == 0);
+        #assert(StrLen(buf) == 0);
+        #assert(buf[0] == '\0');
+        #assert(StrCopy(buf, s.Chars(), 1) == 1);
+        #assert(StrLen(buf) == 1);
+        #assert(buf[0] == 'x');
+        #assert(buf[1] == '\0');
+        #assert(StrCopy(buf, s.Chars(), 2) == 2);
+        #assert(StrLen(buf) == 2);
+        #assert(buf[0] == 'x');
+        #assert(buf[1] == 'x');
+        #assert(buf[2] == '\0');
+
+        #assert(StrCopy(buf, s.Chars(), 3) == 3);
+        #assert(StrLen(buf) == 3);
+        #assert(buf[0] == 'x');
+        #assert(buf[1] == 'x');
+        #assert(buf[2] == 'x');
+        #assert(buf[3] == '\0');
+
+        #assert(StrCopy(buf, s.Chars(), 100) == 100);
+        #assert(StrLen(buf) == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            if (buf[i] != 'x')
+            {
+                #assert(false);
+            }
+        }
+        #assert(buf[100] == '\0');
+
+        #assert(StrCopy(buf, s.Chars(), 4095) == 4095);
+        #assert(StrLen(buf) == 4095);
+        for (int i = 0; i < 4095; ++i)
+        {
+            if (buf[i] != 'x')
+            {
+                #assert(false);
+            }
+        }
+        #assert(buf[4095] == '\0');
+    }   
+
+    public unit_test void MemGrowTest()
+    {
+        #assert(MemGrow(0u) == 8u);
+        #assert(MemGrow(1u) == 8u);
+        #assert(MemGrow(2u) == 8u);
+        #assert(MemGrow(8u) == 64u);
+        #assert(MemGrow(63u) == 64u);
+        #assert(MemGrow(64u) == 512u);
+        #assert(MemGrow(65u) == 512u);
+        #assert(MemGrow(511u) == 512u);
+        #assert(MemGrow(512u) == 4096u);
+        #assert(MemGrow(513u) == 4096u);
+        #assert(MemGrow(4095u) == 4096u);
+        #assert(MemGrow(4096u) == 8192u);
+        #assert(MemGrow(4097u) == 16384u);
+        #assert(MemGrow(8191u) == 16384u);
+        #assert(MemGrow(8192u) == 16384u);
+    }
+}

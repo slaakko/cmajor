@@ -14,7 +14,7 @@
 
 namespace Cm { namespace Ast {
 
-enum class Specifiers: uint16_t
+enum class Specifiers: uint32_t
 {
     none = 0,
     public_ = 1, protected_ = 2, private_ = 4, internal_ = 8, 
@@ -29,17 +29,18 @@ enum class Specifiers: uint16_t
     cdecl_ = 8192,
     nothrow_ = 16384,
     throw_ = 32768,
-    non_access_specifiers = static_ | virtuality | explicit_ | external | suppress | default_ | inline_ | cdecl_ | nothrow_ | throw_
+    unit_test = 65536,
+    non_access_specifiers = static_ | virtuality | explicit_ | external | suppress | default_ | inline_ | cdecl_ | nothrow_ | throw_ | unit_test
 };
 
 inline Specifiers operator|(Specifiers left, Specifiers right)
 {
-    return Specifiers(uint16_t(left) | uint16_t(right));
+    return Specifiers(uint32_t(left) | uint32_t(right));
 }
 
 inline Specifiers operator&(Specifiers left, Specifiers right)
 {
-    return Specifiers(uint16_t(left) & uint16_t(right));
+    return Specifiers(uint32_t(left) & uint32_t(right));
 }
 
 bool HasStaticSpecifier(Specifiers s);

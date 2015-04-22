@@ -1,5 +1,5 @@
-#ifndef Template_hpp_5728
-#define Template_hpp_5728
+#ifndef Template_hpp_3809
+#define Template_hpp_3809
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -25,4 +25,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Template_hpp_5728
+#endif // Template_hpp_3809

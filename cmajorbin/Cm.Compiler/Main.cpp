@@ -10,13 +10,13 @@
 #include <Cm.Compiler/IdeError.hpp>
 #include <Cm.Build/Build.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
-#include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
-#include <Cm.Sym/Exception.hpp>
-#include <Cm.Core/Exception.hpp>
 #include <Cm.Parsing/InitDone.hpp>
+#include <Cm.Sym/Exception.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>

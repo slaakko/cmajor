@@ -1,5 +1,5 @@
-#ifndef Function_hpp_21398
-#define Function_hpp_21398
+#ifndef Function_hpp_3809
+#define Function_hpp_3809
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -25,4 +25,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Function_hpp_21398
+#endif // Function_hpp_3809

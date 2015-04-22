@@ -55,4 +55,9 @@ void CompileUnitNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
+NamespaceNode* CompileUnitNode::GetNamespace(const std::string& fulllNamespaceName) const
+{
+    return globalNs->GetNamespace(fulllNamespaceName);
+}
+
 } } // namespace Cm::Ast

@@ -426,3 +426,39 @@ void leave_traced_call(const char* fun, const char* file, int line)
     fprintf(stderr, "-%04d:%s[%s:%d]\n", traceLevel, fun, file, line);
     fflush(stderr);
 }
+
+static int num_passed_unit_test_assertions = 0;
+static int num_failed_unit_test_assertions = 0;
+
+void crash(int signal)
+{
+    exit(255);
+}
+
+void begin_unit_test(const char* unitTestName)
+{
+    fprintf(stderr, "> %s\n", unitTestName);
+    signal(SIGSEGV, crash);
+}
+
+void end_unit_test(const char* unitTestName)
+{
+    fprintf(stderr, "< %s: %d assertions, %d passed, %d failed\n", unitTestName, num_passed_unit_test_assertions + num_failed_unit_test_assertions, num_passed_unit_test_assertions, 
+        num_failed_unit_test_assertions);
+    if (num_failed_unit_test_assertions > 0)
+    {
+        exit(1);
+    }
+}
+
+void pass_unit_test_assertion(const char* expression)
+{
+    fprintf(stderr, "  assertion '%s' passed\n", expression);
+    ++num_passed_unit_test_assertions;
+}
+
+void fail_unit_test_assertion(const char* expression, const char* file, int line)
+{
+    fprintf(stderr, "  assertion '%s' FAILED in file %s at line %d\n", expression, file, line);
+    ++num_failed_unit_test_assertions;
+}

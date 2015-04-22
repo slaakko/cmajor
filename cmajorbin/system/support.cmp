@@ -3,7 +3,6 @@ target=library;
 assembly <support.cma>;
 reference <os.cml>;
 source <assert.cm>;
-source <cs.cm>;
 source <eh.cm>;
 csource <exit.c>[backend=c];
 asmsource <exit.ll>[backend=llvm];

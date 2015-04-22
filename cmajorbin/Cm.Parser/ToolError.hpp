@@ -1,5 +1,5 @@
-#ifndef ToolError_hpp_17008
-#define ToolError_hpp_17008
+#ifndef ToolError_hpp_3809
+#define ToolError_hpp_3809
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -27,4 +27,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // ToolError_hpp_17008
+#endif // ToolError_hpp_3809

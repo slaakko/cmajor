@@ -254,6 +254,14 @@ public:
     void Visit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
 };
 
+class UnitTestAssertBinder : public StatementBinder
+{
+public:
+    UnitTestAssertBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
+        Cm::BoundTree::BoundFunction* currentFunction_);
+    void Visit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
+};
+
 } } // namespace Cm::Bind
 
 #endif // CM_BIND_STATEMENT_INCLUDED

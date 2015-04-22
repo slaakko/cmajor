@@ -27,7 +27,9 @@ public:
     void Accept(Visitor& visitor) override;
     IdentifierNode* Id() const { return id.get(); }
     std::string Name() const override;
+    bool IsNamespaceNode() const override { return true; }
     bool IsGlobalNamespaceNode() const { return Parent() == nullptr; }
+    NamespaceNode* GetNamespace(const std::string& fullNamespaceName) const;
 private:
     std::unique_ptr<IdentifierNode> id;
     NodeList members;

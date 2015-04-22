@@ -224,7 +224,7 @@ void dbgheap_free(void* mem)
             fprintf(stderr, "\ncall stack:\n%s", call_stack);
             fflush(stderr);
             end_capture_call_stack();
-            exit(255);
+            exit(1);
         }
         else
         {

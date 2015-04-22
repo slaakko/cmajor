@@ -408,7 +408,10 @@ void OpNot::Generate(Emitter& emitter, GenResult& result)
     {
         Ir::Intf::Object* true_ = Cm::IrIntf::True();
         emitter.Own(true_);
-        emitter.Emit(Cm::IrIntf::Xor(result.MainObject()->GetType(), result.MainObject(), result.Arg1(), true_));
+        Ir::Intf::Object* arg1 = Cm::IrIntf::CreateTemporaryRegVar(result.MainObject()->GetType());
+        emitter.Own(arg1);
+        Cm::IrIntf::Assign(emitter, result.MainObject()->GetType(), result.Arg1(), arg1);
+        emitter.Emit(Cm::IrIntf::Xor(result.MainObject()->GetType(), result.MainObject(), arg1, true_));
         Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateLabel();
         emitter.Own(trueLabel);
         Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateLabel();
@@ -421,7 +424,10 @@ void OpNot::Generate(Emitter& emitter, GenResult& result)
     {
         Ir::Intf::Object* true_ = Cm::IrIntf::True();
         emitter.Own(true_);
-        emitter.Emit(Cm::IrIntf::Xor(result.MainObject()->GetType(), result.MainObject(), result.Arg1(), true_));
+        Ir::Intf::Object* arg1 = Cm::IrIntf::CreateTemporaryRegVar(result.MainObject()->GetType());
+        emitter.Own(arg1);
+        Cm::IrIntf::Assign(emitter, result.MainObject()->GetType(), result.Arg1(), arg1);
+        emitter.Emit(Cm::IrIntf::Xor(result.MainObject()->GetType(), result.MainObject(), arg1, true_));
     }
 }
 

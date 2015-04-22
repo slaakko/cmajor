@@ -12,6 +12,9 @@
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Visitor.hpp>
+#include <Cm.Ast/Function.hpp>
+#include <Cm.Util/TextUtils.hpp>
+#include <algorithm>
 
 namespace Cm { namespace Ast {
 
@@ -35,7 +38,16 @@ Node* NamespaceNode::Clone(CloneContext& cloneContext) const
     NamespaceNode* clone = new NamespaceNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
     for (const std::unique_ptr<Node>& member : members)
     {
-        clone->AddMember(member->Clone(cloneContext));
+        if (cloneContext.MakeTestUnits() && member->IsFunctionNode() && (static_cast<FunctionNode*>(member.get())->GetSpecifiers() & Specifiers::unit_test) != Specifiers::none)
+        {
+            FunctionNode* unitTestFunction = static_cast<FunctionNode*>(member->Clone(cloneContext));
+            unitTestFunction->SetParent(const_cast<NamespaceNode*>(this));
+            cloneContext.AddUnitTestFunction(unitTestFunction);
+        }
+        else
+        {
+            clone->AddMember(member->Clone(cloneContext));
+        }
     }
     return clone;
 }
@@ -74,6 +86,51 @@ void NamespaceNode::Accept(Visitor& visitor)
 std::string NamespaceNode::Name() const
 {
     return id->Str();
+}
+
+NamespaceNode* NamespaceNode::GetNamespace(const std::string& fullNamespaceName) const
+{
+    if (fullNamespaceName.empty()) return const_cast<NamespaceNode*>(this);
+    std::vector<std::string> components = Cm::Util::Split(fullNamespaceName, '.');
+    for (const std::unique_ptr<Node>& member : members)
+    {
+        if (member->IsNamespaceNode())
+        {
+            std::vector<std::string> memberComponents = Cm::Util::Split(member->Name(), '.');
+            int n = std::min(int(components.size()), int(memberComponents.size()));
+            int k = 0;
+            for (int i = 0; i < n; ++i)
+            {
+                if (components[i] == memberComponents[i])
+                {
+                    k = i;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (k + 1 == memberComponents.size())
+            {
+                bool first = true;
+                std::string right;
+                for (int i = k + 1; i < int(components.size()); ++i)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        right.append(1, '.');
+                    }
+                    right.append(components[i]);
+                }
+                return static_cast<NamespaceNode*>(member.get())->GetNamespace(right);
+            }
+        }
+    }
+    throw std::runtime_error("namespace '" + fullNamespaceName + "' not found");
 }
 
 AliasNode::AliasNode(const Span& span_) : Node(span_)
