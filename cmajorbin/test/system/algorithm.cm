@@ -1,0 +1,788 @@
+using System;
+using System.Collections;
+
+namespace Test.System.Algorithm
+{
+    public unit_test void MinIntegerTest()
+    {
+        #assert(Min(0, 0) == 0);
+        #assert(Min(-1, -1) == -1);
+        #assert(Min(-1, 0) == -1);
+        #assert(Min(0, -1) == -1);
+        #assert(Min(-1, 1) == -1);
+        #assert(Min(1, -1) == -1);
+        #assert(Min(0, 1) == 0);
+        #assert(Min(1, 0) == 0);
+        #assert(Min(1, 1) == 1);
+        #assert(Min(2, -1) == -1);
+        #assert(Min(-1, 2) == -1);
+        #assert(Min(0, 2) == 0);
+        #assert(Min(2, 0) == 0);
+        #assert(Min(1, 2) == 1);
+        #assert(Min(2, 1) == 1);
+        #assert(Min(2, 2) == 2);
+
+        int x = 0;
+        int y = 0;
+        #assert(Min(x, y) == 0);
+        x = -1;
+        #assert(Min(x, y) == -1);
+        y = -1;
+        #assert(Min(x, y) == -1);
+        x = 0;
+        #assert(Min(x, y) == -1);
+        x = 1;
+        y = -1;
+        #assert(Min(x, y) == -1);
+        x = -1;
+        y = 1;
+        #assert(Min(x, y) == -1);
+        x = 0;
+        y = 1;
+        #assert(Min(x, y) == 0);
+        x = 1;
+        y = 0;
+        #assert(Min(x, y) == 0);
+        x = 2;
+        y = -1;
+        #assert(Min(x, y) == -1);
+        x = -1;
+        y = 2;
+        #assert(Min(x, y) == -1);
+        x = 0;
+        y = 2;
+        #assert(Min(x, y) == 0);
+        x = 2;
+        y = 0;
+        #assert(Min(x, y) == 0);
+        x = 1;
+        y = 2;
+        #assert(Min(x, y) == 1);
+        x = 2;
+        y = 1;
+        #assert(Min(x, y) == 1);
+        x = 2;
+        y = 2;
+        #assert(Min(x, y) == 2);
+
+        #assert(Min(0u, 255) == 0u);
+        #assert(Min(255, 0u) == 0u);
+        #assert(Min(-255, short(0)) == -255);
+        #assert(Min(short(0), -255) == -255);
+        #assert(Min(-255, -255) == -255);
+        #assert(Min(-255, short(255)) == -255);
+        #assert(Min(short(255), -255) == -255);
+        #assert(Min(short(0), 256) == 0);
+        #assert(Min(256, short(0)) == 0);
+        #assert(Min(-255, 256) == -255);
+        #assert(Min(256, -255) == -255);
+
+        #assert(Min(-256, short(0)) == -256);
+        #assert(Min(short(0), -256) == -256);
+        #assert(Min(-256, -256) == -256);
+        #assert(Min(-256, short(255)) == -256);
+        #assert(Min(short(255), -256) == -256);
+        #assert(Min(-256, 256) == -256);
+        #assert(Min(256, -256) == -256);
+
+        #assert(Min(1024, short(0)) == 0);
+        #assert(Min(short(0), 1024) == 0);
+        #assert(Min(1024, -255) == -255);
+        #assert(Min(-255, 1024) == -255);
+        #assert(Min(1024, -256) == -256);
+        #assert(Min(-256, 1024) == -256);
+        #assert(Min(1024, short(255)) == 255);
+        #assert(Min(short(255), 1024) == 255);
+        #assert(Min(1024, 1024) == 1024);
+
+        #assert(Min(MinValue<sbyte>(), sbyte(0)) == MinValue<sbyte>());
+        #assert(Min(sbyte(0), MinValue<sbyte>()) == MinValue<sbyte>());
+        #assert(Min(MinValue<sbyte>(), MaxValue<sbyte>()) == MinValue<sbyte>());
+        #assert(Min(MaxValue<sbyte>(), MinValue<sbyte>()) == MinValue<sbyte>());
+        #assert(Min(sbyte(0), MaxValue<sbyte>()) == 0);
+        #assert(Min(MaxValue<sbyte>(), sbyte(0)) == 0);
+
+        #assert(Min(MinValue<byte>(), byte(128)) == MinValue<byte>());
+        #assert(Min(byte(128), MinValue<byte>()) == MinValue<byte>());
+        #assert(Min(MinValue<byte>(), MaxValue<byte>()) == MinValue<byte>());
+        #assert(Min(MaxValue<byte>(), MinValue<byte>()) == MinValue<byte>());
+        #assert(Min(byte(128), MaxValue<byte>()) == 128);
+        #assert(Min(MaxValue<byte>(), byte(128)) == 128);
+
+        #assert(Min(MinValue<short>(), short(0)) == MinValue<short>());
+        #assert(Min(short(0), MinValue<short>()) == MinValue<short>());
+        #assert(Min(MinValue<short>(), MaxValue<short>()) == MinValue<short>());
+        #assert(Min(MaxValue<short>(), MinValue<short>()) == MinValue<short>());
+        #assert(Min(short(0), MaxValue<short>()) == 0);
+        #assert(Min(MaxValue<short>(), short(0)) == 0);
+
+        #assert(Min(MinValue<ushort>(), ushort(32768)) == MinValue<ushort>());
+        #assert(Min(ushort(32768), MinValue<ushort>()) == MinValue<ushort>());
+        #assert(Min(MinValue<ushort>(), MaxValue<ushort>()) == MinValue<ushort>());
+        #assert(Min(MaxValue<ushort>(), MinValue<ushort>()) == MinValue<ushort>());
+        #assert(Min(ushort(32768), MaxValue<ushort>()) == 32768);
+        #assert(Min(MaxValue<ushort>(), ushort(32768)) == 32768);
+
+        #assert(Min(MinValue<int>(), int(0)) == MinValue<int>());
+        #assert(Min(int(0), MinValue<int>()) == MinValue<int>());
+        #assert(Min(MinValue<int>(), MaxValue<int>()) == MinValue<int>());
+        #assert(Min(MaxValue<int>(), MinValue<int>()) == MinValue<int>());
+        #assert(Min(int(0), MaxValue<int>()) == 0);
+        #assert(Min(MaxValue<int>(), int(0)) == 0);
+
+        #assert(Min(MinValue<uint>(), uint(2147483648)) == MinValue<uint>());
+        #assert(Min(uint(2147483648), MinValue<uint>()) == MinValue<uint>());
+        #assert(Min(MinValue<uint>(), MaxValue<uint>()) == MinValue<uint>());
+        #assert(Min(MaxValue<uint>(), MinValue<uint>()) == MinValue<uint>());
+        #assert(Min(uint(2147483648), MaxValue<uint>()) == 2147483648);
+        #assert(Min(MaxValue<uint>(), uint(2147483648)) == 2147483648);
+
+        #assert(Min(MinValue<long>(), long(0)) == MinValue<long>());
+        #assert(Min(long(0), MinValue<long>()) == MinValue<long>());
+        #assert(Min(MinValue<long>(), MaxValue<long>()) == MinValue<long>());
+        #assert(Min(MaxValue<long>(), MinValue<long>()) == MinValue<long>());
+        #assert(Min(long(0), MaxValue<long>()) == 0);
+        #assert(Min(MaxValue<long>(), long(0)) == 0);
+
+        #assert(Min(MinValue<ulong>(), ulong(2147483648)) == MinValue<ulong>());
+        #assert(Min(ulong(2147483648), MinValue<ulong>()) == MinValue<ulong>());
+        #assert(Min(MinValue<ulong>(), MaxValue<ulong>()) == MinValue<ulong>());
+        #assert(Min(MaxValue<ulong>(), MinValue<ulong>()) == MinValue<ulong>());
+        #assert(Min(ulong(2147483648), MaxValue<ulong>()) == 2147483648);
+        #assert(Min(MaxValue<ulong>(), ulong(2147483648)) == 2147483648);
+    }
+
+    public unit_test void MinCharTest()
+    {
+        #assert(Min('a', 'a') == 'a');
+        #assert(Min('a', 'b') == 'a');
+        #assert(Min('b', 'a') == 'a');
+        #assert(Min('b', 'b') == 'b');
+    }
+
+    public unit_test void MinFloatingTest()
+    {
+        #assert(Min(cast<float>(0.0), cast<float>(0.0)) == cast<float>(0.0));
+        #assert(Min(cast<float>(0.0), cast<float>(1.0)) == cast<float>(0.0));
+        #assert(Min(cast<float>(1.0), cast<float>(0.0)) == cast<float>(0.0));
+        #assert(Min(cast<float>(1.0), cast<float>(1.0)) == cast<float>(1.0));
+        #assert(Min(double(0.0), double(0.0)) == double(0.0));
+        #assert(Min(double(1.0), double(0.0)) == double(0.0));
+        #assert(Min(double(0.0), double(1.0)) == double(0.0));
+        #assert(Min(double(1.0), double(1.0)) == double(1.0));
+    }
+
+    class X
+    {
+        public nothrow X(int value_, const string& id_): value(value_), id(id_)
+        {
+        }
+        public nothrow int Value() const 
+        {
+            return value;
+        }
+        public nothrow const string& Id() const
+        {
+            return id;
+        }
+        private int value;
+        private string id;
+    }
+
+    nothrow bool operator==(const X& left, const X& right)
+    {
+        return left.Id() == right.Id();
+    }
+
+    nothrow bool operator<(const X& left, const X& right)
+    {
+        return left.Value() < right.Value();
+    }
+
+    public unit_test void MinStringTest()
+    {
+        string a = "";
+        string b = "";
+        #assert(Min(a, b) == "");
+        a = "a";
+        #assert(Min(a, b) == "");
+        b = "a";
+        #assert(Min(a, b) == "a");
+        b = "";
+        #assert(Min(a, b) == "");
+        a = "abc";
+        b = "abc";
+        #assert(Min(a, b) == "abc");
+        b = "abd";
+        #assert(Min(a, b) == "abc");
+        a = "abd";
+        #assert(Min(a, b) == "abd");
+        b = "abc";
+        #assert(Min(a, b) == "abc");
+        a = "abcdef";
+        b = "abc";
+        #assert(Min(a, b) == "abc");
+        a = "abcdef";
+        b = "abcdef";
+        #assert(Min(a, b) == "abcdef");
+        a = "abc";
+        b = "abcdef";
+        #assert(Min(a, b) == "abc");
+    }
+
+    public unit_test void MinObjectTest()
+    {
+        X azero(0, "azero");
+        X bzero(0, "bzero");
+        X amin(MinValue<int>(), "amin");
+        X bmin(MinValue<int>(), "bmin");
+        X amax(MaxValue<int>(), "amax");
+        X bmax(MaxValue<int>(), "bmax");
+        #assert(Min(azero, bzero) == azero);
+        #assert(Min(bzero, azero) == bzero);
+        #assert(Min(amin, azero) == amin);
+        #assert(Min(azero, amin) == amin);
+        #assert(Min(amin, bmin) == amin);
+        #assert(Min(bmin, amin) == bmin);
+        #assert(Min(amin, amax) == amin);
+        #assert(Min(amax, amin) == amin);
+        #assert(Min(amax, azero) == azero);
+        #assert(Min(azero, amax) == azero);
+        #assert(Min(amax, bmax) == amax);
+        #assert(Min(bmax, amax) == bmax);
+    }
+
+    public unit_test void MaxIntegerTest()
+    {
+        #assert(Max(0, 0) == 0);
+        #assert(Max(-1, -1) == -1);
+        #assert(Max(-1, 0) == 0);
+        #assert(Max(0, -1) == 0);
+        #assert(Max(-1, 1) == 1);
+        #assert(Max(1, -1) == 1);
+        #assert(Max(0, 1) == 1);
+        #assert(Max(1, 0) == 1);
+        #assert(Max(1, 1) == 1);
+        #assert(Max(2, -1) == 2);
+        #assert(Max(-1, 2) == 2);
+        #assert(Max(0, 2) == 2);
+        #assert(Max(2, 0) == 2);
+        #assert(Max(1, 2) == 2);
+        #assert(Max(2, 1) == 2);
+        #assert(Max(2, 2) == 2);
+
+        int x = 0;
+        int y = 0;
+        #assert(Max(x, y) == 0);
+        x = -1;
+        #assert(Max(x, y) == 0);
+        y = -1;
+        #assert(Max(x, y) == -1);
+        x = 0;
+        #assert(Max(x, y) == 0);
+        x = 1;
+        y = -1;
+        #assert(Max(x, y) == 1);
+        x = -1;
+        y = 1;
+        #assert(Max(x, y) == 1);
+        x = 0;
+        y = 1;
+        #assert(Max(x, y) == 1);
+        x = 1;
+        y = 0;
+        #assert(Max(x, y) == 1);
+        x = 2;
+        y = -1;
+        #assert(Max(x, y) == 2);
+        x = -1;
+        y = 2;
+        #assert(Max(x, y) == 2);
+        x = 0;
+        y = 2;
+        #assert(Max(x, y) == 2);
+        x = 2;
+        y = 0;
+        #assert(Max(x, y) == 2);
+        x = 1;
+        y = 2;
+        #assert(Max(x, y) == 2);
+        x = 2;
+        y = 1;
+        #assert(Max(x, y) == 2);
+        x = 2;
+        y = 2;
+        #assert(Max(x, y) == 2);
+
+        #assert(Max(0u, 255) == 255);
+        #assert(Max(255, 0u) == 255);
+        #assert(Max(-255, short(0)) == 0);
+        #assert(Max(short(0), -255) == 0);
+        #assert(Max(-255, -255) == -255);
+        #assert(Max(-255, short(255)) == 255);
+        #assert(Max(short(255), -255) == 255);
+        #assert(Max(short(0), 256) == 256);
+        #assert(Max(256, short(0)) == 256);
+        #assert(Max(-255, 256) == 256);
+        #assert(Max(256, -255) == 256);
+
+        #assert(Max(-256, short(0)) == 0);
+        #assert(Max(short(0), -256) == 0);
+        #assert(Max(-256, -256) == -256);
+        #assert(Max(-256, short(255)) == 255);
+        #assert(Max(short(255), -256) == 255);
+        #assert(Max(-256, 256) == 256);
+        #assert(Max(256, -256) == 256);
+
+        #assert(Max(1024, short(0)) == 1024);
+        #assert(Max(short(0), 1024) == 1024);
+        #assert(Max(1024, -255) == 1024);
+        #assert(Max(-255, 1024) == 1024);
+        #assert(Max(1024, -256) == 1024);
+        #assert(Max(-256, 1024) == 1024);
+        #assert(Max(1024, short(255)) == 1024);
+        #assert(Max(short(255), 1024) == 1024);
+        #assert(Max(1024, 1024) == 1024);
+
+        #assert(Max(MinValue<sbyte>(), sbyte(0)) == 0);
+        #assert(Max(sbyte(0), MinValue<sbyte>()) == 0);
+        #assert(Max(MinValue<sbyte>(), MaxValue<sbyte>()) == MaxValue<sbyte>());
+        #assert(Max(MaxValue<sbyte>(), MinValue<sbyte>()) == MaxValue<sbyte>());
+        #assert(Max(sbyte(0), MaxValue<sbyte>()) == MaxValue<sbyte>());
+        #assert(Max(MaxValue<sbyte>(), sbyte(0)) == MaxValue<sbyte>());
+
+        #assert(Max(MinValue<byte>(), byte(128)) == 128);
+        #assert(Max(byte(128), MinValue<byte>()) == 128);
+        #assert(Max(MinValue<byte>(), MaxValue<byte>()) == MaxValue<byte>());
+        #assert(Max(MaxValue<byte>(), MinValue<byte>()) == MaxValue<byte>());
+        #assert(Max(byte(128), MaxValue<byte>()) == MaxValue<byte>());
+        #assert(Max(MaxValue<byte>(), byte(128)) == MaxValue<byte>());
+
+        #assert(Max(MinValue<short>(), short(0)) == 0);
+        #assert(Max(short(0), MinValue<short>()) == 0);
+        #assert(Max(MinValue<short>(), MaxValue<short>()) == MaxValue<short>());
+        #assert(Max(MaxValue<short>(), MinValue<short>()) == MaxValue<short>());
+        #assert(Max(short(0), MaxValue<short>()) == MaxValue<short>());
+        #assert(Max(MaxValue<short>(), short(0)) == MaxValue<short>());
+
+        #assert(Max(MinValue<ushort>(), ushort(32768)) == 32768);
+        #assert(Max(ushort(32768), MinValue<ushort>()) == 32768);
+        #assert(Max(MinValue<ushort>(), MaxValue<ushort>()) == MaxValue<ushort>());
+        #assert(Max(MaxValue<ushort>(), MinValue<ushort>()) == MaxValue<ushort>());
+        #assert(Max(ushort(32768), MaxValue<ushort>()) == MaxValue<ushort>());
+        #assert(Max(MaxValue<ushort>(), ushort(32768)) == MaxValue<ushort>());
+
+        #assert(Max(MinValue<int>(), int(0)) == 0);
+        #assert(Max(int(0), MinValue<int>()) == 0);
+        #assert(Max(MinValue<int>(), MaxValue<int>()) == MaxValue<int>());
+        #assert(Max(MaxValue<int>(), MinValue<int>()) == MaxValue<int>());
+        #assert(Max(int(0), MaxValue<int>()) == MaxValue<int>());
+        #assert(Max(MaxValue<int>(), int(0)) == MaxValue<int>());
+
+        #assert(Max(MinValue<uint>(), uint(2147483648)) == 2147483648);
+        #assert(Max(uint(2147483648), MinValue<uint>()) == 2147483648);
+        #assert(Max(MinValue<uint>(), MaxValue<uint>()) == MaxValue<uint>());
+        #assert(Max(MaxValue<uint>(), MinValue<uint>()) == MaxValue<uint>());
+        #assert(Max(uint(2147483648), MaxValue<uint>()) == MaxValue<uint>());
+        #assert(Max(MaxValue<uint>(), uint(2147483648)) == MaxValue<uint>());
+
+        #assert(Max(MinValue<long>(), long(0)) == 0);
+        #assert(Max(long(0), MinValue<long>()) == 0);
+        #assert(Max(MinValue<long>(), MaxValue<long>()) == MaxValue<long>());
+        #assert(Max(MaxValue<long>(), MinValue<long>()) == MaxValue<long>());
+        #assert(Max(long(0), MaxValue<long>()) == MaxValue<long>());
+        #assert(Max(MaxValue<long>(), long(0)) == MaxValue<long>());
+
+        #assert(Max(MinValue<ulong>(), ulong(2147483648)) == 2147483648);
+        #assert(Max(ulong(2147483648), MinValue<ulong>()) == 2147483648);
+        #assert(Max(MinValue<ulong>(), MaxValue<ulong>()) == MaxValue<ulong>());
+        #assert(Max(MaxValue<ulong>(), MinValue<ulong>()) == MaxValue<ulong>());
+        #assert(Max(ulong(2147483648), MaxValue<ulong>()) == MaxValue<ulong>());
+        #assert(Max(MaxValue<ulong>(), ulong(2147483648)) == MaxValue<ulong>());
+    }
+
+    public unit_test void MaxCharTest()
+    {
+        #assert(Max('a', 'a') == 'a');
+        #assert(Max('a', 'b') == 'b');
+        #assert(Max('b', 'a') == 'b');
+        #assert(Max('b', 'b') == 'b');
+    }
+
+    public unit_test void MaxFloatingTest()
+    {
+        #assert(Max(cast<float>(0.0), cast<float>(0.0)) == cast<float>(0.0));
+        #assert(Max(cast<float>(0.0), cast<float>(1.0)) == cast<float>(1.0));
+        #assert(Max(cast<float>(1.0), cast<float>(0.0)) == cast<float>(1.0));
+        #assert(Max(cast<float>(1.0), cast<float>(1.0)) == cast<float>(1.0));
+        #assert(Max(double(0.0), double(0.0)) == double(0.0));
+        #assert(Max(double(1.0), double(0.0)) == double(1.0));
+        #assert(Max(double(0.0), double(1.0)) == double(1.0));
+        #assert(Max(double(1.0), double(1.0)) == double(1.0));
+    }
+
+    public unit_test void MaxStringTest()
+    {
+        string a = "";
+        string b = "";
+        #assert(Max(a, b) == "");
+        a = "a";
+        #assert(Max(a, b) == "a");
+        b = "a";
+        #assert(Max(a, b) == "a");
+        b = "";
+        #assert(Max(a, b) == "a");
+        a = "abc";
+        b = "abc";
+        #assert(Max(a, b) == "abc");
+        b = "abd";
+        #assert(Max(a, b) == "abd");
+        a = "abd";
+        #assert(Max(a, b) == "abd");
+        b = "abc";
+        #assert(Max(a, b) == "abd");
+        a = "abcdef";
+        b = "abc";
+        #assert(Max(a, b) == "abcdef");
+        a = "abcdef";
+        b = "abcdef";
+        #assert(Max(a, b) == "abcdef");
+        a = "abc";
+        b = "abcdef";
+        #assert(Max(a, b) == "abcdef");
+    }
+
+    public unit_test void MaxObjectTest()
+    {
+        X azero(0, "azero");
+        X bzero(0, "bzero");
+        X amin(MinValue<int>(), "amin");
+        X bmin(MinValue<int>(), "bmin");
+        X amax(MaxValue<int>(), "amax");
+        X bmax(MaxValue<int>(), "bmax");
+        #assert(Max(azero, bzero) == bzero);
+        #assert(Max(bzero, azero) == azero);
+        #assert(Max(amin, azero) == azero);
+        #assert(Max(azero, amin) == azero);
+        #assert(Max(amin, bmin) == bmin);
+        #assert(Max(bmin, amin) == amin);
+        #assert(Max(amin, amax) == amax);
+        #assert(Max(amax, amin) == amax);
+        #assert(Max(amax, azero) == amax);
+        #assert(Max(azero, amax) == amax);
+        #assert(Max(amax, bmax) == bmax);
+        #assert(Max(bmax, amax) == amax);
+    }
+
+    class M
+    {
+        public nothrow M(int id_): id(id_)
+        {
+        }
+        public nothrow int Id() const 
+        {
+            return id;
+        }
+        private int id;
+    }
+
+    nothrow bool operator==(const M& left, const M& right) 
+    {
+        return left.Id() == right.Id();
+    }
+
+    public unit_test void SwapTest()
+    {
+        int x = 0;
+        int y = 1;
+        Swap(x, y);
+        #assert(x == 1);
+        #assert(y == 0);
+        M p(0);
+        M q(1);
+        Swap(p, q);
+        #assert(p.Id() == 1);
+        #assert(q.Id() == 0);
+    }
+
+    public unit_test void ReverseRandomAccessIteratorIntTest()
+    {
+        List<int> x0;
+        Reverse(x0.Begin(), x0.End());
+        #assert(x0.IsEmpty());
+        #assert(x0.Count() == 0);
+
+        List<int> x1;
+        x1.Add(1);
+        Reverse(x1.Begin(), x1.End());
+        #assert(!x1.IsEmpty());
+        #assert(x1.Count() == 1);
+        #assert(x1[0] == 1);
+
+        List<int> x2;
+        x2.Add(1);
+        x2.Add(2);
+        Reverse(x2.Begin(), x2.End());
+        #assert(!x2.IsEmpty());
+        #assert(x2.Count() == 2);
+        #assert(x2[0] == 2);
+        #assert(x2[1] == 1);
+
+        List<int> x3;
+        x3.Add(1);
+        x3.Add(2);
+        x3.Add(3);
+        Reverse(x3.Begin(), x3.End());
+        #assert(!x3.IsEmpty());
+        #assert(x3.Count() == 3);
+        #assert(x3[0] == 3);
+        #assert(x3[1] == 2);
+        #assert(x3[2] == 1);
+
+        List<int> x100;
+        for (int i = 0; i < 100; ++i)
+        {
+            x100.Add(i);
+        }
+        Reverse(x100.Begin(), x100.End());
+        #assert(!x100.IsEmpty());
+        #assert(x100.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(x100[i] == 99 - i);
+        }
+
+        List<int> x4096;
+        for (int i = 0; i < 4096; ++i)
+        {
+            x4096.Add(i);
+        }
+        Reverse(x4096.Begin(), x4096.End());
+        #assert(!x4096.IsEmpty());
+        #assert(x4096.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(x4096[i] == 4095 - i);
+        }
+    }
+
+    public unit_test void ReverseRandomAccessIteratorStringTest()
+    {
+        List<string> x0;
+        Reverse(x0.Begin(), x0.End());
+        #assert(x0.IsEmpty());
+        #assert(x0.Count() == 0);
+
+        List<string> x1;
+        x1.Add("1");
+        Reverse(x1.Begin(), x1.End());
+        #assert(!x1.IsEmpty());
+        #assert(x1.Count() == 1);
+        #assert(x1[0] == "1");
+
+        List<string> x2;
+        x2.Add("1");
+        x2.Add("2");
+        Reverse(x2.Begin(), x2.End());
+        #assert(!x2.IsEmpty());
+        #assert(x2.Count() == 2);
+        #assert(x2[0] == "2");
+        #assert(x2[1] == "1");
+
+        List<string> x3;
+        x3.Add("1");
+        x3.Add("2");
+        x3.Add("3");
+        Reverse(x3.Begin(), x3.End());
+        #assert(!x3.IsEmpty());
+        #assert(x3.Count() == 3);
+        #assert(x3[0] == "3");
+        #assert(x3[1] == "2");
+        #assert(x3[2] == "1");
+
+        List<string> x100;
+        for (int i = 0; i < 100; ++i)
+        {
+            x100.Add(ToString(i));
+        }
+        Reverse(x100.Begin(), x100.End());
+        #assert(!x100.IsEmpty());
+        #assert(x100.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(x100[i] == ToString(99 - i));
+        }
+
+        List<string> x4096;
+        for (int i = 0; i < 4096; ++i)
+        {
+            x4096.Add(ToString(i));
+        }
+        Reverse(x4096.Begin(), x4096.End());
+        #assert(!x4096.IsEmpty());
+        #assert(x4096.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(x4096[i] == ToString(4095 - i));
+        }
+    }
+
+    public unit_test void ReverseRandomAccessIteratorUniquePtrMTest()
+    {
+        List<UniquePtr<M>> u0;
+        Reverse(u0.Begin(), u0.End());
+        #assert(u0.IsEmpty());
+        #assert(u0.Count() == 0);
+
+        List<UniquePtr<M>> u1;
+        u1.Add(UniquePtr<M>(new M(1)));
+        Reverse(u1.Begin(), u1.End());
+        #assert(!u1.IsEmpty());
+        #assert(u1.Count() == 1);
+        #assert(*u1[0] == M(1));
+
+        List<UniquePtr<M>> u2;
+        u2.Add(UniquePtr<M>(new M(1)));
+        u2.Add(UniquePtr<M>(new M(2)));
+        Reverse(u2.Begin(), u2.End());
+        #assert(!u2.IsEmpty());
+        #assert(u2.Count() == 2);
+        #assert(*u2[0] == M(2));
+        #assert(*u2[1] == M(1));
+
+        List<UniquePtr<M>> u3;
+        u3.Add(UniquePtr<M>(new M(1)));
+        u3.Add(UniquePtr<M>(new M(2)));
+        u3.Add(UniquePtr<M>(new M(3)));
+        Reverse(u3.Begin(), u3.End());
+        #assert(!u3.IsEmpty());
+        #assert(u3.Count() == 3);
+        #assert(*u3[0] == M(3));
+        #assert(*u3[1] == M(2));
+        #assert(*u3[2] == M(1));
+
+        List<UniquePtr<M>> u100;
+        for (int i = 0; i < 100; ++i)
+        {
+           u100.Add(UniquePtr<M>(new M(i)));
+        }
+        Reverse(u100.Begin(), u100.End());
+        #assert(!u100.IsEmpty());
+        #assert(u100.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(*u100[i] == M(99 - i));
+        }
+
+        List<UniquePtr<M>> u4096;
+        for (int i = 0; i < 4096; ++i)
+        {
+           u4096.Add(UniquePtr<M>(new M(i)));
+        }
+        Reverse(u4096.Begin(), u4096.End());
+        #assert(!u4096.IsEmpty());
+        #assert(u4096.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(*u4096[i] == M(4095 - i));
+        }
+    }
+
+    public class BidIt
+    {
+        public typedef M ValueType;
+        public typedef M& ReferenceType;
+        public typedef M* PointerType;
+
+        public nothrow BidIt(M* p_): p(p_)
+        {
+        }
+        public nothrow BidIt& operator++() 
+        {
+            ++p;
+            return *this;
+        }
+        public nothrow BidIt& operator--()
+        {
+            --p;
+            return *this;
+        }
+        public nothrow M& operator*() 
+        {
+            return *p;
+        }
+        public nothrow M* GetPtr() 
+        {
+            return p;
+        }
+        private M* p;
+    }
+
+    public nothrow bool operator==(BidIt left, BidIt right)
+    {
+        return left.GetPtr() == right.GetPtr();
+    }
+
+    public unit_test void ReverseBidirectionalIteratorMTest()
+    {
+        List<M> m0;
+        Reverse(BidIt(m0.Begin().GetPtr()), BidIt(m0.End().GetPtr()));
+        #assert(m0.IsEmpty());
+        #assert(m0.Count() == 0);
+
+        List<M> m1;
+        m1.Add(M(1));
+        Reverse(BidIt(m1.Begin().GetPtr()), BidIt(m1.End().GetPtr()));
+        #assert(!m1.IsEmpty());
+        #assert(m1.Count() == 1);
+        #assert(m1[0] == M(1));
+
+        List<M> m2;
+        m2.Add(M(1));
+        m2.Add(M(2));
+        Reverse(BidIt(m2.Begin().GetPtr()), BidIt(m2.End().GetPtr()));
+        #assert(!m2.IsEmpty());
+        #assert(m2.Count() == 2);
+        #assert(m2[0] == M(2));
+        #assert(m2[1] == M(1));
+
+        List<M> m3;
+        m3.Add(M(1));
+        m3.Add(M(2));
+        m3.Add(M(3));
+        Reverse(BidIt(m3.Begin().GetPtr()), BidIt(m3.End().GetPtr()));
+        #assert(!m3.IsEmpty());
+        #assert(m3.Count() == 3);
+        #assert(m3[0] == M(3));
+        #assert(m3[1] == M(2));
+        #assert(m3[2] == M(1));
+
+        List<M> m100;
+        for (int i = 0; i < 100; ++i)
+        {
+            m100.Add(M(i));
+        }
+        Reverse(BidIt(m100.Begin().GetPtr()), BidIt(m100.End().GetPtr()));
+        #assert(!m100.IsEmpty());
+        #assert(m100.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(m100[i] == M(99 - i));
+        }
+
+        List<M> m4096;
+        for (int i = 0; i < 4096; ++i)
+        {
+            m4096.Add(M(i));
+        }
+        Reverse(BidIt(m4096.Begin().GetPtr()), BidIt(m4096.End().GetPtr()));
+        #assert(!m4096.IsEmpty());
+        #assert(m4096.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(m4096[i] == M(4095 - i));
+        }
+    }
+
+
+}

@@ -2,3 +2,4 @@ project system_tests;
 target=program;
 assembly <system_tests.cma>;
 source <support.utility.cm>;
+source <algorithm.cm>;

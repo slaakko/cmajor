@@ -47,7 +47,7 @@ public:
     virtual bool IsConstant() const { return false; }
     virtual bool IsBoundExceptionTableConstant() const { return false; }
     virtual bool IsEnumConstant() const { return false; }
-    virtual bool IsCast() const { return false; }
+    virtual bool IsBoundCast() const { return false; }
     virtual void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
     virtual Cm::Core::ArgumentCategory GetArgumentCategory() const { return Cm::Core::ArgumentCategory::rvalue; }
@@ -249,7 +249,7 @@ public:
     BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_);
     Cm::Sym::FunctionSymbol* ConversionFun() const { return conversionFun; }
     void Accept(Visitor& visitor) override;
-    bool IsCast() const override { return true; }
+    bool IsBoundCast() const override { return true; }
     BoundExpression* Operand() const { return operand.get(); }
 private:
     std::unique_ptr<BoundExpression> operand;

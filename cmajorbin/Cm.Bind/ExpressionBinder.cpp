@@ -105,7 +105,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
                 if ((argument->GetType()->IsBasicTypeSymbol() || argument->GetType()->IsEnumTypeSymbol() || argument->GetType()->IsNonReferencePointerType() || 
                     argument->GetType()->IsDelegateTypeSymbol()) &&
                     (argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argumentIsConversion || argument->IsBoundUnaryOp() || argument->IsBoundBinaryOp() || 
-                    argument->IsBoundFunctionCall()))
+                    argument->IsBoundFunctionCall() || argument->IsBoundCast()))
                 {
                     if (!currentFunction)
                     {
@@ -195,8 +195,8 @@ Cm::BoundTree::BoundExpressionList BoundExpressionStack::Pop(int numExpressions)
 
 ExpressionBinder::ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
     Cm::BoundTree::BoundFunction* currentFunction_) :
-    Cm::Ast::Visitor(true, true), boundCompileUnit(boundCompileUnit_), containerScope(containerScope_), 
-    fileScopes(fileScopes_), currentFunction(currentFunction_), expressionCount(0), lookupId(Cm::Sym::SymbolTypeSetId::lookupAllSymbols)
+    Cm::Ast::Visitor(true, true), boundCompileUnit(boundCompileUnit_), containerScope(containerScope_),
+    fileScopes(fileScopes_), currentFunction(currentFunction_), expressionCount(0), lookupId(Cm::Sym::SymbolTypeSetId::lookupAllSymbols), unaryMinus(false)
 {
 }
 
@@ -486,8 +486,16 @@ void ExpressionBinder::EndVisit(Cm::Ast::UnaryPlusNode& unaryPlusNode)
     BindUnaryOp(&unaryPlusNode, "operator+");
 }
 
+void ExpressionBinder::BeginVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode)
+{
+    unaryMinusStack.push(unaryMinus);
+    unaryMinus = true;
+}
+
 void ExpressionBinder::EndVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode)
 {
+    unaryMinus = unaryMinusStack.top();
+    unaryMinusStack.pop();
     BindUnaryOp(&unaryMinusNode, "operator-");
 }
 
@@ -610,8 +618,26 @@ void ExpressionBinder::Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::ByteLiteralNode& byteLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::byteId));
-    Cm::Sym::Value* value = new Cm::Sym::ByteValue(byteLiteralNode.Value());
+    Cm::Sym::TypeSymbol* type = nullptr;
+    Cm::Sym::Value* value = nullptr;
+    if (unaryMinus)
+    {
+        if (byteLiteralNode.Value() == 128)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::sbyteId));
+            value = new Cm::Sym::SByteValue(byteLiteralNode.Value());
+        }
+        else
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
+            value = new Cm::Sym::ShortValue(byteLiteralNode.Value());
+        }
+    }
+    else
+    {
+        type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::byteId));
+        value = new Cm::Sym::ByteValue(byteLiteralNode.Value());
+    }
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&byteLiteralNode);
     literalNode->SetValue(value);
     literalNode->SetType(type);
@@ -630,8 +656,26 @@ void ExpressionBinder::Visit(Cm::Ast::ShortLiteralNode& shortLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::UShortLiteralNode& ushortLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
-    Cm::Sym::Value* value = new Cm::Sym::UShortValue(ushortLiteralNode.Value());
+    Cm::Sym::TypeSymbol* type = nullptr;
+    Cm::Sym::Value* value = nullptr;
+    if (unaryMinus)
+    {
+        if (ushortLiteralNode.Value() == 32768)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
+            value = new Cm::Sym::ShortValue(ushortLiteralNode.Value());
+        }
+        else
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+            value = new Cm::Sym::IntValue(ushortLiteralNode.Value());
+        }
+    }
+    else
+    {
+        type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
+        value = new Cm::Sym::UShortValue(ushortLiteralNode.Value());
+    }
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&ushortLiteralNode);
     literalNode->SetValue(value);
     literalNode->SetType(type);
@@ -650,8 +694,26 @@ void ExpressionBinder::Visit(Cm::Ast::IntLiteralNode& intLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::UIntLiteralNode& uintLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
-    Cm::Sym::Value* value = new Cm::Sym::UIntValue(uintLiteralNode.Value());
+    Cm::Sym::TypeSymbol* type = nullptr;
+    Cm::Sym::Value* value = nullptr;
+    if (unaryMinus)
+    {
+        if (uintLiteralNode.Value() == 2147483648)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+            value = new Cm::Sym::IntValue(uintLiteralNode.Value());
+        }
+        else
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::longId));
+            value = new Cm::Sym::LongValue(uintLiteralNode.Value());
+        }
+    }
+    else
+    {
+        type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
+        value = new Cm::Sym::UIntValue(uintLiteralNode.Value());
+    }
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&uintLiteralNode);
     literalNode->SetValue(value);
     literalNode->SetType(type);

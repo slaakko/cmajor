@@ -321,7 +321,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, returnType->GetContainerScope()->ClassOrNsScope()));
                 std::vector<Cm::Sym::FunctionSymbol*> conversions;
                 Cm::Sym::ConversionType conversionType = Cm::Sym::ConversionType::implicit;
-                if (returnValue->IsCast())
+                if (returnValue->IsBoundCast())
                 {
                     conversionType = Cm::Sym::ConversionType::explicit_;
                 }
