@@ -2083,10 +2083,6 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 
 void ExpressionBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
-    if (identifierNode.Str() == "Test.System.Support.Utility.AlignTest")
-    {
-        int x = 0;
-    }
     if (identifierNode.Str() == Cm::IrIntf::GetExCodeVarName())
     {
         Cm::BoundTree::BoundExceptionCodeVariable* exceptionCodeVariable = new Cm::BoundTree::BoundExceptionCodeVariable();

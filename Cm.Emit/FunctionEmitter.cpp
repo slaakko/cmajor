@@ -1358,10 +1358,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundExitBlocksStatement& boundExitBl
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Text.Parsing.Grammar.Link(System.Text.Parsing.Grammar*)")
-    {
-        int x = 0;
-    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     int n = boundConstructionStatement.Arguments().Count();
     Ir::Intf::LabelObject* resultLabel = nullptr;
