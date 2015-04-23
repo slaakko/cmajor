@@ -454,7 +454,7 @@ bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol
                 }
             }
         }
-        else 
+        else if (parameterType->IsDerivedTypeSymbol())
         {
             Cm::Ast::DerivationList argumentTypeDerivations = Cm::Sym::RemoveDerivations(argumentType->Derivations(), parameterType->Derivations());
             Cm::Sym::TypeSymbol* plainArgumentType = argumentType->GetBaseType();
