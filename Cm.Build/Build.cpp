@@ -249,10 +249,14 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
         Cm::Util::MappedInputFile file(llErrorFilePath);
         try
         {
+            if (!toolErrorGrammar)
+            {
+                toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+            }
             Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
             throw Cm::Core::ToolErrorExcecption(toolError);
         }
-        catch (const std::exception&)
+        catch (...)
         {
             std::string errorText(file.Begin(), file.End());
             throw std::runtime_error(errorText);
@@ -276,6 +280,10 @@ void GenerateOptimizedLlvmCodeFile(Cm::BoundTree::BoundCompileUnit& boundCompile
         Cm::Util::MappedInputFile file(optllErrorFilePath);
         try
         {
+            if (!toolErrorGrammar)
+            {
+                toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+            }
             Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, optllErrorFilePath);
             throw Cm::Core::ToolErrorExcecption(toolError);
         }
@@ -316,6 +324,10 @@ void CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& obje
             Cm::Util::MappedInputFile file(llErrorFilePath);
             try
             {
+                if (!toolErrorGrammar)
+                {
+                    toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+                }
                 Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
                 throw Cm::Core::ToolErrorExcecption(toolError);
             }
@@ -361,6 +373,10 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
             Cm::Util::MappedInputFile file(ccErrorFilePath);
             try
             {
+                if (!toolErrorGrammar)
+                {
+                    toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+                }
                 Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, ccErrorFilePath);
                 throw Cm::Core::ToolErrorExcecption(toolError);
             }
@@ -498,6 +514,10 @@ void Archive(const std::vector<std::string>& objectFilePaths, const std::string&
         Cm::Util::MappedInputFile file(arErrorFilePath);
         try
         {
+            if (!toolErrorGrammar)
+            {
+                toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+            }
             Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, arErrorFilePath);
             throw Cm::Core::ToolErrorExcecption(toolError);
         }
@@ -548,6 +568,10 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
         Cm::Util::MappedInputFile file(exeErrorFilePath);
         try
         {
+            if (!toolErrorGrammar)
+            {
+                toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+            }
             Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, exeErrorFilePath);
             throw Cm::Core::ToolErrorExcecption(toolError);
         }
@@ -617,10 +641,6 @@ void BuildProject(Cm::Ast::Project* project)
     }
     Cm::Parser::FileRegistry fileRegistry;
     Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
-    if (!toolErrorGrammar)
-    {
-        toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
-    }
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
     std::vector<std::string> assemblyFilePaths;
     assemblyFilePaths.push_back(project->AssemblyFilePath());

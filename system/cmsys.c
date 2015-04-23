@@ -453,7 +453,6 @@ void end_unit_test(const char* unitTestName)
 
 void pass_unit_test_assertion(const char* expression)
 {
-    fprintf(stderr, "  assertion '%s' passed\n", expression);
     ++num_passed_unit_test_assertions;
 }
 

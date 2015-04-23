@@ -84,6 +84,7 @@ int main(int argc, const char** argv)
                 "-backend=c      : use C backend\n" <<
                 "-file=FILE      : run only unit tests in file FILE\n" <<
                 "-test=TEST      : run only unit test TEST\n" <<
+                "-verbose        : print also passed assertions\n" <<
                 std::endl;
         }
         else

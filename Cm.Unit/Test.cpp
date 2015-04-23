@@ -21,6 +21,7 @@
 #include <Cm.Parser/CompileUnit.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parser/ToolError.hpp>
+#include <Cm.Parsing/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Core/ConceptRepository.hpp>
 #include <Cm.Core/InitSymbolTable.hpp>
@@ -151,10 +152,6 @@ Cm::Parser::ToolErrorGrammar* toolErrorGrammar = nullptr;
 
 void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<std::string>& cLibs, const std::vector<std::string>& objectFilePaths, const std::string& executableFilePath)
 {
-    if (!toolErrorGrammar)
-    {
-        toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
-    }
     std::string ccCommand = "gcc";
     for (const std::string& objectFilePath : objectFilePaths)
     {
@@ -182,6 +179,10 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
         Cm::Util::MappedInputFile file(exeErrorFilePath);
         try
         {
+            if (!toolErrorGrammar)
+            {
+                toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+            }
             Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, exeErrorFilePath);
             throw Cm::Core::ToolErrorExcecption(toolError);
         }
@@ -242,8 +243,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     boost::filesystem::path p = boost::filesystem::path(testUnit->FilePath()).parent_path();
     p /= "stage";
     p /= boost::filesystem::path(testUnit->FilePath()).filename().replace_extension();
-    p += "." + unitTestName;
-    p.replace_extension(ext);
+    p += "." + unitTestName + ext;
     boost::filesystem::create_directories(p.parent_path());
     std::string testUnitIrFilePath = Cm::Util::GetFullPath(p.generic_string());
     Cm::BoundTree::BoundCompileUnit boundCompileUnit(testUnit, testUnitIrFilePath, symbolTable);
@@ -403,6 +403,14 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
                 if (testUnit.second.find(testName) == std::string::npos) continue;
             }
             TestUnit(testUnit.first.get(), project, testUnit.second);
+        }
+    }
+    catch (const Cm::Parsing::CombinedParsingError& ex)
+    {
+        std::cerr << "  could not compile file '" << sourceFilePath << "': " << ex.what() << std::endl;
+        for (const Cm::Parsing::ExpectationFailure& ef : ex.Errors())
+        {
+            std::cerr << "    " << ef.what() << std::endl;
         }
     }
     catch (const std::exception& ex)

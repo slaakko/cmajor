@@ -74,6 +74,7 @@ public:
     void EndVisit(Cm::Ast::PrefixIncNode& prefixIncNode) override;
     void EndVisit(Cm::Ast::PrefixDecNode& prefixDecNode) override;
     void EndVisit(Cm::Ast::UnaryPlusNode& unaryPlusNode) override;
+    void BeginVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode) override;
     void EndVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode) override;
     void EndVisit(Cm::Ast::NotNode& notNode) override;
     void EndVisit(Cm::Ast::ComplementNode& complementNode) override;
@@ -140,6 +141,8 @@ private:
     Cm::BoundTree::BoundFunction* currentFunction;
     Cm::Sym::SymbolTypeSetId lookupId;
     Cm::Sym::LookupIdStack lookupIdStack;
+    bool unaryMinus;
+    std::stack<bool> unaryMinusStack;
     void BindUnaryOp(Cm::Ast::Node* node, const std::string& opGroupName);
     void BindBinaryOp(Cm::Ast::Node* node, const std::string& opGroupName);
     void BindSymbol(Cm::Ast::Node* idNode, Cm::Sym::Symbol* symbol);
