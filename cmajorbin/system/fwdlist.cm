@@ -18,7 +18,7 @@ using System.Concepts;
 
 namespace System.Collections
 {
-    internal class ForwardListNode<T> where T is Semiregular
+    public class ForwardListNode<T> where T is Semiregular
     {
         private typedef T ValueType;
         private typedef ForwardListNode<ValueType> Self;

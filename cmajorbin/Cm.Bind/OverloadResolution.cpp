@@ -390,7 +390,24 @@ bool Bind(const Cm::Ast::DerivationList& parameterDerivations, const Cm::Ast::De
 bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol* parameterType, Cm::Sym::TypeSymbol* argumentType, std::vector<Cm::Sym::TypeSymbol*>& templateArguments, 
     Cm::Sym::TypeSymbol*& boundType)
 {
-    if (parameterType->IsDerivedTypeSymbol())
+    if (parameterType->IsTypeParameterSymbol())
+    {
+        Cm::Sym::TypeParameterSymbol* typeParameterSymbol = static_cast<Cm::Sym::TypeParameterSymbol*>(parameterType);
+        int index = typeParameterSymbol->Index();
+        Cm::Sym::TypeSymbol*& templateArgumentType = templateArguments[index];
+        if (!templateArgumentType)  // unbound template argument
+        {
+            templateArgumentType = argumentType;
+            boundType = argumentType;
+            return true;
+        }
+        else if (Cm::Sym::TypesEqual(templateArgumentType, argumentType)) // bound template argument
+        {
+            boundType = argumentType;
+            return true;
+        }
+    }
+    else
     {
         Cm::Sym::TypeSymbol* parameterBaseType = parameterType->GetBaseType();
         if (parameterBaseType->IsTemplateTypeSymbol())
@@ -449,23 +466,6 @@ bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol
             {
                 return true;
             }
-        }
-    }
-    else if (parameterType->IsTypeParameterSymbol())
-    {
-        Cm::Sym::TypeParameterSymbol* typeParameterSymbol = static_cast<Cm::Sym::TypeParameterSymbol*>(parameterType);
-        int index = typeParameterSymbol->Index();
-        Cm::Sym::TypeSymbol*& templateArgumentType = templateArguments[index];
-        if (!templateArgumentType)  // unbound template argument
-        {
-            templateArgumentType = argumentType;
-            boundType = argumentType;
-            return true;
-        }
-        else if (Cm::Sym::TypesEqual(templateArgumentType, argumentType)) // bound template argument
-        {
-            boundType = argumentType;
-            return true;
         }
     }
     return false;

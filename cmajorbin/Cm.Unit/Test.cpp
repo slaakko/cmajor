@@ -425,7 +425,7 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
         ++fileFailed;
         ++fileNotCompiled;
     }
-    std::cerr << sourceFilePath << " (ran " << numFileTests << " tests): " << filePassed<< " passed, " << fileFailed << " failed (" << fileNotCompiled << " not compiled, " << 
+    std::cerr << sourceFilePath << " (ran " << numFileTests << " tests): " << filePassed << " passed, " << fileFailed << " failed (" << fileNotCompiled << " did not compile, " << 
         fileExceptions << " exceptions, " << fileCrashed << " crashed, " << fileUnknown << " unknown results)" << std::endl;
     numProjectTests += numFileTests;
     projectPassed += filePassed;
@@ -455,12 +455,12 @@ bool TestProject(Cm::Ast::Project* project, const std::string& fileName, const s
         TestSourceFile(sourceFilePath, project, testName);
     }
     std::cerr << "test results for project '" << project->Name() << "' (ran " << numProjectTests << " tests):\n" <<
-        "passed           : " << projectPassed << "\n" <<
-        "failed:          : " << projectFailed << "\n" <<
-        "  not compiled   : " << projectNotCompiled << "\n" <<
-        "  exceptions     : " << projectExceptions << "\n" <<
-        "  crashed        : " << projectCrashed << "\n" <<
-        "  unknown result : " << projectUnknown << "\n" <<
+        "passed             : " << projectPassed << "\n" <<
+        "failed:            : " << projectFailed << "\n" <<
+        "  did not compile  : " << projectNotCompiled << "\n" <<
+        "  exceptions       : " << projectExceptions << "\n" <<
+        "  crashed          : " << projectCrashed << "\n" <<
+        "  unknown result   : " << projectUnknown << "\n" <<
         std::endl;
     numSolutionTests += numProjectTests;
     solutionPassed += projectPassed;
@@ -519,12 +519,12 @@ bool TestSolution(const std::string& solutionFilePath, const std::string& fileNa
         TestProject(projectFilePath, fileName, testName);
     }
     std::cerr << "test results for solution '" << solution->Name() << "' (ran " << numSolutionTests << " tests):\n" <<
-        "passed           : " << solutionPassed << "\n" <<
-        "failed:          : " << solutionFailed << "\n" <<
-        "  not compiled   : " << solutionNotCompiled << "\n" << 
-        "  exceptions     : " << solutionExceptions << "\n" <<
-        "  crashed        : " << solutionCrashed << "\n" <<
-        "  unknown result : " << solutionUnknown << "\n" << 
+        "passed             : " << solutionPassed << "\n" <<
+        "failed:            : " << solutionFailed << "\n" <<
+        "  did not compile  : " << solutionNotCompiled << "\n" << 
+        "  exceptions       : " << solutionExceptions << "\n" <<
+        "  crashed          : " << solutionCrashed << "\n" <<
+        "  unknown result   : " << solutionUnknown << "\n" << 
         std::endl;
     return solutionFailed == 0;
 }

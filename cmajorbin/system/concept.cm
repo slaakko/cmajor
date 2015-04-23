@@ -233,12 +233,12 @@ namespace System.Concepts
 
     public concept BackInsertionSequence<T>: Container<T>
     {
-        void T.Add(ValueType);
+        void T.Add(T.ValueType);
     }
 
     public concept FrontInsertionSequence<T>: Container<T>
     {
-        Iterator T.InsertFront(ValueType);
+        T.Iterator T.InsertFront(T.ValueType);
     }
 
     public concept ForwardContainer<T>: Container<T>
@@ -248,7 +248,7 @@ namespace System.Concepts
 
     public concept InsertionSequence<T>: ForwardContainer<T>
     {
-        Iterator T.Insert(T.Iterator, T.ValueType);
+        T.Iterator T.Insert(T.Iterator, T.ValueType);
     }
 
     public concept BidirectionalContainer<T>: ForwardContainer<T>

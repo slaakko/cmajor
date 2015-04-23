@@ -784,5 +784,139 @@ namespace Test.System.Algorithm
         }
     }
 
+    public unit_test void CopyForwardListTest()
+    {
+        ForwardList<M> from0;
+        List<M> to0;
+        Copy(from0.Begin(), from0.End(), BackInserter(to0));
+        #assert(to0.IsEmpty());
+        #assert(to0.Count() == 0);
 
+        ForwardList<M> from1;
+        from1.InsertAfter(from1.End(), M(1));
+        List<M> to1;
+        Copy(from1.Begin(), from1.End(), BackInserter(to1));
+        #assert(!to1.IsEmpty());
+        #assert(to1.Count() == 1);
+        #assert(to1[0] == M(1));
+
+        ForwardList<M> from2;
+        ForwardList<M>.Iterator end2 = from2.InsertAfter(from2.End(), M(1));
+        end2 = from2.InsertAfter(end2, M(2));
+        List<M> to2;
+        Copy(from2.Begin(), from2.End(), BackInserter(to2));
+        #assert(!to2.IsEmpty());
+        #assert(to2.Count() == 2);
+        #assert(to2[0] == M(1));
+        #assert(to2[1] == M(2));
+
+        ForwardList<M> from3;
+        ForwardList<M>.Iterator end3 = from3.InsertAfter(from3.End(), M(1));
+        end3 = from3.InsertAfter(end3, M(2));
+        end3 = from3.InsertAfter(end3, M(3));
+        List<M> to3;
+        Copy(from3.Begin(), from3.End(), BackInserter(to3));
+        #assert(!to3.IsEmpty());
+        #assert(to3.Count() == 3);
+        #assert(to3[0] == M(1));
+        #assert(to3[1] == M(2));
+        #assert(to3[2] == M(3));
+
+        ForwardList<M> from100;
+        ForwardList<M>.Iterator end100 = from100.End();
+        for (int i = 0; i < 100; ++i)
+        {
+            end100 = from100.InsertAfter(end100, M(i));
+        }
+        List<M> to100;
+        Copy(from100.Begin(), from100.End(), BackInserter(to100));
+        #assert(!to100.IsEmpty());
+        #assert(to100.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(to100[i] == M(i));
+        }
+
+        ForwardList<M> from4096;
+        ForwardList<M>.Iterator end4096 = from4096.End();
+        for (int i = 0; i < 4096; ++i)
+        {
+            end4096 = from4096.InsertAfter(end4096, M(i));
+        }
+        List<M> to4096;
+        Copy(from4096.Begin(), from4096.End(), BackInserter(to4096));
+        #assert(!to4096.IsEmpty());
+        #assert(to4096.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(to4096[i] == M(i));
+        }
+    }
+
+    public unit_test void CopyListTest()
+    {
+        List<M> from0;
+        List<M> to0;
+        Copy(from0.Begin(), from0.End(), BackInserter(to0));
+        #assert(to0.IsEmpty());
+        #assert(to0.Count() == 0);
+
+        List<M> from1;
+        from1.Add(M(1));
+        List<M> to1;
+        Copy(from1.Begin(), from1.End(), BackInserter(to1));
+        #assert(!to1.IsEmpty());
+        #assert(to1.Count() == 1);
+        #assert(to1[0] == M(1));
+
+        List<M> from2;
+        from2.Add(M(1));
+        from2.Add(M(2));
+        List<M> to2;
+        Copy(from2.Begin(), from2.End(), BackInserter(to2));
+        #assert(!to2.IsEmpty());
+        #assert(to2.Count() == 2);
+        #assert(to2[0] == M(1));
+        #assert(to2[1] == M(2));
+
+        List<M> from3;
+        from3.Add(M(1));
+        from3.Add(M(2));
+        from3.Add(M(3));
+        List<M> to3;
+        Copy(from3.Begin(), from3.End(), BackInserter(to3));
+        #assert(!to3.IsEmpty());
+        #assert(to3.Count() == 3);
+        #assert(to3[0] == M(1));
+        #assert(to3[1] == M(2));
+        #assert(to3[2] == M(3));
+
+        List<M> from100;
+        for (int i = 0; i < 100; ++i)
+        {
+            from100.Add(M(i));
+        }
+        List<M> to100;
+        Copy(from100.Begin(), from100.End(), BackInserter(to100));
+        #assert(!to100.IsEmpty());
+        #assert(to100.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(to100[i] == M(i));
+        }
+
+        List<M> from4096;
+        for (int i = 0; i < 4096; ++i)
+        {
+            from4096.Add(M(i));
+        }
+        List<M> to4096;
+        Copy(from4096.Begin(), from4096.End(), BackInserter(to4096));
+        #assert(!to4096.IsEmpty());
+        #assert(to4096.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(to4096[i] == M(i));
+        }
+    }
 }

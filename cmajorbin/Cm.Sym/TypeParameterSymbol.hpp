@@ -27,6 +27,7 @@ public:
     bool IsExportSymbol() const override { return true; }
     int Index() const { return index; }
     void SetIndex(int index_) { index = index_; }
+    std::string FullName() const override {return Name(); }
 private:
     int index;
 };

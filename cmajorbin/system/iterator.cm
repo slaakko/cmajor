@@ -103,7 +103,7 @@ namespace System
         return left.GetPtr() < right.GetPtr();
     }
 
-    internal class BackInsertProxy<C> where C is BackInsertionSequence
+    public class BackInsertProxy<C> where C is BackInsertionSequence
     {
         private typedef BackInsertProxy<C> Self;
         private typedef C.ValueType ValueType;
@@ -157,7 +157,7 @@ namespace System
         return BackInsertIterator<C>(c);
     }
 
-    internal class FrontInsertProxy<C> where C is FrontInsertionSequence
+    public class FrontInsertProxy<C> where C is FrontInsertionSequence
     {
         private typedef FrontInsertProxy<C> Self;
         private typedef C.ValueType ValueType;
@@ -211,7 +211,7 @@ namespace System
         return FrontInsertIterator<C>(c);
     }
 
-    internal class InsertProxy<C> where C is InsertionSequence
+    public class InsertProxy<C> where C is InsertionSequence
     {
         private typedef InsertProxy<C> Self;
         private typedef C.Iterator Iterator;
