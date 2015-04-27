@@ -898,14 +898,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
             {
                 return function;
             }
-            Cm::Core::FunctionTemplateKey key(function, bestMatch.templateArguments);
-            Cm::Sym::FunctionSymbol* functionTemplateInstance = boundCompileUnit.FunctionTemplateRepository().GetFunctionTemplateInstance(key);
-            if (!functionTemplateInstance)
-            {
-                functionTemplateInstance = Instantiate(containerScope, boundCompileUnit, function, bestMatch.templateArguments);
-                boundCompileUnit.FunctionTemplateRepository().AddFunctionTemplateInstance(key, functionTemplateInstance);
-            }
-            function = functionTemplateInstance;
+            function = Instantiate(boundCompileUnit.FunctionTemplateRepository(), containerScope, boundCompileUnit, function, bestMatch.templateArguments);
         }
         else if (function->IsMemberOfTemplateType())
         {

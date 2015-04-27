@@ -92,20 +92,10 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             }
             else if (paramType->IsConstReferenceType())
             {
-                bool argumentIsConversion = false;
-                if (argument->IsBoundConversion())
-                {
-                    Cm::BoundTree::BoundConversion* conversion = static_cast<Cm::BoundTree::BoundConversion*>(argument);
-                    Cm::BoundTree::BoundExpression* operand = conversion->Operand();
-                    if (operand->IsLiteral() || operand->IsConstant() || operand->IsEnumConstant() || operand->IsBoundUnaryOp() || operand->IsBoundBinaryOp() || operand->IsBoundFunctionCall())
-                    {
-                        argumentIsConversion = true;
-                    }
-                }
                 if ((argument->GetType()->IsBasicTypeSymbol() || argument->GetType()->IsEnumTypeSymbol() || argument->GetType()->IsNonReferencePointerType() || 
                     argument->GetType()->IsDelegateTypeSymbol()) &&
-                    (argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argumentIsConversion || argument->IsBoundUnaryOp() || argument->IsBoundBinaryOp() || 
-                    argument->IsBoundFunctionCall() || argument->IsBoundCast()))
+                    (argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argument->IsBoundUnaryOp() || argument->IsBoundBinaryOp() || 
+                    argument->IsBoundFunctionCall() || argument->IsBoundConversion() || argument->IsBoundCast()))
                 {
                     if (!currentFunction)
                     {

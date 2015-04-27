@@ -437,15 +437,18 @@ void ConstraintChecker::Visit(Cm::Ast::MultiParamConstraintNode& multiParamConst
         {
             constraintCheckStack.Push(true);
         }
-        instantiatedConcept = Instantiate(containerScope, boundCompileUnit, functionFileScope, conceptSymbol, typeArguments);
-        if (instantiatedConcept)
-        {
-            boundCompileUnit->ConceptRepository().AddInstantiatedConcept(conceptId, instantiatedConcept);
-            constraintCheckStack.Push(true);
-        }
         else
         {
-            constraintCheckStack.Push(false);
+            instantiatedConcept = Instantiate(containerScope, boundCompileUnit, functionFileScope, conceptSymbol, typeArguments);
+            if (instantiatedConcept)
+            {
+                boundCompileUnit->ConceptRepository().AddInstantiatedConcept(conceptId, instantiatedConcept);
+                constraintCheckStack.Push(true);
+            }
+            else
+            {
+                constraintCheckStack.Push(false);
+            }
         }
     }
     else

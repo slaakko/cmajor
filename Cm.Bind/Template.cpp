@@ -107,9 +107,15 @@ void BindTypeParameters(Cm::Sym::FunctionSymbol* functionTemplate, Cm::Sym::Func
     }
 }
 
-Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* functionTemplate, 
-    const std::vector<Cm::Sym::TypeSymbol*>& templateArguments)
+Cm::Sym::FunctionSymbol* Instantiate(Cm::Core::FunctionTemplateRepository& functionTemplateRepository, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit,
+    Cm::Sym::FunctionSymbol* functionTemplate, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments)
 {
+    Cm::Core::FunctionTemplateKey key(functionTemplate, templateArguments);
+    Cm::Sym::FunctionSymbol* functionTemplateInstance = functionTemplateRepository.GetFunctionTemplateInstance(key);
+    if (functionTemplateInstance)
+    {
+        return functionTemplateInstance;
+    }
     Cm::Ast::NamespaceNode* currentNs = nullptr;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs(CreateNamespaces(functionTemplate->GetSpan(), functionTemplate->Ns()->FullName(), functionTemplate->GetUsingNodes(), currentNs));
     std::unique_ptr<Cm::Ast::CompoundStatementNode> ownedBody;
@@ -119,7 +125,8 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Sym::ContainerScope* containerScope, Cm
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     declarationVisitor.MarkFunctionSymbolAsTemplateSpecialization();
     globalNs->Accept(declarationVisitor);
-    Cm::Sym::FunctionSymbol* functionTemplateInstance = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
+    functionTemplateInstance = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
+    functionTemplateRepository.AddFunctionTemplateInstance(key, functionTemplateInstance);
     functionTemplateInstance->SetReplicated();
     functionTemplateInstance->SetFunctionTemplateSpecialization();
     BindTypeParameters(functionTemplate, functionTemplateInstance, templateArguments);

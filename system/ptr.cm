@@ -100,6 +100,16 @@ namespace System
         private T* ptr;
     }
 
+    public nothrow bool operator==<T>(const UniquePtr<T>& left, const UniquePtr<T>& right)
+    {
+        return left.GetPtr() == right.GetPtr();
+    }
+
+    public nothrow bool operator<<T>(const UniquePtr<T>& left, const UniquePtr<T>& right)
+    {
+        return left.GetPtr() < right.GetPtr();
+    }
+
     public abstract class CounterBase
     {
         public nothrow CounterBase(): useCount(1), weakCount(1)
