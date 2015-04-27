@@ -784,6 +784,292 @@ namespace Test.System.Algorithm
         }
     }
 
+    public unit_test void ReverseUntilTest()
+    {
+        List<int> a0;
+        Pair<List<int>.Iterator, List<int>.Iterator> p0 = ReverseUntil(a0.Begin(), a0.End(), a0.End());
+        #assert(p0.first == a0.Begin());
+        #assert(p0.second == a0.End());
+        #assert(a0.IsEmpty());
+        #assert(a0.Count() == 0);
+
+        List<int> a1;
+        a1.Add(1);
+        Pair<List<int>.Iterator, List<int>.Iterator> p1 = ReverseUntil(a1.Begin(), a1.Begin(), a1.End());
+        #assert(p1.first == a1.Begin());
+        #assert(p1.second == a1.End());
+        #assert(!a1.IsEmpty());
+        #assert(a1.Count() == 1);
+        #assert(a1[0] == 1);
+
+        List<int> a2;
+        a2.Add(1);
+        Pair<List<int>.Iterator, List<int>.Iterator> p2 = ReverseUntil(a2.Begin(), a2.End(), a2.End());
+        #assert(p2.first == a2.Begin());
+        #assert(p2.second == a2.End());
+        #assert(!a2.IsEmpty());
+        #assert(a2.Count() == 1);
+        #assert(a2[0] == 1);
+
+        List<int> a3;
+        a3.Add(1);
+        a3.Add(2);
+        Pair<List<int>.Iterator, List<int>.Iterator> p3 = ReverseUntil(a3.Begin(), a3.Begin(), a3.End());
+        #assert(p3.first == a3.Begin());
+        #assert(p3.second == a3.End());
+        #assert(!a3.IsEmpty());
+        #assert(a3.Count() == 2);
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 2);
+
+        List<int> a4;
+        a4.Add(1);
+        a4.Add(2);
+        Pair<List<int>.Iterator, List<int>.Iterator> p4 = ReverseUntil(a4.Begin(), a4.Begin() + 1, a4.End());
+        #assert(p4.first == a4.Begin() + 1);
+        #assert(p4.second == a4.Begin() + 1);
+        #assert(!a4.IsEmpty());
+        #assert(a4.Count() == 2);
+        #assert(a4[0] == 2);
+        #assert(a4[1] == 1);
+
+        List<int> a5;
+        a5.Add(1);
+        a5.Add(2);
+        Pair<List<int>.Iterator, List<int>.Iterator> p5 = ReverseUntil(a5.Begin(), a5.End(), a5.End());
+        #assert(p5.first == a5.Begin());
+        #assert(p5.second == a5.End());
+        #assert(!a5.IsEmpty());
+        #assert(a5.Count() == 2);
+        #assert(a5[0] == 1);
+        #assert(a5[1] == 2);
+
+        List<int> a6;
+        a6.Add(1);
+        a6.Add(2);
+        a6.Add(3);
+        Pair<List<int>.Iterator, List<int>.Iterator> p6 = ReverseUntil(a6.Begin(), a6.Begin(), a6.End());
+        #assert(p6.first == a6.Begin());
+        #assert(p6.second == a6.End());
+        #assert(!a6.IsEmpty());
+        #assert(a6.Count() == 3);
+        #assert(a6[0] == 1);
+        #assert(a6[1] == 2);
+        #assert(a6[2] == 3);
+
+        List<int> a7;
+        a7.Add(1);
+        a7.Add(2);
+        a7.Add(3);
+        Pair<List<int>.Iterator, List<int>.Iterator> p7 = ReverseUntil(a7.Begin(), a7.Begin() + 1, a7.End());
+        #assert(p7.first == a7.Begin() + 1);
+        #assert(p7.second == a7.End() - 1);
+        #assert(!a7.IsEmpty());
+        #assert(a7.Count() == 3);
+        #assert(a7[0] == 3);
+        #assert(a7[1] == 2);
+        #assert(a7[2] == 1);
+
+        List<int> a8;
+        a8.Add(1);
+        a8.Add(2);
+        a8.Add(3);
+        Pair<List<int>.Iterator, List<int>.Iterator> p8 = ReverseUntil(a8.Begin(), a8.Begin() + 2, a8.End());
+        #assert(p8.first == a8.Begin() + 1);
+        #assert(p8.second == a8.End() - 1);
+        #assert(!a8.IsEmpty());
+        #assert(a8.Count() == 3);
+        #assert(a8[0] == 3);
+        #assert(a8[1] == 2);
+        #assert(a8[2] == 1);
+
+        List<int> a9;
+        a9.Add(1);
+        a9.Add(2);
+        a9.Add(3);
+        Pair<List<int>.Iterator, List<int>.Iterator> p9 = ReverseUntil(a9.Begin(), a9.End(), a9.End());
+        #assert(p9.first == a9.Begin());
+        #assert(p9.second == a9.End());
+        #assert(!a9.IsEmpty());
+        #assert(a9.Count() == 3);
+        #assert(a9[0] == 1);
+        #assert(a9[1] == 2);
+        #assert(a9[2] == 3);
+
+        List<int> a10;
+        for (int i = 0; i < 100; ++i)
+        {
+            a10.Add(i);
+        }
+        Pair<List<int>.Iterator, List<int>.Iterator> p10 = ReverseUntil(a10.Begin(), a10.Begin() + 50, a10.End());
+        #assert(p10.first == a10.Begin() + 50);
+        #assert(p10.second == a10.End() - 50);
+        #assert(!a10.IsEmpty());
+        #assert(a10.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(a10[i] == 99 - i);
+        }
+
+        List<int> a11;
+        for (int i = 0; i < 4096; ++i)
+        {
+            a11.Add(i);
+        }
+        Pair<List<int>.Iterator, List<int>.Iterator> p11 = ReverseUntil(a11.Begin(), a11.Begin() + 2048, a11.End());
+        #assert(p11.first == a11.Begin() + 2048);
+        #assert(p11.second == a11.End() - 2048);
+        #assert(!a11.IsEmpty());
+        #assert(a11.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(a11[i] == 4095 - i);
+        }
+    }
+
+    public unit_test void RotateTest()
+    {
+        List<int> a0;
+        List<int>.Iterator i0 = Rotate(a0.Begin(), a0.Begin(), a0.End());
+        #assert(i0 == a0.End());
+
+        List<int> a1;
+        a1.Add(1);
+        List<int>.Iterator i1 = Rotate(a1.Begin(), a1.Begin(), a1.End());
+        #assert(i1 == a1.End());
+        #assert(!a1.IsEmpty());
+        #assert(a1.Count() == 1);
+        #assert(a1[0] == 1);
+
+        List<int> a2;
+        a2.Add(1);
+        List<int>.Iterator i2 = Rotate(a2.Begin(), a2.End(), a2.End());
+        #assert(i2 == a2.Begin());
+        #assert(!a2.IsEmpty());
+        #assert(a2.Count() == 1);
+        #assert(a2[0] == 1);
+
+        List<int> a3;
+        a3.Add(1);
+        a3.Add(2);
+        List<int>.Iterator i3 = Rotate(a3.Begin(), a3.Begin(), a3.End());
+        #assert(i3 == a3.End());
+        #assert(!a3.IsEmpty());
+        #assert(a3.Count() == 2);
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 2);
+
+        List<int> a4;
+        a4.Add(1);
+        a4.Add(2);
+        List<int>.Iterator i4 = Rotate(a4.Begin(), a4.Begin() + 1, a4.End());
+        #assert(i4 == a4.Begin() + 1);
+        #assert(!a4.IsEmpty());
+        #assert(a4.Count() == 2);
+        #assert(a4[0] == 2);
+        #assert(a4[1] == 1);
+
+        List<int> a5;
+        a5.Add(1);
+        a5.Add(2);
+        List<int>.Iterator i5 = Rotate(a5.Begin(), a5.End(), a5.End());
+        #assert(i5 == a5.Begin());
+        #assert(!a5.IsEmpty());
+        #assert(a5.Count() == 2);
+        #assert(a5[0] == 1);
+        #assert(a5[1] == 2);
+
+        List<int> a6;
+        a6.Add(1);
+        a6.Add(2);
+        a6.Add(3);
+        List<int>.Iterator i6 = Rotate(a6.Begin(), a6.Begin(), a6.End());
+        #assert(i6 == a6.End());
+        #assert(!a6.IsEmpty());
+        #assert(a6.Count() == 3);
+        #assert(a6[0] == 1);
+        #assert(a6[1] == 2);
+        #assert(a6[2] == 3);
+
+        List<int> a7;
+        a7.Add(1);
+        a7.Add(2);
+        a7.Add(3);
+        List<int>.Iterator i7 = Rotate(a7.Begin(), a7.Begin() + 1, a7.End());
+        #assert(i7 == a7.Begin() + 2);
+        #assert(!a7.IsEmpty());
+        #assert(a7.Count() == 3);
+        #assert(a7[0] == 2);
+        #assert(a7[1] == 3);
+        #assert(a7[2] == 1);
+
+        List<int> a8;
+        a8.Add(1);
+        a8.Add(2);
+        a8.Add(3);
+        List<int>.Iterator i8 = Rotate(a8.Begin(), a8.Begin() + 2, a8.End());
+        #assert(i8 == a8.Begin() + 1);
+        #assert(!a8.IsEmpty());
+        #assert(a8.Count() == 3);
+        #assert(a8[0] == 3);
+        #assert(a8[1] == 1);
+        #assert(a8[2] == 2);
+
+        List<int> a9;
+        a9.Add(1);
+        a9.Add(2);
+        a9.Add(3);
+        List<int>.Iterator i9 = Rotate(a9.Begin(), a9.End(), a9.End());
+        #assert(i9 == a9.Begin());
+        #assert(!a9.IsEmpty());
+        #assert(a9.Count() == 3);
+        #assert(a9[0] == 1);
+        #assert(a9[1] == 2);
+        #assert(a9[2] == 3);
+
+        List<int> a10;
+        for (int i = 0; i < 100; ++i)
+        {
+            a10.Add(i);
+        }
+        List<int>.Iterator i10 = Rotate(a10.Begin(), a10.Begin() + 1, a10.End());
+        #assert(i10 == a10.End() - 1);
+        #assert(!a10.IsEmpty());
+        #assert(a10.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            if (i < 99)
+            {
+                #assert(a10[i] == i + 1);
+            }
+            else
+            {
+                #assert(a10[i] == 0);
+            }
+        }
+
+        List<int> a11;
+        for (int i = 0; i < 4096; ++i)
+        {
+            a11.Add(i);
+        }
+        List<int>.Iterator i11 = Rotate(a11.Begin(), a11.Begin() + 1, a11.End());
+        #assert(i11 == a11.End() - 1);
+        #assert(!a11.IsEmpty());
+        #assert(a11.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            if (i < 4095)
+            {
+                #assert(a11[i] == i + 1);
+            }
+            else
+            {
+                #assert(a11[i] == 0);
+            }
+        }
+    }
+
     public unit_test void CopyForwardListTest()
     {
         ForwardList<M> from0;
@@ -918,5 +1204,2227 @@ namespace Test.System.Algorithm
         {
             #assert(to4096[i] == M(i));
         }
+    }
+
+    public unit_test void CopyStringTest()
+    {
+        for (int n = 0; n < 64; ++n)
+        {
+            List<string> x;
+            for (int i = 0; i < n; ++i)
+            {
+                x.Add(ToString(i));
+            }
+            if (x.Count() > 0)
+            {
+                Copy(x.Begin() + 1, x.End(), x.Begin());
+                for (int i = 0; i < n - 1; ++i)
+                {
+                    #assert(x[i] == ToString(i + 1));
+                }
+                #assert(x[n - 1] == ToString(n - 1));
+            }
+        }
+    }
+
+    public unit_test void CopyBackwardStringTest()
+    {
+        for (int n = 0; n < 64; ++n)
+        {
+            List<string> x;
+            for (int i = 0; i < n; ++i)
+            {
+                x.Add(ToString(i));
+            }
+            if (x.Count() > 0)
+            {
+                CopyBackward(x.Begin(), x.End() - 1, x.End());
+                #assert(x[0] == ToString(0));
+                for (int i = 1; i < n; ++i)
+                {
+                    #assert(x[i] == ToString(i - 1));
+                }
+            }
+        }
+    }
+
+    public unit_test void MoveListUniquePtrTest()
+    {
+        List<UniquePtr<M>> from0;
+        List<UniquePtr<M>> to0;
+        Move(from0.Begin(), from0.End(), to0.Begin());
+        #assert(from0.IsEmpty());
+        #assert(from0.Count() == 0);
+        #assert(to0.IsEmpty());
+        #assert(to0.Count() == 0);
+
+        List<UniquePtr<M>> from1;
+        from1.Add(UniquePtr<M>(new M(1)));
+        List<UniquePtr<M>> to1;
+        to1.Add(UniquePtr<M>());
+        Move(from1.Begin(), from1.End(), to1.Begin());
+        #assert(!from1.IsEmpty());
+        #assert(from1.Count() == 1);
+        #assert(from1[0].IsNull());
+        #assert(!to1.IsEmpty());
+        #assert(to1.Count() == 1);
+        #assert(*to1[0] == M(1));
+    
+        List<UniquePtr<M>> from2;
+        from2.Add(UniquePtr<M>(new M(1)));
+        from2.Add(UniquePtr<M>(new M(2)));
+        List<UniquePtr<M>> to2;
+        to2.Add(UniquePtr<M>());
+        to2.Add(UniquePtr<M>());
+        Move(from2.Begin(), from2.End(), to2.Begin());
+        #assert(!from2.IsEmpty());
+        #assert(from2.Count() == 2);
+        #assert(from2[0].IsNull());
+        #assert(from2[1].IsNull());
+        #assert(!to2.IsEmpty());
+        #assert(to2.Count() == 2);
+        #assert(*to2[0] == M(1));
+        #assert(*to2[1] == M(2));
+
+        List<UniquePtr<M>> from3;
+        from3.Add(UniquePtr<M>(new M(1)));
+        from3.Add(UniquePtr<M>(new M(2)));
+        from3.Add(UniquePtr<M>(new M(3)));
+        List<UniquePtr<M>> to3;
+        to3.Add(UniquePtr<M>());
+        to3.Add(UniquePtr<M>());
+        to3.Add(UniquePtr<M>());
+        Move(from3.Begin(), from3.End(), to3.Begin());
+        #assert(!from3.IsEmpty());
+        #assert(from3.Count() == 3);
+        #assert(from3[0].IsNull());
+        #assert(from3[1].IsNull());
+        #assert(from3[2].IsNull());
+        #assert(!to3.IsEmpty());
+        #assert(to3.Count() == 3);
+        #assert(*to3[0] == M(1));
+        #assert(*to3[1] == M(2));
+        #assert(*to3[2] == M(3));
+
+        List<UniquePtr<M>> from100;
+        for (int i = 0; i < 100; ++i)
+        {
+            from100.Add(UniquePtr<M>(new M(i)));
+        }
+        List<UniquePtr<M>> to100;
+        for (int i = 0; i < 100; ++i)
+        {
+            to100.Add(UniquePtr<M>());
+        }
+        Move(from100.Begin(), from100.End(), to100.Begin());
+        #assert(!from100.IsEmpty());
+        #assert(from100.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(from100[i].IsNull());
+        }
+        #assert(!to100.IsEmpty());
+        #assert(to100.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(*to100[i] == M(i));
+        }
+
+        List<UniquePtr<M>> from4096;
+        for (int i = 0; i < 4096; ++i)
+        {
+            from4096.Add(UniquePtr<M>(new M(i)));
+        }
+        List<UniquePtr<M>> to4096;
+        for (int i = 0; i < 4096; ++i)
+        {
+            to4096.Add(UniquePtr<M>());
+        }
+        Move(from4096.Begin(), from4096.End(), to4096.Begin());
+        #assert(!from4096.IsEmpty());
+        #assert(from4096.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(from4096[i].IsNull());
+        }
+        #assert(!to4096.IsEmpty());
+        #assert(to4096.Count() == 4096);
+        for (int i = 0; i < 4096; ++i)
+        {
+            #assert(*to4096[i] == M(i));
+        }
+    }
+
+    public unit_test void MoveStringTest()
+    {
+        for (int n = 0; n < 64; ++n)
+        {
+            List<string> x;
+            for (int i = 0; i < n; ++i)
+            {
+                x.Add(ToString(i));
+            }
+            if (x.Count() > 0)
+            {
+                Move(x.Begin() + 1, x.End(), x.Begin());
+                for (int i = 0; i < n - 1; ++i)
+                {
+                    #assert(x[i] == ToString(i + 1));
+                }
+                #assert(x[n - 1] == ToString(0));
+            }
+        }
+    }
+
+    public unit_test void MoveBackwardStringTest()
+    {
+        for (int n = 0; n < 64; ++n)
+        {
+            List<string> x;
+            for (int i = 0; i < n; ++i)
+            {
+                x.Add(ToString(i));
+            }
+            if (x.Count() > 0)
+            {
+                MoveBackward(x.Begin(), x.End() - 1, x.End());
+                #assert(x[0] == ToString(n - 1));
+                for (int i = 1; i < n; ++i)
+                {
+                    #assert(x[i] == ToString(i - 1));
+                }
+            }
+        }
+    }
+
+    public unit_test void DistanceForwardIteratorTest()
+    {
+        for (int n = 0; n < 64; ++n)
+        {
+            ForwardList<int> x;
+            ForwardList<int>.Iterator end = x.End();
+            for (int i = 0; i < n; ++i)
+            {
+                end = x.InsertAfter(end, i);
+            }
+            #assert(Distance(x.Begin(), x.End()) == n);
+        }
+        ForwardList<int> x;
+        ForwardList<int>.Iterator end = x.End();
+        for (int i = 0; i < 4096; ++i)
+        {
+            end = x.InsertAfter(end, i);
+        }
+        #assert(Distance(x.Begin(), x.End()) == 4096);
+    }
+
+    public unit_test void DistanceRandomAccessIteratorTest()
+    {
+        for (int n = 0; n < 64; ++n)
+        {
+            List<int> x;
+            for (int i = 0; i < n; ++i)
+            {
+                x.Add(i);
+            }
+            #assert(Distance(x.Begin(), x.End()) == n);
+        }
+        List<int> x;
+        for (int i = 0; i < 4096; ++i)
+        {
+            x.Add(i);
+        }
+        #assert(Distance(x.Begin(), x.End()) == 4096);
+    }
+
+    public unit_test void NextForwardIteratorTest()
+    {
+        for (int n = 0; n < 64; ++n)
+        {
+            ForwardList<int> x;
+            ForwardList<int>.Iterator end = x.End();
+            for (int i = 0; i < n; ++i)
+            {
+                end = x.InsertAfter(end, i);
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                ForwardList<int>.Iterator next = Next(x.Begin(), i);
+                ForwardList<int>.Iterator target = x.Begin();
+                for (int j = 0; j < i; ++j)
+                {
+                    ++target;
+                }
+                #assert(next == target);
+            }
+        }
+    }
+
+    public unit_test void NextRandomAccessIteratorTest()
+    {
+        for (int n = 0; n < 64; ++n)
+        {
+            List<int> x;
+            for (int i = 0; i < n; ++i)
+            {
+                x.Add(i);
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                List<int>.Iterator next = Next(x.Begin(), i);
+                List<int>.Iterator target = x.Begin() + i;
+                #assert(next == target);
+            }
+        }
+    }
+
+    public unit_test void LowerBoundForwardIteratorTest()
+    {
+        ForwardList<X> x0;
+        ForwardList<X>.Iterator low0 = LowerBound(x0.Begin(), x0.End(), X(MinValue<int>(), "min"));
+        #assert(low0 == x0.Begin());
+        ForwardList<X>.Iterator zero0 = LowerBound(x0.Begin(), x0.End(), X(0, "zero"));
+        #assert(zero0 == x0.End());
+        ForwardList<X>.Iterator high0 = LowerBound(x0.Begin(), x0.End(), X(MaxValue<int>(), "max"));
+        #assert(high0 == x0.End());
+
+        ForwardList<X> x1;
+        x1.InsertAfter(x1.End(), X(0, "zero"));
+        ForwardList<X>.Iterator low1 = LowerBound(x1.Begin(), x1.End(), X(MinValue<int>(), "min"));
+        #assert(low1 == x1.Begin());
+        ForwardList<X>.Iterator zero1 = LowerBound(x1.Begin(), x1.End(), X(0, "zero"));
+        #assert(zero1 == x1.Begin());
+        #assert(*zero1 == X(0, "zero"));
+        ForwardList<X>.Iterator high1 = LowerBound(x1.Begin(), x1.End(), X(MaxValue<int>(), "max"));
+        #assert(high1 == x1.End());
+
+        ForwardList<X> x2;
+        ForwardList<X>.Iterator end2 = x2.InsertAfter(x2.End(), X(0, "zero1"));
+        end2 = x2.InsertAfter(end2, X(0, "zero2"));
+        ForwardList<X>.Iterator low2 = LowerBound(x2.Begin(), x2.End(), X(MinValue<int>(), "min"));
+        #assert(low2 == x2.Begin());
+        ForwardList<X>.Iterator zero2 = LowerBound(x2.Begin(), x2.End(), X(0, "zero1"));
+        #assert(zero2 == x2.Begin());
+        #assert(*zero2 == X(0, "zero1"));
+        ForwardList<X>.Iterator high2 = LowerBound(x2.Begin(), x2.End(), X(MaxValue<int>(), "max"));
+        #assert(high2 == x2.End());
+
+        ForwardList<X> x3;
+        ForwardList<X>.Iterator end3 = x3.InsertAfter(x3.End(), X(0, "zero1"));
+        end3 = x3.InsertAfter(end3, X(0, "zero2"));
+        end3 = x3.InsertAfter(end3, X(0, "zero3"));
+        ForwardList<X>.Iterator low3 = LowerBound(x3.Begin(), x3.End(), X(MinValue<int>(), "min"));
+        #assert(low3 == x3.Begin());
+        ForwardList<X>.Iterator zero3 = LowerBound(x3.Begin(), x3.End(), X(0, "zero1"));
+        #assert(zero3 == x3.Begin());
+        #assert(*zero3 == X(0, "zero1"));
+        ForwardList<X>.Iterator high3 = LowerBound(x3.Begin(), x3.End(), X(MaxValue<int>(), "max"));
+        #assert(high3 == x3.End());
+
+        ForwardList<X> x4;
+        ForwardList<X>.Iterator end4 = x4.InsertAfter(x4.End(), X(0, "zero"));
+        end4 = x4.InsertAfter(end4, X(1, "one"));
+        ForwardList<X>.Iterator low4 = LowerBound(x4.Begin(), x4.End(), X(MinValue<int>(), "min"));
+        #assert(low4 == x4.Begin());
+        ForwardList<X>.Iterator zero4 = LowerBound(x4.Begin(), x4.End(), X(0, "zero"));
+        #assert(zero4 == x4.Begin());
+        #assert(*zero4 == X(0, "zero"));
+        ForwardList<X>.Iterator one4 = LowerBound(x4.Begin(), x4.End(), X(1, "one"));
+        #assert(*one4 == X(1, "one"));
+        ForwardList<X>.Iterator high4 = LowerBound(x4.Begin(), x4.End(), X(MaxValue<int>(), "max"));
+        #assert(high4 == x4.End());
+
+        ForwardList<X> x5;
+        ForwardList<X>.Iterator end5 = x5.InsertAfter(x5.End(), X(0, "zero1"));
+        end5 = x5.InsertAfter(end5, X(0, "zero2"));
+        end5 = x5.InsertAfter(end5, X(1, "one"));
+        ForwardList<X>.Iterator low5 = LowerBound(x5.Begin(), x5.End(), X(MinValue<int>(), "min"));
+        #assert(low5 == x5.Begin());
+        ForwardList<X>.Iterator zero5 = LowerBound(x5.Begin(), x5.End(), X(0, "zero1"));
+        #assert(zero5 == x5.Begin());
+        #assert(*zero5 == X(0, "zero1"));
+        ForwardList<X>.Iterator one5 = LowerBound(x5.Begin(), x5.End(), X(1, "one"));
+        #assert(*one5 == X(1, "one"));
+        ForwardList<X>.Iterator high5 = LowerBound(x5.Begin(), x5.End(), X(MaxValue<int>(), "max"));
+        #assert(high5 == x5.End());
+
+        ForwardList<X> x6;
+        ForwardList<X>.Iterator end6 = x6.InsertAfter(x6.End(), X(0, "zero"));
+        end6 = x6.InsertAfter(end6, X(1, "one1"));
+        end6 = x6.InsertAfter(end6, X(1, "one2"));
+        ForwardList<X>.Iterator low6 = LowerBound(x6.Begin(), x6.End(), X(MinValue<int>(), "min"));
+        #assert(low6 == x6.Begin());
+        ForwardList<X>.Iterator zero6 = LowerBound(x6.Begin(), x6.End(), X(0, "zero"));
+        #assert(zero6 == x6.Begin());
+        #assert(*zero6 == X(0, "zero"));
+        ForwardList<X>.Iterator one6 = LowerBound(x6.Begin(), x6.End(), X(1, "one1"));
+        #assert(*one6 == X(1, "one1"));
+        ForwardList<X>.Iterator high6 = LowerBound(x6.Begin(), x6.End(), X(MaxValue<int>(), "max"));
+        #assert(high6 == x6.End());
+
+        ForwardList<X> x7;
+        ForwardList<X>.Iterator end7 = x7.InsertAfter(x7.End(), X(0, "zero"));
+        end7 = x7.InsertAfter(end7, X(1, "one"));
+        end7 = x7.InsertAfter(end7, X(2, "two"));
+        ForwardList<X>.Iterator low7 = LowerBound(x7.Begin(), x7.End(), X(MinValue<int>(), "min"));
+        #assert(low7 == x7.Begin());
+        ForwardList<X>.Iterator zero7 = LowerBound(x7.Begin(), x7.End(), X(0, "zero"));
+        #assert(zero7 == x7.Begin());
+        #assert(*zero7 == X(0, "zero"));
+        ForwardList<X>.Iterator one7 = LowerBound(x7.Begin(), x7.End(), X(1, "one"));
+        #assert(*one7 == X(1, "one"));
+        ForwardList<X>.Iterator two7 = LowerBound(x7.Begin(), x7.End(), X(2, "two"));
+        #assert(*two7 == X(2, "two"));
+        ForwardList<X>.Iterator high7 = LowerBound(x7.Begin(), x7.End(), X(MaxValue<int>(), "max"));
+        #assert(high7 == x7.End());
+
+        ForwardList<X> x8;
+        ForwardList<X>.Iterator end8 = x8.InsertAfter(x8.End(), X(0, "zero"));
+        end8 = x8.InsertAfter(end8, X(2, "two1"));
+        end8 = x8.InsertAfter(end8, X(2, "two2"));
+        ForwardList<X>.Iterator low8 = LowerBound(x8.Begin(), x8.End(), X(MinValue<int>(), "min"));
+        #assert(low8 == x8.Begin());
+        ForwardList<X>.Iterator zero8 = LowerBound(x8.Begin(), x8.End(), X(0, "zero"));
+        #assert(zero8 == x8.Begin());
+        #assert(*zero8 == X(0, "zero"));
+        ForwardList<X>.Iterator one8 = LowerBound(x8.Begin(), x8.End(), X(1, "one"));
+        #assert(*one8 == X(2, "two1"));
+        ForwardList<X>.Iterator two8 = LowerBound(x8.Begin(), x8.End(), X(2, "two"));
+        #assert(*two8 == X(2, "two1"));
+        ForwardList<X>.Iterator high8 = LowerBound(x8.Begin(), x8.End(), X(MaxValue<int>(), "max"));
+        #assert(high8 == x8.End());
+
+        ForwardList<X> x9;
+        ForwardList<X>.Iterator end9 = x9.InsertAfter(x9.End(), X(0, "zero"));
+        end9 = x9.InsertAfter(end9, X(2, "two"));
+        end9 = x9.InsertAfter(end9, X(3, "three"));
+        ForwardList<X>.Iterator low9 = LowerBound(x9.Begin(), x9.End(), X(MinValue<int>(), "min"));
+        #assert(low9 == x9.Begin());
+        ForwardList<X>.Iterator zero9 = LowerBound(x9.Begin(), x9.End(), X(0, "zero"));
+        #assert(zero9 == x9.Begin());
+        #assert(*zero9 == X(0, "zero"));
+        ForwardList<X>.Iterator one9 = LowerBound(x9.Begin(), x9.End(), X(1, "one"));
+        #assert(*one9 == X(2, "two"));
+        ForwardList<X>.Iterator two9 = LowerBound(x9.Begin(), x9.End(), X(2, "two"));
+        #assert(*two9 == X(2, "two"));
+        ForwardList<X>.Iterator three9 = LowerBound(x9.Begin(), x9.End(), X(3, "three"));
+        #assert(*three9 == X(3, "three"));
+        ForwardList<X>.Iterator high9 = LowerBound(x9.Begin(), x9.End(), X(MaxValue<int>(), "max"));
+        #assert(high9 == x9.End());
+
+        ForwardList<X> x10;
+        ForwardList<X>.Iterator end10 = x10.InsertAfter(x10.End(), X(0, "zero"));
+        end10 = x10.InsertAfter(end10, X(2, "two"));
+        end10 = x10.InsertAfter(end10, X(4, "four"));
+        ForwardList<X>.Iterator low10 = LowerBound(x10.Begin(), x10.End(), X(MinValue<int>(), "min"));
+        #assert(low10 == x10.Begin());
+        ForwardList<X>.Iterator zero10 = LowerBound(x10.Begin(), x10.End(), X(0, "zero"));
+        #assert(zero10 == x10.Begin());
+        #assert(*zero10 == X(0, "zero"));
+        ForwardList<X>.Iterator one10 = LowerBound(x10.Begin(), x10.End(), X(1, "one"));
+        #assert(*one10 == X(2, "two"));
+        ForwardList<X>.Iterator two10 = LowerBound(x10.Begin(), x10.End(), X(2, "two"));
+        #assert(*two10 == X(2, "two"));
+        ForwardList<X>.Iterator three10 = LowerBound(x10.Begin(), x10.End(), X(3, "three"));
+        #assert(*three10 == X(4, "four"));
+        ForwardList<X>.Iterator four10 = LowerBound(x10.Begin(), x10.End(), X(4, "four"));
+        #assert(*four10 == X(4, "four"));
+        ForwardList<X>.Iterator high10 = LowerBound(x10.Begin(), x10.End(), X(MaxValue<int>(), "max"));
+        #assert(high10 == x10.End());
+
+        ForwardList<X> x11;
+        ForwardList<X>.Iterator end11 = x11.End();
+        for (int i = 0;  i < 4096; ++i)
+        {
+            end11 = x11.InsertAfter(end11, X(i, ToString(i)));
+        }
+        ForwardList<X>.Iterator low11 = LowerBound(x11.Begin(), x11.End(), X(MinValue<int>(), "min"));
+        #assert(low11 == x11.Begin());
+        ForwardList<X>.Iterator zero11 = LowerBound(x11.Begin(), x11.End(), X(0, "zero"));
+        #assert(zero11 == x11.Begin());
+        #assert(*zero11 == X(0, ToString(0)));
+        ForwardList<X>.Iterator k11 = LowerBound(x11.Begin(), x11.End(), X(1000, "thousand"));
+        #assert(*k11 == X(1000, ToString(1000)));
+        k11 = LowerBound(x11.Begin(), x11.End(), X(2048, "twokilos"));
+        #assert(*k11 == X(2048, ToString(2048)));
+        ForwardList<X>.Iterator n11 = LowerBound(x11.Begin(), x11.End(), X(4095, "fourkilos"));
+        #assert(*n11 == X(4095, ToString(4095)));
+        ForwardList<X>.Iterator high11 = LowerBound(x11.Begin(), x11.End(), X(MaxValue<int>(), "max"));
+        #assert(high11 == x11.End());
+    }
+
+    public unit_test void LowerBoundRandomAccessIteratorTest()
+    {
+        List<X> x0;
+        List<X>.Iterator low0 = LowerBound(x0.Begin(), x0.End(), X(MinValue<int>(), "min"));
+        #assert(low0 == x0.Begin());
+        List<X>.Iterator zero0 = LowerBound(x0.Begin(), x0.End(), X(0, "zero"));
+        #assert(zero0 == x0.End());
+        List<X>.Iterator high0 = LowerBound(x0.Begin(), x0.End(), X(MaxValue<int>(), "max"));
+        #assert(high0 == x0.End());
+
+        List<X> x1;
+        x1.Add(X(0, "zero"));
+        List<X>.Iterator low1 = LowerBound(x1.Begin(), x1.End(), X(MinValue<int>(), "min"));
+        #assert(low1 == x1.Begin());
+        List<X>.Iterator zero1 = LowerBound(x1.Begin(), x1.End(), X(0, "zero"));
+        #assert(zero1 == x1.Begin());
+        #assert(*zero1 == X(0, "zero"));
+        List<X>.Iterator high1 = LowerBound(x1.Begin(), x1.End(), X(MaxValue<int>(), "max"));
+        #assert(high1 == x1.End());
+
+        List<X> x2;
+        x2.Add(X(0, "zero1"));
+        x2.Add(X(0, "zero2"));
+        List<X>.Iterator low2 = LowerBound(x2.Begin(), x2.End(), X(MinValue<int>(), "min"));
+        #assert(low2 == x2.Begin());
+        List<X>.Iterator zero2 = LowerBound(x2.Begin(), x2.End(), X(0, "zero1"));
+        #assert(zero2 == x2.Begin());
+        #assert(*zero2 == X(0, "zero1"));
+        List<X>.Iterator high2 = LowerBound(x2.Begin(), x2.End(), X(MaxValue<int>(), "max"));
+        #assert(high2 == x2.End());
+
+        List<X> x3;
+        x3.Add(X(0, "zero1"));
+        x3.Add(X(0, "zero2"));
+        x3.Add(X(0, "zero3"));
+        List<X>.Iterator low3 = LowerBound(x3.Begin(), x3.End(), X(MinValue<int>(), "min"));
+        #assert(low3 == x3.Begin());
+        List<X>.Iterator zero3 = LowerBound(x3.Begin(), x3.End(), X(0, "zero1"));
+        #assert(zero3 == x3.Begin());
+        #assert(*zero3 == X(0, "zero1"));
+        List<X>.Iterator high3 = LowerBound(x3.Begin(), x3.End(), X(MaxValue<int>(), "max"));
+        #assert(high3 == x3.End());
+
+        List<X> x4;
+        x4.Add(X(0, "zero"));
+        x4.Add(X(1, "one"));
+        List<X>.Iterator low4 = LowerBound(x4.Begin(), x4.End(), X(MinValue<int>(), "min"));
+        #assert(low4 == x4.Begin());
+        List<X>.Iterator zero4 = LowerBound(x4.Begin(), x4.End(), X(0, "zero"));
+        #assert(zero4 == x4.Begin());
+        #assert(*zero4 == X(0, "zero"));
+        List<X>.Iterator one4 = LowerBound(x4.Begin(), x4.End(), X(1, "one"));
+        #assert(*one4 == X(1, "one"));
+        List<X>.Iterator high4 = LowerBound(x4.Begin(), x4.End(), X(MaxValue<int>(), "max"));
+        #assert(high4 == x4.End());
+
+        List<X> x5;
+        x5.Add(X(0, "zero1"));
+        x5.Add(X(0, "zero2"));
+        x5.Add(X(1, "one"));
+        List<X>.Iterator low5 = LowerBound(x5.Begin(), x5.End(), X(MinValue<int>(), "min"));
+        #assert(low5 == x5.Begin());
+        List<X>.Iterator zero5 = LowerBound(x5.Begin(), x5.End(), X(0, "zero1"));
+        #assert(zero5 == x5.Begin());
+        #assert(*zero5 == X(0, "zero1"));
+        List<X>.Iterator one5 = LowerBound(x5.Begin(), x5.End(), X(1, "one"));
+        #assert(*one5 == X(1, "one"));
+        List<X>.Iterator high5 = LowerBound(x5.Begin(), x5.End(), X(MaxValue<int>(), "max"));
+        #assert(high5 == x5.End());
+
+        List<X> x6;
+        x6.Add(X(0, "zero"));
+        x6.Add(X(1, "one1"));
+        x6.Add(X(1, "one2"));
+        List<X>.Iterator low6 = LowerBound(x6.Begin(), x6.End(), X(MinValue<int>(), "min"));
+        #assert(low6 == x6.Begin());
+        List<X>.Iterator zero6 = LowerBound(x6.Begin(), x6.End(), X(0, "zero"));
+        #assert(zero6 == x6.Begin());
+        #assert(*zero6 == X(0, "zero"));
+        List<X>.Iterator one6 = LowerBound(x6.Begin(), x6.End(), X(1, "one1"));
+        #assert(*one6 == X(1, "one1"));
+        List<X>.Iterator high6 = LowerBound(x6.Begin(), x6.End(), X(MaxValue<int>(), "max"));
+        #assert(high6 == x6.End());
+
+        List<X> x7;
+        x7.Add(X(0, "zero"));
+        x7.Add(X(1, "one"));
+        x7.Add(X(2, "two"));
+        List<X>.Iterator low7 = LowerBound(x7.Begin(), x7.End(), X(MinValue<int>(), "min"));
+        #assert(low7 == x7.Begin());
+        List<X>.Iterator zero7 = LowerBound(x7.Begin(), x7.End(), X(0, "zero"));
+        #assert(zero7 == x7.Begin());
+        #assert(*zero7 == X(0, "zero"));
+        List<X>.Iterator one7 = LowerBound(x7.Begin(), x7.End(), X(1, "one"));
+        #assert(*one7 == X(1, "one"));
+        List<X>.Iterator two7 = LowerBound(x7.Begin(), x7.End(), X(2, "two"));
+        #assert(*two7 == X(2, "two"));
+        List<X>.Iterator high7 = LowerBound(x7.Begin(), x7.End(), X(MaxValue<int>(), "max"));
+        #assert(high7 == x7.End());
+
+        List<X> x8;
+        x8.Add(X(0, "zero"));
+        x8.Add(X(2, "two1"));
+        x8.Add(X(2, "two2"));
+        List<X>.Iterator low8 = LowerBound(x8.Begin(), x8.End(), X(MinValue<int>(), "min"));
+        #assert(low8 == x8.Begin());
+        List<X>.Iterator zero8 = LowerBound(x8.Begin(), x8.End(), X(0, "zero"));
+        #assert(zero8 == x8.Begin());
+        #assert(*zero8 == X(0, "zero"));
+        List<X>.Iterator one8 = LowerBound(x8.Begin(), x8.End(), X(1, "one"));
+        #assert(*one8 == X(2, "two1"));
+        List<X>.Iterator two8 = LowerBound(x8.Begin(), x8.End(), X(2, "two"));
+        #assert(*two8 == X(2, "two1"));
+        List<X>.Iterator high8 = LowerBound(x8.Begin(), x8.End(), X(MaxValue<int>(), "max"));
+        #assert(high8 == x8.End());
+
+        List<X> x9;
+        x9.Add(X(0, "zero"));
+        x9.Add(X(2, "two"));
+        x9.Add(X(3, "three"));
+        List<X>.Iterator low9 = LowerBound(x9.Begin(), x9.End(), X(MinValue<int>(), "min"));
+        #assert(low9 == x9.Begin());
+        List<X>.Iterator zero9 = LowerBound(x9.Begin(), x9.End(), X(0, "zero"));
+        #assert(zero9 == x9.Begin());
+        #assert(*zero9 == X(0, "zero"));
+        List<X>.Iterator one9 = LowerBound(x9.Begin(), x9.End(), X(1, "one"));
+        #assert(*one9 == X(2, "two"));
+        List<X>.Iterator two9 = LowerBound(x9.Begin(), x9.End(), X(2, "two"));
+        #assert(*two9 == X(2, "two"));
+        List<X>.Iterator three9 = LowerBound(x9.Begin(), x9.End(), X(3, "three"));
+        #assert(*three9 == X(3, "three"));
+        List<X>.Iterator high9 = LowerBound(x9.Begin(), x9.End(), X(MaxValue<int>(), "max"));
+        #assert(high9 == x9.End());
+
+        List<X> x10;
+        x10.Add(X(0, "zero"));
+        x10.Add(X(2, "two"));
+        x10.Add(X(4, "four"));
+        List<X>.Iterator low10 = LowerBound(x10.Begin(), x10.End(), X(MinValue<int>(), "min"));
+        #assert(low10 == x10.Begin());
+        List<X>.Iterator zero10 = LowerBound(x10.Begin(), x10.End(), X(0, "zero"));
+        #assert(zero10 == x10.Begin());
+        #assert(*zero10 == X(0, "zero"));
+        List<X>.Iterator one10 = LowerBound(x10.Begin(), x10.End(), X(1, "one"));
+        #assert(*one10 == X(2, "two"));
+        List<X>.Iterator two10 = LowerBound(x10.Begin(), x10.End(), X(2, "two"));
+        #assert(*two10 == X(2, "two"));
+        List<X>.Iterator three10 = LowerBound(x10.Begin(), x10.End(), X(3, "three"));
+        #assert(*three10 == X(4, "four"));
+        List<X>.Iterator four10 = LowerBound(x10.Begin(), x10.End(), X(4, "four"));
+        #assert(*four10 == X(4, "four"));
+        List<X>.Iterator high10 = LowerBound(x10.Begin(), x10.End(), X(MaxValue<int>(), "max"));
+        #assert(high10 == x10.End());
+
+        List<X> x11;
+        for (int i = 0;  i < 4096; ++i)
+        {
+            x11.Add(X(i, ToString(i)));
+        }
+        List<X>.Iterator low11 = LowerBound(x11.Begin(), x11.End(), X(MinValue<int>(), "min"));
+        #assert(low11 == x11.Begin());
+        List<X>.Iterator zero11 = LowerBound(x11.Begin(), x11.End(), X(0, "zero"));
+        #assert(zero11 == x11.Begin());
+        #assert(*zero11 == X(0, ToString(0)));
+        List<X>.Iterator k11 = LowerBound(x11.Begin(), x11.End(), X(1000, "thousand"));
+        #assert(*k11 == X(1000, ToString(1000)));
+        k11 = LowerBound(x11.Begin(), x11.End(), X(2048, "twokilos"));
+        #assert(*k11 == X(2048, ToString(2048)));
+        List<X>.Iterator n11 = LowerBound(x11.Begin(), x11.End(), X(4095, "fourkilos"));
+        #assert(*n11 == X(4095, ToString(4095)));
+        List<X>.Iterator high11 = LowerBound(x11.Begin(), x11.End(), X(MaxValue<int>(), "max"));
+        #assert(high11 == x11.End());
+    }
+
+    public unit_test void LowerBoundForwardIteratorRelationTest()
+    {
+        ForwardList<X> x0;
+        ForwardList<X>.Iterator low0 = LowerBound(x0.Begin(), x0.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low0 == x0.Begin());
+        ForwardList<X>.Iterator zero0 = LowerBound(x0.Begin(), x0.End(), X(0, "zero"), Less<X>());
+        #assert(zero0 == x0.End());
+        ForwardList<X>.Iterator high0 = LowerBound(x0.Begin(), x0.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high0 == x0.End());
+
+        ForwardList<X> x1;
+        x1.InsertAfter(x1.End(), X(0, "zero"));
+        ForwardList<X>.Iterator low1 = LowerBound(x1.Begin(), x1.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low1 == x1.Begin());
+        ForwardList<X>.Iterator zero1 = LowerBound(x1.Begin(), x1.End(), X(0, "zero"), Less<X>());
+        #assert(zero1 == x1.Begin());
+        #assert(*zero1 == X(0, "zero"));
+        ForwardList<X>.Iterator high1 = LowerBound(x1.Begin(), x1.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high1 == x1.End());
+
+        ForwardList<X> x2;
+        ForwardList<X>.Iterator end2 = x2.InsertAfter(x2.End(), X(0, "zero1"));
+        end2 = x2.InsertAfter(end2, X(0, "zero2"));
+        ForwardList<X>.Iterator low2 = LowerBound(x2.Begin(), x2.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low2 == x2.Begin());
+        ForwardList<X>.Iterator zero2 = LowerBound(x2.Begin(), x2.End(), X(0, "zero1"), Less<X>());
+        #assert(zero2 == x2.Begin());
+        #assert(*zero2 == X(0, "zero1"));
+        ForwardList<X>.Iterator high2 = LowerBound(x2.Begin(), x2.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high2 == x2.End());
+
+        ForwardList<X> x3;
+        ForwardList<X>.Iterator end3 = x3.InsertAfter(x3.End(), X(0, "zero1"));
+        end3 = x3.InsertAfter(end3, X(0, "zero2"));
+        end3 = x3.InsertAfter(end3, X(0, "zero3"));
+        ForwardList<X>.Iterator low3 = LowerBound(x3.Begin(), x3.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low3 == x3.Begin());
+        ForwardList<X>.Iterator zero3 = LowerBound(x3.Begin(), x3.End(), X(0, "zero1"), Less<X>());
+        #assert(zero3 == x3.Begin());
+        #assert(*zero3 == X(0, "zero1"));
+        ForwardList<X>.Iterator high3 = LowerBound(x3.Begin(), x3.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high3 == x3.End());
+
+        ForwardList<X> x4;
+        ForwardList<X>.Iterator end4 = x4.InsertAfter(x4.End(), X(0, "zero"));
+        end4 = x4.InsertAfter(end4, X(1, "one"));
+        ForwardList<X>.Iterator low4 = LowerBound(x4.Begin(), x4.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low4 == x4.Begin());
+        ForwardList<X>.Iterator zero4 = LowerBound(x4.Begin(), x4.End(), X(0, "zero"), Less<X>());
+        #assert(zero4 == x4.Begin());
+        #assert(*zero4 == X(0, "zero"));
+        ForwardList<X>.Iterator one4 = LowerBound(x4.Begin(), x4.End(), X(1, "one"), Less<X>());
+        #assert(*one4 == X(1, "one"));
+        ForwardList<X>.Iterator high4 = LowerBound(x4.Begin(), x4.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high4 == x4.End());
+
+        ForwardList<X> x5;
+        ForwardList<X>.Iterator end5 = x5.InsertAfter(x5.End(), X(0, "zero1"));
+        end5 = x5.InsertAfter(end5, X(0, "zero2"));
+        end5 = x5.InsertAfter(end5, X(1, "one"));
+        ForwardList<X>.Iterator low5 = LowerBound(x5.Begin(), x5.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low5 == x5.Begin());
+        ForwardList<X>.Iterator zero5 = LowerBound(x5.Begin(), x5.End(), X(0, "zero1"), Less<X>());
+        #assert(zero5 == x5.Begin());
+        #assert(*zero5 == X(0, "zero1"));
+        ForwardList<X>.Iterator one5 = LowerBound(x5.Begin(), x5.End(), X(1, "one"), Less<X>());
+        #assert(*one5 == X(1, "one"));
+        ForwardList<X>.Iterator high5 = LowerBound(x5.Begin(), x5.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high5 == x5.End());
+
+        ForwardList<X> x6;
+        ForwardList<X>.Iterator end6 = x6.InsertAfter(x6.End(), X(0, "zero"));
+        end6 = x6.InsertAfter(end6, X(1, "one1"));
+        end6 = x6.InsertAfter(end6, X(1, "one2"));
+        ForwardList<X>.Iterator low6 = LowerBound(x6.Begin(), x6.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low6 == x6.Begin());
+        ForwardList<X>.Iterator zero6 = LowerBound(x6.Begin(), x6.End(), X(0, "zero"), Less<X>());
+        #assert(zero6 == x6.Begin());
+        #assert(*zero6 == X(0, "zero"));
+        ForwardList<X>.Iterator one6 = LowerBound(x6.Begin(), x6.End(), X(1, "one1"), Less<X>());
+        #assert(*one6 == X(1, "one1"));
+        ForwardList<X>.Iterator high6 = LowerBound(x6.Begin(), x6.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high6 == x6.End());
+
+        ForwardList<X> x7;
+        ForwardList<X>.Iterator end7 = x7.InsertAfter(x7.End(), X(0, "zero"));
+        end7 = x7.InsertAfter(end7, X(1, "one"));
+        end7 = x7.InsertAfter(end7, X(2, "two"));
+        ForwardList<X>.Iterator low7 = LowerBound(x7.Begin(), x7.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low7 == x7.Begin());
+        ForwardList<X>.Iterator zero7 = LowerBound(x7.Begin(), x7.End(), X(0, "zero"), Less<X>());
+        #assert(zero7 == x7.Begin());
+        #assert(*zero7 == X(0, "zero"));
+        ForwardList<X>.Iterator one7 = LowerBound(x7.Begin(), x7.End(), X(1, "one"), Less<X>());
+        #assert(*one7 == X(1, "one"));
+        ForwardList<X>.Iterator two7 = LowerBound(x7.Begin(), x7.End(), X(2, "two"), Less<X>());
+        #assert(*two7 == X(2, "two"));
+        ForwardList<X>.Iterator high7 = LowerBound(x7.Begin(), x7.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high7 == x7.End());
+
+        ForwardList<X> x8;
+        ForwardList<X>.Iterator end8 = x8.InsertAfter(x8.End(), X(0, "zero"));
+        end8 = x8.InsertAfter(end8, X(2, "two1"));
+        end8 = x8.InsertAfter(end8, X(2, "two2"));
+        ForwardList<X>.Iterator low8 = LowerBound(x8.Begin(), x8.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low8 == x8.Begin());
+        ForwardList<X>.Iterator zero8 = LowerBound(x8.Begin(), x8.End(), X(0, "zero"), Less<X>());
+        #assert(zero8 == x8.Begin());
+        #assert(*zero8 == X(0, "zero"));
+        ForwardList<X>.Iterator one8 = LowerBound(x8.Begin(), x8.End(), X(1, "one"), Less<X>());
+        #assert(*one8 == X(2, "two1"));
+        ForwardList<X>.Iterator two8 = LowerBound(x8.Begin(), x8.End(), X(2, "two"), Less<X>());
+        #assert(*two8 == X(2, "two1"));
+        ForwardList<X>.Iterator high8 = LowerBound(x8.Begin(), x8.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high8 == x8.End());
+
+        ForwardList<X> x9;
+        ForwardList<X>.Iterator end9 = x9.InsertAfter(x9.End(), X(0, "zero"));
+        end9 = x9.InsertAfter(end9, X(2, "two"));
+        end9 = x9.InsertAfter(end9, X(3, "three"));
+        ForwardList<X>.Iterator low9 = LowerBound(x9.Begin(), x9.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low9 == x9.Begin());
+        ForwardList<X>.Iterator zero9 = LowerBound(x9.Begin(), x9.End(), X(0, "zero"), Less<X>());
+        #assert(zero9 == x9.Begin());
+        #assert(*zero9 == X(0, "zero"));
+        ForwardList<X>.Iterator one9 = LowerBound(x9.Begin(), x9.End(), X(1, "one"), Less<X>());
+        #assert(*one9 == X(2, "two"));
+        ForwardList<X>.Iterator two9 = LowerBound(x9.Begin(), x9.End(), X(2, "two"), Less<X>());
+        #assert(*two9 == X(2, "two"));
+        ForwardList<X>.Iterator three9 = LowerBound(x9.Begin(), x9.End(), X(3, "three"), Less<X>());
+        #assert(*three9 == X(3, "three"));
+        ForwardList<X>.Iterator high9 = LowerBound(x9.Begin(), x9.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high9 == x9.End());
+
+        ForwardList<X> x10;
+        ForwardList<X>.Iterator end10 = x10.InsertAfter(x10.End(), X(0, "zero"));
+        end10 = x10.InsertAfter(end10, X(2, "two"));
+        end10 = x10.InsertAfter(end10, X(4, "four"));
+        ForwardList<X>.Iterator low10 = LowerBound(x10.Begin(), x10.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low10 == x10.Begin());
+        ForwardList<X>.Iterator zero10 = LowerBound(x10.Begin(), x10.End(), X(0, "zero"), Less<X>());
+        #assert(zero10 == x10.Begin());
+        #assert(*zero10 == X(0, "zero"));
+        ForwardList<X>.Iterator one10 = LowerBound(x10.Begin(), x10.End(), X(1, "one"), Less<X>());
+        #assert(*one10 == X(2, "two"));
+        ForwardList<X>.Iterator two10 = LowerBound(x10.Begin(), x10.End(), X(2, "two"), Less<X>());
+        #assert(*two10 == X(2, "two"));
+        ForwardList<X>.Iterator three10 = LowerBound(x10.Begin(), x10.End(), X(3, "three"), Less<X>());
+        #assert(*three10 == X(4, "four"));
+        ForwardList<X>.Iterator four10 = LowerBound(x10.Begin(), x10.End(), X(4, "four"), Less<X>());
+        #assert(*four10 == X(4, "four"));
+        ForwardList<X>.Iterator high10 = LowerBound(x10.Begin(), x10.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high10 == x10.End());
+
+        ForwardList<X> x11;
+        ForwardList<X>.Iterator end11 = x11.End();
+        for (int i = 0;  i < 4096; ++i)
+        {
+            end11 = x11.InsertAfter(end11, X(i, ToString(i)));
+        }
+        ForwardList<X>.Iterator low11 = LowerBound(x11.Begin(), x11.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low11 == x11.Begin());
+        ForwardList<X>.Iterator zero11 = LowerBound(x11.Begin(), x11.End(), X(0, "zero"), Less<X>());
+        #assert(zero11 == x11.Begin());
+        #assert(*zero11 == X(0, ToString(0)));
+        ForwardList<X>.Iterator k11 = LowerBound(x11.Begin(), x11.End(), X(1000, "thousand"), Less<X>());
+        #assert(*k11 == X(1000, ToString(1000)));
+        k11 = LowerBound(x11.Begin(), x11.End(), X(2048, "twokilos"), Less<X>());
+        #assert(*k11 == X(2048, ToString(2048)));
+        ForwardList<X>.Iterator n11 = LowerBound(x11.Begin(), x11.End(), X(4095, "fourkilos"), Less<X>());
+        #assert(*n11 == X(4095, ToString(4095)));
+        ForwardList<X>.Iterator high11 = LowerBound(x11.Begin(), x11.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high11 == x11.End());
+    }
+
+    public unit_test void LowerBoundRandomAccessIteratorRelationTest()
+    {
+        List<X> x0;
+        List<X>.Iterator low0 = LowerBound(x0.Begin(), x0.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low0 == x0.Begin());
+        List<X>.Iterator zero0 = LowerBound(x0.Begin(), x0.End(), X(0, "zero"), Less<X>());
+        #assert(zero0 == x0.End());
+        List<X>.Iterator high0 = LowerBound(x0.Begin(), x0.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high0 == x0.End());
+
+        List<X> x1;
+        x1.Add(X(0, "zero"));
+        List<X>.Iterator low1 = LowerBound(x1.Begin(), x1.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low1 == x1.Begin());
+        List<X>.Iterator zero1 = LowerBound(x1.Begin(), x1.End(), X(0, "zero"), Less<X>());
+        #assert(zero1 == x1.Begin());
+        #assert(*zero1 == X(0, "zero"));
+        List<X>.Iterator high1 = LowerBound(x1.Begin(), x1.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high1 == x1.End());
+
+        List<X> x2;
+        x2.Add(X(0, "zero1"));
+        x2.Add(X(0, "zero2"));
+        List<X>.Iterator low2 = LowerBound(x2.Begin(), x2.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low2 == x2.Begin());
+        List<X>.Iterator zero2 = LowerBound(x2.Begin(), x2.End(), X(0, "zero1"), Less<X>());
+        #assert(zero2 == x2.Begin());
+        #assert(*zero2 == X(0, "zero1"));
+        List<X>.Iterator high2 = LowerBound(x2.Begin(), x2.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high2 == x2.End());
+
+        List<X> x3;
+        x3.Add(X(0, "zero1"));
+        x3.Add(X(0, "zero2"));
+        x3.Add(X(0, "zero3"));
+        List<X>.Iterator low3 = LowerBound(x3.Begin(), x3.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low3 == x3.Begin());
+        List<X>.Iterator zero3 = LowerBound(x3.Begin(), x3.End(), X(0, "zero1"), Less<X>());
+        #assert(zero3 == x3.Begin());
+        #assert(*zero3 == X(0, "zero1"));
+        List<X>.Iterator high3 = LowerBound(x3.Begin(), x3.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high3 == x3.End());
+
+        List<X> x4;
+        x4.Add(X(0, "zero"));
+        x4.Add(X(1, "one"));
+        List<X>.Iterator low4 = LowerBound(x4.Begin(), x4.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low4 == x4.Begin());
+        List<X>.Iterator zero4 = LowerBound(x4.Begin(), x4.End(), X(0, "zero"), Less<X>());
+        #assert(zero4 == x4.Begin());
+        #assert(*zero4 == X(0, "zero"));
+        List<X>.Iterator one4 = LowerBound(x4.Begin(), x4.End(), X(1, "one"), Less<X>());
+        #assert(*one4 == X(1, "one"));
+        List<X>.Iterator high4 = LowerBound(x4.Begin(), x4.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high4 == x4.End());
+
+        List<X> x5;
+        x5.Add(X(0, "zero1"));
+        x5.Add(X(0, "zero2"));
+        x5.Add(X(1, "one"));
+        List<X>.Iterator low5 = LowerBound(x5.Begin(), x5.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low5 == x5.Begin());
+        List<X>.Iterator zero5 = LowerBound(x5.Begin(), x5.End(), X(0, "zero1"), Less<X>());
+        #assert(zero5 == x5.Begin());
+        #assert(*zero5 == X(0, "zero1"));
+        List<X>.Iterator one5 = LowerBound(x5.Begin(), x5.End(), X(1, "one"), Less<X>());
+        #assert(*one5 == X(1, "one"));
+        List<X>.Iterator high5 = LowerBound(x5.Begin(), x5.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high5 == x5.End());
+
+        List<X> x6;
+        x6.Add(X(0, "zero"));
+        x6.Add(X(1, "one1"));
+        x6.Add(X(1, "one2"));
+        List<X>.Iterator low6 = LowerBound(x6.Begin(), x6.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low6 == x6.Begin());
+        List<X>.Iterator zero6 = LowerBound(x6.Begin(), x6.End(), X(0, "zero"), Less<X>());
+        #assert(zero6 == x6.Begin());
+        #assert(*zero6 == X(0, "zero"));
+        List<X>.Iterator one6 = LowerBound(x6.Begin(), x6.End(), X(1, "one1"), Less<X>());
+        #assert(*one6 == X(1, "one1"));
+        List<X>.Iterator high6 = LowerBound(x6.Begin(), x6.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high6 == x6.End());
+
+        List<X> x7;
+        x7.Add(X(0, "zero"));
+        x7.Add(X(1, "one"));
+        x7.Add(X(2, "two"));
+        List<X>.Iterator low7 = LowerBound(x7.Begin(), x7.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low7 == x7.Begin());
+        List<X>.Iterator zero7 = LowerBound(x7.Begin(), x7.End(), X(0, "zero"), Less<X>());
+        #assert(zero7 == x7.Begin());
+        #assert(*zero7 == X(0, "zero"));
+        List<X>.Iterator one7 = LowerBound(x7.Begin(), x7.End(), X(1, "one"), Less<X>());
+        #assert(*one7 == X(1, "one"));
+        List<X>.Iterator two7 = LowerBound(x7.Begin(), x7.End(), X(2, "two"), Less<X>());
+        #assert(*two7 == X(2, "two"));
+        List<X>.Iterator high7 = LowerBound(x7.Begin(), x7.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high7 == x7.End());
+
+        List<X> x8;
+        x8.Add(X(0, "zero"));
+        x8.Add(X(2, "two1"));
+        x8.Add(X(2, "two2"));
+        List<X>.Iterator low8 = LowerBound(x8.Begin(), x8.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low8 == x8.Begin());
+        List<X>.Iterator zero8 = LowerBound(x8.Begin(), x8.End(), X(0, "zero"), Less<X>());
+        #assert(zero8 == x8.Begin());
+        #assert(*zero8 == X(0, "zero"));
+        List<X>.Iterator one8 = LowerBound(x8.Begin(), x8.End(), X(1, "one"), Less<X>());
+        #assert(*one8 == X(2, "two1"));
+        List<X>.Iterator two8 = LowerBound(x8.Begin(), x8.End(), X(2, "two"), Less<X>());
+        #assert(*two8 == X(2, "two1"));
+        List<X>.Iterator high8 = LowerBound(x8.Begin(), x8.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high8 == x8.End());
+
+        List<X> x9;
+        x9.Add(X(0, "zero"));
+        x9.Add(X(2, "two"));
+        x9.Add(X(3, "three"));
+        List<X>.Iterator low9 = LowerBound(x9.Begin(), x9.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low9 == x9.Begin());
+        List<X>.Iterator zero9 = LowerBound(x9.Begin(), x9.End(), X(0, "zero"), Less<X>());
+        #assert(zero9 == x9.Begin());
+        #assert(*zero9 == X(0, "zero"));
+        List<X>.Iterator one9 = LowerBound(x9.Begin(), x9.End(), X(1, "one"), Less<X>());
+        #assert(*one9 == X(2, "two"));
+        List<X>.Iterator two9 = LowerBound(x9.Begin(), x9.End(), X(2, "two"), Less<X>());
+        #assert(*two9 == X(2, "two"));
+        List<X>.Iterator three9 = LowerBound(x9.Begin(), x9.End(), X(3, "three"), Less<X>());
+        #assert(*three9 == X(3, "three"));
+        List<X>.Iterator high9 = LowerBound(x9.Begin(), x9.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high9 == x9.End());
+
+        List<X> x10;
+        x10.Add(X(0, "zero"));
+        x10.Add(X(2, "two"));
+        x10.Add(X(4, "four"));
+        List<X>.Iterator low10 = LowerBound(x10.Begin(), x10.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low10 == x10.Begin());
+        List<X>.Iterator zero10 = LowerBound(x10.Begin(), x10.End(), X(0, "zero"), Less<X>());
+        #assert(zero10 == x10.Begin());
+        #assert(*zero10 == X(0, "zero"));
+        List<X>.Iterator one10 = LowerBound(x10.Begin(), x10.End(), X(1, "one"), Less<X>());
+        #assert(*one10 == X(2, "two"));
+        List<X>.Iterator two10 = LowerBound(x10.Begin(), x10.End(), X(2, "two"), Less<X>());
+        #assert(*two10 == X(2, "two"));
+        List<X>.Iterator three10 = LowerBound(x10.Begin(), x10.End(), X(3, "three"), Less<X>());
+        #assert(*three10 == X(4, "four"));
+        List<X>.Iterator four10 = LowerBound(x10.Begin(), x10.End(), X(4, "four"), Less<X>());
+        #assert(*four10 == X(4, "four"));
+        List<X>.Iterator high10 = LowerBound(x10.Begin(), x10.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high10 == x10.End());
+
+        List<X> x11;
+        for (int i = 0;  i < 4096; ++i)
+        {
+            x11.Add(X(i, ToString(i)));
+        }
+        List<X>.Iterator low11 = LowerBound(x11.Begin(), x11.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low11 == x11.Begin());
+        List<X>.Iterator zero11 = LowerBound(x11.Begin(), x11.End(), X(0, "zero"), Less<X>());
+        #assert(zero11 == x11.Begin());
+        #assert(*zero11 == X(0, ToString(0)));
+        List<X>.Iterator k11 = LowerBound(x11.Begin(), x11.End(), X(1000, "thousand"), Less<X>());
+        #assert(*k11 == X(1000, ToString(1000)));
+        k11 = LowerBound(x11.Begin(), x11.End(), X(2048, "twokilos"), Less<X>());
+        #assert(*k11 == X(2048, ToString(2048)));
+        List<X>.Iterator n11 = LowerBound(x11.Begin(), x11.End(), X(4095, "fourkilos"), Less<X>());
+        #assert(*n11 == X(4095, ToString(4095)));
+        List<X>.Iterator high11 = LowerBound(x11.Begin(), x11.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high11 == x11.End());
+    }
+
+    public unit_test void UpperBoundForwardIteratorTest()
+    {
+        ForwardList<X> x0;
+        ForwardList<X>.Iterator low0 = UpperBound(x0.Begin(), x0.End(), X(MinValue<int>(), "min"));
+        #assert(low0 == x0.Begin());
+        ForwardList<X>.Iterator zero0 = UpperBound(x0.Begin(), x0.End(), X(0, "zero"));
+        #assert(zero0 == x0.End());
+        ForwardList<X>.Iterator high0 = UpperBound(x0.Begin(), x0.End(), X(MaxValue<int>(), "max"));
+        #assert(high0 == x0.End());
+
+        ForwardList<X> x1;
+        x1.InsertAfter(x1.End(), X(0, "zero"));
+        ForwardList<X>.Iterator low1 = UpperBound(x1.Begin(), x1.End(), X(MinValue<int>(), "min"));
+        #assert(low1 == x1.Begin());
+        ForwardList<X>.Iterator zero1 = UpperBound(x1.Begin(), x1.End(), X(0, "zero"));
+        #assert(zero1 == x1.End());
+        ForwardList<X>.Iterator high1 = UpperBound(x1.Begin(), x1.End(), X(MaxValue<int>(), "max"));
+        #assert(high1 == x1.End());
+
+        ForwardList<X> x2;
+        ForwardList<X>.Iterator end2 = x2.InsertAfter(x2.End(), X(0, "zero1"));
+        end2 = x2.InsertAfter(end2, X(0, "zero2"));
+        ForwardList<X>.Iterator low2 = UpperBound(x2.Begin(), x2.End(), X(MinValue<int>(), "min"));
+        #assert(low2 == x2.Begin());
+        ForwardList<X>.Iterator zero2 = UpperBound(x2.Begin(), x2.End(), X(0, "zero1"));
+        #assert(zero2 == x2.End());
+        ForwardList<X>.Iterator high2 = UpperBound(x2.Begin(), x2.End(), X(MaxValue<int>(), "max"));
+        #assert(high2 == x2.End());
+
+        ForwardList<X> x3;
+        ForwardList<X>.Iterator end3 = x3.InsertAfter(x3.End(), X(0, "zero1"));
+        end3 = x3.InsertAfter(end3, X(0, "zero2"));
+        end3 = x3.InsertAfter(end3, X(0, "zero3"));
+        ForwardList<X>.Iterator low3 = UpperBound(x3.Begin(), x3.End(), X(MinValue<int>(), "min"));
+        #assert(low3 == x3.Begin());
+        ForwardList<X>.Iterator zero3 = UpperBound(x3.Begin(), x3.End(), X(0, "zero1"));
+        #assert(zero3 == x3.End());
+        ForwardList<X>.Iterator high3 = UpperBound(x3.Begin(), x3.End(), X(MaxValue<int>(), "max"));
+        #assert(high3 == x3.End());
+
+        ForwardList<X> x4;
+        ForwardList<X>.Iterator end4 = x4.InsertAfter(x4.End(), X(0, "zero"));
+        end4 = x4.InsertAfter(end4, X(1, "one"));
+        ForwardList<X>.Iterator low4 = UpperBound(x4.Begin(), x4.End(), X(MinValue<int>(), "min"));
+        #assert(low4 == x4.Begin());
+        ForwardList<X>.Iterator zero4 = UpperBound(x4.Begin(), x4.End(), X(0, "zero"));
+        #assert(*zero4 == X(1, "one"));
+        ForwardList<X>.Iterator one4 = UpperBound(x4.Begin(), x4.End(), X(1, "one"));
+        #assert(one4 == x4.End());
+        ForwardList<X>.Iterator high4 = UpperBound(x4.Begin(), x4.End(), X(MaxValue<int>(), "max"));
+        #assert(high4 == x4.End());
+
+        ForwardList<X> x5;
+        ForwardList<X>.Iterator end5 = x5.InsertAfter(x5.End(), X(0, "zero1"));
+        end5 = x5.InsertAfter(end5, X(0, "zero2"));
+        end5 = x5.InsertAfter(end5, X(1, "one"));
+        ForwardList<X>.Iterator low5 = UpperBound(x5.Begin(), x5.End(), X(MinValue<int>(), "min"));
+        #assert(low5 == x5.Begin());
+        ForwardList<X>.Iterator zero5 = UpperBound(x5.Begin(), x5.End(), X(0, "zero1"));
+        #assert(*zero5 == X(1, "one"));
+        ForwardList<X>.Iterator one5 = UpperBound(x5.Begin(), x5.End(), X(1, "one"));
+        #assert(one5 == x5.End());
+        ForwardList<X>.Iterator high5 = UpperBound(x5.Begin(), x5.End(), X(MaxValue<int>(), "max"));
+        #assert(high5 == x5.End());
+
+        ForwardList<X> x6;
+        ForwardList<X>.Iterator end6 = x6.InsertAfter(x6.End(), X(0, "zero"));
+        end6 = x6.InsertAfter(end6, X(1, "one1"));
+        end6 = x6.InsertAfter(end6, X(1, "one2"));
+        ForwardList<X>.Iterator low6 = UpperBound(x6.Begin(), x6.End(), X(MinValue<int>(), "min"));
+        #assert(low6 == x6.Begin());
+        ForwardList<X>.Iterator zero6 = UpperBound(x6.Begin(), x6.End(), X(0, "zero"));
+        #assert(*zero6 == X(1, "one1"));
+        ForwardList<X>.Iterator one6 = UpperBound(x6.Begin(), x6.End(), X(1, "one1"));
+        #assert(one6 == x6.End());
+        ForwardList<X>.Iterator high6 = UpperBound(x6.Begin(), x6.End(), X(MaxValue<int>(), "max"));
+        #assert(high6 == x6.End());
+
+        ForwardList<X> x7;
+        ForwardList<X>.Iterator end7 = x7.InsertAfter(x7.End(), X(0, "zero"));
+        end7 = x7.InsertAfter(end7, X(1, "one"));
+        end7 = x7.InsertAfter(end7, X(2, "two"));
+        ForwardList<X>.Iterator low7 = UpperBound(x7.Begin(), x7.End(), X(MinValue<int>(), "min"));
+        #assert(low7 == x7.Begin());
+        ForwardList<X>.Iterator zero7 = UpperBound(x7.Begin(), x7.End(), X(0, "zero"));
+        #assert(*zero7 == X(1, "one"));
+        ForwardList<X>.Iterator one7 = UpperBound(x7.Begin(), x7.End(), X(1, "one"));
+        #assert(*one7 == X(2, "two"));
+        ForwardList<X>.Iterator two7 = UpperBound(x7.Begin(), x7.End(), X(2, "two"));
+        #assert(two7 == x7.End());
+        ForwardList<X>.Iterator high7 = UpperBound(x7.Begin(), x7.End(), X(MaxValue<int>(), "max"));
+        #assert(high7 == x7.End());
+
+        ForwardList<X> x8;
+        ForwardList<X>.Iterator end8 = x8.InsertAfter(x8.End(), X(0, "zero"));
+        end8 = x8.InsertAfter(end8, X(2, "two1"));
+        end8 = x8.InsertAfter(end8, X(2, "two2"));
+        ForwardList<X>.Iterator low8 = UpperBound(x8.Begin(), x8.End(), X(MinValue<int>(), "min"));
+        #assert(low8 == x8.Begin());
+        ForwardList<X>.Iterator zero8 = UpperBound(x8.Begin(), x8.End(), X(0, "zero"));
+        #assert(*zero8 == X(2, "two1"));
+        ForwardList<X>.Iterator one8 = UpperBound(x8.Begin(), x8.End(), X(1, "one"));
+        #assert(*one8 == X(2, "two1"));
+        ForwardList<X>.Iterator two8 = UpperBound(x8.Begin(), x8.End(), X(2, "two"));
+        #assert(two8 == x8.End());
+        ForwardList<X>.Iterator high8 = UpperBound(x8.Begin(), x8.End(), X(MaxValue<int>(), "max"));
+        #assert(high8 == x8.End());
+
+        ForwardList<X> x9;
+        ForwardList<X>.Iterator end9 = x9.InsertAfter(x9.End(), X(0, "zero"));
+        end9 = x9.InsertAfter(end9, X(2, "two"));
+        end9 = x9.InsertAfter(end9, X(3, "three"));
+        ForwardList<X>.Iterator low9 = UpperBound(x9.Begin(), x9.End(), X(MinValue<int>(), "min"));
+        #assert(low9 == x9.Begin());
+        ForwardList<X>.Iterator zero9 = UpperBound(x9.Begin(), x9.End(), X(0, "zero"));
+        #assert(*zero9 == X(2, "two"));
+        ForwardList<X>.Iterator one9 = UpperBound(x9.Begin(), x9.End(), X(1, "one"));
+        #assert(*one9 == X(2, "two"));
+        ForwardList<X>.Iterator two9 = UpperBound(x9.Begin(), x9.End(), X(2, "two"));
+        #assert(*two9 == X(3, "three"));
+        ForwardList<X>.Iterator three9 = UpperBound(x9.Begin(), x9.End(), X(3, "three"));
+        #assert(three9 == x9.End());
+        ForwardList<X>.Iterator high9 = UpperBound(x9.Begin(), x9.End(), X(MaxValue<int>(), "max"));
+        #assert(high9 == x9.End());
+
+        ForwardList<X> x10;
+        ForwardList<X>.Iterator end10 = x10.InsertAfter(x10.End(), X(0, "zero"));
+        end10 = x10.InsertAfter(end10, X(2, "two"));
+        end10 = x10.InsertAfter(end10, X(4, "four"));
+        ForwardList<X>.Iterator low10 = UpperBound(x10.Begin(), x10.End(), X(MinValue<int>(), "min"));
+        #assert(low10 == x10.Begin());
+        ForwardList<X>.Iterator zero10 = UpperBound(x10.Begin(), x10.End(), X(0, "zero"));
+        #assert(*zero10 == X(2, "two"));
+        ForwardList<X>.Iterator one10 = UpperBound(x10.Begin(), x10.End(), X(1, "one"));
+        #assert(*one10 == X(2, "two"));
+        ForwardList<X>.Iterator two10 = UpperBound(x10.Begin(), x10.End(), X(2, "two"));
+        #assert(*two10 == X(4, "four"));
+        ForwardList<X>.Iterator three10 = UpperBound(x10.Begin(), x10.End(), X(3, "three"));
+        #assert(*three10 == X(4, "four"));
+        ForwardList<X>.Iterator four10 = UpperBound(x10.Begin(), x10.End(), X(4, "four"));
+        #assert(four10 == x10.End());
+        ForwardList<X>.Iterator high10 = UpperBound(x10.Begin(), x10.End(), X(MaxValue<int>(), "max"));
+        #assert(high10 == x10.End());
+
+        ForwardList<X> x11;
+        ForwardList<X>.Iterator end11 = x11.End();
+        for (int i = 0;  i < 4096; ++i)
+        {
+            end11 = x11.InsertAfter(end11, X(i, ToString(i)));
+        }
+        ForwardList<X>.Iterator low11 = UpperBound(x11.Begin(), x11.End(), X(MinValue<int>(), "min"));
+        #assert(low11 == x11.Begin());
+        ForwardList<X>.Iterator zero11 = UpperBound(x11.Begin(), x11.End(), X(0, "zero"));
+        #assert(*zero11 == X(1, ToString(1)));
+        ForwardList<X>.Iterator k11 = UpperBound(x11.Begin(), x11.End(), X(1000, "thousand"));
+        #assert(*k11 == X(1001, ToString(1001)));
+        k11 = UpperBound(x11.Begin(), x11.End(), X(2048, "twokilos"));
+        #assert(*k11 == X(2049, ToString(2049)));
+        ForwardList<X>.Iterator n11 = UpperBound(x11.Begin(), x11.End(), X(4095, "fourkilos"));
+        #assert(n11 == x11.End());
+        ForwardList<X>.Iterator high11 = UpperBound(x11.Begin(), x11.End(), X(MaxValue<int>(), "max"));
+        #assert(high11 == x11.End());
+    }
+
+    public unit_test void UpperBoundRandomAccessIteratorTest()
+    {
+        List<X> x0;
+        List<X>.Iterator low0 = UpperBound(x0.Begin(), x0.End(), X(MinValue<int>(), "min"));
+        #assert(low0 == x0.Begin());
+        List<X>.Iterator zero0 = UpperBound(x0.Begin(), x0.End(), X(0, "zero"));
+        #assert(zero0 == x0.End());
+        List<X>.Iterator high0 = UpperBound(x0.Begin(), x0.End(), X(MaxValue<int>(), "max"));
+        #assert(high0 == x0.End());
+
+        List<X> x1;
+        x1.Add(X(0, "zero"));
+        List<X>.Iterator low1 = UpperBound(x1.Begin(), x1.End(), X(MinValue<int>(), "min"));
+        #assert(low1 == x1.Begin());
+        List<X>.Iterator zero1 = UpperBound(x1.Begin(), x1.End(), X(0, "zero"));
+        #assert(zero1 == x1.End());
+        List<X>.Iterator high1 = UpperBound(x1.Begin(), x1.End(), X(MaxValue<int>(), "max"));
+        #assert(high1 == x1.End());
+
+        List<X> x2;
+        x2.Add(X(0, "zero1"));
+        x2.Add(X(0, "zero2"));
+        List<X>.Iterator low2 = UpperBound(x2.Begin(), x2.End(), X(MinValue<int>(), "min"));
+        #assert(low2 == x2.Begin());
+        List<X>.Iterator zero2 = UpperBound(x2.Begin(), x2.End(), X(0, "zero1"));
+        #assert(zero2 == x2.End());
+        List<X>.Iterator high2 = UpperBound(x2.Begin(), x2.End(), X(MaxValue<int>(), "max"));
+        #assert(high2 == x2.End());
+
+        List<X> x3;
+        x3.Add(X(0, "zero1"));
+        x3.Add(X(0, "zero2"));
+        x3.Add(X(0, "zero3"));
+        List<X>.Iterator low3 = UpperBound(x3.Begin(), x3.End(), X(MinValue<int>(), "min"));
+        #assert(low3 == x3.Begin());
+        List<X>.Iterator zero3 = UpperBound(x3.Begin(), x3.End(), X(0, "zero1"));
+        #assert(zero3 == x3.End());
+        List<X>.Iterator high3 = UpperBound(x3.Begin(), x3.End(), X(MaxValue<int>(), "max"));
+        #assert(high3 == x3.End());
+
+        List<X> x4;
+        x4.Add(X(0, "zero"));
+        x4.Add(X(1, "one"));
+        List<X>.Iterator low4 = UpperBound(x4.Begin(), x4.End(), X(MinValue<int>(), "min"));
+        #assert(low4 == x4.Begin());
+        List<X>.Iterator zero4 = UpperBound(x4.Begin(), x4.End(), X(0, "zero"));
+        #assert(*zero4 == X(1, "one"));
+        List<X>.Iterator one4 = UpperBound(x4.Begin(), x4.End(), X(1, "one"));
+        #assert(one4 == x4.End());
+        List<X>.Iterator high4 = UpperBound(x4.Begin(), x4.End(), X(MaxValue<int>(), "max"));
+        #assert(high4 == x4.End());
+
+        List<X> x5;
+        x5.Add(X(0, "zero1"));
+        x5.Add(X(0, "zero2"));
+        x5.Add(X(1, "one"));
+        List<X>.Iterator low5 = UpperBound(x5.Begin(), x5.End(), X(MinValue<int>(), "min"));
+        #assert(low5 == x5.Begin());
+        List<X>.Iterator zero5 = UpperBound(x5.Begin(), x5.End(), X(0, "zero1"));
+        #assert(*zero5 == X(1, "one"));
+        List<X>.Iterator one5 = UpperBound(x5.Begin(), x5.End(), X(1, "one"));
+        #assert(one5 == x5.End());
+        List<X>.Iterator high5 = UpperBound(x5.Begin(), x5.End(), X(MaxValue<int>(), "max"));
+        #assert(high5 == x5.End());
+
+        List<X> x6;
+        x6.Add(X(0, "zero"));
+        x6.Add(X(1, "one1"));
+        x6.Add(X(1, "one2"));
+        List<X>.Iterator low6 = UpperBound(x6.Begin(), x6.End(), X(MinValue<int>(), "min"));
+        #assert(low6 == x6.Begin());
+        List<X>.Iterator zero6 = UpperBound(x6.Begin(), x6.End(), X(0, "zero"));
+        #assert(*zero6 == X(1, "one1"));
+        List<X>.Iterator one6 = UpperBound(x6.Begin(), x6.End(), X(1, "one1"));
+        #assert(one6 == x6.End());
+        List<X>.Iterator high6 = UpperBound(x6.Begin(), x6.End(), X(MaxValue<int>(), "max"));
+        #assert(high6 == x6.End());
+
+        List<X> x7;
+        x7.Add(X(0, "zero"));
+        x7.Add(X(1, "one"));
+        x7.Add(X(2, "two"));
+        List<X>.Iterator low7 = UpperBound(x7.Begin(), x7.End(), X(MinValue<int>(), "min"));
+        #assert(low7 == x7.Begin());
+        List<X>.Iterator zero7 = UpperBound(x7.Begin(), x7.End(), X(0, "zero"));
+        #assert(*zero7 == X(1, "one"));
+        List<X>.Iterator one7 = UpperBound(x7.Begin(), x7.End(), X(1, "one"));
+        #assert(*one7 == X(2, "two"));
+        List<X>.Iterator two7 = UpperBound(x7.Begin(), x7.End(), X(2, "two"));
+        #assert(two7 == x7.End());
+        List<X>.Iterator high7 = UpperBound(x7.Begin(), x7.End(), X(MaxValue<int>(), "max"));
+        #assert(high7 == x7.End());
+
+        List<X> x8;
+        x8.Add(X(0, "zero"));
+        x8.Add(X(2, "two1"));
+        x8.Add(X(2, "two2"));
+        List<X>.Iterator low8 = UpperBound(x8.Begin(), x8.End(), X(MinValue<int>(), "min"));
+        #assert(low8 == x8.Begin());
+        List<X>.Iterator zero8 = UpperBound(x8.Begin(), x8.End(), X(0, "zero"));
+        #assert(*zero8 == X(2, "two1"));
+        List<X>.Iterator one8 = UpperBound(x8.Begin(), x8.End(), X(1, "one"));
+        #assert(*one8 == X(2, "two1"));
+        List<X>.Iterator two8 = UpperBound(x8.Begin(), x8.End(), X(2, "two"));
+        #assert(two8 == x8.End());
+        List<X>.Iterator high8 = UpperBound(x8.Begin(), x8.End(), X(MaxValue<int>(), "max"));
+        #assert(high8 == x8.End());
+
+        List<X> x9;
+        x9.Add(X(0, "zero"));
+        x9.Add(X(2, "two"));
+        x9.Add(X(3, "three"));
+        List<X>.Iterator low9 = UpperBound(x9.Begin(), x9.End(), X(MinValue<int>(), "min"));
+        #assert(low9 == x9.Begin());
+        List<X>.Iterator zero9 = UpperBound(x9.Begin(), x9.End(), X(0, "zero"));
+        #assert(*zero9 == X(2, "two"));
+        List<X>.Iterator one9 = UpperBound(x9.Begin(), x9.End(), X(1, "one"));
+        #assert(*one9 == X(2, "two"));
+        List<X>.Iterator two9 = UpperBound(x9.Begin(), x9.End(), X(2, "two"));
+        #assert(*two9 == X(3, "three"));
+        List<X>.Iterator three9 = UpperBound(x9.Begin(), x9.End(), X(3, "three"));
+        #assert(three9 == x9.End());
+        List<X>.Iterator high9 = UpperBound(x9.Begin(), x9.End(), X(MaxValue<int>(), "max"));
+        #assert(high9 == x9.End());
+
+        List<X> x10;
+        x10.Add(X(0, "zero"));
+        x10.Add(X(2, "two"));
+        x10.Add(X(4, "four"));
+        List<X>.Iterator low10 = UpperBound(x10.Begin(), x10.End(), X(MinValue<int>(), "min"));
+        #assert(low10 == x10.Begin());
+        List<X>.Iterator zero10 = UpperBound(x10.Begin(), x10.End(), X(0, "zero"));
+        #assert(*zero10 == X(2, "two"));
+        List<X>.Iterator one10 = UpperBound(x10.Begin(), x10.End(), X(1, "one"));
+        #assert(*one10 == X(2, "two"));
+        List<X>.Iterator two10 = UpperBound(x10.Begin(), x10.End(), X(2, "two"));
+        #assert(*two10 == X(5, "four"));
+        List<X>.Iterator three10 = UpperBound(x10.Begin(), x10.End(), X(3, "three"));
+        #assert(*three10 == X(4, "four"));
+        List<X>.Iterator four10 = UpperBound(x10.Begin(), x10.End(), X(4, "four"));
+        #assert(four10 == x10.End());
+        List<X>.Iterator high10 = UpperBound(x10.Begin(), x10.End(), X(MaxValue<int>(), "max"));
+        #assert(high10 == x10.End());
+
+        List<X> x11;
+        for (int i = 0;  i < 4096; ++i)
+        {
+            x11.Add(X(i, ToString(i)));
+        }
+        List<X>.Iterator low11 = UpperBound(x11.Begin(), x11.End(), X(MinValue<int>(), "min"));
+        #assert(low11 == x11.Begin());
+        List<X>.Iterator zero11 = UpperBound(x11.Begin(), x11.End(), X(0, "zero"));
+        #assert(*zero11 == X(1, ToString(1)));
+        List<X>.Iterator k11 = UpperBound(x11.Begin(), x11.End(), X(1000, "thousand"));
+        #assert(*k11 == X(1001, ToString(1001)));
+        k11 = UpperBound(x11.Begin(), x11.End(), X(2048, "twokilos"));
+        #assert(*k11 == X(2049, ToString(2049)));
+        List<X>.Iterator n11 = UpperBound(x11.Begin(), x11.End(), X(4095, "fourkilos"));
+        #assert(n11 == x11.End());
+        List<X>.Iterator high11 = UpperBound(x11.Begin(), x11.End(), X(MaxValue<int>(), "max"));
+        #assert(high11 == x11.End());
+    }
+
+    public unit_test void UpperBoundForwardIteratorRelationTest()
+    {
+        ForwardList<X> x0;
+        ForwardList<X>.Iterator low0 = UpperBound(x0.Begin(), x0.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low0 == x0.Begin());
+        ForwardList<X>.Iterator zero0 = UpperBound(x0.Begin(), x0.End(), X(0, "zero"), Less<X>());
+        #assert(zero0 == x0.End());
+        ForwardList<X>.Iterator high0 = UpperBound(x0.Begin(), x0.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high0 == x0.End());
+
+        ForwardList<X> x1;
+        x1.InsertAfter(x1.End(), X(0, "zero"));
+        ForwardList<X>.Iterator low1 = UpperBound(x1.Begin(), x1.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low1 == x1.Begin());
+        ForwardList<X>.Iterator zero1 = UpperBound(x1.Begin(), x1.End(), X(0, "zero"), Less<X>());
+        #assert(zero1 == x1.End());
+        ForwardList<X>.Iterator high1 = UpperBound(x1.Begin(), x1.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high1 == x1.End());
+
+        ForwardList<X> x2;
+        ForwardList<X>.Iterator end2 = x2.InsertAfter(x2.End(), X(0, "zero1"));
+        end2 = x2.InsertAfter(end2, X(0, "zero2"));
+        ForwardList<X>.Iterator low2 = UpperBound(x2.Begin(), x2.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low2 == x2.Begin());
+        ForwardList<X>.Iterator zero2 = UpperBound(x2.Begin(), x2.End(), X(0, "zero1"), Less<X>());
+        #assert(zero2 == x2.End());
+        ForwardList<X>.Iterator high2 = UpperBound(x2.Begin(), x2.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high2 == x2.End());
+
+        ForwardList<X> x3;
+        ForwardList<X>.Iterator end3 = x3.InsertAfter(x3.End(), X(0, "zero1"));
+        end3 = x3.InsertAfter(end3, X(0, "zero2"));
+        end3 = x3.InsertAfter(end3, X(0, "zero3"));
+        ForwardList<X>.Iterator low3 = UpperBound(x3.Begin(), x3.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low3 == x3.Begin());
+        ForwardList<X>.Iterator zero3 = UpperBound(x3.Begin(), x3.End(), X(0, "zero1"), Less<X>());
+        #assert(zero3 == x3.End());
+        ForwardList<X>.Iterator high3 = UpperBound(x3.Begin(), x3.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high3 == x3.End());
+
+        ForwardList<X> x4;
+        ForwardList<X>.Iterator end4 = x4.InsertAfter(x4.End(), X(0, "zero"));
+        end4 = x4.InsertAfter(end4, X(1, "one"));
+        ForwardList<X>.Iterator low4 = UpperBound(x4.Begin(), x4.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low4 == x4.Begin());
+        ForwardList<X>.Iterator zero4 = UpperBound(x4.Begin(), x4.End(), X(0, "zero"), Less<X>());
+        #assert(*zero4 == X(1, "one"));
+        ForwardList<X>.Iterator one4 = UpperBound(x4.Begin(), x4.End(), X(1, "one"), Less<X>());
+        #assert(one4 == x4.End());
+        ForwardList<X>.Iterator high4 = UpperBound(x4.Begin(), x4.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high4 == x4.End());
+
+        ForwardList<X> x5;
+        ForwardList<X>.Iterator end5 = x5.InsertAfter(x5.End(), X(0, "zero1"));
+        end5 = x5.InsertAfter(end5, X(0, "zero2"));
+        end5 = x5.InsertAfter(end5, X(1, "one"));
+        ForwardList<X>.Iterator low5 = UpperBound(x5.Begin(), x5.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low5 == x5.Begin());
+        ForwardList<X>.Iterator zero5 = UpperBound(x5.Begin(), x5.End(), X(0, "zero1"), Less<X>());
+        #assert(*zero5 == X(1, "one"));
+        ForwardList<X>.Iterator one5 = UpperBound(x5.Begin(), x5.End(), X(1, "one"), Less<X>());
+        #assert(one5 == x5.End());
+        ForwardList<X>.Iterator high5 = UpperBound(x5.Begin(), x5.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high5 == x5.End());
+
+        ForwardList<X> x6;
+        ForwardList<X>.Iterator end6 = x6.InsertAfter(x6.End(), X(0, "zero"));
+        end6 = x6.InsertAfter(end6, X(1, "one1"));
+        end6 = x6.InsertAfter(end6, X(1, "one2"));
+        ForwardList<X>.Iterator low6 = UpperBound(x6.Begin(), x6.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low6 == x6.Begin());
+        ForwardList<X>.Iterator zero6 = UpperBound(x6.Begin(), x6.End(), X(0, "zero"), Less<X>());
+        #assert(*zero6 == X(1, "one1"));
+        ForwardList<X>.Iterator one6 = UpperBound(x6.Begin(), x6.End(), X(1, "one1"), Less<X>());
+        #assert(one6 == x6.End());
+        ForwardList<X>.Iterator high6 = UpperBound(x6.Begin(), x6.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high6 == x6.End());
+
+        ForwardList<X> x7;
+        ForwardList<X>.Iterator end7 = x7.InsertAfter(x7.End(), X(0, "zero"));
+        end7 = x7.InsertAfter(end7, X(1, "one"));
+        end7 = x7.InsertAfter(end7, X(2, "two"));
+        ForwardList<X>.Iterator low7 = UpperBound(x7.Begin(), x7.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low7 == x7.Begin());
+        ForwardList<X>.Iterator zero7 = UpperBound(x7.Begin(), x7.End(), X(0, "zero"), Less<X>());
+        #assert(*zero7 == X(1, "one"));
+        ForwardList<X>.Iterator one7 = UpperBound(x7.Begin(), x7.End(), X(1, "one"), Less<X>());
+        #assert(*one7 == X(2, "two"));
+        ForwardList<X>.Iterator two7 = UpperBound(x7.Begin(), x7.End(), X(2, "two"), Less<X>());
+        #assert(two7 == x7.End());
+        ForwardList<X>.Iterator high7 = UpperBound(x7.Begin(), x7.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high7 == x7.End());
+
+        ForwardList<X> x8;
+        ForwardList<X>.Iterator end8 = x8.InsertAfter(x8.End(), X(0, "zero"));
+        end8 = x8.InsertAfter(end8, X(2, "two1"));
+        end8 = x8.InsertAfter(end8, X(2, "two2"));
+        ForwardList<X>.Iterator low8 = UpperBound(x8.Begin(), x8.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low8 == x8.Begin());
+        ForwardList<X>.Iterator zero8 = UpperBound(x8.Begin(), x8.End(), X(0, "zero"), Less<X>());
+        #assert(*zero8 == X(2, "two1"));
+        ForwardList<X>.Iterator one8 = UpperBound(x8.Begin(), x8.End(), X(1, "one"), Less<X>());
+        #assert(*one8 == X(2, "two1"));
+        ForwardList<X>.Iterator two8 = UpperBound(x8.Begin(), x8.End(), X(2, "two"), Less<X>());
+        #assert(two8 == x8.End());
+        ForwardList<X>.Iterator high8 = UpperBound(x8.Begin(), x8.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high8 == x8.End());
+
+        ForwardList<X> x9;
+        ForwardList<X>.Iterator end9 = x9.InsertAfter(x9.End(), X(0, "zero"));
+        end9 = x9.InsertAfter(end9, X(2, "two"));
+        end9 = x9.InsertAfter(end9, X(3, "three"));
+        ForwardList<X>.Iterator low9 = UpperBound(x9.Begin(), x9.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low9 == x9.Begin());
+        ForwardList<X>.Iterator zero9 = UpperBound(x9.Begin(), x9.End(), X(0, "zero"), Less<X>());
+        #assert(*zero9 == X(2, "two"));
+        ForwardList<X>.Iterator one9 = UpperBound(x9.Begin(), x9.End(), X(1, "one"), Less<X>());
+        #assert(*one9 == X(2, "two"));
+        ForwardList<X>.Iterator two9 = UpperBound(x9.Begin(), x9.End(), X(2, "two"), Less<X>());
+        #assert(*two9 == X(3, "three"));
+        ForwardList<X>.Iterator three9 = UpperBound(x9.Begin(), x9.End(), X(3, "three"), Less<X>());
+        #assert(three9 == x9.End());
+        ForwardList<X>.Iterator high9 = UpperBound(x9.Begin(), x9.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high9 == x9.End());
+
+        ForwardList<X> x10;
+        ForwardList<X>.Iterator end10 = x10.InsertAfter(x10.End(), X(0, "zero"));
+        end10 = x10.InsertAfter(end10, X(2, "two"));
+        end10 = x10.InsertAfter(end10, X(4, "four"));
+        ForwardList<X>.Iterator low10 = UpperBound(x10.Begin(), x10.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low10 == x10.Begin());
+        ForwardList<X>.Iterator zero10 = UpperBound(x10.Begin(), x10.End(), X(0, "zero"), Less<X>());
+        #assert(*zero10 == X(2, "two"));
+        ForwardList<X>.Iterator one10 = UpperBound(x10.Begin(), x10.End(), X(1, "one"), Less<X>());
+        #assert(*one10 == X(2, "two"));
+        ForwardList<X>.Iterator two10 = UpperBound(x10.Begin(), x10.End(), X(2, "two"), Less<X>());
+        #assert(*two10 == X(4, "four"));
+        ForwardList<X>.Iterator three10 = UpperBound(x10.Begin(), x10.End(), X(3, "three"), Less<X>());
+        #assert(*three10 == X(4, "four"));
+        ForwardList<X>.Iterator four10 = UpperBound(x10.Begin(), x10.End(), X(4, "four"), Less<X>());
+        #assert(four10 == x10.End());
+        ForwardList<X>.Iterator high10 = UpperBound(x10.Begin(), x10.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high10 == x10.End());
+
+        ForwardList<X> x11;
+        ForwardList<X>.Iterator end11 = x11.End();
+        for (int i = 0;  i < 4096; ++i)
+        {
+            end11 = x11.InsertAfter(end11, X(i, ToString(i)));
+        }
+        ForwardList<X>.Iterator low11 = UpperBound(x11.Begin(), x11.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low11 == x11.Begin());
+        ForwardList<X>.Iterator zero11 = UpperBound(x11.Begin(), x11.End(), X(0, "zero"), Less<X>());
+        #assert(*zero11 == X(1, ToString(1)));
+        ForwardList<X>.Iterator k11 = UpperBound(x11.Begin(), x11.End(), X(1000, "thousand"), Less<X>());
+        #assert(*k11 == X(1001, ToString(1001)));
+        k11 = UpperBound(x11.Begin(), x11.End(), X(2048, "twokilos"), Less<X>());
+        #assert(*k11 == X(2049, ToString(2049)));
+        ForwardList<X>.Iterator n11 = UpperBound(x11.Begin(), x11.End(), X(4095, "fourkilos"), Less<X>());
+        #assert(n11 == x11.End());
+        ForwardList<X>.Iterator high11 = UpperBound(x11.Begin(), x11.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high11 == x11.End());
+    }
+
+    public unit_test void UpperBoundRandomAccessIteratorRelationTest()
+    {
+        List<X> x0;
+        List<X>.Iterator low0 = UpperBound(x0.Begin(), x0.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low0 == x0.Begin());
+        List<X>.Iterator zero0 = UpperBound(x0.Begin(), x0.End(), X(0, "zero"), Less<X>());
+        #assert(zero0 == x0.End());
+        List<X>.Iterator high0 = UpperBound(x0.Begin(), x0.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high0 == x0.End());
+
+        List<X> x1;
+        x1.Add(X(0, "zero"));
+        List<X>.Iterator low1 = UpperBound(x1.Begin(), x1.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low1 == x1.Begin());
+        List<X>.Iterator zero1 = UpperBound(x1.Begin(), x1.End(), X(0, "zero"), Less<X>());
+        #assert(zero1 == x1.End());
+        List<X>.Iterator high1 = UpperBound(x1.Begin(), x1.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high1 == x1.End());
+
+        List<X> x2;
+        x2.Add(X(0, "zero1"));
+        x2.Add(X(0, "zero2"));
+        List<X>.Iterator low2 = UpperBound(x2.Begin(), x2.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low2 == x2.Begin());
+        List<X>.Iterator zero2 = UpperBound(x2.Begin(), x2.End(), X(0, "zero1"), Less<X>());
+        #assert(zero2 == x2.End());
+        List<X>.Iterator high2 = UpperBound(x2.Begin(), x2.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high2 == x2.End());
+
+        List<X> x3;
+        x3.Add(X(0, "zero1"));
+        x3.Add(X(0, "zero2"));
+        x3.Add(X(0, "zero3"));
+        List<X>.Iterator low3 = UpperBound(x3.Begin(), x3.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low3 == x3.Begin());
+        List<X>.Iterator zero3 = UpperBound(x3.Begin(), x3.End(), X(0, "zero1"), Less<X>());
+        #assert(zero3 == x3.End());
+        List<X>.Iterator high3 = UpperBound(x3.Begin(), x3.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high3 == x3.End());
+
+        List<X> x4;
+        x4.Add(X(0, "zero"));
+        x4.Add(X(1, "one"));
+        List<X>.Iterator low4 = UpperBound(x4.Begin(), x4.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low4 == x4.Begin());
+        List<X>.Iterator zero4 = UpperBound(x4.Begin(), x4.End(), X(0, "zero"), Less<X>());
+        #assert(*zero4 == X(1, "one"));
+        List<X>.Iterator one4 = UpperBound(x4.Begin(), x4.End(), X(1, "one"), Less<X>());
+        #assert(one4 == x4.End());
+        List<X>.Iterator high4 = UpperBound(x4.Begin(), x4.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high4 == x4.End());
+
+        List<X> x5;
+        x5.Add(X(0, "zero1"));
+        x5.Add(X(0, "zero2"));
+        x5.Add(X(1, "one"));
+        List<X>.Iterator low5 = UpperBound(x5.Begin(), x5.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low5 == x5.Begin());
+        List<X>.Iterator zero5 = UpperBound(x5.Begin(), x5.End(), X(0, "zero1"), Less<X>());
+        #assert(*zero5 == X(1, "one"));
+        List<X>.Iterator one5 = UpperBound(x5.Begin(), x5.End(), X(1, "one"), Less<X>());
+        #assert(one5 == x5.End());
+        List<X>.Iterator high5 = UpperBound(x5.Begin(), x5.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high5 == x5.End());
+
+        List<X> x6;
+        x6.Add(X(0, "zero"));
+        x6.Add(X(1, "one1"));
+        x6.Add(X(1, "one2"));
+        List<X>.Iterator low6 = UpperBound(x6.Begin(), x6.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low6 == x6.Begin());
+        List<X>.Iterator zero6 = UpperBound(x6.Begin(), x6.End(), X(0, "zero"), Less<X>());
+        #assert(*zero6 == X(1, "one1"));
+        List<X>.Iterator one6 = UpperBound(x6.Begin(), x6.End(), X(1, "one1"), Less<X>());
+        #assert(one6 == x6.End());
+        List<X>.Iterator high6 = UpperBound(x6.Begin(), x6.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high6 == x6.End());
+
+        List<X> x7;
+        x7.Add(X(0, "zero"));
+        x7.Add(X(1, "one"));
+        x7.Add(X(2, "two"));
+        List<X>.Iterator low7 = UpperBound(x7.Begin(), x7.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low7 == x7.Begin());
+        List<X>.Iterator zero7 = UpperBound(x7.Begin(), x7.End(), X(0, "zero"), Less<X>());
+        #assert(*zero7 == X(1, "one"));
+        List<X>.Iterator one7 = UpperBound(x7.Begin(), x7.End(), X(1, "one"), Less<X>());
+        #assert(*one7 == X(2, "two"));
+        List<X>.Iterator two7 = UpperBound(x7.Begin(), x7.End(), X(2, "two"), Less<X>());
+        #assert(two7 == x7.End());
+        List<X>.Iterator high7 = UpperBound(x7.Begin(), x7.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high7 == x7.End());
+
+        List<X> x8;
+        x8.Add(X(0, "zero"));
+        x8.Add(X(2, "two1"));
+        x8.Add(X(2, "two2"));
+        List<X>.Iterator low8 = UpperBound(x8.Begin(), x8.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low8 == x8.Begin());
+        List<X>.Iterator zero8 = UpperBound(x8.Begin(), x8.End(), X(0, "zero"), Less<X>());
+        #assert(*zero8 == X(2, "two1"));
+        List<X>.Iterator one8 = UpperBound(x8.Begin(), x8.End(), X(1, "one"), Less<X>());
+        #assert(*one8 == X(2, "two1"));
+        List<X>.Iterator two8 = UpperBound(x8.Begin(), x8.End(), X(2, "two"), Less<X>());
+        #assert(two8 == x8.End());
+        List<X>.Iterator high8 = UpperBound(x8.Begin(), x8.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high8 == x8.End());
+
+        List<X> x9;
+        x9.Add(X(0, "zero"));
+        x9.Add(X(2, "two"));
+        x9.Add(X(3, "three"));
+        List<X>.Iterator low9 = UpperBound(x9.Begin(), x9.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low9 == x9.Begin());
+        List<X>.Iterator zero9 = UpperBound(x9.Begin(), x9.End(), X(0, "zero"), Less<X>());
+        #assert(*zero9 == X(2, "two"));
+        List<X>.Iterator one9 = UpperBound(x9.Begin(), x9.End(), X(1, "one"), Less<X>());
+        #assert(*one9 == X(2, "two"));
+        List<X>.Iterator two9 = UpperBound(x9.Begin(), x9.End(), X(2, "two"), Less<X>());
+        #assert(*two9 == X(3, "three"));
+        List<X>.Iterator three9 = UpperBound(x9.Begin(), x9.End(), X(3, "three"), Less<X>());
+        #assert(three9 == x9.End());
+        List<X>.Iterator high9 = UpperBound(x9.Begin(), x9.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high9 == x9.End());
+
+        List<X> x10;
+        x10.Add(X(0, "zero"));
+        x10.Add(X(2, "two"));
+        x10.Add(X(4, "four"));
+        List<X>.Iterator low10 = UpperBound(x10.Begin(), x10.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low10 == x10.Begin());
+        List<X>.Iterator zero10 = UpperBound(x10.Begin(), x10.End(), X(0, "zero"), Less<X>());
+        #assert(*zero10 == X(2, "two"));
+        List<X>.Iterator one10 = UpperBound(x10.Begin(), x10.End(), X(1, "one"), Less<X>());
+        #assert(*one10 == X(2, "two"));
+        List<X>.Iterator two10 = UpperBound(x10.Begin(), x10.End(), X(2, "two"), Less<X>());
+        #assert(*two10 == X(5, "four"));
+        List<X>.Iterator three10 = UpperBound(x10.Begin(), x10.End(), X(3, "three"), Less<X>());
+        #assert(*three10 == X(4, "four"));
+        List<X>.Iterator four10 = UpperBound(x10.Begin(), x10.End(), X(4, "four"), Less<X>());
+        #assert(four10 == x10.End());
+        List<X>.Iterator high10 = UpperBound(x10.Begin(), x10.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high10 == x10.End());
+
+        List<X> x11;
+        for (int i = 0;  i < 4096; ++i)
+        {
+            x11.Add(X(i, ToString(i)));
+        }
+        List<X>.Iterator low11 = UpperBound(x11.Begin(), x11.End(), X(MinValue<int>(), "min"), Less<X>());
+        #assert(low11 == x11.Begin());
+        List<X>.Iterator zero11 = UpperBound(x11.Begin(), x11.End(), X(0, "zero"), Less<X>());
+        #assert(*zero11 == X(1, ToString(1)));
+        List<X>.Iterator k11 = UpperBound(x11.Begin(), x11.End(), X(1000, "thousand"), Less<X>());
+        #assert(*k11 == X(1001, ToString(1001)));
+        k11 = UpperBound(x11.Begin(), x11.End(), X(2048, "twokilos"), Less<X>());
+        #assert(*k11 == X(2049, ToString(2049)));
+        List<X>.Iterator n11 = UpperBound(x11.Begin(), x11.End(), X(4095, "fourkilos"), Less<X>());
+        #assert(n11 == x11.End());
+        List<X>.Iterator high11 = UpperBound(x11.Begin(), x11.End(), X(MaxValue<int>(), "max"), Less<X>());
+        #assert(high11 == x11.End());
+    }
+
+    public unit_test void EqualRangeTest()
+    {
+        List<int> x0;
+        Pair<List<int>.Iterator, List<int>.Iterator> p0 = EqualRange(x0.Begin(), x0.End(), 0);
+        #assert(p0.first == x0.End());
+        #assert(p0.second == x0.End());
+        List<int> x1;
+        x1.Add(0);
+        x1.Add(0);
+        x1.Add(0);
+        x1.Add(1);
+        x1.Add(1);
+        x1.Add(1);
+        x1.Add(3);
+        x1.Add(5);
+        x1.Add(5);
+        x1.Add(8);
+        x1.Add(8);
+        x1.Add(9);
+        x1.Add(9);
+        Pair<List<int>.Iterator, List<int>.Iterator> p1 = EqualRange(x1.Begin(), x1.End(), MinValue<int>());
+        #assert(p1.first == x1.Begin());
+        #assert(p1.second == x1.Begin());
+        Pair<List<int>.Iterator, List<int>.Iterator> p2 = EqualRange(x1.Begin(), x1.End(), 0);
+        #assert(p2.first == x1.Begin());
+        #assert(p2.second == x1.Begin() + 3);
+        Pair<List<int>.Iterator, List<int>.Iterator> p3 = EqualRange(x1.Begin(), x1.End(), 1);
+        #assert(p3.first == x1.Begin() + 3);
+        #assert(p3.second == x1.Begin() + 6);
+        Pair<List<int>.Iterator, List<int>.Iterator> p4 = EqualRange(x1.Begin(), x1.End(), 2);
+        #assert(p4.first == x1.Begin() + 6);
+        #assert(p4.second == x1.Begin() + 6);
+        Pair<List<int>.Iterator, List<int>.Iterator> p5 = EqualRange(x1.Begin(), x1.End(), 3);
+        #assert(p5.first == x1.Begin() + 6);
+        #assert(p5.second == x1.Begin() + 7);
+        Pair<List<int>.Iterator, List<int>.Iterator> p6 = EqualRange(x1.Begin(), x1.End(), 4);
+        #assert(p6.first == x1.Begin() + 7);
+        #assert(p6.second == x1.Begin() + 7);
+        Pair<List<int>.Iterator, List<int>.Iterator> p7 = EqualRange(x1.Begin(), x1.End(), 5);
+        #assert(p7.first == x1.Begin() + 7);
+        #assert(p7.second == x1.Begin() + 9);
+        Pair<List<int>.Iterator, List<int>.Iterator> p8 = EqualRange(x1.Begin(), x1.End(), 6);
+        #assert(p8.first == x1.Begin() + 9);
+        #assert(p8.second == x1.Begin() + 9);
+        Pair<List<int>.Iterator, List<int>.Iterator> p9 = EqualRange(x1.Begin(), x1.End(), 7);
+        #assert(p9.first == x1.Begin() + 9);
+        #assert(p9.second == x1.Begin() + 9);
+        Pair<List<int>.Iterator, List<int>.Iterator> p10 = EqualRange(x1.Begin(), x1.End(), 8);
+        #assert(p10.first == x1.Begin() + 9);
+        #assert(p10.second == x1.Begin() + 11);
+        Pair<List<int>.Iterator, List<int>.Iterator> p11 = EqualRange(x1.Begin(), x1.End(), 9);
+        #assert(p11.first == x1.Begin() + 11);
+        #assert(p11.second == x1.End());
+        Pair<List<int>.Iterator, List<int>.Iterator> p12 = EqualRange(x1.Begin(), x1.End(), MaxValue<int>());
+        #assert(p12.first == x1.End());
+        #assert(p12.second == x1.End());
+    }
+
+    public unit_test void EqualRangeRelationTest()
+    {
+        List<int> x0;
+        Pair<List<int>.Iterator, List<int>.Iterator> p0 = EqualRange(x0.Begin(), x0.End(), 0, Less<int>());
+        #assert(p0.first == x0.End());
+        #assert(p0.second == x0.End());
+        List<int> x1;
+        x1.Add(0);
+        x1.Add(0);
+        x1.Add(0);
+        x1.Add(1);
+        x1.Add(1);
+        x1.Add(1);
+        x1.Add(3);
+        x1.Add(5);
+        x1.Add(5);
+        x1.Add(8);
+        x1.Add(8);
+        x1.Add(9);
+        x1.Add(9);
+        Pair<List<int>.Iterator, List<int>.Iterator> p1 = EqualRange(x1.Begin(), x1.End(), MinValue<int>(), Less<int>());
+        #assert(p1.first == x1.Begin());
+        #assert(p1.second == x1.Begin());
+        Pair<List<int>.Iterator, List<int>.Iterator> p2 = EqualRange(x1.Begin(), x1.End(), 0, Less<int>());
+        #assert(p2.first == x1.Begin());
+        #assert(p2.second == x1.Begin() + 3);
+        Pair<List<int>.Iterator, List<int>.Iterator> p3 = EqualRange(x1.Begin(), x1.End(), 1, Less<int>());
+        #assert(p3.first == x1.Begin() + 3);
+        #assert(p3.second == x1.Begin() + 6);
+        Pair<List<int>.Iterator, List<int>.Iterator> p4 = EqualRange(x1.Begin(), x1.End(), 2, Less<int>());
+        #assert(p4.first == x1.Begin() + 6);
+        #assert(p4.second == x1.Begin() + 6);
+        Pair<List<int>.Iterator, List<int>.Iterator> p5 = EqualRange(x1.Begin(), x1.End(), 3, Less<int>());
+        #assert(p5.first == x1.Begin() + 6);
+        #assert(p5.second == x1.Begin() + 7);
+        Pair<List<int>.Iterator, List<int>.Iterator> p6 = EqualRange(x1.Begin(), x1.End(), 4, Less<int>());
+        #assert(p6.first == x1.Begin() + 7);
+        #assert(p6.second == x1.Begin() + 7);
+        Pair<List<int>.Iterator, List<int>.Iterator> p7 = EqualRange(x1.Begin(), x1.End(), 5, Less<int>());
+        #assert(p7.first == x1.Begin() + 7);
+        #assert(p7.second == x1.Begin() + 9);
+        Pair<List<int>.Iterator, List<int>.Iterator> p8 = EqualRange(x1.Begin(), x1.End(), 6, Less<int>());
+        #assert(p8.first == x1.Begin() + 9);
+        #assert(p8.second == x1.Begin() + 9);
+        Pair<List<int>.Iterator, List<int>.Iterator> p9 = EqualRange(x1.Begin(), x1.End(), 7, Less<int>());
+        #assert(p9.first == x1.Begin() + 9);
+        #assert(p9.second == x1.Begin() + 9);
+        Pair<List<int>.Iterator, List<int>.Iterator> p10 = EqualRange(x1.Begin(), x1.End(), 8, Less<int>());
+        #assert(p10.first == x1.Begin() + 9);
+        #assert(p10.second == x1.Begin() + 11);
+        Pair<List<int>.Iterator, List<int>.Iterator> p11 = EqualRange(x1.Begin(), x1.End(), 9, Less<int>());
+        #assert(p11.first == x1.Begin() + 11);
+        #assert(p11.second == x1.End());
+        Pair<List<int>.Iterator, List<int>.Iterator> p12 = EqualRange(x1.Begin(), x1.End(), MaxValue<int>(), Less<int>());
+        #assert(p12.first == x1.End());
+        #assert(p12.second == x1.End());
+    }
+
+    public unit_test void FindValueTest()
+    {
+        List<int> a0;
+        List<int>.Iterator i0 = Find(a0.Begin(), a0.End(), 0);
+        #assert(i0 == a0.End());
+        #assert(a0.IsEmpty());
+        #assert(a0.Count() == 0);
+
+        List<int> a1;
+        a1.Add(1);
+        List<int>.Iterator i1 = Find(a1.Begin(), a1.End(), 0);
+        #assert(i1 == a1.End());
+        #assert(!a1.IsEmpty());
+        #assert(a1.Count() == 1);
+
+        List<int>.Iterator i12 = Find(a1.Begin(), a1.End(), 1);
+        #assert(i12 == a1.Begin());
+
+        List<int>.Iterator i13 = Find(a1.Begin(), a1.End(), MaxValue<int>());
+        #assert(i13 == a1.End());
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(2);
+        List<int>.Iterator i2 = Find(a2.Begin(), a2.End(), 0);
+        #assert(i2 == a2.End());
+        #assert(!a2.IsEmpty());
+        #assert(a2.Count() == 2);
+
+        List<int>.Iterator i22 = Find(a2.Begin(), a2.End(), 1);
+        #assert(i22 == a2.Begin());
+
+        List<int>.Iterator i23 = Find(a2.Begin(), a2.End(), 2);
+        #assert(i23 == a2.Begin() + 1);
+        
+        List<int>.Iterator i24 = Find(a2.Begin(), a2.End(), MaxValue<int>());
+        #assert(i24 == a2.End());
+
+        List<int> a3;
+        a3.Add(1);
+        a3.Add(2);
+        a3.Add(3);
+        List<int>.Iterator i3 = Find(a3.Begin(), a3.End(), 0);
+        #assert(i3 == a3.End());
+        #assert(!a3.IsEmpty());
+        #assert(a3.Count() == 3);
+
+        List<int>.Iterator i32 = Find(a3.Begin(), a3.End(), 1);
+        #assert(i32 == a3.Begin());
+
+        List<int>.Iterator i33 = Find(a3.Begin(), a3.End(), 2);
+        #assert(i33 == a3.Begin() + 1);
+        
+        List<int>.Iterator i34 = Find(a3.Begin(), a3.End(), 3);
+        #assert(i34 == a3.Begin() + 2);
+
+        List<int>.Iterator i35 = Find(a3.Begin(), a3.End(), MaxValue<int>());
+        #assert(i35 == a3.End());
+
+        List<int> a4;
+        for (int i = 0; i < 100; ++i)
+        {
+            a4.Add(i);
+        }
+        List<int>.Iterator i40 = Find(a4.Begin(), a4.End(), MinValue<int>());
+        #assert(i40 == a4.End());
+        for (int i = 0; i < 100; ++i)
+        {
+            List<int>.Iterator i41 = Find(a4.Begin(), a4.End(), i);
+            #assert(i41 == a4.Begin() + i);
+        }
+        List<int>.Iterator i42 = Find(a4.Begin(), a4.End(), MaxValue<int>());
+        #assert(i42 == a4.End());
+
+        List<int> a5;
+        for (int i = 0; i < 4096; ++i)
+        {
+            a5.Add(i);
+        }
+        List<int>.Iterator i50 = Find(a5.Begin(), a5.End(), MinValue<int>());
+        #assert(i50 == a5.End());
+        for (int i = 0; i < 4096; ++i)
+        {
+            List<int>.Iterator i51 = Find(a5.Begin(), a5.End(), i);
+            #assert(i51 == a5.Begin() + i);
+        }
+        List<int>.Iterator i52 = Find(a5.Begin(), a5.End(), MaxValue<int>());
+        #assert(i52 == a5.End());
+    }
+
+    class Eq : UnaryPred<int>
+    {
+        public nothrow Eq(int value_): value(value_)
+        {
+        }
+        public nothrow bool operator()(int x) const
+        {
+            return value == x;
+        }
+        private int value;
+    }
+
+    public unit_test void FindPredicateTest()
+    {
+        List<int> a0;
+        List<int>.Iterator i0 = Find(a0.Begin(), a0.End(), Eq(0));
+        #assert(i0 == a0.End());
+        #assert(a0.IsEmpty());
+        #assert(a0.Count() == 0);
+
+        List<int> a1;
+        a1.Add(1);
+        List<int>.Iterator i1 = Find(a1.Begin(), a1.End(), Eq(0));
+        #assert(i1 == a1.End());
+        #assert(!a1.IsEmpty());
+        #assert(a1.Count() == 1);
+
+        List<int>.Iterator i12 = Find(a1.Begin(), a1.End(), Eq(1));
+        #assert(i12 == a1.Begin());
+
+        List<int>.Iterator i13 = Find(a1.Begin(), a1.End(), Eq(MaxValue<int>()));
+        #assert(i13 == a1.End());
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(2);
+        List<int>.Iterator i2 = Find(a2.Begin(), a2.End(), Eq(0));
+        #assert(i2 == a2.End());
+        #assert(!a2.IsEmpty());
+        #assert(a2.Count() == 2);
+
+        List<int>.Iterator i22 = Find(a2.Begin(), a2.End(), Eq(1));
+        #assert(i22 == a2.Begin());
+
+        List<int>.Iterator i23 = Find(a2.Begin(), a2.End(), Eq(2));
+        #assert(i23 == a2.Begin() + 1);
+        
+        List<int>.Iterator i24 = Find(a2.Begin(), a2.End(), Eq(MaxValue<int>()));
+        #assert(i24 == a2.End());
+
+        List<int> a3;
+        a3.Add(1);
+        a3.Add(2);
+        a3.Add(3);
+        List<int>.Iterator i3 = Find(a3.Begin(), a3.End(), Eq(0));
+        #assert(i3 == a3.End());
+        #assert(!a3.IsEmpty());
+        #assert(a3.Count() == 3);
+
+        List<int>.Iterator i32 = Find(a3.Begin(), a3.End(), Eq(1));
+        #assert(i32 == a3.Begin());
+
+        List<int>.Iterator i33 = Find(a3.Begin(), a3.End(), Eq(2));
+        #assert(i33 == a3.Begin() + 1);
+        
+        List<int>.Iterator i34 = Find(a3.Begin(), a3.End(), Eq(3));
+        #assert(i34 == a3.Begin() + 2);
+
+        List<int>.Iterator i35 = Find(a3.Begin(), a3.End(), Eq(MaxValue<int>()));
+        #assert(i35 == a3.End());
+
+        List<int> a4;
+        for (int i = 0; i < 100; ++i)
+        {
+            a4.Add(i);
+        }
+        List<int>.Iterator i40 = Find(a4.Begin(), a4.End(), Eq(MinValue<int>()));
+        #assert(i40 == a4.End());
+        for (int i = 0; i < 100; ++i)
+        {
+            List<int>.Iterator i41 = Find(a4.Begin(), a4.End(), Eq(i));
+            #assert(i41 == a4.Begin() + i);
+        }
+        List<int>.Iterator i42 = Find(a4.Begin(), a4.End(), Eq(MaxValue<int>()));
+        #assert(i42 == a4.End());
+
+        List<int> a5;
+        for (int i = 0; i < 4096; ++i)
+        {
+            a5.Add(i);
+        }
+        List<int>.Iterator i50 = Find(a5.Begin(), a5.End(), Eq(MinValue<int>()));
+        #assert(i50 == a5.End());
+        for (int i = 0; i < 4096; ++i)
+        {
+            List<int>.Iterator i51 = Find(a5.Begin(), a5.End(), Eq(i));
+            #assert(i51 == a5.Begin() + i);
+        }
+        List<int>.Iterator i52 = Find(a5.Begin(), a5.End(), Eq(MaxValue<int>()));
+        #assert(i52 == a5.End());
+    }
+
+    public unit_test void CountValueTest()
+    {
+        List<int> a0;
+        int i0 = Count(a0.Begin(), a0.End(), 0);
+        #assert(i0 == 0);
+        #assert(a0.IsEmpty());
+        #assert(a0.Count() == 0);
+
+        List<int> a1;
+        a1.Add(1);
+        int i1 = Count(a1.Begin(), a1.End(), 0);
+        #assert(i1 == 0);
+        #assert(!a1.IsEmpty());
+        #assert(a1.Count() == 1);
+
+        int i12 = Count(a1.Begin(), a1.End(), 1);
+        #assert(i12 == 1);
+
+        int i13 = Count(a1.Begin(), a1.End(), MaxValue<int>());
+        #assert(i13 == 0);
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(1);
+        int i2 = Count(a2.Begin(), a2.End(), 0);
+        #assert(i2 == 0);
+        #assert(!a2.IsEmpty());
+        #assert(a2.Count() == 2);
+
+        int i22 = Count(a2.Begin(), a2.End(), 1);
+        #assert(i22 == 2);
+
+        int i23 = Count(a2.Begin(), a2.End(), 2);
+        #assert(i23 == 0);
+        
+        int i24 = Count(a2.Begin(), a2.End(), MaxValue<int>());
+        #assert(i24 == 0);
+
+        List<int> a3;
+        a3.Add(1);
+        a3.Add(2);
+        a3.Add(3);
+        int i3 = Count(a3.Begin(), a3.End(), 0);
+        #assert(i3 == 0);
+        #assert(!a3.IsEmpty());
+        #assert(a3.Count() == 3);
+
+        int i32 = Count(a3.Begin(), a3.End(), 1);
+        #assert(i32 == 1);
+
+        int i33 = Count(a3.Begin(), a3.End(), 2);
+        #assert(i33 == 1);
+        
+        int i34 = Count(a3.Begin(), a3.End(), 3);
+        #assert(i34 == 1);
+
+        int i35 = Count(a3.Begin(), a3.End(), MaxValue<int>());
+        #assert(i35 == 0);
+
+        List<int> a4;
+        for (int i = 0; i < 100; ++i)
+        {
+            a4.Add(i);
+        }
+        int i40 = Count(a4.Begin(), a4.End(), MinValue<int>());
+        #assert(i40 == 0);
+        for (int i = 0; i < 100; ++i)
+        {
+            int i41 = Count(a4.Begin(), a4.End(), i);
+            #assert(i41 == 1);
+        }
+        int i42 = Count(a4.Begin(), a4.End(), MaxValue<int>());
+        #assert(i42 == 0);
+
+        List<int> a5;
+        for (int i = 0; i < 4096; ++i)
+        {
+            a5.Add(i);
+        }
+        int i50 = Count(a5.Begin(), a5.End(), MinValue<int>());
+        #assert(i50 == 0);
+        for (int i = 0; i < 4096; ++i)
+        {
+            int i51 = Count(a5.Begin(), a5.End(), i);
+            #assert(i51 == 1);
+        }
+        int i52 = Count(a5.Begin(), a5.End(), MaxValue<int>());
+        #assert(i52 == 0);
+    }
+
+    public unit_test void CountPredicateTest()
+    {
+        List<int> a0;
+        int i0 = Count(a0.Begin(), a0.End(), Eq(0));
+        #assert(i0 == 0);
+        #assert(a0.IsEmpty());
+        #assert(a0.Count() == 0);
+
+        List<int> a1;
+        a1.Add(1);
+        int i1 = Count(a1.Begin(), a1.End(), Eq(0));
+        #assert(i1 == 0);
+        #assert(!a1.IsEmpty());
+        #assert(a1.Count() == 1);
+
+        int i12 = Count(a1.Begin(), a1.End(), Eq(1));
+        #assert(i12 == 1);
+
+        int i13 = Count(a1.Begin(), a1.End(), Eq(MaxValue<int>()));
+        #assert(i13 == 0);
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(1);
+        int i2 = Count(a2.Begin(), a2.End(), Eq(0));
+        #assert(i2 == 0);
+        #assert(!a2.IsEmpty());
+        #assert(a2.Count() == 2);
+
+        int i22 = Count(a2.Begin(), a2.End(), Eq(1));
+        #assert(i22 == 2);
+
+        int i23 = Count(a2.Begin(), a2.End(), Eq(2));
+        #assert(i23 == 0);
+        
+        int i24 = Count(a2.Begin(), a2.End(), Eq(MaxValue<int>()));
+        #assert(i24 == 0);
+
+        List<int> a3;
+        a3.Add(1);
+        a3.Add(2);
+        a3.Add(3);
+        int i3 = Count(a3.Begin(), a3.End(), Eq(0));
+        #assert(i3 == 0);
+        #assert(!a3.IsEmpty());
+        #assert(a3.Count() == 3);
+
+        int i32 = Count(a3.Begin(), a3.End(), Eq(1));
+        #assert(i32 == 1);
+
+        int i33 = Count(a3.Begin(), a3.End(), Eq(2));
+        #assert(i33 == 1);
+        
+        int i34 = Count(a3.Begin(), a3.End(), Eq(3));
+        #assert(i34 == 1);
+
+        int i35 = Count(a3.Begin(), a3.End(), Eq(MaxValue<int>()));
+        #assert(i35 == 0);
+
+        List<int> a4;
+        for (int i = 0; i < 100; ++i)
+        {
+            a4.Add(i);
+        }
+        int i40 = Count(a4.Begin(), a4.End(), Eq(MinValue<int>()));
+        #assert(i40 == 0);
+        for (int i = 0; i < 100; ++i)
+        {
+            int i41 = Count(a4.Begin(), a4.End(), Eq(i));
+            #assert(i41 == 1);
+        }
+        int i42 = Count(a4.Begin(), a4.End(), Eq(MaxValue<int>()));
+        #assert(i42 == 0);
+
+        List<int> a5;
+        for (int i = 0; i < 4096; ++i)
+        {
+            a5.Add(i);
+        }
+        int i50 = Count(a5.Begin(), a5.End(), Eq(MinValue<int>()));
+        #assert(i50 == 0);
+        for (int i = 0; i < 4096; ++i)
+        {
+            int i51 = Count(a5.Begin(), a5.End(), Eq(i));
+            #assert(i51 == 1);
+        }
+        int i52 = Count(a5.Begin(), a5.End(), Eq(MaxValue<int>()));
+        #assert(i52 == 0);
+    }
+
+    public unit_test void AccumulateTest()
+    {
+        List<int> a;
+        for (int i = 0; i < 50; ++i)
+        {
+            a.Add(i + 1);
+        }
+        int sum = Accumulate(a.Begin(), a.End(), int(0), Plus<int>());
+        #assert(sum == 1275);
+    }
+
+    class Acc : UnaryFun<int, void>
+    {
+        public nothrow Acc(): sum(0)
+        {
+        }
+        public nothrow void operator()(int x)
+        {
+            sum = sum + x;
+        }
+        public nothrow int Sum() const
+        {
+            return sum;
+        }
+        private int sum;
+    }
+
+    public unit_test void ForEachTest()
+    {
+        List<int> a;
+        for (int i = 0; i < 50; ++i)
+        {
+            a.Add(i + 1);
+        }
+        Acc acc = ForEach(a.Begin(), a.End(), Acc());
+        #assert(acc.Sum() == 1275);
+    }
+
+    class Double : UnaryFun<int, int>
+    {
+        public nothrow int operator()(int x)
+        {
+            return 2 * x;
+        }
+    }
+
+    public unit_test void TransformTest()
+    {
+        List<int> a;
+        a.Add(1);
+        a.Add(2);
+        a.Add(3);
+        List<int> b;
+        Transform(a.Begin(), a.End(), BackInserter(b), Double());
+        #assert(!b.IsEmpty());
+        #assert(b.Count() == 3);
+        #assert(b[0] == 2);
+        #assert(b[1] == 4);
+        #assert(b[2] == 6);
+    }
+
+    public unit_test void Transform2Test()
+    {
+        List<int> a0;
+        a0.Add(1);
+        a0.Add(2);
+        a0.Add(3);
+        List<int> a1;
+        a1.Add(2);
+        a1.Add(7);
+        a1.Add(-3);
+        List<int> b;
+        Transform(a0.Begin(), a0.End(), a1.Begin(), BackInserter(b), Plus<int>());
+        #assert(!b.IsEmpty());
+        #assert(b.Count() == 3);
+        #assert(b[0] == 3);
+        #assert(b[1] == 9);
+        #assert(b[2] == 0);
+    }
+
+    public unit_test void SortTest1()
+    {
+        List<int> a;
+        a.Add(-1);
+        a.Add(MaxValue<int>());
+        a.Add(0);
+        a.Add(17);
+        a.Add(MinValue<int>());
+        a.Add(18);
+        a.Add(19);
+        a.Add(4);
+        a.Add(3);
+        a.Add(2);
+        a.Add(1);
+        Sort(a);
+        #assert(!a.IsEmpty());
+        #assert(a.Count() == 11);
+        #assert(a[0] == MinValue<int>());
+        #assert(a[1] == -1);
+        #assert(a[2] == 0);
+        #assert(a[3] == 1);
+        #assert(a[4] == 2);
+        #assert(a[5] == 3);
+        #assert(a[6] == 4);
+        #assert(a[7] == 17);
+        #assert(a[8] == 18);
+        #assert(a[9] == 19);
+        #assert(a[10] == MaxValue<int>());
     }
 }

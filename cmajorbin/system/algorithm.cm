@@ -65,6 +65,27 @@ namespace System
         }
     }
 
+    public Pair<I, I> ReverseUntil<I>(I first, I middle, I last) where I is BidirectionalIterator
+    {
+        while (first != middle && middle != last)
+        {
+            --last;
+            Swap(*first, *last);
+            ++first;
+        }
+        return MakePair(first, last);
+    }
+
+    public I Rotate<I>(I first, I middle, I last) where I is BidirectionalIterator
+    {
+        Reverse(first, middle);
+        Reverse(middle, last);
+        Pair<I, I> p = ReverseUntil(first, middle, last);
+        Reverse(p.first, p.second);
+        if (middle == p.first) return p.second;
+        return p.first;
+    }
+
     public O Copy<I, O>(I begin, I end, O to) where I is InputIterator and O is OutputIterator and CopyAssignable<O.ValueType, I.ValueType>
     {
         while (begin != end)
@@ -427,7 +448,7 @@ namespace System
         return Median(a, b, c, Less<T>());
     }
 
-    internal nothrow I UnguardedPartition<I, T, R>(I begin, I end, const T& pivot, R r)  where I is RandomAccessIterator and T is I.ValueType and R is Relation and R.Domain is I.ValueType
+    public nothrow I UnguardedPartition<I, T, R>(I begin, I end, const T& pivot, R r)  where I is RandomAccessIterator and T is I.ValueType and R is Relation and R.Domain is I.ValueType
     {
         while (true)
         {
@@ -451,7 +472,7 @@ namespace System
         return begin;
     }
 
-    internal nothrow void UnguardedLinearInsert<I, T, R>(I last, const T& val, R r) where I is RandomAccessIterator and T is I.ValueType and R is Relation and R.Domain is I.ValueType
+    public nothrow void UnguardedLinearInsert<I, T, R>(I last, const T& val, R r) where I is RandomAccessIterator and T is I.ValueType and R is Relation and R.Domain is I.ValueType
     {
         I next = last;
         --next;
@@ -464,7 +485,7 @@ namespace System
         *last = val;
     }
 
-    internal void LinearInsert<I, R>(I first, I last, R r) where I is RandomAccessIterator and R is Relation and R.Domain is I.ValueType
+    public void LinearInsert<I, R>(I first, I last, R r) where I is RandomAccessIterator and R is Relation and R.Domain is I.ValueType
     {
         I.ValueType val = *last;
         if (r(val, *first))
@@ -495,9 +516,9 @@ namespace System
         InsertionSort(begin, end, Less<I.ValueType>());
     }
 
-    internal const int InsertionSortThreshold = 16;
+    public const int InsertionSortThreshold = 16;
 
-    internal void PartialQuickSort<I, R>(I begin, I end, R r) where I is RandomAccessIterator and R is Relation and R.Domain is I.ValueType
+    public void PartialQuickSort<I, R>(I begin, I end, R r) where I is RandomAccessIterator and R is Relation and R.Domain is I.ValueType
     {
         while (end - begin > InsertionSortThreshold)
         {
