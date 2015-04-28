@@ -77,11 +77,9 @@ public:
     void AddTrueTarget(Ir::Intf::LabelObject* trueTarget);
     void AddFalseTarget(Ir::Intf::LabelObject* falseTarget);
     void AddNextTarget(Ir::Intf::LabelObject* nextTarget);
-    void AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget);
     std::vector<Ir::Intf::LabelObject*>& NextTargets() { return nextTargets; }
     std::vector<Ir::Intf::LabelObject*>& TrueTargets() { return trueTargets; }
     std::vector<Ir::Intf::LabelObject*>& FalseTargets() { return falseTargets; }
-    std::vector<Ir::Intf::LabelObject*>& ArgNextTargets() { return argNextTargets; }
     void MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets);
     void MergeData(std::shared_ptr<GenData> childData);
     Ir::Intf::LabelObject* GetLabel() const;
@@ -89,14 +87,12 @@ public:
     void BackpatchTrueTargets(Ir::Intf::LabelObject* label_);
     void BackpatchFalseTargets(Ir::Intf::LabelObject* label_);
     void BackpatchNextTargets(Ir::Intf::LabelObject* label_);
-    void BackpatchArgNextTargets(Ir::Intf::LabelObject* label_);
 private:
     Ir::Intf::LabelObject* label;
     std::vector<Ir::Intf::Object*> objects;
     std::vector<Ir::Intf::LabelObject*> nextTargets;
     std::vector<Ir::Intf::LabelObject*> trueTargets;
     std::vector<Ir::Intf::LabelObject*> falseTargets;
-    std::vector<Ir::Intf::LabelObject*> argNextTargets;
 };
 
 class Emitter : public Ir::Intf::Emitter
@@ -148,7 +144,6 @@ public:
     void AddTrueTarget(Ir::Intf::LabelObject* trueTarget) { genData->AddTrueTarget(trueTarget); }
     void AddFalseTarget(Ir::Intf::LabelObject* falseTarget) { genData->AddFalseTarget(falseTarget); }
     void AddNextTarget(Ir::Intf::LabelObject* nextTarget) { genData->AddNextTarget(nextTarget);  }
-    void AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget) { genData->AddArgNextTarget(argNextTarget); }
     std::vector<Ir::Intf::LabelObject*>& NextTargets() { return genData->NextTargets(); }
     std::vector<Ir::Intf::LabelObject*>& TrueTargets() { return genData->TrueTargets(); }
     std::vector<Ir::Intf::LabelObject*>& FalseTargets() { return genData->FalseTargets(); }
@@ -156,7 +151,6 @@ public:
     void BackpatchTrueTargets(Ir::Intf::LabelObject* label) { genData->BackpatchTrueTargets(label); }
     void BackpatchFalseTargets(Ir::Intf::LabelObject* label) { genData->BackpatchFalseTargets(label); }
     void BackpatchNextTargets(Ir::Intf::LabelObject* label) { genData->BackpatchNextTargets(label); }
-    void BackpatchArgNextTargets(Ir::Intf::LabelObject* label) { genData->BackpatchArgNextTargets(label); }
     bool GenJumpingBoolCode() const { return GetFlag(GenFlags::genJumpingBoolCode, flags); }
     void SetGenJumpingBoolCode() { SetFlag(GenFlags::genJumpingBoolCode, flags); }
     void SetLvalue() { SetFlag(GenFlags::lvalue, flags); }

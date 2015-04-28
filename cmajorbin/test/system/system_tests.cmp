@@ -3,3 +3,4 @@ target=program;
 assembly <system_tests.cma>;
 source <support.utility.cm>;
 source <algorithm.cm>;
+source <bitset.cm>;
