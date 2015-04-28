@@ -85,11 +85,6 @@ void GenData::AddNextTarget(Ir::Intf::LabelObject* nextTarget)
     Ir::Intf::Add(nextTargets, nextTarget);
 }
 
-void GenData::AddArgNextTarget(Ir::Intf::LabelObject* argNextTarget)
-{
-    Ir::Intf::Add(argNextTargets, argNextTarget);
-}
-
 void GenData::MergeTargets(std::vector<Ir::Intf::LabelObject*>& targets, std::vector<Ir::Intf::LabelObject*>& fromTargets)
 {
     Ir::Intf::Merge(targets, fromTargets);
@@ -105,7 +100,6 @@ void GenData::MergeData(std::shared_ptr<GenData> childData)
     Ir::Intf::Merge(nextTargets, childData->nextTargets);
     Ir::Intf::Merge(trueTargets, childData->trueTargets);
     Ir::Intf::Merge(falseTargets, childData->falseTargets);
-    Ir::Intf::Merge(argNextTargets, childData->argNextTargets);
 }
 
 Ir::Intf::LabelObject* GenData::GetLabel() const 
@@ -146,16 +140,6 @@ void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label_)
     }
     Ir::Intf::Backpatch(nextTargets, label_);
     nextTargets.clear();
-}
-
-void GenData::BackpatchArgNextTargets(Ir::Intf::LabelObject* label_)
-{
-    if (!label_)
-    {
-        throw std::runtime_error("backpatch arg next targets got no label");
-    }
-    Ir::Intf::Backpatch(argNextTargets, label_);
-    argNextTargets.clear();
 }
 
 Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr)

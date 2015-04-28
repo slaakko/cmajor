@@ -1,0 +1,13 @@
+using System;
+
+public unit_test void TestConjunctionDisjunction()
+{
+    int pos = 4;
+    int n = 10;
+    if (!(pos >= 0 && pos < n))
+    {
+        #assert(false);
+        return;
+    }
+    #assert(true);
+}

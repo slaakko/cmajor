@@ -1,0 +1,51 @@
+using System;
+using System.Collections;
+
+namespace Test.System.Collections.BitSet
+{
+    public unit_test void TestBitSet()
+    {
+        BitSet bs0;
+        #assert(bs0.Count() == 0);
+        #assert(bs0.All());
+        #assert(!bs0.Any());
+        #assert(bs0.None());
+        #assert(bs0.ToString() == "");
+
+        for (int n = 0; n < 5; ++n)
+        {
+            int numBits = 1;
+            for (int i = 0; i < n; ++i)
+            {
+                numBits = 8 * numBits;
+            }
+            BitSet bs(numBits);
+            #assert(bs.Count() == numBits);
+            #assert(!bs.All());
+            #assert(!bs.Any());
+            #assert(bs.None());
+            string s;
+            for (int i = 0; i < numBits; ++i)
+            {
+                #assert(!bs[i]);
+                s.Append('0');
+            }
+            #assert(bs.ToString() == s);
+            for (int i = 0; i < numBits; ++i)
+            {
+                bs.Set(i);
+                s[i] = '1';
+                #assert(bs.ToString() == s);
+                bs.Reset(i);
+                s[i] = '0';
+                #assert(bs.ToString() == s);
+                bs.Flip(i);
+                s[i] = '1';
+                #assert(bs.ToString() == s);
+                bs.Flip(i);
+                s[i] = '0';
+                #assert(bs.ToString() == s);
+            }
+        }
+    }
+}

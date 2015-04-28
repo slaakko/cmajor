@@ -869,6 +869,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundClassDelegateCall& boundClassDel
 void FunctionEmitter::Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    Ir::Intf::LabelObject* next = nullptr;
     if (boundDisjunction.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         boundDisjunction.Left()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
@@ -946,10 +947,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction)
             emitter->Own(false_);
             Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), false_, result->MainObject());
             rightResult->BackpatchFalseTargets(falseLabel);
-            Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+            next = Cm::IrIntf::CreateNextLocalLabel();
             emitter->Own(next);
             emitter->Emit(Cm::IrIntf::Br(next));
-            result->AddArgNextTarget(next);
             Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
             emitter->Own(trueLabel);
             emitter->AddNextInstructionLabel(trueLabel);
@@ -968,10 +968,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction)
             Ir::Intf::Object* false_ = Cm::IrIntf::False();
             emitter->Own(false_);
             Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), false_, result->MainObject());
-            Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+            next = Cm::IrIntf::CreateNextLocalLabel();
             emitter->Own(next);
             emitter->Emit(Cm::IrIntf::Br(next));
-            result->AddArgNextTarget(next);
 
             bool trueFirst = true;
             std::shared_ptr<Cm::Core::GenResult> trueResult(new Cm::Core::GenResult(emitter.get(), genFlags));
@@ -993,11 +992,16 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDisjunction& boundDisjunction)
         result->Merge(rightResult);
     }
     resultStack.Push(result);
+    if (next)
+    {
+        emitter->AddNextInstructionLabel(next);
+    }
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundConjunction& boundConjunction)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    Ir::Intf::LabelObject* next = nullptr;
     if (boundConjunction.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
     {
         boundConjunction.Left()->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
@@ -1076,10 +1080,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConjunction& boundConjunction)
             emitter->Own(true_);
             Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), true_, result->MainObject());
             rightResult->BackpatchTrueTargets(trueLabel);
-            Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+            next = Cm::IrIntf::CreateNextLocalLabel();
             emitter->Own(next);
             emitter->Emit(Cm::IrIntf::Br(next));
-            result->AddArgNextTarget(next);
             Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
             emitter->Own(falseLabel);
             emitter->AddNextInstructionLabel(falseLabel);
@@ -1095,13 +1098,12 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConjunction& boundConjunction)
             std::shared_ptr<Cm::Core::GenResult> trueResult(new Cm::Core::GenResult(emitter.get(), genFlags));
             ExitCompound(*trueResult, currentCompoundDestructionStack, trueFirst);
             rightResult->BackpatchTrueTargets(trueResult->GetLabel());
-            Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
+            next = Cm::IrIntf::CreateNextLocalLabel();
             emitter->Own(next);
             Ir::Intf::Object* true_ = Cm::IrIntf::True();
             emitter->Own(true_);
             Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI1(), true_, result->MainObject());
             emitter->Emit(Cm::IrIntf::Br(next));
-            result->AddArgNextTarget(next);
 
             bool falseFirst = true;
             std::shared_ptr<Cm::Core::GenResult> falseResult(new Cm::Core::GenResult(emitter.get(), genFlags));
@@ -1122,6 +1124,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConjunction& boundConjunction)
         result->Merge(rightResult);
     }
     resultStack.Push(result);
+    if (next)
+    {
+        emitter->AddNextInstructionLabel(next);
+    }
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncDecExpr)
@@ -1307,7 +1313,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
         {
             GenerateCall(ctor, boundReturnStatement.GetTraceCallInfo(), *result);
         }
-        result->BackpatchArgNextTargets(exprNext);
         ExecutePostfixIncDecStatements(*result);
         ExitFunction(*result);
         if (returnsClassObjectByValue)
@@ -1382,7 +1387,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundCons
     emitter->Own(exprNext);
     emitter->AddNextInstructionLabel(exprNext);
     GenerateCall(ctor, boundConstructionStatement.GetTraceCallInfo(), *result);
-    result->BackpatchArgNextTargets(exprNext);
     ExecutePostfixIncDecStatements(*result);
     if (resultLabel)
     {
@@ -1504,7 +1508,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
     emitter->Own(exprNext);
     emitter->AddNextInstructionLabel(exprNext);
     GenerateCall(assignment, boundAssignmentStatement.GetTraceCallInfo(), *result);
-    result->BackpatchArgNextTargets(exprNext);
     ExecutePostfixIncDecStatements(*result);
     if (resultLabel)
     {

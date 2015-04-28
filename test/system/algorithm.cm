@@ -3427,4 +3427,504 @@ namespace Test.System.Algorithm
         #assert(a[9] == 19);
         #assert(a[10] == MaxValue<int>());
     }
+
+    public unit_test void SortTest2()
+    {
+        ForwardList<int> a;
+        ForwardList<int>.Iterator end = a.End();
+        for (int i = 0; i < 100; ++i)
+        {
+            int x = rand();
+            end = a.InsertAfter(end, x);
+        }
+        Sort(a);
+        int prev = MinValue<int>();
+        for (int x : a)
+        {
+            #assert(x >= prev);
+            prev = x;
+        }
+    }
+
+    public unit_test void SortTest3()
+    {
+        List<int> a;
+        for (int i = 0; i < 4096; ++i)
+        {
+            a.Add(rand());
+        }
+        Sort(a);
+        int prev = MinValue<int>();
+        for (int x : a)
+        {
+            #assert(x >= prev);
+            prev = x;
+        }
+    }
+
+    public unit_test void EqualTest()
+    {
+        ForwardList<int> a;
+        List<int> b;
+        ForwardList<int>.Iterator end = a.End();
+        for (int i = 0; i < 4096; ++i)
+        {
+            int x = rand();
+            end = a.InsertAfter(end, x);
+            b.Add(x);
+        }
+        #assert(Equal(a.Begin(), a.End(), b.Begin(), b.End()));
+    }
+
+    public unit_test void LexicographicalCompareTest()
+    {
+        List<int> a;
+        List<int> b;
+        #assert(!LexicographicalCompare(a.Begin(), a.End(), b.Begin(), b.End()));
+        b.Add(1);
+        #assert(LexicographicalCompare(a.Begin(), a.End(), b.Begin(), b.End()));
+        a.Add(1);
+        #assert(!LexicographicalCompare(a.Begin(), a.End(), b.Begin(), b.End()));
+        a.Add(1);
+        b.Add(0);
+        #assert(!LexicographicalCompare(a.Begin(), a.End(), b.Begin(), b.End()));
+        b[1] = 2;
+        #assert(LexicographicalCompare(a.Begin(), a.End(), b.Begin(), b.End()));
+
+        List<int> a0;
+        List<int> b0;
+        for (int i = 0; i < 4096; ++i)
+        {
+            a0.Add(i);
+            if (i < 4095)
+            {
+                b0.Add(i);
+            }
+            else 
+            {
+                b0.Add(i + 1);
+            }
+        }
+        #assert(LexicographicalCompare(a0.Begin(), a0.End(), b0.Begin(), b0.End()));
+    }
+
+    public unit_test void MinElementValueTest()
+    {
+        List<int> a0;
+        #assert(MinElement(a0.Begin(), a0.End()) == a0.Begin());
+        
+        List<int> a1;
+        a1.Add(1);
+        #assert(MinElement(a1.Begin(), a1.End()) == a1.Begin());
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(1);
+        #assert(MinElement(a2.Begin(), a2.End()) == a2.Begin());
+
+        List<int> a3;
+        a3.Add(2);
+        a3.Add(1);
+        #assert(MinElement(a3.Begin(), a3.End()) == a3.Begin() + 1);
+
+        List<int> a4;
+        a4.Add(1);
+        a4.Add(2);
+        #assert(MinElement(a4.Begin(), a4.End()) == a4.Begin());
+
+        List<int> a5;
+        a5.Add(1);
+        a5.Add(2);
+        a5.Add(3);
+        #assert(MinElement(a5.Begin(), a5.End()) == a5.Begin());
+
+        List<int> a6;
+        a6.Add(3);
+        a6.Add(1);
+        a6.Add(2);
+        #assert(MinElement(a6.Begin(), a6.End()) == a6.Begin() + 1);
+
+        List<int> a7;
+        a7.Add(3);
+        a7.Add(2);
+        a7.Add(1);
+        #assert(MinElement(a7.Begin(), a7.End()) == a7.Begin() + 2);
+    }
+
+    public unit_test void MinElementRelationTest()
+    {
+        List<int> a0;
+        #assert(MinElement(a0.Begin(), a0.End(), Less<int>()) == a0.Begin());
+        
+        List<int> a1;
+        a1.Add(1);
+        #assert(MinElement(a1.Begin(), a1.End(), Less<int>()) == a1.Begin());
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(1);
+        #assert(MinElement(a2.Begin(), a2.End(), Less<int>()) == a2.Begin());
+
+        List<int> a3;
+        a3.Add(2);
+        a3.Add(1);
+        #assert(MinElement(a3.Begin(), a3.End(), Less<int>()) == a3.Begin() + 1);
+
+        List<int> a4;
+        a4.Add(1);
+        a4.Add(2);
+        #assert(MinElement(a4.Begin(), a4.End(), Less<int>()) == a4.Begin());
+
+        List<int> a5;
+        a5.Add(1);
+        a5.Add(2);
+        a5.Add(3);
+        #assert(MinElement(a5.Begin(), a5.End(), Less<int>()) == a5.Begin());
+
+        List<int> a6;
+        a6.Add(3);
+        a6.Add(1);
+        a6.Add(2);
+        #assert(MinElement(a6.Begin(), a6.End(), Less<int>()) == a6.Begin() + 1);
+
+        List<int> a7;
+        a7.Add(3);
+        a7.Add(2);
+        a7.Add(1);
+        #assert(MinElement(a7.Begin(), a7.End(), Less<int>()) == a7.Begin() + 2);
+    }
+
+    public unit_test void MaxElementValueTest()
+    {
+        List<int> a0;
+        #assert(MaxElement(a0.Begin(), a0.End()) == a0.Begin());
+        
+        List<int> a1;
+        a1.Add(1);
+        #assert(MaxElement(a1.Begin(), a1.End()) == a1.Begin());
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(1);
+        #assert(MaxElement(a2.Begin(), a2.End()) == a2.Begin());
+
+        List<int> a3;
+        a3.Add(2);
+        a3.Add(1);
+        #assert(MaxElement(a3.Begin(), a3.End()) == a3.Begin());
+
+        List<int> a4;
+        a4.Add(1);
+        a4.Add(2);
+        #assert(MaxElement(a4.Begin(), a4.End()) == a4.Begin() + 1);
+
+        List<int> a5;
+        a5.Add(1);
+        a5.Add(2);
+        a5.Add(3);
+        #assert(MaxElement(a5.Begin(), a5.End()) == a5.Begin() + 2);
+
+        List<int> a6;
+        a6.Add(3);
+        a6.Add(1);
+        a6.Add(2);
+        #assert(MaxElement(a6.Begin(), a6.End()) == a6.Begin());
+
+        List<int> a7;
+        a7.Add(3);
+        a7.Add(2);
+        a7.Add(1);
+        #assert(MaxElement(a7.Begin(), a7.End()) == a7.Begin());
+    }
+
+    public unit_test void MaxElementRelationTest()
+    {
+        List<int> a0;
+        #assert(MaxElement(a0.Begin(), a0.End(), Less<int>()) == a0.Begin());
+        
+        List<int> a1;
+        a1.Add(1);
+        #assert(MaxElement(a1.Begin(), a1.End(), Less<int>()) == a1.Begin());
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(1);
+        #assert(MaxElement(a2.Begin(), a2.End(), Less<int>()) == a2.Begin());
+
+        List<int> a3;
+        a3.Add(2);
+        a3.Add(1);
+        #assert(MaxElement(a3.Begin(), a3.End(), Less<int>()) == a3.Begin());
+
+        List<int> a4;
+        a4.Add(1);
+        a4.Add(2);
+        #assert(MaxElement(a4.Begin(), a4.End(), Less<int>()) == a4.Begin() + 1);
+
+        List<int> a5;
+        a5.Add(1);
+        a5.Add(2);
+        a5.Add(3);
+        #assert(MaxElement(a5.Begin(), a5.End(), Less<int>()) == a5.Begin() + 2);
+
+        List<int> a6;
+        a6.Add(3);
+        a6.Add(1);
+        a6.Add(2);
+        #assert(MaxElement(a6.Begin(), a6.End(), Less<int>()) == a6.Begin());
+
+        List<int> a7;
+        a7.Add(3);
+        a7.Add(2);
+        a7.Add(1);
+        #assert(MaxElement(a7.Begin(), a7.End(), Less<int>()) == a7.Begin());
+    }
+
+    public unit_test void AbsTest()
+    {
+        #assert(Abs(0) == 0);
+        #assert(Abs(-1) == 1);
+        #assert(Abs(-1) == 1);
+        #assert(Abs(MaxValue<int>()) == MaxValue<int>());
+        #assert(Abs(MinValue<int>() + 1) == MaxValue<int>());
+    }
+
+    public unit_test void FactorialTest()
+    {
+        #assert(Factorial(0u) == 1u);
+        #assert(Factorial(1u) == 1u);
+        #assert(Factorial(2u) == 2u); 
+        #assert(Factorial(3u) == 6u); 
+        #assert(Factorial(4u) == 24u); 
+        #assert(Factorial(5u) == 120u); 
+        #assert(Factorial(cast<uint>(6u)) == 720u); 
+    }
+
+    public unit_test void GcdTest()
+    {
+        #assert(Gcd(0, 0) == 0);
+        #assert(Gcd(0, 1) == 1);
+        #assert(Gcd(1, 0) == 1);
+        #assert(Gcd(1, 1) == 1);
+        #assert(Gcd(1, 2) == 1);
+        #assert(Gcd(2, 1) == 1);
+        #assert(Gcd(2, 2) == 2);
+        #assert(Gcd(3, 1) == 1);
+        #assert(Gcd(1, 3) == 1);
+        #assert(Gcd(2, 3) == 1);
+        #assert(Gcd(3, 2) == 1);
+        #assert(Gcd(3, 3) == 3);
+        #assert(Gcd(4, 1) == 1);
+        #assert(Gcd(4, 2) == 2);
+        #assert(Gcd(4, 3) == 1);
+        #assert(Gcd(4, 4) == 4);
+        #assert(Gcd(1, 4) == 1);
+        #assert(Gcd(2, 4) == 2);
+        #assert(Gcd(3, 4) == 1);
+        #assert(Gcd(9, 6) == 3);
+        #assert(Gcd(6, 9) == 3);
+        #assert(Gcd(125, 45) == 5);
+        #assert(Gcd(45, 125) == 5);
+    }
+
+    public unit_test void NextPermutationValueTest()
+    {
+        List<int> a0;
+        #assert(!NextPermutation(a0.Begin(), a0.End()));
+
+        List<int> a1;
+        a1.Add(1);
+        #assert(!NextPermutation(a1.Begin(), a1.End()));
+        #assert(a1[0] == 1);
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(2);
+        #assert(NextPermutation(a2.Begin(), a2.End()));
+        #assert(a2[0] == 2);
+        #assert(a2[1] == 1);
+        #assert(!NextPermutation(a2.Begin(), a2.End()));
+        #assert(a2[0] == 1);
+        #assert(a2[1] == 2);
+
+        List<int> a3;
+        a3.Add(1);
+        a3.Add(2);
+        a3.Add(3);
+        #assert(NextPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 3);
+        #assert(a3[2] == 2);    
+        #assert(NextPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 2);
+        #assert(a3[1] == 1);
+        #assert(a3[2] == 3);    
+        #assert(NextPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 2);
+        #assert(a3[1] == 3);
+        #assert(a3[2] == 1);    
+        #assert(NextPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 3);
+        #assert(a3[1] == 1);
+        #assert(a3[2] == 2);    
+        #assert(NextPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 3);
+        #assert(a3[1] == 2);
+        #assert(a3[2] == 1);    
+        #assert(!NextPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 2);
+        #assert(a3[2] == 3);    
+    }
+
+    public unit_test void NextPermutationRelationTest()
+    {
+        List<int> a0;
+        #assert(!NextPermutation(a0.Begin(), a0.End(), Less<int>()));
+
+        List<int> a1;
+        a1.Add(1);
+        #assert(!NextPermutation(a1.Begin(), a1.End(), Less<int>()));
+        #assert(a1[0] == 1);
+
+        List<int> a2;
+        a2.Add(1);
+        a2.Add(2);
+        #assert(NextPermutation(a2.Begin(), a2.End(), Less<int>()));
+        #assert(a2[0] == 2);
+        #assert(a2[1] == 1);
+        #assert(!NextPermutation(a2.Begin(), a2.End(), Less<int>()));
+        #assert(a2[0] == 1);
+        #assert(a2[1] == 2);
+
+        List<int> a3;
+        a3.Add(1);
+        a3.Add(2);
+        a3.Add(3);
+        #assert(NextPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 3);
+        #assert(a3[2] == 2);    
+        #assert(NextPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 2);
+        #assert(a3[1] == 1);
+        #assert(a3[2] == 3);    
+        #assert(NextPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 2);
+        #assert(a3[1] == 3);
+        #assert(a3[2] == 1);    
+        #assert(NextPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 3);
+        #assert(a3[1] == 1);
+        #assert(a3[2] == 2);    
+        #assert(NextPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 3);
+        #assert(a3[1] == 2);
+        #assert(a3[2] == 1);    
+        #assert(!NextPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 2);
+        #assert(a3[2] == 3);    
+    }
+
+    public unit_test void PrevPermutationValueTest()
+    {
+        List<int> a0;
+        #assert(!PrevPermutation(a0.Begin(), a0.End()));
+
+        List<int> a1;
+        a1.Add(1);
+        #assert(!PrevPermutation(a1.Begin(), a1.End()));
+        #assert(a1[0] == 1);
+
+        List<int> a2;
+        a2.Add(2);
+        a2.Add(1);
+        #assert(PrevPermutation(a2.Begin(), a2.End()));
+        #assert(a2[0] == 1);
+        #assert(a2[1] == 2);
+        #assert(!PrevPermutation(a2.Begin(), a2.End()));
+        #assert(a2[0] == 2);
+        #assert(a2[1] == 1);
+
+        List<int> a3;
+        a3.Add(3);
+        a3.Add(2);
+        a3.Add(1);
+        #assert(PrevPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 3);
+        #assert(a3[1] == 1);
+        #assert(a3[2] == 2);    
+        #assert(PrevPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 2);
+        #assert(a3[1] == 3);
+        #assert(a3[2] == 1);    
+        #assert(PrevPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 2);
+        #assert(a3[1] == 1);
+        #assert(a3[2] == 3);    
+        #assert(PrevPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 3);
+        #assert(a3[2] == 2);    
+        #assert(PrevPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 2);
+        #assert(a3[2] == 3);    
+        #assert(!PrevPermutation(a3.Begin(), a3.End()));
+        #assert(a3[0] == 3);
+        #assert(a3[1] == 2);
+        #assert(a3[2] == 1);    
+    }
+
+    public unit_test void PrevPermutationRelationTest()
+    {
+        List<int> a0;
+        #assert(!PrevPermutation(a0.Begin(), a0.End(), Less<int>()));
+
+        List<int> a1;
+        a1.Add(1);
+        #assert(!PrevPermutation(a1.Begin(), a1.End(), Less<int>()));
+        #assert(a1[0] == 1);
+
+        List<int> a2;
+        a2.Add(2);
+        a2.Add(1);
+        #assert(PrevPermutation(a2.Begin(), a2.End(), Less<int>()));
+        #assert(a2[0] == 1);
+        #assert(a2[1] == 2);
+        #assert(!PrevPermutation(a2.Begin(), a2.End(), Less<int>()));
+        #assert(a2[0] == 2);
+        #assert(a2[1] == 1);
+
+        List<int> a3;
+        a3.Add(3);
+        a3.Add(2);
+        a3.Add(1);
+        #assert(PrevPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 3);
+        #assert(a3[1] == 1);
+        #assert(a3[2] == 2);    
+        #assert(PrevPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 2);
+        #assert(a3[1] == 3);
+        #assert(a3[2] == 1);    
+        #assert(PrevPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 2);
+        #assert(a3[1] == 1);
+        #assert(a3[2] == 3);    
+        #assert(PrevPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 3);
+        #assert(a3[2] == 2);    
+        #assert(PrevPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 1);
+        #assert(a3[1] == 2);
+        #assert(a3[2] == 3);    
+        #assert(!PrevPermutation(a3.Begin(), a3.End(), Less<int>()));
+        #assert(a3[0] == 3);
+        #assert(a3[1] == 2);
+        #assert(a3[2] == 1);    
+    }
 }
+
