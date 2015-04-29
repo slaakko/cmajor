@@ -235,7 +235,7 @@ bool FindConversion(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm:
     Cm::Sym::TypeSymbol* argumentType = argument.Type();
     if (Cm::Sym::TypesEqual(parameterType, argumentType))
     {
-        if (argument.BindToRvalueRef() && !parameterType->IsRvalueRefType())
+        if (argument.BindToRvalueRef() && !parameterType->IsRvalueRefType() && !parameterType->IsValueTypeSymbol())
         {
             argumentMatch = ArgumentMatch(Cm::Sym::ConversionRank::conversion, 1, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
         }

@@ -234,7 +234,7 @@ namespace System.IO
 
     public string ReadFile(const string& fileName)
     {
-        InputFileStream s(fileName, 4u * 1024u * 1024u);
+        InputFileStream s(fileName, cast<uint>(4u) * 1024u * 1024u);
         return s.ReadToEnd();
     }
     
@@ -530,7 +530,7 @@ namespace System.IO
             fileName = fileName_;
             if (fileName.IsEmpty())
             {
-                throw OpenFileException("fiven file name is empty");
+                throw OpenFileException("given file name is empty");
             }
             if (mode_ == OpenMode.readOnly)
             {
@@ -774,5 +774,38 @@ namespace System.IO
         private string fileName;
         private int handle;
         private bool fileIsOpen;
+    }
+
+    public bool FileContentsEqual(const string& fileName1, const string& fileName2)
+    {
+        BinaryFileStream file1(fileName1, OpenMode.readOnly);
+        BinaryFileStream file2(fileName2, OpenMode.readOnly);
+        long size1 = file1.GetFileSize();
+        long size2 = file2.GetFileSize();
+        if (size1 != size2) return false;
+        while (size1 > 0)
+        {
+            int size = 4096;
+            if (size1 < size)
+            {
+                size = cast<int>(size1);
+                size1 = 0;
+            }
+            else 
+            {
+                size1 = size1 - 4096;
+            }
+            IOBuffer buffer1(cast<ulong>(size));
+            file1.Read(buffer1.Mem(), buffer1.Size());
+            IOBuffer buffer2(cast<ulong>(size));
+            file2.Read(buffer2.Mem(), buffer2.Size());
+            const char* p1 = cast<const char*>(buffer1.Mem());
+            const char* p2 = cast<const char*>(buffer2.Mem());
+            for (int i = 0; i < size; ++i)
+            {
+                if (p1[i] != p2[i]) return false;
+            }
+        }
+        return true;
     }
 }

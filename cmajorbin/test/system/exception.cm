@@ -1,0 +1,22 @@
+using System;
+
+namespace Test.System.Exception
+{
+    public unit_test void ExceptionTest()
+    {
+        Exception x0;
+        #assert(x0.ExceptionType().IsEmpty());
+        #assert(x0.Message().IsEmpty());
+        #assert(x0.File().IsEmpty());
+        #assert(x0.Line() == 0);
+
+        Exception x1("foo");
+        x1.SetExceptionType("System.Exception");
+        x1.SetFile("exception.cm");
+        x1.SetLine(16);
+        begin_capture_call_stack();
+        x1.SetCallStack(capture_call_stack());
+        end_capture_call_stack();
+        Console.Error() << x1.ToString() << endl();
+    }
+}

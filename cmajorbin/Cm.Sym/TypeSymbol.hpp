@@ -62,6 +62,7 @@ public:
     virtual bool IsNullPtrType() const { return false; }
     virtual bool IsConstPointerType() const { return false; }
     virtual bool IsConstPointerPointerType() const { return false; }
+    virtual bool IsValueTypeSymbol() const { return false; }
     virtual DerivationCounts GetDerivationCounts() const { return DerivationCounts(); }
     virtual const Cm::Ast::DerivationList& Derivations() const { return emptyDerivationList; }
     void SetIrType(Ir::Intf::Type* irType_);

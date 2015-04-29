@@ -1,0 +1,113 @@
+using System;
+
+namespace Test.System.CharClass
+{
+    public unit_test void CharClassTest()
+    {
+        #assert(!IsLower('\0'));
+        for (byte c = cast<byte>('a'); c <= cast<byte>('z'); ++c)
+        {
+            #assert(IsLower(cast<char>(c)));
+        }
+        #assert(!IsLower('\xff'));
+        
+        #assert(!IsUpper('\0'));
+        for (byte c = cast<byte>('A'); c <= cast<byte>('Z'); ++c)
+        {
+            #assert(IsUpper(cast<char>(c)));
+        }
+        #assert(!IsUpper('\xff'));
+
+        #assert(!IsAlpha('\0'));
+        for (byte c = cast<byte>('a'); c <= cast<byte>('z'); ++c)
+        {
+            #assert(IsAlpha(cast<char>(c)));
+        }
+        for (byte c = cast<byte>('A'); c <= cast<byte>('Z'); ++c)
+        {
+            #assert(IsAlpha(cast<char>(c)));
+        }
+        #assert(!IsAlpha('\xff'));
+
+        #assert(!IsDigit('\0'));
+        for (byte c = cast<byte>('0'); c <= cast<byte>('9'); ++c)
+        {
+            #assert(IsDigit(cast<char>(c)));
+        }
+        #assert(!IsDigit('\xff'));
+
+        #assert(!IsAlphanumeric('\0'));
+        for (byte c = cast<byte>('a'); c <= cast<byte>('z'); ++c)
+        {
+            #assert(IsAlphanumeric(cast<char>(c)));
+        }
+        for (byte c = cast<byte>('A'); c <= cast<byte>('Z'); ++c)
+        {
+            #assert(IsAlphanumeric(cast<char>(c)));
+        }
+        for (byte c = cast<byte>('0'); c <= cast<byte>('9'); ++c)
+        {
+            #assert(IsAlphanumeric(cast<char>(c)));
+        }
+        #assert(!IsAlphanumeric('\xff'));
+
+        #assert(!IsHexDigit('\0'));
+        for (byte c = cast<byte>('0'); c <= cast<byte>('9'); ++c)
+        {
+            #assert(IsHexDigit(cast<char>(c)));
+        }
+        for (byte c = cast<byte>('a'); c <= cast<byte>('f'); ++c)
+        {
+            #assert(IsHexDigit(cast<char>(c)));
+        }
+        for (byte c = cast<byte>('A'); c <= cast<byte>('F'); ++c)
+        {
+            #assert(IsHexDigit(cast<char>(c)));
+        }
+        #assert(!IsHexDigit('\xff'));
+
+        for (byte c = 0u; c <= 31u; ++c)
+        {
+            #assert(IsControl(cast<char>(c)));
+        }
+        #assert(IsControl(cast<char>(127u)));
+        #assert(!IsControl('\xff'));
+
+        #assert(!IsGraphic('\0'));
+        for (byte c = 33u; c <= 126u; ++c)
+        {
+            #assert(IsGraphic(cast<char>(c)));
+        }
+        #assert(!IsGraphic('\xff'));
+
+        #assert(!IsPrintable('\0'));
+        for (byte c = 32u; c <= 126u; ++c)
+        {
+            #assert(IsPrintable(cast<char>(c)));
+        }
+        #assert(!IsPrintable('\xff'));
+        
+        #assert(!IsPunctuation('\0'));
+        for (byte c = 33u; c <= 47u; ++c)
+        {
+            #assert(IsPunctuation(cast<char>(c)));
+        }
+        for (byte c = 58u; c <= 64u; ++c)
+        {
+            #assert(IsPunctuation(cast<char>(c)));
+        }
+        for (byte c = 91u; c <= 96u; ++c)
+        {
+            #assert(IsPunctuation(cast<char>(c)));
+        }
+        #assert(!IsPunctuation('\xff'));
+
+        #assert(!IsSpace('\0'));
+        for (byte c = 9u; c <= 13u; ++c)
+        {
+            #assert(IsSpace(cast<char>(c)));
+        }
+        #assert(IsSpace(' '));
+        #assert(!IsSpace('\xff'));
+    }
+}

@@ -1,0 +1,32 @@
+using System;
+
+namespace Test.System.Date
+{
+    public unit_test void DateTest()
+    {
+        Date d0;
+        #assert(d0.Year() == 1);
+        #assert(d0.Month() == 1);
+        #assert(d0.Day() == 1);
+        #assert(d0 == Date());
+
+        Date d1(1u, 1u, 2u);
+        #assert(d1.Year() == 1);
+        #assert(d1.Month() == 1);
+        #assert(d1.Day() == 2);
+        #assert(d0 < d1);
+
+        Date d2(65535u, 12u, 31u);
+        #assert(d2.Year() == 65535);
+        #assert(d2.Month() == 12);
+        #assert(d2.Day() == 31);
+        #assert(d2 > d1);
+        #assert(d2 > d0);
+
+        Date d3 = CurrentDate();
+        #assert(d3 > d0);
+        #assert(d3 > d1);
+        #assert(d3 < d2);
+        Console.Out() << ToString(d3) << endl();
+    }
+}
