@@ -92,8 +92,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             }
             else if (paramType->IsConstReferenceType())
             {
-                if ((argument->GetType()->IsBasicTypeSymbol() || argument->GetType()->IsEnumTypeSymbol() || argument->GetType()->IsNonReferencePointerType() || 
-                    argument->GetType()->IsDelegateTypeSymbol()) &&
+                if ((argument->GetType()->IsValueTypeSymbol()) &&
                     (argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argument->IsBoundUnaryOp() || argument->IsBoundBinaryOp() || 
                     argument->IsBoundFunctionCall() || argument->IsBoundConversion() || argument->IsBoundCast()))
                 {

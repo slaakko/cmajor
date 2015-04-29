@@ -1,0 +1,216 @@
+using System;
+
+namespace Test.System.Convert
+{
+    public unit_test void TestConvert()
+    {
+        #assert(ToString(MinValue<int>()) == "-2147483648");
+        #assert(ToString(int(-1)) == "-1");
+        #assert(ToString(int(0)) == "0");
+        #assert(ToString(int(1)) == "1");
+        #assert(ToString(MaxValue<int>()) == "2147483647");
+
+        #assert(ToString(MinValue<uint>()) == "0");
+        #assert(ToString(uint(1u)) == "1");
+        #assert(ToString(MaxValue<uint>()) == "4294967295");
+
+        #assert(ToString(MinValue<long>()) == "-9223372036854775808");
+        #assert(ToString(long(-1)) == "-1");
+        #assert(ToString(long(0)) == "0");
+        #assert(ToString(long(1)) == "1");
+        #assert(ToString(MaxValue<long>()) == "9223372036854775807");
+
+        #assert(ToString(MinValue<ulong>()) == "0");
+        #assert(ToString(ulong(1u)) == "1");
+        #assert(ToString(MaxValue<ulong>()) == "18446744073709551615");
+
+        #assert(ToString(MinValue<byte>()) == "0");
+        #assert(ToString(cast<byte>(1)) == "1");
+        #assert(ToString(MaxValue<byte>()) == "255");
+
+        #assert(ToString(MinValue<sbyte>()) == "-128");
+        #assert(ToString(cast<sbyte>(-1)) == "-1");
+        #assert(ToString(cast<sbyte>(0)) == "0");
+        #assert(ToString(MaxValue<sbyte>()) == "127");
+
+        #assert(ToString(MinValue<short>()) == "-32768");
+        #assert(ToString(cast<short>(-1)) == "-1");
+        #assert(ToString(cast<short>(0)) == "0");
+        #assert(ToString(cast<short>(1)) == "1");
+        #assert(ToString(MaxValue<short>()) == "32767");
+
+        #assert(ToString(MinValue<ushort>()) == "0");
+        #assert(ToString(cast<ushort>(1)) == "1");
+        #assert(ToString(MaxValue<ushort>()) == "65535");
+
+        #assert(ToString(0.0) == "0");
+        #assert(ToString(0.1) == "0.1");
+        #assert(ToString(-0.1) == "-0.1");
+
+        #assert(ToString('x') == "x");
+        
+        #assert(ToString(true) == "true");
+        #assert(ToString(false) == "false");
+
+        #assert(ToString(Date()) == "0001-01-01");
+        #assert(ToString(Date(2015u, 04u, 29u)) == "2015-04-29");
+
+        #assert(ParseDate("0001-01-01") == Date());
+        #assert(ParseDate("2015-04-29") == Date(2015u, 04u, 29u));
+
+        for (byte h = 0u; h < 10; ++h)
+        {
+            #assert(HexChar(h) == cast<char>(cast<byte>('0') + h));
+        }
+        #assert(HexChar(0x0au) == 'A');
+        #assert(HexChar(0x0bu) == 'B');
+        #assert(HexChar(0x0cu) == 'C');
+        #assert(HexChar(0x0du) == 'D');
+        #assert(HexChar(0x0eu) == 'E');
+        #assert(HexChar(0x0fu) == 'F');
+
+        #assert(ToHexString(0x0u) == "00");
+        #assert(ToHexString(0x1u) == "01");
+        #assert(ToHexString(0x0Fu) == "0F");
+        #assert(ToHexString(0x10u) == "10");
+        #assert(ToHexString(0x11u) == "11");
+        #assert(ToHexString(0x1Fu) == "1F");
+        #assert(ToHexString(0x3Fu) == "3F");
+        #assert(ToHexString(0xFFu) == "FF");
+        #assert(ToHexString(0x1000u) == "1000");
+        #assert(ToHexString(0x1234u) == "1234");
+        #assert(ToHexString(0x12345678u) == "12345678");
+        #assert(ToHexString(0x123456789abcdeffu) == "123456789ABCDEFF");
+
+        string s1("x");
+        s1[0] = cast<char>(0x41);
+        #assert(ToUtf8(0x41u) == s1);
+        string s2("xxx");
+        s2[0] = cast<char>(0xe2);
+        s2[1] = cast<char>(0x89);
+        s2[2] = cast<char>(0xa2);
+        #assert(ToUtf8(0x2262u) == s2);
+        string s3("xx");
+        s3[0] = cast<char>(0xce);
+        s3[1] = cast<char>(0x91);
+        #assert(ToUtf8(0x0391u) == s3);
+        string s4("x");
+        s4[0] = cast<char>(0x2e);
+        #assert(ToUtf8(0x2eu) == s4);
+        string s5("xxx");
+        s5[0] = cast<char>(0xed);
+        s5[1] = cast<char>(0x95);
+        s5[2] = cast<char>(0x9c);
+        #assert(ToUtf8(0xd55cu) == s5);
+        string s6("xxx");
+        s6[0] = cast<char>(0xea);
+        s6[1] = cast<char>(0xb5);
+        s6[2] = cast<char>(0xad);
+        #assert(ToUtf8(0xad6du) == s6);
+        string s7("xxx");
+        s7[0] = cast<char>(0xec);
+        s7[1] = cast<char>(0x96);
+        s7[2] = cast<char>(0xb4);
+        #assert(ToUtf8(0xc5b4u) == s7);
+
+        int xf;
+        #assert(!ParseInt("", xf));
+        int x0;
+        #assert(ParseInt("0", x0));
+        #assert(x0 == 0);
+        #assert(ParseInt("0") == 0);
+        int x1;
+        #assert(ParseInt("-1", x1));
+        #assert(x1 == -1);
+        #assert(ParseInt("-1") == -1);
+        int x2;
+        #assert(ParseInt("1", x2));
+        #assert(x2 == 1);
+        #assert(ParseInt("1") == 1);
+        int x3;
+        #assert(ParseInt("-2147483648", x3));
+        #assert(x3 == MinValue<int>());
+        #assert(ParseInt("-2147483648") == MinValue<int>());
+        int x4;
+        #assert(ParseInt("2147483647", x4));
+        #assert(x4 == MaxValue<int>());
+        #assert(ParseInt("2147483647") == MaxValue<int>());
+
+        uint uxf;
+        #assert(!ParseUInt("", uxf));
+        uint ux0;
+        #assert(ParseUInt("0", ux0));
+        #assert(ux0 == 0);
+        #assert(ParseUInt("0") == 0);
+        uint ux1;
+        #assert(ParseUInt("4294967295", ux1));
+        #assert(ux1 == MaxValue<uint>());
+        #assert(ParseUInt("4294967295") == MaxValue<uint>());
+
+        ulong ulf;
+        #assert(!ParseULong("", ulf));
+        ulong ul0;
+        #assert(ParseULong("0", ul0));
+        #assert(ul0 == 0);
+        #assert(ParseULong("0") == 0);
+        ulong ul1;
+        #assert(ParseULong("18446744073709551615", ul1));
+        #assert(ul1 == MaxValue<ulong>());
+        #assert(ParseULong("18446744073709551615") == MaxValue<ulong>()); 
+
+        ulong hex0;
+        #assert(ParseHex("0", hex0));
+        #assert(hex0 == 0x00);
+        #assert(ParseHex("0") == 0x00);
+        ulong hex1;
+        #assert(ParseHex("1", hex1));
+        #assert(hex1 == 0x01);
+        #assert(ParseHex("1") == 0x01);
+        ulong hex2;
+        #assert(ParseHex("FF", hex2));
+        #assert(hex2 == 0xFF);
+        #assert(ParseHex("FF") == 0xFF);
+        ulong hex3;
+        #assert(ParseHex("BAADC0DE", hex3));
+        #assert(hex3 == 0xBAADC0DE);
+        #assert(ParseHex("BAADC0DE") == 0xBAADC0DE);
+        ulong hex4;
+        #assert(ParseHex("FFFFFFFFFFFFFFFF", hex4));
+        #assert(hex4 == MaxValue<ulong>());
+        #assert(ParseHex("FFFFFFFFFFFFFFFF") == MaxValue<ulong>());
+
+        double d0;
+        #assert(ParseDouble("0", d0));
+        #assert(d0 == 0);
+        #assert(ParseDouble("0")  == 0);
+        double d1;
+        #assert(ParseDouble("1", d1));
+        #assert(d1 == 1);
+        #assert(ParseDouble("1")  == 1);
+        double d2;
+        #assert(ParseDouble("-1", d2));
+        #assert(d2 == -1);
+        #assert(ParseDouble("-1")  == -1);
+        double d3;
+        #assert(ParseDouble("1e0", d3));
+        #assert(d3 == 1);
+        #assert(ParseDouble("1e0")  == 1);
+        double d4;
+        #assert(ParseDouble("1e1", d4));
+        #assert(d4 == 10);
+        #assert(ParseDouble("1e1")  == 10);
+        double d5;
+        #assert(ParseDouble("1e-1", d5));
+        #assert(d5 == 0.1);
+        #assert(ParseDouble("1e-1")  == 0.1);
+
+        bool b0;
+        #assert(ParseBool("true", b0));
+        #assert(b0 == true);
+        #assert(ParseBool("true") == true);
+        bool b1;
+        #assert(ParseBool("false", b1));
+        #assert(b1 == false);
+        #assert(ParseBool("false") == false);
+    }
+}

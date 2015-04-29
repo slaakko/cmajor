@@ -1,13 +1,16 @@
 using System;
 
-public unit_test void TestConjunctionDisjunction()
+namespace Test.Compiler
 {
-    int pos = 4;
-    int n = 10;
-    if (!(pos >= 0 && pos < n))
+    public unit_test void TestConjunctionDisjunction()
     {
-        #assert(false);
-        return;
+        int pos = 4;
+        int n = 10;
+        if (!(pos >= 0 && pos < n))
+        {
+            #assert(false);
+            return;
+        }
+        #assert(true);
     }
-    #assert(true);
 }

@@ -1,0 +1,148 @@
+using System;
+using System.Support;
+using System.IO;
+
+namespace Test.System.FileStream
+{
+    public unit_test void FileStreamTest()
+    {
+        {
+            IOBuffer buf(4096u);
+            #assert(buf.Mem() != null);
+            #assert(buf.Size() == 4096u);
+        }
+    
+        {
+            InputFileStream standardInput;
+            #assert(standardInput.Handle() == stdin);
+            #assert(standardInput.EndOfStream() == false);
+        }
+
+        {
+            InputFileStream textFile("textfile.txt");
+            string emptyLine = textFile.ReadLine();
+            #assert(emptyLine.IsEmpty());
+            #assert(emptyLine.Length() == 0);
+            string a = textFile.ReadLine();
+            #assert(a == "a");
+            string ab = textFile.ReadLine();
+            #assert(ab == "ab");
+            string abc = textFile.ReadLine();
+            #assert(abc == "abc");
+            string letters = textFile.ReadLine();
+            #assert(letters == "The quick brown fox jumps over the lazy dog");
+            string rest = textFile.ReadToEnd();
+            #assert(textFile.EndOfStream());
+        }
+       
+        string text = ReadFile("textfile.txt");
+        #assert(!text.IsEmpty());
+        #assert(text.Length() == 54);
+
+        {
+            OutputFileStream textFile("file.txt");
+            textFile.WriteLine();
+            textFile.WriteLine("a");
+            textFile.WriteLine("ab");
+            textFile.WriteLine("abc");
+            textFile.WriteLine("The quick brown fox jumps over the lazy dog");
+        }
+
+        #assert(FileContentsEqual("textfile.txt", "file.txt"));
+
+        {
+            BinaryFileStream file("file.dat", OpenMode.writeOnly);
+            file.Write(text);
+            file.Write("abradacabra");
+            string s = "ABRADACABRA";
+            file.Write(s);
+            file.Write('x');
+            file.Write(MinValue<byte>());
+            file.Write(MaxValue<byte>());
+            file.Write(MinValue<sbyte>());
+            file.Write(MaxValue<sbyte>());
+            file.Write(MinValue<short>());
+            file.Write(MaxValue<short>());
+            file.Write(MinValue<ushort>());
+            file.Write(MaxValue<ushort>());
+            file.Write(MinValue<int>());
+            file.Write(MaxValue<int>());
+            file.Write(MinValue<uint>());
+            file.Write(MaxValue<uint>());
+            file.Write(MinValue<long>());
+            file.Write(MaxValue<long>());
+            file.Write(MinValue<ulong>());
+            file.Write(MaxValue<ulong>());
+            file.Write(true);
+            file.Write(false);
+            file.Write(cast<float>(0.0));
+            file.Write(cast<float>(1e9));
+            file.Write(cast<float>(-1e9));
+            file.Write(cast<double>(0.0));
+            file.Write(cast<double>(1e9));
+            file.Write(cast<double>(-1e9));
+        }
+
+        {
+            BinaryFileStream file("file.dat", OpenMode.readOnly);
+            string t = file.ReadString();
+            #assert(t == text);
+            string s0 = file.ReadString();
+            #assert(s0 == "abradacabra");
+            string s1 = file.ReadString();
+            #assert(s1 == "ABRADACABRA");
+            char c = file.ReadChar();
+            #assert(c == 'x');
+            byte b0 = file.ReadByte();
+            #assert(b0 == MinValue<byte>());
+            byte b1 = file.ReadByte();
+            #assert(b1 == MaxValue<byte>());
+            sbyte sb0 = file.ReadSByte();
+            #assert(sb0 == MinValue<sbyte>());
+            sbyte sb1 = file.ReadSByte();
+            #assert(sb1 == MaxValue<sbyte>());
+            short sh0 = file.ReadShort();
+            #assert(sh0 == MinValue<short>());
+            short sh1 = file.ReadShort();
+            #assert(sh1 == MaxValue<short>());
+            ushort ush0 = file.ReadUShort();
+            #assert(ush0 == MinValue<ushort>());
+            ushort ush1 = file.ReadUShort();
+            #assert(ush1 == MaxValue<ushort>());
+            int i0 = file.ReadInt();
+            #assert(i0 == MinValue<int>());
+            int i1 = file.ReadInt();
+            #assert(i1 == MaxValue<int>());
+            uint ui0 = file.ReadUInt();
+            #assert(ui0 == MinValue<uint>());
+            uint ui1 = file.ReadUInt();
+            #assert(ui1 == MaxValue<uint>());
+            long l0 = file.ReadLong();
+            #assert(l0 == MinValue<long>());
+            long l1 = file.ReadLong();
+            #assert(l1 == MaxValue<long>());
+            ulong ul0 = file.ReadULong();
+            #assert(ul0 == MinValue<ulong>());
+            ulong ul1 = file.ReadULong();
+            #assert(ul1 == MaxValue<ulong>());
+            bool bo0 = file.ReadBool();
+            #assert(bo0 == true);
+            bool bo1 = file.ReadBool();
+            #assert(bo1 == false);
+            float f0 = file.ReadFloat();
+            #assert(f0 == cast<float>(0.0));
+            float f1 = file.ReadFloat();
+            #assert(f1 == cast<float>(1e9));
+            float f2 = file.ReadFloat();
+            #assert(f2 == cast<float>(-1e9));
+            double d0 = file.ReadDouble();
+            #assert(d0 == 0.0);
+            double d1 = file.ReadDouble();
+            #assert(d1 == 1e9);
+            double d2 = file.ReadDouble();
+            #assert(d2 == -1e9);
+        }
+
+        #assert(FileContentsEqual("file.dat", "compare.dat"));
+    }
+}

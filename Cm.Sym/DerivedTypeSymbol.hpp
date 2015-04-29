@@ -56,6 +56,7 @@ public:
         return HasPureReferenceDerivation(derivations) && !baseType->IsClassTypeSymbol() || HasReferenceDerivation(derivations) && HasPointertDerivation(derivations);
     }
     bool IsNonReferencePointerType() const override { return IsPointerType() && GetPointerCount() == 1 && !HasReferenceDerivation(derivations); }
+    bool IsValueTypeSymbol() const override { return IsNonReferencePointerType(); }
     bool IsConstPointerType() const { return HasConstPointerDerivation(derivations); }
     bool IsConstPointerPointerType() const { return HasConstPointerPointerDerivation(derivations); }
     DerivationCounts GetDerivationCounts() const override { return CountDerivations(derivations); }

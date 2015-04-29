@@ -30,6 +30,7 @@ public:
     void SetType(TypeSymbol* type, int index) override { SetUnderlyingType(type); }
     void SetUnderlyingType(TypeSymbol* underlyingType_);
     void MakeIrType() override;
+    bool IsValueTypeSymbol() const override { return true; }
 private:
     TypeSymbol* underlyingType;
 };

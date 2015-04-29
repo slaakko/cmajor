@@ -69,6 +69,7 @@ public:
     void MakeIrType() override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    bool IsValueTypeSymbol() const override { return true; }
 private:
     DelegateTypeSymbolFlags flags;
     TypeSymbol* returnType;
