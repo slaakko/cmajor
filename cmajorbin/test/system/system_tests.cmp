@@ -9,3 +9,4 @@ source <convert.cm>;
 source <date.cm>;
 source <exception.cm>;
 source <filestream.cm>;
+source <function.cm>;

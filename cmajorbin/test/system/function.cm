@@ -1,0 +1,143 @@
+using System;
+
+namespace Test.System.Function
+{
+    public unit_test void FunctionTest()
+    {
+        #assert(Plus<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()) == 0);
+        #assert(Plus<sbyte>()(MinValue<sbyte>(), 0) == MinValue<sbyte>());
+        #assert(Plus<sbyte>()(0, MinValue<sbyte>()) == MinValue<sbyte>());
+        #assert(Plus<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()) == -1);
+        #assert(Plus<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()) == -1);
+        #assert(Plus<sbyte>()(0, 0) == 0);
+        #assert(Plus<sbyte>()(0, MaxValue<sbyte>()) == MaxValue<sbyte>());
+        #assert(Plus<sbyte>()(MaxValue<sbyte>(), 0) == MaxValue<sbyte>());
+        #assert(Plus<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()) == -2);
+
+        #assert(Plus<byte>()(MinValue<byte>(), MinValue<byte>()) == MinValue<byte>());
+        #assert(Plus<byte>()(MinValue<byte>(), 127u) == 127u);
+        #assert(Plus<byte>()(127u, MinValue<byte>()) == 127u);
+        #assert(Plus<byte>()(MinValue<byte>(), MaxValue<byte>()) == MaxValue<byte>());
+        #assert(Plus<byte>()(MaxValue<byte>(), MinValue<byte>()) == MaxValue<byte>());
+        #assert(Plus<byte>()(127u, 127u) == 254u);
+        #assert(Plus<byte>()(127u, MaxValue<byte>()) == 126u);
+        #assert(Plus<byte>()(MaxValue<byte>(), 127u) == 126u);
+        #assert(Plus<byte>()(MaxValue<byte>(), MaxValue<byte>()) == 254u);
+
+        #assert(Plus<short>()(MinValue<short>(), MinValue<short>()) == 0);
+        #assert(Plus<short>()(MinValue<short>(), 0) == MinValue<short>());
+        #assert(Plus<short>()(0, MinValue<short>()) == MinValue<short>());
+        #assert(Plus<short>()(MinValue<short>(), MaxValue<short>()) == -1);
+        #assert(Plus<short>()(MaxValue<short>(), MinValue<short>()) == -1);
+        #assert(Plus<short>()(0, 0) == 0);
+        #assert(Plus<short>()(0, MaxValue<short>()) == MaxValue<short>());
+        #assert(Plus<short>()(MaxValue<short>(), 0) == MaxValue<short>());
+        #assert(Plus<short>()(MaxValue<short>(), MaxValue<short>()) == -2);
+
+        #assert(Plus<ushort>()(MinValue<ushort>(), MinValue<ushort>()) == MinValue<ushort>());
+        #assert(Plus<ushort>()(MinValue<ushort>(), 32767u) == 32767u);
+        #assert(Plus<ushort>()(32767u, MinValue<ushort>()) == 32767u);
+        #assert(Plus<ushort>()(MinValue<ushort>(), MaxValue<ushort>()) == MaxValue<ushort>());
+        #assert(Plus<ushort>()(MaxValue<ushort>(), MinValue<ushort>()) == MaxValue<ushort>());
+        #assert(Plus<ushort>()(32767u, 32767u) == 65534u);
+        #assert(Plus<ushort>()(32767u, MaxValue<ushort>()) == 32766u);
+        #assert(Plus<ushort>()(MaxValue<ushort>(), 32767u) == 32766u);
+        #assert(Plus<ushort>()(MaxValue<ushort>(), MaxValue<ushort>()) == 65534u);
+
+        #assert(Plus<int>()(MinValue<int>(), MinValue<int>()) == 0);
+        #assert(Plus<int>()(MinValue<int>(), 0) == MinValue<int>());
+        #assert(Plus<int>()(0, MinValue<int>()) == MinValue<int>());
+        #assert(Plus<int>()(MinValue<int>(), MaxValue<int>()) == -1);
+        #assert(Plus<int>()(MaxValue<int>(), MinValue<int>()) == -1);
+        #assert(Plus<int>()(0, 0) == 0);
+        #assert(Plus<int>()(0, MaxValue<int>()) == MaxValue<int>());
+        #assert(Plus<int>()(MaxValue<int>(), 0) == MaxValue<int>());
+        #assert(Plus<int>()(MaxValue<int>(), MaxValue<int>()) == -2);
+
+        #assert(Plus<uint>()(MinValue<uint>(), MinValue<uint>()) == MinValue<uint>());
+        #assert(Plus<uint>()(MinValue<uint>(), 2147483647u) == 2147483647u);
+        #assert(Plus<uint>()(2147483647u, MinValue<uint>()) == 2147483647u);
+        #assert(Plus<uint>()(MinValue<uint>(), MaxValue<uint>()) == MaxValue<uint>());
+        #assert(Plus<uint>()(MaxValue<uint>(), MinValue<uint>()) == MaxValue<uint>());
+        #assert(Plus<uint>()(2147483647u, 2147483647u) == 4294967294u);
+        #assert(Plus<uint>()(2147483647u, MaxValue<uint>()) == 2147483646u);
+        #assert(Plus<uint>()(MaxValue<uint>(), 2147483647u) == 2147483646u);
+        #assert(Plus<uint>()(MaxValue<uint>(), MaxValue<uint>()) == 4294967294u);
+
+        #assert(Plus<long>()(MinValue<long>(), MinValue<long>()) == 0);
+        #assert(Plus<long>()(MinValue<long>(), 0) == MinValue<long>());
+        #assert(Plus<long>()(0, MinValue<long>()) == MinValue<long>());
+        #assert(Plus<long>()(MinValue<long>(), MaxValue<long>()) == -1);
+        #assert(Plus<long>()(MaxValue<long>(), MinValue<long>()) == -1);
+        #assert(Plus<long>()(0, 0) == 0);
+        #assert(Plus<long>()(0, MaxValue<long>()) == MaxValue<long>());
+        #assert(Plus<long>()(MaxValue<long>(), 0) == MaxValue<long>());
+        #assert(Plus<long>()(MaxValue<long>(), MaxValue<long>()) == -2);
+
+        #assert(Plus<ulong>()(MinValue<ulong>(), MinValue<ulong>()) == MinValue<ulong>());
+        #assert(Plus<ulong>()(MinValue<ulong>(), 9223372036854775807u) == 9223372036854775807u);
+        #assert(Plus<ulong>()(9223372036854775807u, MinValue<ulong>()) == 9223372036854775807u);
+        #assert(Plus<ulong>()(MinValue<ulong>(), MaxValue<ulong>()) == MaxValue<ulong>());
+        #assert(Plus<ulong>()(MaxValue<ulong>(), MinValue<ulong>()) == MaxValue<ulong>());
+        #assert(Plus<ulong>()(9223372036854775807u, 9223372036854775807u) == MaxValue<ulong>() - 1);
+        #assert(Plus<ulong>()(9223372036854775807u, MaxValue<ulong>()) == 9223372036854775806u);
+        #assert(Plus<ulong>()(MaxValue<ulong>(), 9223372036854775807u) == 9223372036854775806u);
+        #assert(Plus<ulong>()(MaxValue<ulong>(), MaxValue<ulong>()) == MaxValue<ulong>() - 1);
+
+        #assert(Negate<sbyte>()(MinValue<sbyte>()) == MinValue<sbyte>());
+        #assert(Negate<sbyte>()(0) == 0);
+        #assert(Negate<sbyte>()(MaxValue<sbyte>()) == -MaxValue<sbyte>());
+        
+        #assert(Negate<short>()(MinValue<short>()) == MinValue<short>());
+        #assert(Negate<short>()(0) == 0);
+        #assert(Negate<short>()(MaxValue<short>()) == -MaxValue<short>());
+
+        #assert(Negate<int>()(MinValue<int>()) == MinValue<int>());
+        #assert(Negate<int>()(0) == 0);
+        #assert(Negate<int>()(MaxValue<int>()) == -MaxValue<int>());
+
+        #assert(Negate<long>()(MinValue<long>()) == MinValue<long>());
+        #assert(Negate<long>()(0) == 0);
+        #assert(Negate<long>()(MaxValue<long>()) == -MaxValue<long>());
+
+        #assert(Minus<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()) == 0);
+        #assert(Minus<sbyte>()(MinValue<sbyte>(), 0) == MinValue<sbyte>());
+        #assert(Minus<sbyte>()(0, MinValue<sbyte>()) == MinValue<sbyte>());
+        #assert(Minus<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()) == 1);
+        #assert(Minus<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()) == -1);
+        #assert(Minus<sbyte>()(0, 0) == 0);
+        #assert(Minus<sbyte>()(0, MaxValue<sbyte>()) == -MaxValue<sbyte>());
+        #assert(Minus<sbyte>()(MaxValue<sbyte>(), 0) == MaxValue<sbyte>());
+        #assert(Minus<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()) == 0);
+
+        #assert(Minus<short>()(MinValue<short>(), MinValue<short>()) == 0);
+        #assert(Minus<short>()(MinValue<short>(), 0) == MinValue<short>());
+        #assert(Minus<short>()(0, MinValue<short>()) == MinValue<short>());
+        #assert(Minus<short>()(MinValue<short>(), MaxValue<short>()) == 1);
+        #assert(Minus<short>()(MaxValue<short>(), MinValue<short>()) == -1);
+        #assert(Minus<short>()(0, 0) == 0);
+        #assert(Minus<short>()(0, MaxValue<short>()) == -MaxValue<short>());
+        #assert(Minus<short>()(MaxValue<short>(), 0) == MaxValue<short>());
+        #assert(Minus<short>()(MaxValue<short>(), MaxValue<short>()) == 0);
+
+        #assert(Minus<int>()(MinValue<int>(), MinValue<int>()) == 0);
+        #assert(Minus<int>()(MinValue<int>(), 0) == MinValue<int>());
+        #assert(Minus<int>()(0, MinValue<int>()) == MinValue<int>());
+        #assert(Minus<int>()(MinValue<int>(), MaxValue<int>()) == 1);
+        #assert(Minus<int>()(MaxValue<int>(), MinValue<int>()) == -1);
+        #assert(Minus<int>()(0, 0) == 0);
+        #assert(Minus<int>()(0, MaxValue<int>()) == -MaxValue<int>());
+        #assert(Minus<int>()(MaxValue<int>(), 0) == MaxValue<int>());
+        #assert(Minus<int>()(MaxValue<int>(), MaxValue<int>()) == 0);
+
+        #assert(Minus<long>()(MinValue<long>(), MinValue<long>()) == 0);
+        #assert(Minus<long>()(MinValue<long>(), 0) == MinValue<long>());
+        #assert(Minus<long>()(0, MinValue<long>()) == MinValue<long>());
+        #assert(Minus<long>()(MinValue<long>(), MaxValue<long>()) == 1);
+        #assert(Minus<long>()(MaxValue<long>(), MinValue<long>()) == -1);
+        #assert(Minus<long>()(0, 0) == 0);
+        #assert(Minus<long>()(0, MaxValue<long>()) == -MaxValue<long>());
+        #assert(Minus<long>()(MaxValue<long>(), 0) == MaxValue<long>());
+        #assert(Minus<long>()(MaxValue<long>(), MaxValue<long>()) == 0);
+    }
+}
