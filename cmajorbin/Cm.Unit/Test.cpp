@@ -400,7 +400,7 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
         {
             if (!testName.empty())
             {
-                if (testUnit.second.find(testName) == std::string::npos) continue;
+                if (testUnit.second != testName) continue;
             }
             TestUnit(testUnit.first.get(), project, testUnit.second);
         }

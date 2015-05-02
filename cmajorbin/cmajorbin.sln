@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.22609.0
+VisualStudioVersion = 14.0.22823.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cm.Compiler", "Cm.Compiler\Cm.Compiler.vcxproj", "{00F080D7-2AFD-41C5-BDCC-0D1F32A65028}"
 	ProjectSection(ProjectDependencies) = postProject

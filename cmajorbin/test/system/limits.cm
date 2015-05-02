@@ -1,0 +1,24 @@
+using System;
+
+namespace Test.System.Limits
+{
+    public unit_test void TestLimits()
+    {
+        #assert(MinValue<sbyte>() == -128);
+        #assert(MaxValue<sbyte>() == 127);
+        #assert(MinValue<byte>() == 0);
+        #assert(MaxValue<byte>() == 255);
+        #assert(MinValue<short>() == -32768);
+        #assert(MaxValue<short>() == 32767);
+        #assert(MinValue<ushort>() == 0);
+        #assert(MaxValue<ushort>() == 65535);
+        #assert(MinValue<int>() == -2147483648);
+        #assert(MaxValue<int>() == 2147483647);
+        #assert(MinValue<uint>() == 0);
+        #assert(MaxValue<uint>() == 4294967295);
+        #assert(MinValue<long>() == -9223372036854775808);
+        #assert(MaxValue<long>() == 9223372036854775807);
+        #assert(MinValue<ulong>() == 0);
+        #assert(MaxValue<ulong>() == 18446744073709551615);
+    }
+}

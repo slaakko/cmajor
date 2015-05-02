@@ -10,3 +10,7 @@ source <date.cm>;
 source <exception.cm>;
 source <filestream.cm>;
 source <function.cm>;
+source <fwdlist.cm>;
+source <iterator.cm>;
+source <limits.cm>;
+source <list.cm>;

@@ -1,0 +1,251 @@
+using System;
+using System.Collections;
+
+namespace Test.System.Collections.ForwardList
+{
+    public unit_test void ForwardListIntTest()
+    {
+        ForwardList<int> fl0;
+        #assert(fl0.IsEmpty());
+        #assert(fl0.Count() == 0);
+        ForwardList<int> fl1(fl0);
+        #assert(fl1.IsEmpty());
+        #assert(fl1.Count() == 0);
+        #assert(Equal(fl0.Begin(), fl0.End(), fl1.Begin(), fl1.End()));
+        Swap(fl0, fl1);
+        #assert(fl0.IsEmpty());
+        #assert(fl0.Count() == 0);
+        #assert(fl1.IsEmpty());
+        #assert(fl1.Count() == 0);
+        #assert(Equal(fl0.Begin(), fl0.End(), fl1.Begin(), fl1.End()));
+
+        ForwardList<int> fl2;
+        fl2.InsertFront(1);
+        #assert(!fl2.IsEmpty());
+        #assert(fl2.Count() == 1);
+        #assert(fl2.Front() == 1);
+        ForwardList<int> fl3(fl2);
+        #assert(!fl3.IsEmpty());
+        #assert(fl3.Count() == 1);
+        #assert(Equal(fl2.Begin(), fl2.End(), fl3.Begin(), fl3.End()));
+        Swap(fl2, fl3);
+        #assert(!fl2.IsEmpty());
+        #assert(fl2.Count() == 1);
+        #assert(!fl3.IsEmpty());
+        #assert(fl3.Count() == 1);
+        #assert(Equal(fl2.Begin(), fl2.End(), fl3.Begin(), fl3.End()));
+        fl2.RemoveFront();
+        #assert(Equal(fl2.Begin(), fl2.End(), fl0.Begin(), fl0.End()));
+        fl3.Remove(1);
+        #assert(Equal(fl2.Begin(), fl2.End(), fl3.Begin(), fl3.End()));
+
+        ForwardList<int> fl4;
+        ForwardList<int>.Iterator e4 = fl4.End();
+        e4 = fl4.InsertAfter(e4, 1);
+        e4 = fl4.InsertAfter(e4, 2);
+        #assert(!fl4.IsEmpty());
+        #assert(fl4.Count() == 2);
+        List<int> l4;
+        l4.Add(1);
+        l4.Add(2);
+        #assert(Equal(fl4.Begin(), fl4.End(), l4.Begin(), l4.End()));
+        ForwardList<int> fl5(fl4);
+        #assert(!fl5.IsEmpty());
+        #assert(fl5.Count() == 2);
+        #assert(Equal(fl4.Begin(), fl4.End(), fl5.Begin(), fl5.End()));
+        Swap(fl4, fl5);
+        #assert(!fl4.IsEmpty());
+        #assert(fl4.Count() == 2);
+        #assert(!fl5.IsEmpty());
+        #assert(fl5.Count() == 2);
+        #assert(Equal(fl4.Begin(), fl4.End(), fl5.Begin(), fl5.End()));
+        fl4.RemoveFront();
+        fl4.RemoveFront();
+        #assert(Equal(fl4.Begin(), fl4.End(), fl0.Begin(), fl0.End()));
+        fl5.Remove(2);
+        fl5.Remove(1);
+        #assert(Equal(fl4.Begin(), fl4.End(), fl5.Begin(), fl5.End()));
+
+        ForwardList<int> fl6;
+        ForwardList<int>.Iterator e6 = fl6.End();
+        e6 = fl6.InsertAfter(e6, 1);
+        e6 = fl6.InsertAfter(e6, 2);
+        e6 = fl6.InsertAfter(e6, 3);
+        #assert(!fl6.IsEmpty());
+        #assert(fl6.Count() == 3);
+        List<int> l6;
+        l6.Add(1);
+        l6.Add(2);
+        l6.Add(3);
+        #assert(Equal(fl6.Begin(), fl6.End(), l6.Begin(), l6.End()));
+        ForwardList<int> fl7(fl6);
+        #assert(!fl7.IsEmpty());
+        #assert(fl7.Count() == 3);
+        #assert(fl6 == fl7);
+        fl6.RemoveAfter(fl6.Begin());
+        l6.Remove(l6.Begin() + 1);
+        #assert(Equal(fl6.Begin(), fl6.End(), l6.Begin(), l6.End()));
+        fl6.RemoveAfter(fl6.Begin());
+        l6.Remove(l6.Begin() + 1);
+        #assert(Equal(fl6.Begin(), fl6.End(), l6.Begin(), l6.End()));
+        fl6.RemoveFront();
+        #assert(fl6.IsEmpty());
+        #assert(fl6.Count() == 0);
+        Swap(fl6, fl7);
+        #assert(fl7.IsEmpty());
+        #assert(fl7.Count() == 0);
+        l6.Add(2);
+        l6.Add(3);
+        #assert(Equal(fl6.Begin(), fl6.End(), l6.Begin(), l6.End()));
+        fl6.Clear();
+        #assert(fl6.IsEmpty());
+        #assert(fl6.Count() == 0);
+        #assert(fl6 == fl7);
+
+        ForwardList<int> fl100;
+        List<int> l100;
+        for (int i = 0; i < 100; ++i)
+        {
+            fl100.InsertFront(i);
+            l100.Insert(l100.Begin(), i);
+        }
+        #assert(!fl100.IsEmpty());
+        #assert(fl100.Count() == 100);
+        #assert(Equal(fl100.Begin(), fl100.End(), l100.Begin(), l100.End()));
+
+        ForwardList<int> fl4096;
+        List<int> l4096;
+        ForwardList<int>.Iterator e4096 = fl4096.End();
+        for (int i = 0; i < 4096; ++i)
+        {
+            e4096 = fl4096.InsertAfter(e4096, i);
+            l4096.Add(i);
+        }
+        #assert(!fl4096.IsEmpty());
+        #assert(fl4096.Count() == 4096);
+        #assert(Equal(fl4096.Begin(), fl4096.End(), l4096.Begin(), l4096.End()));
+    }
+
+    public unit_test void ForwardListStringTest()
+    {
+        ForwardList<string> fl0;
+        #assert(fl0.IsEmpty());
+        #assert(fl0.Count() == 0);
+        ForwardList<string> fl1(fl0);
+        #assert(fl1.IsEmpty());
+        #assert(fl1.Count() == 0);
+        #assert(Equal(fl0.Begin(), fl0.End(), fl1.Begin(), fl1.End()));
+        Swap(fl0, fl1);
+        #assert(fl0.IsEmpty());
+        #assert(fl0.Count() == 0);
+        #assert(fl1.IsEmpty());
+        #assert(fl1.Count() == 0);
+        #assert(Equal(fl0.Begin(), fl0.End(), fl1.Begin(), fl1.End()));
+
+        ForwardList<string> fl2;
+        fl2.InsertFront("1");
+        #assert(!fl2.IsEmpty());
+        #assert(fl2.Count() == 1);
+        #assert(fl2.Front() == "1");
+        ForwardList<string> fl3(fl2);
+        #assert(!fl3.IsEmpty());
+        #assert(fl3.Count() == 1);
+        #assert(Equal(fl2.Begin(), fl2.End(), fl3.Begin(), fl3.End()));
+        Swap(fl2, fl3);
+        #assert(!fl2.IsEmpty());
+        #assert(fl2.Count() == 1);
+        #assert(!fl3.IsEmpty());
+        #assert(fl3.Count() == 1);
+        #assert(Equal(fl2.Begin(), fl2.End(), fl3.Begin(), fl3.End()));
+        fl2.RemoveFront();
+        #assert(Equal(fl2.Begin(), fl2.End(), fl0.Begin(), fl0.End()));
+        fl3.Remove("1");
+        #assert(Equal(fl2.Begin(), fl2.End(), fl3.Begin(), fl3.End()));
+
+        ForwardList<string> fl4;
+        ForwardList<string>.Iterator e4 = fl4.End();
+        e4 = fl4.InsertAfter(e4, "1");
+        e4 = fl4.InsertAfter(e4, "2");
+        #assert(!fl4.IsEmpty());
+        #assert(fl4.Count() == 2);
+        List<string> l4;
+        l4.Add("1");
+        l4.Add("2");
+        #assert(Equal(fl4.Begin(), fl4.End(), l4.Begin(), l4.End()));
+        ForwardList<string> fl5(fl4);
+        #assert(!fl5.IsEmpty());
+        #assert(fl5.Count() == 2);
+        #assert(Equal(fl4.Begin(), fl4.End(), fl5.Begin(), fl5.End()));
+        Swap(fl4, fl5);
+        #assert(!fl4.IsEmpty());
+        #assert(fl4.Count() == 2);
+        #assert(!fl5.IsEmpty());
+        #assert(fl5.Count() == 2);
+        #assert(Equal(fl4.Begin(), fl4.End(), fl5.Begin(), fl5.End()));
+        fl4.RemoveFront();
+        fl4.RemoveFront();
+        #assert(Equal(fl4.Begin(), fl4.End(), fl0.Begin(), fl0.End()));
+        fl5.Remove("2");
+        fl5.Remove("1");
+        #assert(Equal(fl4.Begin(), fl4.End(), fl5.Begin(), fl5.End()));
+
+        ForwardList<string> fl6;
+        ForwardList<string>.Iterator e6 = fl6.End();
+        e6 = fl6.InsertAfter(e6, "1");
+        e6 = fl6.InsertAfter(e6, "2");
+        e6 = fl6.InsertAfter(e6, "3");
+        #assert(!fl6.IsEmpty());
+        #assert(fl6.Count() == 3);
+        List<string> l6;
+        l6.Add("1");
+        l6.Add("2");
+        l6.Add("3");
+        #assert(Equal(fl6.Begin(), fl6.End(), l6.Begin(), l6.End()));
+        ForwardList<string> fl7(fl6);
+        #assert(!fl7.IsEmpty());
+        #assert(fl7.Count() == 3);
+        #assert(fl6 == fl7);
+        fl6.RemoveAfter(fl6.Begin());
+        l6.Remove(l6.Begin() + 1);
+        #assert(Equal(fl6.Begin(), fl6.End(), l6.Begin(), l6.End()));
+        fl6.RemoveAfter(fl6.Begin());
+        l6.Remove(l6.Begin() + 1);
+        #assert(Equal(fl6.Begin(), fl6.End(), l6.Begin(), l6.End()));
+        fl6.RemoveFront();
+        #assert(fl6.IsEmpty());
+        #assert(fl6.Count() == 0);
+        Swap(fl6, fl7);
+        #assert(fl7.IsEmpty());
+        #assert(fl7.Count() == 0);
+        l6.Add("2");
+        l6.Add("3");
+        #assert(Equal(fl6.Begin(), fl6.End(), l6.Begin(), l6.End()));
+        fl6.Clear();
+        #assert(fl6.IsEmpty());
+        #assert(fl6.Count() == 0);
+        #assert(fl6 == fl7);
+
+        ForwardList<string> fl100;
+        List<string> l100;
+        for (int i = 0; i < 100; ++i)
+        {
+            fl100.InsertFront(ToString(i));
+            l100.Insert(l100.Begin(), ToString(i));
+        }
+        #assert(!fl100.IsEmpty());
+        #assert(fl100.Count() == 100);
+        #assert(Equal(fl100.Begin(), fl100.End(), l100.Begin(), l100.End()));
+
+        ForwardList<string> fl4096;
+        List<string> l4096;
+        ForwardList<string>.Iterator e4096 = fl4096.End();
+        for (int i = 0; i < 4096; ++i)
+        {
+            e4096 = fl4096.InsertAfter(e4096, ToString(i));
+            l4096.Add(ToString(i));
+        }
+        #assert(!fl4096.IsEmpty());
+        #assert(fl4096.Count() == 4096);
+        #assert(Equal(fl4096.Begin(), fl4096.End(), l4096.Begin(), l4096.End()));
+    }
+}

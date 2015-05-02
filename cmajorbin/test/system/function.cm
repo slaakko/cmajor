@@ -139,5 +139,567 @@ namespace Test.System.Function
         #assert(Minus<long>()(0, MaxValue<long>()) == -MaxValue<long>());
         #assert(Minus<long>()(MaxValue<long>(), 0) == MaxValue<long>());
         #assert(Minus<long>()(MaxValue<long>(), MaxValue<long>()) == 0);
+
+        #assert(Multiplies<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()) == 0);
+        #assert(Multiplies<sbyte>()(MinValue<sbyte>(), 0) == 0);
+        #assert(Multiplies<sbyte>()(0, MinValue<sbyte>()) == 0);
+        #assert(Multiplies<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()) == MinValue<sbyte>());
+        #assert(Multiplies<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()) == MinValue<sbyte>());
+        #assert(Multiplies<sbyte>()(0, 0) == 0);
+        #assert(Multiplies<sbyte>()(0, MaxValue<sbyte>()) == 0);
+        #assert(Multiplies<sbyte>()(MaxValue<sbyte>(), 0) == 0);
+        #assert(Multiplies<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()) == 1);
+
+        Console.Out() << Multiplies<byte>()(MaxValue<byte>(), MaxValue<byte>()) << endl();
+
+        #assert(Multiplies<byte>()(MinValue<byte>(), MinValue<byte>()) == MinValue<byte>());
+        #assert(Multiplies<byte>()(MinValue<byte>(), 127u) == MinValue<byte>());
+        #assert(Multiplies<byte>()(127u, MinValue<byte>()) == MinValue<byte>());
+        #assert(Multiplies<byte>()(MinValue<byte>(), MaxValue<byte>()) == MinValue<byte>());
+        #assert(Multiplies<byte>()(MaxValue<byte>(), MinValue<byte>()) == MinValue<byte>());
+        #assert(Multiplies<byte>()(127u, 127u) == 1);
+        #assert(Multiplies<byte>()(127u, MaxValue<byte>()) == 129u);
+        #assert(Multiplies<byte>()(MaxValue<byte>(), 127u) == 129u);
+        #assert(Multiplies<byte>()(MaxValue<byte>(), MaxValue<byte>()) == 1);
+
+        #assert(Multiplies<short>()(MinValue<short>(), MinValue<short>()) == 0);
+        #assert(Multiplies<short>()(MinValue<short>(), 0) == 0);
+        #assert(Multiplies<short>()(0, MinValue<short>()) == 0);
+        #assert(Multiplies<short>()(MinValue<short>(), MaxValue<short>()) == MinValue<short>());
+        #assert(Multiplies<short>()(MaxValue<short>(), MinValue<short>()) == MinValue<short>());
+        #assert(Multiplies<short>()(0, 0) == 0);
+        #assert(Multiplies<short>()(0, MaxValue<short>()) == 0);
+        #assert(Multiplies<short>()(MaxValue<short>(), 0) == 0);
+        #assert(Multiplies<short>()(MaxValue<short>(), MaxValue<short>()) == 1);
+
+        #assert(Multiplies<ushort>()(MinValue<ushort>(), MinValue<ushort>()) == MinValue<ushort>());
+        #assert(Multiplies<ushort>()(MinValue<ushort>(), 32767u) == MinValue<ushort>());
+        #assert(Multiplies<ushort>()(32767u, MinValue<ushort>()) == MinValue<ushort>());
+        #assert(Multiplies<ushort>()(MinValue<ushort>(), MaxValue<ushort>()) == MinValue<ushort>());
+        #assert(Multiplies<ushort>()(MaxValue<ushort>(), MinValue<ushort>()) == MinValue<ushort>());
+        #assert(Multiplies<ushort>()(32767u, 32767u) == 1);
+        #assert(Multiplies<ushort>()(32767u, MaxValue<ushort>()) == 32769u);
+        #assert(Multiplies<ushort>()(MaxValue<ushort>(), 32767u) == 32769u);
+        #assert(Multiplies<ushort>()(MaxValue<ushort>(), MaxValue<ushort>()) == 1);
+
+        #assert(Multiplies<int>()(MinValue<int>(), MinValue<int>()) == 0);
+        #assert(Multiplies<int>()(MinValue<int>(), 0) == 0);
+        #assert(Multiplies<int>()(0, MinValue<int>()) == 0);
+        #assert(Multiplies<int>()(MinValue<int>(), MaxValue<int>()) == MinValue<int>());
+        #assert(Multiplies<int>()(MaxValue<int>(), MinValue<int>()) == MinValue<int>());
+        #assert(Multiplies<int>()(0, 0) == 0);
+        #assert(Multiplies<int>()(0, MaxValue<int>()) == 0);
+        #assert(Multiplies<int>()(MaxValue<int>(), 0) == 0);
+        #assert(Multiplies<int>()(MaxValue<int>(), MaxValue<int>()) == 1);
+
+        #assert(Multiplies<uint>()(MinValue<uint>(), MinValue<uint>()) == MinValue<uint>());
+        #assert(Multiplies<uint>()(MinValue<uint>(), 2147483647u) == MinValue<uint>());
+        #assert(Multiplies<uint>()(2147483647u, MinValue<uint>()) == MinValue<uint>());
+        #assert(Multiplies<uint>()(MinValue<uint>(), MaxValue<uint>()) == MinValue<uint>());
+        #assert(Multiplies<uint>()(MaxValue<uint>(), MinValue<uint>()) == MinValue<uint>());
+        #assert(Multiplies<uint>()(2147483647u, 2147483647u) == 1);
+        #assert(Multiplies<uint>()(2147483647u, MaxValue<uint>()) == 2147483649u);
+        #assert(Multiplies<uint>()(MaxValue<uint>(), 2147483647u) == 2147483649u);
+        #assert(Multiplies<uint>()(MaxValue<uint>(), MaxValue<uint>()) == 1);
+
+        #assert(Multiplies<long>()(MinValue<long>(), MinValue<long>()) == 0);
+        #assert(Multiplies<long>()(MinValue<long>(), 0) == 0);
+        #assert(Multiplies<long>()(0, MinValue<long>()) == 0);
+        #assert(Multiplies<long>()(MinValue<long>(), MaxValue<long>()) == MinValue<long>());
+        #assert(Multiplies<long>()(MaxValue<long>(), MinValue<long>()) == MinValue<long>());
+        #assert(Multiplies<long>()(0, 0) == 0);
+        #assert(Multiplies<long>()(0, MaxValue<long>()) == 0);
+        #assert(Multiplies<long>()(MaxValue<long>(), 0) == 0);
+        #assert(Multiplies<long>()(MaxValue<long>(), MaxValue<long>()) == 1);
+
+        #assert(Multiplies<ulong>()(MinValue<ulong>(), MinValue<ulong>()) == MinValue<ulong>());
+        #assert(Multiplies<ulong>()(MinValue<ulong>(), 9223372036854775807u) == MinValue<ulong>());
+        #assert(Multiplies<ulong>()(9223372036854775807u, MinValue<ulong>()) == MinValue<ulong>());
+        #assert(Multiplies<ulong>()(MinValue<ulong>(), MaxValue<ulong>()) == MinValue<ulong>());
+        #assert(Multiplies<ulong>()(MaxValue<ulong>(), MinValue<ulong>()) == MinValue<ulong>());
+        #assert(Multiplies<ulong>()(9223372036854775807u, 9223372036854775807u) == 1);
+        #assert(Multiplies<ulong>()(9223372036854775807u, MaxValue<ulong>()) == 9223372036854775809u);
+        #assert(Multiplies<ulong>()(MaxValue<ulong>(), 9223372036854775807u) == 9223372036854775809u);
+        #assert(Multiplies<ulong>()(MaxValue<ulong>(), MaxValue<ulong>()) == 1);
+
+        #assert(EqualTo<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()));
+        #assert(!EqualTo<sbyte>()(MinValue<sbyte>(), 0));
+        #assert(!EqualTo<sbyte>()(0, MinValue<sbyte>()));
+        #assert(!EqualTo<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()));
+        #assert(!EqualTo<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()));
+        #assert(EqualTo<sbyte>()(0, 0));
+        #assert(!EqualTo<sbyte>()(0, MaxValue<sbyte>()));
+        #assert(!EqualTo<sbyte>()(MaxValue<sbyte>(), 0));
+        #assert(EqualTo<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()));
+
+        #assert(EqualTo<byte>()(MinValue<byte>(), MinValue<byte>()));
+        #assert(!EqualTo<byte>()(MinValue<byte>(), 127u));
+        #assert(!EqualTo<byte>()(127u, MinValue<byte>()));
+        #assert(!EqualTo<byte>()(MinValue<byte>(), MaxValue<byte>()));
+        #assert(!EqualTo<byte>()(MaxValue<byte>(), MinValue<byte>()));
+        #assert(EqualTo<byte>()(127u, 127u));
+        #assert(!EqualTo<byte>()(127u, MaxValue<byte>()));
+        #assert(!EqualTo<byte>()(MaxValue<byte>(), 127u));
+        #assert(EqualTo<byte>()(MaxValue<byte>(), MaxValue<byte>()));
+
+        #assert(EqualTo<short>()(MinValue<short>(), MinValue<short>()));
+        #assert(!EqualTo<short>()(MinValue<short>(), 0));
+        #assert(!EqualTo<short>()(0, MinValue<short>()));
+        #assert(!EqualTo<short>()(MinValue<short>(), MaxValue<short>()));
+        #assert(!EqualTo<short>()(MaxValue<short>(), MinValue<short>()));
+        #assert(EqualTo<short>()(0, 0));
+        #assert(!EqualTo<short>()(0, MaxValue<short>()));
+        #assert(!EqualTo<short>()(MaxValue<short>(), 0));
+        #assert(EqualTo<short>()(MaxValue<short>(), MaxValue<short>()));
+
+        #assert(EqualTo<ushort>()(MinValue<ushort>(), MinValue<ushort>()));
+        #assert(!EqualTo<ushort>()(MinValue<ushort>(), 32767u));
+        #assert(!EqualTo<ushort>()(32767u, MinValue<ushort>()));
+        #assert(!EqualTo<ushort>()(MinValue<ushort>(), MaxValue<ushort>()));
+        #assert(!EqualTo<ushort>()(MaxValue<ushort>(), MinValue<ushort>()));
+        #assert(EqualTo<ushort>()(32767u, 32767u));
+        #assert(!EqualTo<ushort>()(32767u, MaxValue<ushort>()));
+        #assert(!EqualTo<ushort>()(MaxValue<ushort>(), 32767u));
+        #assert(EqualTo<ushort>()(MaxValue<ushort>(), MaxValue<ushort>()));
+
+        #assert(EqualTo<int>()(MinValue<int>(), MinValue<int>()));
+        #assert(!EqualTo<int>()(MinValue<int>(), 0));
+        #assert(!EqualTo<int>()(0, MinValue<int>()));
+        #assert(!EqualTo<int>()(MinValue<int>(), MaxValue<int>()));
+        #assert(!EqualTo<int>()(MaxValue<int>(), MinValue<int>()));
+        #assert(EqualTo<int>()(0, 0));
+        #assert(!EqualTo<int>()(0, MaxValue<int>()));
+        #assert(!EqualTo<int>()(MaxValue<int>(), 0));
+        #assert(EqualTo<int>()(MaxValue<int>(), MaxValue<int>()));
+
+        #assert(EqualTo<uint>()(MinValue<uint>(), MinValue<uint>()));
+        #assert(!EqualTo<uint>()(MinValue<uint>(), 2147483647u));
+        #assert(!EqualTo<uint>()(2147483647u, MinValue<uint>()));
+        #assert(!EqualTo<uint>()(MinValue<uint>(), MaxValue<uint>()));
+        #assert(!EqualTo<uint>()(MaxValue<uint>(), MinValue<uint>()));
+        #assert(EqualTo<uint>()(2147483647u, 2147483647u));
+        #assert(!EqualTo<uint>()(2147483647u, MaxValue<uint>()));
+        #assert(!EqualTo<uint>()(MaxValue<uint>(), 2147483647u));
+        #assert(EqualTo<uint>()(MaxValue<uint>(), MaxValue<uint>()));
+
+        #assert(EqualTo<long>()(MinValue<long>(), MinValue<long>()));
+        #assert(!EqualTo<long>()(MinValue<long>(), 0));
+        #assert(!EqualTo<long>()(0, MinValue<long>()));
+        #assert(!EqualTo<long>()(MinValue<long>(), MaxValue<long>()));
+        #assert(!EqualTo<long>()(MaxValue<long>(), MinValue<long>()));
+        #assert(EqualTo<long>()(0, 0));
+        #assert(!EqualTo<long>()(0, MaxValue<long>()));
+        #assert(!EqualTo<long>()(MaxValue<long>(), 0));
+        #assert(EqualTo<long>()(MaxValue<long>(), MaxValue<long>()));
+
+        #assert(EqualTo<ulong>()(MinValue<ulong>(), MinValue<ulong>()));
+        #assert(!EqualTo<ulong>()(MinValue<ulong>(), 9223372036854775807u));
+        #assert(!EqualTo<ulong>()(9223372036854775807u, MinValue<ulong>()));
+        #assert(!EqualTo<ulong>()(MinValue<ulong>(), MaxValue<ulong>()));
+        #assert(!EqualTo<ulong>()(MaxValue<ulong>(), MinValue<ulong>()));
+        #assert(EqualTo<ulong>()(9223372036854775807u, 9223372036854775807u));
+        #assert(!EqualTo<ulong>()(9223372036854775807u, MaxValue<ulong>()));
+        #assert(!EqualTo<ulong>()(MaxValue<ulong>(), 9223372036854775807u));
+        #assert(EqualTo<ulong>()(MaxValue<ulong>(), MaxValue<ulong>()));
+
+        #assert(!NotEqualTo<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()));
+        #assert(NotEqualTo<sbyte>()(MinValue<sbyte>(), 0));
+        #assert(NotEqualTo<sbyte>()(0, MinValue<sbyte>()));
+        #assert(NotEqualTo<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()));
+        #assert(NotEqualTo<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()));
+        #assert(!NotEqualTo<sbyte>()(0, 0));
+        #assert(NotEqualTo<sbyte>()(0, MaxValue<sbyte>()));
+        #assert(NotEqualTo<sbyte>()(MaxValue<sbyte>(), 0));
+        #assert(!NotEqualTo<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()));
+
+        #assert(!NotEqualTo<byte>()(MinValue<byte>(), MinValue<byte>()));
+        #assert(NotEqualTo<byte>()(MinValue<byte>(), 127u));
+        #assert(NotEqualTo<byte>()(127u, MinValue<byte>()));
+        #assert(NotEqualTo<byte>()(MinValue<byte>(), MaxValue<byte>()));
+        #assert(NotEqualTo<byte>()(MaxValue<byte>(), MinValue<byte>()));
+        #assert(!NotEqualTo<byte>()(127u, 127u));
+        #assert(NotEqualTo<byte>()(127u, MaxValue<byte>()));
+        #assert(NotEqualTo<byte>()(MaxValue<byte>(), 127u));
+        #assert(!NotEqualTo<byte>()(MaxValue<byte>(), MaxValue<byte>()));
+
+        #assert(!NotEqualTo<short>()(MinValue<short>(), MinValue<short>()));
+        #assert(NotEqualTo<short>()(MinValue<short>(), 0));
+        #assert(NotEqualTo<short>()(0, MinValue<short>()));
+        #assert(NotEqualTo<short>()(MinValue<short>(), MaxValue<short>()));
+        #assert(NotEqualTo<short>()(MaxValue<short>(), MinValue<short>()));
+        #assert(!NotEqualTo<short>()(0, 0));
+        #assert(NotEqualTo<short>()(0, MaxValue<short>()));
+        #assert(NotEqualTo<short>()(MaxValue<short>(), 0));
+        #assert(!NotEqualTo<short>()(MaxValue<short>(), MaxValue<short>()));
+
+        #assert(!NotEqualTo<ushort>()(MinValue<ushort>(), MinValue<ushort>()));
+        #assert(NotEqualTo<ushort>()(MinValue<ushort>(), 32767u));
+        #assert(NotEqualTo<ushort>()(32767u, MinValue<ushort>()));
+        #assert(NotEqualTo<ushort>()(MinValue<ushort>(), MaxValue<ushort>()));
+        #assert(NotEqualTo<ushort>()(MaxValue<ushort>(), MinValue<ushort>()));
+        #assert(!NotEqualTo<ushort>()(32767u, 32767u));
+        #assert(NotEqualTo<ushort>()(32767u, MaxValue<ushort>()));
+        #assert(NotEqualTo<ushort>()(MaxValue<ushort>(), 32767u));
+        #assert(!NotEqualTo<ushort>()(MaxValue<ushort>(), MaxValue<ushort>()));
+
+        #assert(!NotEqualTo<int>()(MinValue<int>(), MinValue<int>()));
+        #assert(NotEqualTo<int>()(MinValue<int>(), 0));
+        #assert(NotEqualTo<int>()(0, MinValue<int>()));
+        #assert(NotEqualTo<int>()(MinValue<int>(), MaxValue<int>()));
+        #assert(NotEqualTo<int>()(MaxValue<int>(), MinValue<int>()));
+        #assert(!NotEqualTo<int>()(0, 0));
+        #assert(NotEqualTo<int>()(0, MaxValue<int>()));
+        #assert(NotEqualTo<int>()(MaxValue<int>(), 0));
+        #assert(!NotEqualTo<int>()(MaxValue<int>(), MaxValue<int>()));
+
+        #assert(!NotEqualTo<uint>()(MinValue<uint>(), MinValue<uint>()));
+        #assert(NotEqualTo<uint>()(MinValue<uint>(), 2147483647u));
+        #assert(NotEqualTo<uint>()(2147483647u, MinValue<uint>()));
+        #assert(NotEqualTo<uint>()(MinValue<uint>(), MaxValue<uint>()));
+        #assert(NotEqualTo<uint>()(MaxValue<uint>(), MinValue<uint>()));
+        #assert(!NotEqualTo<uint>()(2147483647u, 2147483647u));
+        #assert(NotEqualTo<uint>()(2147483647u, MaxValue<uint>()));
+        #assert(NotEqualTo<uint>()(MaxValue<uint>(), 2147483647u));
+        #assert(!NotEqualTo<uint>()(MaxValue<uint>(), MaxValue<uint>()));
+
+        #assert(!NotEqualTo<long>()(MinValue<long>(), MinValue<long>()));
+        #assert(NotEqualTo<long>()(MinValue<long>(), 0));
+        #assert(NotEqualTo<long>()(0, MinValue<long>()));
+        #assert(NotEqualTo<long>()(MinValue<long>(), MaxValue<long>()));
+        #assert(NotEqualTo<long>()(MaxValue<long>(), MinValue<long>()));
+        #assert(!NotEqualTo<long>()(0, 0));
+        #assert(NotEqualTo<long>()(0, MaxValue<long>()));
+        #assert(NotEqualTo<long>()(MaxValue<long>(), 0));
+        #assert(!NotEqualTo<long>()(MaxValue<long>(), MaxValue<long>()));
+
+        #assert(!NotEqualTo<ulong>()(MinValue<ulong>(), MinValue<ulong>()));
+        #assert(NotEqualTo<ulong>()(MinValue<ulong>(), 9223372036854775807u));
+        #assert(NotEqualTo<ulong>()(9223372036854775807u, MinValue<ulong>()));
+        #assert(NotEqualTo<ulong>()(MinValue<ulong>(), MaxValue<ulong>()));
+        #assert(NotEqualTo<ulong>()(MaxValue<ulong>(), MinValue<ulong>()));
+        #assert(!NotEqualTo<ulong>()(9223372036854775807u, 9223372036854775807u));
+        #assert(NotEqualTo<ulong>()(9223372036854775807u, MaxValue<ulong>()));
+        #assert(NotEqualTo<ulong>()(MaxValue<ulong>(), 9223372036854775807u));
+        #assert(!NotEqualTo<ulong>()(MaxValue<ulong>(), MaxValue<ulong>()));
+
+        #assert(!Less<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()));
+        #assert(Less<sbyte>()(MinValue<sbyte>(), 0));
+        #assert(!Less<sbyte>()(0, MinValue<sbyte>()));
+        #assert(Less<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()));
+        #assert(!Less<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()));
+        #assert(!Less<sbyte>()(0, 0));
+        #assert(Less<sbyte>()(0, MaxValue<sbyte>()));
+        #assert(!Less<sbyte>()(MaxValue<sbyte>(), 0));
+        #assert(!Less<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()));
+
+        #assert(!Less<byte>()(MinValue<byte>(), MinValue<byte>()));
+        #assert(Less<byte>()(MinValue<byte>(), 127u));
+        #assert(!Less<byte>()(127u, MinValue<byte>()));
+        #assert(Less<byte>()(MinValue<byte>(), MaxValue<byte>()));
+        #assert(!Less<byte>()(MaxValue<byte>(), MinValue<byte>()));
+        #assert(!Less<byte>()(127u, 127u));
+        #assert(Less<byte>()(127u, MaxValue<byte>()));
+        #assert(!Less<byte>()(MaxValue<byte>(), 127u));
+        #assert(!Less<byte>()(MaxValue<byte>(), MaxValue<byte>()));
+
+        #assert(!Less<short>()(MinValue<short>(), MinValue<short>()));
+        #assert(Less<short>()(MinValue<short>(), 0));
+        #assert(!Less<short>()(0, MinValue<short>()));
+        #assert(Less<short>()(MinValue<short>(), MaxValue<short>()));
+        #assert(!Less<short>()(MaxValue<short>(), MinValue<short>()));
+        #assert(!Less<short>()(0, 0));
+        #assert(Less<short>()(0, MaxValue<short>()));
+        #assert(!Less<short>()(MaxValue<short>(), 0));
+        #assert(!Less<short>()(MaxValue<short>(), MaxValue<short>()));
+
+        #assert(!Less<ushort>()(MinValue<ushort>(), MinValue<ushort>()));
+        #assert(Less<ushort>()(MinValue<ushort>(), 32767u));
+        #assert(!Less<ushort>()(32767u, MinValue<ushort>()));
+        #assert(Less<ushort>()(MinValue<ushort>(), MaxValue<ushort>()));
+        #assert(!Less<ushort>()(MaxValue<ushort>(), MinValue<ushort>()));
+        #assert(!Less<ushort>()(32767u, 32767u));
+        #assert(Less<ushort>()(32767u, MaxValue<ushort>()));
+        #assert(!Less<ushort>()(MaxValue<ushort>(), 32767u));
+        #assert(!Less<ushort>()(MaxValue<ushort>(), MaxValue<ushort>()));
+
+        #assert(!Less<int>()(MinValue<int>(), MinValue<int>()));
+        #assert(Less<int>()(MinValue<int>(), 0));
+        #assert(!Less<int>()(0, MinValue<int>()));
+        #assert(Less<int>()(MinValue<int>(), MaxValue<int>()));
+        #assert(!Less<int>()(MaxValue<int>(), MinValue<int>()));
+        #assert(!Less<int>()(0, 0));
+        #assert(Less<int>()(0, MaxValue<int>()));
+        #assert(!Less<int>()(MaxValue<int>(), 0));
+        #assert(!Less<int>()(MaxValue<int>(), MaxValue<int>()));
+
+        #assert(!Less<uint>()(MinValue<uint>(), MinValue<uint>()));
+        #assert(Less<uint>()(MinValue<uint>(), 2147483647u));
+        #assert(!Less<uint>()(2147483647u, MinValue<uint>()));
+        #assert(Less<uint>()(MinValue<uint>(), MaxValue<uint>()));
+        #assert(!Less<uint>()(MaxValue<uint>(), MinValue<uint>()));
+        #assert(!Less<uint>()(2147483647u, 2147483647u));
+        #assert(Less<uint>()(2147483647u, MaxValue<uint>()));
+        #assert(!Less<uint>()(MaxValue<uint>(), 2147483647u));
+        #assert(!Less<uint>()(MaxValue<uint>(), MaxValue<uint>()));
+
+        #assert(!Less<long>()(MinValue<long>(), MinValue<long>()));
+        #assert(Less<long>()(MinValue<long>(), 0));
+        #assert(!Less<long>()(0, MinValue<long>()));
+        #assert(Less<long>()(MinValue<long>(), MaxValue<long>()));
+        #assert(!Less<long>()(MaxValue<long>(), MinValue<long>()));
+        #assert(!Less<long>()(0, 0));
+        #assert(Less<long>()(0, MaxValue<long>()));
+        #assert(!Less<long>()(MaxValue<long>(), 0));
+        #assert(!Less<long>()(MaxValue<long>(), MaxValue<long>()));
+
+        #assert(!Less<ulong>()(MinValue<ulong>(), MinValue<ulong>()));
+        #assert(Less<ulong>()(MinValue<ulong>(), 9223372036854775807u));
+        #assert(!Less<ulong>()(9223372036854775807u, MinValue<ulong>()));
+        #assert(Less<ulong>()(MinValue<ulong>(), MaxValue<ulong>()));
+        #assert(!Less<ulong>()(MaxValue<ulong>(), MinValue<ulong>()));
+        #assert(!Less<ulong>()(9223372036854775807u, 9223372036854775807u));
+        #assert(Less<ulong>()(9223372036854775807u, MaxValue<ulong>()));
+        #assert(!Less<ulong>()(MaxValue<ulong>(), 9223372036854775807u));
+        #assert(!Less<ulong>()(MaxValue<ulong>(), MaxValue<ulong>()));
+
+        #assert(!Greater<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()));
+        #assert(!Greater<sbyte>()(MinValue<sbyte>(), 0));
+        #assert(Greater<sbyte>()(0, MinValue<sbyte>()));
+        #assert(!Greater<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()));
+        #assert(Greater<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()));
+        #assert(!Greater<sbyte>()(0, 0));
+        #assert(!Greater<sbyte>()(0, MaxValue<sbyte>()));
+        #assert(Greater<sbyte>()(MaxValue<sbyte>(), 0));
+        #assert(!Greater<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()));
+
+        #assert(!Greater<byte>()(MinValue<byte>(), MinValue<byte>()));
+        #assert(!Greater<byte>()(MinValue<byte>(), 127u));
+        #assert(Greater<byte>()(127u, MinValue<byte>()));
+        #assert(!Greater<byte>()(MinValue<byte>(), MaxValue<byte>()));
+        #assert(Greater<byte>()(MaxValue<byte>(), MinValue<byte>()));
+        #assert(!Greater<byte>()(127u, 127u));
+        #assert(!Greater<byte>()(127u, MaxValue<byte>()));
+        #assert(Greater<byte>()(MaxValue<byte>(), 127u));
+        #assert(!Greater<byte>()(MaxValue<byte>(), MaxValue<byte>()));
+
+        #assert(!Greater<short>()(MinValue<short>(), MinValue<short>()));
+        #assert(!Greater<short>()(MinValue<short>(), 0));
+        #assert(Greater<short>()(0, MinValue<short>()));
+        #assert(!Greater<short>()(MinValue<short>(), MaxValue<short>()));
+        #assert(Greater<short>()(MaxValue<short>(), MinValue<short>()));
+        #assert(!Greater<short>()(0, 0));
+        #assert(!Greater<short>()(0, MaxValue<short>()));
+        #assert(Greater<short>()(MaxValue<short>(), 0));
+        #assert(!Greater<short>()(MaxValue<short>(), MaxValue<short>()));
+
+        #assert(!Greater<ushort>()(MinValue<ushort>(), MinValue<ushort>()));
+        #assert(!Greater<ushort>()(MinValue<ushort>(), 32767u));
+        #assert(Greater<ushort>()(32767u, MinValue<ushort>()));
+        #assert(!Greater<ushort>()(MinValue<ushort>(), MaxValue<ushort>()));
+        #assert(Greater<ushort>()(MaxValue<ushort>(), MinValue<ushort>()));
+        #assert(!Greater<ushort>()(32767u, 32767u));
+        #assert(!Greater<ushort>()(32767u, MaxValue<ushort>()));
+        #assert(Greater<ushort>()(MaxValue<ushort>(), 32767u));
+        #assert(!Greater<ushort>()(MaxValue<ushort>(), MaxValue<ushort>()));
+
+        #assert(!Greater<int>()(MinValue<int>(), MinValue<int>()));
+        #assert(!Greater<int>()(MinValue<int>(), 0));
+        #assert(Greater<int>()(0, MinValue<int>()));
+        #assert(!Greater<int>()(MinValue<int>(), MaxValue<int>()));
+        #assert(Greater<int>()(MaxValue<int>(), MinValue<int>()));
+        #assert(!Greater<int>()(0, 0));
+        #assert(!Greater<int>()(0, MaxValue<int>()));
+        #assert(Greater<int>()(MaxValue<int>(), 0));
+        #assert(!Greater<int>()(MaxValue<int>(), MaxValue<int>()));
+
+        #assert(!Greater<uint>()(MinValue<uint>(), MinValue<uint>()));
+        #assert(!Greater<uint>()(MinValue<uint>(), 2147483647u));
+        #assert(Greater<uint>()(2147483647u, MinValue<uint>()));
+        #assert(!Greater<uint>()(MinValue<uint>(), MaxValue<uint>()));
+        #assert(Greater<uint>()(MaxValue<uint>(), MinValue<uint>()));
+        #assert(!Greater<uint>()(2147483647u, 2147483647u));
+        #assert(!Greater<uint>()(2147483647u, MaxValue<uint>()));
+        #assert(Greater<uint>()(MaxValue<uint>(), 2147483647u));
+        #assert(!Greater<uint>()(MaxValue<uint>(), MaxValue<uint>()));
+
+        #assert(!Greater<long>()(MinValue<long>(), MinValue<long>()));
+        #assert(!Greater<long>()(MinValue<long>(), 0));
+        #assert(Greater<long>()(0, MinValue<long>()));
+        #assert(!Greater<long>()(MinValue<long>(), MaxValue<long>()));
+        #assert(Greater<long>()(MaxValue<long>(), MinValue<long>()));
+        #assert(!Greater<long>()(0, 0));
+        #assert(!Greater<long>()(0, MaxValue<long>()));
+        #assert(Greater<long>()(MaxValue<long>(), 0));
+        #assert(!Greater<long>()(MaxValue<long>(), MaxValue<long>()));
+
+        #assert(!Greater<ulong>()(MinValue<ulong>(), MinValue<ulong>()));
+        #assert(!Greater<ulong>()(MinValue<ulong>(), 9223372036854775807u));
+        #assert(Greater<ulong>()(9223372036854775807u, MinValue<ulong>()));
+        #assert(!Greater<ulong>()(MinValue<ulong>(), MaxValue<ulong>()));
+        #assert(Greater<ulong>()(MaxValue<ulong>(), MinValue<ulong>()));
+        #assert(!Greater<ulong>()(9223372036854775807u, 9223372036854775807u));
+        #assert(!Greater<ulong>()(9223372036854775807u, MaxValue<ulong>()));
+        #assert(Greater<ulong>()(MaxValue<ulong>(), 9223372036854775807u));
+        #assert(!Greater<ulong>()(MaxValue<ulong>(), MaxValue<ulong>()));
+
+        #assert(LessOrEqualTo<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()));
+        #assert(LessOrEqualTo<sbyte>()(MinValue<sbyte>(), 0));
+        #assert(!LessOrEqualTo<sbyte>()(0, MinValue<sbyte>()));
+        #assert(LessOrEqualTo<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()));
+        #assert(!LessOrEqualTo<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()));
+        #assert(LessOrEqualTo<sbyte>()(0, 0));
+        #assert(LessOrEqualTo<sbyte>()(0, MaxValue<sbyte>()));
+        #assert(!LessOrEqualTo<sbyte>()(MaxValue<sbyte>(), 0));
+        #assert(LessOrEqualTo<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()));
+
+        #assert(LessOrEqualTo<byte>()(MinValue<byte>(), MinValue<byte>()));
+        #assert(LessOrEqualTo<byte>()(MinValue<byte>(), 127u));
+        #assert(!LessOrEqualTo<byte>()(127u, MinValue<byte>()));
+        #assert(LessOrEqualTo<byte>()(MinValue<byte>(), MaxValue<byte>()));
+        #assert(!LessOrEqualTo<byte>()(MaxValue<byte>(), MinValue<byte>()));
+        #assert(LessOrEqualTo<byte>()(127u, 127u));
+        #assert(LessOrEqualTo<byte>()(127u, MaxValue<byte>()));
+        #assert(!LessOrEqualTo<byte>()(MaxValue<byte>(), 127u));
+        #assert(LessOrEqualTo<byte>()(MaxValue<byte>(), MaxValue<byte>()));
+
+        #assert(LessOrEqualTo<short>()(MinValue<short>(), MinValue<short>()));
+        #assert(LessOrEqualTo<short>()(MinValue<short>(), 0));
+        #assert(!LessOrEqualTo<short>()(0, MinValue<short>()));
+        #assert(LessOrEqualTo<short>()(MinValue<short>(), MaxValue<short>()));
+        #assert(!LessOrEqualTo<short>()(MaxValue<short>(), MinValue<short>()));
+        #assert(LessOrEqualTo<short>()(0, 0));
+        #assert(LessOrEqualTo<short>()(0, MaxValue<short>()));
+        #assert(!LessOrEqualTo<short>()(MaxValue<short>(), 0));
+        #assert(LessOrEqualTo<short>()(MaxValue<short>(), MaxValue<short>()));
+
+        #assert(LessOrEqualTo<ushort>()(MinValue<ushort>(), MinValue<ushort>()));
+        #assert(LessOrEqualTo<ushort>()(MinValue<ushort>(), 32767u));
+        #assert(!LessOrEqualTo<ushort>()(32767u, MinValue<ushort>()));
+        #assert(LessOrEqualTo<ushort>()(MinValue<ushort>(), MaxValue<ushort>()));
+        #assert(!LessOrEqualTo<ushort>()(MaxValue<ushort>(), MinValue<ushort>()));
+        #assert(LessOrEqualTo<ushort>()(32767u, 32767u));
+        #assert(LessOrEqualTo<ushort>()(32767u, MaxValue<ushort>()));
+        #assert(!LessOrEqualTo<ushort>()(MaxValue<ushort>(), 32767u));
+        #assert(LessOrEqualTo<ushort>()(MaxValue<ushort>(), MaxValue<ushort>()));
+
+        #assert(LessOrEqualTo<int>()(MinValue<int>(), MinValue<int>()));
+        #assert(LessOrEqualTo<int>()(MinValue<int>(), 0));
+        #assert(!LessOrEqualTo<int>()(0, MinValue<int>()));
+        #assert(LessOrEqualTo<int>()(MinValue<int>(), MaxValue<int>()));
+        #assert(!LessOrEqualTo<int>()(MaxValue<int>(), MinValue<int>()));
+        #assert(LessOrEqualTo<int>()(0, 0));
+        #assert(LessOrEqualTo<int>()(0, MaxValue<int>()));
+        #assert(!LessOrEqualTo<int>()(MaxValue<int>(), 0));
+        #assert(LessOrEqualTo<int>()(MaxValue<int>(), MaxValue<int>()));
+
+        #assert(LessOrEqualTo<uint>()(MinValue<uint>(), MinValue<uint>()));
+        #assert(LessOrEqualTo<uint>()(MinValue<uint>(), 2147483647u));
+        #assert(!LessOrEqualTo<uint>()(2147483647u, MinValue<uint>()));
+        #assert(LessOrEqualTo<uint>()(MinValue<uint>(), MaxValue<uint>()));
+        #assert(!LessOrEqualTo<uint>()(MaxValue<uint>(), MinValue<uint>()));
+        #assert(LessOrEqualTo<uint>()(2147483647u, 2147483647u));
+        #assert(LessOrEqualTo<uint>()(2147483647u, MaxValue<uint>()));
+        #assert(!LessOrEqualTo<uint>()(MaxValue<uint>(), 2147483647u));
+        #assert(LessOrEqualTo<uint>()(MaxValue<uint>(), MaxValue<uint>()));
+
+        #assert(LessOrEqualTo<long>()(MinValue<long>(), MinValue<long>()));
+        #assert(LessOrEqualTo<long>()(MinValue<long>(), 0));
+        #assert(!LessOrEqualTo<long>()(0, MinValue<long>()));
+        #assert(LessOrEqualTo<long>()(MinValue<long>(), MaxValue<long>()));
+        #assert(!LessOrEqualTo<long>()(MaxValue<long>(), MinValue<long>()));
+        #assert(LessOrEqualTo<long>()(0, 0));
+        #assert(LessOrEqualTo<long>()(0, MaxValue<long>()));
+        #assert(!LessOrEqualTo<long>()(MaxValue<long>(), 0));
+        #assert(LessOrEqualTo<long>()(MaxValue<long>(), MaxValue<long>()));
+
+        #assert(LessOrEqualTo<ulong>()(MinValue<ulong>(), MinValue<ulong>()));
+        #assert(LessOrEqualTo<ulong>()(MinValue<ulong>(), 9223372036854775807u));
+        #assert(!LessOrEqualTo<ulong>()(9223372036854775807u, MinValue<ulong>()));
+        #assert(LessOrEqualTo<ulong>()(MinValue<ulong>(), MaxValue<ulong>()));
+        #assert(!LessOrEqualTo<ulong>()(MaxValue<ulong>(), MinValue<ulong>()));
+        #assert(LessOrEqualTo<ulong>()(9223372036854775807u, 9223372036854775807u));
+        #assert(LessOrEqualTo<ulong>()(9223372036854775807u, MaxValue<ulong>()));
+        #assert(!LessOrEqualTo<ulong>()(MaxValue<ulong>(), 9223372036854775807u));
+        #assert(LessOrEqualTo<ulong>()(MaxValue<ulong>(), MaxValue<ulong>()));
+
+        #assert(GreaterOrEqualTo<sbyte>()(MinValue<sbyte>(), MinValue<sbyte>()));
+        #assert(!GreaterOrEqualTo<sbyte>()(MinValue<sbyte>(), 0));
+        #assert(GreaterOrEqualTo<sbyte>()(0, MinValue<sbyte>()));
+        #assert(!GreaterOrEqualTo<sbyte>()(MinValue<sbyte>(), MaxValue<sbyte>()));
+        #assert(GreaterOrEqualTo<sbyte>()(MaxValue<sbyte>(), MinValue<sbyte>()));
+        #assert(GreaterOrEqualTo<sbyte>()(0, 0));
+        #assert(!GreaterOrEqualTo<sbyte>()(0, MaxValue<sbyte>()));
+        #assert(GreaterOrEqualTo<sbyte>()(MaxValue<sbyte>(), 0));
+        #assert(GreaterOrEqualTo<sbyte>()(MaxValue<sbyte>(), MaxValue<sbyte>()));
+
+        #assert(GreaterOrEqualTo<byte>()(MinValue<byte>(), MinValue<byte>()));
+        #assert(!GreaterOrEqualTo<byte>()(MinValue<byte>(), 127u));
+        #assert(GreaterOrEqualTo<byte>()(127u, MinValue<byte>()));
+        #assert(!GreaterOrEqualTo<byte>()(MinValue<byte>(), MaxValue<byte>()));
+        #assert(GreaterOrEqualTo<byte>()(MaxValue<byte>(), MinValue<byte>()));
+        #assert(GreaterOrEqualTo<byte>()(127u, 127u));
+        #assert(!GreaterOrEqualTo<byte>()(127u, MaxValue<byte>()));
+        #assert(GreaterOrEqualTo<byte>()(MaxValue<byte>(), 127u));
+        #assert(GreaterOrEqualTo<byte>()(MaxValue<byte>(), MaxValue<byte>()));
+
+        #assert(GreaterOrEqualTo<short>()(MinValue<short>(), MinValue<short>()));
+        #assert(!GreaterOrEqualTo<short>()(MinValue<short>(), 0));
+        #assert(GreaterOrEqualTo<short>()(0, MinValue<short>()));
+        #assert(!GreaterOrEqualTo<short>()(MinValue<short>(), MaxValue<short>()));
+        #assert(GreaterOrEqualTo<short>()(MaxValue<short>(), MinValue<short>()));
+        #assert(GreaterOrEqualTo<short>()(0, 0));
+        #assert(!GreaterOrEqualTo<short>()(0, MaxValue<short>()));
+        #assert(GreaterOrEqualTo<short>()(MaxValue<short>(), 0));
+        #assert(GreaterOrEqualTo<short>()(MaxValue<short>(), MaxValue<short>()));
+
+        #assert(GreaterOrEqualTo<ushort>()(MinValue<ushort>(), MinValue<ushort>()));
+        #assert(!GreaterOrEqualTo<ushort>()(MinValue<ushort>(), 32767u));
+        #assert(GreaterOrEqualTo<ushort>()(32767u, MinValue<ushort>()));
+        #assert(!GreaterOrEqualTo<ushort>()(MinValue<ushort>(), MaxValue<ushort>()));
+        #assert(GreaterOrEqualTo<ushort>()(MaxValue<ushort>(), MinValue<ushort>()));
+        #assert(GreaterOrEqualTo<ushort>()(32767u, 32767u));
+        #assert(!GreaterOrEqualTo<ushort>()(32767u, MaxValue<ushort>()));
+        #assert(GreaterOrEqualTo<ushort>()(MaxValue<ushort>(), 32767u));
+        #assert(GreaterOrEqualTo<ushort>()(MaxValue<ushort>(), MaxValue<ushort>()));
+
+        #assert(GreaterOrEqualTo<int>()(MinValue<int>(), MinValue<int>()));
+        #assert(!GreaterOrEqualTo<int>()(MinValue<int>(), 0));
+        #assert(GreaterOrEqualTo<int>()(0, MinValue<int>()));
+        #assert(!GreaterOrEqualTo<int>()(MinValue<int>(), MaxValue<int>()));
+        #assert(GreaterOrEqualTo<int>()(MaxValue<int>(), MinValue<int>()));
+        #assert(GreaterOrEqualTo<int>()(0, 0));
+        #assert(!GreaterOrEqualTo<int>()(0, MaxValue<int>()));
+        #assert(GreaterOrEqualTo<int>()(MaxValue<int>(), 0));
+        #assert(GreaterOrEqualTo<int>()(MaxValue<int>(), MaxValue<int>()));
+
+        #assert(GreaterOrEqualTo<uint>()(MinValue<uint>(), MinValue<uint>()));
+        #assert(!GreaterOrEqualTo<uint>()(MinValue<uint>(), 2147483647u));
+        #assert(GreaterOrEqualTo<uint>()(2147483647u, MinValue<uint>()));
+        #assert(!GreaterOrEqualTo<uint>()(MinValue<uint>(), MaxValue<uint>()));
+        #assert(GreaterOrEqualTo<uint>()(MaxValue<uint>(), MinValue<uint>()));
+        #assert(GreaterOrEqualTo<uint>()(2147483647u, 2147483647u));
+        #assert(!GreaterOrEqualTo<uint>()(2147483647u, MaxValue<uint>()));
+        #assert(GreaterOrEqualTo<uint>()(MaxValue<uint>(), 2147483647u));
+        #assert(GreaterOrEqualTo<uint>()(MaxValue<uint>(), MaxValue<uint>()));
+
+        #assert(GreaterOrEqualTo<long>()(MinValue<long>(), MinValue<long>()));
+        #assert(!GreaterOrEqualTo<long>()(MinValue<long>(), 0));
+        #assert(GreaterOrEqualTo<long>()(0, MinValue<long>()));
+        #assert(!GreaterOrEqualTo<long>()(MinValue<long>(), MaxValue<long>()));
+        #assert(GreaterOrEqualTo<long>()(MaxValue<long>(), MinValue<long>()));
+        #assert(GreaterOrEqualTo<long>()(0, 0));
+        #assert(!GreaterOrEqualTo<long>()(0, MaxValue<long>()));
+        #assert(GreaterOrEqualTo<long>()(MaxValue<long>(), 0));
+        #assert(GreaterOrEqualTo<long>()(MaxValue<long>(), MaxValue<long>()));
+
+        #assert(GreaterOrEqualTo<ulong>()(MinValue<ulong>(), MinValue<ulong>()));
+        #assert(!GreaterOrEqualTo<ulong>()(MinValue<ulong>(), 9223372036854775807u));
+        #assert(GreaterOrEqualTo<ulong>()(9223372036854775807u, MinValue<ulong>()));
+        #assert(!GreaterOrEqualTo<ulong>()(MinValue<ulong>(), MaxValue<ulong>()));
+        #assert(GreaterOrEqualTo<ulong>()(MaxValue<ulong>(), MinValue<ulong>()));
+        #assert(GreaterOrEqualTo<ulong>()(9223372036854775807u, 9223372036854775807u));
+        #assert(!GreaterOrEqualTo<ulong>()(9223372036854775807u, MaxValue<ulong>()));
+        #assert(GreaterOrEqualTo<ulong>()(MaxValue<ulong>(), 9223372036854775807u));
+        #assert(GreaterOrEqualTo<ulong>()(MaxValue<ulong>(), MaxValue<ulong>()));
     }
 }

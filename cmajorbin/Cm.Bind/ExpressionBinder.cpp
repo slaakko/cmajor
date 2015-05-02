@@ -721,8 +721,26 @@ void ExpressionBinder::Visit(Cm::Ast::LongLiteralNode& longLiteralNode)
 
 void ExpressionBinder::Visit(Cm::Ast::ULongLiteralNode& ulongLiteralNode)
 {
-    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
-    Cm::Sym::Value* value = new Cm::Sym::ULongValue(ulongLiteralNode.Value());
+    Cm::Sym::TypeSymbol* type = nullptr;
+    Cm::Sym::Value* value = nullptr;
+    if (unaryMinus)
+    {
+        if (ulongLiteralNode.Value() == 9223372036854775808)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::longId));
+            value = new Cm::Sym::LongValue(ulongLiteralNode.Value());
+        }
+        else
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+            value = new Cm::Sym::ULongValue(ulongLiteralNode.Value());
+        }
+    }
+    else
+    {
+        type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+        value = new Cm::Sym::ULongValue(ulongLiteralNode.Value());
+    }
     Cm::BoundTree::BoundLiteral* literalNode = new Cm::BoundTree::BoundLiteral(&ulongLiteralNode);
     literalNode->SetValue(value);
     literalNode->SetType(type);
