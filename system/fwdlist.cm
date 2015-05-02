@@ -237,10 +237,6 @@ namespace System.Collections
                 }
             }
         }
-        public nothrow void Swap(Self& that)
-        {
-            Swap(head, that.head);
-        }
         private void CopyFrom(const Self& that)
         {
             NodePtr n = that.head;

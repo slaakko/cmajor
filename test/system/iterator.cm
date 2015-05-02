@@ -1,0 +1,62 @@
+using System;
+using System.Collections;
+
+namespace Test.System.Iterator
+{
+    public unit_test void BackInserterIntTest()
+    {
+        List<int> x0;
+        List<int> y0;
+        Copy(x0.Begin(), x0.End(), BackInserter(y0));
+        #assert(x0.IsEmpty());
+        #assert(x0.Count() == 0);
+        #assert(y0.IsEmpty());
+        #assert(y0.Count() == 0);
+        #assert(x0 == y0);
+        for (int i = 0; i < 100; ++i)
+        {
+            x0.Add(i);
+        }
+        Copy(x0.Begin(), x0.End(), BackInserter(y0));
+        #assert(x0 == y0);
+    }
+
+    public unit_test void FrontInserterIntTest()
+    {
+        List<int> x0;
+        List<int> y0;
+        for (int i = 0; i < 100; ++i)
+        {
+            x0.Add(i);
+        }
+        Copy(x0.Begin(), x0.End(), FrontInserter(y0));
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(y0[i] == 99 - x0[i]);
+        }
+    }
+
+    public unit_test void InserterIntTest()
+    {
+        List<int> x0;
+        List<int> y0;
+        for (int i = 0; i < 50; ++i)
+        {
+            x0.Add(i);
+            y0.Add(i);
+        }
+        Copy(x0.Begin(), x0.End(), Inserter(y0, y0.Begin() + 25));
+        for (int i = 0; i < 25; ++i)
+        {
+            #assert(y0[i] == i);
+        }
+        for (int i = 25; i < 75; ++i)
+        {
+            #assert(y0[i] == i - 25);
+        }
+        for (int i = 75; i < 100; ++i)
+        {
+            #assert(y0[i] == i - 50);
+        }
+    }
+}

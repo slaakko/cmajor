@@ -1,0 +1,219 @@
+using System;
+using System.Collections;
+
+namespace Test.System.Collections.List
+{
+    public unit_test void ListIntTest()
+    {
+        List<int> x0;
+        #assert(x0.IsEmpty());
+        #assert(x0.Count() == 0);
+        List<int> y0(x0);
+        #assert(y0.IsEmpty());
+        #assert(y0.Count() == 0);
+        #assert(x0 == y0);
+        Swap(x0, y0);
+        #assert(x0.IsEmpty());
+        #assert(x0.Count() == 0);
+        #assert(y0.IsEmpty());
+        #assert(y0.Count() == 0);
+        #assert(x0 == y0);
+
+        List<int> x1;
+        x1.Add(1);
+        #assert(!x1.IsEmpty());
+        #assert(x1.Count() == 1);
+        #assert(x1[0] == 1);
+        List<int> y1(x1);
+        #assert(!y1.IsEmpty());
+        #assert(y1.Count() == 1);
+        #assert(y1[0] == 1);
+        #assert(x1 == y1);
+        Swap(x1, y1);
+        #assert(!x1.IsEmpty());
+        #assert(x1.Count() == 1);
+        #assert(x1[0] == 1);
+        #assert(!y1.IsEmpty());
+        #assert(y1.Count() == 1);
+        #assert(y1[0] == 1);
+        #assert(x1 == y1);
+
+        List<int> x2;
+        x2.Add(1);
+        x2.Add(2);
+        #assert(!x2.IsEmpty());
+        #assert(x2.Count() == 2);
+        #assert(x2[0] == 1);
+        #assert(x2[1] == 2);
+        List<int> y2(x2);
+        #assert(!y2.IsEmpty());
+        #assert(y2.Count() == 2);
+        #assert(y2[0] == 1);
+        #assert(y2[1] == 2);
+        #assert(x2 == y2);
+        Swap(x2, y2);
+        #assert(!x2.IsEmpty());
+        #assert(x2.Count() == 2);
+        #assert(x2[0] == 1);
+        #assert(x2[1] == 2);
+        #assert(!y2.IsEmpty());
+        #assert(y2.Count() == 2);
+        #assert(y2[0] == 1);
+        #assert(y2[1] == 2);
+        #assert(x2 == y2);
+
+        List<int> x3;
+        x3.Add(1);
+        x3.Add(2);
+        x3.Add(3);
+        #assert(!x3.IsEmpty());
+        #assert(x3.Count() == 3);
+        #assert(x3[0] == 1);
+        #assert(x3[1] == 2);
+        #assert(x3[2] == 3);
+        List<int> y3(x3);
+        #assert(!y3.IsEmpty());
+        #assert(y3.Count() == 3);
+        #assert(y3[0] == 1);
+        #assert(y3[1] == 2);
+        #assert(y3[2] == 3);
+        #assert(x3 == y3);
+        Swap(x3, y3);
+        #assert(!x3.IsEmpty());
+        #assert(x3.Count() == 3);
+        #assert(x3[0] == 1);
+        #assert(x3[1] == 2);
+        #assert(x3[2] == 3);
+        #assert(!y3.IsEmpty());
+        #assert(y3.Count() == 3);
+        #assert(y3[0] == 1);
+        #assert(y3[1] == 2);
+        #assert(y3[2] == 3);
+        #assert(x3 == y3);
+
+        List<int> x100;
+        for (int i = 0; i < 100; ++i)
+        {
+            x100.Add(i);
+        }
+        #assert(!x100.IsEmpty());
+        #assert(x100.Count() == 100);
+        List<int> y100(x100);
+        #assert(!y100.IsEmpty());
+        #assert(y100.Count() == 100);
+        #assert(x100 == y100);
+        Swap(x100, y100);
+        #assert(!x100.IsEmpty());
+        #assert(x100.Count() == 100);
+        #assert(!y100.IsEmpty());
+        #assert(y100.Count() == 100);
+        #assert(x100 == y100);
+    }
+
+    public unit_test void ListStringTest()
+    {
+        List<string> x0;
+        #assert(x0.IsEmpty());
+        #assert(x0.Count() == 0);
+        List<string> y0(x0);
+        #assert(y0.IsEmpty());
+        #assert(y0.Count() == 0);
+        #assert(x0 == y0);
+        Swap(x0, y0);
+        #assert(x0.IsEmpty());
+        #assert(x0.Count() == 0);
+        #assert(y0.IsEmpty());
+        #assert(y0.Count() == 0);
+        #assert(x0 == y0);
+
+        List<string> x1;
+        x1.Add(ToString(1));
+        #assert(!x1.IsEmpty());
+        #assert(x1.Count() == 1);
+        #assert(x1[0] == "1");
+        List<string> y1(x1);
+        #assert(!y1.IsEmpty());
+        #assert(y1.Count() == 1);
+        #assert(y1[0] == "1");
+        #assert(x1 == y1);
+        Swap(x1, y1);
+        #assert(!x1.IsEmpty());
+        #assert(x1.Count() == 1);
+        #assert(x1[0] == "1");
+        #assert(!y1.IsEmpty());
+        #assert(y1.Count() == 1);
+        #assert(y1[0] == "1");
+        #assert(x1 == y1);
+
+        List<string> x2;
+        x2.Add(ToString(1));
+        x2.Add(ToString(2));
+        #assert(!x2.IsEmpty());
+        #assert(x2.Count() == 2);
+        #assert(x2[0] == "1");
+        #assert(x2[1] == "2");
+        List<string> y2(x2);
+        #assert(!y2.IsEmpty());
+        #assert(y2.Count() == 2);
+        #assert(y2[0] == "1");
+        #assert(y2[1] == "2");
+        #assert(x2 == y2);
+        Swap(x2, y2);
+        #assert(!x2.IsEmpty());
+        #assert(x2.Count() == 2);
+        #assert(x2[0] == "1");
+        #assert(x2[1] == "2");
+        #assert(!y2.IsEmpty());
+        #assert(y2.Count() == 2);
+        #assert(y2[0] == "1");
+        #assert(y2[1] == "2");
+        #assert(x2 == y2);
+
+        List<string> x3;
+        x3.Add(ToString(1));
+        x3.Add(ToString(2));
+        x3.Add(ToString(3));
+        #assert(!x3.IsEmpty());
+        #assert(x3.Count() == 3);
+        #assert(x3[0] == "1");
+        #assert(x3[1] == "2");
+        #assert(x3[2] == "3");
+        List<string> y3(x3);
+        #assert(!y3.IsEmpty());
+        #assert(y3.Count() == 3);
+        #assert(y3[0] == "1");
+        #assert(y3[1] == "2");
+        #assert(y3[2] == "3");
+        #assert(x3 == y3);
+        Swap(x3, y3);
+        #assert(!x3.IsEmpty());
+        #assert(x3.Count() == 3);
+        #assert(x3[0] == "1");
+        #assert(x3[1] == "2");
+        #assert(x3[2] == "3");
+        #assert(!y3.IsEmpty());
+        #assert(y3.Count() == 3);
+        #assert(y3[0] == "1");
+        #assert(y3[1] == "2");
+        #assert(y3[2] == "3");
+        #assert(x3 == y3);
+
+        List<string> x100;
+        for (int i = 0; i < 100; ++i)
+        {
+            x100.Add(ToString(i));
+        }
+        #assert(!x100.IsEmpty());
+        #assert(x100.Count() == 100);
+        List<string> y100(x100);
+        #assert(!y100.IsEmpty());
+        #assert(y100.Count() == 100);
+        #assert(x100 == y100);
+        Swap(x100, y100);
+        #assert(!x100.IsEmpty());
+        #assert(x100.Count() == 100);
+        #assert(!y100.IsEmpty());
+        #assert(y100.Count() == 100);
+        #assert(x100 == y100);
+    }
+}

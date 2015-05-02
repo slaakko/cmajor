@@ -261,12 +261,6 @@ namespace System.Collections
             #assert(!IsEmpty());
             return *(End() - 1);
         }
-        public nothrow void Swap(Self& that)
-        {
-            Swap(items, that.items);
-            Swap(count, that.count);
-            Swap(res, that.res);
-        }
         private void Grow(int minRes)
         {
             minRes = cast<int>(MemGrow(cast<ulong>(minRes)));
