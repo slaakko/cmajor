@@ -64,6 +64,7 @@ public:
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type, int index) override;
     void MakeIrType() override;
+    void RecomputeIrType() override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
 private:

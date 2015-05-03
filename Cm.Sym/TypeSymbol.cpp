@@ -86,7 +86,6 @@ void TypeSymbol::SetIrType(Ir::Intf::Type* irType_)
     }
     irType_->SetOwned();
     irType.reset(irType_);
-    irType->SetId(id.Rep());
     SetIrTypeMade();
 }
 
@@ -108,6 +107,15 @@ void TypeSymbol::SetDefaultIrValue(Ir::Intf::Object* defaultIrValue_)
 Ir::Intf::Object* TypeSymbol::GetDefaultIrValue() const
 {
     return defaultIrValue.get();
+}
+
+void TypeSymbol::AddDependentType(TypeSymbol* dependentType)
+{
+    dependentTypes.push_front(dependentType);
+}
+
+void TypeSymbol::RecomputeIrType()
+{
 }
 
 } } // namespace Cm::Sym

@@ -14,6 +14,7 @@
 #include <Cm.Ast/TypeExpr.hpp>
 #include <Ir.Intf/Type.hpp>
 #include <Ir.Intf/Object.hpp>
+#include <forward_list>
 
 namespace Cm { namespace Sym {
 
@@ -69,10 +70,14 @@ public:
     Ir::Intf::Type* GetIrType() const;
     void SetDefaultIrValue(Ir::Intf::Object* defaultIrValue_);
     Ir::Intf::Object* GetDefaultIrValue() const;
+    void AddDependentType(TypeSymbol* dependentType);
+    std::forward_list<TypeSymbol*>& DependentTypes() { return dependentTypes; }
+    virtual void RecomputeIrType();
 private:
     TypeId id;
     std::unique_ptr<Ir::Intf::Type> irType;
     std::unique_ptr<Ir::Intf::Object> defaultIrValue;
+    std::forward_list<TypeSymbol*> dependentTypes;
 };
 
 inline bool TypesEqual(TypeSymbol* left, TypeSymbol* right)

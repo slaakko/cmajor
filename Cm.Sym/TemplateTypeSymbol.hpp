@@ -34,6 +34,7 @@ public:
     void AddTypeArgument(TypeSymbol* typeArgument);
     void SetType(TypeSymbol* type, int index) override;
     void MakeIrType() override;
+    void RecomputeIrType() override;
     void SetFileScope(FileScope* fileScope_);
     FileScope* CloneFileScope() const { return fileScope->Clone(); }
     void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);

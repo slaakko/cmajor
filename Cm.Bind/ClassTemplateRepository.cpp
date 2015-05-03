@@ -41,10 +41,6 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
         throw std::runtime_error("subject type not class type");
     }
     Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectTypeSymbol);
-    if (subjectClassTypeSymbol->Name().find("Map") != std::string::npos)
-    {
-        int x = 0;
-    }
     classTemplates.insert(subjectClassTypeSymbol);
     Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol, false);
     if (!node)
@@ -101,10 +97,9 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     {
         templateTypeSymbol->SetName(Cm::Sym::MakeTemplateTypeSymbolName(templateTypeSymbol->GetSubjectType(), templateTypeSymbol->TypeArguments()));
         templateTypeSymbol->SetId(Cm::Sym::ComputeTemplateTypeId(templateTypeSymbol->GetSubjectType(), templateTypeSymbol->TypeArguments()));
-        templateTypeSymbol->ResetIrTypeMade();
-        templateTypeSymbol->MakeIrType();
+        templateTypeSymbol->RecomputeIrType();
+        boundCompileUnit.SymbolTable().GetTypeRepository().AddType(templateTypeSymbol);     // add to type repository with new id
     }
-    boundCompileUnit.SymbolTable().GetTypeRepository().AddType(templateTypeSymbol);
     Cm::Ast::IdentifierNode* classInstanceId = new Cm::Ast::IdentifierNode(classInstanceNode->GetSpan(), templateTypeSymbol->FullName());
     classInstanceNode->SetId(classInstanceId);
     currentNs->AddMember(classInstanceNode);

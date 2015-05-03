@@ -174,6 +174,7 @@ DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_
 DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* baseType_, const Cm::Ast::DerivationList& derivations_, const TypeId& id_) : 
     TypeSymbol(span_, name_, id_), baseType(baseType_), derivations(derivations_)
 {
+    baseType->AddDependentType(this);
 }
 
 std::string DerivedTypeSymbol::GetMangleId() const
@@ -214,6 +215,7 @@ void DerivedTypeSymbol::Read(Reader& reader)
 void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
 {
     baseType = type;
+    baseType->AddDependentType(this);
 }
 
 void DerivedTypeSymbol::MakeIrType()
@@ -225,6 +227,12 @@ void DerivedTypeSymbol::MakeIrType()
     {
         SetDefaultIrValue(GetIrType()->CreateDefaultValue());
     }
+}
+
+void DerivedTypeSymbol::RecomputeIrType()
+{
+    ResetIrTypeMade();
+    MakeIrType();
 }
 
 void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
