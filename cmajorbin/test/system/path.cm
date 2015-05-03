@@ -1,0 +1,137 @@
+using System;
+using System.IO;
+
+namespace Test.System.IO
+{
+    public unit_test void PathTest()
+    {
+        string cwd = GetCurrentWorkingDirectory();
+        #assert(DirectoryExists(cwd));
+        #assert(PathExists(cwd));
+        string p0 = Path.MakeCanonical("");
+        #assert(p0.IsEmpty());
+        string p1 = Path.MakeCanonical(@"C:\");
+        #assert(p1 == "C:/");
+        string p2 = Path.MakeCanonical(@"\\");
+        #assert(p2 == "/");
+        string p3 = Path.MakeCanonical("C://");
+        #assert(p3 == "C:/");
+
+        string p4 = Path.ChangeExtension("", "");
+        #assert(p4.IsEmpty());
+        string p5 = Path.ChangeExtension("foo", "");
+        #assert(p5 == "foo");
+        string p6 = Path.ChangeExtension("foo.bar", "");
+        #assert(p6 == "foo");
+        string p7 = Path.ChangeExtension("foo", ".bar");
+        #assert(p7 == "foo.bar");
+        string p8 = Path.ChangeExtension("foo", "bar");
+        #assert(p8 == "foo.bar");
+        string p9 = Path.ChangeExtension("foo.bar", "baz");
+        #assert(p9 == "foo.baz");
+        string p10 = Path.ChangeExtension("foo.bar", ".baz");
+        #assert(p10 == "foo.baz");
+
+        #assert(!Path.HasExtension(""));
+        #assert(!Path.HasExtension("foo"));
+        #assert(!Path.HasExtension(@"foo.bar\baz"));
+        #assert(!Path.HasExtension("foo.bar//baz"));
+        #assert(!Path.HasExtension("foo."));
+        #assert(!Path.HasExtension("."));
+        #assert(Path.HasExtension(".bar"));
+        #assert(Path.HasExtension("foo.bar"));
+
+        string p11 = Path.GetExtension("");
+        #assert(p11.IsEmpty());
+        string p12 = Path.GetExtension("foo");
+        #assert(p12.IsEmpty());
+        string p13 = Path.GetExtension(@"C:\");
+        #assert(p13.IsEmpty());
+        string p14 = Path.GetExtension(@"C:\foo.bar\baz");
+        #assert(p14.IsEmpty());
+        string p15 = Path.GetExtension(".bar");
+        #assert(p15 == ".bar");
+        string p16 = Path.GetExtension("foo.bar");
+        #assert(p16 == ".bar");
+        string p17 = Path.GetExtension(@"C:\foo.bar.baz");
+        #assert(p17 == ".baz");
+
+        string p18 = Path.GetFileName("");
+        #assert(p18.IsEmpty());
+        string p19 = Path.GetFileName(@"C:\");
+        #assert(p19.IsEmpty());
+        string p20 = Path.GetFileName("F:");
+        #assert(p20.IsEmpty());
+        string p21 = Path.GetFileName("foo/bar.baz");
+        #assert(p21 == "bar.baz");
+        string p22 = Path.GetFileName(@"C:\foo.bar");
+        #assert(p22 == "foo.bar");
+        string p23 = Path.GetFileName("foo.bar");
+        #assert(p23 == "foo.bar");
+        string p24 = Path.GetFileName("foo");
+        #assert(p24 == "foo");
+
+        string p25 = Path.GetFileNameWithoutExtension("foo");
+        #assert(p25 == "foo");
+        string p26 = Path.GetFileNameWithoutExtension("foo.bar");
+        #assert(p26 == "foo");
+        string p27 = Path.GetFileNameWithoutExtension("foo/bar.baz");
+        #assert(p27 == "bar");
+
+        string p28 = Path.GetDirectoryName("");
+        #assert(p28.IsEmpty());
+        string p29 = Path.GetDirectoryName("C:");
+        #assert(p29.IsEmpty());
+        string p30 = Path.GetDirectoryName(@"C:\");
+        #assert(p30.IsEmpty());
+        string p31 = Path.GetDirectoryName("foo/bar");
+        #assert(p31 == "foo");
+        string p32 = Path.GetDirectoryName(@"C:\foo");
+        #assert(p32 == "C:");
+        string p33 = Path.GetDirectoryName(@"C:\foo\bar.baz");
+        #assert(p33 == "C:/foo");
+        string p34 = Path.GetDirectoryName("foo/bar/baz");
+        #assert(p34 == "foo/bar");
+
+        string p35 = Path.Combine("", "");
+        #assert(p35.IsEmpty());
+        string p36 = Path.Combine("foo", "");
+        #assert(p36 == "foo");
+        string p37 = Path.Combine("foo", "bar");
+        #assert(p37 == "foo/bar");
+        string p38 = Path.Combine("foo", @"C:\bar");
+        #assert(p38 == "C:/bar");
+        string p39 = Path.Combine("foo/", "bar.baz");
+        #assert(p39 == "foo/bar.baz");
+        string p40 = Path.Combine("/fuz/zip", "zac.bat");
+        #assert(p40 == "/fuz/zip/zac.bat");
+
+        #assert(!Path.IsAbsolute(""));
+        #assert(!Path.IsAbsolute("foo/bar"));
+        #assert(!Path.IsAbsolute("C:"));
+        #assert(Path.IsAbsolute(@"C:\"));
+        #assert(Path.IsAbsolute(@"\foo"));
+        #assert(Path.IsAbsolute("/foo"));
+
+        #assert(Path.IsRelative(""));
+        #assert(Path.IsRelative("foo/bar"));
+        #assert(Path.IsRelative("C:"));
+        #assert(!Path.IsRelative(@"C:\"));
+        #assert(!Path.IsRelative(@"\foo"));
+        #assert(!Path.IsRelative("/foo"));
+
+        string p41 = Path.GetParent("");
+        Console.Out() << p41 << endl();
+        string p42 = Path.GetParent("foo");
+        Console.Out() << p42 << endl();
+
+        string p43 = GetFullPath(".");
+        Console.Out() << p43 << endl();
+        #assert(p42 == p43);
+        string p44 = GetFullPath("..");
+        Console.Out() << p44 << endl();
+        #assert(p41 == p44);
+        string p45 = GetFullPath(@"C:\");
+        #assert(p45 == "C:/");
+    }
+}

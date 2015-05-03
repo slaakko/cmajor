@@ -120,6 +120,11 @@ void TemplateTypeSymbol::Read(Reader& reader)
     reader.EnqueueMakeIrTypeFor(this);
 }
 
+void TemplateTypeSymbol::AddTypeArgument(TypeSymbol* typeArgument)
+{
+    typeArguments.push_back(typeArgument);
+}
+
 void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
 {
     if (index == -1)
