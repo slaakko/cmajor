@@ -18,3 +18,4 @@ source <map.cm>;
 source <pair.cm>;
 source <path.cm>;
 source <ptr.cm>;
+source <queue.cm>;
