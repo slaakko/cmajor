@@ -424,8 +424,9 @@ bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol
                 Cm::Sym::TemplateTypeSymbol* parameterTemplateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(parameterBaseType);
                 if (Cm::Sym::TypesEqual(argumentTemplateTypeSymbol->GetSubjectType(), parameterTemplateTypeSymbol->GetSubjectType()))
                 {
-                    int n = int(argumentTemplateTypeSymbol->TypeArguments().size());
-                    if (n == int(parameterTemplateTypeSymbol->TypeArguments().size()))
+                    int n = int(parameterTemplateTypeSymbol->TypeArguments().size());
+                    int m = int(argumentTemplateTypeSymbol->TypeArguments().size());
+                    if (m == n)
                     {
                         for (int i = 0; i < n; ++i)
                         {

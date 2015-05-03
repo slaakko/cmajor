@@ -169,6 +169,7 @@ public:
     void SetBound() { SetFlag(SymbolFlags::bound); }
     bool IrTypeMade() const { return GetFlag(SymbolFlags::irTypeMade); }
     void SetIrTypeMade() { SetFlag(SymbolFlags::irTypeMade); }
+    void ResetIrTypeMade() { ResetFlag(SymbolFlags::irTypeMade); }
     SymbolFlags Flags() const { return flags; }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none;  }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }

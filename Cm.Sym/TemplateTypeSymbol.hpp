@@ -31,6 +31,7 @@ public:
     void SetSubjectType(TypeSymbol* subjectType_);
     TypeSymbol* GetSubjectType() const { return subjectType; }
     const std::vector<TypeSymbol*>& TypeArguments() const { return typeArguments; }
+    void AddTypeArgument(TypeSymbol* typeArgument);
     void SetType(TypeSymbol* type, int index) override;
     void MakeIrType() override;
     void SetFileScope(FileScope* fileScope_);

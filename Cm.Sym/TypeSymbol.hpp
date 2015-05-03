@@ -40,7 +40,7 @@ public:
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     const TypeId& Id() const { return id; }
-    void SetId(const TypeId& id_) { id = id_;  }
+    void SetId(const TypeId& id_) { id = id_; }
     virtual std::string GetMangleId() const = 0;
     virtual bool IsAbstract() const { return false; }
     virtual bool IsDerivedTypeSymbol() const { return false; }

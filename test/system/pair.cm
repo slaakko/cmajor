@@ -1,0 +1,26 @@
+using System;
+
+namespace Test.System.Pair
+{
+    public unit_test void PairTest()
+    {
+        Pair<string, int> p0("foo", 1);
+        Pair<string, int> p1("foo", 1);
+        #assert(p0 == p1);
+        #assert(p0.first == p1.first);
+        #assert(p0.second == p1.second);
+        Pair<string, int> p2("bar", 2);
+        #assert(p2 != p0);
+        #assert(p2 != p1);
+        #assert(p2 < p0);
+        #assert(p2 < p1);
+        Pair<string, int> p3("bar", 3);
+        #assert(p3 != p0);
+        #assert(p3 != p1);
+        #assert(p3 != p2);
+        #assert(p3.first == p2.first);
+        #assert(p3 < p0);
+        #assert(p3 < p1);
+        #assert(p3 > p2);
+    }
+}
