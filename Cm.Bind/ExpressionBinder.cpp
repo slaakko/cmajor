@@ -1214,6 +1214,10 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
             if (fun)
             {
                 type = fun->GetReturnType();
+                if (type->IsClassTypeSymbol())
+                {
+                    returnClassObjectByValue = true;
+                }
             }
         }
         if (!fun)
@@ -1312,7 +1316,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
     }
-    else if (returnClassObjectByValue)
+    if (returnClassObjectByValue)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
     }

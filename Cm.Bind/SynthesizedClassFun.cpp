@@ -14,6 +14,7 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/MutexTable.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Bind {
@@ -759,6 +760,10 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
         Cm::Sym::TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
         if (!memberVariableType->IsClassTypeSymbol()) continue;
         Cm::Sym::ClassTypeSymbol* memberVariableClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
+        if (memberVariableClassType->IsTemplateTypeSymbol() && !memberVariableClassType->Bound())
+        {
+            compileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(static_cast<Cm::Sym::TemplateTypeSymbol*>(memberVariableClassType), containerScope, compileUnit.GetFileScopes());
+        }
         if (!memberVariableClassType->Destructor()) continue;
         Cm::Sym::FunctionSymbol* memberDtor = memberVariableClassType->Destructor();
         Cm::BoundTree::BoundExpressionList arguments;
@@ -775,6 +780,10 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
     if (classTypeSymbol->BaseClass())
     {
         Cm::Sym::ClassTypeSymbol* baseClass = classTypeSymbol->BaseClass();
+        if (baseClass->IsTemplateTypeSymbol() && !baseClass->Bound())
+        {
+            compileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(static_cast<Cm::Sym::TemplateTypeSymbol*>(baseClass), containerScope, compileUnit.GetFileScopes());
+        }
         Cm::Sym::FunctionSymbol* baseClassDtor = baseClass->Destructor();
         if (!baseClassDtor)
         {

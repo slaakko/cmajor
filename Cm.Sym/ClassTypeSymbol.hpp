@@ -93,6 +93,7 @@ public:
     bool DoGenerateDestructor();
     bool DoGenerateStaticConstructor();
     bool HasNonTrivialMemberDestructor() const;
+    virtual bool TemplateArgumentHasNonTrivialDestructor() const { return false; }
     void AddSymbol(Symbol* symbol) override;
     void AddConversion(FunctionSymbol* functionSymbol);
     const std::vector<MemberVariableSymbol*>& MemberVariables() const { return memberVariables; }
