@@ -19,11 +19,6 @@ using System.IO;
 
 namespace System.Text.Parsing
 {
-    public typedef Set<Grammar*> GrammarSet;
-    
-    public typedef List<Rule*> RuleList;
-    public typedef Set<RuleLink*> RuleLinkSet;
-    
     public class Grammar: ParsingObject
     {
         public Grammar(const string& name_, Scope* enclosingScope_): 
@@ -199,7 +194,7 @@ namespace System.Text.Parsing
             Own(grammarReference);
             grammarReferences.Insert(grammarReference);
         }
-        public nothrow const GrammarSet& GrammarReferences() const
+        public nothrow const Set<Grammar*>& GrammarReferences() const
         {
             return grammarReferences;
         }
@@ -231,7 +226,7 @@ namespace System.Text.Parsing
         {
             return parsingDomain;
         }
-        public nothrow inline const RuleList& GetRules() const
+        public nothrow inline const List<Rule*>& GetRules() const
         {
             return rules;
         }
@@ -270,12 +265,12 @@ namespace System.Text.Parsing
         }
         private ParsingDomain* parsingDomain;
         private Namespace* ns;
-        private RuleList rules;
-        private RuleLinkSet ruleLinks;
+        private List<Rule*> rules;
+        private Set<RuleLink*> ruleLinks;
         private Rule* start;
         private Rule* skip;
         private Parser* contentParser;
-        private GrammarSet grammarReferences;
+        private Set<Grammar*> grammarReferences;
         private bool linking;
         private bool linked;
         private int maxLogLineLength;

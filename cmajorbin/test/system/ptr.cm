@@ -1,0 +1,39 @@
+using System;
+
+namespace Test.System.Ptr
+{
+    public unit_test void TestUniquePtr()
+    {
+        UniquePtr<int> p0;
+        #assert(p0.IsNull());
+        #assert(p0.GetPtr() == null);
+
+        UniquePtr<int> p1(new int(1));
+        #assert(!p1.IsNull());
+        #assert(*p1 == 1);
+
+        UniquePtr<int> p2(new int(2));
+        Swap(p1, p2);
+        #assert(!p2.IsNull());
+        #assert(!p1.IsNull());
+        #assert(*p1 == 2);
+        #assert(*p2 == 1);
+
+        #assert(p0 != p1);
+        #assert(p0 != p2);
+        #assert(p1 != p2);
+
+        p1.Reset(new int(3));
+        #assert(*p1 == 3);
+
+        p1.Reset(p2.Release());
+        #assert(p2.IsNull());
+        #assert(*p1 == 1);
+
+        p1.Reset();
+        #assert(p1.IsNull());
+        #assert(p0 == p1);
+        #assert(p1 == p2);
+        #assert(p0 == p2);
+    }
+}

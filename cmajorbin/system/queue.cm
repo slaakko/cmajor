@@ -23,11 +23,6 @@ namespace System.Collections
         public typedef T ValueType;
         private typedef Queue<T> Self;
         
-        public default Queue();
-        suppress Queue(const Self&);
-        suppress void operator=(const Self&);
-        public default Queue(Self&&);
-        public default void operator=(Self&&);
         public nothrow inline bool IsEmpty() const
         {
             return items.IsEmpty();

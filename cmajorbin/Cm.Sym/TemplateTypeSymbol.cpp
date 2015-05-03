@@ -63,6 +63,11 @@ TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& nam
 TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_) :
     ClassTypeSymbol(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_)
 {
+    subjectType->AddDependentType(this);
+    for (TypeSymbol* typeArgument : typeArguments)
+    {
+        typeArgument->AddDependentType(this);
+    }
 }
 
 std::string TemplateTypeSymbol::GetMangleId() const
@@ -123,6 +128,7 @@ void TemplateTypeSymbol::Read(Reader& reader)
 void TemplateTypeSymbol::AddTypeArgument(TypeSymbol* typeArgument)
 {
     typeArguments.push_back(typeArgument);
+    typeArgument->AddDependentType(this);
 }
 
 void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
@@ -138,6 +144,7 @@ void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
             throw std::runtime_error("invalid type index");
         }
         typeArguments[index] = type;
+        type->AddDependentType(this);
     }
 }
 
@@ -147,9 +154,20 @@ void TemplateTypeSymbol::MakeIrType()
     SetIrType(Cm::IrIntf::CreateClassTypeName(FullName()));
 }
 
+void TemplateTypeSymbol::RecomputeIrType()
+{
+    ResetIrTypeMade();
+    MakeIrType();
+    for (TypeSymbol* dependentType : DependentTypes())
+    {
+        dependentType->RecomputeIrType();
+    }
+}
+
 void TemplateTypeSymbol::SetSubjectType(TypeSymbol* subjectType_)
 {
     subjectType = subjectType_;
+    subjectType->AddDependentType(this);
 }
 
 void TemplateTypeSymbol::SetFileScope(FileScope* fileScope_)
