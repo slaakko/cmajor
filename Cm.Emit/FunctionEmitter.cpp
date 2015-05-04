@@ -519,6 +519,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
         Cm::Sym::TypeSymbol* temporaryType = boundTemporary->GetType();
         boundTemporary->Accept(*this);
         std::shared_ptr<Cm::Core::GenResult> temporaryResult = resultStack.Pop();
+        if (!resultLabel)
+        {
+            resultLabel = temporaryResult->GetLabel();
+        }
         temporary = temporaryResult->MainObject();
         result->Merge(temporaryResult);
         if (temporaryType->IsClassTypeSymbol())
@@ -546,7 +550,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
         {
             result->SetAddrArg();
         }
-        resultLabel = operandResult->GetLabel();
+        if (!resultLabel)
+        {
+            resultLabel = operandResult->GetLabel();
+        }
         result->Merge(operandResult);
     }
     if (boundConversion.Operand()->GetType()->IsClassTypeSymbol() && (boundConversion.GetType()->IsPointerType() || boundConversion.GetType()->IsReferenceType() || boundConversion.GetType()->IsRvalueRefType()))
