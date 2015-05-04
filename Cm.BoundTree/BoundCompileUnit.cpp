@@ -7,8 +7,10 @@
 
 ========================================================================*/
 
+#include <Cm.Bind/Class.hpp>
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <boost/filesystem.hpp>

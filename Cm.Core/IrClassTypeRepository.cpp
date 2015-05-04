@@ -21,46 +21,14 @@ IrClassTypeRepository::~IrClassTypeRepository()
 {
 }
 
+bool IrClassTypeRepository::Added(Cm::Sym::ClassTypeSymbol* classType) const
+{
+    return classTypes.find(classType) != classTypes.end();
+}
+
 void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
-    if (classTypes.find(classTypeSymbol) != classTypes.end()) return;
     classTypes.insert(classTypeSymbol);
-    if (classTypeSymbol->BaseClass())
-    {
-        AddClassType(classTypeSymbol->BaseClass());
-    }
-    for (Cm::Sym::MemberVariableSymbol* memberVar : classTypeSymbol->MemberVariables())
-    {
-        Cm::Sym::TypeSymbol* memberVariableBaseType = memberVar->GetType()->GetBaseType();
-        if (memberVariableBaseType->IsClassTypeSymbol())
-        {
-            AddClassType(static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableBaseType));
-        }
-    }
-    if (classTypeSymbol->IsVirtual())
-    {
-        for (Cm::Sym::FunctionSymbol* virtualFunction : classTypeSymbol->Vtbl())
-        {
-            if (virtualFunction)
-            {
-                Cm::Sym::TypeSymbol* returnType = virtualFunction->GetReturnType();
-                if (returnType && returnType->GetBaseType()->IsClassTypeSymbol())
-                {
-                    Cm::Sym::ClassTypeSymbol* returnClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(returnType->GetBaseType());
-                    AddClassType(returnClassType);
-                }
-                for (Cm::Sym::ParameterSymbol* parameter : virtualFunction->Parameters())
-                {
-                    Cm::Sym::TypeSymbol* parameterBaseType = parameter->GetType()->GetBaseType();
-                    if (parameterBaseType->IsClassTypeSymbol())
-                    {
-                        Cm::Sym::ClassTypeSymbol* parameterClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(parameterBaseType);
-                        AddClassType(parameterClassType);
-                    }
-                }
-            }
-        }
-    }
 }
 
 void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
@@ -300,6 +268,10 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::A
 
 void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter)
 {
+    if (!classType->Bound())
+    {
+        throw std::runtime_error("class type '" + classType->FullName() + "' not bound");
+    }
     std::vector<Ir::Intf::Type*> memberTypes;
     std::vector<std::string> memberNames;
     std::string tagName = classType->GetMangleId() + "_";

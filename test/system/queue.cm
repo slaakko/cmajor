@@ -38,7 +38,7 @@ namespace Test.System.Collections.Queue
 
         q1.Put(UniquePtr<int>(new int(1)));
         q1.Put(UniquePtr<int>(new int(2)));
-        q1.Put(UniquePtr<int>(new int (3)));
+        q1.Put(UniquePtr<int>(new int(3)));
         #assert(!q1.IsEmpty());
         #assert(q1.Count() == 3);
         #assert(*q1.Get() == 1);

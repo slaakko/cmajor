@@ -17,6 +17,7 @@
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
+#include <Cm.Bind/Class.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
@@ -1345,7 +1346,7 @@ Cm::BoundTree::BoundConstructionStatement* CreateTracedFunConstructionStatement(
         throw std::runtime_error("not class type");
     }
     Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(tracedFunType);
-    boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+    AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
     Cm::Sym::TypeSymbol* tracedFunPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(tracedFunType, span);
     Cm::Sym::LocalVariableSymbol* tracedFunVar = boundFunction->CreateTempLocalVariable(tracedFunType);
     boundConstructionStatement->SetLocalVariable(tracedFunVar);

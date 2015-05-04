@@ -8,10 +8,12 @@
 ========================================================================*/
 
 #include <Cm.Bind/Class.hpp>
-#include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/MemberVariable.hpp>
+#include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -20,10 +22,6 @@ namespace Cm { namespace Bind {
 Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode)
 {
-    if (classNode->Id()->Str() == "System.Support.ExDeleter<System.Exception>")
-    {
-        int X = 0;
-    }
     Cm::Sym::Symbol* symbol = containerScope->Lookup(classNode->Id()->Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, Cm::Sym::SymbolTypeSetId::lookupClassSymbols);
     if (symbol)
     {
@@ -149,6 +147,57 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
         classTypeSymbol->SetIrType(Cm::IrIntf::CreateClassTypeName(classTypeSymbol->FullName()));
     }
     classTypeSymbol->SetBound();
+}
+
+void AddClassTypeToIrClassTypeRepository(Cm::Sym::ClassTypeSymbol* classType, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope)
+{
+    if (boundCompileUnit.IsPrebindCompileUnit()) return;
+    if (boundCompileUnit.IrClassTypeRepository().Added(classType)) return;
+    boundCompileUnit.IrClassTypeRepository().AddClassType(classType);
+    if (!classType->Bound())
+    {
+        if (classType->IsTemplateTypeSymbol())
+        {
+            Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(classType);
+            boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, boundCompileUnit.GetFileScopes());
+        }
+    }
+    if (classType->BaseClass())
+    {
+        AddClassTypeToIrClassTypeRepository(classType->BaseClass(), boundCompileUnit, containerScope);
+    }
+    for (Cm::Sym::MemberVariableSymbol* memberVar : classType->MemberVariables())
+    {
+        Cm::Sym::TypeSymbol* memberVariableBaseType = memberVar->GetType()->GetBaseType();
+        if (memberVariableBaseType->IsClassTypeSymbol())
+        {
+            AddClassTypeToIrClassTypeRepository(static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableBaseType), boundCompileUnit, containerScope);
+        }
+    }
+    if (classType->IsVirtual())
+    {
+        for (Cm::Sym::FunctionSymbol* virtualFunction : classType->Vtbl())
+        {
+            if (virtualFunction)
+            {
+                Cm::Sym::TypeSymbol* returnType = virtualFunction->GetReturnType();
+                if (returnType && returnType->GetBaseType()->IsClassTypeSymbol())
+                {
+                    Cm::Sym::ClassTypeSymbol* returnClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(returnType->GetBaseType());
+                    AddClassTypeToIrClassTypeRepository(returnClassType, boundCompileUnit, containerScope);
+                }
+                for (Cm::Sym::ParameterSymbol* parameter : virtualFunction->Parameters())
+                {
+                    Cm::Sym::TypeSymbol* parameterBaseType = parameter->GetType()->GetBaseType();
+                    if (parameterBaseType->IsClassTypeSymbol())
+                    {
+                        Cm::Sym::ClassTypeSymbol* parameterClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(parameterBaseType);
+                        AddClassTypeToIrClassTypeRepository(parameterClassType, boundCompileUnit, containerScope);
+                    }
+                }
+            }
+        }
+    }
 }
 
 } } // namespace Cm::Bind

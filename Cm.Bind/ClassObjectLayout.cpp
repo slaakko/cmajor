@@ -11,6 +11,7 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/ExpressionBinder.hpp>
 #include <Cm.Bind/OverloadResolution.hpp>
+#include <Cm.Bind/Class.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Ast/Visitor.hpp>
@@ -43,7 +44,7 @@ ClassInitializerHandler::ClassInitializerHandler(Cm::BoundTree::BoundCompileUnit
 void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpressionList& arguments, const Cm::Parsing::Span& span, Cm::Ast::Node* baseInitializerNode)
 {
     Cm::Sym::ClassTypeSymbol* baseClassType = classType->BaseClass();
-    BoundCompileUnit().IrClassTypeRepository().AddClassType(baseClassType);
+    AddClassTypeToIrClassTypeRepository(baseClassType, BoundCompileUnit(), ContainerScope());
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* baseClassPtrType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
     Cm::Core::Argument baseClassArg(Cm::Core::ArgumentCategory::lvalue, baseClassPtrType);
@@ -273,7 +274,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     if (memberVariableType->IsClassTypeSymbol())
     {
         Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
-        BoundCompileUnit().IrClassTypeRepository().AddClassType(memberVarClassType);
+        AddClassTypeToIrClassTypeRepository(memberVarClassType, BoundCompileUnit(), ContainerScope());
     }
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* memberCtor = nullptr;
@@ -559,7 +560,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializer
     if (memberVariableType->IsClassTypeSymbol())
     {
         Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
-        BoundCompileUnit().IrClassTypeRepository().AddClassType(memberVarClassType);
+        AddClassTypeToIrClassTypeRepository(memberVarClassType, BoundCompileUnit(), ContainerScope());
     }
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* memberCtor = nullptr;

@@ -233,17 +233,6 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
     if (templateTypeSymbol->Destructor())
     {
         Instantiate(containerScope, templateTypeSymbol->Destructor());
-        for (Cm::Sym::TypeSymbol* typeArgument : templateTypeSymbol->TypeArguments())
-        {
-            if (typeArgument->IsTemplateTypeSymbol())
-            {
-                Cm::Sym::TemplateTypeSymbol* typeArgumentTemplateType = static_cast<Cm::Sym::TemplateTypeSymbol*>(typeArgument);
-                if (typeArgumentTemplateType->Destructor())
-                {
-                    Instantiate(containerScope, typeArgumentTemplateType->Destructor());
-                }
-            }
-        }
     }
 }
 

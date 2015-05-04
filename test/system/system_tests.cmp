@@ -19,3 +19,4 @@ source <pair.cm>;
 source <path.cm>;
 source <ptr.cm>;
 source <queue.cm>;
+source <set.cm>;

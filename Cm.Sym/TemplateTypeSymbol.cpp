@@ -220,13 +220,4 @@ void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*
     }
 }
 
-bool TemplateTypeSymbol::TemplateArgumentHasNonTrivialDestructor() const
-{
-    for (TypeSymbol* typeArgument : typeArguments)
-    {
-        if (typeArgument->IsClassTypeSymbol() && static_cast<ClassTypeSymbol*>(typeArgument)->Destructor()) return true;
-    }
-    return false;
-}
-
 } } // namespace Cm::Sym

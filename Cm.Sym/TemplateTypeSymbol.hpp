@@ -40,7 +40,6 @@ public:
     void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
-    bool TemplateArgumentHasNonTrivialDestructor() const override;
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;

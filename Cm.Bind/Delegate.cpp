@@ -89,6 +89,7 @@ void CompleteBindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
     Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, delegateNode->ReturnTypeExpr());
     delegateTypeSymbol->SetReturnType(returnType);
     delegateTypeSymbol->MakeIrType();
+    delegateTypeSymbol->SetBound();
 }
 
 Cm::Sym::ClassDelegateTypeSymbol* BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, 
@@ -182,6 +183,7 @@ void CompleBindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::Contain
     dlg->SetType(dlgType);
     classDelegateTypeSymbol->AddSymbol(dlg);
     classDelegateTypeSymbol->MakeIrType();
+    classDelegateTypeSymbol->SetBound();
 }
 
 } } // namespace Cm::Bind

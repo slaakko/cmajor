@@ -9,6 +9,7 @@
 
 #ifndef CM_BIND_CLASS_INCLUDED
 #define CM_BIND_CLASS_INCLUDED
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Class.hpp>
@@ -20,6 +21,8 @@ Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::
 
 void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol);
+
+void AddClassTypeToIrClassTypeRepository(Cm::Sym::ClassTypeSymbol* classType, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope);
 
 } } // namespace Cm::Bind
 

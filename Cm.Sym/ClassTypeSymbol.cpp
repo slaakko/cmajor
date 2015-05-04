@@ -191,7 +191,6 @@ bool ClassTypeSymbol::DoGenerateDestructor()
     if (GenerateDestructor()) return true;  // asked to generate one, so generate
     if (IsVirtual()) return true;           // virtual classes need to have one
     if (HasNonTrivialMemberDestructor()) return true;   // member has one => need to have one
-    if (TemplateArgumentHasNonTrivialDestructor()) return true;
     if (baseClass && baseClass->Destructor()) return true;  // base class has one => need to have one
     return false;                           // else don't generate
 }
