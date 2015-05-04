@@ -620,7 +620,7 @@ void CleanProject(Cm::Ast::Project* project)
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
-        std::cout << "Cleaning project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->OutputBasePath().generic_string()) << ")";
+        std::cout << "Cleaning project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->OutputBasePath().generic_string()) << ")" << std::endl;
     }
     boost::filesystem::remove_all(project->OutputBasePath());
     if (!quiet)
