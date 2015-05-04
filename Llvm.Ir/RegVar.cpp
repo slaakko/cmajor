@@ -36,11 +36,21 @@ void RegVar::InitFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::Intf
     {
         emitter.Emit(Store(type, &constant, this));
     }
-    else
+    else if (type->IsIntegerType())
     {
         Ir::Intf::Object* defaultValue = type->CreateDefaultValue();
         emitter.Own(defaultValue);
         emitter.Emit(Or(type, this, &constant, defaultValue)); 
+    }
+    else if (type->IsFloatingPointType())
+    {
+        Ir::Intf::Object* defaultValue = type->CreateDefaultValue();
+        emitter.Own(defaultValue);
+        emitter.Emit(FAdd(type, this, &constant, defaultValue));
+    }
+    else
+    {
+        throw std::runtime_error("can only init regvar from pointer, integer or floating point type");
     }
 }
 
@@ -141,11 +151,21 @@ void RegVar::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::In
     {
         emitter.Emit(Store(type, &constant, this));
     }
-    else
+    else if (type->IsIntegerType())
     {
         Ir::Intf::Object* defaultValue = type->CreateDefaultValue();
         emitter.Own(defaultValue);
         emitter.Emit(Or(type, this, &constant, defaultValue));
+    }
+    else if (type->IsFloatingPointType())
+    {
+        Ir::Intf::Object* defaultValue = type->CreateDefaultValue();
+        emitter.Own(defaultValue);
+        emitter.Emit(FAdd(type, this, &constant, defaultValue));
+    }
+    else
+    {
+        throw std::runtime_error("can only assign regvar from pointer, integer or floating point type");
     }
 }
 
