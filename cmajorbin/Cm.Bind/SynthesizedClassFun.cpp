@@ -11,6 +11,7 @@
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Bind/ExpressionBinder.hpp>
 #include <Cm.Bind/Parameter.hpp>
+#include <Cm.Bind/Class.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/MutexTable.hpp>
@@ -23,7 +24,7 @@ Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const 
     Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ClassTypeSymbol* baseClassType, Cm::Sym::ParameterSymbol* thisParam, Cm::BoundTree::BoundExpressionList& arguments, 
     const std::string& errorMessageHeader, std::unique_ptr<Cm::Core::Exception>& exception)
 {
-    compileUnit.IrClassTypeRepository().AddClassType(baseClassType);
+    AddClassTypeToIrClassTypeRepository(baseClassType, compileUnit, containerScope);
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* baseClassPtrType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
     Cm::Core::Argument baseClassArg(Cm::Core::ArgumentCategory::lvalue, baseClassPtrType);
@@ -90,7 +91,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableState
     if (memberVariableType->IsClassTypeSymbol())
     {
         Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
-        compileUnit.IrClassTypeRepository().AddClassType(memberVarClassType);
+        AddClassTypeToIrClassTypeRepository(memberVarClassType, compileUnit, containerScope);
     }
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* memberCtor = nullptr;
@@ -135,7 +136,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::
     Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ClassTypeSymbol* baseClassType, Cm::Sym::ParameterSymbol* thisParam, Cm::BoundTree::BoundExpressionList& arguments, 
     const std::string& errorMessageHeader, std::unique_ptr<Cm::Core::Exception>& exception)
 {
-    compileUnit.IrClassTypeRepository().AddClassType(baseClassType);
+    AddClassTypeToIrClassTypeRepository(baseClassType, compileUnit, containerScope);
     std::vector<Cm::Core::Argument> resolutionArguments;
     Cm::Sym::TypeSymbol* baseClassPtrType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
     Cm::Core::Argument baseClassArg(Cm::Core::ArgumentCategory::lvalue, baseClassPtrType);
@@ -200,7 +201,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement
     if (memberVariableType->IsClassTypeSymbol())
     {
         Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
-        compileUnit.IrClassTypeRepository().AddClassType(memberVarClassType);
+        AddClassTypeToIrClassTypeRepository(memberVarClassType, compileUnit, containerScope);
     }
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* memberAssignment = nullptr;
@@ -825,7 +826,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
 		throw std::runtime_error("System.Support.MtxGuard is not of class type");
 	}
 	Cm::Sym::ClassTypeSymbol* mutexGuardClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(mutexGuardSymbol);
-    compileUnit.IrClassTypeRepository().AddClassType(mutexGuardClassType);
+    AddClassTypeToIrClassTypeRepository(mutexGuardClassType, compileUnit, containerScope);
     std::vector<Cm::Core::Argument> mutexGuardResolutionArguments;
 	Cm::Sym::TypeSymbol* mutexGuardPointerType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(mutexGuardClassType, span);
 	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, mutexGuardPointerType));
@@ -900,7 +901,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
         if (memberVariableType->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
-            compileUnit.IrClassTypeRepository().AddClassType(memberVarClassType);
+            AddClassTypeToIrClassTypeRepository(memberVarClassType, compileUnit, containerScope);
         }
 
         std::vector<Cm::Sym::FunctionSymbol*> conversions;

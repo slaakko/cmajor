@@ -23,6 +23,7 @@
 #include <Cm.Bind/ClassObjectLayout.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -89,7 +90,7 @@ void Binder::BeginVisit(Cm::Ast::ClassNode& classNode)
         Cm::Sym::ClassTypeSymbol* classTypeSymbol = containerScope->Class();
         if (!boundCompileUnit.IsPrebindCompileUnit())
         {
-            boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+            AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, currentContainerScope);
         }
         boundClassStack.push(std::move(boundClass));
         boundClass.reset(new Cm::BoundTree::BoundClass(classTypeSymbol, &classNode));
@@ -109,6 +110,20 @@ void Binder::EndVisit(Cm::Ast::ClassNode& classNode)
         Cm::Sym::ClassTypeSymbol* classTypeSymbol = boundClass->Symbol();
         if (!classTypeSymbol->HasUserDefinedDestructor())
         {
+            for (Cm::Sym::MemberVariableSymbol* memberVar : classTypeSymbol->MemberVariables())
+            {
+                if (!memberVar->GetType()->Bound() && memberVar->GetType()->IsTemplateTypeSymbol())
+                {
+                    Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(memberVar->GetType());
+                    boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, currentContainerScope, boundCompileUnit.GetFileScopes());
+                }
+            }
+            if (classTypeSymbol->DoGenerateDestructor())
+            {
+                Cm::Sym::FunctionSymbol* destructor = GenerateDestructorSymbol(boundCompileUnit.SymbolTable(), classNode.GetSpan(), classTypeSymbol, boundCompileUnit.SyntaxUnit());
+                destructor->SetPublic();
+                classTypeSymbol->AddSymbol(destructor);
+            }
             if (classTypeSymbol->Destructor())
             {
                 GenerateDestructorImplementation(classNode.GetSpan(), classTypeSymbol, currentContainerScope, boundCompileUnit);
@@ -131,7 +146,7 @@ void Binder::BeginClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
     if (!boundCompileUnit.IsPrebindCompileUnit())
     {
-        boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+        AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, currentContainerScope);
     }
     boundClassStack.push(std::move(boundClass));
     boundClass.reset(new Cm::BoundTree::BoundClass(classTypeSymbol, nullptr));

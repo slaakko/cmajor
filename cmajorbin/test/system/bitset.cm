@@ -11,7 +11,6 @@ namespace Test.System.Collections.BitSet
         #assert(!bs0.Any());
         #assert(bs0.None());
         #assert(bs0.ToString() == "");
-
         for (int n = 0; n < 5; ++n)
         {
             int numBits = 1;

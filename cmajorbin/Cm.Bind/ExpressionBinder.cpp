@@ -54,7 +54,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
         if (returnType && returnType->GetBaseType()->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* returnClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(returnType->GetBaseType());
-            irClassTypeRepository.AddClassType(returnClassType);
+            AddClassTypeToIrClassTypeRepository(returnClassType, boundCompileUnit, containerScope);
         }
     }
     int n = arguments.Count();
@@ -68,7 +68,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             if (paramBaseType->IsClassTypeSymbol())
             {
                 Cm::Sym::ClassTypeSymbol* paramClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(paramBaseType);
-                irClassTypeRepository.AddClassType(paramClassType);
+                AddClassTypeToIrClassTypeRepository(paramClassType, boundCompileUnit, containerScope);
             }
         }
         Cm::BoundTree::BoundExpression* argument = arguments[i].get();
@@ -78,7 +78,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             if (argumentBaseType->IsClassTypeSymbol())
             {
                 Cm::Sym::ClassTypeSymbol* argumentClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(argumentBaseType);
-                irClassTypeRepository.AddClassType(argumentClassType);
+                AddClassTypeToIrClassTypeRepository(argumentClassType, boundCompileUnit, containerScope);
             }
         }
         if (!isBasicTypeOp)
@@ -2235,7 +2235,7 @@ void ExpressionBinder::PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const
             if (paramBaseType->IsClassTypeSymbol())
             {
                 Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(paramBaseType);
-                boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+                AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
             }
         }
     }

@@ -19,6 +19,7 @@ class IrClassTypeRepository
 {
 public:
     virtual ~IrClassTypeRepository();
+    bool Added(Cm::Sym::ClassTypeSymbol* classType) const;
     void AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol);
     virtual void Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
         IrFunctionRepository& irFunctionRepository) = 0;
