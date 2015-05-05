@@ -1,0 +1,68 @@
+using System;
+using System.Collections;
+
+namespace Test.System.Collections.Stack
+{
+    public unit_test void StackTest()
+    {
+        Stack<int> s0;
+        #assert(s0.IsEmpty());
+        #assert(s0.Count() == 0);
+        s0.Push(1);
+        s0.Push(2);
+        s0.Push(3);
+        #assert(!s0.IsEmpty());
+        #assert(s0.Count() == 3);
+        #assert(s0.Top() == 3);
+        #assert(s0.Pop() == 3);
+        #assert(s0.Top() == 2);
+        #assert(s0.Pop() == 2);
+        #assert(s0.Top() == 1);
+        #assert(s0.Pop() == 1);
+        #assert(s0.IsEmpty());
+        #assert(s0.Count() == 0);
+        for (int i = 0; i < 100; ++i)
+        {
+            s0.Push(i);
+        }
+        #assert(!s0.IsEmpty());
+        #assert(s0.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(s0.Top() == 99 - i);
+            #assert(s0.Pop() == 99 - i);
+        }
+        #assert(s0.IsEmpty());
+        #assert(s0.Count() == 0);
+
+        Stack<UniquePtr<int>> s1;
+        #assert(s1.IsEmpty());
+        #assert(s1.Count() == 0);
+        s1.Push(UniquePtr<int>(new int(1)));
+        s1.Push(UniquePtr<int>(new int(2)));
+        s1.Push(UniquePtr<int>(new int(3)));
+        #assert(!s1.IsEmpty());
+        #assert(s1.Count() == 3);
+        #assert(*s1.Top() == 3);
+        #assert(*s1.Pop() == 3);
+        #assert(*s1.Top() == 2);
+        #assert(*s1.Pop() == 2);
+        #assert(*s1.Top() == 1);
+        #assert(*s1.Pop() == 1);
+        #assert(s1.IsEmpty());
+        #assert(s1.Count() == 0);
+        for (int i = 0; i < 100; ++i)
+        {
+            s1.Push(UniquePtr<int>(new int(i)));
+        }
+        #assert(!s1.IsEmpty());
+        #assert(s1.Count() == 100);
+        for (int i = 0; i < 100; ++i)
+        {
+            #assert(*s1.Top() == 99 - i);
+            #assert(*s1.Pop() == 99 - i);
+        }
+        #assert(s1.IsEmpty());
+        #assert(s1.Count() == 0);
+    }
+}

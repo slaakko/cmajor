@@ -77,7 +77,7 @@ namespace System.Collections
 
     public nothrow inline bool operator==<T, C>(const Set<T, C>& left, const Set<T, C>& right) where T is Regular and C is Relation and C.Domain is T
     {
-        return left.Count() == right.Count() && Equal(left.CBegin(), left.CEnd(), right.CBegin(), right.CEnd(), C());
+        return left.Count() == right.Count() && Equal(left.CBegin(), left.CEnd(), right.CBegin(), right.CEnd(), EqualTo<T>());
     }
 
     public nothrow inline bool operator<<T, C>(const Set<T, C>& left, const Set<T, C>& right) where T is Semiregular and C is Relation and C.Domain is T
