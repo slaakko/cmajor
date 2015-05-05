@@ -21,13 +21,7 @@ namespace System.Collections
     public class Stack<T> where T is Semiregular
     {
         public typedef T ValueType;
-        private typedef Stack<T> Self;
 
-        public default Stack();
-        suppress Stack(const Self&);
-        suppress void operator=(const Self&);
-        public default Stack(Self&&);
-        public default void operator=(Self&&);
         public nothrow inline bool IsEmpty() const
         {
             return items.IsEmpty();

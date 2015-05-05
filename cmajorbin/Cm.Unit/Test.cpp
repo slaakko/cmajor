@@ -373,6 +373,20 @@ std::vector<std::pair<std::unique_ptr<Cm::Ast::CompileUnitNode>, std::string>> S
 
 Cm::Parser::CompileUnitGrammar* compileUnitGrammar = nullptr;
 
+bool TestNameEquals(const std::string& testName, const std::string& testUnitName)
+{
+    std::vector<std::string> testNameComponents = Cm::Util::Split(testName, '.');
+    std::vector<std::string> testUnitNameComponents = Cm::Util::Split(testUnitName, '.');
+    int n = std::min(int(testNameComponents.size()), int(testUnitNameComponents.size()));
+    for (int i = 0; i < n; ++i)
+    {
+        int k = int(testNameComponents.size()) - i - 1;
+        int l = int(testUnitNameComponents.size()) - i - 1;
+        if (testNameComponents[k] != testUnitNameComponents[l]) return false;
+    }
+    return true;
+}
+
 void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project, const std::string& testName)
 {
     numFileTests = 0;
@@ -400,7 +414,7 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
         {
             if (!testName.empty())
             {
-                if (testUnit.second != testName) continue;
+                if (!TestNameEquals(testName, testUnit.second)) continue;
             }
             TestUnit(testUnit.first.get(), project, testUnit.second);
         }
@@ -436,6 +450,22 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
     projectUnknown += fileUnknown;
 }
 
+bool SourceFileNameEquals(const std::string& fileName, const std::string& sourceFilePath)
+{
+    boost::filesystem::path filePath = fileName;
+    std::vector<std::string> filePathComponents = Cm::Util::Split(filePath.generic_string(), '/');
+    std::vector<std::string> sourceFilePathComponents = Cm::Util::Split(sourceFilePath, '/');
+    int n = std::min(int(filePathComponents.size()), int(sourceFilePathComponents.size()));
+    for (int i = 0; i < n; ++i)
+    {
+        int k = int(filePathComponents.size()) - i - 1;
+        int l = int(sourceFilePathComponents.size()) - i - 1;
+        if (filePathComponents[k] != sourceFilePathComponents[l]) return false;
+    }
+    return true;
+
+}
+
 bool TestProject(Cm::Ast::Project* project, const std::string& fileName, const std::string& testName)
 {
     numProjectTests = 0;
@@ -450,7 +480,7 @@ bool TestProject(Cm::Ast::Project* project, const std::string& fileName, const s
     {
         if (!fileName.empty())
         {
-            if (sourceFilePath.find(fileName) == std::string::npos) continue;
+            if (!SourceFileNameEquals(fileName, sourceFilePath)) continue;
         }
         TestSourceFile(sourceFilePath, project, testName);
     }

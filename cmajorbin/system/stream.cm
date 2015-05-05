@@ -14,7 +14,7 @@
 // Copyright (c) 2009 Alexander Stepanov and Paul McJones
 
 using System;
-//using System.Collections;
+using System.Collections;
 using System.Concepts;
 
 namespace System.IO

@@ -21,7 +21,6 @@ namespace System.Collections
     public class Queue<T> where T is Semiregular
     {
         public typedef T ValueType;
-        private typedef Queue<T> Self;
         
         public nothrow inline bool IsEmpty() const
         {
