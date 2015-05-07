@@ -21,3 +21,7 @@ source <ptr.cm>;
 source <queue.cm>;
 source <set.cm>;
 source <stack.cm>;
+source <string.cm>;
+source <stringstream.cm>;
+source <textutil.cm>;
+source <time.cm>;
