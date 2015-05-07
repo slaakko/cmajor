@@ -1,0 +1,136 @@
+using System;
+
+namespace Test.System.Time
+{
+    public unit_test void TimePointTest()
+    {
+        TimePoint tp0;
+        #assert(tp0.Rep() == 0);
+        TimePoint tp1(1000000000);
+        #assert(tp1.Rep() == 1000000000);
+    }
+
+    public unit_test void DurationTest()
+    {
+        Duration d0;
+        #assert(d0.Rep() == 0);
+        #assert(d0.Hours() == 0);
+        #assert(d0.Minutes() == 0);
+        #assert(d0.Seconds() == 0);
+        #assert(d0.Milliseconds() == 0);
+        #assert(d0.Microseconds() == 0);
+        #assert(d0.Nanoseconds() == 0);
+
+        #assert(d0 == Duration());
+
+        Duration d1(1000000000);
+        #assert(d1.Rep() == 1000000000);
+        #assert(d1.Hours() == 0);
+        #assert(d1.Minutes() == 0);
+        #assert(d1.Seconds() == 1);
+        #assert(d1.Milliseconds() == 1000);
+        #assert(d1.Microseconds() == 1000000);
+        #assert(d1.Nanoseconds() == 1000000000);
+
+        #assert(d1 == Duration(1000000000));
+
+        Duration d2(long(1000000000) * 60);
+        #assert(d2.Rep() == 60 * long(1000000000));
+        #assert(d2.Hours() == 0);
+        #assert(d2.Minutes() == 1);
+        #assert(d2.Seconds() == 60);
+        #assert(d2.Milliseconds() == 60000);
+        #assert(d2.Microseconds() == 60000000);
+        #assert(d2.Nanoseconds() == 60000000000);
+
+        #assert(d2 == Duration(60000000000));
+
+        Duration d3(long(1000000000) * 60 * 60);
+        #assert(d3.Rep() == long(1000000000) * 60 * 60);
+        #assert(d3.Hours() == 1);
+        #assert(d3.Minutes() == 60);
+        #assert(d3.Seconds() == 3600);
+        #assert(d3.Milliseconds() == 3600000);
+        #assert(d3.Microseconds() == 3600000000);
+        #assert(d3.Nanoseconds() == 3600000000000);
+
+        #assert(d3 == Duration(3600000000000));
+
+        Duration d4 = Duration.FromNanoseconds(0);
+        #assert(d4.Rep() == 0);
+        #assert(d4.Hours() == 0);
+        #assert(d4.Minutes() == 0);
+        #assert(d4.Seconds() == 0);
+        #assert(d4.Milliseconds() == 0);
+        #assert(d4.Microseconds() == 0);
+        #assert(d4.Nanoseconds() == 0);
+
+        #assert(d4 == Duration());
+
+        Duration d5 = Duration.FromNanoseconds(1000000000);
+        #assert(d5.Rep() == 1000000000);
+        #assert(d5.Hours() == 0);
+        #assert(d5.Minutes() == 0);
+        #assert(d5.Seconds() == 1);
+        #assert(d5.Milliseconds() == 1000);
+        #assert(d5.Microseconds() == 1000000);
+        #assert(d5.Nanoseconds() == 1000000000);
+
+        #assert(d5 == Duration(1000000000));
+
+        Duration d6 = Duration.FromMicroseconds(60 * long(1000000));
+        #assert(d6.Rep() == 60000000000);
+        #assert(d6.Hours() == 0);
+        #assert(d6.Minutes() == 1);
+        #assert(d6.Seconds() == 60);
+        #assert(d6.Milliseconds() == 60000);
+        #assert(d6.Microseconds() == 60000000);
+        #assert(d6.Nanoseconds() == 60000000000);
+
+        #assert(d6 == Duration(60000000000));
+
+        Duration d7 = Duration.FromMilliseconds(long(60) * 60 * 1000);
+        #assert(d7.Rep() == long(1000000000) * 60 * 60);
+        #assert(d7.Hours() == 1);
+        #assert(d7.Minutes() == 60);
+        #assert(d7.Seconds() == 3600);
+        #assert(d7.Milliseconds() == 3600000);
+        #assert(d7.Microseconds() == 3600000000);
+        #assert(d7.Nanoseconds() == 3600000000000);
+
+        #assert(d7 == Duration(3600000000000));
+
+        Duration d8 = Duration.FromSeconds(long(24) * 3600);
+        #assert(d8.Rep() == long(1000000000) * 60 * 60 * 24);
+        #assert(d8.Hours() == 24);
+        #assert(d8.Minutes() == long(60) * 24);
+        #assert(d8.Seconds() == long(3600) * 24);
+        #assert(d8.Milliseconds() == long(3600000) * 24);
+        #assert(d8.Microseconds() == 3600000000 * 24);
+        #assert(d8.Nanoseconds() == 3600000000000 * 24);
+
+        #assert(d8 == Duration(3600000000000 * 24));
+
+        Duration d9 = Duration.FromMinutes(long(24) * 60);
+        #assert(d9.Rep() == long(1000000000) * 3600 * 24);
+        #assert(d9.Hours() == 24);
+        #assert(d9.Minutes() == long(60) * 24);
+        #assert(d9.Seconds() == long(3600) * 24);
+        #assert(d9.Milliseconds() == long(3600000) * 24);
+        #assert(d9.Microseconds() == 3600000000 * 24);
+        #assert(d9.Nanoseconds() == 3600000000000 * 24);
+
+        #assert(d9 == Duration(3600000000000 * 24));
+
+        Duration d10 = Duration.FromHours(24);
+        #assert(d10.Rep() == long(1000000000) * 3600 * 24);
+        #assert(d10.Hours() == 24);
+        #assert(d10.Minutes() == long(60) * 24);
+        #assert(d10.Seconds() == long(3600) * 24);
+        #assert(d10.Milliseconds() == long(3600000) * 24);
+        #assert(d10.Microseconds() == 3600000000 * 24);
+        #assert(d10.Nanoseconds() == 3600000000000 * 24);
+
+        #assert(d10 == Duration(3600000000000 * 24));
+    }
+}

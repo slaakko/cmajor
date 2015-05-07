@@ -1,0 +1,93 @@
+using System;
+using System.Text;
+
+namespace Test.System.TextUtil
+{
+    public unit_test void HexEscapeTest()
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            char c = cast<char>(i);
+            string e = HexEscape(c);
+            #assert(e.Length() == 4);
+            #assert(e[0] == '\\');
+            #assert(e[1] == 'x');
+            string x = e.Substring(2);
+            ulong hex = ParseHex(x);
+            #assert(hex == i);
+        }
+    }
+
+    public unit_test void CharStrTest()
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            char c = cast<char>(i);
+            string s = CharStr(c);
+            if (IsPrintable(c))
+            {
+                if (s[0] != '\\')
+                {
+                    #assert(s == ToString(c));
+                }
+            }
+            else
+            {
+                #assert(s[0] == '\\');
+            }
+        }
+    }
+
+    public unit_test void MakeCharLiteralTest()
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            char c = cast<char>(i);
+            string s = MakeCharLiteral(c);
+            #assert(s[0] == '\'');
+            #assert(s[s.Length() - 1] == '\'');
+        }
+    }
+
+    public unit_test void StringStrTest()
+    {
+        #assert(StringStr("foo") == "foo");
+        #assert(StringStr("foo\n") == "foo\\n");
+    }
+
+    public unit_test void MakeStringLiteralTest()
+    {
+        #assert(MakeStringLiteral("foo") == "\"foo\"");
+        #assert(MakeStringLiteral("foo\n") == "\"foo\\n\"");
+    }
+
+    public unit_test void TrimTest()
+    {
+        #assert(Trim("") == "");
+        #assert(Trim(" ") == "");
+        #assert(Trim(string(' ', 8)) == "");
+        #assert(Trim("foo") == "foo");
+        #assert(Trim("foo ") == "foo");
+        #assert(Trim(" foo") == "foo");
+        #assert(Trim(" foo ") == "foo");
+        #assert(Trim("   foo ") == "foo");
+        #assert(Trim(" foo   ") == "foo");
+        #assert(Trim("abra da cabra") == "abra da cabra");
+    }
+
+    public unit_test void TrimAllTest()
+    {
+        #assert(TrimAll("") == "");
+        #assert(TrimAll(" ") == "");
+        #assert(TrimAll(string(' ', 8)) == "");
+        #assert(TrimAll("foo") == "foo");
+        #assert(TrimAll("foo ") == "foo");
+        #assert(TrimAll(" foo") == "foo");
+        #assert(TrimAll(" foo ") == "foo");
+        #assert(TrimAll("   foo ") == "foo");
+        #assert(TrimAll(" foo   ") == "foo");
+        #assert(TrimAll("abra da cabra") == "abra da cabra");
+        #assert(TrimAll("abra   da  cabra") == "abra da cabra");
+        #assert(TrimAll("     abra   da cabra  ") == "abra da cabra");
+    }
+}

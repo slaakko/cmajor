@@ -488,4 +488,18 @@ namespace System
         }
         return result;
     }
+
+    public bool LastComponentsEqual(const string& s0, const string& s1, char componentSeparator)
+    {
+        List<string> c0 = s0.Split(componentSeparator);
+        List<string> c1 = s1.Split(componentSeparator);
+        int n0 = c0.Count();
+        int n1 = c1.Count();
+        int n = Min(n0, n1);
+        for (int i = 0; i < n; ++i)
+        {
+            if (c0[n0 - i - 1] != c1[n1 - i - 1]) return false;
+        }
+        return true;
+    }
 }
