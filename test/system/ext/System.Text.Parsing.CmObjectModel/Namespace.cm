@@ -1,0 +1,22 @@
+using System;
+using System.Text;
+using System.IO;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Test
+{
+    public unit_test void TestNamespace()
+    {
+        OutputStringStream s;
+        CodeFormatter f(s);
+
+        NamespaceImport nsi0("System");
+        nsi0.Print(f);
+        #assert(s.GetStr() == "using System;\n");
+        s.SetStr(string());
+
+        Alias a0("Foo", "Alpha.Beta.Bar");
+        a0.Print(f);
+        #assert(s.GetStr() == "using Foo = Alpha.Beta.Bar;\n");
+    }
+}

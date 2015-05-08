@@ -1,0 +1,20 @@
+using System;
+using System.IO;
+using System.Text;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Test
+{
+    public unit_test void TestIdentifier()
+    {
+        OutputStringStream s;
+        CodeFormatter f(s);
+
+        TemplateId foo("foo");
+        foo.AddTemplateArg(new Identifier("bar"));
+        foo.AddTemplateArg(new Identifier("baz"));
+        foo.Print(f);
+        #assert(s.GetStr() == "foo<bar, baz>");
+        s.SetStr(string());
+    }
+}

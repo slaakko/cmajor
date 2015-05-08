@@ -1,0 +1,73 @@
+using System;
+using System.Text;
+using System.IO;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Test
+{
+    public unit_test void TestLiteral()
+    {
+        OutputStringStream s;
+        CodeFormatter f(s);
+
+        IntLiteral il0(10u, 'u');
+        il0.Print(f);
+        #assert(s.GetStr() == "10u");
+        s.SetStr(string());
+
+        IntLiteral il1(10u, ' ');
+        il1.Print(f);
+        #assert(s.GetStr() == "10");
+        s.SetStr(string());
+
+        HexLiteral hl0(0x00000000BAADF00Du, 'u');
+        hl0.Print(f);
+        #assert(s.GetStr() == "0x00000000BAADF00Du");
+        s.SetStr(string());
+
+        FloatingLiteral fl0(1000000.0, ' ');
+        fl0.Print(f);
+        #assert(s.GetStr() == "1000000");
+        s.SetStr(string());
+
+        BooleanLiteral bl0(false);
+        bl0.Print(f);
+        #assert(s.GetStr() == "false");
+        s.SetStr(string());
+
+        BooleanLiteral bl1(true);
+        bl1.Print(f);
+        #assert(s.GetStr() == "true");
+        s.SetStr(string());
+
+        CharacterLiteral cl0('\0');
+        cl0.Print(f);
+        #assert(s.GetStr() == "'\\0'");
+        s.SetStr(string());
+
+        CharacterLiteral cl1('x');
+        cl1.Print(f);
+        #assert(s.GetStr() == "'x'");
+        s.SetStr(string());
+
+        CharacterLiteral cl2('\n');
+        cl2.Print(f);
+        #assert(s.GetStr() == "'\\n'");
+        s.SetStr(string());
+
+        StringLiteral sl0("foo");
+        sl0.Print(f);
+        #assert(s.GetStr() == "\"foo\"");
+        s.SetStr(string());
+
+        StringLiteral sl1("foo\n");
+        sl1.Print(f);
+        #assert(s.GetStr() == "\"foo\\n\"");
+        s.SetStr(string());
+
+        NullLiteral nl0;
+        nl0.Print(f);
+        #assert(s.GetStr() == "null");
+        s.SetStr(string());
+    }
+}

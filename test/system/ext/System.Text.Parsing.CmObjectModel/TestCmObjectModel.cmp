@@ -3,3 +3,7 @@ target=program;
 assembly <TestCmObjectModel.cma>;
 reference <ext/System.Text.Parsing.CmObjectModel/System.Text.Parsing.CmObjectModel.cml>;
 source <Expression.cm>;
+source <Identifier.cm>;
+source <Literal.cm>;
+source <Namespace.cm>;
+source <Statement.cm>;

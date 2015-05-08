@@ -1,0 +1,166 @@
+using System;
+using System.Collections;
+using System.Text;
+using System.IO;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Test
+{
+    public unit_test void TestStatement()
+    {
+        OutputStringStream s;
+        CodeFormatter f(s);
+
+        PostfixExpression* p0 = new PostfixExpression(new Identifier("foo"));
+        List<CmObject*> invokeArgs;
+        p0->AddOp(new Invoke(invokeArgs));
+        SimpleStatement s0(p0);
+        s0.Print(f);
+        #assert(s.GetStr() == "foo();\n");
+        s.SetStr(string());
+
+        EmptyStatement e0;
+        e0.Print(f);
+        #assert(s.GetStr() == ";\n");
+        s.SetStr(string());
+
+        ReturnStatement r0(null);
+        r0.Print(f);
+        #assert(s.GetStr() == "return;\n");
+        s.SetStr(string());
+
+        ReturnStatement r1(new BooleanLiteral(true));
+        r1.Print(f);
+        #assert(s.GetStr() == "return true;\n");
+        s.SetStr(string());
+
+        ConditionalStatement c0(new BinaryExpression(Operator.eq, new Identifier("alpha"), new Identifier("beta")), new ReturnStatement(null), null);
+        c0.Print(f);
+        #assert(s.GetStr() == "if (alpha == beta) return;\n");
+        s.SetStr(string());
+
+        ConditionalStatement c1(new BinaryExpression(Operator.less, new Identifier("alpha"), new Identifier("beta")), 
+            new ReturnStatement(new BooleanLiteral(true)), 
+            new ReturnStatement(new BooleanLiteral(false)));
+        c1.Print(f);
+        #assert(s.GetStr() == "if (alpha < beta) return true;\nelse return false;\n");
+        s.SetStr(string());
+
+        CompoundStatement cm0;
+        cm0.Print(f);
+        #assert(s.GetStr() == "{\n}\n");
+        s.SetStr(string());
+
+        PostfixExpression* p1 = new PostfixExpression(new Identifier("foo"));
+        List<CmObject*> invokeArgs2;
+        p1->AddOp(new Invoke(invokeArgs2));
+        SimpleStatement* s1 = new SimpleStatement(p1);
+        CompoundStatement cm1;
+        cm1.AddStatement(s1);
+        cm1.Print(f);
+        #assert(s.GetStr() == "{\n    foo();\n}\n");
+        s.SetStr(string());
+
+        SwitchStatement sw0(new Identifier("x"));
+        ExpressionList caseList0;
+        caseList0.Add(new IntLiteral(1u, ' '));
+        CaseStatement* case0 = new CaseStatement(caseList0);
+        case0->AddStatement(new BreakStatement());
+        DefaultStatement* default0 = new DefaultStatement();
+        default0->AddStatement(new BreakStatement());
+        sw0.AddCase(case0);
+        sw0.SetDefault(default0);
+        sw0.Print(f);
+        #assert(s.GetStr() == "switch (x)\n{\n    case 1:\n    {\n        break;\n    }\n    default:\n    {\n        break;\n    }\n}\n");
+        s.SetStr(string());
+
+        WhileStatement ws0(new BinaryExpression(Operator.less, new Identifier("i"), new IntLiteral(10u, ' ')), new SimpleStatement(new PrefixExpression(Operator.preInc, new Identifier("i"))));
+        ws0.Print(f);
+        #assert(s.GetStr() == "while (i < 10) ++i;\n");
+        s.SetStr(string());
+
+        DoStatement ds0(new SimpleStatement(new PrefixExpression(Operator.preDec, new Identifier("i"))), new BinaryExpression(Operator.greater, new Identifier("i"), new IntLiteral(0u, ' ')));
+        ds0.Print(f);
+        #assert(s.GetStr() == "do --i;\nwhile (i > 0);\n");
+        s.SetStr(string());
+
+        RangeForStatement rfs0;
+        rfs0.SetContent(new IntType(), "i", new Identifier("s"), new BreakStatement());
+        rfs0.Print(f);
+        #assert(s.GetStr() == "for (int i : s) break;\n");
+        s.SetStr(string());
+
+        ForStatement fs0;
+        ExpressionList csArgs;
+        csArgs.Add(new IntLiteral(0u, ' '));
+        fs0.SetContent(new ConstructionStatement(new IntType(), "i", csArgs), new BinaryExpression(Operator.less, new Identifier("i"), new IntLiteral(10u, ' ')), 
+            new PrefixExpression(Operator.preInc, new Identifier("i")), new BreakStatement());
+        fs0.Print(f);
+        #assert(s.GetStr() == "for (int i = 0; i < 10; ++i) break;\n");
+        s.SetStr(string());
+
+        GotoStatement gs("foo");
+        gs.Print(f);
+        #assert(s.GetStr() == "goto foo;\n");
+        s.SetStr(string());
+
+        GotoCaseStatement gcs(new IntLiteral(1u, ' '));
+        gcs.Print(f);
+        #assert(s.GetStr() == "goto case 1;\n");
+        s.SetStr(string());
+
+        TypedefStatement ts(new IntType(), "i16");
+        ts.Print(f);
+        #assert(s.GetStr() == "typedef int i16;\n");
+        s.SetStr(string());
+
+        AssignmentStatement as(new Identifier("foo"), new Identifier("bar"));
+        as.Print(f);
+        #assert(s.GetStr() == "foo = bar;\n");
+        s.SetStr(string());
+
+        ExpressionList cs0Args;
+        cs0Args.Add(new IntLiteral(0u, ' '));
+        ConstructionStatement cs0(new IntType(), "i", cs0Args);
+        cs0.Print(f);
+        #assert(s.GetStr() == "int i = 0;\n");
+        s.SetStr(string());
+
+        DestroyStatement ds(new Identifier("p"));
+        ds.Print(f);
+        #assert(s.GetStr() == "destroy p;\n");
+        s.SetStr(string());
+
+        DeleteStatement ds1(new Identifier("p"));
+        ds1.Print(f);
+        #assert(s.GetStr() == "delete p;\n");
+        s.SetStr(string());
+
+        PostfixExpression* pf0 = new PostfixExpression(new Identifier("Exception"));
+        ExpressionList ia;
+        ia.Add(new StringLiteral("foo"));
+        pf0->AddOp(new Invoke(ia));
+        ThrowStatement ts1(pf0);
+        ts1.Print(f);
+        #assert(s.GetStr() == "throw Exception(\"foo\");\n");
+        s.SetStr(string());
+
+        CompoundStatement* tryBlock = new CompoundStatement();
+        PostfixExpression* pf1 = new PostfixExpression(new Identifier("foo"));
+        ExpressionList ia2;
+        pf1->AddOp(new Invoke(ia2));
+        tryBlock->AddStatement(new SimpleStatement(pf1));
+        List<ExceptionHandler*> handlers;
+        CompoundStatement* catchBlock = new CompoundStatement();
+        handlers.Add(new ExceptionHandler(new Identifier("Exception"), "ex", catchBlock));
+        TryStatement ts2(tryBlock, handlers);
+        ts2.Print(f);
+        #assert(s.GetStr() == "try\n{\n    foo();\n}\ncatch (Exception ex)\n{\n}\n");
+        s.SetStr(string());
+
+        AssertStatement as3(new BooleanLiteral(true));
+        as3.Print(f);
+        #assert(s.GetStr() == "#assert(true);\n");
+        s.SetStr(string());
+    }
+}
