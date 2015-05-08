@@ -1,0 +1,20 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace Test
+{
+    public unit_test void TestRule()
+    {
+        ParsingDomain* parsingDomain = new ParsingDomain();
+        RegisterParsingDomain(parsingDomain);
+
+        Rule rule("rule", parsingDomain->GetNamespaceScope(""), new CharParser('x'));
+        Stack<UniquePtr<Object>> s;
+
+        Scanner s0("x", 0, "", null);
+        Match m0 = rule.Parse(s0, s);
+        #assert(m0.Hit());
+        #assert(m0.Length() == 1);
+    }
+}

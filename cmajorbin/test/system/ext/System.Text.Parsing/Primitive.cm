@@ -1,0 +1,151 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace Test
+{
+    public unit_test void TestPrimitive()
+    {
+        Stack<UniquePtr<Object>> s;
+
+        CharParser charParser('x');
+        #assert(charParser.GetChar() == 'x');
+        Scanner s0("x", 0, "", null);
+        Match m0 = charParser.Parse(s0, s);
+        #assert(m0.Hit());
+        #assert(m0.Length() == 1);
+        Scanner s1("y", 0, "", null);
+        Match m1 = charParser.Parse(s1, s);
+        #assert(!m1.Hit());
+        #assert(m1.Length() == -1);
+
+        StringParser stringParser("xyzzy");
+        #assert(stringParser.GetString() == "xyzzy");
+        Scanner s2("xyzzy", 0, "", null);
+        Match m2 = stringParser.Parse(s2, s);
+        #assert(m2.Hit());
+        #assert(m2.Length() == 5);
+        Scanner s3("xyzz", 0, "", null);
+        Match m3 = stringParser.Parse(s3, s);
+        #assert(!m3.Hit());
+        #assert(m3.Length() == -1);
+        Scanner s4("xyzza", 0, "", null);
+        Match m4 = stringParser.Parse(s4, s);
+        #assert(!m4.Hit());
+        #assert(m4.Length() == -1);
+
+        CharSetParser charSetParser0("a-f");
+        #assert(charSetParser0.GetSet() == "a-f");
+        #assert(!charSetParser0.Inverse());
+        Scanner s5("a", 0, "", null);
+        Match m5 = charSetParser0.Parse(s5, s);
+        #assert(m5.Hit());
+        #assert(m5.Length() == 1);
+        Scanner s6("x", 0, "", null);
+        Match m6 = charSetParser0.Parse(s6, s);
+        #assert(!m6.Hit());
+        #assert(m6.Length() == -1);
+
+        CharSetParser charSetParser1("a-f", true);
+        #assert(charSetParser1.GetSet() == "a-f");
+        #assert(charSetParser1.Inverse());
+        Scanner s7("a", 0, "", null);
+        Match m7 = charSetParser1.Parse(s7, s);
+        #assert(!m7.Hit());
+        #assert(m7.Length() == -1);
+        Scanner s8("x", 0, "", null);
+        Match m8 = charSetParser1.Parse(s8, s);
+        #assert(m8.Hit());
+        #assert(m8.Length() == 1);
+
+        CharSetParser charSetParser2("x", false);
+        #assert(charSetParser2.GetSet() == "x");
+        #assert(!charSetParser2.Inverse());
+        Scanner s9("x", 0, "", null);
+        Match m9 = charSetParser2.Parse(s9, s);
+        #assert(m9.Hit());
+        #assert(m9.Length() == 1);
+
+        EmptyParser emptyParser;
+        Scanner s10("x", 0, "", null);
+        Match m10 = emptyParser.Parse(s10, s);
+        #assert(m10.Hit());
+        #assert(m10.Length() == 0);
+        Scanner s11("", 0, "", null);
+        Match m11 = emptyParser.Parse(s11, s);
+        #assert(m11.Hit());
+        #assert(m11.Length() == 0);
+
+        SpaceParser spaceParser;
+        Scanner s12(" ", 0, "", null);
+        Match m12 = spaceParser.Parse(s12, s);
+        #assert(m12.Hit());
+        #assert(m12.Length() == 1);
+        Scanner s13("x", 0, "", null);
+        Match m13 = spaceParser.Parse(s13, s);
+        #assert(!m13.Hit());
+        #assert(m13.Length() == -1);
+        Scanner s14("\n", 0, "", null);
+        Match m14 = spaceParser.Parse(s14, s);
+        #assert(m14.Hit());
+        #assert(m14.Length() == 1);
+        Scanner s15("", 0, "", null);
+        Match m15 = spaceParser.Parse(s15, s);
+        #assert(!m15.Hit());
+        #assert(m15.Length() == -1);
+
+        LetterParser letterParser;
+        Scanner s16("X", 0, "", null);
+        Match m16 = letterParser.Parse(s16, s);
+        #assert(m16.Hit());
+        #assert(m16.Length() == 1);
+        Scanner s17(" ", 0, "", null);
+        Match m17 = letterParser.Parse(s17, s);
+        #assert(!m17.Hit());
+        #assert(m17.Length() == -1);
+
+        DigitParser digitParser;
+        Scanner s18("9", 0, "", null);
+        Match m18 = digitParser.Parse(s18, s);
+        #assert(m18.Hit());
+        #assert(m18.Length() == 1);
+        Scanner s19("A", 0, "", null);
+        Match m19 = digitParser.Parse(s19, s);
+        #assert(!m19.Hit());
+        #assert(m19.Length() == -1);
+
+        HexDigitParser hexDigitParser;
+        Scanner s20("A", 0, "", null);
+        Match m20 = hexDigitParser.Parse(s20, s);
+        #assert(m20.Hit());
+        #assert(m20.Length() == 1);
+        Scanner s21("0", 0, "", null);
+        Match m21 = hexDigitParser.Parse(s21, s);
+        #assert(m21.Hit());
+        #assert(m21.Length() == 1);
+        Scanner s22("X", 0, "", null);
+        Match m22 = hexDigitParser.Parse(s22, s);
+        #assert(!m22.Hit());
+        #assert(m22.Length() == -1);
+
+        PunctuationParser punctuationParser;
+        Scanner s23(",", 0, "", null);
+        Match m23 = punctuationParser.Parse(s23, s);
+        #assert(m23.Hit());
+        #assert(m23.Length() == 1);
+        Scanner s24("X", 0, "", null);
+        Match m24 = hexDigitParser.Parse(s24, s);
+        #assert(!m24.Hit());
+        #assert(m24.Length() == -1);
+
+        AnyCharParser anyCharParser;
+        Scanner s25("X", 0, "", null);
+        Match m25 = anyCharParser.Parse(s25, s);
+        #assert(m25.Hit());
+        #assert(m25.Length() == 1);
+        Scanner s26("", 0, "", null);
+        Match m26 = anyCharParser.Parse(s26, s);
+        #assert(!m26.Hit());
+        #assert(m26.Length() == -1);
+    }
+}

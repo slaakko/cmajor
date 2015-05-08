@@ -1,0 +1,28 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace Test
+{
+    public unit_test void TestGrammar()
+    {
+        ParsingDomain* parsingDomain = new ParsingDomain();
+        RegisterParsingDomain(parsingDomain);
+        
+        Grammar grammar("testGrammar", parsingDomain->GetNamespaceScope(""), parsingDomain);
+        grammar.SetOwner(0);
+        Rule* start = new Rule("start", parsingDomain->GetNamespaceScope(""), new SequenceParser(new NonterminalParser("fuzzy", "fuzzy"), new NonterminalParser("logic", "logic")));
+        grammar.AddRule(start);
+        Rule* fuzzy = new Rule("fuzzy", parsingDomain->GetNamespaceScope(""), new StringParser("fuzzy"));
+        grammar.AddRule(fuzzy);
+        Rule* logic = new Rule("logic", parsingDomain->GetNamespaceScope(""), new StringParser("logic"));
+        grammar.AddRule(logic);
+        Rule* skipper = new Rule("skipper", parsingDomain->GetNamespaceScope(""), new SpaceParser());
+        grammar.AddRule(skipper);
+        grammar.ResolveStart();
+        grammar.SetSkipRuleName("skipper");
+        grammar.ResolveSkip();
+        grammar.Link();
+        grammar.Parse("fuzzy logic", 0, "");
+    }
+}
