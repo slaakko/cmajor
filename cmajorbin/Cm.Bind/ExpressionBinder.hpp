@@ -29,6 +29,9 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
     Cm::Sym::TypeSymbol* returnType, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, 
     Cm::Core::IrClassTypeRepository& irClassTypeRepository, bool isBasicTypeOp);
 
+Cm::BoundTree::BoundConversion* CreateBoundConversion(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::Node* node, 
+    Cm::BoundTree::BoundExpression* operand, Cm::Sym::FunctionSymbol* conversionFun, Cm::BoundTree::BoundFunction* currentFunction);
+
 class BoundExpressionStack
 {
 public:

@@ -99,7 +99,16 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     constructionStatement->SetConstructor(ctor);
     constructionStatement->InsertLocalVariableToArguments();
     constructionStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
-    constructionStatement->ApplyConversions(conversions, CurrentFunction());
+    int n = int(conversions.size());
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
+        if (conversionFun)
+        {
+            Cm::BoundTree::BoundExpression* arg = constructionStatement->Arguments()[i].release();
+            constructionStatement->Arguments()[i].reset(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &constructionStatementNode, arg, conversionFun, CurrentFunction()));
+        }
+    }
     if (!ctor->IsBasicTypeOp())
     {
         constructionStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->GetFunctionSymbol(), constructionStatementNode.GetSpan()));
@@ -198,12 +207,12 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
     Cm::Sym::FunctionSymbol* leftConversion = conversions[0];
     if (leftConversion)
     {
-        left = Cm::BoundTree::CreateBoundConversion(&assignmentStatementNode, left, leftConversion, CurrentFunction());
+        left = CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &assignmentStatementNode, left, leftConversion, CurrentFunction());
     }
     Cm::Sym::FunctionSymbol* rightConversion = conversions[1];
     if (rightConversion)
     {
-        right = Cm::BoundTree::CreateBoundConversion(&assignmentStatementNode, right, rightConversion, CurrentFunction());
+        right = CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &assignmentStatementNode, right, rightConversion, CurrentFunction());
     }
     Cm::BoundTree::BoundExpressionList arguments;
     arguments.Add(left);
@@ -349,7 +358,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 Cm::Sym::FunctionSymbol* conversionFun = conversions[1];
                 if (conversionFun)
                 {
-                    returnValue = Cm::BoundTree::CreateBoundConversion(&returnStatementNode, returnValue, conversionFun, CurrentFunction());
+                    returnValue = CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &returnStatementNode, returnValue, conversionFun, CurrentFunction());
                 }
                 if (returnValue->GetType()->IsClassTypeSymbol() && (returnType->IsReferenceType() || returnType->IsClassTypeSymbol()))
                 {
@@ -823,7 +832,7 @@ void DeleteStatementBinder::EndVisit(Cm::Ast::DeleteStatementNode& deleteStateme
     Cm::BoundTree::BoundExpressionList arguments;
     if (conversions[0])
     {
-        arguments.Add(CreateBoundConversion(&deleteStatementNode, mem.release(), conversions[0], CurrentFunction()));
+        arguments.Add(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &deleteStatementNode, mem.release(), conversions[0], CurrentFunction()));
     }
     else
     {

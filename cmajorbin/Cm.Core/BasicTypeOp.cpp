@@ -593,7 +593,7 @@ void ConvertingCtor::Generate(Emitter& emitter, GenResult& result)
     if (!result.ClassTypeToPointerTypeConversion() && !sourceType->IsFunctionType() &&
         (!from->IsGlobal() || from->IsGlobal() && Cm::IrIntf::TypesEqual(from->GetType(), ptrSource)) &&
         (!from->IsRegVar() || from->IsRegVar() && Cm::IrIntf::TypesEqual(from->GetType(), ptrSource)) &&
-        !from->IsConstant() && !result.AddrArg())
+        !from->IsConstant() && !result.AddrArg() && !result.ArgByRef())
     {
         Ir::Intf::Object* origFrom = from;
         from = Cm::IrIntf::CreateTemporaryRegVar(sourceType->GetIrType());
@@ -605,7 +605,20 @@ void ConvertingCtor::Generate(Emitter& emitter, GenResult& result)
         case ConversionInst::sext: emitter.Emit(Cm::IrIntf::Sext(sourceType->GetIrType(), to, from, targetType->GetIrType())); break;
         case ConversionInst::zext: emitter.Emit(Cm::IrIntf::Zext(sourceType->GetIrType(), to, from, targetType->GetIrType())); break;
         case ConversionInst::trunc: emitter.Emit(Cm::IrIntf::Trunc(sourceType->GetIrType(), to, from, targetType->GetIrType())); break;
-        case ConversionInst::bitcast: emitter.Emit(Cm::IrIntf::Bitcast(sourceType->GetIrType(), to, from, targetType->GetIrType())); break;
+        case ConversionInst::bitcast: 
+        {
+            if (result.ArgByRef())
+            {
+                Ir::Intf::Type* pointerSourceType = Cm::IrIntf::Pointer(sourceType->GetIrType(), 1);
+                emitter.Own(pointerSourceType);
+                emitter.Emit(Cm::IrIntf::Bitcast(pointerSourceType, to, from, targetType->GetIrType()));
+            }
+            else
+            {
+                emitter.Emit(Cm::IrIntf::Bitcast(sourceType->GetIrType(), to, from, targetType->GetIrType()));
+            }
+            break;
+        }
         case ConversionInst::uitofp: emitter.Emit(Cm::IrIntf::Uitofp(sourceType->GetIrType(), to, from, targetType->GetIrType())); break;
         case ConversionInst::sitofp: emitter.Emit(Cm::IrIntf::Sitofp(sourceType->GetIrType(), to, from, targetType->GetIrType())); break;
         case ConversionInst::fptosi: emitter.Emit(Cm::IrIntf::Fptosi(sourceType->GetIrType(), to, from, targetType->GetIrType())); break;

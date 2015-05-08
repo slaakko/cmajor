@@ -525,6 +525,7 @@ Cm::Parser::SolutionGrammar* solutionGrammar = nullptr;
 
 bool TestSolution(const std::string& solutionFilePath, const std::string& fileName, const std::string& testName)
 {
+    boost::filesystem::path currentPath = boost::filesystem::current_path();
     numSolutionTests = 0;
     solutionPassed = 0;
     solutionFailed = 0;
@@ -546,6 +547,8 @@ bool TestSolution(const std::string& solutionFilePath, const std::string& fileNa
     std::cerr << "testing solution '" << solution->Name() << "'..." << std::endl;
     for (const std::string& projectFilePath : solution->ProjectFilePaths())
     {
+        boost::filesystem::path pfp = projectFilePath;
+        boost::filesystem::current_path(pfp.parent_path());
         TestProject(projectFilePath, fileName, testName);
     }
     std::cerr << "test results for solution '" << solution->Name() << "' (ran " << numSolutionTests << " tests):\n" <<
@@ -556,6 +559,7 @@ bool TestSolution(const std::string& solutionFilePath, const std::string& fileNa
         "  crashed          : " << solutionCrashed << "\n" <<
         "  unknown result   : " << solutionUnknown << "\n" << 
         std::endl;
+    boost::filesystem::current_path(currentPath);
     return solutionFailed == 0;
 }
 

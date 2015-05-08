@@ -233,6 +233,8 @@ public:
     BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_);
     bool IsBoundConversion() const override { return true; }
     BoundExpression* Operand() const { return operand.get(); }
+    BoundExpression* ReleaseOperand() { return operand.release(); }
+    void ResetOperand(BoundExpression* operand_) { operand.reset(operand_); }
     Cm::Sym::FunctionSymbol* ConversionFun() const { return conversionFun; }
     void Accept(Visitor& visitor) override;
     void SetBoundTemporary(Cm::BoundTree::BoundExpression* boundTemporary_);
@@ -437,10 +439,6 @@ public:
 private:
     Cm::Sym::LocalVariableSymbol* resultVar;
 };
-
-class BoundFunction;
-
-BoundConversion* CreateBoundConversion(Cm::Ast::Node* node, BoundExpression* operand, Cm::Sym::FunctionSymbol* conversionFun, BoundFunction* currentFunction);
 
 } } // namespace Cm::BoundTree
 
