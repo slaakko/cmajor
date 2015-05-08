@@ -2,3 +2,8 @@ project TestParsing;
 target=program;
 assembly <TestParsing.cma>;
 reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+source <Composite.cm>;
+source <Grammar.cm>;
+source <Keyword.cm>;
+source <Primitive.cm>;
+source <Rule.cm>;
