@@ -133,7 +133,7 @@ namespace System.Text.Parsing.CmObjectModel
 
     public class ObjectConstructionExpression: Expression
     {
-        public ObjectConstructionExpression(CmObject* typeExpr_, const ExpressionList& args_): base("new", 30), typeExpr(typeExpr_), args(args_)
+        public ObjectConstructionExpression(CmObject* typeExpr_, const ExpressionList& args_): base("construct", 30), typeExpr(typeExpr_), args(args_)
         {
             Own(typeExpr);
             for (CmObject* arg : args)

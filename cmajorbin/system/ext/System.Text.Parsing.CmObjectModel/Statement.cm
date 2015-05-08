@@ -1,5 +1,5 @@
 /*========================================================================
-    Copyright (c) 2012-2014 Seppo Laakko
+    Copyright (c) 2012-2015 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
  
     Distributed under the GNU General Public License, version 3 (GPLv3).
@@ -27,6 +27,9 @@ namespace System.Text.Parsing.CmObjectModel
         public virtual bool IsCompoundStatement() const
         {
             return false;
+        }
+        public virtual void ResetNewLine()
+        {
         }
     }
     
@@ -420,6 +423,7 @@ namespace System.Text.Parsing.CmObjectModel
         public void SetContent(Statement* initialization_, CmObject* condition_, CmObject* increment_, Statement* action_)
         {
             initialization = initialization_;
+            initialization->ResetNewLine();
             Own(initialization);
             condition = condition_;
             Own(condition);
@@ -439,11 +443,13 @@ namespace System.Text.Parsing.CmObjectModel
             {
                 initialization->Print(formatter);
             }
+            formatter.Write(" ");
             if (condition != null)
             {
                 condition->Print(formatter);
             }            
             formatter.Write(";");
+            formatter.Write(" ");
             if (increment != null)
             {
                 increment->Print(formatter);
@@ -587,17 +593,28 @@ namespace System.Text.Parsing.CmObjectModel
     public class AssignmentStatement: Statement
     {
         public AssignmentStatement(CmObject* targetExpr_, CmObject* sourceExpr_):
-            base(), targetExpr(targetExpr_), sourceExpr(sourceExpr_)
+            base(), targetExpr(targetExpr_), sourceExpr(sourceExpr_), newLine(true)
         {
             Own(targetExpr);
             Own(sourceExpr);
+        }
+        public override void ResetNewLine()
+        {
+            newLine = false;
         }
         public override void Print(CodeFormatter& formatter)
         {
             targetExpr->Print(formatter);
             formatter.Write(" = ");
             sourceExpr->Print(formatter);
-            formatter.WriteLine(";");
+            if (newLine)
+            {
+                formatter.WriteLine(";");
+            }
+            else
+            {
+                formatter.Write(";");
+            }
         }
         public override void Accept(Visitor& visitor)
         {
@@ -607,18 +624,23 @@ namespace System.Text.Parsing.CmObjectModel
         }        
         private CmObject* targetExpr;
         private CmObject* sourceExpr;
+        private bool newLine;
     }
     
     public class ConstructionStatement: Statement
     {
         public ConstructionStatement(CmObject* typeExpr_, const string& identifier_, const ExpressionList& initExprs_):
-            base(), typeExpr(typeExpr_), identifier(identifier_), initExprs(initExprs_)
+            base(), typeExpr(typeExpr_), identifier(identifier_), initExprs(initExprs_), newLine(true)
         {
             Own(typeExpr);
             for (CmObject* initExpr : initExprs)
             {
                 Own(initExpr);
             }
+        }
+        public override void ResetNewLine()
+        {
+            newLine = false;
         }
         public override void Print(CodeFormatter& formatter)
         {
@@ -649,8 +671,15 @@ namespace System.Text.Parsing.CmObjectModel
                     }
                     formatter.Write(")");
                 }
-            }            
-            formatter.WriteLine(";");
+            }
+            if (newLine)
+            {
+                formatter.WriteLine(";");
+            }
+            else
+            {
+                formatter.Write(";");
+            }
         }
         public override void Accept(Visitor& visitor)
         {
@@ -664,6 +693,7 @@ namespace System.Text.Parsing.CmObjectModel
         private CmObject* typeExpr;
         private string identifier;
         private ExpressionList initExprs;
+        private bool newLine;
     }
     
     public class DestroyStatement: Statement
