@@ -232,24 +232,6 @@ void BoundConstructionStatement::GetResolutionArguments(Cm::Sym::TypeSymbol* loc
     }
 }
 
-void BoundConstructionStatement::ApplyConversions(const std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundFunction* currentFunction)
-{
-    int n = int(conversions.size());
-    if (n != arguments.Count())
-    {
-        throw std::runtime_error("wrong number of conversions");
-    }
-    for (int i = 0; i < n; ++i)
-    {
-        Cm::Sym::FunctionSymbol* conversionFun = conversions[i];
-        if (conversionFun)
-        {
-            BoundExpression* arg = arguments[i].release();
-            arguments[i].reset(CreateBoundConversion(SyntaxNode(), arg, conversionFun, currentFunction));
-        }
-    }
-}
-
 void BoundConstructionStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);

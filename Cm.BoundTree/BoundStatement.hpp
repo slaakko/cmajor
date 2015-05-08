@@ -17,6 +17,7 @@
 namespace Cm { namespace BoundTree {
 
 class BoundCompoundStatement;
+class BoundFunction;
 
 class BoundStatement : public BoundNode
 {
@@ -202,7 +203,6 @@ public:
     void SetConstructor(Cm::Sym::FunctionSymbol* ctor_) { ctor = ctor_; }
     Cm::Sym::FunctionSymbol* Constructor() const { return ctor; }
     void InsertLocalVariableToArguments();
-    void ApplyConversions(const std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundFunction* currentFunction);
     void Accept(Visitor& visitor) override;
     BoundExpressionList& Arguments() { return arguments; }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);

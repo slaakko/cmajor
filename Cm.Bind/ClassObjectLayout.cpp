@@ -86,7 +86,7 @@ void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpres
         {
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
             Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
+            argument.reset(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(baseInitializerNode, std::move(arguments));
@@ -169,7 +169,7 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
         {
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
             Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
+            argument.reset(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(&thisInitializerNode, std::move(arguments));
@@ -306,7 +306,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
         {
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
             Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
+            argument.reset(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
@@ -461,7 +461,16 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
 	constructMutexGuardStatement->SetConstructor(mutexGuardConstructor);
 	constructMutexGuardStatement->InsertLocalVariableToArguments();
 	constructMutexGuardStatement->Arguments()[0]->SetFlag(Cm::BoundTree::BoundNodeFlags::constructVariable);
-	constructMutexGuardStatement->ApplyConversions(mutexGuardConversions, currentFunction);
+    int n = int(mutexGuardConversions.size());
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::FunctionSymbol* conversionFun = mutexGuardConversions[i];
+        if (conversionFun)
+        {
+            Cm::BoundTree::BoundExpression* arg = constructMutexGuardStatement->Arguments()[i].release();
+            constructMutexGuardStatement->Arguments()[i].reset(CreateBoundConversion(containerScope, boundCompileUnit, staticConstructorNode, arg, conversionFun, currentFunction));
+        }
+    }
 	PrepareArguments(containerScope, boundCompileUnit, currentFunction, nullptr, mutexGuardConstructor->Parameters(), constructMutexGuardStatement->Arguments(), true, 
         boundCompileUnit.IrClassTypeRepository(), mutexGuardConstructor->IsBasicTypeOp());
 	currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, constructMutexGuardStatement);
@@ -588,7 +597,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializer
         {
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
             Cm::BoundTree::BoundExpression* arg = argument.release();
-            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
+            argument.reset(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));

@@ -1,0 +1,5 @@
+project TestCmObjectModel;
+target=program;
+assembly <TestCmObjectModel.cma>;
+reference <ext/System.Text.Parsing.CmObjectModel/System.Text.Parsing.CmObjectModel.cml>;
+source <Expression.cm>;

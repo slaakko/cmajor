@@ -1,0 +1,4 @@
+project TestParsing;
+target=program;
+assembly <TestParsing.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;

@@ -550,6 +550,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
         {
             result->SetAddrArg();
         }
+        if (boundConversion.Operand()->GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef))
+        {
+            result->SetArgByRef();
+        }
         if (!resultLabel)
         {
             resultLabel = operandResult->GetLabel();

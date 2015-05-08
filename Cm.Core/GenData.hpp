@@ -22,10 +22,11 @@ enum class GenFlags : uint8_t
     none = 0, 
     genJumpingBoolCode = 1 << 0,
     lvalue = 1 << 1,
-    addrArg = 1 << 2,
-    classTypeToPointerTypeConversion = 1 << 3,
-    virtualCall = 1 << 4,
-    labelSet = 1 << 5
+    argByRef = 1 << 2,
+    addrArg = 1 << 3,
+    classTypeToPointerTypeConversion = 1 << 4,
+    virtualCall = 1 << 5,
+    labelSet = 1 << 6
 };
 
 inline GenFlags operator&(GenFlags left, GenFlags right)
@@ -154,6 +155,8 @@ public:
     bool GenJumpingBoolCode() const { return GetFlag(GenFlags::genJumpingBoolCode, flags); }
     void SetGenJumpingBoolCode() { SetFlag(GenFlags::genJumpingBoolCode, flags); }
     void SetLvalue() { SetFlag(GenFlags::lvalue, flags); }
+    bool ArgByRef() const { return GetFlag(GenFlags::argByRef, flags); }
+    void SetArgByRef() { SetFlag(GenFlags::argByRef, flags); }
     bool AddrArg() const { return GetFlag(GenFlags::addrArg, flags); }
     void SetAddrArg() { SetFlag(GenFlags::addrArg, flags); }
     bool ClassTypeToPointerTypeConversion() const { return GetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }

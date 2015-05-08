@@ -1,0 +1,36 @@
+using System;
+using System.IO;
+using System.Text;
+using System.Text.Parsing.CmObjectModel;
+
+namespace Test
+{
+    public unit_test void TestExpression()
+    {
+        OutputStringStream s;
+        CodeFormatter f(s);
+        ThisAccess thisAccess;
+        thisAccess.Print(f);
+        #assert(s.GetStr() == "this");
+        s.SetStr(string());
+
+        BaseAccess baseAccess;
+        baseAccess.Print(f);
+        #assert(s.GetStr() == "base");
+        s.SetStr(string());
+
+        NewExpression newBoolExpr(new BoolType(), ExpressionList());
+        newBoolExpr.Print(f);
+        #assert(s.GetStr() == "new bool()");
+        s.SetStr(string());
+
+        ExpressionList intArgs;
+        intArgs.Add(new IntLiteral(1u, ' '));
+        NewExpression newIntExpr(new IntType(), intArgs);
+        newIntExpr.Print(f);
+        #assert(s.GetStr() == "new int(1)");
+        s.SetStr(string());
+
+
+    }
+}

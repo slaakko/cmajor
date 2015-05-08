@@ -1,0 +1,5 @@
+solution tests;
+project <compiler/compiler.cmp>;
+project <system/system_tests.cmp>;
+project <system/ext/System.Text.Parsing.CmObjectModel/TestCmObjectModel.cmp>;
+project <system/ext/System.Text.Parsing/TestParsing.cmp>;

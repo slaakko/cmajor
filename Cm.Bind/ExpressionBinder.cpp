@@ -165,6 +165,88 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
     }
 }
 
+Cm::BoundTree::BoundConversion* CreateBoundConversion(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::Node* node,
+    Cm::BoundTree::BoundExpression* operand, Cm::Sym::FunctionSymbol* conversionFun, Cm::BoundTree::BoundFunction* currentFunction)
+{
+    Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(node, operand, conversionFun);
+    Cm::Sym::TypeSymbol* paramType = conversionFun->GetSourceType();
+    Cm::BoundTree::BoundExpression* argument = operand;
+    if (!conversionFun->IsBasicTypeOp())
+    {
+        if (paramType->IsNonConstReferenceType())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
+        else if (paramType->IsConstReferenceType())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
+        else if (paramType->IsRvalueRefType())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
+        else if (paramType->IsClassTypeSymbol())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
+        else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsNonClassReferenceType())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
+        }
+    }
+    else
+    {
+        if (paramType->IsClassTypeSymbol())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
+        else
+        {
+            if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsNonClassReferenceType())
+            {
+                argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
+            }
+        }
+    }
+    if (conversionFun->GetTargetType()->IsClassTypeSymbol())
+    {
+        Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, currentFunction->CreateTempLocalVariable(conversionFun->GetTargetType()));
+        boundTemporary->SetType(conversionFun->GetTargetType());
+        boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        conversion->SetBoundTemporary(boundTemporary);
+        conversion->SetType(boundTemporary->GetType());
+    }
+    else if (conversionFun->GetTargetType()->IsConstReferenceType())
+    {
+        argument = conversion->ReleaseOperand();
+        std::vector<Cm::Core::Argument> resolutionArguments;
+        Cm::Sym::TypeSymbol* pointerType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(argument->GetType(), argument->SyntaxNode()->GetSpan());
+        resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, pointerType));
+        resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, argument->GetType()));
+        Cm::Sym::FunctionLookupSet resolutionLookups;
+        resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
+        resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
+        std::vector<Cm::Sym::FunctionSymbol*> conversions;
+        Cm::Sym::FunctionSymbol* copyCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, resolutionLookups,
+            argument->SyntaxNode()->GetSpan(), conversions);
+        Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(argument->SyntaxNode(), currentFunction->CreateTempLocalVariable(argument->GetType()));
+        boundTemporary->SetType(argument->GetType());
+        Cm::BoundTree::BoundConversion* constRefConversion = new Cm::BoundTree::BoundConversion(argument->SyntaxNode(), argument, copyCtor);
+        constRefConversion->SetType(pointerType);
+        boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        constRefConversion->SetBoundTemporary(boundTemporary);
+        constRefConversion->SetType(pointerType);
+        conversion->ResetOperand(constRefConversion);
+        constRefConversion->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        conversion->SetType(conversionFun->GetTargetType());
+    }
+    else
+    {
+        conversion->SetType(conversionFun->GetTargetType());
+    }
+    return conversion;
+}
+
 Cm::BoundTree::BoundExpression* BoundExpressionStack::Pop()
 {
     if (expressions.Empty()) throw std::runtime_error("bound expression stack is empty");
@@ -229,7 +311,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     Cm::BoundTree::BoundExpression* unaryOperand = operand;
     if (conversionFun)
     {
-        unaryOperand = Cm::BoundTree::CreateBoundConversion(node, operand, conversionFun, currentFunction);
+        unaryOperand = CreateBoundConversion(containerScope, boundCompileUnit, node, operand, conversionFun, currentFunction);
 		firstArgByRef = false;
     }
 	Cm::BoundTree::BoundExpressionList arguments;
@@ -292,13 +374,13 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     Cm::BoundTree::BoundExpression* leftOperand = left;
     if (leftConversionFun)
     {
-        leftOperand = Cm::BoundTree::CreateBoundConversion(node, left, leftConversionFun, currentFunction);
+        leftOperand = CreateBoundConversion(containerScope, boundCompileUnit, node, left, leftConversionFun, currentFunction);
 		firstArgByRef = false;
     }
     Cm::BoundTree::BoundExpression* rightOperand = right;
     if (rightConversionFun)
     {
-        rightOperand = Cm::BoundTree::CreateBoundConversion(node, right, rightConversionFun, currentFunction);
+        rightOperand = CreateBoundConversion(containerScope, boundCompileUnit, node, right, rightConversionFun, currentFunction);
     }
 	Cm::BoundTree::BoundExpressionList arguments;
 	arguments.Add(leftOperand);
@@ -993,7 +1075,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
                         Cm::Sym::FunctionSymbol* derivedBaseConversion = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(memVarOwnerClassTypePtr, classTypePtr, 
                             distance, dotNode.GetSpan());
                         classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
-                        classObject = Cm::BoundTree::CreateBoundConversion(&dotNode, classObject, derivedBaseConversion, currentFunction);
+                        classObject = CreateBoundConversion(containerScope, boundCompileUnit, &dotNode, classObject, derivedBaseConversion, currentFunction);
                     }
                     classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
                     memberVariable->SetClassObject(classObject);
@@ -1072,7 +1154,7 @@ void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberI
                                 Cm::Sym::FunctionSymbol* derivedBaseConversion = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(memVarOwnerClassTypePtr, 
                                     classTypePtr, distance, node->GetSpan());
                                 classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
-                                classObject = Cm::BoundTree::CreateBoundConversion(node, classObject, derivedBaseConversion, currentFunction);
+                                classObject = CreateBoundConversion(containerScope, boundCompileUnit, node, classObject, derivedBaseConversion, currentFunction);
                             }
                             memberVariable->SetClassObject(classObject);
                             boundExpressionStack.Push(memberVariable);
@@ -1279,7 +1361,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         {
             Cm::BoundTree::BoundExpression* arg = arguments[i].release();
             std::unique_ptr<Cm::BoundTree::BoundExpression>& argument = arguments[i];
-            argument.reset(Cm::BoundTree::CreateBoundConversion(arg->SyntaxNode(), arg, conversionFun, currentFunction));
+            argument.reset(CreateBoundConversion(containerScope, boundCompileUnit, arg->SyntaxNode(), arg, conversionFun, currentFunction));
         }
     }
     if (constructTemporary)
@@ -1556,7 +1638,7 @@ void ExpressionBinder::BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::Delegate
             if (conversion)
             {
                 Cm::BoundTree::BoundExpression* arg = arguments[i].release();
-                arguments[i].reset(Cm::BoundTree::CreateBoundConversion(node, arg, conversion, currentFunction));
+                arguments[i].reset(CreateBoundConversion(containerScope, boundCompileUnit, node, arg, conversion, currentFunction));
             }
         }
         PrepareArguments(containerScope, boundCompileUnit, currentFunction, delegateType->GetReturnType(), delegateType->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(), false);
@@ -1604,7 +1686,7 @@ void ExpressionBinder::BindInvokeClassDelegate(Cm::Ast::Node* node, Cm::Sym::Cla
             Cm::Sym::FunctionSymbol* conversion = functionMatch.conversions[i];
             if (conversion)
             {
-                arguments[i].reset(Cm::BoundTree::CreateBoundConversion(node, arguments[i].release(), conversion, currentFunction));
+                arguments[i].reset(CreateBoundConversion(containerScope, boundCompileUnit, node, arguments[i].release(), conversion, currentFunction));
             }
         }
         PrepareArguments(containerScope, boundCompileUnit, currentFunction, classDelegateType->GetReturnType(), classDelegateType->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), false);
@@ -1918,7 +2000,7 @@ void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* target
     Cm::Sym::FunctionSymbol* conversion = conversions[1];
     if (conversion)
     {
-        sourceExpr = Cm::BoundTree::CreateBoundConversion(node, sourceExpr, conversion, CurrentFunction());
+        sourceExpr = CreateBoundConversion(containerScope, boundCompileUnit, node, sourceExpr, conversion, CurrentFunction());
     }
     Cm::BoundTree::BoundCast* cast = new Cm::BoundTree::BoundCast(node, sourceExpr, convertingCtor);
     cast->SetType(targetType);
@@ -2007,7 +2089,7 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
         if (conversionFun)
         {
             Cm::BoundTree::BoundExpression* arg = arguments[i].release();
-            arguments[i].reset(CreateBoundConversion(node, arg, conversionFun, currentFunction));
+            arguments[i].reset(CreateBoundConversion(containerScope, boundCompileUnit, node, arg, conversionFun, currentFunction));
         }
     }
     PrepareArguments(containerScope, boundCompileUnit, currentFunction, nullptr, ctor->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(), ctor->IsBasicTypeOp());
