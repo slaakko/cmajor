@@ -44,9 +44,9 @@ namespace Syntax
         Console.WriteLine("Parsing project file '" + projectFilePath + "'...");
         UniquePtr<ParsingDomain> projectParsingDomain(new ParsingDomain());
         projectParsingDomain->SetOwned();
-        ProjectFileGrammarPtr projectFileGrammar = ProjectFileGrammar.Create(projectParsingDomain.GetPtr());
-        LibraryFileGrammarPtr libraryFileGrammar = LibraryFileGrammar.Create(projectParsingDomain.GetPtr());
-        ParserFileGrammarPtr parserFileGrammar = ParserFileGrammar.Create(projectParsingDomain.GetPtr());
+        ProjectFileGrammar* projectFileGrammar = ProjectFileGrammar.Create(projectParsingDomain.GetPtr());
+        LibraryFileGrammar* libraryFileGrammar = LibraryFileGrammar.Create(projectParsingDomain.GetPtr());
+        ParserFileGrammar* parserFileGrammar = ParserFileGrammar.Create(projectParsingDomain.GetPtr());
         if (debug)
         {
             parserFileGrammar->SetLog(&Console.Error());
