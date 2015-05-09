@@ -63,8 +63,8 @@ private:
     std::unique_ptr<Cm::Sym::FunctionSymbol> moveAssignment;
     std::unique_ptr<Cm::Sym::FunctionSymbol> opEqual;
     std::unique_ptr<Cm::Sym::FunctionSymbol> opLess;
-    std::unique_ptr<Cm::Sym::FunctionSymbol> delegateFromFunCtor;
-    std::unique_ptr<Cm::Sym::FunctionSymbol> delegateFromFunAssignment;
+    std::unordered_map<Cm::Sym::FunctionSymbol*, std::unique_ptr<Cm::Sym::FunctionSymbol>> delegateFromFunCtorMap;
+    std::unordered_map<Cm::Sym::FunctionSymbol*, std::unique_ptr<Cm::Sym::FunctionSymbol>> delegateFromFunAssignmentMap;
 };
 
 typedef std::unordered_map<Cm::Sym::TypeSymbol*, DelegateTypeOpCache>  DelegateTypeOpCacheMap;

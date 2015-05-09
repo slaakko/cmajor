@@ -209,6 +209,7 @@ Cm::Sym::FunctionSymbol* ResolveClassDelegateOverload(Cm::Sym::ContainerScope* c
 Cm::Sym::FunctionSymbol* ClassDelegateTypeOpCache::GetClassDelegateFromFunCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType, 
     Cm::Sym::FunctionSymbol* fun)
 {
+    std::unique_ptr<Cm::Sym::FunctionSymbol>& classDelegateFromFunCtor = classDelegateFromFunCtorMap[fun];
     if (!classDelegateFromFunCtor)
     {
         classDelegateFromFunCtor.reset(new ClassDelegateFromFunCtor(typeRepository, classDelegateType, fun));
@@ -219,6 +220,7 @@ Cm::Sym::FunctionSymbol* ClassDelegateTypeOpCache::GetClassDelegateFromFunCtor(C
 Cm::Sym::FunctionSymbol* ClassDelegateTypeOpCache::GetClassDelegateFromFunAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType, 
     Cm::Sym::FunctionSymbol* fun)
 {
+    std::unique_ptr<Cm::Sym::FunctionSymbol>& classDelegateFromFunAssignment = classDelegateFromFunAssignmentMap[fun];
     if (!classDelegateFromFunAssignment)
     {
         classDelegateFromFunAssignment.reset(new ClassDelegateFromFunAssignment(typeRepository, classDelegateType, fun));

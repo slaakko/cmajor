@@ -58,8 +58,8 @@ public:
     Cm::Sym::FunctionSymbol* GetClassDelegateFromFunAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType, Cm::Sym::FunctionSymbol* fun);
     Cm::Sym::FunctionSymbol* GetClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType);
 private:
-    std::unique_ptr<Cm::Sym::FunctionSymbol> classDelegateFromFunCtor;
-    std::unique_ptr<Cm::Sym::FunctionSymbol> classDelegateFromFunAssignment;
+    std::unordered_map<Cm::Sym::FunctionSymbol*, std::unique_ptr<Cm::Sym::FunctionSymbol>> classDelegateFromFunCtorMap;
+    std::unordered_map<Cm::Sym::FunctionSymbol*, std::unique_ptr<Cm::Sym::FunctionSymbol>> classDelegateFromFunAssignmentMap;
     std::unique_ptr<Cm::Sym::FunctionSymbol> classDelegateEqualOp;
 };
 
