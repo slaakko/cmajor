@@ -1,0 +1,24 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace Test
+{
+    class Context
+    {
+        public string value;
+        public string fromFilePath;
+    }
+
+    public unit_test void TestValueObject()
+    {
+        Context context;
+        context.value = "foo";
+
+        Stack<UniquePtr<Object>> stack;
+        stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+
+        UniquePtr<Object> fromFilePath_value = stack.Pop();
+        context.fromFilePath = *cast<ValueObject<string>*>(fromFilePath_value.GetPtr());
+    }
+}

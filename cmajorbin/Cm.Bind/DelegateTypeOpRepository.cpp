@@ -152,6 +152,7 @@ Cm::Sym::FunctionSymbol* DelegateTypeOpCache::GetOpLess(Cm::Sym::TypeRepository&
 Cm::Sym::FunctionSymbol* DelegateTypeOpCache::GetDelegateFromFunCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* delegatePtrType, Cm::Sym::DelegateTypeSymbol* delegateType, 
     Cm::Sym::FunctionSymbol* fun)
 {
+    std::unique_ptr<Cm::Sym::FunctionSymbol>& delegateFromFunCtor = delegateFromFunCtorMap[fun];
     if (!delegateFromFunCtor)
     {
         delegateFromFunCtor.reset(new DelegateFromFunCtor(typeRepository, delegatePtrType, delegateType, fun));
@@ -162,6 +163,7 @@ Cm::Sym::FunctionSymbol* DelegateTypeOpCache::GetDelegateFromFunCtor(Cm::Sym::Ty
 Cm::Sym::FunctionSymbol* DelegateTypeOpCache::GetDelegateFromFunAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* delegatePtrType, 
     Cm::Sym::DelegateTypeSymbol* delegateType, Cm::Sym::FunctionSymbol* fun)
 {
+    std::unique_ptr<Cm::Sym::FunctionSymbol>& delegateFromFunAssignment = delegateFromFunAssignmentMap[fun];
     if (!delegateFromFunAssignment)
     {
         delegateFromFunAssignment.reset(new DelegateFromFunAssignment(typeRepository, delegatePtrType, delegateType, fun));
