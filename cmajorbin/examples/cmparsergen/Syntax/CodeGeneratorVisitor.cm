@@ -88,7 +88,7 @@ namespace Syntax
             formatter.WriteLine("{");
             formatter.IncIndent();
             formatter.WriteLine("RegisterParsingDomain(parsingDomain);");
-            formatter.WriteLine(grammarPtrType + " grammar(new " + grammar.Name() + "(parsingDomain));");
+            formatter.WriteLine(grammarPtrType + " grammar = new " + grammar.Name() + "(parsingDomain);");
             formatter.WriteLine("parsingDomain->AddGrammar(grammar);");
             formatter.WriteLine("grammar->CreateRules();");
             formatter.WriteLine("grammar->Link();");
