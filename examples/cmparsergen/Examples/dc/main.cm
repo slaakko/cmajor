@@ -4,7 +4,7 @@ void main()
 {
     try
     {
-        DcGrammarPtr grammar = DcGrammar.Create();
+        DcGrammar* grammar = DcGrammar.Create();
         while (true)
         {
             Console.Out() << "> ";
