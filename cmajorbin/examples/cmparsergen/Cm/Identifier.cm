@@ -4,18 +4,16 @@ using System.Text.Parsing;
 
 namespace Cm
 {
-    public typedef IdentifierGrammar* IdentifierGrammarPtr;
-
     public class IdentifierGrammar: System.Text.Parsing.Grammar
     {
-        public static IdentifierGrammarPtr Create()
+        public static IdentifierGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static IdentifierGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static IdentifierGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            IdentifierGrammarPtr grammar(new IdentifierGrammar(parsingDomain));
+            IdentifierGrammar* grammar = new IdentifierGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -156,16 +154,16 @@ namespace Cm
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.KeywordGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = Cm.KeywordGrammar.Create(parsingDomain);
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.KeywordGrammar");
             if (grammar1 == null)
             {
-                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar1 = Cm.KeywordGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }

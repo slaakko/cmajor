@@ -5,18 +5,16 @@ using Cm;
 
 namespace Syntax
 {
-    public typedef ParserFileGrammar* ParserFileGrammarPtr;
-
     public class ParserFileGrammar: System.Text.Parsing.Grammar
     {
-        public static ParserFileGrammarPtr Create()
+        public static ParserFileGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static ParserFileGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static ParserFileGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            ParserFileGrammarPtr grammar(new ParserFileGrammar(parsingDomain));
+            ParserFileGrammar* grammar = new ParserFileGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -193,7 +191,7 @@ namespace Syntax
                 if (matched)
                 {
                     UniquePtr<Object> fromNamespaceImport_value = stack.Pop();
-                    context.fromNamespaceImport = *cast<ValueObject<System.Text.Parsing.CmObjectModel.UsingObject*>*>(fromNamespaceImport_value.GetPtr());
+                    context.fromNamespaceImport = *cast<ValueObject<System.Text.Parsing.CmObjectModel.UsingObjectPtr>*>(fromNamespaceImport_value.GetPtr());
                 }
             }
             public throw void PostAlias(Stack<UniquePtr<Object>>& stack, bool matched)
@@ -201,14 +199,14 @@ namespace Syntax
                 if (matched)
                 {
                     UniquePtr<Object> fromAlias_value = stack.Pop();
-                    context.fromAlias = *cast<ValueObject<System.Text.Parsing.CmObjectModel.UsingObject*>*>(fromAlias_value.GetPtr());
+                    context.fromAlias = *cast<ValueObject<System.Text.Parsing.CmObjectModel.UsingObjectPtr>*>(fromAlias_value.GetPtr());
                 }
             }
             private class Context
             {
                 public ParserFileContent* parserFileContent;
-                public System.Text.Parsing.CmObjectModel.UsingObject* fromNamespaceImport;
-                public System.Text.Parsing.CmObjectModel.UsingObject* fromAlias;
+                public System.Text.Parsing.CmObjectModel.UsingObjectPtr fromNamespaceImport;
+                public System.Text.Parsing.CmObjectModel.UsingObjectPtr fromAlias;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -346,16 +344,16 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.GrammarGrammar");
             if (grammar0 == null)
             {
-                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar0 = Syntax.GrammarGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.GrammarGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar1 == null)
             {
-                grammar1 = Syntax.GrammarGrammar.Create(parsingDomain);
+                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
             Grammar* grammar2 = parsingDomain->GetGrammar("Cm.NamespaceGrammar");
@@ -367,12 +365,12 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
-            AddRuleLink(new RuleLink("NamespaceImport", this, "Cm.NamespaceGrammar.NamespaceImport"));
-            AddRuleLink(new RuleLink("Alias", this, "Cm.NamespaceGrammar.Alias"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("newline", this, "System.Text.Parsing.stdlib.newline"));
+            AddRuleLink(new RuleLink("NamespaceImport", this, "Cm.NamespaceGrammar.NamespaceImport"));
+            AddRuleLink(new RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
+            AddRuleLink(new RuleLink("Alias", this, "Cm.NamespaceGrammar.Alias"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRule(new ParserFileRule("ParserFile", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

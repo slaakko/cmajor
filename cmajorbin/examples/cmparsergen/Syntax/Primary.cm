@@ -1,23 +1,21 @@
 using System;
 using System.Collections;
 using System.Text.Parsing;
-using System.Text.Parsing.CmObjectModel;
 using Cm;
+using System.Text.Parsing.CmObjectModel;
 
 namespace Syntax
 {
-    public typedef PrimaryGrammar* PrimaryGrammarPtr;
-
     public class PrimaryGrammar: System.Text.Parsing.Grammar
     {
-        public static PrimaryGrammarPtr Create()
+        public static PrimaryGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static PrimaryGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static PrimaryGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            PrimaryGrammarPtr grammar(new PrimaryGrammar(parsingDomain));
+            PrimaryGrammar* grammar = new PrimaryGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -641,7 +639,7 @@ namespace Syntax
                 if (matched)
                 {
                     UniquePtr<Object> fromaction_value = stack.Pop();
-                    context.fromaction = *cast<ValueObject<CompoundStatement*>*>(fromaction_value.GetPtr());
+                    context.fromaction = *cast<ValueObject<CompoundStatementPtr>*>(fromaction_value.GetPtr());
                 }
             }
             public throw void PrefailureAction(Stack<UniquePtr<Object>>& stack)
@@ -653,7 +651,7 @@ namespace Syntax
                 if (matched)
                 {
                     UniquePtr<Object> fromfailureAction_value = stack.Pop();
-                    context.fromfailureAction = *cast<ValueObject<CompoundStatement*>*>(fromfailureAction_value.GetPtr());
+                    context.fromfailureAction = *cast<ValueObject<CompoundStatementPtr>*>(fromfailureAction_value.GetPtr());
                 }
             }
             private class Context
@@ -661,8 +659,8 @@ namespace Syntax
                 public Parser* child;
                 public ParsingContext* ctx;
                 public Parser* value;
-                public CompoundStatement* fromaction;
-                public CompoundStatement* fromfailureAction;
+                public CompoundStatementPtr fromaction;
+                public CompoundStatementPtr fromfailureAction;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -703,11 +701,11 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Primitive", this, "PrimitiveGrammar.Primitive"));
-            AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRuleLink(new RuleLink("ExpressionList", this, "Cm.ExpressionGrammar.ExpressionList"));
-            AddRuleLink(new RuleLink("CompoundStatement", this, "Cm.StatementGrammar.CompoundStatement"));
+            AddRuleLink(new RuleLink("Primitive", this, "PrimitiveGrammar.Primitive"));
             AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
+            AddRuleLink(new RuleLink("CompoundStatement", this, "Cm.StatementGrammar.CompoundStatement"));
+            AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRule(new PrimaryRule("Primary", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

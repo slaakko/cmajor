@@ -4,18 +4,16 @@ using System.Text.Parsing;
 
 namespace Cm
 {
-    public typedef KeywordGrammar* KeywordGrammarPtr;
-
     public class KeywordGrammar: System.Text.Parsing.Grammar
     {
-        public static KeywordGrammarPtr Create()
+        public static KeywordGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static KeywordGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static KeywordGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            KeywordGrammarPtr grammar(new KeywordGrammar(parsingDomain));
+            KeywordGrammar* grammar = new KeywordGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();

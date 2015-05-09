@@ -1,22 +1,27 @@
 using System;
 using System.Collections;
 using System.Text.Parsing;
-using System.Text.Parsing.CmObjectModel;
+using LiteralPtr = System.Text.Parsing.CmObjectModel.LiteralPtr;
+using BooleanLiteral = System.Text.Parsing.CmObjectModel.BooleanLiteral;
+using FloatingLiteral = System.Text.Parsing.CmObjectModel.FloatingLiteral;
+using HexLiteral = System.Text.Parsing.CmObjectModel.HexLiteral;
+using IntLiteral = System.Text.Parsing.CmObjectModel.IntLiteral;
+using CharacterLiteral = System.Text.Parsing.CmObjectModel.CharacterLiteral;
+using StringLiteral = System.Text.Parsing.CmObjectModel.StringLiteral;
+using NullLiteral = System.Text.Parsing.CmObjectModel.NullLiteral;
 
 namespace Cm
 {
-    public typedef LiteralGrammar* LiteralGrammarPtr;
-
     public class LiteralGrammar: System.Text.Parsing.Grammar
     {
-        public static LiteralGrammarPtr Create()
+        public static LiteralGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static LiteralGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static LiteralGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            LiteralGrammarPtr grammar(new LiteralGrammar(parsingDomain));
+            LiteralGrammar* grammar = new LiteralGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -65,7 +70,7 @@ namespace Cm
             public LiteralRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
                 base(name_, enclosingScope_, definition_), contextStack(), context()
             {
-                SetValueTypeName("Literal*");
+                SetValueTypeName("LiteralPtr");
             }
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
@@ -187,7 +192,7 @@ namespace Cm
             }
             private class Context
             {
-                public Literal* value;
+                public LiteralPtr value;
                 public bool fromb;
                 public Pair<double, char> fromf;
                 public Pair<ulong, char> fromh;
@@ -307,8 +312,7 @@ namespace Cm
                 int n = match.Length();
                 context.val = 0u;
                 context.unsignedSuffix = ' ';
-                for (int i = 0;
-                i < n;++i)
+                for (int i = 0; i < n; ++i)
                 {
                     context.val = 10u * context.val + cast<ulong>(match[i]) - cast<ulong>('0');
                 }
@@ -366,8 +370,7 @@ namespace Cm
                 context.val = 0u;
                 context.unsignedSuffix = ' ';
                 int n = match.Length();
-                for (int i = 0;
-                i < n;++i)
+                for (int i = 0; i < n; ++i)
                 {
                     char c = match[i];
                     ulong b = 0u;
@@ -411,10 +414,10 @@ namespace Cm
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
-            AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
             AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
             AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
+            AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
+            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
             AddRule(new LiteralRule("Literal", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(
