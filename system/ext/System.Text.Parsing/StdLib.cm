@@ -13,7 +13,7 @@ namespace System.Text.Parsing
         public static stdlib* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            stdlib* grammar(new stdlib(parsingDomain));
+            stdlib* grammar = new stdlib(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();

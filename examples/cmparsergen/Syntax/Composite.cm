@@ -5,18 +5,16 @@ using Cm;
 
 namespace Syntax
 {
-    public typedef CompositeGrammar* CompositeGrammarPtr;
-
     public class CompositeGrammar: System.Text.Parsing.Grammar
     {
-        public static CompositeGrammarPtr Create()
+        public static CompositeGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static CompositeGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static CompositeGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            CompositeGrammarPtr grammar(new CompositeGrammar(parsingDomain));
+            CompositeGrammar* grammar = new CompositeGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();

@@ -4,18 +4,16 @@ using System.Text.Parsing;
 
 namespace Syntax
 {
-    public typedef ProjectFileGrammar* ProjectFileGrammarPtr;
-
     public class ProjectFileGrammar: System.Text.Parsing.Grammar
     {
-        public static ProjectFileGrammarPtr Create()
+        public static ProjectFileGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static ProjectFileGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static ProjectFileGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            ProjectFileGrammarPtr grammar(new ProjectFileGrammar(parsingDomain));
+            ProjectFileGrammar* grammar = new ProjectFileGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -316,8 +314,8 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRule(new ProjectFileRule("ProjectFile", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

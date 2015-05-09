@@ -65,7 +65,7 @@ namespace Cm
         GotoDefaultStatement(ParsingContext* ctx): Statement*;
         WhileStatement(ParsingContext* ctx): Statement*;
         DoStatement(ParsingContext* ctx): Statement*;
-        RangeForStatement(ParsingContext* ctx, var UniqueRangeForStatementPtr holder, var UniquePtr<CmObject> varTypeHolder): RangeForStatementPtr;
+        RangeForStatement(ParsingContext* ctx, var UniquePtr<RangeForStatement> holder, var UniquePtr<CmObject> varTypeHolder): RangeForStatementPtr;
         ForStatement(ParsingContext* ctx): ForStatementPtr;
         ForInitStatement(ParsingContext* ctx): Statement*;
         CompoundStatement(ParsingContext* ctx): CompoundStatementPtr;
@@ -81,12 +81,12 @@ namespace Cm
         DestroyStatement(ParsingContext* ctx): Statement*;
         ThrowStatement(ParsingContext* ctx): Statement*;
         TryStatement(ParsingContext* ctx): Statement*;
-        ExceptionHandlers(ParsingContext* ctx): ExceptionHandlerList;
-        ExceptionHandler(ExceptionHandlerList* handlers, ParsingContext* ctx);
+        ExceptionHandlers(ParsingContext* ctx): List<ExceptionHandler*>;
+        ExceptionHandler(List<ExceptionHandler*>* handlers, ParsingContext* ctx);
         AssertStatement(ParsingContext* ctx): Statement*;
     }
     grammar TemplateGrammar
     {
-        TemplateId(ParsingContext* ctx, var UniqueTemplateIdPtr templateId): TemplateIdPtr;
+        TemplateId(ParsingContext* ctx, var UniquePtr<TemplateId> templateId): TemplateId*;
     }
 }

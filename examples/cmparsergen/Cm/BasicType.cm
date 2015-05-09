@@ -1,22 +1,33 @@
 using System;
 using System.Collections;
 using System.Text.Parsing;
-using System.Text.Parsing.CmObjectModel;
+using TypePtr = System.Text.Parsing.CmObjectModel.TypePtr;
+using BoolType = System.Text.Parsing.CmObjectModel.BoolType;
+using SByteType = System.Text.Parsing.CmObjectModel.SByteType;
+using ByteType = System.Text.Parsing.CmObjectModel.ByteType;
+using UShortType = System.Text.Parsing.CmObjectModel.UShortType;
+using ShortType = System.Text.Parsing.CmObjectModel.ShortType;
+using UIntType = System.Text.Parsing.CmObjectModel.UIntType;
+using IntType = System.Text.Parsing.CmObjectModel.IntType;
+using LongType = System.Text.Parsing.CmObjectModel.LongType;
+using ULongType = System.Text.Parsing.CmObjectModel.ULongType;
+using FloatType = System.Text.Parsing.CmObjectModel.FloatType;
+using DoubleType = System.Text.Parsing.CmObjectModel.DoubleType;
+using CharType = System.Text.Parsing.CmObjectModel.CharType;
+using VoidType = System.Text.Parsing.CmObjectModel.VoidType;
 
 namespace Cm
 {
-    public typedef BasicTypeGrammar* BasicTypeGrammarPtr;
-
     public class BasicTypeGrammar: System.Text.Parsing.Grammar
     {
-        public static BasicTypeGrammarPtr Create()
+        public static BasicTypeGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static BasicTypeGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static BasicTypeGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            BasicTypeGrammarPtr grammar(new BasicTypeGrammar(parsingDomain));
+            BasicTypeGrammar* grammar = new BasicTypeGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -26,7 +37,7 @@ namespace Cm
         {
             SetOwner(0);
         }
-        public Type* Parse(const string& content, int fileIndex, const string& fileName)
+        public TypePtr Parse(const string& content, int fileIndex, const string& fileName)
         {
             Scanner scanner(content, fileIndex, fileName, Skip());
             System.IO.OutputStream* log = Log();
@@ -57,7 +68,7 @@ namespace Cm
                 }
             }
             UniquePtr<Object> value = stack.Pop();
-            Type* result = *cast<ValueObject<Type*>*>(value.GetPtr());
+            TypePtr result = *cast<ValueObject<TypePtr>*>(value.GetPtr());
             return result;
         }
         private class BasicTypeRule: System.Text.Parsing.Rule
@@ -163,7 +174,7 @@ namespace Cm
             }
             private class Context
             {
-                public Type* value;
+                public TypePtr value;
             }
             private Stack<Context> contextStack;
             private Context context;

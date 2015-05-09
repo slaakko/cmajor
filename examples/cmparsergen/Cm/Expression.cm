@@ -5,18 +5,16 @@ using System.Text.Parsing.CmObjectModel;
 
 namespace Cm
 {
-    public typedef ExpressionGrammar* ExpressionGrammarPtr;
-
     public class ExpressionGrammar: System.Text.Parsing.Grammar
     {
-        public static ExpressionGrammarPtr Create()
+        public static ExpressionGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static ExpressionGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static ExpressionGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            ExpressionGrammarPtr grammar(new ExpressionGrammar(parsingDomain));
+            ExpressionGrammar* grammar = new ExpressionGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -1759,8 +1757,8 @@ namespace Cm
                 public ParsingContext* ctx;
                 public CmObject* value;
                 public CmObject* fromExpression;
-                public Literal* fromLiteral;
-                public Type* fromBasicType;
+                public LiteralPtr fromLiteral;
+                public TypePtr fromBasicType;
                 public CmObject* fromSizeOfExpr;
                 public CmObject* fromCastExpr;
                 public CmObject* fromObjectCreationExpr;
@@ -2256,38 +2254,38 @@ namespace Cm
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.TemplateGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.TemplateGrammar.Create(parsingDomain);
+                grammar0 = Cm.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.BasicTypeGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.IdentifierGrammar.Create(parsingDomain);
+                grammar1 = Cm.BasicTypeGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.BasicTypeGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.LiteralGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.BasicTypeGrammar.Create(parsingDomain);
+                grammar2 = Cm.LiteralGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.LiteralGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.TemplateGrammar");
             if (grammar3 == null)
             {
-                grammar3 = Cm.LiteralGrammar.Create(parsingDomain);
+                grammar3 = Cm.TemplateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
             AddRuleLink(new RuleLink("Literal", this, "LiteralGrammar.Literal"));
             AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
             AddRule(new ExpressionRule("Expression", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("Disjunction", "Disjunction", 1))));

@@ -6,18 +6,16 @@ using System.Text.Parsing.CmObjectModel;
 
 namespace Syntax
 {
-    public typedef ElementGrammar* ElementGrammarPtr;
-
     public class ElementGrammar: System.Text.Parsing.Grammar
     {
-        public static ElementGrammarPtr Create()
+        public static ElementGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static ElementGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static ElementGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            ElementGrammarPtr grammar(new ElementGrammar(parsingDomain));
+            ElementGrammar* grammar = new ElementGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -317,10 +315,6 @@ namespace Syntax
                 AddInheritedAttribute(AttrOrVariable("Rule*", "rule"));
                 AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
             }
-            suppress ParameterRule(const ParameterRule&);
-            suppress void operator=(const ParameterRule&);
-            suppress ParameterRule(ParameterRule&&);
-            suppress void operator=(ParameterRule&&);
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
@@ -587,16 +581,16 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
             if (grammar0 == null)
             {
-                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar0 = Cm.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar1 == null)
             {
-                grammar1 = Cm.IdentifierGrammar.Create(parsingDomain);
+                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
             Grammar* grammar2 = parsingDomain->GetGrammar("Cm.ExpressionGrammar");
@@ -608,10 +602,10 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Declarator", this, "Cm.IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("Declarator", this, "Cm.IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("TypeExpr", this, "Cm.ExpressionGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
             AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRule(new RuleLinkRule("RuleLink", GetScope(),
                 new AlternativeParser(

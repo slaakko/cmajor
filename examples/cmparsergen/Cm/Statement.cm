@@ -5,18 +5,16 @@ using System.Text.Parsing.CmObjectModel;
 
 namespace Cm
 {
-    public typedef StatementGrammar* StatementGrammarPtr;
-
     public class StatementGrammar: System.Text.Parsing.Grammar
     {
-        public static StatementGrammarPtr Create()
+        public static StatementGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static StatementGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static StatementGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            StatementGrammarPtr grammar(new StatementGrammar(parsingDomain));
+            StatementGrammar* grammar = new StatementGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -581,9 +579,9 @@ namespace Cm
                 public SwitchStatementPtr fromSwitchStatement;
                 public Statement* fromWhileStatement;
                 public Statement* fromDoStatement;
-                public RangeForStatement* fromRangeForStatement;
-                public ForStatement* fromForStatement;
-                public CompoundStatement* fromCompoundStatement;
+                public RangeForStatementPtr fromRangeForStatement;
+                public ForStatementPtr fromForStatement;
+                public CompoundStatementPtr fromCompoundStatement;
                 public Statement* fromBreakStatement;
                 public Statement* fromContinueStatement;
                 public Statement* fromGotoStatement;
@@ -827,10 +825,10 @@ namespace Cm
             private class Context
             {
                 public ParsingContext* ctx;
-                public SwitchStatement* value;
+                public SwitchStatementPtr value;
                 public CmObject* fromExpression;
-                public CaseStatement* fromCaseStatement;
-                public DefaultStatement* fromDefaultStatement;
+                public CaseStatementPtr fromCaseStatement;
+                public DefaultStatementPtr fromDefaultStatement;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -948,7 +946,7 @@ namespace Cm
             private class Context
             {
                 public ParsingContext* ctx;
-                public CaseStatement* value;
+                public CaseStatementPtr value;
                 public ExpressionList fromCaseExprList;
                 public Statement* fromGotoCaseStatement;
                 public Statement* fromGotoDefaultStatement;
@@ -1090,7 +1088,7 @@ namespace Cm
             private class Context
             {
                 public ParsingContext* ctx;
-                public DefaultStatement* value;
+                public DefaultStatementPtr value;
                 public Statement* fromGotoCaseStatement;
                 public Statement* fromStatement;
             }
@@ -1442,7 +1440,7 @@ namespace Cm
             private class Context
             {
                 public ParsingContext* ctx;
-                public RangeForStatement* value;
+                public RangeForStatementPtr value;
                 public UniquePtr<RangeForStatement> holder;
                 public UniquePtr<CmObject> varTypeHolder;
                 public CmObject* fromvarType;
@@ -1554,7 +1552,7 @@ namespace Cm
             private class Context
             {
                 public ParsingContext* ctx;
-                public ForStatement* value;
+                public ForStatementPtr value;
                 public Statement* frominit;
                 public CmObject* fromcondition;
                 public CmObject* fromincrement;
@@ -1703,7 +1701,7 @@ namespace Cm
             private class Context
             {
                 public ParsingContext* ctx;
-                public CompoundStatement* value;
+                public CompoundStatementPtr value;
                 public Statement* fromStatement;
             }
             private Stack<Context> contextStack;
@@ -2599,7 +2597,7 @@ namespace Cm
                 public ParsingContext* ctx;
                 public CmObject* fromexceptionType;
                 public string fromexception;
-                public CompoundStatement* fromcatchBlock;
+                public CompoundStatementPtr fromcatchBlock;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -2678,10 +2676,10 @@ namespace Cm
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("TypeExpr", this, "ExpressionGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
             AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "ExpressionGrammar.TypeExpr"));
             AddRule(new StatementRule("Statement", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(

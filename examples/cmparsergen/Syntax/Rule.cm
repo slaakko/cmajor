@@ -5,18 +5,16 @@ using Cm;
 
 namespace Syntax
 {
-    public typedef RuleGrammar* RuleGrammarPtr;
-
     public class RuleGrammar: System.Text.Parsing.Grammar
     {
-        public static RuleGrammarPtr Create()
+        public static RuleGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static RuleGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static RuleGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            RuleGrammarPtr grammar(new RuleGrammar(parsingDomain));
+            RuleGrammar* grammar = new RuleGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -266,9 +264,9 @@ namespace Syntax
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRuleLink(new RuleLink("Signature", this, "ElementGrammar.Signature"));
-            AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
             AddRule(new RuleRule("Rule", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

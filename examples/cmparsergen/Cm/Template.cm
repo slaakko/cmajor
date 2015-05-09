@@ -5,18 +5,16 @@ using System.Text.Parsing.CmObjectModel;
 
 namespace Cm
 {
-    public typedef TemplateGrammar* TemplateGrammarPtr;
-
     public class TemplateGrammar: System.Text.Parsing.Grammar
     {
-        public static TemplateGrammarPtr Create()
+        public static TemplateGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static TemplateGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static TemplateGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            TemplateGrammarPtr grammar(new TemplateGrammar(parsingDomain));
+            TemplateGrammar* grammar = new TemplateGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -160,8 +158,8 @@ namespace Cm
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("TypeExpr", this, "ExpressionGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "ExpressionGrammar.TypeExpr"));
             AddRule(new TemplateIdRule("TemplateId", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(

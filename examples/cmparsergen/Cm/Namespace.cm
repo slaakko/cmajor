@@ -1,22 +1,21 @@
 using System;
 using System.Collections;
 using System.Text.Parsing;
-using System.Text.Parsing.CmObjectModel;
+using NamespaceImport = System.Text.Parsing.CmObjectModel.NamespaceImport;
+using Alias = System.Text.Parsing.CmObjectModel.Alias;
 
 namespace Cm
 {
-    public typedef NamespaceGrammar* NamespaceGrammarPtr;
-
     public class NamespaceGrammar: System.Text.Parsing.Grammar
     {
-        public static NamespaceGrammarPtr Create()
+        public static NamespaceGrammar* Create()
         {
             return Create(new ParsingDomain());
         }
-        public static NamespaceGrammarPtr Create(ParsingDomain* parsingDomain)
+        public static NamespaceGrammar* Create(ParsingDomain* parsingDomain)
         {
             RegisterParsingDomain(parsingDomain);
-            NamespaceGrammarPtr grammar(new NamespaceGrammar(parsingDomain));
+            NamespaceGrammar* grammar = new NamespaceGrammar(parsingDomain);
             parsingDomain->AddGrammar(grammar);
             grammar->CreateRules();
             grammar->Link();
@@ -65,7 +64,7 @@ namespace Cm
             public NamespaceImportRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
                 base(name_, enclosingScope_, definition_), contextStack(), context()
             {
-                SetValueTypeName("System.Text.Parsing.CmObjectModel.UsingObject*");
+                SetValueTypeName("System.Text.Parsing.CmObjectModel.UsingObjectPtr");
             }
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
@@ -76,7 +75,7 @@ namespace Cm
             {
                 if (matched)
                 {
-                    stack.Push(UniquePtr<Object>(new ValueObject<System.Text.Parsing.CmObjectModel.UsingObject*>(context.value)));
+                    stack.Push(UniquePtr<Object>(new ValueObject<System.Text.Parsing.CmObjectModel.UsingObjectPtr>(context.value)));
                 }
                 context = contextStack.Pop();
             }
@@ -101,7 +100,7 @@ namespace Cm
             }
             private class Context
             {
-                public System.Text.Parsing.CmObjectModel.UsingObject* value;
+                public System.Text.Parsing.CmObjectModel.UsingObjectPtr value;
                 public string fromQualifiedId;
             }
             private Stack<Context> contextStack;
@@ -112,7 +111,7 @@ namespace Cm
             public AliasRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
                 base(name_, enclosingScope_, definition_), contextStack(), context()
             {
-                SetValueTypeName("System.Text.Parsing.CmObjectModel.UsingObject*");
+                SetValueTypeName("System.Text.Parsing.CmObjectModel.UsingObjectPtr");
             }
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
@@ -123,7 +122,7 @@ namespace Cm
             {
                 if (matched)
                 {
-                    stack.Push(UniquePtr<Object>(new ValueObject<System.Text.Parsing.CmObjectModel.UsingObject*>(context.value)));
+                    stack.Push(UniquePtr<Object>(new ValueObject<System.Text.Parsing.CmObjectModel.UsingObjectPtr>(context.value)));
                 }
                 context = contextStack.Pop();
             }
@@ -158,7 +157,7 @@ namespace Cm
             }
             private class Context
             {
-                public System.Text.Parsing.CmObjectModel.UsingObject* value;
+                public System.Text.Parsing.CmObjectModel.UsingObjectPtr value;
                 public string fromIdentifier;
                 public string fromQualifiedId;
             }
@@ -177,8 +176,8 @@ namespace Cm
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
             AddRule(new NamespaceImportRule("NamespaceImport", GetScope(),
                 new SequenceParser(
                     new SequenceParser(
