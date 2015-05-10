@@ -1,0 +1,54 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Net.Sockets
+{
+    public class SocketLibraryException: Exception
+    {
+        public SocketLibraryException(const string& message_): base(message_)
+        {
+        }
+        public default SocketLibraryException(const SocketLibraryException&);
+    }
+    
+    public class SocketLibrary
+    {
+        static nothrow SocketLibrary(): instance(new SocketLibrary())
+        {
+        }
+        public static nothrow SocketLibrary& Instance()
+        {
+            return *instance;
+        }
+        private nothrow SocketLibrary()
+        {
+        }
+        public nothrow ~SocketLibrary()
+        {
+            done_sockets();
+        }
+        public void Init()
+        {
+            int result = init_sockets();
+            if (result != 0)
+            {
+                throw SocketLibraryException("socket library initialization (WSAStartup) failed with error code " + ToString(result));
+            }
+        }
+        private static UniquePtr<SocketLibrary> instance;
+    }
+}

@@ -1,0 +1,221 @@
+using System;
+using System.Collections;
+using System.Threading;
+using System.Net.Sockets;
+using System.Text;
+
+public class ConsoleErrorLock
+{
+    public static ConsoleErrorLock(): mtx()
+    {
+    }
+    public ConsoleErrorLock()
+    {
+        mtx.Lock();
+    }
+    public ~ConsoleErrorLock()
+    {
+        mtx.Unlock();
+    }
+    private static Mutex mtx;
+}
+
+public class ConsoleOutLock
+{
+    public static ConsoleOutLock(): mtx()
+    {
+    }
+    public ConsoleOutLock()
+    {
+        mtx.Lock();
+    }
+    public ~ConsoleOutLock()
+    {
+        mtx.Unlock();
+    }
+    private static Mutex mtx;
+}
+
+public void RunServer(void* arg)
+{
+    Server* server = cast<Server*>(arg);
+    server->Run();
+}
+
+public string MemToString(void* mem, int numBytes)
+{
+    const char* m = cast<const char*>(mem);
+    return MakeStringLiteral(string(m, numBytes));
+}
+
+public class Server
+{
+    public Server(TcpSocket&& socket_): socket(socket_), exited(false)
+    {
+    }
+    public void SetThread(Thread&& thread_)
+    {
+        thread = thread_;
+    }
+    suppress Server(const Server&);
+    suppress void operator=(const Server&);
+    suppress Server(Server&&);
+    suppress void operator=(Server&&);
+    public inline nothrow bool Exited() const
+    {
+        return exited;
+    }
+    public void Join()
+    {
+        try
+        {
+            thread.Join();
+        }
+        catch (const Exception& ex)
+        {
+            ConsoleErrorLock lock;
+            Console.Error() << ex.Message() << endl();
+        }
+    }
+    public void Run()
+    {
+        try
+        {
+            NetworkBuffer buf(1024);
+            int numReceived = socket.Receive(buf.Mem(), buf.Size());
+            while (numReceived != 0)
+            {
+                { 
+                    ConsoleOutLock lock;
+                    Console.Out() << "received " << numReceived << " bytes from socket " << socket.GetSocketHandle() << ": " << MemToString(buf.Mem(), numReceived) << endl();
+                }            
+                int totalSent = 0;
+                int numLeft = numReceived;
+                while (numLeft != 0)
+                {
+                    void* start = cast<byte*>(buf.Mem()) + totalSent;
+                    int numSent = socket.Send(start, numLeft);
+                    { 
+                        ConsoleOutLock lock;
+                        Console.Out() << "sent " << numSent << " bytes to socket " << socket.GetSocketHandle() << ": " << MemToString(buf.Mem(), numSent) << endl();
+                    }
+                    totalSent = totalSent + numSent;
+                    numLeft = numLeft - numSent;
+                }                
+                numReceived = socket.Receive(buf.Mem(), buf.Size());
+            }            
+            { 
+                ConsoleOutLock lock;
+                Console.Out() << "peer socket " << socket.GetSocketHandle() << " shut down" << endl();
+            }            
+            socket.Shutdown(ShutdownMode.both);
+            socket.Close();
+            { 
+                ConsoleOutLock lock;
+                Console.Out() << "connection closed." << endl();
+            }
+            exited = true;
+        }
+        catch (const Exception& ex)
+        {
+            exited = true;
+            ConsoleErrorLock lock;
+            Console.Error() << ex.Message() << endl();
+        }
+    }
+    private TcpSocket socket;
+    private Thread thread;
+    private bool exited;
+}
+
+public void RunServerPool(void* arg)
+{
+    ServerPool* pool = cast<ServerPool*>(arg);
+    pool->Run();
+}
+
+public class ServerPool
+{
+    public ServerPool(): mtx()
+    {
+    }
+    public void AddServer(UniquePtr<Server>&& server)
+    {
+        LockGuard<Mutex> guard(mtx);
+        servers.Add(server);
+    }
+    suppress ServerPool(const ServerPool&);
+    suppress void operator=(const ServerPool&);
+    suppress ServerPool(ServerPool&&);
+    suppress void operator=(ServerPool&&);
+    public void Run()
+    {
+        try
+        {
+            while (true)
+            {
+                SleepFor(Duration.FromSeconds(60));
+                LockGuard<Mutex> guard(mtx);
+                int prevAlive = servers.Count();
+                List<UniquePtr<Server>> aliveServers;
+                for (UniquePtr<Server>& server : servers)
+                {
+                    if (server->Exited())
+                    {
+                        server->Join();
+                    }
+                    else
+                    {
+                        aliveServers.Add(Rvalue(server));
+                    }
+                }
+                Swap(servers, aliveServers);
+                if (prevAlive != servers.Count())
+                {
+                    ConsoleOutLock lock;
+                    Console.Out() << servers.Count() << " connections alive in server pool." << endl();
+                }
+            }            
+        }
+        catch (const Exception& ex)
+        {
+            ConsoleErrorLock lock;
+            Console.Error() << ex.Message() << endl();
+        }
+    }
+    private List<UniquePtr<Server>> servers;
+    private Mutex mtx;
+}
+
+void main()
+{
+    try
+    {
+        ServerPool serverPool;
+        Thread serverPoolThread(ThreadFun(RunServerPool), &serverPool);
+        TcpSocket serverSocket;
+        serverSocket.Bind(12345);
+        serverSocket.Listen(1000);
+        while (true)
+        {
+            {
+                ConsoleOutLock lock;
+                Console.Out() << "listening port 12345..." << endl();
+            }        
+            TcpSocket peerSocket = serverSocket.Accept();
+            {
+                ConsoleOutLock lock;
+                Console.Out() << "accepted connection (socket=" << peerSocket.GetSocketHandle() << ")" << endl();
+            }        
+            UniquePtr<Server> server(new Server(Rvalue(peerSocket)));
+            Thread thread(ThreadFun(RunServer), server.GetPtr());
+            server->SetThread(Rvalue(thread));
+            serverPool.AddServer(Rvalue(server));
+        }
+    }
+    catch (const Exception& ex)
+    {
+        ConsoleErrorLock lock;
+        Console.Error() << ex.Message() << endl();
+    }
+}

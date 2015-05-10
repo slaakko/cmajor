@@ -1,0 +1,170 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+
+namespace System.Net.Sockets
+{
+    public const int invalidSocketHandle = -1;
+    
+    public class TcpSocket
+    {
+        public TcpSocket(): socket(invalidSocketHandle)
+        {
+            SocketLibrary.Instance().Init();
+            socket = create_tcp_socket();
+            if (socket == -1)
+            {
+                throw SocketError("create_tcp_socket", get_last_socket_error());
+            }
+        }
+        public TcpSocket(const string& node, const string& service): socket(invalidSocketHandle)
+        {
+            string errorMessage;
+            SocketLibrary.Instance().Init();
+            begin_connect();
+            int getaddrinfofailed = 0;
+            int result = connect_socket(node.Chars(), service.Chars(), &socket, &getaddrinfofailed);
+            if (result != 0)
+            {
+                if (getaddrinfofailed != 0)
+                {
+                    errorMessage = get_addrinfo_error(result);
+                    end_connect();
+                    throw SocketError("connect", errorMessage, result);
+                }
+                else
+                {
+                    end_connect();
+                    throw SocketError("connect", result);
+                }
+            }
+            end_connect();
+        }
+        public nothrow TcpSocket(int socket_): socket(socket_)
+        {
+        }
+        public nothrow inline int GetSocketHandle() const
+        {
+            return socket;
+        }
+        suppress TcpSocket(const TcpSocket&);
+        suppress void operator=(const TcpSocket&);
+        public nothrow TcpSocket(TcpSocket&& that): socket(that.socket)
+        {
+            that.socket = invalidSocketHandle;
+        }
+        public default nothrow void operator=(TcpSocket&& that);
+        public ~TcpSocket()
+        {
+            try
+            {
+                Close();
+            }            
+            catch (const Exception& ex)
+            {
+            }
+        }
+        public void Bind(int port)
+        {
+            int result = bind_socket(socket, port);
+            if (result == -1)
+            {
+                throw SocketError("bind", get_last_socket_error());
+            }
+        }
+        public void Listen(int backlog)
+        {
+            int result = listen_socket(socket, backlog);
+            if (result == -1)
+            {
+                throw SocketError("listen", get_last_socket_error());
+            }
+        }
+        public TcpSocket Accept()
+        {
+            int peerSocket = accept_socket(socket);
+            if (peerSocket == -1)
+            {
+                throw SocketError("accept", get_last_socket_error());
+            }
+            return TcpSocket(peerSocket);
+        }
+        public void Shutdown(ShutdownMode mode)
+        {
+            int result = shutdown_socket(socket, mode);
+            if (result == -1)
+            {
+                throw SocketError("shutdown", get_last_socket_error());
+            }
+        }
+        public void Close()
+        {
+            if (socket != invalidSocketHandle)
+            {
+                int result = close_socket(socket);
+                if (result == -1)
+                {
+                    throw SocketError("close", get_last_socket_error());
+                }
+                socket = invalidSocketHandle;
+            }            
+        }
+        public int Send(const void* buf, int len)
+        {
+            int result = send_socket(socket, buf, len, 0);
+            if (result == -1)
+            {
+                throw SocketError("send", get_last_socket_error());
+            }
+            return result;
+        }
+        public void Send(const string& s)
+        {
+            const char* p = s.Chars();
+            int len = s.Length();
+            int numSent = Send(p, len);
+            int numLeft = len - numSent;
+            while (numLeft > 0)
+            {
+                p = p + numSent;
+                numSent = Send(p, numLeft);
+                numLeft = numLeft - numSent;
+            } 
+        }
+        public int Receive(const void* buf, int len)
+        {
+            int result = receive_socket(socket, buf, len, 0);
+            if (result == -1)
+            {
+                throw SocketError("receive", get_last_socket_error());
+            }
+            return result;
+        }
+        public string ReceiveAll()
+        {
+            string s;
+            NetworkBuffer buf(65536);
+            int numReceived = Receive(buf.Mem(), buf.Size());
+            while (numReceived > 0)
+            {
+                s.Append(cast<const char*>(buf.Mem()), numReceived);
+                numReceived = Receive(buf.Mem(), buf.Size());
+            }
+            return s;
+        }
+        private int socket;
+    }
+}

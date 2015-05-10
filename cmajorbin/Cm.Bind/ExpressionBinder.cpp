@@ -1985,6 +1985,10 @@ void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Ast::Node* targetTypeEx
 
 void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* targetType, Cm::BoundTree::BoundExpression* sourceExpr)
 {
+    if (currentFunction->GetFunctionSymbol()->Name() == "main()")
+    {
+        int x = 0;
+    }
     std::vector<Cm::Core::Argument> resolutionArguments;
     resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(targetType, node->GetSpan())));
     resolutionArguments.push_back(Cm::Core::Argument(sourceExpr->GetArgumentCategory(), sourceExpr->GetType()));

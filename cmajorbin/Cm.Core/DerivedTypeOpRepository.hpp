@@ -11,6 +11,7 @@
 #define CM_CORE_DERIVED_TYPE_OP_REPOSITORY_INCLUDED
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/ConversionTable.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 
 namespace Cm { namespace Core {
 
