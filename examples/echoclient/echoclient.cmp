@@ -1,0 +1,5 @@
+project EchoClient;
+target=program;
+assembly <EchoClient.cma>;
+reference <ext/System.Net.Sockets/System.Net.Sockets.cml>;
+source <main.cm>;

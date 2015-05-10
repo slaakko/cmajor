@@ -1,0 +1,87 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Support;
+
+namespace System.Net.Sockets
+{
+    public class NetworkBuffer
+    {
+        public nothrow NetworkBuffer(int size_): size(size_), mem(MemAlloc(cast<uint>(size_)))
+        {
+        }
+        suppress NetworkBuffer(const NetworkBuffer&);
+        suppress void operator=(const NetworkBuffer&);
+        public nothrow NetworkBuffer(NetworkBuffer&& that): size(that.size), mem(that.mem)
+        {
+            that.size = 0u;
+            that.mem = null;
+        }
+        public default void operator=(NetworkBuffer&&);
+        public nothrow ~NetworkBuffer()
+        {
+            MemFree(mem);
+        }
+        public inline nothrow void* Mem() const 
+        { 
+            return mem; 
+        }
+        public inline nothrow int Size() const
+        {
+            return size;
+        }
+        private int size;
+        private void* mem;
+    }
+    
+    internal class GetSocketErrorMessageContext
+    {    
+        public nothrow GetSocketErrorMessageContext()
+        {
+            begin_get_socket_error_str();
+        }
+        public nothrow ~GetSocketErrorMessageContext()
+        {
+            end_get_socket_error_str();
+        }
+    }    
+    
+    internal nothrow string GetSocketErrorMessage(int errorCode)
+    {
+        string errorMessage;
+        {
+            GetSocketErrorMessageContext messageContext;
+            errorMessage = get_socket_error_str(errorCode);
+        }        
+        return errorMessage;
+    }
+        
+    public class SocketError: Exception
+    {
+        public SocketError(const string& operation, int errorCode_): base(operation  + " failed: " + GetSocketErrorMessage(errorCode_)), errorCode(errorCode_)
+        {
+        }
+        public SocketError(const string& operation, const string& errorMessage, int errorCode_): base(operation + " failed: " + errorMessage), errorCode(errorCode_)
+        {
+        }
+        public default SocketError(const SocketError&);
+        public nothrow int ErrorCode() const
+        {
+            return errorCode;
+        }
+        private int errorCode;
+    }
+}

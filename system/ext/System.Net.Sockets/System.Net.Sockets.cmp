@@ -1,0 +1,10 @@
+project System.Net.Sockets;
+target=library;
+assembly <System.Net.Sockets.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+csource <socketapi.c>;
+source <socketlib.cm>;
+source <sockets.cm>;
+source <socketutil.cm>;
+source <tcpsocket.cm>;
+clib <ws2_32>[os=windows];

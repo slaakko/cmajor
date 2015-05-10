@@ -1,0 +1,52 @@
+using System;
+using System.Net.Sockets;
+using System.Text;
+
+public string MemToString(void* mem, int numBytes)
+{
+    const char* m = cast<const char*>(mem);
+    return MakeStringLiteral(string(m, numBytes));
+}
+
+void main()
+{
+    try
+    {
+        TcpSocket socket("localhost", "12345");
+        NetworkBuffer buf(1024);
+        Console.Out() << "enter a line to send (empty line exits):" << endl();
+        string line = Console.ReadLine();
+        while (!line.IsEmpty())
+        {
+            line.Append("\n");
+            int totalSent = 0;
+            int numLeft = line.Length();
+            while (numLeft != 0)
+            {
+                void* start = cast<byte*>(cast<void*>(line.Chars())) + totalSent;
+                int numSent = socket.Send(start, numLeft);
+                Console.Out() << numSent << " bytes sent" << endl();
+                totalSent = totalSent + numSent;
+                numLeft = numLeft - numSent;
+            }            
+            int numReceived = socket.Receive(buf.Mem(), buf.Size());
+            Console.Out() << numReceived << " bytes received: " << MemToString(buf.Mem(), numReceived) << endl();
+            while (numReceived < totalSent)
+            {
+                int nowReceived = socket.Receive(buf.Mem(), buf.Size());
+                Console.Out() << numReceived << " bytes received: " << MemToString(buf.Mem(), nowReceived) << endl();
+                numReceived = numReceived + nowReceived;
+                Console.Out() << "now " << numReceived << " bytes totally received" << endl();
+            }
+            Console.Out() << "enter a line to send (empty line exits):" << endl();
+            line = Console.ReadLine();
+        }            
+        socket.Shutdown(ShutdownMode.both);
+        socket.Close();
+        Console.Out() << "bye!" << endl();
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.Message() << endl();
+    }
+}
