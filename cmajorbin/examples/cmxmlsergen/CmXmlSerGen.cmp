@@ -1,0 +1,6 @@
+project CmXmlSerGen;
+target=program;
+assembly <CmXmlSerGen.cma>;
+executable <cmxmlsergen>;
+reference <ext/System.Xml.Serialization/System.Xml.Serialization.cml>;
+source <main.cm>;

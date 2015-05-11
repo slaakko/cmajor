@@ -1,0 +1,9 @@
+project System.Xml;
+target=library;
+assembly <System.Xml.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+source <ContentHandler.cm>;
+source <Xml.cm>;
+text <Xml.parser>;
+text <Xml.pl>;
+text <Xml.pp>;

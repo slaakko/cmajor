@@ -1,0 +1,168 @@
+using System;
+using System.Collections;
+using System.IO;
+using System.Xml;
+using System.Text;
+
+namespace System.Xml.Serialization
+{
+    public UniquePtr<Serializable> ReadSerializableFromXmlString(const string& xml)
+    {
+        XmlReader reader(xml, "");
+        return UniquePtr<Serializable>(reader.GetSerializable());
+    }
+    
+    public UniquePtr<Serializable> ReadSerializableFromXmlFile(const string& xmlFileName)
+    {
+        string xml = ReadFile(xmlFileName);
+        XmlReader reader(xml, "");
+        return UniquePtr<Serializable>(reader.GetSerializable());
+    }
+    
+    public string WriteSerializableToXmlString(Serializable* serializable)
+    {
+        OutputStringStream stream;
+        CodeFormatter formatter(stream);
+        formatter.SetIndentSize(1);
+        serializable->Write(formatter, 0);
+        return stream.GetStr();
+    }
+    
+    public void WriteSerializableToXmlFile(Serializable* serializable, const string& xmlFileName)
+    {
+        OutputFileStream stream(xmlFileName);
+        CodeFormatter formatter(stream);
+        formatter.SetIndentSize(1);
+        serializable->Write(formatter, 0);
+    }
+    
+    internal class XmlGrammarProvider
+    {
+        static XmlGrammarProvider(): instance(new XmlGrammarProvider())
+        {
+        }
+        public static XmlGrammarProvider& Instance() 
+        {
+            return *instance;
+        }
+        private XmlGrammarProvider(): xmlGrammar(XmlGrammar.Create())
+        {
+        }
+        public XmlGrammar* GetXmlGrammar() const
+        {
+            return xmlGrammar;
+        }
+        private static UniquePtr<XmlGrammarProvider> instance;
+        private XmlGrammar* xmlGrammar;
+    }
+    
+    internal class XmlReader: ContentHandler
+    {
+        public XmlReader(const string& xmlContent, const string& xmlFileName): state(0)
+        {
+            XmlGrammarProvider.Instance().GetXmlGrammar()->Parse(xmlContent, 0, xmlFileName, this);
+        }
+        public Serializable* GetSerializable()
+        {
+            return serializable;
+        }
+        public override void EndDocument()
+        {
+            if (state != 0)
+            {
+                throw Exception("shorthanded structure");
+            }
+        }
+        public override void StartTag(const string& tagName)
+        {
+            if (state == 0)
+            {
+                serializable = GlobalFactory.Instance().Create(tagName);
+                if (serializable == null)
+                {
+                    throw Exception("unknown serializable '" + tagName + "'");
+                }
+            }
+            else
+            {
+                serializableStack.Push(serializable);
+                serializable = serializable->GetField(tagName);
+            }
+            ++state;
+            data.Clear();
+        }
+        public override void EndTag(const string& tagName)
+        {
+            if (state == 0)
+            {
+                throw Exception("extra end tag '" + tagName + "' encountered");
+            }
+            if (serializable->Name() != tagName)
+            {
+                throw Exception("non-matching end tag '" + tagName + "' encountered");
+            }
+            if (state > 1)
+            {
+                serializable->Read(data);
+                Serializable* owner = serializableStack.Pop();
+                owner->AddArrayItem(serializable);
+                serializable = owner;
+            }
+            --state;
+        }
+        public override void CharData(const string& charData)
+        {
+            data.Append(charData);
+        }
+        public override void EntityRef(const string& refName)
+        {
+            if (refName == "amp")
+            {
+                data.Append('&');
+            }
+            else if (refName == "lt")
+            {
+                data.Append('<');
+            }
+            else if (refName == "gt")
+            {
+                data.Append('>');
+            }
+            else if (refName == "apos")
+            {
+                data.Append('\'');
+            }
+            else if (refName == "quot")
+            {
+                data.Append('"');
+            }
+            else
+            {
+                throw Exception("unknown entity reference '" + refName + "'");
+            }
+        }
+        public override void CharRef(const string& charRef)
+        {
+            ulong code = 0u;
+            if (charRef.StartsWith("&#x"))
+            {
+                string codeStr = charRef.Substring(3, charRef.Length() - 4);
+                code = ParseHex(codeStr);
+            }
+            else 
+            {
+                string codeStr = charRef.Substring(2, charRef.Length() - 3);
+                code = ParseULong(codeStr);
+            }
+            if (code > MaxValue<uint>())
+            {
+                throw Exception("too big character code " + ToString(code) + " in character reference (max=" + ToString(MaxValue<uint>()) + ")");
+            }
+            data.Append(ToUtf8(cast<uint>(code & MaxValue<uint>())));
+        }
+        private int state;
+        private string data;
+        private Serializable* serializable;
+        private Stack<Serializable*> serializableStack;
+    }
+}

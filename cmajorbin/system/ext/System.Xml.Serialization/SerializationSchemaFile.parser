@@ -1,0 +1,83 @@
+using System;
+
+namespace System.Xml.Serialization
+{
+    grammar SerializationSchemaFileGrammar
+    {
+        using stdlib.spaces_and_comments;
+        using stdlib.identifier;
+        skip spaces_and_comments;
+        
+        SchemaFile: SerializationSchemaFile*
+            ::= empty{ value = new SerializationSchemaFile(); }
+            (   keyword("namespace") QualifiedId!{ value->SetNamespace(QualifiedId); } '{'! Structs(value)! '}'!
+            |   Structs(value):plain
+            )
+            ;
+            
+        Structs(SerializationSchemaFile* file)
+            ::= (Struct{ file->AddStruct(Struct); })*
+            ;
+            
+        Struct: Struct*
+            ::= keyword("struct") Identifier!{ value = new Struct(Identifier, Identifier); } '{' Fields(value) '}'
+            ;
+            
+        Fields(Struct* structure)
+            ::= (Field{ structure->AddField(Field); })*
+            ;
+            
+        Field: Serializable*
+            ::= ArrayField{ value = ArrayField; }
+            |   IntField{ value = IntField; }
+            |   DoubleField{ value = DoubleField; }
+            |   BoolField{ value = BoolField; }
+            |   StringField{ value = StringField; }
+            |   StructField{ value = StructField; }
+            ;
+            
+        ArrayField: Array*
+            ::= (ItemType '[' ']' Identifier! ';'!){ value = new Array(ItemType, Identifier); }
+            ;
+            
+        ItemType: Serializable*
+            ::= keyword("int"){ value = new IntField("item"); }
+            |   keyword("double"){ value = new DoubleField("item"); }
+            |   keyword("bool"){ value = new BoolField("item"); }
+            |   keyword("string"){ value = new StringField("item"); }
+            |   QualifiedId:structTypeName{ value = new Struct(structTypeName, "item"); }
+            ;
+            
+        IntField: Serializable*
+            ::= (keyword("int") Identifier! ';'!){ value = new IntField(Identifier); }
+            ;
+            
+        DoubleField: Serializable*
+            ::= (keyword("double") Identifier! ';'!){ value = new DoubleField(Identifier); }
+            ;
+            
+        BoolField: Serializable*
+            ::= (keyword("bool") Identifier! ';'!){ value = new BoolField(Identifier); }
+            ;
+            
+        StringField: Serializable*
+            ::= (keyword("string") Identifier! ';'!){ value = new StringField(Identifier); }
+            ;
+            
+        StructField: Serializable*
+            ::= (QualifiedId:typeName Identifier:name! ';'!){ value = new Struct(typeName, name); }
+            ;
+            
+        Keyword
+            ::= keyword_list(identifier, ["int", "double", "bool", "string", "struct"])
+            ;
+            
+        Identifier: string
+            ::= (identifier - Keyword){ value = match; }
+            ;
+            
+        QualifiedId: string
+            ::= token(Identifier:first ('.' Identifier:next)*){ value = match; }
+            ;
+    }
+}

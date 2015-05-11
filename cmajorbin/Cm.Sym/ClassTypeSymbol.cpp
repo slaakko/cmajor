@@ -112,7 +112,7 @@ void ClassTypeSymbol::Read(Reader& reader)
     bool hasBaseClass = reader.GetBinaryReader().ReadBool();
     if (hasBaseClass)
     {
-        reader.FetchTypeFor(this, 0);
+        reader.FetchTypeFor(this, -2);
     }
     if (IsClassTemplateSymbol())
     {
@@ -167,8 +167,11 @@ void ClassTypeSymbol::FreeClassNode(Cm::Sym::SymbolTable& symbolTable)
 
 void ClassTypeSymbol::SetType(TypeSymbol* type, int index) 
 {
-    baseClass = static_cast<ClassTypeSymbol*>(type);
-	GetContainerScope()->SetBase(baseClass->GetContainerScope());
+    if (index == -2)
+    {
+        baseClass = static_cast<ClassTypeSymbol*>(type);
+        GetContainerScope()->SetBase(baseClass->GetContainerScope());
+    }
 }
 
 bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls) const
@@ -420,6 +423,32 @@ const Cm::Ast::NodeList& ClassTypeSymbol::GetUsingNodes() const
         throw std::runtime_error("no persistent class data");
     }
     return persistentClassData->usingNodes;
+}
+
+void ClassTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+{
+    ContainerSymbol::CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+    if (baseClass)
+    {
+        if (collected.find(baseClass) == collected.end())
+        {
+            collected.insert(baseClass);
+            baseClass->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+        }
+    }
+}
+
+void ClassTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+{
+    ContainerSymbol::CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+    if (baseClass)
+    {
+        if (collected.find(baseClass) == collected.end())
+        {
+            collected.insert(baseClass);
+            baseClass->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+        }
+    }
 }
 
 } } // namespace Cm::Sym

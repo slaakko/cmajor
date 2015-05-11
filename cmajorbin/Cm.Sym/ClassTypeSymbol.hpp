@@ -280,6 +280,8 @@ public:
     void InitVirtualFunctionTables() override;
     void MakeIrType() override;
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
+    void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
 private:
     ClassTypeSymbolFlags flags;
     ClassTypeSymbol* baseClass;

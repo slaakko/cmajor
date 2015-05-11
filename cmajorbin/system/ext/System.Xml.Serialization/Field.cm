@@ -1,0 +1,230 @@
+using System;
+using System.Text;
+
+namespace System.Xml.Serialization
+{
+    public string XmlQuote(const string& text)
+    {
+        string quotedText;
+        quotedText.Reserve(2 * text.Length());
+        for (char c : text)
+        {
+            switch (c)
+            {
+                case '&':
+                {
+                    quotedText.Append("&amp;");
+                    break;
+                }
+                case '<':
+                {
+                    quotedText.Append("&lt;");
+                    break;
+                }
+                case '>':
+                {
+                    quotedText.Append("&gt;");
+                    break;
+                }
+                case '\'':
+                {
+                    quotedText.Append("&apos;");
+                    break;
+                }
+                case '"':
+                {
+                    quotedText.Append("&aquot");
+                    break;
+                }
+                default:
+                {
+                    quotedText.Append(c);
+                    break;
+                }
+            }
+        }
+        return quotedText;
+    }
+    
+    public class Field: Serializable
+    {
+        public nothrow Field(): base()
+        {
+        }
+        public nothrow Field(const string& name_): base(name_)
+        {
+        }
+        public override bool IsScalarFieldType() const
+        {
+            return true;
+        }
+        public override string Getter() const
+        {
+            return "return " + Name() + "->GetValue();";
+        }
+        public override string Setter() const
+        {
+            return Name() + "->SetValue(" + Name() + "_);";
+        }
+    }
+    
+    public class ValueField<Value>: Field
+    {
+        public nothrow ValueField(): base(), value()
+        {
+        }
+        public nothrow ValueField(const string& name_): base(name_), value()
+        {
+        }
+        public nothrow const Value& GetValue() const
+        {
+            return value;
+        }
+        public nothrow Value& GetValueRef()
+        {
+            return value;
+        }
+        public void SetValue(const Value& value_)
+        {
+            value = value_;
+        }
+        private Value value;
+    }
+    
+    public class IntField: ValueField<int>
+    {
+        public nothrow IntField(): base()
+        {
+        }
+        public nothrow IntField(const string& name_): base(name_)
+        {
+        }
+        public override Serializable* Clone() const
+        {
+            return new IntField(Name());
+        }
+        public override void Read(const string& s)
+        {
+            SetValue(ParseInt(s));
+        }
+        public override void Write(CodeFormatter& formatter, int level)
+        {
+            formatter.WriteLine("<" + Name() + ">" + ToString(GetValue()) + "</" + Name() + ">");
+        }
+        public override string TypeName() const
+        {
+            return "IntField";
+        }
+        public override string ValueTypeName() const
+        {
+            return "int";
+        }
+        public override string PtrTypeName() const
+        {
+            return "IntField*";
+        }
+    }
+    
+    public class DoubleField: ValueField<double>
+    {
+        public nothrow DoubleField(): base()
+        {
+        }
+        public nothrow DoubleField(const string& name_): base(name_)
+        {
+        }
+        public override Serializable* Clone() const
+        {
+            return new DoubleField(Name());
+        }
+        public override void Read(const string& s)
+        {
+            SetValue(ParseDouble(s));
+        }
+        public override void Write(CodeFormatter& formatter, int level)
+        {
+            formatter.WriteLine("<" + Name() + ">" + ToString(GetValue()) + "</" + Name() + ">");
+        }
+        public override string TypeName() const
+        {
+            return "DoubleField";
+        }
+        public override string ValueTypeName() const
+        {
+            return "double";
+        }
+        public override string PtrTypeName() const
+        {
+            return "DoubleField*";
+        }
+    }
+
+    public class BoolField: ValueField<bool>
+    {
+        public nothrow BoolField(): base()
+        {
+        }
+        public nothrow BoolField(const string& name_): base(name_)
+        {
+        }
+        public override Serializable* Clone() const
+        {
+            return new BoolField(Name());
+        }
+        public override void Read(const string& s)
+        {
+            SetValue(ParseBool(s));
+        }
+        public override void Write(CodeFormatter& formatter, int level)
+        {
+            formatter.WriteLine("<" + Name() + ">" + ToString(GetValue()) + "</" + Name() + ">");
+        }
+        public override string TypeName() const
+        {
+            return "BoolField";
+        }
+        public override string ValueTypeName() const
+        {
+            return "bool";
+        }
+        public override string PtrTypeName() const
+        {
+            return "BoolField*";
+        }
+    }
+    
+    public class StringField: ValueField<string>
+    {
+        public nothrow StringField(): base()
+        {
+        }
+        public nothrow StringField(const string& name_): base(name_)
+        {
+        }
+        public override Serializable* Clone() const
+        {
+            return new StringField(Name());
+        }
+        public override void Read(const string& s)
+        {
+            SetValue(s);
+        }
+        public override void Write(CodeFormatter& formatter, int level)
+        {
+            formatter.WriteLine("<" + Name() + ">" + XmlQuote(GetValue()) + "</" + Name() + ">");
+        }
+        public override string TypeName() const
+        {
+            return "StringField";
+        }
+        public override string ValueTypeName() const
+        {
+            return "string";
+        }
+        public override string PtrTypeName() const
+        {
+            return "StringField*";
+        }
+    }
+    
+}

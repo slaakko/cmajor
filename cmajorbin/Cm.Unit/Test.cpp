@@ -238,7 +238,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     Cm::Bind::Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository());
     testUnit->Accept(prebinder);
     fileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.ReleaseFileScope()));
-    Cm::Bind::VirtualBinder virtualBinder(symbolTable, testUnit);
+    Cm::Bind::VirtualBinder virtualBinder(symbolTable, testUnit, prebindCompileUnit);
     testUnit->Accept(virtualBinder);
     boost::filesystem::path p = boost::filesystem::path(testUnit->FilePath()).parent_path();
     p /= "stage";

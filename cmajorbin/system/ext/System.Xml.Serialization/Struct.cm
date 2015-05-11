@@ -1,0 +1,123 @@
+using System;
+using System.Collections;
+using System.Text;
+
+namespace System.Xml.Serialization
+{
+    public typedef Map<string, Serializable*> FieldMap;
+
+    public class Struct: Serializable
+    {
+        public Struct(): base()
+        {
+        }
+        public Struct(const string& typeName_, const string& name_): base(name_), typeName(typeName_), ptrTypeName(typeName_ + "*")
+        {
+        }
+        suppress Struct(const Struct&);
+        suppress void operator=(const Struct&);
+        public nothrow const List<Serializable*>& Fields() const
+        {
+            return fields;
+        }
+        public override void Write(CodeFormatter& formatter, int level)
+        {
+            if (level == 0)
+            {
+                formatter.WriteLine("<" +  typeName + ">");
+            }
+            else
+            {
+                formatter.WriteLine("<" + Name() + ">");
+            }
+            formatter.IncIndent();
+            for (Serializable* field : fields)
+            {
+                field->Write(formatter, level + 1);
+            }
+            formatter.DecIndent();
+            if (level == 0)
+            {
+                formatter.WriteLine("</" + typeName + ">");
+            }
+            else
+            {
+                formatter.WriteLine("</" + Name() + ">");
+            }
+        }
+        public void AddField(Serializable* field)
+        {
+            if (fieldMap.Find(field->Name()) != fieldMap.End())
+            {
+                throw Exception("Field " + field->Name() + " already exists");
+            }
+            fieldMap[field->Name()] = field;
+            fields.Add(field);
+            ownedFields.Add(UniquePtr<Serializable>(field));
+        }
+        public void ReplaceField(Serializable* oldField, Serializable* newField)
+        {
+            newField->SetName(oldField->Name());
+            List<Serializable*>.Iterator i = Find(fields.Begin(), fields.End(), oldField);
+            fields.Remove(i);
+            List<UniquePtr<Serializable>>.Iterator e = ownedFields.End();
+            for (List<UniquePtr<Serializable>>.Iterator j = ownedFields.Begin(); j != e; ++j)
+            {
+                const UniquePtr<Serializable>& x = *j;
+                if (x.GetPtr() == oldField)
+                {
+                    ownedFields.Remove(j);
+                    return;
+                }
+            }
+            fieldMap[newField->Name()] = newField;
+            fields.Add(newField);
+            ownedFields.Add(UniquePtr<Serializable>(newField));
+        }
+        public override Serializable* GetField(const string& name_) const
+        {
+            FieldMap.Iterator i = fieldMap.Find(name_);
+            if (i != fieldMap.End())
+            {
+                return i->second;
+            }
+            else
+            {
+                throw Exception("Tried to access unknown field '" + name_ + "' from structure '" + Name() + "'");
+            }
+        }
+        public override string TypeName() const
+        {
+            return typeName;
+        }
+        public override string ValueTypeName() const
+        {
+            return ptrTypeName;
+        }
+        public override string ArrayItemTypeName() const
+        {
+            return typeName;
+        }
+        public override string PtrTypeName() const
+        {
+            return ptrTypeName;
+        }
+        public override string Getter() const
+        {
+            return "return " + Name() + ";";
+        }
+        public override string Setter() const
+        {
+            return "ReplaceField(" + Name() + ", " + Name() + "_);" + Name() + " = " + Name() + "_;";
+        }
+        public override string ConstructorParameterList() const
+        {
+            return "(\"" + Name() + "\")";
+        }
+        private string typeName;
+        private string ptrTypeName;
+        private List<Serializable*> fields;
+        private List<UniquePtr<Serializable>> ownedFields;
+        private FieldMap fieldMap;
+    }
+}

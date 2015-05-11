@@ -1,0 +1,68 @@
+using System;
+using System.IO;
+using System.Text;
+
+namespace System.Xml.Serialization
+{
+    public abstract class Serializable
+    {
+        public nothrow Serializable(): name()
+        {
+        }
+        public nothrow Serializable(const string& name_): name(name_)
+        {
+        }
+        public nothrow virtual ~Serializable()
+        {
+        }
+        public virtual Serializable* Clone() const 
+        {
+            return null;
+        }
+        public virtual Serializable* GetField(const string& name_) const
+        {
+            throw Exception("Tried to get field " + name_ + " from non-structured serializable " + Name());
+        }
+        public virtual void Read(const string& s)
+        {
+        }
+        public abstract void Write(CodeFormatter& codeFormatter, int level);
+        public nothrow const string& Name() const
+        {
+            return name;
+        }
+        public void SetName(const string& name_)
+        {
+            name = name_;
+        }
+        public virtual void AddArrayItem(Serializable* item)
+        {
+        }
+        public abstract string TypeName() const;
+        public abstract string ValueTypeName() const;
+        public abstract string PtrTypeName() const;
+        public virtual string ArrayItemTypeName() const 
+        {
+            return ValueTypeName();
+        }
+        public abstract string Getter() const;
+        public abstract string Setter() const;
+        public virtual bool IsScalarFieldType() const
+        {
+            return false;
+        }
+        public virtual bool IsArrayField() const
+        {
+            return false;
+        }
+        public virtual string Initializer() const
+        {
+            return "(\"" + Name() + "\")";
+        }
+        public virtual string ConstructorParameterList() const
+        {
+            return "(\"" + Name() + "\")";
+        }
+        private string name;
+    }
+}

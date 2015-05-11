@@ -83,7 +83,7 @@ std::string TemplateTypeSymbol::GetMangleId() const
 
 void TemplateTypeSymbol::Write(Writer& writer)
 {
-    TypeSymbol::Write(writer);
+    ClassTypeSymbol::Write(writer);
     writer.GetBinaryWriter().Write(Parent()->FullName());
     writer.Write(subjectType->Id());
     uint8_t n = uint8_t(typeArguments.size());
@@ -96,7 +96,7 @@ void TemplateTypeSymbol::Write(Writer& writer)
 
 void TemplateTypeSymbol::Read(Reader& reader)
 {
-    TypeSymbol::Read(reader);
+    ClassTypeSymbol::Read(reader);
     std::string parentName = reader.GetBinaryReader().ReadString();
     Cm::Sym::Symbol* parent = reader.GetSymbolTable().GlobalScope()->Lookup(parentName);
     if (parent)
@@ -133,11 +133,12 @@ void TemplateTypeSymbol::AddTypeArgument(TypeSymbol* typeArgument)
 
 void TemplateTypeSymbol::SetType(TypeSymbol* type, int index)
 {
+    ClassTypeSymbol::SetType(type, index);
     if (index == -1)
     {
         SetSubjectType(type);
     }
-    else
+    else if (index >= 0)
     {
         if (index >= int(typeArguments.size()))
         {
@@ -182,6 +183,7 @@ void TemplateTypeSymbol::SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_)
 
 void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
+    ClassTypeSymbol::CollectExportedDerivedTypes(collected, exportedDerivedTypes);
     if (collected.find(subjectType) == collected.end())
     {
         collected.insert(subjectType);
@@ -199,6 +201,7 @@ void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>
 
 void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
 {
+    ClassTypeSymbol::CollectExportedTemplateTypes(collected, exportedTemplateTypes);
     if (Source() == SymbolSource::project)
     {
         if (collected.find(subjectType) == collected.end())

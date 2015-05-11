@@ -221,6 +221,10 @@ void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
 void DerivedTypeSymbol::MakeIrType()
 {
     if (IrTypeMade()) return;
+    if (!baseType)
+    {
+        throw std::runtime_error("base type not set for derived type '" + FullName() + "'");
+    }
     baseType->MakeIrType();
     SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
     if (IsPointerType())

@@ -1,0 +1,72 @@
+using System;
+
+namespace System.Xml
+{
+    grammar XmlGrammar
+    {
+        Document(ContentHandler* handler)
+            ::= (S?){ handler->StartDocument(); }
+                XmlDecl? S?
+                Element(handler)
+                (S?){ handler->EndDocument(); }
+            ;
+            
+        XmlDecl
+            ::= "<?xml" (anychar - "?>")* "?>"
+            ;
+            
+        Element(ContentHandler* handler)
+            ::= EmptyElemTag{ handler->EmptyElement(EmptyElemTag); }
+            |   STag{ handler->StartTag(STag); } Content(handler) ETag{ handler->EndTag(ETag); }
+            ;
+            
+        EmptyElemTag: string
+            ::= ('<' Name S? "/>"){ value = Name; }
+            ;
+            
+        STag: string
+            ::= ('<' Name S? '>'){ value = Name; }
+            ;
+            
+        ETag: string
+            ::= ("</" Name S? '>'){ value = Name; }
+            ;
+            
+        S   ::= [\x20\x09\x0D\x0A]+
+            ;
+            
+        Name: string
+            ::= (NameStartChar NameChar*){ value = match; }
+            ;
+            
+        NameStartChar
+            ::= [A-Za-z_:]
+            ;
+            
+        NameChar
+            ::= NameStartChar
+            |   [0-9.-]
+            ;
+            
+        Content(ContentHandler* handler)
+            ::= CharData(handler):startData ((Element(handler) | Reference(handler)) CharData(handler):endData)*
+            ;
+
+        CharData(ContentHandler* handler)
+            ::= ([^<&]*){ if (!match.IsEmpty()) handler->CharData(match); }
+            ;
+            
+        Reference(ContentHandler* handler)
+            ::= EntityRef{ handler->EntityRef(EntityRef); }
+            |   CharRef{ handler->CharRef(CharRef); }
+            ;
+            
+        EntityRef: string
+            ::= ('&' Name ';'){ value = Name; }
+            ;
+            
+        CharRef: string
+            ::= ("&#" [0-9]+ ';' | "&#x" [0-9A-Fa-f]+ ';'){ value = match; }
+            ;
+    }
+}

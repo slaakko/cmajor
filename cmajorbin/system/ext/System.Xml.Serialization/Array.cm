@@ -1,0 +1,148 @@
+using System;
+using System.Collections;
+using System.Text;
+
+namespace System.Xml.Serialization
+{
+    public class Array: Serializable
+    {
+        public nothrow Array(): base()
+        {
+        }
+        public nothrow Array(Serializable* itemType_, const string& name_): base(name_), itemType(itemType_)
+        {
+        }
+        suppress Array(const Array&);
+        suppress void operator=(const Array&);
+        public override string TypeName() const
+        {
+            string typeName;
+            if (itemType->IsScalarFieldType())
+            {
+                typeName.Append("ScalarArrayField<");
+            }
+            else
+            {
+                typeName.Append("StructureArrayField<");
+            }
+            typeName.Append(itemType->ArrayItemTypeName());
+            typeName.Append('>');
+            return typeName;
+        }
+        public override string ValueTypeName() const
+        {
+            return TypeName() + "&";
+        }
+        public override string PtrTypeName() const
+        {
+            return TypeName() + "*";
+        }
+        public override void AddArrayItem(Serializable* item)
+        {
+            item->SetName("item");
+            items.Add(UniquePtr<Serializable>(item));
+        }
+        public nothrow int Count() const
+        {
+            return items.Count();
+        }
+        public Serializable* GetItemType() const
+        {
+            return itemType.GetPtr();
+        }
+        public Serializable* GetItem(int index) const
+        {
+            return items[index].GetPtr();
+        }
+        public void SetItem(int index, Serializable* item)
+        {
+            item->SetName("item");
+            items[index] = UniquePtr<Serializable>(item);
+        }
+        public override Serializable* GetField(const string& name_) const
+        {
+            return itemType->Clone();
+        }
+        public override string Getter() const
+        {
+            return "return *" + Name() + ";";
+        }
+        public override string Setter() const
+        {
+            return ";";
+        }
+        public override void Write(CodeFormatter& formatter, int level)
+        {
+            formatter.WriteLine("<" + Name() + ">");
+            formatter.IncIndent();
+            for (const UniquePtr<Serializable>& item : items)
+            {
+                item->Write(formatter, level + 1);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("</" + Name() + ">");
+        }
+        public override bool IsArrayField() const
+        {
+            return true;
+        }
+        public override string Initializer() const
+        {
+            return "(new " + itemType->TypeName() + itemType->ConstructorParameterList() + ", \"" + Name() + "\")";
+        }
+        private UniquePtr<Serializable> itemType;
+        private List<UniquePtr<Serializable>> items;
+    }
+    
+    public class ScalarArrayField<ItemType>: Array
+    {
+        public nothrow ScalarArrayField(): base() 
+        {
+        }
+        public nothrow ScalarArrayField(Serializable* itemType_, const string& name_): base(itemType_, name_)
+        {
+        }
+        suppress ScalarArrayField(const ScalarArrayField<ItemType>&);
+        suppress void operator=(const ScalarArrayField<ItemType>&);
+        public ItemType operator[](int index) const
+        {
+            Serializable* item = GetItem(index);
+            ValueField<ItemType>* field = cast<ValueField<ItemType>*>(item);
+            return field->GetValue();
+        }
+        public ItemType& operator[](int index)
+        {
+            Serializable* item = GetItem(index);
+            ValueField<ItemType>* field = cast<ValueField<ItemType>*>(item);
+            return field->GetValueRef();
+        }
+        public void Add(ItemType item)
+        {
+            AddArrayItem(GetField("item"));
+            int index = Count() - 1;
+            (*this)[index] = item;
+        }
+    }
+    
+    public class StructureArrayField<StructType>: Array
+    {
+        public nothrow StructureArrayField(): base()
+        {
+        }
+        public nothrow StructureArrayField(Serializable* itemType_, const string& name_): base(itemType_, name_)
+        {
+        }
+        suppress StructureArrayField(const StructureArrayField<StructType>&);
+        suppress void operator=(const StructureArrayField<StructType>&);
+        public const StructType& operator[](int index) const
+        {
+            Serializable* item = GetItem(index);
+            return *cast<StructType*>(item);
+        }
+        public void Add(StructType* item)
+        {
+            AddArrayItem(GetField("item"));
+            SetItem(Count() - 1, item);
+        }
+    }
+}

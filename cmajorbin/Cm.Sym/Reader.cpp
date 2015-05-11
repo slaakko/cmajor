@@ -86,6 +86,10 @@ TypeId Reader::ReadTypeId()
 
 void Reader::FetchTypeFor(Symbol* symbol, int index)
 {
+    if (symbol->Name() == "IntField")
+    {
+        int x = 0;
+    }
     TypeId typeId = ReadTypeId();
     TypeSymbol* type = symbolTable.GetTypeRepository().GetTypeNothrow(typeId);
     if (type)
@@ -141,6 +145,10 @@ Symbol* Reader::ReadSymbol()
         symbol->Read(*this);
         if (symbol->IsTemplateTypeSymbol())
         {
+            if (symbol->Name() == "ValueField<int>")
+            {
+                int x = 0;
+            }
             symbol->ResetFlag(SymbolFlags::bound);
         }
         return symbol;

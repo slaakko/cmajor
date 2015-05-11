@@ -1,0 +1,35 @@
+using System;
+
+namespace System.Xml
+{
+    public class ContentHandler
+    {
+        public virtual nothrow ~ContentHandler()
+        {
+        }
+        public virtual void StartDocument()
+        {
+        }
+        public virtual void EndDocument()
+        {
+        }
+        public virtual void StartTag(const string& tagName)
+        {
+        }
+        public virtual void EndTag(const string& tagName)
+        {
+        }
+        public virtual void EmptyElement(const string& tagName)
+        {
+        }
+        public virtual void CharData(const string& charData)
+        {
+        }
+        public virtual void EntityRef(const string& refName)
+        {
+        }
+        public virtual void CharRef(const string& charRef)
+        {
+        }
+    }
+}

@@ -1,0 +1,16 @@
+project System.Xml.Serialization;
+target=library;
+assembly <System.Xml.Serialization.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+reference <ext/System.Xml/System.Xml.cml>;
+source <Array.cm>;
+source <Factory.cm>;
+source <Field.cm>;
+source <SchemaFile.cm>;
+source <Serializable.cm>;
+source <SerializationSchemaFile.cm>;
+text <SerializationSchemaFile.parser>;
+text <SerializationSchemaFile.pl>;
+text <SerializationSchemaFile.pp>;
+source <Serialize.cm>;
+source <Struct.cm>;
