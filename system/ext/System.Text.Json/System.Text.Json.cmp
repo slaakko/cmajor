@@ -1,0 +1,13 @@
+project System.Text.Json;
+target=library;
+assembly <System.Text.Json.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+source <data.cm>;
+source <json.cm>;
+text <json.parser>;
+text <json.pl>;
+text <json.pp>;
+source <parser.cm>;
+source <schema.cm>;
+source <schemafile.cm>;
+text <schemafile.parser>;

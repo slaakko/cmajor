@@ -1,0 +1,463 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace System.Net.Http
+{
+    public class HttpResponseGrammar: System.Text.Parsing.Grammar
+    {
+        public static HttpResponseGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static HttpResponseGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            HttpResponseGrammar* grammar = new HttpResponseGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private HttpResponseGrammar(ParsingDomain* parsingDomain): base("HttpResponseGrammar", parsingDomain->GetNamespaceScope("System.Net.Http"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public HttpResponse Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            HttpResponse result = *cast<ValueObject<HttpResponse>*>(value.GetPtr());
+            return result;
+        }
+        private class HttpResponseRule: System.Text.Parsing.Rule
+        {
+            public HttpResponseRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("HttpResponse");
+                AddLocalVariable(AttrOrVariable("List<HeaderLine>", "headerLines"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<HttpResponse>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* statusLineNonterminalParser = GetNonterminal("StatusLine");
+                statusLineNonterminalParser->SetPostCall(PostCall(PostStatusLine));
+                NonterminalParser* headerLineNonterminalParser = GetNonterminal("HeaderLine");
+                headerLineNonterminalParser->SetPostCall(PostCall(PostHeaderLine));
+                NonterminalParser* contentNonterminalParser = GetNonterminal("Content");
+                contentNonterminalParser->SetPostCall(PostCall(PostContent));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = HttpResponse(context.fromStatusLine, context.headerLines, context.fromContent);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.headerLines.Add(context.fromHeaderLine);
+            }
+            public throw void PostStatusLine(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStatusLine_value = stack.Pop();
+                    context.fromStatusLine = *cast<ValueObject<HttpStatus>*>(fromStatusLine_value.GetPtr());
+                }
+            }
+            public throw void PostHeaderLine(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromHeaderLine_value = stack.Pop();
+                    context.fromHeaderLine = *cast<ValueObject<HeaderLine>*>(fromHeaderLine_value.GetPtr());
+                }
+            }
+            public throw void PostContent(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromContent_value = stack.Pop();
+                    context.fromContent = *cast<ValueObject<string>*>(fromContent_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public HttpResponse value;
+                public List<HeaderLine> headerLines;
+                public HttpStatus fromStatusLine;
+                public HeaderLine fromHeaderLine;
+                public string fromContent;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class StatusLineRule: System.Text.Parsing.Rule
+        {
+            public StatusLineRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("HttpStatus");
+                AddLocalVariable(AttrOrVariable("string", "statusText"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<HttpStatus>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* versionNonterminalParser = GetNonterminal("version");
+                versionNonterminalParser->SetPostCall(PostCall(Postversion));
+                NonterminalParser* statusCodeNonterminalParser = GetNonterminal("statusCode");
+                statusCodeNonterminalParser->SetPostCall(PostCall(PoststatusCode));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = HttpStatus(context.fromversion, context.fromstatusCode, context.statusText);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.statusText = match;
+            }
+            public throw void Postversion(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromversion_value = stack.Pop();
+                    context.fromversion = *cast<ValueObject<string>*>(fromversion_value.GetPtr());
+                }
+            }
+            public throw void PoststatusCode(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromstatusCode_value = stack.Pop();
+                    context.fromstatusCode = *cast<ValueObject<int>*>(fromstatusCode_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public HttpStatus value;
+                public string statusText;
+                public string fromversion;
+                public int fromstatusCode;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class HttpVersionRule: System.Text.Parsing.Rule
+        {
+            public HttpVersionRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* majorNonterminalParser = GetNonterminal("major");
+                majorNonterminalParser->SetPostCall(PostCall(Postmajor));
+                NonterminalParser* minorNonterminalParser = GetNonterminal("minor");
+                minorNonterminalParser->SetPostCall(PostCall(Postminor));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = match;
+            }
+            public throw void Postmajor(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> frommajor_value = stack.Pop();
+                    context.frommajor = *cast<ValueObject<int>*>(frommajor_value.GetPtr());
+                }
+            }
+            public throw void Postminor(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromminor_value = stack.Pop();
+                    context.fromminor = *cast<ValueObject<int>*>(fromminor_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public string value;
+                public int frommajor;
+                public int fromminor;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class HeaderLineRule: System.Text.Parsing.Rule
+        {
+            public HeaderLineRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("HeaderLine");
+                AddLocalVariable(AttrOrVariable("string", "name"));
+                AddLocalVariable(AttrOrVariable("string", "val"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<HeaderLine>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = HeaderLine(context.name, context.val);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.name = match;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.val = match;
+            }
+            private class Context
+            {
+                public HeaderLine value;
+                public string name;
+                public string val;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ContentRule: System.Text.Parsing.Rule
+        {
+            public ContentRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = match;
+            }
+            private class Context
+            {
+                public string value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Net.Http.TokenSep");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Net.Http.TokenSep.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar1 == null)
+            {
+                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar1);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("int", this, "System.Text.Parsing.stdlib.int"));
+            AddRuleLink(new RuleLink("Separators", this, "TokenSep.Separators"));
+            AddRuleLink(new RuleLink("newline", this, "System.Text.Parsing.stdlib.newline"));
+            AddRule(new HttpResponseRule("HttpResponse", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new NonterminalParser("StatusLine", "StatusLine", 0),
+                                new KleeneStarParser(
+                                    new ActionParser("A1",
+                                        new NonterminalParser("HeaderLine", "HeaderLine", 0)))),
+                            new NonterminalParser("newline", "newline", 0)),
+                        new NonterminalParser("Content", "Content", 0)))));
+            AddRule(new StatusLineRule("StatusLine", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new NonterminalParser("version", "HttpVersion", 0),
+                                new NonterminalParser("statusCode", "int", 0)),
+                            new ActionParser("A1",
+                                new KleeneStarParser(
+                                    new DifferenceParser(
+                                        new AnyCharParser(),
+                                        new NonterminalParser("newline", "newline", 0))
+                                    ))),
+                        new NonterminalParser("newline", "newline", 0)))));
+            AddRule(new HttpVersionRule("HttpVersion", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new KeywordParser("HTTP"),
+                        new CharParser('/')),
+                    new ActionParser("A0",
+                        new SequenceParser(
+                            new SequenceParser(
+                                new NonterminalParser("major", "int", 0),
+                                new CharParser('.')),
+                            new NonterminalParser("minor", "int", 0))))));
+            AddRule(new HeaderLineRule("HeaderLine", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new ActionParser("A1",
+                                    new PositiveParser(
+                                        new DifferenceParser(
+                                            new AnyCharParser(),
+                                            new CharParser(':'))
+                                        )),
+                                new CharParser(':')),
+                            new ActionParser("A2",
+                                new KleeneStarParser(
+                                    new DifferenceParser(
+                                        new AnyCharParser(),
+                                        new NonterminalParser("newline", "newline", 0))
+                                    ))),
+                        new NonterminalParser("newline", "newline", 0)))));
+            AddRule(new ContentRule("Content", GetScope(),
+                new ActionParser("A0",
+                    new KleeneStarParser(
+                        new AnyCharParser()))));
+            SetSkipRuleName("Separators");
+        }
+    }
+    public class TokenSep: System.Text.Parsing.Grammar
+    {
+        public static TokenSep* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static TokenSep* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            TokenSep* grammar = new TokenSep(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private TokenSep(ParsingDomain* parsingDomain): base("TokenSep", parsingDomain->GetNamespaceScope("System.Net.Http"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public override void GetReferencedGrammars()
+        {
+        }
+        public override void CreateRules()
+        {
+            AddRule(new Rule("Separators", GetScope(),
+                new PositiveParser(
+                    new AlternativeParser(
+                        new CharParser(' '),
+                        new CharParser('\t')))));
+        }
+    }
+}

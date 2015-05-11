@@ -1,0 +1,108 @@
+using System;
+using System.Collections;
+using System.IO;
+using System.Text.RegularExpressions;
+
+int main(int argc, const char** argv)
+{
+    int retval = 1; // return value 0 means found, 1 means not found or error
+    try
+    {
+        if (argc < 2)
+        {
+            Console.Out() << "simplegrep [options] \"pattern\" [{file}]" << endl();
+            Console.Out() << "options:" << endl();
+            Console.Out() << "--------------------------------------------------" << endl();
+            Console.Out() << "-c:       compile pattern to DFA" << endl();
+            Console.Out() << "-quiet:   don't output anything, just return value" << endl();
+            Console.Out() << "--------------------------------------------------" << endl();
+            Console.Out() << "returns 0 if found, 1 if not found" << endl();
+            return 1;
+        }
+        bool compileToDfa = false;
+        bool quiet = false;
+        int patternIndex = -1;
+        List<string> fileNames;
+        for (int i = 1; i < argc; ++i)
+        {
+            string arg = argv[i];
+            if (arg == "-c")
+            {
+                compileToDfa = true;
+            }
+            else if (arg == "-quiet")
+            {
+                quiet = true;
+            }
+            else if (patternIndex == -1)
+            {
+                patternIndex = i;
+            }
+            else 
+            {
+                fileNames.Add(arg);
+            }
+        }
+        if (patternIndex == -1)
+        {
+            throw Exception("no pattern given");
+        }
+        if (fileNames.IsEmpty())
+        {
+//          empty string means read from stdin:
+            fileNames.Add(string());    
+        }
+        string pattern = argv[patternIndex];
+        int start = 0;
+        int end = pattern.Length() - 1;
+        if (pattern.Length() >= 1)
+        {
+            if (pattern[0] == '"' || pattern[0] == '\'')
+            {
+                ++start;
+            }
+        }    
+        if (pattern.Length() - start >= 1)
+        {
+            if (pattern[pattern.Length() - 1] == '"' || pattern[pattern.Length() - 1] == '\'')
+            {
+                --end;
+            }
+        }
+        pattern = pattern.Substring(start, end - start + 1);
+        RegExFlags flags = RegExFlags.matchLine;
+        if (compileToDfa)
+        {
+            flags = cast<RegExFlags>(flags | RegExFlags.compiled);
+        }
+        RegEx re(pattern, flags);
+        for (const string& fileName : fileNames)
+        {
+            InputFileStream file;
+            if (!fileName.IsEmpty())
+            {
+                file.Open(fileName);
+            }
+            int lineNumber = 1;
+            while (!file.EndOfStream())
+            {
+                string line = file.ReadLine();
+                if (re.Matches(line))
+                {
+                    if (!quiet)
+                    {
+                        Console.Out() << fileName << "(" << lineNumber << "): " << line << endl();
+                    }                    
+                    retval = 0; 
+                }
+                ++lineNumber;
+            }
+        }
+    }    
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.Message() << endl();
+        return 1;
+    }
+    return retval;  // return value 0 means found, 1 means not found or error
+}

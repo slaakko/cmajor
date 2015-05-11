@@ -1,0 +1,15 @@
+project System.Text.RegularExpressions;
+target=library;
+assembly <System.Text.RegularExpressions.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+source <algorithm.cm>;
+source <charclass.cm>;
+source <dfa.cm>;
+source <nfa.cm>;
+source <parser.cm>;
+source <ptrnfa.cm>;
+source <regex.cm>;
+source <reparser.cm>;
+text <reparser.parser>;
+text <reparser.pl>;
+text <reparser.pp>;

@@ -220,4 +220,9 @@ void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*
     }
 }
 
+void TemplateTypeSymbol::SetConstraint(Cm::Ast::WhereConstraintNode* constraint_)
+{
+    constraint.reset(constraint_);
+}
+
 } } // namespace Cm::Sym

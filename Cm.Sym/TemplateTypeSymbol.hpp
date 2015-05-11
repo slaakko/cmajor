@@ -36,15 +36,19 @@ public:
     void MakeIrType() override;
     void RecomputeIrType() override;
     void SetFileScope(FileScope* fileScope_);
+    FileScope* GetFileScope() const { return fileScope.get(); }
     FileScope* CloneFileScope() const { return fileScope->Clone(); }
     void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    void SetConstraint(Cm::Ast::WhereConstraintNode* constraint);
+    Cm::Ast::WhereConstraintNode* GetConstraint() const { return constraint.get(); }
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs;
     std::unique_ptr<FileScope> fileScope;
+    std::unique_ptr<Cm::Ast::WhereConstraintNode> constraint;
 };
 
 } } // namespace Cm::Sym

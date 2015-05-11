@@ -1,0 +1,29 @@
+using System;
+
+namespace System.Net.Http
+{
+    internal class HttpResponseParser
+    {
+        static HttpResponseParser(): instance(new HttpResponseParser())
+        {
+        }
+        public static HttpResponseParser& Instance() 
+        {
+            return *instance;
+        }
+        private HttpResponseParser(): grammar(HttpResponseGrammar.Create())
+        {
+        }
+        public HttpResponse Parse(const string& responseText)
+        {
+            return grammar->Parse(responseText, 0, "");
+        }
+        private static UniquePtr<HttpResponseParser> instance;
+        private HttpResponseGrammar* grammar;
+    }
+    
+    public HttpResponse ParseHttpResponse(const string& responseText)
+    {
+        return HttpResponseParser.Instance().Parse(responseText);
+    }
+}

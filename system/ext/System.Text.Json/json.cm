@@ -1,0 +1,500 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace System.Text.Json.Data
+{
+    public class JsonGrammar: System.Text.Parsing.Grammar
+    {
+        public static JsonGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static JsonGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            JsonGrammar* grammar = new JsonGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private JsonGrammar(ParsingDomain* parsingDomain): base("JsonGrammar", parsingDomain->GetNamespaceScope("System.Text.Json.Data"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public JsonValue* Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            JsonValue* result = *cast<ValueObject<JsonValue*>*>(value.GetPtr());
+            return result;
+        }
+        private class ValueRule: System.Text.Parsing.Rule
+        {
+            public ValueRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("JsonValue*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<JsonValue*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+                ActionParser* a5ActionParser = GetAction("A5");
+                a5ActionParser->SetAction(ParsingAction(A5Action));
+                ActionParser* a6ActionParser = GetAction("A6");
+                a6ActionParser->SetAction(ParsingAction(A6Action));
+                NonterminalParser* stringNonterminalParser = GetNonterminal("String");
+                stringNonterminalParser->SetPostCall(PostCall(PostString));
+                NonterminalParser* numberNonterminalParser = GetNonterminal("Number");
+                numberNonterminalParser->SetPostCall(PostCall(PostNumber));
+                NonterminalParser* objectNonterminalParser = GetNonterminal("Object");
+                objectNonterminalParser->SetPostCall(PostCall(PostObject));
+                NonterminalParser* arrayNonterminalParser = GetNonterminal("Array");
+                arrayNonterminalParser->SetPostCall(PostCall(PostArray));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromString;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromNumber;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromObject;
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromArray;
+            }
+            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new JsonBool(true);
+            }
+            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new JsonBool(false);
+            }
+            public throw void A6Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new JsonNull();
+            }
+            public throw void PostString(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromString_value = stack.Pop();
+                    context.fromString = *cast<ValueObject<JsonString*>*>(fromString_value.GetPtr());
+                }
+            }
+            public throw void PostNumber(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromNumber_value = stack.Pop();
+                    context.fromNumber = *cast<ValueObject<JsonNumber*>*>(fromNumber_value.GetPtr());
+                }
+            }
+            public throw void PostObject(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromObject_value = stack.Pop();
+                    context.fromObject = *cast<ValueObject<JsonObject*>*>(fromObject_value.GetPtr());
+                }
+            }
+            public throw void PostArray(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromArray_value = stack.Pop();
+                    context.fromArray = *cast<ValueObject<JsonArray*>*>(fromArray_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public JsonValue* value;
+                public JsonString* fromString;
+                public JsonNumber* fromNumber;
+                public JsonObject* fromObject;
+                public JsonArray* fromArray;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ObjectRule: System.Text.Parsing.Rule
+        {
+            public ObjectRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("JsonObject*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<JsonObject*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* nameNonterminalParser = GetNonterminal("name");
+                nameNonterminalParser->SetPostCall(PostCall(Postname));
+                NonterminalParser* valNonterminalParser = GetNonterminal("val");
+                valNonterminalParser->SetPostCall(PostCall(Postval));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new JsonObject();
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddField(Rvalue(*context.fromname), context.fromval);
+                delete context.fromname;
+            }
+            public throw void Postname(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromname_value = stack.Pop();
+                    context.fromname = *cast<ValueObject<JsonString*>*>(fromname_value.GetPtr());
+                }
+            }
+            public throw void Postval(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromval_value = stack.Pop();
+                    context.fromval = *cast<ValueObject<JsonValue*>*>(fromval_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public JsonObject* value;
+                public JsonString* fromname;
+                public JsonValue* fromval;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ArrayRule: System.Text.Parsing.Rule
+        {
+            public ArrayRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("JsonArray*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<JsonArray*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* itemNonterminalParser = GetNonterminal("item");
+                itemNonterminalParser->SetPostCall(PostCall(Postitem));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new JsonArray();
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->AddItem(context.fromitem);
+            }
+            public throw void Postitem(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromitem_value = stack.Pop();
+                    context.fromitem = *cast<ValueObject<JsonValue*>*>(fromitem_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public JsonArray* value;
+                public JsonValue* fromitem;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class StringRule: System.Text.Parsing.Rule
+        {
+            public StringRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("JsonString*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<JsonString*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                NonterminalParser* escapeNonterminalParser = GetNonterminal("escape");
+                escapeNonterminalParser->SetPostCall(PostCall(Postescape));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new JsonString();
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->Append(match[0]);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->Append(context.fromescape);
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                ulong u = ParseHex(match);
+                ushort c = cast<ushort>(u & 0x000000000000FFFF);
+                context.value->Append(ToUtf8(c));
+            }
+            public throw void Postescape(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromescape_value = stack.Pop();
+                    context.fromescape = *cast<ValueObject<char>*>(fromescape_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public JsonString* value;
+                public char fromescape;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class NumberRule: System.Text.Parsing.Rule
+        {
+            public NumberRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("JsonNumber*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<JsonNumber*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* numberNonterminalParser = GetNonterminal("number");
+                numberNonterminalParser->SetPostCall(PostCall(Postnumber));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new JsonNumber(context.fromnumber);
+            }
+            public throw void Postnumber(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromnumber_value = stack.Pop();
+                    context.fromnumber = *cast<ValueObject<double>*>(fromnumber_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public JsonNumber* value;
+                public double fromnumber;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
+            AddRuleLink(new RuleLink("escape", this, "System.Text.Parsing.stdlib.escape"));
+            AddRuleLink(new RuleLink("number", this, "System.Text.Parsing.stdlib.number"));
+            AddRule(new ValueRule("Value", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new ActionParser("A0",
+                                            new NonterminalParser("String", "String", 0)),
+                                        new ActionParser("A1",
+                                            new NonterminalParser("Number", "Number", 0))),
+                                    new ActionParser("A2",
+                                        new NonterminalParser("Object", "Object", 0))),
+                                new ActionParser("A3",
+                                    new NonterminalParser("Array", "Array", 0))),
+                            new ActionParser("A4",
+                                new KeywordParser("true"))),
+                        new ActionParser("A5",
+                            new KeywordParser("false"))),
+                    new ActionParser("A6",
+                        new KeywordParser("null")))));
+            AddRule(new ObjectRule("Object", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new ActionParser("A0",
+                            new CharParser('{')),
+                        new OptionalParser(
+                            new ListParser(
+                                new ActionParser("A1",
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new NonterminalParser("name", "String", 0),
+                                            new CharParser(':')),
+                                        new NonterminalParser("val", "Value", 0))),
+                                new CharParser(',')))),
+                    new CharParser('}'))));
+            AddRule(new ArrayRule("Array", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new ActionParser("A0",
+                            new CharParser('[')),
+                        new OptionalParser(
+                            new ListParser(
+                                new ActionParser("A1",
+                                    new NonterminalParser("item", "Value", 0)),
+                                new CharParser(',')))),
+                    new CharParser(']'))));
+            AddRule(new StringRule("String", GetScope(),
+                new TokenParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new ActionParser("A0",
+                                new CharParser('"')),
+                            new KleeneStarParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new ActionParser("A1",
+                                            new CharSetParser("\"\\", true)),
+                                        new ActionParser("A2",
+                                            new NonterminalParser("escape", "escape", 0))),
+                                    new SequenceParser(
+                                        new StringParser("\\u"),
+                                        new ActionParser("A3",
+                                            new SequenceParser(
+                                                new SequenceParser(
+                                                    new SequenceParser(
+                                                        new HexDigitParser(),
+                                                        new HexDigitParser()),
+                                                    new HexDigitParser()),
+                                                new HexDigitParser())))))),
+                        new CharParser('"')))));
+            AddRule(new NumberRule("Number", GetScope(),
+                new ActionParser("A0",
+                    new NonterminalParser("number", "number", 0))));
+            SetSkipRuleName("spaces");
+        }
+    }
+}

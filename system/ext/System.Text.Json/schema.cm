@@ -1,0 +1,454 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+using System;
+using System.Text;
+using System.Collections;
+
+namespace System.Text.Json.Schema
+{
+    public class SchemaFileContent
+    {
+        public SchemaFileContent()
+        {
+        }
+        suppress SchemaFileContent(const SchemaFileContent&);
+        suppress void operator=(const SchemaFileContent&);
+        suppress SchemaFileContent(SchemaFileContent&&);
+        suppress void operator=(SchemaFileContent&&);
+        public void AddContainer(Container* container)
+        {
+            containers.Add(UniquePtr<Container>(container));
+            containerMap[container->Name()] = container;
+        }   
+        public void AddField(Field* field)
+        {
+            fields.Add(UniquePtr<Field>(field));
+        }
+        public Field* NewContainerField(const string& containerName, const string& fieldName)
+        {
+            Map<string, Container*>.Iterator i = containerMap.Find(containerName);
+            if (i != containerMap.End())
+            {
+                Container* container = i->second;
+                return new ContainerField(container, fieldName);
+            }
+            else
+            {
+                throw Exception("container '" + containerName + "' not found.");
+            }
+        }
+        public void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("using System;");
+            formatter.WriteLine();
+            for (const UniquePtr<Container>& container : containers)
+            {
+                container->GenerateDefinitions(formatter);
+                formatter.WriteLine();
+            }
+        }
+        private List<UniquePtr<Container>> containers;
+        private List<UniquePtr<Field>> fields;
+        private Map<string, Container*> containerMap;
+    }
+    
+    public abstract class Field
+    {
+        public Field(const string& name_): name(name_)
+        {
+        }
+        public nothrow virtual ~Field()
+        {
+        }
+//      Note: Because 'Field' is used as a base class it implements a virtual destructor.
+//      This means copy and move operations are suppressed by default.
+//      However here we want to enable the default behavior for copying and moving 'name' field:
+        public default nothrow Field(const Field&);
+        public default nothrow void operator=(const Field&);
+        public default nothrow Field(Field&&);
+        public default nothrow void operator=(Field&&);
+        public nothrow const string& Name() const
+        {
+            return name;
+        }
+        public abstract void GenerateDefinitions(CodeFormatter& formatter);
+        public virtual void FetchData(System.Text.Json.Data.JsonValue* jsonValue)
+        {
+        }
+        private string name;
+    }
+    
+    public class StringField: Field
+    {
+        public StringField(const string& fieldName_): base(fieldName_)
+        {
+        }
+        public override void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("public System.Text.Json.Schema.StringField " + Name() + ";");
+        }
+        public override void FetchData(System.Text.Json.Data.JsonValue* jsonValue)
+        {
+            if (jsonValue->IsString())
+            {
+                System.Text.Json.Data.JsonString* s = cast<System.Text.Json.Data.JsonString*>(jsonValue);
+                value = s->Value();
+            }
+            else
+            {
+                throw Exception("data type mismatch");
+            }
+        }
+        public nothrow operator const string&() const
+        {
+            return value;
+        }
+        private string value;
+    }
+    
+    public class NumberField: Field
+    {
+        public NumberField(const string& fieldName_): base(fieldName_)
+        {
+        }
+        public override void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("public System.Text.Json.Schema.NumberField " + Name() + ";");
+        }
+        public override void FetchData(System.Text.Json.Data.JsonValue* jsonValue)
+        {
+            if (jsonValue->IsNumber())
+            {
+                System.Text.Json.Data.JsonNumber* n = cast<System.Text.Json.Data.JsonNumber*>(jsonValue);
+                value = n->Value();
+            }
+            else
+            {
+                throw Exception("data type mismatch");
+            }
+        }        
+        public nothrow operator double() const
+        {
+            return value;
+        }
+        private double value;
+    }
+    
+    public class BooleanField: Field
+    {
+        public BooleanField(const string& fieldName_): base(fieldName_)
+        {
+        }
+        public override void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("public System.Text.Json.Schema.BooleanField " + Name() + ";");
+        }
+        public override void FetchData(System.Text.Json.Data.JsonValue* jsonValue)
+        {
+            if (jsonValue->IsBool())
+            {
+                System.Text.Json.Data.JsonBool* b = cast<System.Text.Json.Data.JsonBool*>(jsonValue);
+                value = b->Value();
+            }
+            else
+            {
+                throw Exception("data type mismatch");
+            }
+        }
+        public nothrow operator bool() const
+        {
+            return value; 
+        }
+        private bool value;
+    }
+    
+    public class ContainerField: Field
+    {
+        public ContainerField(Container* container_, const string& fieldName_): base(fieldName_), container(container_)
+        {
+        }
+        public override void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("public " + container->TypeName() + " " + Name() + ";");
+        }
+        private Container* container;
+    }
+    
+    public class ArrayFieldBase: Field
+    {
+        public ArrayFieldBase(const string& itemTypeName_, const string& fieldName_): base(fieldName_), itemTypeName(itemTypeName_)
+        {
+        }
+        public ArrayFieldBase(const string& fieldName_): base(fieldName_)
+        {
+        }
+        public override void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("public System.Text.Json.Schema.ArrayField<" + itemTypeName + "> " + Name() + ";");
+        }
+        private string itemTypeName;
+    }
+    
+    public class ArrayField<ItemType>: ArrayFieldBase
+    {
+        public ArrayField(const string& fieldName_): base(fieldName_)
+        {
+        }
+        public typedef List<ItemType>.Iterator Iterator;
+        public typedef List<ItemType>.ConstIterator ConstIterator;
+        public override void FetchData(System.Text.Json.Data.JsonValue* value)
+        {
+            if (value->IsArray())
+            {
+                System.Text.Json.Data.JsonArray* a = cast<System.Text.Json.Data.JsonArray*>(value);
+                int n = a->Count();
+                items.Reserve(n);
+                for (int i = 0; i < n; ++i)
+                {
+                    System.Text.Json.Data.JsonValue* fieldValue = a->GetItem(i);
+                    if (fieldValue != null)
+                    {
+                        ItemType item("item");
+                        item.FetchData(fieldValue);
+                        items.Add(Rvalue(item));
+                    }
+                    else
+                    {
+                        string fieldName = Name();
+                        string index = ToString(i);
+                        string msg = "array item ";
+                        msg.Append(fieldName);
+                        msg.Append(':');
+                        msg.Append(index);
+                        throw Exception(msg);
+                    }
+                }
+            }
+            else
+            {
+                throw Exception("data type mismatch");
+            }
+        }
+        public nothrow int Count() const
+        {
+            return items.Count();
+        }
+        public nothrow const ItemType& operator[](int index) const
+        {
+            return items[index];
+        }
+        public nothrow Iterator Begin()
+        {
+            return items.Begin();
+        }
+        public nothrow ConstIterator CBegin() const
+        {
+            return items.CBegin();
+        }
+        public nothrow Iterator End()
+        {
+            return items.End();
+        }
+        public nothrow ConstIterator CEnd() const
+        {
+            return items.CEnd();
+        }
+        private List<ItemType> items;
+    }
+    
+    public class Container: Field
+    {
+        public Container(const string& fieldName_): base(fieldName_)
+        {
+        }
+        public void AddField(Field* field)
+        {
+            fields.Add(field);
+        }
+        public nothrow const string& TypeName() const
+        {
+            return typeName;
+        }
+        public void SetTypeName(const string& typeName_)
+        {
+            typeName = typeName_;
+        }
+        public override void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            for (Field* field : fields)
+            {
+                field->GenerateDefinitions(formatter);
+            }
+        }
+        public void GenAddFields(CodeFormatter& formatter)
+        {
+            for (Field* field : fields)
+            {
+                formatter.WriteLine("AddField(&" + field->Name() + ");");
+            }
+        }
+        public nothrow const List<Field*>& Fields() const
+        {
+            return fields;
+        }
+        private string typeName;
+        private List<Field*> fields;
+    }
+    
+    public class Sequence: Container
+    {
+        public Sequence(const string& fieldName_): base(fieldName_)
+        {
+        }
+        public override void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("public class " + TypeName() + ": System.Text.Json.Schema.Sequence");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            formatter.Write("public " + TypeName() + "(const string& fieldName_): base(fieldName_)");
+            if (Fields().Count() > 0)
+            {
+                formatter.WriteLine(",");
+            }
+            else
+            {   
+                formatter.WriteLine();
+            }
+            formatter.IncIndent();
+            bool first = true;
+            for (Field* field : Fields())
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.WriteLine(", ");
+                }
+                formatter.Write(field->Name() + "(\"" + field->Name() + "\")");
+            }
+            formatter.WriteLine();
+            formatter.DecIndent();
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            GenAddFields(formatter);
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            base->GenerateDefinitions(formatter);
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void FetchData(System.Text.Json.Data.JsonValue* value)
+        {
+            if (value->IsArray())
+            {
+                System.Text.Json.Data.JsonArray* a = cast<System.Text.Json.Data.JsonArray*>(value);
+                int n = Fields().Count();
+                if (n != a->Count())
+                {
+                    throw Exception("array size mismatch");
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    System.Text.Json.Data.JsonValue* fieldValue = a->GetItem(i);
+                    if (fieldValue != null)
+                    {
+                        Field* field = Fields()[i];
+                        field->FetchData(fieldValue);
+                    }
+                    else
+                    {
+                        throw Exception("sequence item " + Name() + "[" + ToString(i) + "] is null");
+                    }
+                }
+            }
+            else
+            {
+                throw Exception("data type mismatch");
+            }
+        }
+    }
+    
+    public class Struct: Container
+    {
+        public Struct(): base("structure")
+        {
+        }
+        public Struct(const string& fieldName_): base(fieldName_)
+        {
+        }
+        public override void GenerateDefinitions(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("public class " + TypeName() + ": System.Text.Json.Schema.Struct");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            formatter.WriteLine("public " + TypeName() + "(): this(\"" + TypeName() + "\")");
+            formatter.WriteLine("{");
+            formatter.WriteLine("}");
+            formatter.Write("public " + TypeName() + "(const string& fieldName_): base(fieldName_)");
+            if (Fields().Count() > 0)
+            {
+                formatter.WriteLine(",");
+            }
+            else
+            {   
+                formatter.WriteLine();
+            }
+            formatter.IncIndent();
+            bool first = true;
+            for (Field* field : Fields())
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.WriteLine(", ");
+                }
+                formatter.Write(field->Name() + "(\"" + field->Name() + "\")");
+            }
+            formatter.WriteLine();
+            formatter.DecIndent();
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            GenAddFields(formatter);
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            base->GenerateDefinitions(formatter);
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void FetchData(System.Text.Json.Data.JsonValue* value)
+        {
+            if (value->IsObject())
+            {
+                System.Text.Json.Data.JsonObject* o = cast<System.Text.Json.Data.JsonObject*>(value);
+                for (Field* field : Fields())
+                {
+                    System.Text.Json.Data.JsonValue* fieldValue = o->GetField(field->Name());
+                    if (fieldValue != null)
+                    {
+                        field->FetchData(fieldValue);
+                    }                    
+                    else
+                    {
+                        throw Exception(TypeName() + "." + field->Name() + " not found.");
+                    }
+                }
+            }
+            else
+            {
+                throw Exception("data type mismatch");
+            }
+        }
+    }
+}

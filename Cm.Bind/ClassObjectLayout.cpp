@@ -293,7 +293,6 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     boundThisParam->SetType(thisParam->GetType());
     boundMemberVariable->SetClassObject(boundThisParam);
     arguments.InsertFront(boundMemberVariable);
-    PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), nullptr, memberCtor->Parameters(), arguments, true, BoundCompileUnit().IrClassTypeRepository(), memberCtor->IsBasicTypeOp());
     int n = int(conversions.size());
     if (n != arguments.Count())
     {
@@ -309,6 +308,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
             argument.reset(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), arg->SyntaxNode(), arg, conversionFun, CurrentFunction()));
         }
     }
+    PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), nullptr, memberCtor->Parameters(), arguments, true, BoundCompileUnit().IrClassTypeRepository(), memberCtor->IsBasicTypeOp());
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
     return initMemberVariableStatement;
 }

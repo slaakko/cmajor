@@ -1,0 +1,10 @@
+project Downloads;
+target=program;
+assembly <downloads.cma>;
+reference <ext/System.Text.Json/System.Text.Json.cml>;
+reference <ext/System.Net.Sockets/System.Net.Sockets.cml>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+reference <ext/System.Net.Http/System.Net.Http.cml>;
+source <downloads.cm>;
+source <statistics.cm>;
+text <statistics.schema>;

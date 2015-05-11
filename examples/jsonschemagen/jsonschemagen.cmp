@@ -1,0 +1,5 @@
+project JsonSchemaGen;
+target=program;
+assembly <jsonschemagen.cma>;
+reference <ext/System.Text.Json/System.Text.Json.cml>;
+source <main.cm>;

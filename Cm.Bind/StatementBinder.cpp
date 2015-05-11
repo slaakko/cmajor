@@ -309,8 +309,12 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                     }
                     else
                     {
-                        Cm::Core::Argument sourceArgument = Cm::Core::Argument(returnValue->GetArgumentCategory(), SymbolTable().GetTypeRepository().MakeConstReferenceType(returnValue->GetType(),
-                            returnStatementNode.GetSpan()));
+                        Cm::Sym::TypeSymbol* sourceType = returnValue->GetType();
+                        if (!sourceType->IsPointerType())
+                        {
+                            sourceType = SymbolTable().GetTypeRepository().MakeConstReferenceType(sourceType, returnStatementNode.GetSpan());
+                        }
+                        Cm::Core::Argument sourceArgument = Cm::Core::Argument(returnValue->GetArgumentCategory(), sourceType);
                         resolutionArguments.push_back(sourceArgument);
                         if (returnType->IsReferenceType())
                         {

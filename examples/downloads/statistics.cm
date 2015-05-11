@@ -1,0 +1,154 @@
+using System;
+
+public class OsStat: System.Text.Json.Schema.Sequence
+{
+    public OsStat(const string& fieldName_): base(fieldName_),
+        os("os"), 
+        count("count")
+    {
+        AddField(&os);
+        AddField(&count);
+    }
+    public System.Text.Json.Schema.StringField os;
+    public System.Text.Json.Schema.NumberField count;
+}
+
+public class CountryStat: System.Text.Json.Schema.Sequence
+{
+    public CountryStat(const string& fieldName_): base(fieldName_),
+        country("country"), 
+        count("count")
+    {
+        AddField(&country);
+        AddField(&count);
+    }
+    public System.Text.Json.Schema.StringField country;
+    public System.Text.Json.Schema.NumberField count;
+}
+
+public class DateStat: System.Text.Json.Schema.Sequence
+{
+    public DateStat(const string& fieldName_): base(fieldName_),
+        date("date"), 
+        count("count")
+    {
+        AddField(&date);
+        AddField(&count);
+    }
+    public System.Text.Json.Schema.StringField date;
+    public System.Text.Json.Schema.NumberField count;
+}
+
+public class OsSummary: System.Text.Json.Schema.Struct
+{
+    public OsSummary(): this("OsSummary")
+    {
+    }
+    public OsSummary(const string& fieldName_): base(fieldName_),
+        top("top"), 
+        percent("percent"), 
+        modifier_text("modifier_text")
+    {
+        AddField(&top);
+        AddField(&percent);
+        AddField(&modifier_text);
+    }
+    public System.Text.Json.Schema.StringField top;
+    public System.Text.Json.Schema.NumberField percent;
+    public System.Text.Json.Schema.StringField modifier_text;
+}
+
+public class GeoSummary: System.Text.Json.Schema.Struct
+{
+    public GeoSummary(): this("GeoSummary")
+    {
+    }
+    public GeoSummary(const string& fieldName_): base(fieldName_),
+        top("top"), 
+        percent("percent"), 
+        modifier_text("modifier_text")
+    {
+        AddField(&top);
+        AddField(&percent);
+        AddField(&modifier_text);
+    }
+    public System.Text.Json.Schema.StringField top;
+    public System.Text.Json.Schema.NumberField percent;
+    public System.Text.Json.Schema.StringField modifier_text;
+}
+
+public class TimeSummary: System.Text.Json.Schema.Struct
+{
+    public TimeSummary(): this("TimeSummary")
+    {
+    }
+    public TimeSummary(const string& fieldName_): base(fieldName_),
+        downloads("downloads")
+    {
+        AddField(&downloads);
+    }
+    public System.Text.Json.Schema.NumberField downloads;
+}
+
+public class Summaries: System.Text.Json.Schema.Struct
+{
+    public Summaries(): this("Summaries")
+    {
+    }
+    public Summaries(const string& fieldName_): base(fieldName_),
+        os("os"), 
+        geo("geo"), 
+        time("time")
+    {
+        AddField(&os);
+        AddField(&geo);
+        AddField(&time);
+    }
+    public OsSummary os;
+    public GeoSummary geo;
+    public TimeSummary time;
+}
+
+public class Statistics: System.Text.Json.Schema.Struct
+{
+    public Statistics(): this("Statistics")
+    {
+    }
+    public Statistics(const string& fieldName_): base(fieldName_),
+        oses("oses"), 
+        start_date("start_date"), 
+        end_date("end_date"), 
+        countries("countries"), 
+        oses_with_downloads("oses_with_downloads"), 
+        downloads("downloads"), 
+        messages("messages"), 
+        period("period"), 
+        total("total"), 
+        stats_updated("stats_updated"), 
+        summaries("summaries")
+    {
+        AddField(&oses);
+        AddField(&start_date);
+        AddField(&end_date);
+        AddField(&countries);
+        AddField(&oses_with_downloads);
+        AddField(&downloads);
+        AddField(&messages);
+        AddField(&period);
+        AddField(&total);
+        AddField(&stats_updated);
+        AddField(&summaries);
+    }
+    public System.Text.Json.Schema.ArrayField<OsStat> oses;
+    public System.Text.Json.Schema.StringField start_date;
+    public System.Text.Json.Schema.StringField end_date;
+    public System.Text.Json.Schema.ArrayField<CountryStat> countries;
+    public System.Text.Json.Schema.ArrayField<System.Text.Json.Schema.StringField> oses_with_downloads;
+    public System.Text.Json.Schema.ArrayField<DateStat> downloads;
+    public System.Text.Json.Schema.ArrayField<System.Text.Json.Schema.StringField> messages;
+    public System.Text.Json.Schema.StringField period;
+    public System.Text.Json.Schema.NumberField total;
+    public System.Text.Json.Schema.StringField stats_updated;
+    public Summaries summaries;
+}
+

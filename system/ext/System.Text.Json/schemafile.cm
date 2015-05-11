@@ -1,0 +1,916 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace System.Text.Json.Schema
+{
+    public class SchemaFileGrammar: System.Text.Parsing.Grammar
+    {
+        public static SchemaFileGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static SchemaFileGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            SchemaFileGrammar* grammar = new SchemaFileGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private SchemaFileGrammar(ParsingDomain* parsingDomain): base("SchemaFileGrammar", parsingDomain->GetNamespaceScope("System.Text.Json.Schema"), parsingDomain)
+        {
+            SetOwner(0);
+            keywords0.Add("bool");
+            keywords0.Add("number");
+            keywords0.Add("sequence");
+            keywords0.Add("string");
+            keywords0.Add("struct");
+        }
+        public SchemaFileContent* Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            SchemaFileContent* result = *cast<ValueObject<SchemaFileContent*>*>(value.GetPtr());
+            return result;
+        }
+        private class SchemaFileRule: System.Text.Parsing.Rule
+        {
+            public SchemaFileRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("SchemaFileContent*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<SchemaFileContent*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* jsonContainerNonterminalParser = GetNonterminal("JsonContainer");
+                jsonContainerNonterminalParser->SetPreCall(PreCall(PreJsonContainer));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new SchemaFileContent();
+            }
+            public throw void PreJsonContainer(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<SchemaFileContent*>(context.value)));
+            }
+            private class Context
+            {
+                public SchemaFileContent* value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class JsonContainerRule: System.Text.Parsing.Rule
+        {
+            public JsonContainerRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("SchemaFileContent*", "content"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> content_value = stack.Pop();
+                context.content = *cast<ValueObject<SchemaFileContent*>*>(content_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                NonterminalParser* sequenceNonterminalParser = GetNonterminal("Sequence");
+                sequenceNonterminalParser->SetPreCall(PreCall(PreSequence));
+                NonterminalParser* structNonterminalParser = GetNonterminal("Struct");
+                structNonterminalParser->SetPreCall(PreCall(PreStruct));
+            }
+            public throw void PreSequence(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<SchemaFileContent*>(context.content)));
+            }
+            public throw void PreStruct(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<SchemaFileContent*>(context.content)));
+            }
+            private class Context
+            {
+                public SchemaFileContent* content;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class SequenceRule: System.Text.Parsing.Rule
+        {
+            public SequenceRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("SchemaFileContent*", "content"));
+                AddLocalVariable(AttrOrVariable("Sequence*", "sequence"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> content_value = stack.Pop();
+                context.content = *cast<ValueObject<SchemaFileContent*>*>(content_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* seqNameNonterminalParser = GetNonterminal("seqName");
+                seqNameNonterminalParser->SetPostCall(PostCall(PostseqName));
+                NonterminalParser* fieldNonterminalParser = GetNonterminal("Field");
+                fieldNonterminalParser->SetPreCall(PreCall(PreField));
+                fieldNonterminalParser->SetPostCall(PostCall(PostField));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.sequence = new Sequence(context.fromseqName);
+                context.sequence->SetTypeName(context.fromseqName);
+                context.content->AddContainer(context.sequence);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.sequence->AddField(context.fromField);
+                context.content->AddField(context.fromField);
+            }
+            public throw void PostseqName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromseqName_value = stack.Pop();
+                    context.fromseqName = *cast<ValueObject<string>*>(fromseqName_value.GetPtr());
+                }
+            }
+            public throw void PreField(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<SchemaFileContent*>(context.content)));
+            }
+            public throw void PostField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromField_value = stack.Pop();
+                    context.fromField = *cast<ValueObject<Field*>*>(fromField_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public SchemaFileContent* content;
+                public Sequence* sequence;
+                public string fromseqName;
+                public Field* fromField;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class StructRule: System.Text.Parsing.Rule
+        {
+            public StructRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("SchemaFileContent*", "content"));
+                AddLocalVariable(AttrOrVariable("Struct*", "structure"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> content_value = stack.Pop();
+                context.content = *cast<ValueObject<SchemaFileContent*>*>(content_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* structNameNonterminalParser = GetNonterminal("structName");
+                structNameNonterminalParser->SetPostCall(PostCall(PoststructName));
+                NonterminalParser* fieldNonterminalParser = GetNonterminal("Field");
+                fieldNonterminalParser->SetPreCall(PreCall(PreField));
+                fieldNonterminalParser->SetPostCall(PostCall(PostField));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.structure = new Struct(context.fromstructName);
+                context.structure->SetTypeName(context.fromstructName);
+                context.content->AddContainer(context.structure);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.structure->AddField(context.fromField);
+                context.content->AddField(context.fromField);
+            }
+            public throw void PoststructName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromstructName_value = stack.Pop();
+                    context.fromstructName = *cast<ValueObject<string>*>(fromstructName_value.GetPtr());
+                }
+            }
+            public throw void PreField(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<SchemaFileContent*>(context.content)));
+            }
+            public throw void PostField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromField_value = stack.Pop();
+                    context.fromField = *cast<ValueObject<Field*>*>(fromField_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public SchemaFileContent* content;
+                public Struct* structure;
+                public string fromstructName;
+                public Field* fromField;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class FieldRule: System.Text.Parsing.Rule
+        {
+            public FieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("SchemaFileContent*", "content"));
+                SetValueTypeName("Field*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> content_value = stack.Pop();
+                context.content = *cast<ValueObject<SchemaFileContent*>*>(content_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Field*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+                NonterminalParser* stringFieldNonterminalParser = GetNonterminal("StringField");
+                stringFieldNonterminalParser->SetPostCall(PostCall(PostStringField));
+                NonterminalParser* numberFieldNonterminalParser = GetNonterminal("NumberField");
+                numberFieldNonterminalParser->SetPostCall(PostCall(PostNumberField));
+                NonterminalParser* booleanFieldNonterminalParser = GetNonterminal("BooleanField");
+                booleanFieldNonterminalParser->SetPostCall(PostCall(PostBooleanField));
+                NonterminalParser* containerFieldNonterminalParser = GetNonterminal("ContainerField");
+                containerFieldNonterminalParser->SetPreCall(PreCall(PreContainerField));
+                containerFieldNonterminalParser->SetPostCall(PostCall(PostContainerField));
+                NonterminalParser* arrayFieldNonterminalParser = GetNonterminal("ArrayField");
+                arrayFieldNonterminalParser->SetPostCall(PostCall(PostArrayField));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromStringField;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromNumberField;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromBooleanField;
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromContainerField;
+            }
+            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromArrayField;
+            }
+            public throw void PostStringField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStringField_value = stack.Pop();
+                    context.fromStringField = *cast<ValueObject<Field*>*>(fromStringField_value.GetPtr());
+                }
+            }
+            public throw void PostNumberField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromNumberField_value = stack.Pop();
+                    context.fromNumberField = *cast<ValueObject<Field*>*>(fromNumberField_value.GetPtr());
+                }
+            }
+            public throw void PostBooleanField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromBooleanField_value = stack.Pop();
+                    context.fromBooleanField = *cast<ValueObject<Field*>*>(fromBooleanField_value.GetPtr());
+                }
+            }
+            public throw void PreContainerField(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<SchemaFileContent*>(context.content)));
+            }
+            public throw void PostContainerField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromContainerField_value = stack.Pop();
+                    context.fromContainerField = *cast<ValueObject<Field*>*>(fromContainerField_value.GetPtr());
+                }
+            }
+            public throw void PostArrayField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromArrayField_value = stack.Pop();
+                    context.fromArrayField = *cast<ValueObject<Field*>*>(fromArrayField_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public SchemaFileContent* content;
+                public Field* value;
+                public Field* fromStringField;
+                public Field* fromNumberField;
+                public Field* fromBooleanField;
+                public Field* fromContainerField;
+                public Field* fromArrayField;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class StringFieldRule: System.Text.Parsing.Rule
+        {
+            public StringFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Field*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Field*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
+                fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new StringField(context.fromfieldName);
+            }
+            public throw void PostfieldName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromfieldName_value = stack.Pop();
+                    context.fromfieldName = *cast<ValueObject<string>*>(fromfieldName_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Field* value;
+                public string fromfieldName;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class NumberFieldRule: System.Text.Parsing.Rule
+        {
+            public NumberFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Field*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Field*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
+                fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new NumberField(context.fromfieldName);
+            }
+            public throw void PostfieldName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromfieldName_value = stack.Pop();
+                    context.fromfieldName = *cast<ValueObject<string>*>(fromfieldName_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Field* value;
+                public string fromfieldName;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class BooleanFieldRule: System.Text.Parsing.Rule
+        {
+            public BooleanFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Field*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Field*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
+                fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new BooleanField(context.fromfieldName);
+            }
+            public throw void PostfieldName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromfieldName_value = stack.Pop();
+                    context.fromfieldName = *cast<ValueObject<string>*>(fromfieldName_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Field* value;
+                public string fromfieldName;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ContainerFieldRule: System.Text.Parsing.Rule
+        {
+            public ContainerFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("SchemaFileContent*", "content"));
+                SetValueTypeName("Field*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> content_value = stack.Pop();
+                context.content = *cast<ValueObject<SchemaFileContent*>*>(content_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Field*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* containerNameNonterminalParser = GetNonterminal("containerName");
+                containerNameNonterminalParser->SetPostCall(PostCall(PostcontainerName));
+                NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
+                fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.content->NewContainerField(context.fromcontainerName, context.fromfieldName);
+            }
+            public throw void PostcontainerName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromcontainerName_value = stack.Pop();
+                    context.fromcontainerName = *cast<ValueObject<string>*>(fromcontainerName_value.GetPtr());
+                }
+            }
+            public throw void PostfieldName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromfieldName_value = stack.Pop();
+                    context.fromfieldName = *cast<ValueObject<string>*>(fromfieldName_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public SchemaFileContent* content;
+                public Field* value;
+                public string fromcontainerName;
+                public string fromfieldName;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ArrayFieldRule: System.Text.Parsing.Rule
+        {
+            public ArrayFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Field*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Field*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* itemTypeNonterminalParser = GetNonterminal("itemType");
+                itemTypeNonterminalParser->SetPostCall(PostCall(PostitemType));
+                NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
+                fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new ArrayFieldBase(context.fromitemType, context.fromfieldName);
+            }
+            public throw void PostitemType(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromitemType_value = stack.Pop();
+                    context.fromitemType = *cast<ValueObject<string>*>(fromitemType_value.GetPtr());
+                }
+            }
+            public throw void PostfieldName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromfieldName_value = stack.Pop();
+                    context.fromfieldName = *cast<ValueObject<string>*>(fromfieldName_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Field* value;
+                public string fromitemType;
+                public string fromfieldName;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class FieldTypeRule: System.Text.Parsing.Rule
+        {
+            public FieldTypeRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                NonterminalParser* containerTypeNonterminalParser = GetNonterminal("containerType");
+                containerTypeNonterminalParser->SetPostCall(PostCall(PostcontainerType));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = "System.Text.Json.Schema.StringField";
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = "System.Text.Json.Schema.NumberField";
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = "System.Text.Json.Schema.BooleanField";
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromcontainerType;
+            }
+            public throw void PostcontainerType(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromcontainerType_value = stack.Pop();
+                    context.fromcontainerType = *cast<ValueObject<string>*>(fromcontainerType_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public string value;
+                public string fromcontainerType;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class IdentifierRule: System.Text.Parsing.Rule
+        {
+            public IdentifierRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = match;
+            }
+            public throw void Postidentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromidentifier_value = stack.Pop();
+                    context.fromidentifier = *cast<ValueObject<string>*>(fromidentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public string value;
+                public string fromidentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRule(new SchemaFileRule("SchemaFile", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new EmptyParser()),
+                    new KleeneStarParser(
+                        new NonterminalParser("JsonContainer", "JsonContainer", 1)))));
+            AddRule(new JsonContainerRule("JsonContainer", GetScope(),
+                new AlternativeParser(
+                    new NonterminalParser("Sequence", "Sequence", 1),
+                    new NonterminalParser("Struct", "Struct", 1))));
+            AddRule(new SequenceRule("Sequence", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("sequence"),
+                                new ActionParser("A0",
+                                    new NonterminalParser("seqName", "Identifier", 0))),
+                            new CharParser('{')),
+                        new KleeneStarParser(
+                            new ActionParser("A1",
+                                new NonterminalParser("Field", "Field", 1)))),
+                    new CharParser('}'))));
+            AddRule(new StructRule("Struct", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("struct"),
+                                new ActionParser("A0",
+                                    new NonterminalParser("structName", "Identifier", 0))),
+                            new CharParser('{')),
+                        new KleeneStarParser(
+                            new ActionParser("A1",
+                                new NonterminalParser("Field", "Field", 1)))),
+                    new CharParser('}'))));
+            AddRule(new FieldRule("Field", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new ActionParser("A0",
+                                    new NonterminalParser("StringField", "StringField", 0)),
+                                new ActionParser("A1",
+                                    new NonterminalParser("NumberField", "NumberField", 0))),
+                            new ActionParser("A2",
+                                new NonterminalParser("BooleanField", "BooleanField", 0))),
+                        new ActionParser("A3",
+                            new NonterminalParser("ContainerField", "ContainerField", 1))),
+                    new ActionParser("A4",
+                        new NonterminalParser("ArrayField", "ArrayField", 0)))));
+            AddRule(new StringFieldRule("StringField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("string"),
+                            new NonterminalParser("fieldName", "Identifier", 0)),
+                        new CharParser(';')))));
+            AddRule(new NumberFieldRule("NumberField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("number"),
+                            new NonterminalParser("fieldName", "Identifier", 0)),
+                        new CharParser(';')))));
+            AddRule(new BooleanFieldRule("BooleanField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("bool"),
+                            new NonterminalParser("fieldName", "Identifier", 0)),
+                        new CharParser(';')))));
+            AddRule(new ContainerFieldRule("ContainerField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("containerName", "Identifier", 0),
+                            new NonterminalParser("fieldName", "Identifier", 0)),
+                        new CharParser(';')))));
+            AddRule(new ArrayFieldRule("ArrayField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new NonterminalParser("itemType", "FieldType", 0),
+                                    new CharParser('[')),
+                                new CharParser(']')),
+                            new NonterminalParser("fieldName", "Identifier", 0)),
+                        new CharParser(';')))));
+            AddRule(new FieldTypeRule("FieldType", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new ActionParser("A0",
+                                new KeywordParser("string")),
+                            new ActionParser("A1",
+                                new KeywordParser("number"))),
+                        new ActionParser("A2",
+                            new KeywordParser("bool"))),
+                    new ActionParser("A3",
+                        new NonterminalParser("containerType", "Identifier", 0)))));
+            AddRule(new IdentifierRule("Identifier", GetScope(),
+                new ActionParser("A0",
+                    new DifferenceParser(
+                        new NonterminalParser("identifier", "identifier", 0),
+                        new NonterminalParser("Keyword", "Keyword", 0))
+                    )));
+            AddRule(new Rule("Keyword", GetScope(),
+                new KeywordListParser("identifier", keywords0)));
+            SetSkipRuleName("spaces");
+        }
+        private List<string> keywords0;
+    }
+}

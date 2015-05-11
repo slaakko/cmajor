@@ -1,0 +1,40 @@
+using System;
+using System.Collections;
+
+namespace System.Net.Http
+{
+    grammar TokenSep
+    {
+        Separators
+            ::= (' ' | '\t')+
+            ;
+    }
+    grammar HttpResponseGrammar
+    {
+        using stdlib.newline;
+        using stdlib.int;
+        using TokenSep.Separators;
+        skip Separators;
+        
+        HttpResponse(var List<HeaderLine> headerLines): HttpResponse
+            ::= (StatusLine (HeaderLine{ headerLines.Add(HeaderLine); })* newline Content){ value = HttpResponse(StatusLine, headerLines, Content); }
+            ;
+            
+        StatusLine(var string statusText): HttpStatus
+            ::= (HttpVersion:version int:statusCode ((anychar - newline)*){ statusText = match; } newline){ value = HttpStatus(version, statusCode, statusText); }
+            ; 
+            
+        HttpVersion: string
+            ::= keyword("HTTP") '/' (int:major '.' int:minor){ value = match; }
+            ;
+            
+        HeaderLine(var string name, var string val): HeaderLine
+            ::= (((anychar - ':')+){ name = match; } ':' ((anychar - newline)*){ val = match; } newline){ value = HeaderLine(name, val); }
+            ;
+            
+        Content: string
+            ::= (anychar*){ value = match; }
+            ;            
+    }
+}
+
