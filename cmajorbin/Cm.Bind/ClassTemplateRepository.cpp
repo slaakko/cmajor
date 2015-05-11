@@ -60,7 +60,6 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     Cm::Ast::ClassNode* classInstanceNode = static_cast<Cm::Ast::ClassNode*>(classNode->Clone(cloneContext));
     int n = int(subjectClassTypeSymbol->TypeParameters().size());
     int m = int(templateTypeSymbol->TypeArguments().size());
-    std::vector<Cm::Sym::TypeSymbol*> constraintCheckTypeArguments;
     if (n < m)
     {
         throw Cm::Core::Exception("too many template arguments", templateTypeSymbol->GetSpan());
@@ -91,7 +90,6 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
         }
         boundTypeParam->SetType(typeArgument);
         templateTypeSymbol->AddSymbol(boundTypeParam);
-        constraintCheckTypeArguments.push_back(typeArgument);
     }
     if (m < n)
     {
@@ -118,12 +116,20 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     templateTypeSymbol->SetFileScope(fileScope);
     if (classNode->Constraint())
     {
-        Cm::Core::ConceptCheckException exception;
-        bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(), constraintCheckTypeArguments, 
-            exception);
-        if (!constraintSatisfied)
+        if (boundCompileUnit.IsPrebindCompileUnit()) // cannot check constraints in prebind context, so set to template type symbol for checking later...
         {
-            throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.Referenced());
+            Cm::Ast::CloneContext cloneContext;
+            templateTypeSymbol->SetConstraint(static_cast<Cm::Ast::WhereConstraintNode*>(classNode->Constraint()->Clone(cloneContext)));
+        }
+        else
+        {
+            Cm::Core::ConceptCheckException exception;
+            bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(),
+                exception);
+            if (!constraintSatisfied)
+            {
+                throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.Referenced());
+            }
         }
     }
     VirtualBinder virtualBinder(boundCompileUnit.SymbolTable(), boundCompileUnit.SyntaxUnit());
@@ -168,8 +174,22 @@ void ClassTemplateRepository::CollectViableFunctions(const std::string& groupNam
     }
 }
 
+struct FlagSetter
+{
+    FlagSetter(bool& flag_) : flag(flag_)
+    {
+        flag = true;
+    }
+    ~FlagSetter()
+    {
+        flag = false;
+    }
+    bool& flag;
+};
+
 void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol)
 {
+    if (boundCompileUnit.IsPrebindCompileUnit()) return;
     if (boundCompileUnit.Instantiated(memberFunctionSymbol)) return;
     boundCompileUnit.AddToInstantiated(memberFunctionSymbol);
     memberFunctionSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
@@ -179,6 +199,23 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         throw std::runtime_error("not template type symbol");
     }
     Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(parent);
+    if (templateTypeSymbol->GetConstraint())    // if has unchecked constraint, check it now...
+    {
+        Cm::Sym::TypeSymbol* subjectTypeSymbol = templateTypeSymbol->GetSubjectType();
+        if (!subjectTypeSymbol->IsClassTypeSymbol())
+        {
+            throw std::runtime_error("subject type not class type");
+        }
+        Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectTypeSymbol);
+        Cm::Core::ConceptCheckException exception;
+        bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, templateTypeSymbol->GetFileScope(), templateTypeSymbol->GetConstraint(), 
+            subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(), exception);
+        if (!constraintSatisfied)
+        {
+            throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.Referenced());
+        }
+        templateTypeSymbol->SetConstraint(nullptr);
+    }
     Cm::Ast::Node* ttNode = boundCompileUnit.SymbolTable().GetNode(templateTypeSymbol);
     if (!ttNode->IsClassNode())
     {
@@ -229,10 +266,30 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         functionNode->SetBody(nullptr);
         boundCompileUnit.RemoveLastFileScope();
     }
-
-    if (templateTypeSymbol->Destructor())
+    static bool recursed = false;
+    if (!recursed)
     {
-        Instantiate(containerScope, templateTypeSymbol->Destructor());
+        FlagSetter flagSetter(recursed);
+        if (templateTypeSymbol->Destructor())
+        {
+            Instantiate(containerScope, templateTypeSymbol->Destructor());
+        }
+        for (Cm::Sym::FunctionSymbol* virtualFunction : templateTypeSymbol->Vtbl())
+        {
+            if (virtualFunction)
+            {
+                Cm::Sym::Symbol* parent = virtualFunction->Parent();
+                if (!parent->IsTypeSymbol())
+                {
+                    throw std::runtime_error("not type symbol");
+                }
+                Cm::Sym::TypeSymbol* parentType = static_cast<Cm::Sym::TypeSymbol*>(parent);
+                if (Cm::Sym::TypesEqual(parentType, templateTypeSymbol))
+                {
+                    Instantiate(containerScope, virtualFunction);
+                }
+            }
+        }
     }
 }
 

@@ -1,0 +1,92 @@
+using System;
+
+namespace System.Text.RegularExpressions
+{
+    grammar RegularExpressionGrammar
+    {
+        using stdlib.escape;
+
+        RegularExpression: PtrNfa
+            ::= AlternativeExpression:alt{ value = alt; }
+            ;
+
+        AlternativeExpression: PtrNfa
+            ::= SequenceExpression:left{ value = left; } ('|' SequenceExpression:right{ value = Alt(value, right); })*
+            ;
+
+        SequenceExpression: PtrNfa
+            ::= PostfixExpression:left{ value = left; } (PostfixExpression:right{ value = Cat(value, right); })*
+            ;
+
+        PostfixExpression: PtrNfa
+            ::= PrimaryExpression:primary{ value = primary; } ('*'{ value = Kleene(value); } | '+'{ value = Positive(value); } | '?'{ value = Optional(value); })?
+            ;
+
+        PrimaryExpression: PtrNfa
+            ::= Char:chr{ value = MakeNfa(chr); }
+            |   '.'{ value = MakeNfa(System.Text.RegularExpressions.CharClass(string(eps), true)); }
+            |   CharClass:cls{ value = MakeNfa(cls); }
+            |   ('(' AlternativeExpression:alt ')'){ value = alt; }
+            |   "\\d"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.digit), false)); }
+            |   "\\D"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.digit), true)); }
+            |   "\\s"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.space), false)); }
+            |   "\\S"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.space), true)); }
+            |   "\\w"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.word), false)); }
+            |   "\\W"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.word), true)); }
+            |   "\\l"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.lower), false)); }
+            |   "\\L"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.lower), true)); }
+            |   "\\u"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.upper), false)); }
+            |   "\\U"{ value = MakeNfa(System.Text.RegularExpressions.CharClass(ToRanges(Class.upper), true)); }
+            |   escape{ value = MakeNfa(escape); }
+            ;
+
+        Char: char
+            ::= (anychar - [()\\\[*+?|.]){ value = match[0]; }
+            ;
+
+        CharClass(var bool inverse, var string s): System.Text.RegularExpressions.CharClass
+            ::= (
+                    '[' ('^'{ inverse = true; })?
+                    (Class{ s.Append(ToRanges(Class)); } | CharRange{ s.Append(CharRange); })*
+                    ']'!
+                )
+                {
+                    value = System.Text.RegularExpressions.CharClass(s, inverse);
+                }
+                ;
+
+        Class: Class
+            ::= "[:alnum:]"{ value = Class.alnum; }
+            |   "[:alpha:]"{ value = Class.alpha; }
+            |   "[:blank:]"{ value = Class.blank; }
+            |   "[:cntrl:]"{ value = Class.cntrl; }
+            |   "[:digit:]"{ value = Class.digit; }
+            |   "[:graph:]"{ value = Class.graph; }
+            |   "[:lower:]"{ value = Class.lower; }
+            |   "[:print:]"{ value = Class.print; }
+            |   "[:punct:]"{ value = Class.punct; }
+            |   "[:space:]"{ value = Class.space; }
+            |   "[:upper:]"{ value = Class.upper; }
+            |   "[:word:]"{ value = Class.word; }
+            |   "[:w:]"{ value = Class.word; }
+            |   "[:xdigit:]"{ value = Class.xdigit; }
+            ;
+
+        CharRange: string
+            ::= CharClassChar:first
+                ('-' CharClassChar:last
+                    {
+                        value.Append(first);
+                        value.Append('-');
+                        value.Append(last);
+                    }
+                |   empty{ value.Append(first); }
+                )
+                ;
+
+        CharClassChar: char
+            ::= [^\\\]]{ value = match[0]; }
+            |   escape{ value = escape; }
+            ;
+    }
+}

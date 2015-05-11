@@ -1,0 +1,42 @@
+/*========================================================================
+    Copyright (c) 2012-2014 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+using System;
+
+namespace System.Text.Json
+{
+    internal class JsonParser
+    {
+        static JsonParser(): instance(new JsonParser())
+        {
+        }
+        public static JsonParser& Instance()
+        {
+            return *instance;
+        }
+        private JsonParser(): grammar(System.Text.Json.Data.JsonGrammar.Create())
+        {
+        }
+        suppress JsonParser(const JsonParser&);
+        suppress void operator=(const JsonParser&);
+        suppress JsonParser(JsonParser&&);
+        suppress void operator=(JsonParser&&);
+        public System.Text.Json.Data.JsonValue* Parse(const string& jsonText)
+        {
+            return grammar->Parse(jsonText, 0, "");
+        }
+        private static UniquePtr<JsonParser> instance;
+        private System.Text.Json.Data.JsonGrammar* grammar;
+    }
+    
+    public UniquePtr<System.Text.Json.Data.JsonValue> ParseJson(const string& jsonText)
+    {
+        return UniquePtr<System.Text.Json.Data.JsonValue>(JsonParser.Instance().Parse(jsonText));
+    }
+}

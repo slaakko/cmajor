@@ -327,6 +327,10 @@ bool FindConversion(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm:
         }
     }
     Cm::Sym::FunctionSymbol* otherConversion = boundCompileUnit.ConversionTable().GetConversion(plainArgumentType, plainParameterType);
+    if (!otherConversion)
+    {
+        otherConversion = boundCompileUnit.ConversionTable().GetConversion(plainArgumentType, parameterType);
+    }
     if (otherConversion)
     {
         if (otherConversion->IsConvertingConstructor() || otherConversion->IsConversionFunction())

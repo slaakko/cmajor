@@ -1,0 +1,6 @@
+project SimpleGrep;
+target=program;
+assembly <simplegrep.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+reference <ext/System.Text.RegularExpressions/System.Text.RegularExpressions.cml>;
+source <main.cm>;

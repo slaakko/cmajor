@@ -1,0 +1,138 @@
+using System;
+using System.Text.Json;
+using System.Text.Json.Data;
+using System.Net.Sockets;
+using System.Net.Http;
+
+void PrintReport(JsonValue* value)
+{
+    Statistics statistics;
+    statistics.FetchData(value);
+    Console.Out() << "start date: " << statistics.start_date << endl();
+    Console.Out() << "end date: " << statistics.end_date << endl();    
+    Console.Out() << "statistics updated: " << statistics.stats_updated << endl();
+    Console.Out() << "period: " << statistics.period << endl();
+    Console.Out() << endl();
+    Console.Out() << "by os:" << endl();
+    Console.Out() << "---------------------------------------------" << endl();
+    for (const OsStat& s : statistics.oses)
+    {
+        Console.Out() << s.os << ": " << s.count << endl();
+    }
+    Console.Out() << endl();
+    Console.Out() << "by country:" << endl();
+    Console.Out() << "---------------------------------------------" << endl();
+    for (const CountryStat& s : statistics.countries)
+    {
+        Console.Out() << s.country << ": " << s.count << endl();
+    }
+    Console.Out() << endl();
+    Console.Out() << "by date:" << endl();
+    Console.Out() << "---------------------------------------------" << endl();
+    for (const DateStat& s : statistics.downloads)
+    {
+        Console.Out() << s.date << ": " << s.count << endl();
+    }
+    Console.Out() << endl();
+    Console.Out() << "summaries: " << endl();
+    Console.Out() << "---------------------------------------------" << endl();
+    Console.Out() << "os top: " << statistics.summaries.os.top << endl();
+    Console.Out() << "os percent: " << statistics.summaries.os.percent << endl();
+    Console.Out() << "geo top: " << statistics.summaries.geo.top << endl();
+    Console.Out() << "geo percent: " << statistics.summaries.geo.percent << endl();
+    Console.Out() << "downloads: " << statistics.summaries.time.downloads << endl();
+    Console.Out() << "---------------------------------------------" << endl();
+    Console.Out() << "total: " << statistics.total << endl();
+
+}
+
+int main(int argc, const char** argv)
+{
+    if (argc == 2 && argv[1] == "-help")
+    {
+        Console.Out() << "Usage: downloads [-help] [-dump] [-h=<host>] [-p=<project>] [-v=<version>] [-s=<start_date>] [-e=<end_date>]" << endl();
+        Console.Out() << "defaults:" << endl();
+        Console.Out() << "-h: sourceforge.net" << endl();
+        Console.Out() << "-p: cmajor" << endl();
+        Console.Out() << "-v: <all versions>" << endl();
+        Console.Out() << "-s: 1900-01-01" << endl();
+        Console.Out() << "-e: <current date>" << endl();
+        return 1;
+    }
+    try
+    {
+        string host = "sourceforge.net";
+        string project = "cmajor";
+        string version = "";
+        string startDate = "1900-01-01";
+        string endDate = ToString(CurrentDate());
+        bool debug = false;
+        for (int i = 1; i < argc; ++i)
+        {
+            string arg = argv[i];
+            if (arg == "-debug")
+            {
+                debug = true;
+            }
+            else if (arg.StartsWith("-h="))
+            {
+                host = arg.Substring(3);
+            }
+            else if (arg.StartsWith("-p="))
+            {
+                project = arg.Substring(3);
+            }
+            else if (arg.StartsWith("-v="))
+            {
+                version = arg.Substring(3);
+            }
+            else if (arg.StartsWith("-s="))
+            {
+                startDate = arg.Substring(3);
+            }
+            else if (arg.StartsWith("-e="))
+            {
+                endDate = arg.Substring(3);
+            }
+            else
+            {
+                throw Exception("invalid argument '" + arg + "'");
+            }
+        }
+        TcpSocket socket(host, "80");
+        string request = "GET /projects/" + project + "/files/";
+        if (!version.IsEmpty())
+        {
+            request.Append(version);
+            request.Append("/");
+        }
+        request.Append("stats/json?start_date=" + startDate + "&end_date=" + endDate + " HTTP/1.1\r\n");
+        request.Append("Host: " + host + "\r\n");
+        request.Append("\r\n");
+        if (debug)
+        {
+            Console.Out() << "sending request: " << request << " to " << host << endl();
+        }        
+        socket.Send(request);
+        string responseText = socket.ReceiveAll();
+        if (debug)
+        {
+            Console.Out() << "received response: " << responseText << " from " << host << endl();
+        }        
+        HttpResponse response = ParseHttpResponse(responseText);
+        if (response.Status().StatusCode() == 200)
+        {
+            UniquePtr<JsonValue> jsonValue = ParseJson(response.Content());
+            PrintReport(jsonValue.GetPtr());
+        }
+        else
+        {
+            throw Exception(host + " returned status " + ToString(response.Status().StatusCode()));
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.Message() << endl();
+    }
+    return 0;
+}

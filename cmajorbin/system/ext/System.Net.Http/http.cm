@@ -1,0 +1,75 @@
+using System;
+using System.Collections;
+
+namespace System.Net.Http
+{
+    public class HttpResponse
+    {
+        public HttpResponse()
+        {
+        }
+        public HttpResponse(const HttpStatus& status_, const List<HeaderLine>& headerLines_, const string& content_): status(status_), headerLines(headerLines_), content(content_)
+        {
+        }
+        public nothrow const HttpStatus& Status() const
+        {
+            return status;
+        }
+        public nothrow const List<HeaderLine>& HeaderLines() const
+        {
+            return headerLines;
+        }
+        public nothrow const string& Content() const
+        {
+            return content;
+        }
+        private HttpStatus status;
+        private List<HeaderLine> headerLines;
+        private string content;
+    }
+    
+    public class HttpStatus
+    {
+        public HttpStatus()
+        {
+        }
+        public HttpStatus(const string& httpVersion_, int statusCode_, const string& statusText_): httpVersion(httpVersion_), statusCode(statusCode_), statusText(statusText_)
+        {
+        }
+        public nothrow const string& HttpVersion() const
+        {
+            return httpVersion;
+        }
+        public nothrow int StatusCode() const
+        {
+            return statusCode;
+        }
+        public nothrow const string& StatusText() const
+        {
+            return statusText;
+        }
+        private string httpVersion;
+        private int statusCode;
+        private string statusText;
+    }
+    
+    public class HeaderLine
+    {
+        public HeaderLine()
+        {
+        }
+        public HeaderLine(const string& name_, const string& value_): name(name_), value(value_)
+        {
+        }
+        public const string& Name() const
+        {
+            return name;
+        }
+        public const string& Value() const
+        {
+            return value;
+        }
+        private string name;
+        private string value;
+    }
+}

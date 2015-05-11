@@ -1,0 +1,79 @@
+using System;
+
+namespace System.Text.Json.Schema
+{
+    grammar SchemaFileGrammar
+    {
+        using stdlib.spaces;
+        using stdlib.identifier;
+        
+        skip spaces;
+        
+        SchemaFile: SchemaFileContent*
+            ::= empty{ value = new SchemaFileContent(); }
+                JsonContainer(value)*
+            ;
+            
+        JsonContainer(SchemaFileContent* content)
+            ::= Sequence(content)
+            |   Struct(content)
+            ;  
+            
+        Sequence(SchemaFileContent* content, var Sequence* sequence)
+            ::= keyword("sequence") Identifier:seqName{ sequence = new Sequence(seqName); sequence->SetTypeName(seqName); content->AddContainer(sequence); }
+                '{'
+                (Field(content){ sequence->AddField(Field); content->AddField(Field); })*
+                '}'
+            ;
+            
+        Struct(SchemaFileContent* content, var Struct* structure)
+            ::= keyword("struct") Identifier:structName{ structure = new Struct(structName); structure->SetTypeName(structName); content->AddContainer(structure); }
+                '{'
+                (Field(content){ structure->AddField(Field); content->AddField(Field); })*
+                '}'
+            ;
+            
+        Field(SchemaFileContent* content): Field*
+            ::= StringField{ value = StringField; }
+            |   NumberField{ value = NumberField; }
+            |   BooleanField{ value = BooleanField; }
+            |   ContainerField(content){ value = ContainerField; }
+            |   ArrayField{ value = ArrayField; }
+            ;
+            
+        StringField: Field*
+            ::= (keyword("string") Identifier:fieldName ';'){ value = new StringField(fieldName); }
+            ;
+            
+        NumberField: Field*
+            ::= (keyword("number") Identifier:fieldName ';'){ value = new NumberField(fieldName); }
+            ;
+            
+        BooleanField: Field*
+            ::= (keyword("bool") Identifier:fieldName ';'){ value = new BooleanField(fieldName); }
+            ;
+            
+        ContainerField(SchemaFileContent* content): Field*
+            ::= (Identifier:containerName Identifier:fieldName ';'){ value = content->NewContainerField(containerName, fieldName); }
+            ;
+            
+        ArrayField: Field*
+            ::= (FieldType:itemType '[' ']' Identifier:fieldName ';'){ value = new ArrayFieldBase(itemType, fieldName); }
+            ;
+            
+        FieldType: string
+            ::= keyword("string"){ value = "System.Text.Json.Schema.StringField"; }
+            |   keyword("number"){ value = "System.Text.Json.Schema.NumberField"; }
+            |   keyword("bool"){ value = "System.Text.Json.Schema.BooleanField"; }
+            |   Identifier:containerType{ value = containerType; }
+            ;
+            
+        Identifier: string
+            ::= (identifier - Keyword){ value = match; }
+            ;
+    
+        Keyword
+            ::= keyword_list(identifier, ["string", "number", "bool", "sequence", "struct"])
+            ;
+    }        
+}

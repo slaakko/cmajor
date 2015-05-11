@@ -1,0 +1,48 @@
+using System;
+
+namespace System.Text.Json.Data
+{
+    grammar JsonGrammar
+    {
+        using stdlib.spaces;
+        using stdlib.escape;
+        using stdlib.number;
+        
+        skip spaces;
+        
+        Value: JsonValue*
+            ::= String{ value = String; }
+            |   Number{ value = Number; }
+            |   Object{ value = Object; }
+            |   Array{ value = Array; }
+            |   keyword("true"){ value = new JsonBool(true); }
+            |   keyword("false"){ value = new JsonBool(false); }
+            |   keyword("null"){ value = new JsonNull(); }
+            ;
+            
+        Object: JsonObject*
+            ::= '{'{ value = new JsonObject(); } ((String:name ':' Value:val){ value->AddField(Rvalue(*name), val); delete name; } % ',')? '}'
+            ;
+            
+        Array: JsonArray*
+            ::= '['{ value = new JsonArray(); } (Value:item{ value->AddItem(item); } % ',')? ']'
+            ;
+            
+        String: JsonString*
+            ::= token('"'{ value = new JsonString(); } 
+            (   [^"\\]{ value->Append(match[0]); }
+            |   escape{ value->Append(escape); } 
+            |   "\\u" (hexdigit hexdigit hexdigit hexdigit)
+                { 
+                    ulong u = ParseHex(match);
+                    ushort c = cast<ushort>(u & 0xFFFF);
+                    value->Append(ToUtf8(c)); 
+                }
+            )* '"')
+            ;
+            
+        Number: JsonNumber*
+            ::= number{ value = new JsonNumber(number); }
+            ;
+    }
+}

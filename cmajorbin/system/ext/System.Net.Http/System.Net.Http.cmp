@@ -1,0 +1,10 @@
+project System.Net.Http;
+target=library;
+assembly <System.Net.Http.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+source <http.cm>;
+text <http.pl>;
+text <http.pp>;
+source <httpresponse.cm>;
+text <httpresponse.parser>;
+source <httpresponseparser.cm>;

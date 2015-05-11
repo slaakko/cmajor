@@ -263,6 +263,7 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     defaultConstructorSymbol->ComputeName();
     defaultConstructorSymbol->SetNothrow();
     if (!generateImplementation) return defaultConstructorSymbol;
+    AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> defaultConstructor(new Cm::BoundTree::BoundFunction(nullptr, defaultConstructorSymbol));
     defaultConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
     GenerateReceives(containerScope, compileUnit, defaultConstructor.get());
@@ -346,6 +347,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
     copyConstructorSymbol->AddSymbol(thatParam);
     copyConstructorSymbol->ComputeName();
     if (!generateImplementation) return copyConstructorSymbol;
+    AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyConstructor(new Cm::BoundTree::BoundFunction(nullptr, copyConstructorSymbol));
     copyConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
     GenerateReceives(containerScope, compileUnit, copyConstructor.get());
@@ -442,6 +444,7 @@ Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bo
     moveConstructorSymbol->AddSymbol(thatParam);
     moveConstructorSymbol->ComputeName();
     if (!generateImplementation) return moveConstructorSymbol;
+    AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> moveConstructor(new Cm::BoundTree::BoundFunction(nullptr, moveConstructorSymbol));
     moveConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
     GenerateReceives(containerScope, compileUnit, moveConstructor.get());
@@ -551,6 +554,7 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
     copyAssignmentSymbol->SetReturnType(voidType);
     copyAssignmentSymbol->ComputeName();
     if (!generateImplementation) return copyAssignmentSymbol;
+    AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyAssignment(new Cm::BoundTree::BoundFunction(nullptr, copyAssignmentSymbol));
     copyAssignment->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
     GenerateReceives(containerScope, compileUnit, copyAssignment.get());
@@ -634,6 +638,7 @@ Cm::Sym::FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, boo
     moveAssignmentSymbol->AddSymbol(thatParam);
     moveAssignmentSymbol->ComputeName();
     if (!generateImplementation) return moveAssignmentSymbol;
+    AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> moveAssignment(new Cm::BoundTree::BoundFunction(nullptr, moveAssignmentSymbol));
     moveAssignment->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
     GenerateReceives(containerScope, compileUnit, moveAssignment.get());
@@ -745,6 +750,7 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
     Cm::Sym::FunctionSymbol* destructorSymbol = classTypeSymbol->Destructor();
     if (compileUnit.Instantiated(destructorSymbol)) return;
     compileUnit.AddToInstantiated(destructorSymbol);
+    AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     Cm::Sym::ParameterSymbol* thisParam = destructorSymbol->Parameters()[0];
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     std::unique_ptr<Cm::BoundTree::BoundFunction> destructor(new Cm::BoundTree::BoundFunction(nullptr, destructorSymbol));
@@ -812,6 +818,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
     Cm::Sym::FunctionSymbol* staticConstructorSymbol = classTypeSymbol->StaticConstructor();
     if (compileUnit.Instantiated(staticConstructorSymbol)) return;
     compileUnit.AddToInstantiated(staticConstructorSymbol);
+    compileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
     std::unique_ptr<Cm::BoundTree::BoundFunction> staticConstructor(new Cm::BoundTree::BoundFunction(nullptr, staticConstructorSymbol));
     staticConstructor->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
 
@@ -987,6 +994,7 @@ Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetDefaultConstructor(const C
     if (!defaultConstructor)
     {
         bool generateImplementation = !classTypeSymbol->GenerateDefaultConstructor(); // default implementation is generated from elsewhere
+        if (compileUnit.IsPrebindCompileUnit()) generateImplementation = false;
         defaultConstructor.reset(GenerateDefaultConstructor(generateImplementation, classTypeSymbol->GenerateDefaultConstructor(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return defaultConstructor.get();
@@ -998,6 +1006,7 @@ Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetCopyConstructor(const Cm::
     if (!copyConstructor)
     {
         bool generateImplementation = !classTypeSymbol->GenerateCopyConstructor(); // default implementation is generated from elsewhere
+        if (compileUnit.IsPrebindCompileUnit()) generateImplementation = false;
         copyConstructor.reset(GenerateCopyConstructor(generateImplementation, classTypeSymbol->GenerateCopyConstructor(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return copyConstructor.get();
@@ -1009,6 +1018,7 @@ Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetMoveConstructor(const Cm::
     if (!moveConstructor)
     {
         bool generateImplementation = !classTypeSymbol->GenerateMoveConstructor(); // default implementation is generated from elsewhere
+        if (compileUnit.IsPrebindCompileUnit()) generateImplementation = false;
         moveConstructor.reset(GenerateMoveConstructor(generateImplementation, classTypeSymbol->GenerateMoveConstructor(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return moveConstructor.get();
@@ -1020,6 +1030,7 @@ Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetCopyAssignment(const Cm::P
     if (!copyAssignment)
     {
         bool generateImplementation = !classTypeSymbol->GenerateCopyAssignment(); // default implementation is generated from elsewhere
+        if (compileUnit.IsPrebindCompileUnit()) generateImplementation = false;
         copyAssignment.reset(GenerateCopyAssignment(generateImplementation, classTypeSymbol->GenerateCopyAssignment(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return copyAssignment.get();
@@ -1031,6 +1042,7 @@ Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetMoveAssignment(const Cm::P
     if (!moveAssignment)
     {
         bool generateImplementation = !classTypeSymbol->GenerateMoveAssignment(); // default implementation is generated from elsewhere
+        if (compileUnit.IsPrebindCompileUnit()) generateImplementation = false;
         moveAssignment.reset(GenerateMoveAssignment(generateImplementation, classTypeSymbol->GenerateMoveAssignment(), span, classTypeSymbol, containerScope, compileUnit, exception));
     }
     return moveAssignment.get();

@@ -1,0 +1,37 @@
+using System;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Schema;
+
+int main(int argc, const char** argv)
+{
+    try
+    {
+        if (argc < 2)
+        {
+            Console.Out() << "Usage: jsonschemagen {<file>.schema}" << endl();
+            Console.Out() << "generates json schema classes" << endl();
+            return 1;
+        }
+        SchemaFileGrammar* grammar = SchemaFileGrammar.Create();
+        for (int i = 1; i < argc; ++i)
+        {
+            string fileName = argv[i];
+            string content = ReadFile(fileName);
+            Console.Out() << "<= " << fileName << endl();
+            UniquePtr<SchemaFileContent> schemaFileContent = grammar->Parse(content, i - 1, fileName);
+            string definitionFile = Path.ChangeExtension(fileName, ".cm");
+            OutputFileStream stream(definitionFile);
+            CodeFormatter formatter(stream);
+            schemaFileContent->GenerateDefinitions(formatter);
+            Console.Out() << "=> " << definitionFile << endl();
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.Message() << endl();
+        return 2;
+    }
+    return 0;
+}

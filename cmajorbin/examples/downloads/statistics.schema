@@ -1,0 +1,58 @@
+sequence OsStat
+{
+    string os;
+    number count;
+}
+
+sequence CountryStat
+{
+    string country;
+    number count;
+}
+
+sequence DateStat
+{
+    string date;
+    number count;
+}
+
+struct OsSummary
+{
+    string top;
+    number percent;
+    string modifier_text;
+}
+
+struct GeoSummary
+{
+    string top;
+    number percent;
+    string modifier_text;
+}
+
+struct TimeSummary
+{
+    number downloads;
+}
+
+struct Summaries
+{
+    OsSummary os;
+    GeoSummary geo;
+    TimeSummary time;
+}
+
+struct Statistics
+{
+    OsStat[] oses;
+    string start_date;
+    string end_date;
+    CountryStat[] countries;
+    string[] oses_with_downloads;
+    DateStat[] downloads;
+    string[] messages;
+    string period;
+    number total;
+    string stats_updated;
+    Summaries summaries;
+}
