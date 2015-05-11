@@ -1,0 +1,75 @@
+using System;
+using System.Collections;
+
+namespace System.Xml.Serialization
+{
+    public abstract class Creator
+    {
+        public nothrow Creator(const string& name_): name(name_)
+        {
+        }
+        public virtual nothrow ~Creator()
+        {
+        }
+        public abstract Serializable* Create();
+        public nothrow const string& Name() const
+        {
+            return name;
+        }
+        private string name;
+    }
+    
+    public class ConcreteCreator<T>: Creator
+    {
+        public nothrow ConcreteCreator(const string& name_): base(name_)
+        {
+        }
+        public override Serializable* Create()
+        {
+            return new T(Name());
+        }        
+    }
+    
+    public class GlobalFactory
+    {
+        static GlobalFactory(): instance(new GlobalFactory())
+        {
+        }
+        public static GlobalFactory& Instance()
+        {
+            return *instance;
+        }
+        private GlobalFactory()
+        {
+        }
+        public void Register(Creator* creator)
+        {
+            Map<string, Creator*>.Iterator i = creatorMap.Find(creator->Name());
+            if (i != creatorMap.End())
+            {
+                throw Exception("creator '" + creator->Name() + "' already exists");
+            }
+            else
+            {
+                creatorMap[creator->Name()] = creator;
+                creators.Add(UniquePtr<Creator>(creator));
+            }
+        }
+        public Serializable* Create(const string& name)
+        {
+            Map<string, Creator*>.Iterator i = creatorMap.Find(name);
+            if (i != creatorMap.End())
+            {
+                Creator* creator = i->second;
+                return creator->Create();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        private Map<string, Creator*> creatorMap;
+        private List<UniquePtr<Creator>> creators;
+        private static UniquePtr<GlobalFactory> instance;
+    }
+}

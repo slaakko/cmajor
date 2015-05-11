@@ -1,0 +1,154 @@
+using System;
+using System.Collections;
+using System.IO;
+using System.Text;
+
+namespace System.Xml.Serialization
+{
+    public class SerializationSchemaFile
+    {
+        public nothrow SerializationSchemaFile()
+        {
+        }
+        suppress SerializationSchemaFile(const SerializationSchemaFile&);
+        suppress void operator=(const SerializationSchemaFile&);
+        suppress SerializationSchemaFile(SerializationSchemaFile&&);
+        suppress void operator=(SerializationSchemaFile&&);
+        public void SetNamespace(const string& ns_)
+        {
+            ns = ns_;
+        }
+        public nothrow const string& Ns() const
+        {
+            return ns;
+        }
+        public nothrow const List<Struct*>& Structs() const
+        {
+            return structs;
+        }
+        public void AddStruct(Struct* structure)
+        {
+            structs.Add(structure);
+            ownedStructs.Add(UniquePtr<Struct>(structure));
+        }
+        private string ns;
+        private List<Struct*> structs;
+        private List<UniquePtr<Struct>> ownedStructs;
+    }
+    
+    public void GenerateSerializationCode(const string& schemaFileName)
+    {
+        SerializationSchemaFileGrammar* grammar = SerializationSchemaFileGrammar.Create();
+        string schemaFileContent = ReadFile(schemaFileName);
+        UniquePtr<SerializationSchemaFile> schemaFile = grammar->Parse(schemaFileContent, 0, schemaFileName);
+        string cmajorFileName = Path.ChangeExtension(schemaFileName, ".cm");
+        OutputFileStream cmajorFile(cmajorFileName);
+        CodeFormatter formatter(cmajorFile);
+        formatter.WriteLine("using System;");
+        formatter.WriteLine("using System.Xml.Serialization;");
+        formatter.WriteLine();
+        if (!schemaFile->Ns().IsEmpty())
+        {
+            formatter.WriteLine("namespace " + schemaFile->Ns());
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+        }
+        for (Struct* structure : schemaFile->Structs())
+        {
+            formatter.WriteLine("public class " + structure->TypeName() + ": Struct");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            string fullStructureName = schemaFile->Ns();
+            if (!fullStructureName.IsEmpty())
+            {
+                fullStructureName.Append('.');
+            }
+            fullStructureName.Append(structure->TypeName());
+            formatter.WriteLine("public " + structure->TypeName() + "(const string& name_): base(\"" + fullStructureName + "\", name_),");
+            formatter.IncIndent();
+            const List<Serializable*>& fields = structure->Fields();
+            int n = fields.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                Serializable* field  = fields[i];
+                string continuation = "";
+                if (i < n - 1)
+                {
+                    continuation.Append(", ");
+                }
+                formatter.WriteLine(field->Name() + "(new " + field->TypeName() + field->Initializer() + ")" + continuation);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            for (int i = 0; i < n; ++i)
+            {
+                Serializable* field  = fields[i];
+                formatter.WriteLine("AddField(" + field->Name() + ");");
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            formatter.WriteLine("suppress " + structure->TypeName() + "(const " + structure->TypeName() + "&);");
+            formatter.WriteLine("suppress void operator=(const " + structure->TypeName() + "&);");
+            formatter.WriteLine("public override Serializable* Clone() const");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            formatter.WriteLine("return new " + structure->TypeName() + "(base->Name());");
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            for (int i = 0; i < n; ++i)
+            {
+                Serializable* field  = fields[i];
+                if (field->IsArrayField())
+                {
+                    Array* a = cast<Array*>(field);
+                    Serializable* itemType = a->GetItemType();
+                    if (itemType->IsScalarFieldType())
+                    {
+                        string itemTypeName = itemType->ArrayItemTypeName();
+                        formatter.WriteLine("public const ScalarArrayField<" + itemTypeName + ">& get_" + field->Name() + "() const { return *" + field->Name() + "; }");
+                        formatter.WriteLine("public ScalarArrayField<" + itemTypeName + ">& get_" + field->Name() + "() { return *" + field->Name() + "; }");
+                    }
+                    else
+                    {
+                        string itemTypeName = itemType->ArrayItemTypeName();
+                        formatter.WriteLine("public const StructureArrayField<" + itemTypeName + ">& get_" + field->Name() + "() const { return *" + field->Name() + "; }");
+                        formatter.WriteLine("public StructureArrayField<" + itemTypeName + ">& get_" + field->Name() + "() { return *" + field->Name() + "; }");
+                    }                
+                }
+                else
+                {
+                    formatter.WriteLine("public " + field->ValueTypeName() + " get_" + field->Name() + "() const { " + field->Getter() + " }");
+                    formatter.WriteLine("public void set_" + field->Name() + "(" + field->ValueTypeName() + " " + field->Name() + "_) { " + field->Setter()  + " }");
+                }
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                Serializable* field  = fields[i];
+                formatter.WriteLine("private " + field->PtrTypeName() + " " + field->Name() + ";");
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        formatter.WriteLine("public void Register()");
+        formatter.WriteLine("{");
+        formatter.IncIndent();
+        for (Struct* structure : schemaFile->Structs())
+        {
+            string fullStructureName = schemaFile->Ns();
+            if (!fullStructureName.IsEmpty())
+            {
+                fullStructureName.Append('.');
+            }
+            fullStructureName.Append(structure->TypeName());
+            formatter.WriteLine("GlobalFactory.Instance().Register(new ConcreteCreator<" + structure->TypeName() + ">(\"" + fullStructureName + "\"));");
+        }
+        formatter.DecIndent();
+        formatter.WriteLine("}");
+        if (!schemaFile->Ns().IsEmpty())
+        {
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+    }
+}

@@ -132,7 +132,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
             }
         }
     }
-    VirtualBinder virtualBinder(boundCompileUnit.SymbolTable(), boundCompileUnit.SyntaxUnit());
+    VirtualBinder virtualBinder(boundCompileUnit.SymbolTable(), boundCompileUnit.SyntaxUnit(), boundCompileUnit);
     globalNs->Accept(virtualBinder);
     Binder binder(boundCompileUnit);
     globalNs->Accept(binder);

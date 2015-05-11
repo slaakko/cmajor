@@ -426,7 +426,7 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
     }
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
-        Cm::Bind::VirtualBinder virtualBinder(symbolTable, compileUnit.get());
+        Cm::Bind::VirtualBinder virtualBinder(symbolTable, compileUnit.get(), prebindCompileUnit);
         compileUnit->Accept(virtualBinder);
     }
     if (projectName == "system")

@@ -1,0 +1,1051 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+
+namespace System.Xml.Serialization
+{
+    public class SerializationSchemaFileGrammar: System.Text.Parsing.Grammar
+    {
+        public static SerializationSchemaFileGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static SerializationSchemaFileGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            SerializationSchemaFileGrammar* grammar = new SerializationSchemaFileGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private SerializationSchemaFileGrammar(ParsingDomain* parsingDomain): base("SerializationSchemaFileGrammar", parsingDomain->GetNamespaceScope("System.Xml.Serialization"), parsingDomain)
+        {
+            SetOwner(0);
+            keywords0.Add("bool");
+            keywords0.Add("double");
+            keywords0.Add("int");
+            keywords0.Add("string");
+            keywords0.Add("struct");
+        }
+        public SerializationSchemaFile* Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            SerializationSchemaFile* result = *cast<ValueObject<SerializationSchemaFile*>*>(value.GetPtr());
+            return result;
+        }
+        private class SchemaFileRule: System.Text.Parsing.Rule
+        {
+            public SchemaFileRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("SerializationSchemaFile*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<SerializationSchemaFile*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
+                qualifiedIdNonterminalParser->SetPostCall(PostCall(PostQualifiedId));
+                NonterminalParser* structsNonterminalParser = GetNonterminal("Structs");
+                structsNonterminalParser->SetPreCall(PreCall(PreStructs));
+                NonterminalParser* plainNonterminalParser = GetNonterminal("plain");
+                plainNonterminalParser->SetPreCall(PreCall(Preplain));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new SerializationSchemaFile();
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->SetNamespace(context.fromQualifiedId);
+            }
+            public throw void PostQualifiedId(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromQualifiedId_value = stack.Pop();
+                    context.fromQualifiedId = *cast<ValueObject<string>*>(fromQualifiedId_value.GetPtr());
+                }
+            }
+            public throw void PreStructs(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<SerializationSchemaFile*>(context.value)));
+            }
+            public throw void Preplain(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<SerializationSchemaFile*>(context.value)));
+            }
+            private class Context
+            {
+                public SerializationSchemaFile* value;
+                public string fromQualifiedId;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class StructsRule: System.Text.Parsing.Rule
+        {
+            public StructsRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("SerializationSchemaFile*", "file"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> file_value = stack.Pop();
+                context.file = *cast<ValueObject<SerializationSchemaFile*>*>(file_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* structNonterminalParser = GetNonterminal("Struct");
+                structNonterminalParser->SetPostCall(PostCall(PostStruct));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.file->AddStruct(context.fromStruct);
+            }
+            public throw void PostStruct(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStruct_value = stack.Pop();
+                    context.fromStruct = *cast<ValueObject<Struct*>*>(fromStruct_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public SerializationSchemaFile* file;
+                public Struct* fromStruct;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class StructRule: System.Text.Parsing.Rule
+        {
+            public StructRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Struct*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Struct*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+                NonterminalParser* fieldsNonterminalParser = GetNonterminal("Fields");
+                fieldsNonterminalParser->SetPreCall(PreCall(PreFields));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new Struct(context.fromIdentifier, context.fromIdentifier);
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            public throw void PreFields(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<Struct*>(context.value)));
+            }
+            private class Context
+            {
+                public Struct* value;
+                public string fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class FieldsRule: System.Text.Parsing.Rule
+        {
+            public FieldsRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("Struct*", "structure"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> structure_value = stack.Pop();
+                context.structure = *cast<ValueObject<Struct*>*>(structure_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* fieldNonterminalParser = GetNonterminal("Field");
+                fieldNonterminalParser->SetPostCall(PostCall(PostField));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.structure->AddField(context.fromField);
+            }
+            public throw void PostField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromField_value = stack.Pop();
+                    context.fromField = *cast<ValueObject<Serializable*>*>(fromField_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Struct* structure;
+                public Serializable* fromField;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class FieldRule: System.Text.Parsing.Rule
+        {
+            public FieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Serializable*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Serializable*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+                ActionParser* a5ActionParser = GetAction("A5");
+                a5ActionParser->SetAction(ParsingAction(A5Action));
+                NonterminalParser* arrayFieldNonterminalParser = GetNonterminal("ArrayField");
+                arrayFieldNonterminalParser->SetPostCall(PostCall(PostArrayField));
+                NonterminalParser* intFieldNonterminalParser = GetNonterminal("IntField");
+                intFieldNonterminalParser->SetPostCall(PostCall(PostIntField));
+                NonterminalParser* doubleFieldNonterminalParser = GetNonterminal("DoubleField");
+                doubleFieldNonterminalParser->SetPostCall(PostCall(PostDoubleField));
+                NonterminalParser* boolFieldNonterminalParser = GetNonterminal("BoolField");
+                boolFieldNonterminalParser->SetPostCall(PostCall(PostBoolField));
+                NonterminalParser* stringFieldNonterminalParser = GetNonterminal("StringField");
+                stringFieldNonterminalParser->SetPostCall(PostCall(PostStringField));
+                NonterminalParser* structFieldNonterminalParser = GetNonterminal("StructField");
+                structFieldNonterminalParser->SetPostCall(PostCall(PostStructField));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromArrayField;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromIntField;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromDoubleField;
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromBoolField;
+            }
+            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromStringField;
+            }
+            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = context.fromStructField;
+            }
+            public throw void PostArrayField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromArrayField_value = stack.Pop();
+                    context.fromArrayField = *cast<ValueObject<Array*>*>(fromArrayField_value.GetPtr());
+                }
+            }
+            public throw void PostIntField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIntField_value = stack.Pop();
+                    context.fromIntField = *cast<ValueObject<Serializable*>*>(fromIntField_value.GetPtr());
+                }
+            }
+            public throw void PostDoubleField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromDoubleField_value = stack.Pop();
+                    context.fromDoubleField = *cast<ValueObject<Serializable*>*>(fromDoubleField_value.GetPtr());
+                }
+            }
+            public throw void PostBoolField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromBoolField_value = stack.Pop();
+                    context.fromBoolField = *cast<ValueObject<Serializable*>*>(fromBoolField_value.GetPtr());
+                }
+            }
+            public throw void PostStringField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStringField_value = stack.Pop();
+                    context.fromStringField = *cast<ValueObject<Serializable*>*>(fromStringField_value.GetPtr());
+                }
+            }
+            public throw void PostStructField(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStructField_value = stack.Pop();
+                    context.fromStructField = *cast<ValueObject<Serializable*>*>(fromStructField_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Serializable* value;
+                public Array* fromArrayField;
+                public Serializable* fromIntField;
+                public Serializable* fromDoubleField;
+                public Serializable* fromBoolField;
+                public Serializable* fromStringField;
+                public Serializable* fromStructField;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ArrayFieldRule: System.Text.Parsing.Rule
+        {
+            public ArrayFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Array*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Array*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* itemTypeNonterminalParser = GetNonterminal("ItemType");
+                itemTypeNonterminalParser->SetPostCall(PostCall(PostItemType));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new Array(context.fromItemType, context.fromIdentifier);
+            }
+            public throw void PostItemType(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromItemType_value = stack.Pop();
+                    context.fromItemType = *cast<ValueObject<Serializable*>*>(fromItemType_value.GetPtr());
+                }
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Array* value;
+                public Serializable* fromItemType;
+                public string fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ItemTypeRule: System.Text.Parsing.Rule
+        {
+            public ItemTypeRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Serializable*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Serializable*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+                NonterminalParser* structTypeNameNonterminalParser = GetNonterminal("structTypeName");
+                structTypeNameNonterminalParser->SetPostCall(PostCall(PoststructTypeName));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new IntField("item");
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new DoubleField("item");
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new BoolField("item");
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new StringField("item");
+            }
+            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new Struct(context.fromstructTypeName, "item");
+            }
+            public throw void PoststructTypeName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromstructTypeName_value = stack.Pop();
+                    context.fromstructTypeName = *cast<ValueObject<string>*>(fromstructTypeName_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Serializable* value;
+                public string fromstructTypeName;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class IntFieldRule: System.Text.Parsing.Rule
+        {
+            public IntFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Serializable*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Serializable*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new IntField(context.fromIdentifier);
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Serializable* value;
+                public string fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class DoubleFieldRule: System.Text.Parsing.Rule
+        {
+            public DoubleFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Serializable*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Serializable*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new DoubleField(context.fromIdentifier);
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Serializable* value;
+                public string fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class BoolFieldRule: System.Text.Parsing.Rule
+        {
+            public BoolFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Serializable*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Serializable*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new BoolField(context.fromIdentifier);
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Serializable* value;
+                public string fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class StringFieldRule: System.Text.Parsing.Rule
+        {
+            public StringFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Serializable*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Serializable*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new StringField(context.fromIdentifier);
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<string>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Serializable* value;
+                public string fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class StructFieldRule: System.Text.Parsing.Rule
+        {
+            public StructFieldRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Serializable*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Serializable*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* typeNameNonterminalParser = GetNonterminal("typeName");
+                typeNameNonterminalParser->SetPostCall(PostCall(PosttypeName));
+                NonterminalParser* nameNonterminalParser = GetNonterminal("name");
+                nameNonterminalParser->SetPostCall(PostCall(Postname));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = new Struct(context.fromtypeName, context.fromname);
+            }
+            public throw void PosttypeName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromtypeName_value = stack.Pop();
+                    context.fromtypeName = *cast<ValueObject<string>*>(fromtypeName_value.GetPtr());
+                }
+            }
+            public throw void Postname(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromname_value = stack.Pop();
+                    context.fromname = *cast<ValueObject<string>*>(fromname_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Serializable* value;
+                public string fromtypeName;
+                public string fromname;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class IdentifierRule: System.Text.Parsing.Rule
+        {
+            public IdentifierRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = match;
+            }
+            public throw void Postidentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromidentifier_value = stack.Pop();
+                    context.fromidentifier = *cast<ValueObject<string>*>(fromidentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public string value;
+                public string fromidentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class QualifiedIdRule: System.Text.Parsing.Rule
+        {
+            public QualifiedIdRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* firstNonterminalParser = GetNonterminal("first");
+                firstNonterminalParser->SetPostCall(PostCall(Postfirst));
+                NonterminalParser* nextNonterminalParser = GetNonterminal("next");
+                nextNonterminalParser->SetPostCall(PostCall(Postnext));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value = match;
+            }
+            public throw void Postfirst(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromfirst_value = stack.Pop();
+                    context.fromfirst = *cast<ValueObject<string>*>(fromfirst_value.GetPtr());
+                }
+            }
+            public throw void Postnext(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromnext_value = stack.Pop();
+                    context.fromnext = *cast<ValueObject<string>*>(fromnext_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public string value;
+                public string fromfirst;
+                public string fromnext;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRule(new SchemaFileRule("SchemaFile", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new EmptyParser()),
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new KeywordParser("namespace"),
+                                        new ActionParser("A1",
+                                            new ExpectationParser(
+                                                new NonterminalParser("QualifiedId", "QualifiedId", 0)))),
+                                    new ExpectationParser(
+                                        new CharParser('{'))),
+                                new ExpectationParser(
+                                    new NonterminalParser("Structs", "Structs", 1))),
+                            new ExpectationParser(
+                                new CharParser('}'))),
+                        new NonterminalParser("plain", "Structs", 1)))));
+            AddRule(new StructsRule("Structs", GetScope(),
+                new KleeneStarParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("Struct", "Struct", 0)))));
+            AddRule(new StructRule("Struct", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("struct"),
+                                new ActionParser("A0",
+                                    new ExpectationParser(
+                                        new NonterminalParser("Identifier", "Identifier", 0)))),
+                            new CharParser('{')),
+                        new NonterminalParser("Fields", "Fields", 1)),
+                    new CharParser('}'))));
+            AddRule(new FieldsRule("Fields", GetScope(),
+                new KleeneStarParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("Field", "Field", 0)))));
+            AddRule(new FieldRule("Field", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new ActionParser("A0",
+                                        new NonterminalParser("ArrayField", "ArrayField", 0)),
+                                    new ActionParser("A1",
+                                        new NonterminalParser("IntField", "IntField", 0))),
+                                new ActionParser("A2",
+                                    new NonterminalParser("DoubleField", "DoubleField", 0))),
+                            new ActionParser("A3",
+                                new NonterminalParser("BoolField", "BoolField", 0))),
+                        new ActionParser("A4",
+                            new NonterminalParser("StringField", "StringField", 0))),
+                    new ActionParser("A5",
+                        new NonterminalParser("StructField", "StructField", 0)))));
+            AddRule(new ArrayFieldRule("ArrayField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new NonterminalParser("ItemType", "ItemType", 0),
+                                    new CharParser('[')),
+                                new CharParser(']')),
+                            new ExpectationParser(
+                                new NonterminalParser("Identifier", "Identifier", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new ItemTypeRule("ItemType", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new ActionParser("A0",
+                                    new KeywordParser("int")),
+                                new ActionParser("A1",
+                                    new KeywordParser("double"))),
+                            new ActionParser("A2",
+                                new KeywordParser("bool"))),
+                        new ActionParser("A3",
+                            new KeywordParser("string"))),
+                    new ActionParser("A4",
+                        new NonterminalParser("structTypeName", "QualifiedId", 0)))));
+            AddRule(new IntFieldRule("IntField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("int"),
+                            new ExpectationParser(
+                                new NonterminalParser("Identifier", "Identifier", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new DoubleFieldRule("DoubleField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("double"),
+                            new ExpectationParser(
+                                new NonterminalParser("Identifier", "Identifier", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new BoolFieldRule("BoolField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("bool"),
+                            new ExpectationParser(
+                                new NonterminalParser("Identifier", "Identifier", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new StringFieldRule("StringField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("string"),
+                            new ExpectationParser(
+                                new NonterminalParser("Identifier", "Identifier", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new StructFieldRule("StructField", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("typeName", "QualifiedId", 0),
+                            new ExpectationParser(
+                                new NonterminalParser("name", "Identifier", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new Rule("Keyword", GetScope(),
+                new KeywordListParser("identifier", keywords0)));
+            AddRule(new IdentifierRule("Identifier", GetScope(),
+                new ActionParser("A0",
+                    new DifferenceParser(
+                        new NonterminalParser("identifier", "identifier", 0),
+                        new NonterminalParser("Keyword", "Keyword", 0))
+                    )));
+            AddRule(new QualifiedIdRule("QualifiedId", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new NonterminalParser("first", "Identifier", 0),
+                            new KleeneStarParser(
+                                new SequenceParser(
+                                    new CharParser('.'),
+                                    new NonterminalParser("next", "Identifier", 0))))))));
+            SetSkipRuleName("spaces_and_comments");
+        }
+        private List<string> keywords0;
+    }
+}

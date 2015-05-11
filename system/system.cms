@@ -8,6 +8,8 @@ project <ext/System.Text.Parsing/System.Text.Parsing.cmp>;
 project <ext/System.Text.RegularExpressions/System.Text.RegularExpressions.cmp>;
 project <ext/System.Net.Http/System.Net.Http.cmp>;
 project <ext/System.Text.Json/System.Text.Json.cmp>;
+project <ext/System.Xml/System.Xml.cmp>;
+project <ext/System.Xml.Serialization/System.Xml.Serialization.cmp>;
 activeProject os;
 dependency os();
 dependency support(os);
@@ -18,3 +20,5 @@ dependency System.Text.RegularExpressions(System.Text.Parsing, System.Text.Parsi
 dependency System.Net.Sockets(System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
 dependency System.Net.Http(System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
 dependency System.Text.Json(System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
+dependency System.Xml(System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
+dependency System.Xml.Serialization(System.Xml, System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
