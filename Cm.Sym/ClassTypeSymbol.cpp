@@ -16,7 +16,6 @@
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
-#include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -26,9 +25,9 @@ PersistentClassData::PersistentClassData() : classNodePos(0), classNodeSize(0)
 {
 }
 
-TypeId GetNextClassTypeId()
+TypeId GetNextClassTypeId(uint32_t nextClassNumber)
 {
-    uint32_t nextClassNumber = GetClassCounter()->GetNextClassNumber();
+    
     TypeId id;
     uint8_t n = uint8_t(id.Rep().Tag().size());
     for (uint8_t i = 0; i < sizeof(nextClassNumber); ++i)
@@ -42,17 +41,18 @@ TypeId GetNextClassTypeId()
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
-    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), classNumber(-1)
 {
 }
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_) : TypeSymbol(span_, name_, getNextId_ ? GetNextClassTypeId() : TypeId()),
-    flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_, uint32_t classNumber_) : 
+    TypeSymbol(span_, name_, getNextId_ ? GetNextClassTypeId(classNumber_) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr), 
+    staticConstructor(nullptr), initializedVar(nullptr), classNumber(classNumber_)
 {
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : TypeSymbol(span_, name_, id_), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
-    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr)
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), classNumber(-1)
 {
 }
 

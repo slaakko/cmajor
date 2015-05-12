@@ -24,6 +24,7 @@
     <ClInclude Include="ClassConversionTable.hpp" />
     <ClInclude Include="ClassDelegateTypeOpRepository.hpp" />
     <ClInclude Include="ClassTemplateRepository.hpp" />
+    <ClInclude Include="CompileUnitMap.hpp" />
     <ClInclude Include="ConceptRepository.hpp" />
     <ClInclude Include="DelegateTypeOpRepository.hpp" />
     <ClInclude Include="DerivedTypeOpRepository.hpp" />
@@ -47,6 +48,7 @@
     <ClCompile Include="ClassConversionTable.cpp" />
     <ClCompile Include="ClassDelegateTypeOpRepository.cpp" />
     <ClCompile Include="ClassTemplateRepository.cpp" />
+    <ClCompile Include="CompileUnitMap.cpp" />
     <ClCompile Include="ConceptRepository.cpp" />
     <ClCompile Include="DelegateTypeOpRepository.cpp" />
     <ClCompile Include="DerivedTypeOpRepository.cpp" />

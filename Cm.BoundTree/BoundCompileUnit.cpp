@@ -7,7 +7,6 @@
 
 ========================================================================*/
 
-#include <Cm.Bind/Class.hpp>
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
@@ -17,12 +16,30 @@
 
 namespace Cm { namespace BoundTree {
 
+CompileUnitMap::~CompileUnitMap()
+{
+}
+
+CompileUnitMap* globalCompileUnitMap = nullptr;
+
+void SetCompileUnitMap(CompileUnitMap* compileUnitMap)
+{
+    globalCompileUnitMap = compileUnitMap;
+}
+
+CompileUnitMap* GetCompileUnitMap()
+{
+    return globalCompileUnitMap;
+}
+
 BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(syntaxUnit_),
     fileScopes(), irFilePath(irFilePath_), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), 
     derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false)
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
     optIrFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".opt.ll").generic_string());
+    dependencyFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".dep").generic_string());
+    changedFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".chg").generic_string());
     if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
     {
         stringRepository.reset(new Cm::Core::LlvmStringRepository());
@@ -104,6 +121,66 @@ void BoundCompileUnit::SetDelegateTypeOpRepository(Cm::Core::DelegateTypeOpRepos
 void BoundCompileUnit::SetClassDelegateTypeOpRepository(Cm::Core::ClassDelegateTypeOpRepository* classDelegateTypeOpRepository_)
 {
     classDelegateTypeOpRepository.reset(classDelegateTypeOpRepository_);
+}
+
+bool BoundCompileUnit::Changed() const
+{
+    boost::filesystem::path sfp = syntaxUnit->FilePath();
+    boost::filesystem::path irp = irFilePath;
+    boost::filesystem::path ofp = objectFilePath;
+    if (!boost::filesystem::exists(irp)) return true;
+    if (boost::filesystem::last_write_time(sfp) > boost::filesystem::last_write_time(irp)) return true;
+    if (!boost::filesystem::exists(ofp)) return true;
+    if (boost::filesystem::last_write_time(sfp) > boost::filesystem::last_write_time(ofp)) return true;
+    if (boost::filesystem::last_write_time(irp) > boost::filesystem::last_write_time(ofp)) return true;
+    return false;
+}
+
+void BoundCompileUnit::AddDependentUnit(Cm::BoundTree::BoundCompileUnit* dependentUnit)
+{
+    dependentUnits.insert(dependentUnit);
+}
+
+void BoundCompileUnit::ReadDependencyFile()
+{
+    if (boost::filesystem::exists(dependencyFilePath))
+    {
+        std::ifstream dependencyFile(dependencyFilePath);
+        std::string dependentFilePath;
+        while (std::getline(dependencyFile, dependentFilePath))
+        {
+            BoundCompileUnit* dependentUnit = GetCompileUnitMap()->GetBoundCompileUnit(dependentFilePath);
+            if (dependentUnit)
+            {
+                AddDependentUnit(dependentUnit);
+            }
+        }
+    }
+}
+
+void BoundCompileUnit::WriteDependencyFile()
+{
+    std::ofstream dependencyFile(dependencyFilePath);
+    for (Cm::BoundTree::BoundCompileUnit* dependentUnit : dependentUnits)
+    {
+        dependencyFile << dependentUnit->SyntaxUnit()->FilePath() << std::endl;
+    }
+}
+
+void BoundCompileUnit::WriteChangedFile()
+{
+    std::ofstream changedFile(changedFilePath);
+    changedFile << "changed" << std::endl;
+}
+
+bool BoundCompileUnit::HasChangedFile() const
+{
+    return boost::filesystem::exists(changedFilePath);
+}
+
+void BoundCompileUnit::RemoveChangedFile()
+{
+    boost::filesystem::remove(changedFilePath);
 }
 
 } } // namespace Cm::BoundTree

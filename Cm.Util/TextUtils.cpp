@@ -12,6 +12,7 @@
 #include <sstream>
 #include <fstream>
 #include <iterator>
+#include <algorithm>
 
 namespace Cm { namespace Util {
 
@@ -199,6 +200,20 @@ std::string ReadFile(const std::string& fileName)
         if ((unsigned char)content[2] == (unsigned char)0xBF) ++start;
     }
     return start == 0 ? content : content.substr(start);
+}
+
+bool LastComponentsEqual(const std::string& s0, const std::string& s1, char componentSeparator)
+{
+    std::vector<std::string> c0 = Split(s0, componentSeparator);
+    std::vector<std::string> c1 = Split(s1, componentSeparator);
+    int n0 = int(c0.size());
+    int n1 = int(c1.size());
+    int n = std::min(n0, n1);
+    for (int i = 0; i < n; ++i)
+    {
+        if (c0[n0 - i - 1] != c1[n1 - i - 1]) return false;
+    }
+    return true;
 }
 
 } } // namespace Cm::Util

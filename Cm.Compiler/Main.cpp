@@ -80,7 +80,10 @@ int main(int argc, const char** argv)
     {
         InitDone initDone;
         std::vector<std::string> solutionOrProjectFilePaths;
+        std::vector<std::string> compileFileNames;
         Cm::IrIntf::BackEnd backend = Cm::IrIntf::BackEnd::llvm;
+        bool rebuild = false;
+        bool prevWasCompile = false;
         if (argc < 2)
         {
             std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
@@ -88,10 +91,12 @@ int main(int argc, const char** argv)
             std::cout << "Compile Cmajor solution file.cms or project file.cmp" << std::endl;
             std::cout <<
                 "options:\n" <<
+                "-R              : rebuild project or solution\n" <<
                 "-clean          : clean project or solution\n" <<
+                "-c FILENAME     : compile only FILENAME, do not link" <<
                 "-config=debug   : use debug configuration (default)\n" <<
                 "-config=release : use release configuration\n" <<
-                "-O=<n>          : set optimization level to <n> (default: debug:0, release:3)\n" <<
+                "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
                 "-backend=llvm   : use LLVM backend (default)\n" <<
                 "-backend=c      : use C backend\n" <<
                 "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
@@ -159,9 +164,17 @@ int main(int argc, const char** argv)
                                 throw std::runtime_error("unknown argument '" + arg + "'");
                             }
                         }
+                        else if (arg == "-R")
+                        {
+                            rebuild = true;
+                        }
                         else if (arg == "-clean")
                         {
                             Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::clean);
+                        }
+                        else if (arg == "-c")
+                        {
+                            prevWasCompile = true;
                         }
                         else if (arg == "-emit-opt")
                         {
@@ -190,12 +203,20 @@ int main(int argc, const char** argv)
                     }
                     else
                     {
-                        std::string ext = Cm::Util::Path::GetExtension(arg);
-                        if (ext != ".cms" && ext != ".cmp")
+                        if (prevWasCompile)
                         {
-                            throw std::runtime_error(arg + " is not Cmajor solution or project file");
+                            compileFileNames.push_back(arg);
+                            prevWasCompile = false;
                         }
-                        solutionOrProjectFilePaths.push_back(arg);
+                        else
+                        {
+                            std::string ext = Cm::Util::Path::GetExtension(arg);
+                            if (ext != ".cms" && ext != ".cmp")
+                            {
+                                throw std::runtime_error(arg + " is not Cmajor solution or project file");
+                            }
+                            solutionOrProjectFilePaths.push_back(arg);
+                        }
                     }
                 }
             }
@@ -205,16 +226,23 @@ int main(int argc, const char** argv)
             {
                 std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
             }
+            if (!compileFileNames.empty())
+            {
+                if (solutionOrProjectFilePaths.empty())
+                {
+                    throw std::runtime_error("solution or project must be specified when compiling single files");
+                }
+            }
             for (const std::string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
             {
                 std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
                 if (ext == ".cms")
                 {
-                    Cm::Build::BuildSolution(solutionOrProjectFilePath);
+                    Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames);
                 }
                 else if (ext == ".cmp")
                 {
-                    Cm::Build::BuildProject(solutionOrProjectFilePath);
+                    Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames);
                 }
                 else
                 {

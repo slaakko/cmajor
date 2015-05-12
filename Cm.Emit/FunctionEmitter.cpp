@@ -15,6 +15,7 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
+#include <Cm.Core/CompileUnitMap.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
@@ -2096,6 +2097,23 @@ void FunctionEmitter::GenerateClassDelegateAssignmentFromFun(Cm::Bind::ClassDele
 
 void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result)
 {
+    Cm::Ast::CompileUnitNode* thisUnit = currentFunction->GetFunctionSymbol()->CompileUnit();
+    if (thisUnit)
+    {
+        Cm::Ast::CompileUnitNode* thatUnit = fun->CompileUnit();
+        if (thatUnit)
+        {
+            Cm::BoundTree::BoundCompileUnit* thisBoundUnit = Cm::Core::GetBoundCompileUnit(thisUnit);
+            if (thisBoundUnit)
+            {
+                Cm::BoundTree::BoundCompileUnit* thatBoundUnit = Cm::Core::GetBoundCompileUnit(thatUnit);
+                if (thatBoundUnit && thatBoundUnit != thisBoundUnit)
+                {
+                    thatBoundUnit->AddDependentUnit(thisBoundUnit);
+                }
+            }
+        }
+    }
     if (fun->IsClassDelegateFromFunCtor())
     {
         GenerateClassDelegateInitFromFun(static_cast<Cm::Bind::ClassDelegateFromFunCtor*>(fun), result);

@@ -28,6 +28,20 @@
 
 namespace Cm { namespace BoundTree {
 
+class BoundCompileUnit;
+typedef std::unordered_set<Cm::BoundTree::BoundCompileUnit*> DependentCompileUnitSet;
+typedef DependentCompileUnitSet::const_iterator DependentCompileUnitSetIt;
+
+class CompileUnitMap
+{
+public:
+    virtual ~CompileUnitMap();
+    virtual BoundCompileUnit* GetBoundCompileUnit(const std::string& compileUnitFilePath) const = 0;
+};
+
+void SetCompileUnitMap(CompileUnitMap* compileUnitMap);
+CompileUnitMap* GetCompileUnitMap();
+
 class BoundCompileUnit
 {
 public:
@@ -69,12 +83,22 @@ public:
     bool HasGotos() const { return hasGotos; }
     bool IsPrebindCompileUnit() const { return isPrebindCompileUnit; }
     void SetPrebindCompileUnit() { isPrebindCompileUnit = true; }
+    bool Changed() const;
+    void AddDependentUnit(Cm::BoundTree::BoundCompileUnit* dependentUnit);
+    void ReadDependencyFile();
+    void WriteDependencyFile();
+    const DependentCompileUnitSet& GetDependentUnits() const { return dependentUnits; }
+    void WriteChangedFile();
+    bool HasChangedFile() const;
+    void RemoveChangedFile();
 private:
     Cm::Ast::CompileUnitNode* syntaxUnit;
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     std::string irFilePath;
     std::string objectFilePath;
     std::string optIrFilePath;
+    std::string dependencyFilePath;
+    std::string changedFilePath;
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;
@@ -96,6 +120,7 @@ private:
     std::unordered_set<Cm::Sym::FunctionSymbol*> instantiatedFunctions;
     bool hasGotos;
     bool isPrebindCompileUnit;
+    DependentCompileUnitSet dependentUnits;
 };
 
 } } // namespace Cm::BoundTree

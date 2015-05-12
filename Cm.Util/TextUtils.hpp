@@ -24,6 +24,7 @@ std::string CharStr(char c);
 std::string StringStr(const std::string& s);
 std::string QuotedPath(const std::string& path);
 std::string ReadFile(const std::string& fileName);
+bool LastComponentsEqual(const std::string& s0, const std::string& s1, char componentSeparator);
 
 } } // namespace Cm::Util
 

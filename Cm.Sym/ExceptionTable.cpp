@@ -9,8 +9,10 @@
 
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <boost/filesystem.hpp>
 #include <fstream>
 #include <stdexcept>
 
@@ -139,6 +141,43 @@ void ExceptionTable::GenerateExceptionTableUnit(const std::string& exceptionTabl
         formatter.DecIndent();
         formatter.WriteLine("};");
         formatter.WriteLine("int* _X_exception_X_base_X_id_X_table_X_addr = _X_exception_X_base_X_id_X_table;");
+    }
+}
+
+void EraseExceptionIdFile(const std::string& irFilePath)
+{
+    boost::filesystem::path exceptionFilePath = boost::filesystem::path(irFilePath).replace_extension(".exc");
+    boost::filesystem::remove(exceptionFilePath);
+}
+
+void WriteExceptionIdToFile(const std::string& irFilePath, const std::string& exceptionTypeFullName)
+{
+    boost::filesystem::path exceptionFilePath = boost::filesystem::path(irFilePath).replace_extension(".exc");
+    std::fstream exceptionFile(exceptionFilePath.generic_string(), std::ios::app);
+    exceptionFile << exceptionTypeFullName << std::endl;
+}
+
+void ProcessExceptionIdFile(const std::string& irFilePath, SymbolTable& symbolTable)
+{
+    boost::filesystem::path exceptionFilePath = boost::filesystem::path(irFilePath).replace_extension(".exc");
+    if (boost::filesystem::exists(exceptionFilePath))
+    {
+        std::ifstream exceptionFile(exceptionFilePath.generic_string());
+        std::string exceptionTypeFullName;
+        while (std::getline(exceptionFile, exceptionTypeFullName))
+        {
+            Cm::Sym::Symbol* exceptionSymbol = symbolTable.GlobalScope()->Lookup(exceptionTypeFullName);
+            if (!exceptionSymbol)
+            {
+                throw std::runtime_error("exception symbol '" + exceptionTypeFullName + "' not found");
+            }
+            if (!exceptionSymbol->IsTypeSymbol())
+            {
+                throw std::runtime_error("exception symbol '" + exceptionTypeFullName + "' is not type symbol");
+            }
+            Cm::Sym::TypeSymbol* exceptionTypeSymbol = static_cast<TypeSymbol*>(exceptionSymbol);
+            GetExceptionTable()->AddProjectException(exceptionTypeSymbol);
+        }
     }
 }
 

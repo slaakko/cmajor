@@ -13,7 +13,6 @@
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Bind/Class.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
-#include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -428,6 +427,11 @@ void GenerateBaseClassDestructionStatement(Cm::BoundTree::BoundCompileUnit& boun
 void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundFunction* currentFunction, 
     Cm::Sym::ClassTypeSymbol* classType, Cm::Ast::Node* staticConstructorNode)
 {
+    Cm::Sym::FunctionSymbol* staticConstructorSymbol = currentFunction->GetFunctionSymbol();
+    if (!staticConstructorSymbol->IsStaticConstructor())
+    {
+        throw std::runtime_error("not static constructor");
+    }
 	Cm::Sym::TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
 	Cm::Sym::Symbol* mutexGuardSymbol = boundCompileUnit.SymbolTable().GlobalScope()->Lookup("System.Support.MtxGuard");
 	if (!mutexGuardSymbol)
@@ -450,7 +454,11 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
 		staticConstructorNode->GetSpan(), mutexGuardConversions);
 	int classObjectLayoutFunIndex = currentFunction->GetClassObjectLayoutFunIndex();
 	Cm::BoundTree::BoundConstructionStatement* constructMutexGuardStatement = new Cm::BoundTree::BoundConstructionStatement(staticConstructorNode);
-	int mutexId = Cm::Sym::GetMutexTable()->GetNextMutexId();
+    int mutexId = staticConstructorSymbol->GetMutexId();
+    if (mutexId == -1)
+    {
+        throw std::runtime_error("invalid mutex id");
+    }
 	Cm::BoundTree::BoundLiteral* mutexIdLiteral = new Cm::BoundTree::BoundLiteral(staticConstructorNode);
 	mutexIdLiteral->SetValue(new Cm::Sym::IntValue(mutexId));
 	mutexIdLiteral->SetType(intType);

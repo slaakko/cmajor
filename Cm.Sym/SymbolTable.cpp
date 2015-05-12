@@ -26,6 +26,8 @@
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Sym/ConceptSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/ClassCounter.hpp>
+#include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -125,7 +127,8 @@ void SymbolTable::BeginNamespaceScope(const std::string& namespaceName, const Sp
 void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
 {
     Cm::Ast::IdentifierNode* classId = classNode->Id();
-    ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true);
+    uint32_t nextClassNumber = GetClassCounter()->GetNextClassNumber();
+    ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true, nextClassNumber);
     typeRepository.AddType(classSymbol);
     ContainerScope* classScope = classSymbol->GetContainerScope();
     nodeScopeMap[classNode] = classScope;
@@ -229,6 +232,10 @@ void SymbolTable::EndFunctionScope()
     EndContainer();
     container->AddSymbol(functionSymbol);
     currentFunction = nullptr;
+    if (functionSymbol->IsStaticConstructor())
+    {
+        functionSymbol->SetMutexId(GetMutexTable()->GetNextMutexId());
+    }
 }
 
 void SymbolTable::BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode)

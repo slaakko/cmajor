@@ -225,6 +225,8 @@ public:
     void Dump(CodeFormatter& formatter) override;
     FileScope* GetFileScope(ContainerScope* containerScope);
     void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);
+    int GetMutexId() const { return mutexId; }
+    void SetMutexId(int mutexId_) { mutexId = mutexId_; }
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
@@ -237,6 +239,7 @@ private:
     Ir::Intf::Parameter* classObjectResultIrParam;
     std::unique_ptr<PersistentFunctionData> persistentFunctionData;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs;
+    int mutexId;
     bool GetFlag(FunctionSymbolFlags flag) const
     {
         return (flags & flag) != FunctionSymbolFlags::none;
