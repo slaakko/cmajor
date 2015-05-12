@@ -32,6 +32,8 @@
 #include <Cm.Ast/BasicType.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Cm.Util/TextUtils.hpp>
+#include <boost/filesystem.hpp>
+#include <fstream>
 
 namespace Cm { namespace Bind {
 
@@ -878,6 +880,7 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                 {
                     Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
                     exceptionTable->AddProjectException(exceptionClassType);
+                    Cm::Sym::WriteExceptionIdToFile(BoundCompileUnit().IrFilePath(), exceptionClassType->FullName());
                     int32_t exceptionId = exceptionTable->GetExceptionId(exceptionClassType);
                     Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::GetCurrentFileRegistry();
                     std::string sourceFilePath = fileRegistry->GetParsedFileName(throwStatementNode.GetSpan().FileIndex());
@@ -1130,6 +1133,7 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                     {
                         Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
                         exceptionTable->AddProjectException(catchedExceptionClassType);
+                        Cm::Sym::WriteExceptionIdToFile(BoundCompileUnit().IrFilePath(), catchedExceptionClassType->FullName());
                         int32_t catchedExceptionId = exceptionTable->GetExceptionId(catchedExceptionClassType);
                         Cm::Ast::IdentifierNode* handleVarId = new Cm::Ast::IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
                         Cm::Ast::ConstructionStatementNode* handleThisExStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), new Cm::Ast::BoolNode(catchNode.GetSpan()), handleVarId);

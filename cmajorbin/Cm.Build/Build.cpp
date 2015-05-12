@@ -37,6 +37,7 @@
 #include <Cm.Bind/ControlFlowAnalyzer.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
+#include <Cm.Core/CompileUnitMap.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Emit/LlvmEmitter.hpp>
 #include <Cm.Emit/CEmitter.hpp>
@@ -175,6 +176,7 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConcept
 
 void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol*& userMainFunction)
 {
+    Cm::Sym::EraseExceptionIdFile(boundCompileUnit.IrFilePath());
     Cm::Bind::Binder binder(boundCompileUnit);
     compileUnit->Accept(binder);
     Cm::Sym::FunctionSymbol* boundUserMainFunction = binder.GetUserMainFunction();
@@ -390,9 +392,10 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
     }
 }
 
-void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, 
-    std::vector<std::string>& objectFilePaths)
+bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, 
+    std::vector<std::string>& objectFilePaths, bool rebuild, const std::vector<std::string>& compileFileNames)
 {
+    bool changed = false;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !syntaxTree.CompileUnits().empty())
     {
@@ -450,37 +453,102 @@ void Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
             throw std::runtime_error("System.Exception not found");
         }
     }
-    int index = 0;
+    std::set<Cm::BoundTree::BoundCompileUnit*> buildSet;
+    std::vector<std::unique_ptr<Cm::BoundTree::BoundCompileUnit>> boundCompileUnits;
+    Cm::Core::CompileUnitMap compileUnitMap;
+    Cm::Core::SetCompileUnitMap(&compileUnitMap);
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
-        if (!quiet)
-        {
-            std::cout << "> " << Cm::Util::GetFullPath(compileUnit->FilePath()) << std::endl;
-        }
         Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
         std::string ext = backend == Cm::IrIntf::BackEnd::llvm ? ".ll" : backend == Cm::IrIntf::BackEnd::c ? ".c" : "";
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(ext)).generic_string());
-        Cm::BoundTree::BoundCompileUnit boundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable);
-        boundCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
-        boundCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(boundCompileUnit));
-        boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
-        boundCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(boundCompileUnit));
-        boundCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(boundCompileUnit));
-        boundCompileUnit.AddFileScope(fileScopes[index].release());
-        Bind(compileUnit.get(), boundCompileUnit, userMainFunction);
-        if (boundCompileUnit.HasGotos())
+        std::unique_ptr<Cm::BoundTree::BoundCompileUnit> boundCompileUnit(new Cm::BoundTree::BoundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable));
+        compileUnitMap.MapCompileUnit(compileUnit.get(), boundCompileUnit.get());
+        boundCompileUnits.push_back(std::move(boundCompileUnit));
+    }
+    if (!rebuild)
+    {
+        if (!compileFileNames.empty())
         {
-            AnalyzeControlFlow(boundCompileUnit);
+            for (const std::unique_ptr<Cm::BoundTree::BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+            {
+                boundCompileUnit->ReadDependencyFile();
+                for (const std::string& compileFileName : compileFileNames)
+                {
+                    std::string cfn = Cm::Util::Path::MakeCanonical(compileFileName);
+                    if (Cm::Util::LastComponentsEqual(cfn, boundCompileUnit->SyntaxUnit()->FilePath(), '/'))
+                    {
+                        boundCompileUnit->WriteChangedFile();
+                        buildSet.insert(boundCompileUnit.get());
+                    }
+                }
+            }
         }
-        Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
-		GenerateObjectCode(boundCompileUnit);
-        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+        else
         {
-            GenerateOptimizedLlvmCodeFile(boundCompileUnit);
+            for (const std::unique_ptr<Cm::BoundTree::BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+            {
+                boundCompileUnit->ReadDependencyFile();
+                if (boundCompileUnit->HasChangedFile())
+                {
+                    for (Cm::BoundTree::BoundCompileUnit* dependentUnit : boundCompileUnit->GetDependentUnits())
+                    {
+                        buildSet.insert(dependentUnit);
+                    }
+                    boundCompileUnit->RemoveChangedFile();
+                }
+                else if (boundCompileUnit->Changed())
+                {
+                    buildSet.insert(boundCompileUnit.get());
+                    for (Cm::BoundTree::BoundCompileUnit* dependentUnit : boundCompileUnit->GetDependentUnits())
+                    {
+                        buildSet.insert(dependentUnit);
+                    }
+                }
+            }
         }
-        objectFilePaths.push_back(boundCompileUnit.ObjectFilePath());
+    }
+    int index = 0;
+    for (const std::unique_ptr<Cm::BoundTree::BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+    {
+        if (rebuild || buildSet.find(boundCompileUnit.get()) != buildSet.end())
+        {
+            if (!quiet)
+            {
+                std::cout << "> " << Cm::Util::GetFullPath(boundCompileUnit->SyntaxUnit()->FilePath()) << std::endl;
+            }
+            changed = true;
+            boundCompileUnit->SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(*boundCompileUnit));
+            boundCompileUnit->SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(*boundCompileUnit));
+            boundCompileUnit->SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(*boundCompileUnit));
+            boundCompileUnit->SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(*boundCompileUnit));
+            boundCompileUnit->SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(*boundCompileUnit));
+            boundCompileUnit->AddFileScope(fileScopes[index].release());
+            Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit, userMainFunction);
+            if (boundCompileUnit->HasGotos())
+            {
+                AnalyzeControlFlow(*boundCompileUnit);
+            }
+            Emit(symbolTable.GetTypeRepository(), *boundCompileUnit);
+            GenerateObjectCode(*boundCompileUnit);
+            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+            {
+                GenerateOptimizedLlvmCodeFile(*boundCompileUnit);
+            }
+        }
+        else
+        {
+            Cm::Sym::ProcessExceptionIdFile(boundCompileUnit->IrFilePath(), symbolTable);
+        }
+        objectFilePaths.push_back(boundCompileUnit->ObjectFilePath());
         ++index;
     }
+    for (const std::unique_ptr<Cm::BoundTree::BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+    {
+        boundCompileUnit->WriteDependencyFile();
+    }
+    Cm::Core::SetCompileUnitMap(nullptr);
+    return changed;
 }
 
 void Archive(const std::vector<std::string>& objectFilePaths, const std::string& assemblyFilePath)
@@ -629,14 +697,15 @@ void CleanProject(Cm::Ast::Project* project)
     }
 }
 
-void BuildProject(Cm::Ast::Project* project)
+bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames)
 {
+    bool changed = false;
     currentProject = project;
     Cm::Core::GetGlobalSettings()->SetCurrentProjectName(project->Name());
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
-        std::cout << "Building project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << 
+        std::cout << (rebuild ? "Rebuilding" : "Building") << " project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << 
             ") using " << Cm::Core::GetGlobalSettings()->Config() << " configuration..." << std::endl;
     }
     Cm::Parser::FileRegistry fileRegistry;
@@ -666,7 +735,10 @@ void BuildProject(Cm::Ast::Project* project)
     std::vector<std::string> objectFilePaths;
     CompileCFiles(project, objectFilePaths);
     CompileAsmSources(project, objectFilePaths);
-    Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
+    if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths, rebuild, compileFileNames))
+    {
+        changed = true;
+    }
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
         GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
@@ -697,15 +769,23 @@ void BuildProject(Cm::Ast::Project* project)
     Cm::Sym::SetClassCounter(nullptr);
     if (!quiet)
     {
-        std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ") built successfully" << std::endl;
+        if (!changed)
+        {
+            std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ") is up-to-date" << std::endl;
+        }
+        else
+        {
+            std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ") built successfully" << std::endl;
+        }
     }
     currentProject = nullptr;
     Cm::Core::GetGlobalSettings()->SetCurrentProjectName("");
+    return changed;
 }
 
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;
 
-void BuildProject(const std::string& projectFilePath)
+bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames)
 {
     if (!boost::filesystem::exists(projectFilePath))
     {
@@ -722,17 +802,20 @@ void BuildProject(const std::string& projectFilePath)
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean))
     {
         CleanProject(project.get());
+        return true;
     }
     else
     {
-        BuildProject(project.get());
+        return BuildProject(project.get(), rebuild, compileFileNames);
     }
 }
 
 Cm::Parser::SolutionGrammar* solutionGrammar = nullptr;
 
-void BuildSolution(const std::string& solutionFilePath)
+void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames)
 {
+    int built = 0;
+    int uptodate = 0;
     if (!boost::filesystem::exists(solutionFilePath))
     {
         throw std::runtime_error("solution file '" + solutionFilePath + "' not found");
@@ -747,7 +830,7 @@ void BuildSolution(const std::string& solutionFilePath)
     bool clean = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean);
     if (!quiet)
     {
-        std::string work = "Building";
+        std::string work = rebuild ? "Rebuilding" : "Building";
         if (clean)
         {
             work = "Cleaning";
@@ -782,7 +865,16 @@ void BuildSolution(const std::string& solutionFilePath)
         }
         else
         {
-            BuildProject(project);
+            bool projectChanged = BuildProject(project, rebuild, compileFileNames);
+            if (projectChanged)
+            {
+                rebuild = true;
+                ++built;
+            }
+            else
+            {
+                ++uptodate;
+            }
         }
     }
     if (!quiet)
@@ -793,6 +885,7 @@ void BuildSolution(const std::string& solutionFilePath)
         }
         else
         {
+            std::cout << built << " project" << (built != 1 ? "s" : "") << " built, " << uptodate << " project" << (uptodate != 1 ? "s" : "") << " up-to-date" << std::endl;
             std::cout << "Solution '" << solution->Name() + "' (" << Cm::Util::GetFullPath(solution->FilePath()) << ") built successfully" << std::endl;
         }
     }

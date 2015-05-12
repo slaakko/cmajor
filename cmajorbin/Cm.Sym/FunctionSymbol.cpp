@@ -142,7 +142,7 @@ PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), speci
 }
 
 FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
-    classObjectResultIrParam(nullptr)
+    classObjectResultIrParam(nullptr), mutexId(-1)
 {
 }
 

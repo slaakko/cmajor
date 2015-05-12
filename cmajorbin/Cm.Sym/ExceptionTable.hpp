@@ -40,6 +40,10 @@ private:
     std::vector<ExceptionRecord> exceptions;
 };
 
+void EraseExceptionIdFile(const std::string& irFilePath);
+void WriteExceptionIdToFile(const std::string& irFilePath, const std::string& exceptionTypeFullName);
+void ProcessExceptionIdFile(const std::string& irFilePath, SymbolTable& symbolTable);
+
 void SetExceptionTable(ExceptionTable* exceptionTable);
 ExceptionTable* GetExceptionTable();
 

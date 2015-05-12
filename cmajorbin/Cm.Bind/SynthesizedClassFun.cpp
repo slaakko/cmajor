@@ -16,6 +16,7 @@
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/MutexTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Bind {
@@ -742,6 +743,7 @@ Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& s
     staticConstructorSymbol->ComputeName();
     staticConstructorSymbol->SetNothrow();
     staticConstructorSymbol->SetPublic();
+    staticConstructorSymbol->SetMutexId(Cm::Sym::GetMutexTable()->GetNextMutexId());
     return staticConstructorSymbol;
 }
 
@@ -844,7 +846,11 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
 	Cm::Sym::FunctionSymbol* mutexGuardConstructor = ResolveOverload(containerScope, compileUnit, "@constructor", mutexGuardResolutionArguments, mutexGuardFunctionLookups,
 		span, mutexGuardConversions);
 	Cm::BoundTree::BoundConstructionStatement* constructMutexGuardStatement = new Cm::BoundTree::BoundConstructionStatement(nullptr);
-	int mutexId = Cm::Sym::GetMutexTable()->GetNextMutexId(); 
+    int mutexId = staticConstructorSymbol->GetMutexId();
+    if (mutexId == -1)
+    {
+        throw std::runtime_error("invalid mutex id");
+    }
 	Cm::BoundTree::BoundLiteral* mutexIdLiteral = new Cm::BoundTree::BoundLiteral(nullptr);
 	mutexIdLiteral->SetValue(new Cm::Sym::IntValue(mutexId));
 	mutexIdLiteral->SetType(intType);
