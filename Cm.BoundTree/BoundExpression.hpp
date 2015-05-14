@@ -11,6 +11,7 @@
 #define CM_BOUND_TREE_BOUND_EXPRESSION_INCLUDED
 #include <Cm.BoundTree/BoundNode.hpp>
 #include <Cm.Core/Argument.hpp>
+#include <Cm.Core/CDebugInfo.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
@@ -51,8 +52,11 @@ public:
     virtual void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
     virtual Cm::Core::ArgumentCategory GetArgumentCategory() const { return Cm::Core::ArgumentCategory::rvalue; }
+    void SetCfgNode(Cm::Core::CfgNode* cfgNode_);
+    Cm::Core::CfgNode* GetCfgNode() const { return cfgNode; }
 private:
     Cm::Sym::TypeSymbol* type;
+    Cm::Core::CfgNode* cfgNode;
 };
 
 class TraceCallInfo

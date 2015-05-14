@@ -11,6 +11,7 @@
 #include <C.Ir/Instruction.hpp>
 #include <C.Ir/Parameter.hpp>
 #include <C.Ir/Factory.hpp>
+#include <Ir.Intf/Metadata.hpp>
 
 namespace C {
 
@@ -153,6 +154,11 @@ void Function::WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inli
         if (!comment.empty())
         {
             s.append(" // ").append(comment);
+        }
+        Ir::Intf::CDebugNode* cDebugNode = inst->GetCDebugNode();
+        if (cDebugNode)
+        {
+            cDebugNode->SetCLine(formatter.Line());
         }
         formatter.WriteLine(s);
         prev = inst;

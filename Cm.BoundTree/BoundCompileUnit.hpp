@@ -53,6 +53,7 @@ public:
     const std::string& IrFilePath() const { return irFilePath; }
     const std::string& OptIrFilePath() const { return optIrFilePath; }
     const std::string& ObjectFilePath() const { return objectFilePath; }
+    const std::string& CDebugInfoFilePath() const { return cDebugInfoFilePath; }
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
@@ -91,6 +92,8 @@ public:
     void WriteChangedFile();
     bool HasChangedFile() const;
     void RemoveChangedFile();
+    void SetMainUnit() { isMainUnit = true; }
+    bool IsMainUnit() const { return isMainUnit; }
 private:
     Cm::Ast::CompileUnitNode* syntaxUnit;
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
@@ -99,6 +102,7 @@ private:
     std::string optIrFilePath;
     std::string dependencyFilePath;
     std::string changedFilePath;
+    std::string cDebugInfoFilePath;
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;
@@ -120,6 +124,7 @@ private:
     std::unordered_set<Cm::Sym::FunctionSymbol*> instantiatedFunctions;
     bool hasGotos;
     bool isPrebindCompileUnit;
+    bool isMainUnit;
     DependentCompileUnitSet dependentUnits;
 };
 

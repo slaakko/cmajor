@@ -34,12 +34,14 @@ CompileUnitMap* GetCompileUnitMap()
 
 BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(syntaxUnit_),
     fileScopes(), irFilePath(irFilePath_), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), 
-    derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false)
+    derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false), 
+    isMainUnit(false)
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
     optIrFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".opt.ll").generic_string());
     dependencyFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".dep").generic_string());
     changedFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".chg").generic_string());
+    cDebugInfoFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".cdi").generic_string());
     if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
     {
         stringRepository.reset(new Cm::Core::LlvmStringRepository());

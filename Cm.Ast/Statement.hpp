@@ -326,8 +326,14 @@ public:
     void Print(CodeFormatter& formatter) override;
     virtual bool IsCompoundStatementNode() const { return true; }
     void Accept(Visitor& visitor) override;
+    void SetBeginBraceSpan(const Span& beginBraceSpan_) { beginBraceSpan = beginBraceSpan_; }
+    const Span& BeginBraceSpan() const { return beginBraceSpan; }
+    void SetEndBraceSpan(const Span& endBraceSpan_) { endBraceSpan = endBraceSpan_; }
+    const Span& EndBraceSpan() const { return endBraceSpan; }
 private:
     StatementNodeList statements;
+    Span beginBraceSpan;
+    Span endBraceSpan;
 };
 
 class BreakStatementNode : public StatementNode

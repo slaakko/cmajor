@@ -14,7 +14,7 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), parent(nullptr)
+BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), parent(nullptr), cfgNode(nullptr)
 {
     if (syntaxNode_)
     {
@@ -42,6 +42,31 @@ BoundCompoundStatement* BoundStatement::CompoundParent() const
         return nullptr;
     }
     return static_cast<BoundCompoundStatement*>(p);
+}
+
+void BoundStatement::AddToPrevSet(Cm::Core::CfgNode* node)
+{
+    prevSet.insert(node);
+}
+
+void BoundStatement::SetCfgNode(Cm::Core::CfgNode* cfgNode_)
+{ 
+    cfgNode = cfgNode_; 
+    PatchPrevSet();
+}
+
+void BoundStatement::PatchPrevSet()
+{
+    if (!cfgNode)
+    {
+        throw std::runtime_error("cfg node not set");
+    }
+    int thisNodeId = cfgNode->Id();
+    for (Cm::Core::CfgNode* prev : prevSet)
+    {
+        prev->AddNext(thisNodeId);
+    }
+    prevSet.clear();
 }
 
 BoundStatementList::BoundStatementList()
@@ -160,10 +185,6 @@ void BoundReturnStatement::SetExpression(BoundExpression* expression_)
 
 void BoundReturnStatement::Accept(Visitor& visitor)
 {
-    if (expression)
-    {
-        expression->Accept(visitor);
-    }
     visitor.Visit(*this);
 }
 
@@ -195,6 +216,42 @@ BoundExitBlocksStatement::BoundExitBlocksStatement(Cm::Ast::Node* syntaxNode_, B
 }
 
 void BoundExitBlocksStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundBeginThrowStatement::BoundBeginThrowStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundBeginThrowStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundEndThrowStatement::BoundEndThrowStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundEndThrowStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundBeginCatchStatement::BoundBeginCatchStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundBeginCatchStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundEndCatchStatement::BoundEndCatchStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundEndCatchStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }
@@ -259,8 +316,6 @@ BoundAssignmentStatement::BoundAssignmentStatement(Cm::Ast::Node* syntaxNode_, B
 
 void BoundAssignmentStatement::Accept(Visitor& visitor)
 {
-    left->Accept(visitor);
-    right->Accept(visitor);
     visitor.Visit(*this);
 }
 
@@ -280,10 +335,6 @@ void BoundSimpleStatement::SetExpression(BoundExpression* expression_)
 
 void BoundSimpleStatement::Accept(Visitor& visitor)
 {
-    if (expression)
-    {
-        expression->Accept(visitor);
-    }
     visitor.Visit(*this);
 }
 
@@ -317,6 +368,11 @@ void BoundSwitchStatement::Accept(Visitor& visitor)
 void BoundSwitchStatement::AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel)
 {
     breakTargetLabels.push_back(breakTargetLabel);
+}
+
+void BoundSwitchStatement::AddToBreakNextSet(Cm::Core::CfgNode* node)
+{
+    breakNextSet.insert(node);
 }
 
 BoundCaseStatement::BoundCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
@@ -478,6 +534,16 @@ void BoundWhileStatement::AddContinueTargetLabel(Ir::Intf::LabelObject* continue
     continueTargetLabels.push_back(continueTargetLabel);
 }
 
+void BoundWhileStatement::AddToBreakNextSet(Cm::Core::CfgNode* node)
+{
+    breakNextSet.insert(node);
+}
+
+void BoundWhileStatement::AddToContinueNextSet(Cm::Core::CfgNode* node)
+{
+    continueNextSet.insert(node);
+}
+
 BoundDoStatement::BoundDoStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
@@ -512,6 +578,16 @@ void BoundDoStatement::AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLab
 void BoundDoStatement::AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel)
 {
     continueTargetLabels.push_back(continueTargetLabel);
+}
+
+void BoundDoStatement::AddToBreakNextSet(Cm::Core::CfgNode* node)
+{
+    breakNextSet.insert(node);
+}
+
+void BoundDoStatement::AddToContinueNextSet(Cm::Core::CfgNode* node)
+{
+    continueNextSet.insert(node);
 }
 
 BoundForStatement::BoundForStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
@@ -562,6 +638,16 @@ void BoundForStatement::AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLa
 void BoundForStatement::AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel)
 {
     continueTargetLabels.push_back(continueTargetLabel);
+}
+
+void BoundForStatement::AddToBreakNextSet(Cm::Core::CfgNode* node)
+{
+    breakNextSet.insert(node);
+}
+
+void BoundForStatement::AddToContinueNextSet(Cm::Core::CfgNode* node)
+{
+    continueNextSet.insert(node);
 }
 
 } } // namespace Cm::BoundTree

@@ -32,6 +32,22 @@ public:
     Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) override;
     void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) override;
     Ir::Intf::Object* MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source) override;
+
+    void CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes) override;
+    void CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span) override;
+    void AddDebugNodeTransition(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
+    void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundStatement& toStatement) override;
+    void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundExpression& toExpression) override;
+    int RetrievePrevDebugNodes() override;
+    void AddToPrevDebugNodes(int debugNodeSetHandle) override;
+    void AddToPrevDebugNodes(Cm::BoundTree::BoundStatement& statement) override;
+    void AddToPrevDebugNodes(Cm::BoundTree::BoundExpression& expr) override;
+    void AddToPrevDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet) override;
+    void CreateEntryDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span) override;
+    void CreateExitDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span) override;
+    void PatchPrevDebugNodes(Cm::BoundTree::BoundStatement& statement) override;
+    void SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
+    void PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode) override;
 };
 
 } } // namespace Cm::Emit

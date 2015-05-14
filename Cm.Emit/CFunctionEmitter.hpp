@@ -10,6 +10,7 @@
 #ifndef CM_EMIT_C_FUNCTION_EMITTER_INCLUDED
 #define CM_EMIT_C_FUNCTION_EMITTER_INCLUDED
 #include <Cm.Emit/FunctionEmitter.hpp>
+#include <Cm.Core/CDebugInfo.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -21,7 +22,8 @@ public:
         std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_,
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_,
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
-        Cm::Sym::FunctionSymbol* leaveTracedCallFun_);
+        Cm::Sym::FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_, bool generateDebugInfo_);
+    void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void SetFunctionMap(std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap_) { functionMap = functionMap_; }
     void EmitDummyVar(Cm::Core::Emitter* emitter) override;
     void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) override;
@@ -33,8 +35,35 @@ public:
     Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) override;
     void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) override;
     Ir::Intf::Object* MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source) override;
+    void Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginThrowStatement) override;
+    void Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThrowStatement) override;
+    void Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement) override;
+    void Visit(Cm::BoundTree::BoundEndCatchStatement& boundEndCatchStatement) override;
+    Cm::Core::CFunctionDebugInfo* ReleaseFunctionDebugInfo() { return functionDebugInfo.release(); }
+
+    void CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevSet) override;
+    void CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span) override;
+    void AddDebugNodeTransition(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
+    void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundStatement& toStatement) override;
+    void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundExpression& toExpression) override;
+    int RetrievePrevDebugNodes() override;
+    void AddToPrevDebugNodes(int debugNodeSetHandle) override;
+    void AddToPrevDebugNodes(Cm::BoundTree::BoundStatement& statement) override;
+    void AddToPrevDebugNodes(Cm::BoundTree::BoundExpression& expr) override;
+    void AddToPrevDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet) override;
+    void CreateEntryDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span) override;
+    void CreateExitDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span) override;
+    void PatchPrevDebugNodes(Cm::BoundTree::BoundStatement& statement) override;
+    void SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
+    void PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode) override;
 private:
     std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap;
+    bool generateDebugInfo;
+    std::unique_ptr<Cm::Core::CFunctionDebugInfo> functionDebugInfo;
+    std::unique_ptr<Cm::Util::MappedInputFile> currentSourceFile;
+    const char* start;
+    const char* end;
+    std::vector<std::unordered_set<Cm::Core::CfgNode*>> debugNodeSets;
 };
 
 } } // namespace Cm::Emit

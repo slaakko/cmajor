@@ -48,8 +48,8 @@ private:
 class CDebugNode
 {
 public:
-    virtual ~CDebugNode() {}
-    virtual void SetCLine(int cline) = 0;
+    virtual ~CDebugNode();
+    virtual void SetCLine(int cLine) = 0;
 };
 
 typedef CDebugNode* CDebugNodePtr;

@@ -67,4 +67,8 @@ void MetadataNode::Write(CodeFormatter& formatter)
     formatter.WriteLine();
 }
 
+CDebugNode::~CDebugNode()
+{
+}
+
 } } // namespace Ir::Intf

@@ -96,6 +96,8 @@ private:
     std::vector<Ir::Intf::LabelObject*> falseTargets;
 };
 
+class CfgNode;
+
 class Emitter : public Ir::Intf::Emitter
 {
 public:
@@ -111,6 +113,9 @@ public:
     void Own(Ir::Intf::Object* object) override;
     void Own(Ir::Intf::Type* type) override;
     void Own(Ir::Intf::Function* fun) override;
+    void UseCDebugNode(Ir::Intf::CDebugNode* cDebugNode_) { cDebugNode = cDebugNode_; }
+    void SetActiveCfgNode(CfgNode* activeCfgNode_) { activeCfgNode = activeCfgNode_; }
+    CfgNode* GetActiveCfgNode() const { return activeCfgNode; }
 private:
     Ir::Intf::Function* irFunction;
     std::unordered_set<std::shared_ptr<GenData>> labelRequestSet;
@@ -120,6 +125,8 @@ private:
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedObjects;
     std::vector<std::unique_ptr<Ir::Intf::Type>> ownedTypes;
     std::vector<std::unique_ptr<Ir::Intf::Function>> ownedFuns;
+    Ir::Intf::CDebugNode* cDebugNode;
+    CfgNode* activeCfgNode;
 };
 
 class GenResult

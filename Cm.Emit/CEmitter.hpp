@@ -10,6 +10,7 @@
 #ifndef CM_EMIT_C_EMITTER_INCLUDED
 #define CM_EMIT_C_EMITTER_INCLUDED
 #include <Cm.Emit/Emitter.hpp>
+#include <Cm.Core/CDebugInfo.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -28,6 +29,9 @@ private:
     std::string funFilePath;
     std::ofstream funFile;
     std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*> functionMap;
+    std::unique_ptr<Cm::Core::CDebugInfoFile> debugInfoFile;
+    std::unique_ptr<Cm::Util::MappedInputFile> currentSourceFile;
+    int funLine;
 };
 
 } } // namespace Cm::Emit

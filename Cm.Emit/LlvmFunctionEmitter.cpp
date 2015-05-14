@@ -19,7 +19,7 @@ LlvmFunctionEmitter::LlvmFunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_
     Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
     Cm::Sym::FunctionSymbol* leaveTracedCallFun_) : FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
     internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_, externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCalllFun_,
-    leaveTracedCallFun_)
+    leaveTracedCallFun_, false)
 {
 }
 
@@ -256,6 +256,82 @@ void LlvmFunctionEmitter::MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::Func
 Ir::Intf::Object* LlvmFunctionEmitter::MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source)
 {
     return source;
+}
+
+void LlvmFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::AddDebugNodeTransition(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundStatement& toStatement)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundExpression& toExpression)
+{
+    // nothing to do for LLVM backend
+}
+
+int LlvmFunctionEmitter::RetrievePrevDebugNodes()
+{
+    // nothing to do for LLVM backend
+    return -1;
+}
+
+void LlvmFunctionEmitter::AddToPrevDebugNodes(int debugNodeSetHandle)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::AddToPrevDebugNodes(Cm::BoundTree::BoundStatement& statement)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::AddToPrevDebugNodes(Cm::BoundTree::BoundExpression& expr)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::AddToPrevDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::CreateEntryDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::CreateExitDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::PatchPrevDebugNodes(Cm::BoundTree::BoundStatement& statement)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement)
+{
+    // nothing to do for LLVM backend
+}
+
+void LlvmFunctionEmitter::PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode)
+{
+    // nothing to do for LLVM backend
 }
 
 } } // namespace Cm::Emit

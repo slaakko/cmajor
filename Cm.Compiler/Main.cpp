@@ -71,7 +71,7 @@ int main(int argc, const char** argv)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;
     _CrtSetDbgFlag(dbgFlags);
-   //_CrtSetBreakAlloc(6249600);
+   //_CrtSetBreakAlloc(552062);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     Cm::Core::GlobalSettings globalSettings;
@@ -93,12 +93,13 @@ int main(int argc, const char** argv)
                 "options:\n" <<
                 "-R              : rebuild project or solution\n" <<
                 "-clean          : clean project or solution\n" <<
-                "-c FILENAME     : compile only FILENAME, do not link" <<
+                "-c FILENAME     : compile only FILENAME, do not link\n" <<
                 "-config=debug   : use debug configuration (default)\n" <<
                 "-config=release : use release configuration\n" <<
                 "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
                 "-backend=llvm   : use LLVM backend (default)\n" <<
                 "-backend=c      : use C backend\n" <<
+                "-g              : generate debug info (enabled by default for debug config)\n" <<
                 "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
                 "-quiet          : write no output messages for successful compiles\n" << 
                 "-trace          : instrument program/library with tracing enabled\n" <<
@@ -176,6 +177,10 @@ int main(int argc, const char** argv)
                         {
                             prevWasCompile = true;
                         }
+                        else if (arg == "-g")
+                        {
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info);
+                        }
                         else if (arg == "-emit-opt")
                         {
                             Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt);
@@ -221,6 +226,10 @@ int main(int argc, const char** argv)
                 }
             }
             Cm::IrIntf::SetBackEnd(backend);
+            if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+            {
+                Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info);
+            }
             bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
             if (!quiet)
             {
