@@ -174,23 +174,11 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConcept
     }
 }
 
-void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol*& userMainFunction)
+void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
     Cm::Sym::EraseExceptionIdFile(boundCompileUnit.IrFilePath());
     Cm::Bind::Binder binder(boundCompileUnit);
     compileUnit->Accept(binder);
-    Cm::Sym::FunctionSymbol* boundUserMainFunction = binder.GetUserMainFunction();
-    if (boundUserMainFunction)
-    {
-        if (userMainFunction)
-        {
-            throw Cm::Core::Exception("already has main() function", boundUserMainFunction->GetSpan(), userMainFunction->GetSpan());
-        }
-        else
-        {
-            userMainFunction = boundUserMainFunction;
-        }
-    }
 }
 
 void AnalyzeControlFlow(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
@@ -392,8 +380,8 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
     }
 }
 
-bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, Cm::Sym::FunctionSymbol*& userMainFunction, 
-    std::vector<std::string>& objectFilePaths, bool rebuild, const std::vector<std::string>& compileFileNames)
+bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, 
+    bool rebuild, const std::vector<std::string>& compileFileNames)
 {
     bool changed = false;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
@@ -524,7 +512,7 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
             boundCompileUnit->SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(*boundCompileUnit));
             boundCompileUnit->SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(*boundCompileUnit));
             boundCompileUnit->AddFileScope(fileScopes[index].release());
-            Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit, userMainFunction);
+            Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
             if (boundCompileUnit->HasGotos())
             {
                 AnalyzeControlFlow(*boundCompileUnit);
@@ -731,17 +719,16 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     std::vector<std::string> allReferenceFilePaths;
     BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths);
     boost::filesystem::create_directories(project->OutputBasePath());
-    Cm::Sym::FunctionSymbol* userMainFunction = nullptr;
     std::vector<std::string> objectFilePaths;
     CompileCFiles(project, objectFilePaths);
     CompileAsmSources(project, objectFilePaths);
-    if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths, rebuild, compileFileNames))
+    if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames))
     {
         changed = true;
     }
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
-        GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), userMainFunction, objectFilePaths);
+        GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths);
         GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths);
     }
     boost::filesystem::remove(project->AssemblyFilePath());

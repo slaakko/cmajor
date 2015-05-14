@@ -21,7 +21,6 @@ class Binder: public Cm::Ast::Visitor
 {
 public:
     Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_);
-    Cm::Sym::FunctionSymbol* GetUserMainFunction() const { return userMainFunction; }
 
     void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
     void EndVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
@@ -103,7 +102,6 @@ private:
     std::unique_ptr<Cm::BoundTree::BoundClass> boundClass;
     std::unique_ptr<Cm::BoundTree::BoundParentStatement> currentParent;
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
-    Cm::Sym::FunctionSymbol* userMainFunction;
     Cm::BoundTree::BoundSwitchStatement* switchStatement;
 };
 

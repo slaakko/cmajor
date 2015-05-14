@@ -80,6 +80,7 @@ public:
     FunctionSymbol* GetOverload(const std::string& fullOverloadGroupName) const;
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
+    Cm::Sym::FunctionSymbol* UserMainFunction() const { return userMainFunction; }
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
@@ -98,6 +99,7 @@ private:
     TypeRepository typeRepository;
     ConversionTable standardConversionTable;
     SymbolNodeMap symbolNodeMap;
+    Cm::Sym::FunctionSymbol* userMainFunction;
 };
 
 } } // namespace Cm::Sym

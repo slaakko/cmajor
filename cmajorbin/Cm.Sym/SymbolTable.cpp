@@ -34,7 +34,8 @@
 
 namespace Cm { namespace Sym {
 
-SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs), currentClass(nullptr), currentFunction(nullptr), typeRepository(), standardConversionTable(typeRepository)
+SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs), currentClass(nullptr), currentFunction(nullptr), typeRepository(), standardConversionTable(typeRepository),
+    userMainFunction(nullptr)
 {
 }
 
@@ -218,6 +219,17 @@ void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, Functi
     functionSymbol->SetCompileUnit(functionNode->GetCompileUnit());
     functionSymbolMap[functionNode] = functionSymbol;
     functionSymbol->SetGroupName(functionNode->GroupId()->Str());
+    if (functionSymbol->GroupName() == "main")
+    {
+        if (userMainFunction)
+        {
+            throw Cm::Sym::Exception("already has main() function", functionNode->GetSpan(), userMainFunction->GetSpan());
+        }
+        else
+        {
+            userMainFunction = functionSymbol;
+        }
+    }
     ContainerScope* functionScope = functionSymbol->GetContainerScope();
     nodeScopeMap[functionNode] = functionScope;
     symbolNodeMap[functionSymbol] = functionNode;

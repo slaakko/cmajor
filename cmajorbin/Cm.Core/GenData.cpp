@@ -142,7 +142,7 @@ void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label_)
     nextTargets.clear();
 }
 
-Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr)
+Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr), cDebugNode(nullptr), activeCfgNode(nullptr)
 {
 }
 
@@ -191,24 +191,16 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
         nextInstructionLabels.clear();
         gotoTargetLabel = nullptr;
     }
-    /*
-    if (currentSourcePosMetadataNode)
-    {
-    instruction->SetSourcePosMetadataNode(currentSourcePosMetadataNode);
-    }
-    */
     if (!nextInstructionComment.empty())
     {
         instruction->SetComment(nextInstructionComment);
         nextInstructionComment.clear();
     }
-    /*
-    if (cdebugNode)
+    if (cDebugNode)
     {
-    instruction->SetCDebugNode(cdebugNode);
-    cdebugNode = nullptr;
+        instruction->SetCDebugNode(cDebugNode);
+        cDebugNode = nullptr;
     }
-    */
     irFunction->AddInstruction(instruction);
 }
 

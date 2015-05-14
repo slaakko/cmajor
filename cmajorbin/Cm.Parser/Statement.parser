@@ -103,19 +103,18 @@ namespace Cm.Parser
             ;
 
         CaseStatement(ParsingContext* ctx, var std::unique_ptr<CaseStatementNode> caseS): Cm::Ast::CaseStatementNode*
-            ::= (empty{ caseS.reset(new CaseStatementNode(span)); } CaseList(ctx, caseS.get()) 
+            ::= (empty{ caseS.reset(new CaseStatementNode(span)); } CaseList(ctx, caseS.get()){ caseS->GetSpan().SetEnd(span.End()); } 
                     (
                         Statement(ctx){ caseS->AddStatement(Statement); }
                     )*
                 )
                 {
                     value = caseS.release(); 
-                    value->GetSpan().SetEnd(span.End());
                 }
             ;
 
         DefaultStatement(ParsingContext* ctx): Cm::Ast::DefaultStatementNode*
-            ::= keyword("default") ':'!{ value = new DefaultStatementNode(span); }
+            ::= (keyword("default") ':'!){ value = new DefaultStatementNode(span); }
                 (   
                     Statement(ctx){ value->AddStatement(Statement); }
                 )*
@@ -162,7 +161,8 @@ namespace Cm.Parser
             ;
 
         CompoundStatement(ParsingContext* ctx): Cm::Ast::CompoundStatementNode*
-            ::= ('{'{ value = new CompoundStatementNode(span); } (Statement(ctx){ value->AddStatement(Statement); })* '}'!){ value->GetSpan().SetEnd(span.End()); }
+            ::= ('{'{ value = new CompoundStatementNode(span); value->SetBeginBraceSpan(span); } 
+                (Statement(ctx){ value->AddStatement(Statement); })* ('}'{ value->SetEndBraceSpan(span); })!){ value->GetSpan().SetEnd(span.End()); }
             ;
 
         BreakStatement(ParsingContext* ctx): Cm::Ast::StatementNode*

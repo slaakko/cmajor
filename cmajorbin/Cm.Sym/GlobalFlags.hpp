@@ -13,7 +13,7 @@
 
 namespace Cm { namespace Sym {
 
-enum class GlobalFlags : uint8_t
+enum class GlobalFlags : uint16_t
 {
     none = 0,
     optimize = 1 << 0,
@@ -23,17 +23,18 @@ enum class GlobalFlags : uint8_t
     trace = 1 << 4,
     debug_heap = 1 << 5,
     clean = 1 << 6,
-    unit_test = 1 << 7
+    unit_test = 1 << 7,
+    generate_debug_info = 1 << 8
 };
 
 inline GlobalFlags operator|(GlobalFlags left, GlobalFlags right)
 {
-    return GlobalFlags(uint8_t(left) | uint8_t(right));
+    return GlobalFlags(uint16_t(left) | uint16_t(right));
 }
 
 inline GlobalFlags operator&(GlobalFlags left, GlobalFlags right)
 {
-    return GlobalFlags(uint8_t(left) & uint8_t(right));
+    return GlobalFlags(uint16_t(left) & uint16_t(right));
 }
 
 bool GetGlobalFlag(GlobalFlags flag);

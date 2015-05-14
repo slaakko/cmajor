@@ -8,6 +8,9 @@
 ========================================================================*/
 
 #include <Cm.Emit/CFunctionEmitter.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.Parser/FileRegistry.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Emit {
@@ -17,10 +20,39 @@ CFunctionEmitter::CFunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::
     std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_,
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_,
     Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
-    Cm::Sym::FunctionSymbol* leaveTracedCallFun_) : FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
+    Cm::Sym::FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_, bool generateDebugInfo_) :
+    FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
     internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_, externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCalllFun_,
-    leaveTracedCallFun_), functionMap(nullptr)
+    leaveTracedCallFun_, generateDebugInfo_), functionMap(nullptr), start(start_), end(end_), generateDebugInfo(generateDebugInfo_)
 {
+}
+
+void CFunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
+{
+    FunctionEmitter::BeginVisit(boundFunction);
+    if (GenerateDebugInfo())
+    {
+        Cm::Sym::FunctionSymbol* currentFunctionSymbol = boundFunction.GetFunctionSymbol();
+        functionDebugInfo.reset(new Cm::Core::CFunctionDebugInfo(IrFunctionRepository().CreateIrFunction(currentFunctionSymbol)->Name()));
+        functionDebugInfo->SetFunctionDisplayName(currentFunctionSymbol->FullName());
+        if (currentFunctionSymbol->GroupName() == "main")
+        {
+            functionDebugInfo->SetMain();
+        }
+        if (currentFunctionSymbol->CompileUnit())
+        {
+            functionDebugInfo->SetSourceFilePath(currentFunctionSymbol->CompileUnit()->FilePath());
+        }
+        else
+        {
+            int32_t fileIndex = currentFunctionSymbol->GetSpan().FileIndex();
+            const std::string& sourceFilePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(fileIndex);
+            functionDebugInfo->SetSourceFilePath(sourceFilePath);
+            currentSourceFile.reset(new Cm::Util::MappedInputFile(sourceFilePath));
+            start = currentSourceFile->Begin();
+            end = currentSourceFile->End();
+        }
+    }
 }
 
 void CFunctionEmitter::EmitDummyVar(Cm::Core::Emitter* emitter)
@@ -254,6 +286,262 @@ Ir::Intf::Object* CFunctionEmitter::MakeLocalVarIrObject(Cm::Sym::TypeSymbol* ty
         return target;
     }
     return source;
+}
+
+void CFunctionEmitter::Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginThrowStatement)
+{
+    FunctionEmitter::Visit(boundBeginThrowStatement);
+    if (GenerateDebugInfo())
+    {
+        if (!boundBeginThrowStatement.SyntaxNode())
+        {
+            throw std::runtime_error("no syntax node");
+        }
+        CreateDebugNode(boundBeginThrowStatement, boundBeginThrowStatement.SyntaxNode()->GetSpan(), false);
+        boundBeginThrowStatement.GetCfgNode()->SetKind(Cm::Core::CfgNodeKind::throwNode);
+    }
+    PushGenDebugInfo(false);
+}
+
+void CFunctionEmitter::Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThrowStatement)
+{
+    PopGenDebugInfo();
+    if (GenerateDebugInfo())
+    {
+        if (!boundEndThrowStatement.SyntaxNode())
+        {
+            throw std::runtime_error("no syntax node");
+        }
+        CreateDebugNode(boundEndThrowStatement, boundEndThrowStatement.SyntaxNode()->GetSpan(), false);
+    }
+    FunctionEmitter::Visit(boundEndThrowStatement);
+}
+
+void CFunctionEmitter::Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement)
+{
+    FunctionEmitter::Visit(boundBeginCatchStatement);
+    if (GenerateDebugInfo())
+    {
+        if (!boundBeginCatchStatement.SyntaxNode())
+        {
+            throw std::runtime_error("no syntax node");
+        }
+        CreateDebugNode(boundBeginCatchStatement, boundBeginCatchStatement.SyntaxNode()->GetSpan(), false);
+        boundBeginCatchStatement.GetCfgNode()->SetKind(Cm::Core::CfgNodeKind::catchNode);
+    }
+    PushGenDebugInfo(false);
+}
+
+void CFunctionEmitter::Visit(Cm::BoundTree::BoundEndCatchStatement& boundEndCatchStatement)
+{
+    PopGenDebugInfo();
+    if (GenerateDebugInfo())
+    {
+        if (!boundEndCatchStatement.SyntaxNode())
+        {
+            throw std::runtime_error("no syntax node");
+        }
+        CreateDebugNode(boundEndCatchStatement, boundEndCatchStatement.SyntaxNode()->GetSpan(), false);
+    }
+    FunctionEmitter::Visit(boundEndCatchStatement);
+}
+
+void CFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes)
+{
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::ControlFlowGraph& cfg = functionDebugInfo->Cfg();
+        Cm::Core::CfgNode* cfgNode = cfg.CreateNode(span, start, end);
+        statement.SetCfgNode(cfgNode);
+        cfg.PatchPrevNodes(cfgNode);
+        Emitter()->UseCDebugNode(cfgNode);
+        Emitter()->SetActiveCfgNode(cfgNode);
+        if (addToPrevNodes)
+        {
+            cfg.AddToPrevNodes(cfgNode);
+        }
+    }
+}
+
+void CFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span)
+{
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::ControlFlowGraph& cfg = functionDebugInfo->Cfg();
+        Cm::Core::CfgNode* cfgNode = cfg.CreateNode(span, start, end);
+        expr.SetCfgNode(cfgNode);
+        cfg.PatchPrevNodes(cfgNode);
+        Emitter()->UseCDebugNode(cfgNode);
+        Emitter()->SetActiveCfgNode(cfgNode);
+    }
+}
+
+void CFunctionEmitter::AddDebugNodeTransition(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement)
+{
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::CfgNode* fromCfgNode = fromStatement.GetCfgNode();
+        if (!fromCfgNode)
+        {
+            throw std::runtime_error("from cfg node not set");
+        }
+        Cm::Core::CfgNode* toCfgNode = toStatement.GetCfgNode();
+        if (!toCfgNode)
+        {
+            throw std::runtime_error("to cfg node not set");
+        }
+        fromCfgNode->AddNext(toCfgNode->Id());
+    }
+}
+
+void CFunctionEmitter::AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundStatement& toStatement)
+{
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::CfgNode* fromCfgNode = fromExpression.GetCfgNode();
+        if (!fromCfgNode)
+        {
+            throw std::runtime_error("from cfg node not set");
+        }
+        Cm::Core::CfgNode* toCfgNode = toStatement.GetCfgNode();
+        if (!toCfgNode)
+        {
+            throw std::runtime_error("to cfg node not set");
+        }
+        fromCfgNode->AddNext(toCfgNode->Id());
+    }
+}
+
+void CFunctionEmitter::AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundExpression& toExpression)
+{
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::CfgNode* fromCfgNode = fromExpression.GetCfgNode();
+        if (!fromCfgNode)
+        {
+            throw std::runtime_error("from cfg node not set");
+        }
+        Cm::Core::CfgNode* toCfgNode = toExpression.GetCfgNode();
+        if (!toCfgNode)
+        {
+            throw std::runtime_error("to cfg node not set");
+        }
+        fromCfgNode->AddNext(toCfgNode->Id());
+    }
+}
+
+int CFunctionEmitter::RetrievePrevDebugNodes()
+{
+    if (GenerateDebugInfo())
+    {
+        int debugNodeSetHandle = int(debugNodeSets.size());
+        debugNodeSets.push_back(std::move(functionDebugInfo->Cfg().RetrivePrevNodes()));
+        return debugNodeSetHandle;
+    }
+    return -1;
+}
+
+void CFunctionEmitter::AddToPrevDebugNodes(int debugNodeSetHandle)
+{
+    if (GenerateDebugInfo())
+    {
+        if (debugNodeSetHandle < 0 || debugNodeSetHandle >= int(debugNodeSets.size()))
+        {
+            throw std::runtime_error("invalid debug node set handle");
+        }
+        std::unordered_set<Cm::Core::CfgNode*> prevDebugNodes = std::move(debugNodeSets[debugNodeSetHandle]);
+        functionDebugInfo->Cfg().AddToPrevNodes(prevDebugNodes);
+    }
+}
+
+void CFunctionEmitter::AddToPrevDebugNodes(Cm::BoundTree::BoundStatement& statement)
+{
+    if (GenerateDebugInfo())
+    {
+        functionDebugInfo->Cfg().AddToPrevNodes(statement.GetCfgNode());
+    }
+}
+
+void CFunctionEmitter::AddToPrevDebugNodes(Cm::BoundTree::BoundExpression& expr)
+{
+    if (GenerateDebugInfo())
+    {
+        functionDebugInfo->Cfg().AddToPrevNodes(expr.GetCfgNode());
+    }
+}
+
+void CFunctionEmitter::AddToPrevDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet)
+{
+    if (GenerateDebugInfo())
+    {
+        functionDebugInfo->Cfg().AddToPrevNodes(nodeSet);
+    }
+}
+
+void CFunctionEmitter::CreateEntryDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span)
+{
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::ControlFlowGraph& cfg = functionDebugInfo->Cfg();
+        Cm::Core::CfgNode* cfgNode = cfg.CreateNode(span, start, end);
+        cfg.PatchPrevNodes(cfgNode);
+        statement.SetCfgNode(cfgNode);
+        Emitter()->UseCDebugNode(cfgNode);
+        Ir::Intf::LabelObject* entryLabel = Cm::IrIntf::CreateNextLocalLabel();
+        Emitter()->Own(entryLabel);
+        Emitter()->AddNextInstructionLabel(entryLabel);
+        Cm::Core::GenResult result;
+        DoNothing(result);
+        if (CompoundResult())
+        {
+            CompoundResult()->BackpatchNextTargets(entryLabel);
+        }
+        cfg.AddToPrevNodes(cfgNode);
+        Emitter()->SetActiveCfgNode(cfgNode);
+    }
+}
+
+void CFunctionEmitter::CreateExitDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span)
+{
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::ControlFlowGraph& cfg = functionDebugInfo->Cfg();
+        Cm::Core::CfgNode* cfgNode = cfg.CreateNode(span, start, end);
+        cfg.PatchPrevNodes(cfgNode);
+        Emitter()->UseCDebugNode(cfgNode);
+        Ir::Intf::LabelObject* exitLabel = Cm::IrIntf::CreateNextLocalLabel();
+        Emitter()->Own(exitLabel);
+        Emitter()->AddNextInstructionLabel(exitLabel);
+        Cm::Core::GenResult result;
+        DoNothing(result);
+        CompoundResult()->BackpatchNextTargets(exitLabel);
+        cfg.AddToPrevNodes(cfgNode);
+        Emitter()->SetActiveCfgNode(cfgNode);
+    }
+}
+
+void CFunctionEmitter::PatchPrevDebugNodes(Cm::BoundTree::BoundStatement& statement)
+{
+    if (GenerateDebugInfo())
+    {
+        functionDebugInfo->Cfg().PatchPrevNodes(statement.GetCfgNode());
+    }
+}
+
+void CFunctionEmitter::SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement)
+{
+    if (GenerateDebugInfo())
+    {
+        toStatement.SetCfgNode(fromStatement.GetCfgNode());
+    }
+}
+
+void CFunctionEmitter::PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode)
+{
+    if (GenerateDebugInfo())
+    {
+        functionDebugInfo->Cfg().Patch(nodeSet, nextNode);
+    }
 }
 
 } } // namespace Cm::Emit

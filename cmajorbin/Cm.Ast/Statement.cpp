@@ -1021,6 +1021,8 @@ Node* CompoundStatementNode::Clone(CloneContext& cloneContext) const
         clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
     }
     CloneLabelTo(clone, cloneContext);
+    clone->beginBraceSpan = beginBraceSpan;
+    clone->endBraceSpan = endBraceSpan;
     return clone;
 }
 
@@ -1029,12 +1031,16 @@ void CompoundStatementNode::Read(Reader& reader)
     StatementNode::Read(reader);
     statements.Read(reader);
     statements.SetParent(this);
+    beginBraceSpan = reader.ReadSpan();
+    endBraceSpan = reader.ReadSpan();
 }
 
 void CompoundStatementNode::Write(Writer& writer)
 {
     StatementNode::Write(writer);
     statements.Write(writer);
+    writer.Write(beginBraceSpan);
+    writer.Write(endBraceSpan);
 }
 
 void CompoundStatementNode::Print(CodeFormatter& formatter)

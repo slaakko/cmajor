@@ -20,7 +20,7 @@ namespace Cm { namespace Emit {
 
 CEmitter::CEmitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
-    Emitter(irFilePath, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_)
+    Emitter(irFilePath, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_), funLine(1)
 {
 }
 
@@ -46,6 +46,11 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     Emitter::BeginVisit(compileUnit);
     funFilePath = Cm::Util::GetFullPath(boost::filesystem::path(compileUnit.IrFilePath()).replace_extension(".fun").generic_string());
     funFile.open(funFilePath.c_str());
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info) && !compileUnit.IsMainUnit())
+    {
+        debugInfoFile.reset(new Cm::Core::CDebugInfoFile());
+        currentSourceFile.reset(new Cm::Util::MappedInputFile(compileUnit.SyntaxUnit()->FilePath()));
+    }
 }
 
 void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
@@ -67,9 +72,18 @@ void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     staticMemberVariableRepository.Write(CodeFormatter());
     ExternalConstantRepository().Write(CodeFormatter());
     funFile.close();
+    if (debugInfoFile)
+    {
+        debugInfoFile->FixCLines(CodeFormatter().Line() - 1);
+    }
     std::string funFileContent(Cm::Util::ReadFile(funFilePath));
     CodeFormatter().WriteLine(funFileContent);
     boost::filesystem::remove(funFilePath);
+    if (debugInfoFile)
+    {
+        Cm::Ser::BinaryWriter writer(compileUnit.CDebugInfoFilePath());
+        debugInfoFile->Write(writer);
+    }
 }
 
 void CEmitter::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
@@ -92,10 +106,36 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
     Cm::Util::CodeFormatter funFormatter(funFile);
+    funFormatter.SetLine(funLine);
+    const char* start = nullptr;
+    const char* end = nullptr;
+    if (debugInfoFile)
+    {
+        if (!currentSourceFile)
+        {
+            throw std::runtime_error("current source file not set");
+        }
+        start = currentSourceFile->Begin();
+        end = currentSourceFile->End();
+    }
     CFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(),
-        ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun());
+        ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(),
+        start, end, debugInfoFile != nullptr);
     functionEmitter.SetFunctionMap(&functionMap);
     boundFunction.Accept(functionEmitter);
+    funLine = funFormatter.Line();
+    if (debugInfoFile)
+    {
+        Cm::Core::CFunctionDebugInfo* functionDebugInfo = functionEmitter.ReleaseFunctionDebugInfo();
+        if (functionDebugInfo)
+        {
+            debugInfoFile->AddFunctionDebugInfo(functionDebugInfo);
+        }
+        else
+        {
+            throw std::runtime_error("has no function debug info");
+        }
+    }
 }
 
 } } // namespace Cm::Emit

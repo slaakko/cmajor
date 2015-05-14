@@ -187,7 +187,8 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::BoundTree::BoundClass* currentClass_, 
     std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, 
-    Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCallFun_, Cm::Sym::FunctionSymbol* leaveTracedCallFun_) :
+    Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCallFun_, Cm::Sym::FunctionSymbol* leaveTracedCallFun_,
+    bool generateDebugInfo_) :
     Cm::BoundTree::Visitor(true), emitter(new Cm::Core::Emitter()), codeFormatter(codeFormatter_), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_),
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), localVariableIrObjectRepository(&irFunctionRepository), 
     compoundResult(), currentCompileUnit(currentCompileUnit_),
@@ -195,7 +196,7 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     staticMemberVariableRepository(staticMemberVariableRepository_), externalConstantRepository(externalConstantRepository_),
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), 
     currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_),
-    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_)
+    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), generateDebugInfo(generateDebugInfo_)
 {
 }
 
@@ -1188,6 +1189,22 @@ void FunctionEmitter::EndVisitStatement(Cm::BoundTree::BoundStatement& statement
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
 {
+    if (generateDebugInfo)
+    {
+        if (!boundCompoundStatement.Parent())
+        {
+            PushGenDebugInfo(boundCompoundStatement.SyntaxNode() != nullptr);
+        }
+        if (generateDebugInfo)
+        {
+            if (!boundCompoundStatement.SyntaxNode())
+            {
+                throw std::runtime_error("block body has no syntax node");
+            }
+            Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(boundCompoundStatement.SyntaxNode());
+            CreateEntryDebugNode(boundCompoundStatement, compoundStatementNode->BeginBraceSpan());
+        }
+    }
     compoundResultStack.Push(compoundResult);
     compoundResult = std::shared_ptr<Cm::Core::GenResult>(new Cm::Core::GenResult(emitter.get(), Cm::Core::GenFlags::none));
     if (boundCompoundStatement.IsEmpty())
@@ -1202,6 +1219,19 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCom
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
 {
     ClearCompoundDestructionStack(*compoundResult);
+    if (generateDebugInfo)
+    {
+        if (!boundCompoundStatement.SyntaxNode())
+        {
+            throw std::runtime_error("block body has no syntax node");
+        }
+        Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(boundCompoundStatement.SyntaxNode());
+        CreateExitDebugNode(boundCompoundStatement, compoundStatementNode->EndBraceSpan());
+    }
+    if (!boundCompoundStatement.Parent())
+    {
+        PopGenDebugInfo();
+    }
     currentCompoundDestructionStack = functionDestructionStack.Pop();
     resultStack.Push(compoundResult);
     compoundResult = compoundResultStack.Pop();
@@ -1291,6 +1321,18 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCallStatement& boundFunc
 void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) 
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (generateDebugInfo)
+    {
+        if (!boundReturnStatement.SyntaxNode())
+        {
+            throw std::runtime_error("no syntax node");
+        }
+        CreateEntryDebugNode(boundReturnStatement, boundReturnStatement.SyntaxNode()->GetSpan());
+    }
+    if (boundReturnStatement.Expression())
+    {
+        boundReturnStatement.Expression()->Accept(*this);
+    }
     if (boundReturnStatement.ReturnsValue())
     {
         bool resultSet = false;
@@ -1327,6 +1369,15 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
         }
         ExecutePostfixIncDecStatements(*result);
         ExitFunction(*result);
+        if (generateDebugInfo)
+        {
+            if (!currentFunction->Body()->SyntaxNode())
+            {
+                throw std::runtime_error("current function body has no syntax node");
+            }
+            Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(currentFunction->Body()->SyntaxNode());
+            CreateExitDebugNode(boundReturnStatement, compoundStatementNode->EndBraceSpan());
+        }
         if (returnsClassObjectByValue)
         {
             emitter->Emit(Cm::IrIntf::Ret());
@@ -1343,6 +1394,15 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
     else
     {
         ExitFunction(*result);
+        if (generateDebugInfo)
+        {
+            if (!currentFunction->Body()->SyntaxNode())
+            {
+                throw std::runtime_error("current function body has no syntax node");
+            }
+            Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(currentFunction->Body()->SyntaxNode());
+            CreateExitDebugNode(boundReturnStatement, compoundStatementNode->EndBraceSpan());
+        }
         emitter->Emit(Cm::IrIntf::Ret());
     }
     resultStack.Push(result);
@@ -1373,9 +1433,45 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundExitBlocksStatement& boundExitBl
     resultStack.Push(result);
 }
 
+void FunctionEmitter::Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginThrowStatement)
+{
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    DoNothing(*result);
+    resultStack.Push(result);
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThrowStatement)
+{
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    DoNothing(*result);
+    resultStack.Push(result);
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement)
+{
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    DoNothing(*result);
+    resultStack.Push(result);
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundEndCatchStatement& boundBeginCatchStatement)
+{
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    DoNothing(*result);
+    resultStack.Push(result);
+}
+
 void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (generateDebugInfo)
+    {
+        if (!boundConstructionStatement.SyntaxNode())
+        {
+            throw std::runtime_error("syntax node not set");
+        }
+        CreateDebugNode(boundConstructionStatement, boundConstructionStatement.SyntaxNode()->GetSpan(), true);
+    }
     int n = boundConstructionStatement.Arguments().Count();
     Ir::Intf::LabelObject* resultLabel = nullptr;
     Ir::Intf::Object* object = nullptr;
@@ -1502,6 +1598,16 @@ void FunctionEmitter::ExitFunction(Cm::Core::GenResult& result)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (generateDebugInfo)
+    {
+        if (!boundAssignmentStatement.SyntaxNode())
+        {
+            throw std::runtime_error("syntax node not set");
+        }
+        CreateDebugNode(boundAssignmentStatement, boundAssignmentStatement.SyntaxNode()->GetSpan(), true);
+    }
+    boundAssignmentStatement.Left()->Accept(*this);
+    boundAssignmentStatement.Right()->Accept(*this);
     Cm::Sym::FunctionSymbol* assignment = boundAssignmentStatement.Assignment();
     if (!assignment->IsBasicTypeOp())
     {
@@ -1531,8 +1637,17 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
 void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (generateDebugInfo)
+    {
+        if (!boundSimpleStatement.SyntaxNode())
+        {
+            throw std::runtime_error("statement syntax node not set");
+        }
+        CreateDebugNode(boundSimpleStatement, boundSimpleStatement.SyntaxNode()->GetSpan(), true);
+    }
     if (boundSimpleStatement.HasExpression())
     {
+        boundSimpleStatement.GetExpression()->Accept(*this);
         std::shared_ptr<Cm::Core::GenResult> expressionResult = resultStack.Pop();
         result->SetLabel(expressionResult->GetLabel());
         result->Merge(expressionResult);
@@ -1549,10 +1664,23 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStat
 void FunctionEmitter::Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (generateDebugInfo)
+    {
+        if (!boundBreakStatement.SyntaxNode())
+        {
+            throw std::runtime_error("syntax node not set");
+        }
+        CreateDebugNode(boundBreakStatement, boundBreakStatement.SyntaxNode()->GetSpan(), false);
+    }
     Ir::Intf::LabelObject* breakTargetLabel = Cm::IrIntf::CreateNextLocalLabel();
     emitter->Own(breakTargetLabel);
     breakTargetStatement->AddBreakTargetLabel(breakTargetLabel);
     ExitCompounds(boundBreakStatement.CompoundParent(), breakTargetStatement->CompoundParent(), *result);
+    if (generateDebugInfo)
+    {
+        breakTargetStatement->AddToBreakNextSet(boundBreakStatement.GetCfgNode());
+    }
+    Emitter()->UseCDebugNode(boundBreakStatement.GetCfgNode());
     emitter->Emit(Cm::IrIntf::Br(breakTargetLabel));
     resultStack.Push(result);
 }
@@ -1560,10 +1688,23 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBreakStatement& boundBreakStatem
 void FunctionEmitter::Visit(Cm::BoundTree::BoundContinueStatement& boundContinueStatement) 
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (generateDebugInfo)
+    {
+        if (!boundContinueStatement.SyntaxNode())
+        {
+            throw std::runtime_error("syntax node not set");
+        }
+        CreateDebugNode(boundContinueStatement, boundContinueStatement.SyntaxNode()->GetSpan(), false);
+    }
     Ir::Intf::LabelObject* continueTargetLabel = Cm::IrIntf::CreateNextLocalLabel();
     emitter->Own(continueTargetLabel);
     continueTargetStatement->AddContinueTargetLabel(continueTargetLabel);
     ExitCompounds(boundContinueStatement.CompoundParent(), continueTargetStatement->CompoundParent(), *result);
+    if (generateDebugInfo)
+    {
+        continueTargetStatement->AddToContinueNextSet(boundContinueStatement.GetCfgNode());
+    }
+    Emitter()->UseCDebugNode(boundContinueStatement.GetCfgNode());
     emitter->Emit(Cm::IrIntf::Br(continueTargetLabel));
     resultStack.Push(result);
 }
@@ -1571,12 +1712,31 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundContinueStatement& boundContinue
 void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoStatement& boundGotoStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (generateDebugInfo)
+    {
+        if (!boundGotoStatement.SyntaxNode())
+        {
+            throw std::runtime_error("syntax node not set");
+        }
+        CreateDebugNode(boundGotoStatement, boundGotoStatement.SyntaxNode()->GetSpan(), false);
+    }
     if (!boundGotoStatement.IsExceptionHandlingGoto())
     {
         ExitCompounds(boundGotoStatement.CompoundParent(), boundGotoStatement.GetTargetCompoundParent(), *result);
     }
     Ir::Intf::LabelObject* gotoTargetLabel = Cm::IrIntf::CreateLabel(boundGotoStatement.TargetLabel());
     emitter->Own(gotoTargetLabel);
+    if (generateDebugInfo)
+    {
+        if (boundGotoStatement.GetTargetStatement()->GetCfgNode())
+        {
+            AddDebugNodeTransition(boundGotoStatement, *boundGotoStatement.GetTargetStatement());
+        }
+        else
+        {
+            boundGotoStatement.GetTargetStatement()->AddToPrevSet(boundGotoStatement.GetCfgNode());
+        }
+    }
     emitter->Emit(Cm::IrIntf::Br(gotoTargetLabel));
     resultStack.Push(result);
 }
@@ -1584,6 +1744,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoStatement& boundGotoStatemen
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement)
 {
     PushSkipContent();
+    if (generateDebugInfo)
+    {
+        if (!boundConditionalStatement.Condition()->SyntaxNode())
+        {
+            throw std::runtime_error("condition syntax node not set");
+        }
+        CreateDebugNode(boundConditionalStatement, boundConditionalStatement.Condition()->SyntaxNode()->GetSpan(), true);
+    }
 }
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundConditionalStatement)
@@ -1595,6 +1763,10 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     Cm::BoundTree::BoundStatement* thenS = boundConditionalStatement.ThenS();
     BeginVisitStatement(*thenS);
     thenS->Accept(*this);
+    if (generateDebugInfo)
+    {
+        AddDebugNodeTransition(boundConditionalStatement, *thenS);
+    }
     std::shared_ptr<Cm::Core::GenResult> thenResult = resultStack.Pop();
     conditionResult->BackpatchTrueTargets(thenResult->GetLabel());
     Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
@@ -1603,10 +1775,19 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     emitter->Emit(Cm::IrIntf::Br(next));
     result->Merge(thenResult);
     Cm::BoundTree::BoundStatement* elseS = boundConditionalStatement.ElseS();
+    int debugNodeSetHandle = -1;
     if (elseS)
     {
+        if (generateDebugInfo)
+        {
+            debugNodeSetHandle = RetrievePrevDebugNodes();
+        }
         BeginVisitStatement(*elseS);
         elseS->Accept(*this);
+        if (generateDebugInfo)
+        {
+            AddDebugNodeTransition(boundConditionalStatement, *elseS);
+        }
         std::shared_ptr<Cm::Core::GenResult> elseResult = resultStack.Pop();
         conditionResult->BackpatchFalseTargets(elseResult->GetLabel());
         result->Merge(elseResult);
@@ -1614,10 +1795,15 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     else
     {
         result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
+        AddToPrevDebugNodes(boundConditionalStatement);
     }
     if (resultLabel)
     {
         result->SetLabel(resultLabel);
+    }
+    if (debugNodeSetHandle != -1)
+    {
+        AddToPrevDebugNodes(debugNodeSetHandle);
     }
     result->Merge(conditionResult, true);
     resultStack.Push(result);
@@ -1626,6 +1812,14 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement)
 {
     PushSkipContent();
+    if (generateDebugInfo)
+    {
+        if (!boundWhileStatement.Condition()->SyntaxNode())
+        {
+            throw std::runtime_error("condition syntax node not set");
+        }
+        CreateDebugNode(boundWhileStatement, boundWhileStatement.Condition()->SyntaxNode()->GetSpan(), true);
+    }
 }
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement)
@@ -1638,6 +1832,11 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileSta
     PushContinueTargetStatement(&boundWhileStatement);
     BeginVisitStatement(*statement);
     statement->Accept(*this);
+    if (generateDebugInfo)
+    {
+        PatchPrevDebugNodes(boundWhileStatement);
+        AddDebugNodeTransition(boundWhileStatement, *statement);
+    }
     std::shared_ptr<Cm::Core::GenResult> statementResult = resultStack.Pop();
     emitter->Emit(Cm::IrIntf::Br(conditionResult->GetLabel()));
     conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
@@ -1647,6 +1846,12 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileSta
     Ir::Intf::Backpatch(boundWhileStatement.ContinueTargetLabels(), conditionResult->GetLabel());
     PopContinueTargetStatement();
     PopBreakTargetStatement();
+    if (generateDebugInfo)
+    {
+        AddToPrevDebugNodes(boundWhileStatement);
+        AddToPrevDebugNodes(boundWhileStatement.BreakNextSet());
+        PatchDebugNodes(boundWhileStatement.ContinueNextSet(), boundWhileStatement.GetCfgNode());
+    }
     result->SetLabel(conditionResult->GetLabel());
     result->Merge(conditionResult, true);
     result->Merge(statementResult);
@@ -1667,8 +1872,24 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement
     PushContinueTargetStatement(&boundDoStatement);
     BeginVisitStatement(*statement);
     statement->Accept(*this);
+    if (generateDebugInfo)
+    {
+        SetCfgNode(*statement, boundDoStatement);
+    }
     std::shared_ptr<Cm::Core::GenResult> statementResult = resultStack.Pop();
     Cm::BoundTree::BoundExpression* condition = boundDoStatement.Condition();
+    if (generateDebugInfo)
+    {
+        if (!condition->SyntaxNode())
+        {
+            throw std::runtime_error("condition syntax node not set");
+        }
+        CreateDebugNode(*condition, condition->SyntaxNode()->GetSpan());
+    }
+    if (generateDebugInfo)
+    {
+        AddDebugNodeTransition(*condition, boundDoStatement);
+    }
     condition->Accept(*this);
     std::shared_ptr<Cm::Core::GenResult> conditionResult = resultStack.Pop();
     statementResult->BackpatchNextTargets(conditionResult->GetLabel());
@@ -1676,6 +1897,12 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement
     result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
     result->MergeTargets(result->NextTargets(), boundDoStatement.BreakTargetLabels());
     Ir::Intf::Backpatch(boundDoStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+    if (generateDebugInfo)
+    {
+        AddToPrevDebugNodes(*condition);
+        AddToPrevDebugNodes(boundDoStatement.BreakNextSet());
+        PatchDebugNodes(boundDoStatement.ContinueNextSet(), condition->GetCfgNode());
+    }
     PopContinueTargetStatement();
     PopBreakTargetStatement();
     result->SetLabel(statementResult->GetLabel());
@@ -1698,6 +1925,15 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     Cm::BoundTree::BoundStatement* initS = boundForStatement.InitS();
     BeginVisitStatement(*initS);
     initS->Accept(*this);
+    if (generateDebugInfo)
+    {
+        SetCfgNode(*initS, boundForStatement);
+        if (!boundForStatement.Condition()->SyntaxNode())
+        {
+            throw std::runtime_error("condition syntax node not set");
+        }
+        CreateDebugNode(*boundForStatement.Condition(), boundForStatement.Condition()->SyntaxNode()->GetSpan());
+    }
     std::shared_ptr<Cm::Core::GenResult> initResult = resultStack.Pop();
     Ir::Intf::LabelObject* initLabel = initResult->GetLabel();
     Cm::BoundTree::BoundExpression* condition = boundForStatement.Condition();
@@ -1707,11 +1943,27 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     Cm::BoundTree::BoundStatement* action = boundForStatement.Action();
     BeginVisitStatement(*action);
     action->Accept(*this);
+    if (generateDebugInfo)
+    {
+        AddDebugNodeTransition(*boundForStatement.Condition(), *action);
+    }
     std::shared_ptr<Cm::Core::GenResult> actionResult = resultStack.Pop();
     conditionResult->BackpatchTrueTargets(actionResult->GetLabel());
     result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
     Cm::BoundTree::BoundExpression* increment = boundForStatement.Increment();
+    if (generateDebugInfo)
+    {
+        if (!increment->SyntaxNode())
+        {
+            throw std::runtime_error("increment syntax node not set");
+        }
+        CreateDebugNode(*increment, increment->SyntaxNode()->GetSpan());
+    }
     increment->Accept(*this);
+    if (generateDebugInfo)
+    {
+        AddDebugNodeTransition(*increment, *condition);
+    }
     std::shared_ptr<Cm::Core::GenResult> incrementResult = resultStack.Pop();
     actionResult->BackpatchNextTargets(incrementResult->GetLabel());
     incrementResult->BackpatchNextTargets(conditionResult->GetLabel());
@@ -1720,6 +1972,12 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     Ir::Intf::Backpatch(boundForStatement.ContinueTargetLabels(), conditionResult->GetLabel());
     PopContinueTargetStatement();
     PopBreakTargetStatement();
+    if (generateDebugInfo)
+    {
+        AddToPrevDebugNodes(*condition);
+        AddToPrevDebugNodes(boundForStatement.BreakNextSet());
+        PatchDebugNodes(boundForStatement.ContinueNextSet(), increment->GetCfgNode());
+    }
     result->Merge(initResult);
     result->Merge(conditionResult);
     result->Merge(actionResult);
@@ -1731,6 +1989,14 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
 void FunctionEmitter::Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (generateDebugInfo)
+    {
+        if (!boundSwitchStatement.Condition()->SyntaxNode())
+        {
+            throw std::runtime_error("condition syntax node not set");
+        }
+        CreateDebugNode(boundSwitchStatement, boundSwitchStatement.Condition()->SyntaxNode()->GetSpan(), false);
+    }
     PushBreakTargetStatement(&boundSwitchStatement);
     boundSwitchStatement.Condition()->Accept(*this);
     std::shared_ptr<Cm::Core::GenResult> conditionResult = resultStack.Pop();
@@ -1765,6 +2031,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStat
         defaultDest = Cm::IrIntf::CreateNextLocalLabel();
         emitter->Own(defaultDest);
         result->AddNextTarget(defaultDest);
+        AddToPrevDebugNodes(boundSwitchStatement);
     }
     currentSwitchCaseConstantMap = switchCaseConstantMapStack.top();
     switchCaseConstantMapStack.pop();
@@ -1772,6 +2039,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStat
     switchEmitStateStack.pop();
     Ir::Intf::Instruction* switchInst = Cm::IrIntf::Switch(result->MainObject()->GetType(), result->MainObject(), defaultDest, destinations);
     emitter->Emit(switchInst);
+    std::vector<int> prevDebugNodeHandles;
     int index = 0;
     for (std::unique_ptr<Cm::BoundTree::BoundStatement>& caseStatement : boundSwitchStatement.CaseStatements())
     {
@@ -1781,6 +2049,11 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStat
         currentSwitchCaseConstantMap = &caseConstantMap;
         switchCaseLabel = caseLabels[index];
         caseStatement->Accept(*this);
+        if (generateDebugInfo)
+        {
+            AddDebugNodeTransition(boundSwitchStatement, *caseStatement);
+            prevDebugNodeHandles.push_back(RetrievePrevDebugNodes());
+        }
         currentSwitchCaseConstantMap = switchCaseConstantMapStack.top();
         switchCaseConstantMapStack.pop();
         currentSwitchEmitState = switchEmitStateStack.top();
@@ -1797,6 +2070,11 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStat
         currentSwitchCaseConstantMap = &caseConstantMap;
         switchCaseLabel = defaultDest;
         boundSwitchStatement.DefaultStatement()->Accept(*this);
+        if (generateDebugInfo)
+        {
+            AddDebugNodeTransition(boundSwitchStatement, *boundSwitchStatement.DefaultStatement());
+            prevDebugNodeHandles.push_back(RetrievePrevDebugNodes());
+        }
         currentSwitchCaseConstantMap = switchCaseConstantMapStack.top();
         switchCaseConstantMapStack.pop();
         currentSwitchEmitState = switchEmitStateStack.top();
@@ -1810,6 +2088,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundSwitchStatement& boundSwitchStat
         result->SetLabel(resultLabel);
     }
     PopBreakTargetStatement();
+    if (generateDebugInfo)
+    {
+        for (int handle : prevDebugNodeHandles)
+        {
+            AddToPrevDebugNodes(handle);
+        }
+        AddToPrevDebugNodes(boundSwitchStatement.BreakNextSet());
+    }
     resultStack.Push(result);
 }
 
@@ -1835,6 +2121,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCaseStatement& boundCaseStatemen
     else if (currentSwitchEmitState == SwitchEmitState::emitStatements)
     {
         std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+        if (generateDebugInfo)
+        {
+            if (!boundCaseStatement.SyntaxNode())
+            {
+                throw std::runtime_error("condition syntax node not set");
+            }
+            CreateDebugNode(boundCaseStatement, boundCaseStatement.SyntaxNode()->GetSpan(), true);
+        }
         emitter->AddNextInstructionLabel(switchCaseLabel);
         for (std::unique_ptr<Cm::BoundTree::BoundStatement>& statement : boundCaseStatement.Statements())
         {
@@ -1858,6 +2152,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDefaultStatement& boundDefaultSt
     else if (currentSwitchEmitState == SwitchEmitState::emitStatements)
     {
         std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+        if (generateDebugInfo)
+        {
+            if (!boundDefaultStatement.SyntaxNode())
+            {
+                throw std::runtime_error("condition syntax node not set");
+            }
+            CreateDebugNode(boundDefaultStatement, boundDefaultStatement.SyntaxNode()->GetSpan(), true);
+        }
         emitter->AddNextInstructionLabel(switchCaseLabel);
         for (std::unique_ptr<Cm::BoundTree::BoundStatement>& statement : boundDefaultStatement.Statements())
         {
@@ -1881,6 +2183,22 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCase
         Ir::Intf::LabelObject* target = i->second.first;
         Cm::BoundTree::BoundStatement* targetS = i->second.second;
         ExitCompounds(boundGotoCaseStatement.CompoundParent(), targetS->CompoundParent(), *result);
+        if (generateDebugInfo)
+        {
+            if (!boundGotoCaseStatement.SyntaxNode())
+            {
+                throw std::runtime_error("syntax node not set");
+            }
+            CreateDebugNode(boundGotoCaseStatement, boundGotoCaseStatement.SyntaxNode()->GetSpan(), false);
+            if (targetS->GetCfgNode())
+            {
+                AddDebugNodeTransition(boundGotoCaseStatement, *targetS);
+            }
+            else
+            {
+                targetS->AddToPrevSet(boundGotoCaseStatement.GetCfgNode());
+            }
+        }
         emitter->Emit(Cm::IrIntf::Br(target));
     }
     else
@@ -1899,6 +2217,22 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoD
         Ir::Intf::LabelObject* target = i->second.first;
         Cm::BoundTree::BoundStatement* targetS = i->second.second;
         ExitCompounds(boundGotoDefaultStatement.CompoundParent(), targetS->CompoundParent(), *result);
+        if (generateDebugInfo)
+        {
+            if (!boundGotoDefaultStatement.SyntaxNode())
+            {
+                throw std::runtime_error("syntax node not set");
+            }
+            CreateDebugNode(boundGotoDefaultStatement, boundGotoDefaultStatement.SyntaxNode()->GetSpan(), false);
+            if (targetS->GetCfgNode())
+            {
+                AddDebugNodeTransition(boundGotoDefaultStatement, *targetS);
+            }
+            else
+            {
+                targetS->AddToPrevSet(boundGotoDefaultStatement.GetCfgNode());
+            }
+        }
         emitter->Emit(Cm::IrIntf::Br(target));
     }
     else
@@ -1906,6 +2240,17 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoD
         throw Cm::Core::Exception("goto default statement target not found", boundGotoDefaultStatement.SyntaxNode()->GetSpan());
     }
     resultStack.Push(result);
+}
+
+void FunctionEmitter::PushGenDebugInfo(bool generate)
+{
+    generateDebugInfoStack.push(generateDebugInfo);
+    generateDebugInfo = generate;
+}
+
+void FunctionEmitter::PopGenDebugInfo()
+{
+    generateDebugInfo = generateDebugInfoStack.top();
 }
 
 void FunctionEmitter::PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement)

@@ -253,8 +253,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     boundCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(boundCompileUnit));
     boundCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(boundCompileUnit));
     boundCompileUnit.AddFileScope(fileScopes[0].release());
-    Cm::Sym::FunctionSymbol* userMainFunction = nullptr;
-    Cm::Build::Bind(testUnit, boundCompileUnit, userMainFunction);
+    Cm::Build::Bind(testUnit, boundCompileUnit);
     if (boundCompileUnit.HasGotos())
     {
         Cm::Build::AnalyzeControlFlow(boundCompileUnit);

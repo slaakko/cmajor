@@ -16,7 +16,7 @@ namespace Cm { namespace Util {
 class CodeFormatter
 {
 public:
-    CodeFormatter(std::ostream& stream_): stream(stream_), indent(0), indentSize(4), atBeginningOfLine(true) {}
+    CodeFormatter(std::ostream& stream_): stream(stream_), indent(0), indentSize(4), atBeginningOfLine(true), line(1) {}
     int Indent() const { return indent; }
     int IndentSize() const { return indentSize; }
     int& IndentSize() { return indentSize; }
@@ -33,11 +33,14 @@ public:
     {
         --indent;
     }
+    int Line() const { return line; }
+    void SetLine(int line_) { line = line_; }
 private:
     std::ostream& stream;
     int indent;
     int indentSize;
     bool atBeginningOfLine;
+    int line;
 };
 
 } } // namespace Cm::Util

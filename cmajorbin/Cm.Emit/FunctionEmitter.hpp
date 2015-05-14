@@ -87,7 +87,7 @@ public:
         std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, 
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_, 
-        Cm::Sym::FunctionSymbol* leaveTracedCallFun_);
+        Cm::Sym::FunctionSymbol* leaveTracedCallFun_, bool generateDebugInfo_);
 
     virtual void EmitDummyVar(Cm::Core::Emitter* emitter) = 0;
     virtual void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) = 0;
@@ -96,6 +96,22 @@ public:
     virtual Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) = 0;
     virtual void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) = 0;
     virtual Ir::Intf::Object* MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source) = 0;
+
+    virtual void CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes) = 0;
+    virtual void CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span) = 0;
+    virtual void AddDebugNodeTransition(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) = 0;
+    virtual void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundStatement& toStatement) = 0;
+    virtual void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundExpression& toExpression) = 0;
+    virtual int RetrievePrevDebugNodes() = 0;
+    virtual void AddToPrevDebugNodes(int debugNodeSetHandle) = 0;
+    virtual void AddToPrevDebugNodes(Cm::BoundTree::BoundStatement& statement) = 0;
+    virtual void AddToPrevDebugNodes(Cm::BoundTree::BoundExpression& expr) = 0;
+    virtual void AddToPrevDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet) = 0;
+    virtual void CreateEntryDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span) = 0;
+    virtual void CreateExitDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span) = 0;
+    virtual void PatchPrevDebugNodes(Cm::BoundTree::BoundStatement& statement) = 0;
+    virtual void SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) = 0;
+    virtual void PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode) = 0;
 
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
@@ -132,6 +148,10 @@ public:
     void Visit(Cm::BoundTree::BoundBeginTryStatement& boundBeginTryStatement) override;
     void Visit(Cm::BoundTree::BoundEndTryStatement& boundEndTryStatement) override;
     void Visit(Cm::BoundTree::BoundExitBlocksStatement& boundExitBlocksStatement) override;
+    void Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginThrowStatement) override;
+    void Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThrowStatement) override;
+    void Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement) override;
+    void Visit(Cm::BoundTree::BoundEndCatchStatement& boundEndCatchStatement) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(Cm::BoundTree::BoundDestructionStatement& boundDestructionStatement) override;
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
@@ -160,8 +180,15 @@ protected:
     void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     Cm::Sym::ParameterSymbol* ThisParam() { return thisParam; }
     Cm::Core::StaticMemberVariableRepository& StaticMemberVariableRepository() { return staticMemberVariableRepository; }
+    Cm::BoundTree::BoundFunction* CurrentFunction() const { return currentFunction; }
+    std::shared_ptr<Cm::Core::GenResult> CompoundResult() const { return compoundResult; }
+    void PushGenDebugInfo(bool generate);
+    void PopGenDebugInfo();
+    bool GenerateDebugInfo() const { return generateDebugInfo; }
 private:
-	std::unique_ptr<Cm::Core::Emitter> emitter;
+    bool generateDebugInfo;
+    std::stack<bool> generateDebugInfoStack;
+    std::unique_ptr<Cm::Core::Emitter> emitter;
     Cm::Util::CodeFormatter& codeFormatter;
     Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::GenFlags genFlags;

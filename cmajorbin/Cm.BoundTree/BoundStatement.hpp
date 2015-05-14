@@ -11,6 +11,7 @@
 #define CM_BOUND_TREE_BOUND_STATEMENT_INCLUDED
 #include <Cm.BoundTree/BoundExpression.hpp>
 #include <Cm.Core/Argument.hpp>
+#include <Cm.Core/CDebugInfo.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Ir.Intf/Label.hpp>
 
@@ -34,13 +35,21 @@ public:
     virtual bool IsBoundDefaultStatement() const { return false; }
     virtual void AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) {}
     virtual void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) {}
+    virtual void AddToBreakNextSet(Cm::Core::CfgNode* node) {}
+    virtual void AddToContinueNextSet(Cm::Core::CfgNode* node) {}
     BoundStatement* Parent() const { return parent; }
     void SetParent(BoundStatement* parent_) { parent = parent_; }
     BoundCompoundStatement* CompoundParent() const;
     const std::string& Label() const { return label; }
+    void SetCfgNode(Cm::Core::CfgNode* cfgNode_);
+    Cm::Core::CfgNode* GetCfgNode() const { return cfgNode; }
+    void AddToPrevSet(Cm::Core::CfgNode* node);
+    void PatchPrevSet();
 private:
     BoundStatement* parent;
     std::string label;
+    Cm::Core::CfgNode* cfgNode;
+    std::unordered_set<Cm::Core::CfgNode*> prevSet;
 };
 
 class BoundStatementList
@@ -192,6 +201,34 @@ private:
     BoundCompoundStatement* targetBlock;
 };
 
+class BoundBeginThrowStatement : public BoundStatement
+{
+public:
+    BoundBeginThrowStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
+};
+
+class BoundEndThrowStatement : public BoundStatement
+{
+public:
+    BoundEndThrowStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
+};
+
+class BoundBeginCatchStatement : public BoundStatement
+{
+public:
+    BoundBeginCatchStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
+};
+
+class BoundEndCatchStatement : public BoundStatement
+{
+public:
+    BoundEndCatchStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
+};
+
 class BoundConstructionStatement : public BoundStatement
 {
 public:
@@ -270,11 +307,14 @@ public:
     void Accept(Visitor& visitor) override;
     void AddBreakTargetLabel(Ir::Intf::LabelObject* breakTargetLabel) override;
     std::vector<Ir::Intf::LabelObject*>& BreakTargetLabels() { return breakTargetLabels; }
+    void AddToBreakNextSet(Cm::Core::CfgNode* node) override;
+    const std::unordered_set<Cm::Core::CfgNode*>& BreakNextSet() const { return breakNextSet; }
 private:
     std::unique_ptr<BoundExpression> condition;
     BoundStatementList caseStatements;
     std::unique_ptr<BoundStatement> defaultStatement;
     std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
+    std::unordered_set<Cm::Core::CfgNode*> breakNextSet;
 };
 
 class BoundCaseStatement : public BoundParentStatement
@@ -361,6 +401,7 @@ public:
     BoundConditionalStatement(Cm::Ast::Node* syntaxNode_);
     bool IsConditionStatement() const override { return true; }
     void SetCondition(BoundExpression* condition_);
+    BoundExpression* Condition() const { return condition.get(); }
     void AddStatement(BoundStatement* statement) override;
     void Accept(Visitor& visitor) override;
     bool IsBoundConditionalStatement() const override { return true; }
@@ -378,6 +419,7 @@ public:
     BoundWhileStatement(Cm::Ast::Node* syntaxNode_);
     bool IsConditionStatement() const override { return true; }
     void SetCondition(BoundExpression* condition_);
+    BoundExpression* Condition() const { return condition.get(); }
     void AddStatement(BoundStatement* statement_) override;
     bool IsBoundWhileStatement() const override { return true; }
     void Accept(Visitor& visitor) override;
@@ -386,11 +428,17 @@ public:
     void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) override;
     std::vector<Ir::Intf::LabelObject*>& BreakTargetLabels() { return breakTargetLabels; }
     std::vector<Ir::Intf::LabelObject*>& ContinueTargetLabels() { return continueTargetLabels; }
+    void AddToBreakNextSet(Cm::Core::CfgNode* node) override;
+    const std::unordered_set<Cm::Core::CfgNode*>& BreakNextSet() const { return breakNextSet; }
+    void AddToContinueNextSet(Cm::Core::CfgNode* node) override;
+    const std::unordered_set<Cm::Core::CfgNode*>& ContinueNextSet() const { return continueNextSet; }
 private:
     std::unique_ptr<BoundExpression> condition;
     std::unique_ptr<BoundStatement> statement;
     std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
     std::vector<Ir::Intf::LabelObject*> continueTargetLabels;
+    std::unordered_set<Cm::Core::CfgNode*> breakNextSet;
+    std::unordered_set<Cm::Core::CfgNode*> continueNextSet;
 };
 
 class BoundDoStatement : public BoundParentStatement
@@ -408,11 +456,17 @@ public:
     void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) override;
     std::vector<Ir::Intf::LabelObject*>& BreakTargetLabels() { return breakTargetLabels; }
     std::vector<Ir::Intf::LabelObject*>& ContinueTargetLabels() { return continueTargetLabels; }
+    void AddToBreakNextSet(Cm::Core::CfgNode* node) override;
+    const std::unordered_set<Cm::Core::CfgNode*>& BreakNextSet() const { return breakNextSet; }
+    void AddToContinueNextSet(Cm::Core::CfgNode* node) override;
+    const std::unordered_set<Cm::Core::CfgNode*>& ContinueNextSet() const { return continueNextSet; }
 private:
     std::unique_ptr<BoundStatement> statement;
     std::unique_ptr<BoundExpression> condition;
     std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
     std::vector<Ir::Intf::LabelObject*> continueTargetLabels;
+    std::unordered_set<Cm::Core::CfgNode*> breakNextSet;
+    std::unordered_set<Cm::Core::CfgNode*> continueNextSet;
 };
 
 class BoundForStatement : public BoundParentStatement
@@ -433,6 +487,10 @@ public:
     void AddContinueTargetLabel(Ir::Intf::LabelObject* continueTargetLabel) override;
     std::vector<Ir::Intf::LabelObject*>& BreakTargetLabels() { return breakTargetLabels; }
     std::vector<Ir::Intf::LabelObject*>& ContinueTargetLabels() { return continueTargetLabels; }
+    void AddToBreakNextSet(Cm::Core::CfgNode* node) override;
+    const std::unordered_set<Cm::Core::CfgNode*>& BreakNextSet() const { return breakNextSet; }
+    void AddToContinueNextSet(Cm::Core::CfgNode* node) override;
+    const std::unordered_set<Cm::Core::CfgNode*>& ContinueNextSet() const { return continueNextSet; }
 private:
     std::unique_ptr<BoundStatement> initS;
     std::unique_ptr<BoundExpression> condition;
@@ -440,6 +498,8 @@ private:
     std::unique_ptr<BoundStatement> action;
     std::vector<Ir::Intf::LabelObject*> breakTargetLabels;
     std::vector<Ir::Intf::LabelObject*> continueTargetLabels;
+    std::unordered_set<Cm::Core::CfgNode*> breakNextSet;
+    std::unordered_set<Cm::Core::CfgNode*> continueNextSet;
 };
 
 } } // namespace Cm::BoundTree

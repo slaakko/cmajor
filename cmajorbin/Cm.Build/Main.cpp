@@ -35,8 +35,9 @@
 
 namespace Cm { namespace Build {
 
-void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, Cm::Sym::FunctionSymbol* userMainFunction, std::vector<std::string>& objectFilePaths)
+void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths)
 {
+    Cm::Sym::FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
     if (!userMainFunction)
     {
         throw Cm::Core::Exception("program has no main() function");
@@ -56,6 +57,7 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     }
     std::string mainCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__main__" + ext)).generic_string());
     Cm::BoundTree::BoundCompileUnit mainCompileUnit(&syntaxUnit, mainCompileUnitIrFilePath, symbolTable);
+    mainCompileUnit.SetMainUnit();
     mainCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(mainCompileUnit));
     mainCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(mainCompileUnit));
     mainCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(mainCompileUnit));

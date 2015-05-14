@@ -28,7 +28,7 @@
 namespace Cm { namespace Bind {
 
 Binder::Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : Cm::Ast::Visitor(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentParent(nullptr),
-    userMainFunction(nullptr), switchStatement(nullptr)
+    switchStatement(nullptr)
 {
 }
 
@@ -314,17 +314,6 @@ void Binder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
         Cm::Sym::FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&functionNode);
         BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&functionNode));
         boundFunction.reset(new Cm::BoundTree::BoundFunction(&functionNode, functionSymbol));
-        if (functionSymbol->GroupName() == "main")
-        {
-            if (userMainFunction)
-            {
-                throw Cm::Core::Exception("already has main() function", functionNode.GetSpan(), userMainFunction->GetSpan());
-            }
-            else
-            {
-                userMainFunction = functionSymbol;
-            }
-        }
     }
 }
 

@@ -35,6 +35,7 @@ void CodeFormatter::NewLine()
 {
     stream << "\n";
     atBeginningOfLine = true;
+    ++line;
 }
 
 } } // namespace Cm::Util

@@ -145,6 +145,7 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Core::FunctionTemplateRepository& funct
     Binder binder(boundCompileUnit);
     globalNs->Accept(binder);
     boundCompileUnit.RemoveLastFileScope();
+    functionTemplateInstance->SetGlobalNs(globalNs.release());
     return functionTemplateInstance;
 }
 

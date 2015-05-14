@@ -881,6 +881,7 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                     Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
                     exceptionTable->AddProjectException(exceptionClassType);
                     Cm::Sym::WriteExceptionIdToFile(BoundCompileUnit().IrFilePath(), exceptionClassType->FullName());
+                    binder.AddBoundStatement(new Cm::BoundTree::BoundBeginThrowStatement(&throwStatementNode));
                     int32_t exceptionId = exceptionTable->GetExceptionId(exceptionClassType);
                     Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::GetCurrentFileRegistry();
                     std::string sourceFilePath = fileRegistry->GetParsedFileName(throwStatementNode.GetSpan().FileIndex());
@@ -1028,6 +1029,7 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                     binder.BeginContainerScope(containerScope);
                     throwActions->Accept(binder);
                     binder.EndContainerScope();
+                    binder.AddBoundStatement(new Cm::BoundTree::BoundEndThrowStatement(&throwStatementNode));
                 }
                 else
                 {
@@ -1134,6 +1136,7 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
                         exceptionTable->AddProjectException(catchedExceptionClassType);
                         Cm::Sym::WriteExceptionIdToFile(BoundCompileUnit().IrFilePath(), catchedExceptionClassType->FullName());
+                        binder.AddBoundStatement(new Cm::BoundTree::BoundBeginCatchStatement(&catchNode));
                         int32_t catchedExceptionId = exceptionTable->GetExceptionId(catchedExceptionClassType);
                         Cm::Ast::IdentifierNode* handleVarId = new Cm::Ast::IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
                         Cm::Ast::ConstructionStatementNode* handleThisExStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), new Cm::Ast::BoolNode(catchNode.GetSpan()), handleVarId);
@@ -1297,6 +1300,7 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         binder.BeginContainerScope(containerScope);
                         handlerBlock->Accept(binder);
                         binder.EndContainerScope();
+                        binder.AddBoundStatement(new Cm::BoundTree::BoundEndCatchStatement(&catchNode));
                     }
                     else
                     {

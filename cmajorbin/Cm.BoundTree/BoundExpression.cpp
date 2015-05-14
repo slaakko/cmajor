@@ -17,8 +17,13 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundExpression::BoundExpression(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), type(nullptr)
+BoundExpression::BoundExpression(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), type(nullptr), cfgNode(nullptr)
 {
+}
+
+void BoundExpression::SetCfgNode(Cm::Core::CfgNode* cfgNode_)
+{
+    cfgNode = cfgNode_;
 }
 
 TraceCallInfo::TraceCallInfo(BoundExpression* fun_, BoundExpression* file_, BoundExpression* line_) : fun(fun_), file(file_), line(line_)
