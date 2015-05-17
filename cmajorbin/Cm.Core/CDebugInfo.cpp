@@ -16,6 +16,10 @@ void SourceSpan::Read(Cm::Ser::BinaryReader& reader)
     line = reader.ReadInt();
     startCol = reader.ReadInt();
     endCol = reader.ReadInt();
+    if (!Valid())
+    {
+        int x = 0;
+    }
 }
 
 void SourceSpan::Write(Cm::Ser::BinaryWriter& writer)
@@ -45,14 +49,17 @@ const char* LineStart(const char* start, const char* pos)
 
 SourceSpan FromSpan(const char* start, const char* end, const Cm::Parsing::Span& span)
 {
+    if (span.IsNull())
+    {
+        return SourceSpan(0, 0, 0);
+    }
     const char* s = start + span.Start();
     if (s < start || s >= end) return SourceSpan();
     const char* e = start + span.End();
     if (e < start || e >= end) return SourceSpan();
-    const char* sStart = LineStart(start, s);
-    int32_t startCol = int32_t(s - sStart) + 1;
-    const char* eStart = LineStart(start, e);
-    int32_t endCol = int32_t(e - eStart) + 1;
+    const char* lineStart = LineStart(start, s);
+    int32_t startCol = int32_t(s - lineStart) + 1;
+    int32_t endCol = int32_t(e - lineStart) + 1;
     return SourceSpan(span.LineNumber(), startCol, endCol);
 }
 
@@ -351,11 +358,12 @@ void ControlFlowGraph::Dump(Cm::Util::CodeFormatter& formatter)
     formatter.WriteLine("}");
 }
 
-CFunctionDebugInfo::CFunctionDebugInfo() : isMain(false)
+CFunctionDebugInfo::CFunctionDebugInfo() : isMain(false), isUnique(false)
 {
 }
 
-CFunctionDebugInfo::CFunctionDebugInfo(const std::string& mangledFunctionName_): isMain(false), mangledFunctionName(mangledFunctionName_), functionDisplayName(), cfg(), sourceFilePath()
+CFunctionDebugInfo::CFunctionDebugInfo(const std::string& mangledFunctionName_): isMain(false), mangledFunctionName(mangledFunctionName_), functionDisplayName(), cfg(), sourceFilePath(), 
+    isUnique(false)
 {
 }
 
@@ -369,6 +377,11 @@ void CFunctionDebugInfo::SetSourceFilePath(const std::string& sourceFilePath_)
     sourceFilePath = sourceFilePath_;
 }
 
+void CFunctionDebugInfo::SetCFilePath(const std::string& cFilePath_)
+{
+    cFilePath = cFilePath_;
+}
+
 void CFunctionDebugInfo::FixCLines(int32_t offset)
 {
     cfg.FixCLines(offset);
@@ -378,18 +391,22 @@ void CFunctionDebugInfo::Read(Cm::Ser::BinaryReader& reader)
 {
     mangledFunctionName = reader.ReadString();
     isMain = reader.ReadBool();
+    isUnique = reader.ReadBool();
     functionDisplayName = reader.ReadString();
     cfg.Read(reader);
     sourceFilePath = reader.ReadString();
+    cFilePath = reader.ReadString();
 }
 
 void CFunctionDebugInfo::Write(Cm::Ser::BinaryWriter& writer)
 {
     writer.Write(mangledFunctionName);
     writer.Write(isMain);
+    writer.Write(isUnique);
     writer.Write(functionDisplayName);
     cfg.Write(writer);
     writer.Write(sourceFilePath);
+    writer.Write(cFilePath);
 }
 
 void CFunctionDebugInfo::Dump(Cm::Util::CodeFormatter& formatter)
@@ -398,8 +415,10 @@ void CFunctionDebugInfo::Dump(Cm::Util::CodeFormatter& formatter)
     formatter.WriteLine("{");
     formatter.IncIndent();
     formatter.WriteLine(std::string("main: ") + (isMain ? "true;" : "false;"));
+    formatter.WriteLine(std::string("unique: ") + (isUnique ? "true;" : "false;"));
     formatter.WriteLine("display name: " + functionDisplayName + ";");
     formatter.WriteLine("source file path: " + sourceFilePath + ";");
+    formatter.WriteLine("C file path: " + cFilePath + ";");
     cfg.Dump(formatter);
     formatter.DecIndent();
     formatter.WriteLine("}");

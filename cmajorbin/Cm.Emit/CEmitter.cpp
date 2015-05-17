@@ -20,7 +20,7 @@ namespace Cm { namespace Emit {
 
 CEmitter::CEmitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
-    Emitter(irFilePath, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_), funLine(1)
+    Emitter(irFilePath, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_), funLine(1), symbolTable(nullptr)
 {
 }
 
@@ -51,6 +51,8 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
         debugInfoFile.reset(new Cm::Core::CDebugInfoFile());
         currentSourceFile.reset(new Cm::Util::MappedInputFile(compileUnit.SyntaxUnit()->FilePath()));
     }
+    symbolTable = &compileUnit.SymbolTable();
+    cFilePath = compileUnit.IrFilePath();
 }
 
 void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
@@ -122,6 +124,8 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
         ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(),
         start, end, debugInfoFile != nullptr);
     functionEmitter.SetFunctionMap(&functionMap);
+    functionEmitter.SetSymbolTable(symbolTable);
+    functionEmitter.SetCFilePath(cFilePath);
     boundFunction.Accept(functionEmitter);
     funLine = funFormatter.Line();
     if (debugInfoFile)

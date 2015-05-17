@@ -24,6 +24,7 @@
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parser/Expression.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -536,18 +537,21 @@ void RangeForStatementBinder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForS
     Cm::Ast::DotNode* containerIterator(new Cm::Ast::DotNode(rangeForStatementNode.GetSpan(), containerTypeId, iteratorTypeId));
     Cm::Ast::ConstructionStatementNode* initNode(new Cm::Ast::ConstructionStatementNode(rangeForStatementNode.GetSpan(), containerIterator, iteratorId));
     initNode->AddArgument(invokeContainerBeginNode);
-    Cm::Ast::NotEqualNode* iteratorNotEqualToEnd(new Cm::Ast::NotEqualNode(rangeForStatementNode.GetSpan(), iteratorId->Clone(cloneContext), invokeContainerEndNode));
-    Cm::Ast::PrefixIncNode* incIterator(new Cm::Ast::PrefixIncNode(rangeForStatementNode.GetSpan(), iteratorId->Clone(cloneContext)));
+    Cm::Ast::NotEqualNode* iteratorNotEqualToEnd(new Cm::Ast::NotEqualNode(rangeForStatementNode.VariableSpan(), iteratorId->Clone(cloneContext), invokeContainerEndNode));
+    Cm::Ast::PrefixIncNode* incIterator(new Cm::Ast::PrefixIncNode(rangeForStatementNode.Container()->GetSpan(), iteratorId->Clone(cloneContext)));
     Cm::Ast::CompoundStatementNode* action(new Cm::Ast::CompoundStatementNode(rangeForStatementNode.GetSpan()));
+    action->SetBeginBraceSpan(Span(0, 0, 0, 0));
+    action->SetEndBraceSpan(Span(0, 0, 0, 0));
     action->SetParent(rangeForStatementNode.Parent());
     Cm::Ast::DerefNode* derefIterator(new Cm::Ast::DerefNode(rangeForStatementNode.GetSpan(), iteratorId->Clone(cloneContext)));
-    Cm::Ast::ConstructionStatementNode* initVariable(new Cm::Ast::ConstructionStatementNode(rangeForStatementNode.GetSpan(), rangeForStatementNode.VarTypeExpr()->Clone(cloneContext), 
+    Cm::Ast::ConstructionStatementNode* initVariable(new Cm::Ast::ConstructionStatementNode(Span(0, 0, 0, 0), rangeForStatementNode.VarTypeExpr()->Clone(cloneContext), 
         static_cast<Cm::Ast::IdentifierNode*>(rangeForStatementNode.VarId()->Clone(cloneContext))));
     initVariable->AddArgument(derefIterator);
     action->AddStatement(initVariable);
     Cm::Sym::DeclarationVisitor declarationVisitor(SymbolTable());
     action->AddStatement(static_cast<Cm::Ast::StatementNode*>(rangeForStatementNode.Action()->Clone(cloneContext)));
     Cm::Ast::ForStatementNode* forStatementNode = new Cm::Ast::ForStatementNode(rangeForStatementNode.GetSpan(), initNode, iteratorNotEqualToEnd, incIterator, action);
+    forStatementNode->SetAsRangeForStatement();
     forStatementNode->SetParent(rangeForStatementNode.Parent());
     CurrentFunction()->Own(forStatementNode);
     forStatementNode->Accept(declarationVisitor);
@@ -1087,13 +1091,13 @@ void TryBinder::Visit(Cm::Ast::TryStatementNode& tryStatementNode)
     tryStatementNode.TryBlock()->Accept(binder);
     binder.EndContainerScope();
     binder.AddBoundStatement(new Cm::BoundTree::BoundEndTryStatement(&tryStatementNode));
-    Cm::Ast::GotoStatementNode* gotoOverCatches = new Cm::Ast::GotoStatementNode(tryStatementNode.GetSpan(), new Cm::Ast::LabelNode(tryStatementNode.GetSpan(), continueLabel));
+    Cm::Ast::GotoStatementNode* gotoOverCatches = new Cm::Ast::GotoStatementNode(Span(0, 0, 0, 0), new Cm::Ast::LabelNode(Span(0, 0, 0, 0), continueLabel));
     gotoOverCatches->SetExceptionHandlingGoto();
     CurrentFunction()->Own(gotoOverCatches);
     gotoOverCatches->Accept(binder);
     CurrentFunction()->PopTryNode();
     tryStatementNode.Handlers().Accept(binder);
-    Cm::Ast::SimpleStatementNode* emptyStatement = new Cm::Ast::SimpleStatementNode(tryStatementNode.GetSpan(), nullptr);
+    Cm::Ast::SimpleStatementNode* emptyStatement = new Cm::Ast::SimpleStatementNode(Span(0, 0, 0, 0), nullptr);
     CurrentFunction()->Own(emptyStatement);
     emptyStatement->SetLabelNode(new Cm::Ast::LabelNode(tryStatementNode.GetSpan(), continueLabel));
     emptyStatement->Accept(binder);
@@ -1136,7 +1140,7 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
                         exceptionTable->AddProjectException(catchedExceptionClassType);
                         Cm::Sym::WriteExceptionIdToFile(BoundCompileUnit().IrFilePath(), catchedExceptionClassType->FullName());
-                        binder.AddBoundStatement(new Cm::BoundTree::BoundBeginCatchStatement(&catchNode));
+                        binder.AddBoundStatement(new Cm::BoundTree::BoundPushGenDebugInfoStatement(&catchNode, false));
                         int32_t catchedExceptionId = exceptionTable->GetExceptionId(catchedExceptionClassType);
                         Cm::Ast::IdentifierNode* handleVarId = new Cm::Ast::IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
                         Cm::Ast::ConstructionStatementNode* handleThisExStatement = new Cm::Ast::ConstructionStatementNode(catchNode.GetSpan(), new Cm::Ast::BoolNode(catchNode.GetSpan()), handleVarId);
@@ -1158,6 +1162,8 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         handleThisExCall->AddArgument(new Cm::Ast::IntLiteralNode(catchNode.GetSpan(), catchedExceptionId));
                         handleThisExStatement->AddArgument(handleThisExCall);
                         Cm::Ast::CompoundStatementNode* handlerBlock = new Cm::Ast::CompoundStatementNode(catchNode.GetSpan());
+                        handlerBlock->SetBeginBraceSpan(Span(0, 0, 0, 0));
+                        handlerBlock->SetEndBraceSpan(Span(0, 0, 0, 0));
                         CurrentFunction()->Own(handlerBlock);
                         Cm::Ast::FunctionNode* functionNode = catchNode.GetFunction();
                         handlerBlock->SetParent(functionNode);
@@ -1292,6 +1298,10 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                             new Cm::Ast::IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName()));
                         constructExDeleterStatement->AddArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), exPtrVarName));
                         handlerBlock->AddStatement(constructExDeleterStatement);
+                        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
+                        {
+                            handlerBlock->AddStatement(new Cm::Ast::BeginCatchStatementNode(Span(0, 0, 0, 0)));
+                        }
                         handlerBlock->AddStatement(static_cast<Cm::Ast::StatementNode*>(catchNode.CatchBlock()->Clone(cloneContext)));
                         Cm::Sym::DeclarationVisitor declarationVisitor(SymbolTable());
                         handlerBlock->Accept(declarationVisitor);
@@ -1300,7 +1310,6 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                         binder.BeginContainerScope(containerScope);
                         handlerBlock->Accept(binder);
                         binder.EndContainerScope();
-                        binder.AddBoundStatement(new Cm::BoundTree::BoundEndCatchStatement(&catchNode));
                     }
                     else
                     {

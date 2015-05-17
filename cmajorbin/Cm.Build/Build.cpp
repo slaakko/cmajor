@@ -135,7 +135,7 @@ Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const s
 }
 
 void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths,
-    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths)
+    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths)
 {
     boost::filesystem::path projectBase = project->BasePath();
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
@@ -156,16 +156,17 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
         {
             importedModules.insert(libraryReferencePath);
             Cm::Sym::Module module(libraryReferencePath);
-            module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths);
+            module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
         }
     }
 }
 
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 
-    const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths)
+    const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths,
+    std::vector<std::string>& allDebugInfoFilePaths)
 {
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
-    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths);
+    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
     symbolTable.InitVirtualFunctionTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
@@ -381,7 +382,7 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
 }
 
 bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, 
-    bool rebuild, const std::vector<std::string>& compileFileNames)
+    bool rebuild, const std::vector<std::string>& compileFileNames, std::vector<std::string>& debugInfoFilePaths)
 {
     bool changed = false;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
@@ -453,6 +454,13 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         std::unique_ptr<Cm::BoundTree::BoundCompileUnit> boundCompileUnit(new Cm::BoundTree::BoundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable));
         compileUnitMap.MapCompileUnit(compileUnit.get(), boundCompileUnit.get());
         boundCompileUnits.push_back(std::move(boundCompileUnit));
+    }
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
+    {
+        for (const std::unique_ptr<Cm::BoundTree::BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+        {
+            debugInfoFilePaths.push_back(boundCompileUnit->CDebugInfoFilePath());
+        }
     }
     if (!rebuild)
     {
@@ -649,6 +657,46 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
     }
 }
 
+void CreateDebugInfoFile(const std::string& executableFilePath, const std::vector<std::string>& allDebugInfoFilePaths)
+{
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+    if (!quiet)
+    {
+        std::cout << "Creating debug info file..." << std::endl;
+    }
+    std::string cmdbFilePath = Cm::Util::GetFullPath(boost::filesystem::path(executableFilePath).replace_extension(".cmdb").generic_string());
+    std::vector<std::string> nonEmptyDebugInfoFilePaths;
+    for (const std::string& debugInfoFilePath : allDebugInfoFilePaths)
+    {
+        boost::filesystem::path difp = debugInfoFilePath;
+        if (boost::filesystem::exists(difp))
+        {
+            if (boost::filesystem::file_size(difp) != 0)
+            {
+                nonEmptyDebugInfoFilePaths.push_back(debugInfoFilePath);
+            }
+        }
+    }
+    Cm::Ser::BinaryWriter writer(cmdbFilePath);
+    writer.Write(int32_t(nonEmptyDebugInfoFilePaths.size()));
+    for (const std::string& nonEmptyDebugInfoFilePath : nonEmptyDebugInfoFilePaths)
+    {
+        if (!quiet)
+        {
+            std::cout << "> " << nonEmptyDebugInfoFilePath << std::endl;
+        }
+        Cm::Ser::BinaryReader reader(nonEmptyDebugInfoFilePath);
+        Cm::Core::CDebugInfoFile debugInfoFile;
+        debugInfoFile.Read(reader);
+        writer.Write(nonEmptyDebugInfoFilePath);
+        debugInfoFile.Write(writer);
+    }
+    if (!quiet)
+    {
+        std::cout << "=> " << cmdbFilePath << std::endl;
+    }
+}
+
 void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths)
 {
     boost::filesystem::path outputBase(projectOutputBasePath);
@@ -717,12 +765,14 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
-    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths);
+    std::vector<std::string> allDebugInfoFilePaths;
+    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
     boost::filesystem::create_directories(project->OutputBasePath());
     std::vector<std::string> objectFilePaths;
     CompileCFiles(project, objectFilePaths);
     CompileAsmSources(project, objectFilePaths);
-    if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames))
+    std::vector<std::string> debugInfoFilePaths;
+    if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths))
     {
         changed = true;
     }
@@ -748,7 +798,13 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     projectModule.SetSourceFilePaths(project->SourceFilePaths());
     projectModule.SetReferenceFilePaths(allReferenceFilePaths);
     projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
+    projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
     projectModule.Export(symbolTable);
+    if (project->GetTarget() == Cm::Ast::Target::program && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
+    {
+        allDebugInfoFilePaths.insert(allDebugInfoFilePaths.end(), debugInfoFilePaths.begin(), debugInfoFilePaths.end());
+        CreateDebugInfoFile(project->ExecutableFilePath(), allDebugInfoFilePaths);
+    }
     Cm::Parser::SetCurrentFileRegistry(nullptr);
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);

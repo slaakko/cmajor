@@ -30,6 +30,7 @@ public:
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);
     void Dump(Cm::Util::CodeFormatter& formatter);
+    bool IsNull() const { return line == 0 && startCol == 0 && endCol == 0; }
 private:
     int32_t line;
     int32_t startCol;
@@ -116,11 +117,15 @@ public:
     const std::string& MangledFunctionName() const { return mangledFunctionName; }
     bool IsMain() const { return isMain; }
     void SetMain() { isMain = true; }
+    bool IsUnique() const { return isUnique; }
+    void SetUnique() { isUnique = true; }
     void SetFunctionDisplayName(const std::string& functionDisplayName_);
     const std::string& FunctionDisplayName() const { return functionDisplayName; }
     ControlFlowGraph& Cfg() { return cfg; }
     void SetSourceFilePath(const std::string& sourceFilePath_);
     const std::string& SourceFilePath() const { return sourceFilePath; }
+    void SetCFilePath(const std::string& cFilePath_);
+    const std::string& CFilePath() const { return cFilePath; }
     void FixCLines(int32_t offset);
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);
@@ -128,9 +133,11 @@ public:
 private:
     std::string mangledFunctionName;
     bool isMain;
+    bool isUnique;
     std::string functionDisplayName;
     ControlFlowGraph cfg;
     std::string sourceFilePath;
+    std::string cFilePath;
 };
 
 class CDebugInfoFile

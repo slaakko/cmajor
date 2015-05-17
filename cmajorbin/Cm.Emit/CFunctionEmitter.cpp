@@ -8,9 +8,11 @@
 ========================================================================*/
 
 #include <Cm.Emit/CFunctionEmitter.hpp>
+#include <Cm.Emit/SourceFileCache.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Emit {
@@ -23,7 +25,7 @@ CFunctionEmitter::CFunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::
     Cm::Sym::FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_, bool generateDebugInfo_) :
     FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
     internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_, externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCalllFun_,
-    leaveTracedCallFun_, generateDebugInfo_), functionMap(nullptr), start(start_), end(end_), generateDebugInfo(generateDebugInfo_)
+    leaveTracedCallFun_, generateDebugInfo_), functionMap(nullptr), start(start_), end(end_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr)
 {
 }
 
@@ -35,11 +37,35 @@ void CFunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
         Cm::Sym::FunctionSymbol* currentFunctionSymbol = boundFunction.GetFunctionSymbol();
         functionDebugInfo.reset(new Cm::Core::CFunctionDebugInfo(IrFunctionRepository().CreateIrFunction(currentFunctionSymbol)->Name()));
         functionDebugInfo->SetFunctionDisplayName(currentFunctionSymbol->FullName());
+        functionDebugInfo->SetCFilePath(cFilePath);
         if (currentFunctionSymbol->GroupName() == "main")
         {
             functionDebugInfo->SetMain();
         }
-        if (currentFunctionSymbol->CompileUnit())
+        if (!currentFunctionSymbol->IsReplicated())
+        {
+            functionDebugInfo->SetUnique();
+        }
+        if (currentFunctionSymbol->Parent() && currentFunctionSymbol->Parent()->IsTemplateTypeSymbol())
+        {
+            Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(currentFunctionSymbol->Parent());
+            Cm::Sym::TypeSymbol* subjectType = templateTypeSymbol->GetSubjectType();
+            if (!subjectType->IsClassTypeSymbol())
+            {
+                throw std::runtime_error("subject type not class type");
+            }
+            Cm::Sym::ClassTypeSymbol* subjectClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectType);
+            const std::string& sourceFilePath = subjectClassType->SourceFilePath();
+            if (sourceFilePath.empty())
+            {
+                throw std::runtime_error("template type symbol source file path not set");
+            }
+            functionDebugInfo->SetSourceFilePath(sourceFilePath);
+            SourceFile& sourceFile = SourceFileCache::Instance().GetSourceFile(sourceFilePath);
+            start = sourceFile.Begin();
+            end = sourceFile.End();
+        }
+        else if (currentFunctionSymbol->CompileUnit())
         {
             functionDebugInfo->SetSourceFilePath(currentFunctionSymbol->CompileUnit()->FilePath());
         }
@@ -48,9 +74,31 @@ void CFunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
             int32_t fileIndex = currentFunctionSymbol->GetSpan().FileIndex();
             const std::string& sourceFilePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(fileIndex);
             functionDebugInfo->SetSourceFilePath(sourceFilePath);
-            currentSourceFile.reset(new Cm::Util::MappedInputFile(sourceFilePath));
-            start = currentSourceFile->Begin();
-            end = currentSourceFile->End();
+            SourceFile& sourceFile = SourceFileCache::Instance().GetSourceFile(sourceFilePath);
+            start = sourceFile.Begin();
+            end = sourceFile.End();
+        }
+    }
+}
+
+void CFunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
+{
+    FunctionEmitter::EndVisit(boundFunction);
+    if (GenerateDebugInfo())
+    {
+        Cm::Sym::FunctionSymbol* currentFunctionSymbol = boundFunction.GetFunctionSymbol();
+        if (currentFunctionSymbol->Parent() && currentFunctionSymbol->Parent()->IsTemplateTypeSymbol())
+        {
+            Cm::Ast::Node* node = symbolTable->GetNode(currentFunctionSymbol, false);
+            if (node)
+            {
+                if (!node->IsFunctionNode())
+                {
+                    throw std::runtime_error("not function node");
+                }
+                Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
+                functionNode->SetBody(nullptr);
+            }
         }
     }
 }
@@ -319,31 +367,19 @@ void CFunctionEmitter::Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThro
 
 void CFunctionEmitter::Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement)
 {
-    FunctionEmitter::Visit(boundBeginCatchStatement);
+    PopGenDebugInfo();
     if (GenerateDebugInfo())
     {
         if (!boundBeginCatchStatement.SyntaxNode())
         {
             throw std::runtime_error("no syntax node");
         }
-        CreateDebugNode(boundBeginCatchStatement, boundBeginCatchStatement.SyntaxNode()->GetSpan(), false);
+        CreateDebugNode(boundBeginCatchStatement, boundBeginCatchStatement.SyntaxNode()->GetSpan(), true);
         boundBeginCatchStatement.GetCfgNode()->SetKind(Cm::Core::CfgNodeKind::catchNode);
     }
-    PushGenDebugInfo(false);
-}
-
-void CFunctionEmitter::Visit(Cm::BoundTree::BoundEndCatchStatement& boundEndCatchStatement)
-{
-    PopGenDebugInfo();
-    if (GenerateDebugInfo())
-    {
-        if (!boundEndCatchStatement.SyntaxNode())
-        {
-            throw std::runtime_error("no syntax node");
-        }
-        CreateDebugNode(boundEndCatchStatement, boundEndCatchStatement.SyntaxNode()->GetSpan(), false);
-    }
-    FunctionEmitter::Visit(boundEndCatchStatement);
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(Emitter(), GenFlags()));
+    DoNothing(*result);
+    ResultStack().Push(result);
 }
 
 void CFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes)

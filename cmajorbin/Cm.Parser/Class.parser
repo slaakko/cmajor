@@ -51,7 +51,8 @@ namespace Cm.Parser
         skip spaces_and_comments;
 
         Class(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::ClassNode*
-            ::= (Specifiers keyword("class") Identifier){ value = new ClassNode(span, Specifiers, Identifier); } TemplateParameterList(ctx, value)? Inheritance(ctx, value)? 
+            ::= (Specifiers keyword("class") Identifier){ value = new ClassNode(span, Specifiers, Identifier); value->SetCompileUnit(compileUnit); } 
+                TemplateParameterList(ctx, value)? Inheritance(ctx, value)? 
                 (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? '{'! ClassContent(ctx, value, compileUnit)! '}'!
             ;
 

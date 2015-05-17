@@ -12,6 +12,7 @@
 #include <Cm.Emit/Emitter.hpp>
 #include <Cm.Core/CDebugInfo.hpp>
 
+
 namespace Cm { namespace Emit {
 
 class CEmitter : public Emitter
@@ -32,6 +33,8 @@ private:
     std::unique_ptr<Cm::Core::CDebugInfoFile> debugInfoFile;
     std::unique_ptr<Cm::Util::MappedInputFile> currentSourceFile;
     int funLine;
+    Cm::Sym::SymbolTable* symbolTable;
+    std::string cFilePath;
 };
 
 } } // namespace Cm::Emit

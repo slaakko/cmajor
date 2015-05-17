@@ -150,8 +150,6 @@ public:
     void Visit(Cm::BoundTree::BoundExitBlocksStatement& boundExitBlocksStatement) override;
     void Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginThrowStatement) override;
     void Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThrowStatement) override;
-    void Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement) override;
-    void Visit(Cm::BoundTree::BoundEndCatchStatement& boundEndCatchStatement) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(Cm::BoundTree::BoundDestructionStatement& boundDestructionStatement) override;
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
@@ -172,6 +170,8 @@ public:
     void Visit(Cm::BoundTree::BoundDefaultStatement& boundDefaultStatement) override;
     void Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCaseStatement) override;
     void Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
+    void Visit(Cm::BoundTree::BoundPushGenDebugInfoStatement& boundPushGenDebugInfoStatement) override;
+    void Visit(Cm::BoundTree::BoundPopGenDebugInfoStatement& boundPopGenDebugInfoStatement) override;
 protected:
     Cm::Core::Emitter* Emitter() { return emitter.get(); }
     Cm::Core::GenFlags GenFlags() { return genFlags; }

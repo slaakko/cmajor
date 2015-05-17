@@ -24,6 +24,7 @@ public:
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
         Cm::Sym::FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_, bool generateDebugInfo_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
+    void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void SetFunctionMap(std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap_) { functionMap = functionMap_; }
     void EmitDummyVar(Cm::Core::Emitter* emitter) override;
     void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) override;
@@ -38,7 +39,6 @@ public:
     void Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginThrowStatement) override;
     void Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThrowStatement) override;
     void Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement) override;
-    void Visit(Cm::BoundTree::BoundEndCatchStatement& boundEndCatchStatement) override;
     Cm::Core::CFunctionDebugInfo* ReleaseFunctionDebugInfo() { return functionDebugInfo.release(); }
 
     void CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevSet) override;
@@ -56,14 +56,17 @@ public:
     void PatchPrevDebugNodes(Cm::BoundTree::BoundStatement& statement) override;
     void SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
     void PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode) override;
+    void SetSymbolTable(Cm::Sym::SymbolTable* symbolTable_) { symbolTable = symbolTable_; }
+    void SetCFilePath(const std::string& cFilePath_) { cFilePath = cFilePath_; }
 private:
     std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap;
     bool generateDebugInfo;
     std::unique_ptr<Cm::Core::CFunctionDebugInfo> functionDebugInfo;
-    std::unique_ptr<Cm::Util::MappedInputFile> currentSourceFile;
     const char* start;
     const char* end;
     std::vector<std::unordered_set<Cm::Core::CfgNode*>> debugNodeSets;
+    Cm::Sym::SymbolTable* symbolTable;
+    std::string cFilePath;
 };
 
 } } // namespace Cm::Emit

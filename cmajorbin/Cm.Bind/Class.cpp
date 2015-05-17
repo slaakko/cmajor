@@ -46,6 +46,10 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
     if (classTypeSymbol->Bound()) return;
+    if (classNode->GetCompileUnit())
+    {
+        classTypeSymbol->SetSourceFilePath(classNode->GetCompileUnit()->FilePath());
+    }
     Cm::Ast::Specifiers specifiers = classNode->GetSpecifiers();
     bool isClassMember = classNode->Parent()->IsClassNode();
     SetAccess(classTypeSymbol, specifiers, isClassMember);

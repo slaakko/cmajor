@@ -41,18 +41,18 @@ TypeId GetNextClassTypeId(uint32_t nextClassNumber)
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
-    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), classNumber(-1)
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), classNumber(-1), compileUnit(nullptr)
 {
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_, uint32_t classNumber_) : 
     TypeSymbol(span_, name_, getNextId_ ? GetNextClassTypeId(classNumber_) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr), 
-    staticConstructor(nullptr), initializedVar(nullptr), classNumber(classNumber_)
+    staticConstructor(nullptr), initializedVar(nullptr), classNumber(classNumber_), compileUnit(nullptr)
 {
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : TypeSymbol(span_, name_, id_), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
-    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), classNumber(-1)
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), classNumber(-1), compileUnit(nullptr)
 {
 }
 
@@ -103,6 +103,11 @@ void ClassTypeSymbol::Write(Writer& writer)
             throw std::runtime_error("not class node");
         }
     }
+    if (!IsTemplateTypeSymbol() && !IsClassDelegateTypeSymbol() && sourceFilePath.empty())
+    {
+        throw std::runtime_error("source file path not set");
+    }
+    writer.GetBinaryWriter().Write(sourceFilePath);
 }
 
 void ClassTypeSymbol::Read(Reader& reader)
@@ -127,6 +132,7 @@ void ClassTypeSymbol::Read(Reader& reader)
         reader.GetBinaryReader().Skip(persistentClassData->classNodeSize);
     }
     reader.EnqueueMakeIrTypeFor(this);
+    sourceFilePath = reader.GetBinaryReader().ReadString();
 }
 
 void ClassTypeSymbol::ReadClassNode(Cm::Sym::SymbolTable& symbolTable, int fileIndex)

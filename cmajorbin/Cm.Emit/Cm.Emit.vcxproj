@@ -23,16 +23,20 @@
     <ClInclude Include="CFunctionEmitter.hpp" />
     <ClInclude Include="Emitter.hpp" />
     <ClInclude Include="FunctionEmitter.hpp" />
+    <ClInclude Include="InitDone.hpp" />
     <ClInclude Include="LlvmEmitter.hpp" />
     <ClInclude Include="LlvmFunctionEmitter.hpp" />
+    <ClInclude Include="SourceFileCache.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CEmitter.cpp" />
     <ClCompile Include="CFunctionEmitter.cpp" />
     <ClCompile Include="Emitter.cpp" />
     <ClCompile Include="FunctionEmitter.cpp" />
+    <ClCompile Include="InitDone.cpp" />
     <ClCompile Include="LlvmEmitter.cpp" />
     <ClCompile Include="LlvmFunctionEmitter.cpp" />
+    <ClCompile Include="SourceFileCache.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F0374DC9-3D1D-4A36-ACAC-1636F34C9159}</ProjectGuid>

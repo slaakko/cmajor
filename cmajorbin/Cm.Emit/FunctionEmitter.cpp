@@ -1189,21 +1189,18 @@ void FunctionEmitter::EndVisitStatement(Cm::BoundTree::BoundStatement& statement
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement)
 {
+    if (!boundCompoundStatement.Parent())
+    {
+        PushGenDebugInfo(generateDebugInfo && boundCompoundStatement.SyntaxNode() != nullptr);
+    }
     if (generateDebugInfo)
     {
-        if (!boundCompoundStatement.Parent())
+        if (!boundCompoundStatement.SyntaxNode())
         {
-            PushGenDebugInfo(boundCompoundStatement.SyntaxNode() != nullptr);
+            throw std::runtime_error("block body has no syntax node");
         }
-        if (generateDebugInfo)
-        {
-            if (!boundCompoundStatement.SyntaxNode())
-            {
-                throw std::runtime_error("block body has no syntax node");
-            }
-            Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(boundCompoundStatement.SyntaxNode());
-            CreateEntryDebugNode(boundCompoundStatement, compoundStatementNode->BeginBraceSpan());
-        }
+        Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(boundCompoundStatement.SyntaxNode());
+        CreateEntryDebugNode(boundCompoundStatement, compoundStatementNode->BeginBraceSpan());
     }
     compoundResultStack.Push(compoundResult);
     compoundResult = std::shared_ptr<Cm::Core::GenResult>(new Cm::Core::GenResult(emitter.get(), Cm::Core::GenFlags::none));
@@ -1441,20 +1438,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginT
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThrowStatement)
-{
-    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
-    DoNothing(*result);
-    resultStack.Push(result);
-}
-
-void FunctionEmitter::Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement)
-{
-    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
-    DoNothing(*result);
-    resultStack.Push(result);
-}
-
-void FunctionEmitter::Visit(Cm::BoundTree::BoundEndCatchStatement& boundBeginCatchStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     DoNothing(*result);
@@ -1922,12 +1905,36 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     PushBreakTargetStatement(&boundForStatement);
     PushContinueTargetStatement(&boundForStatement);
+    Cm::Ast::Node* node = boundForStatement.SyntaxNode();
+    if (!node->IsStatementNode())
+    {
+        throw std::runtime_error("not statement node");
+    }
+    Cm::Ast::StatementNode* statementNode = static_cast<Cm::Ast::StatementNode*>(node);
+    if (!statementNode->IsForStatementNode())
+    {
+        throw std::runtime_error("not for statement node");
+    }
+    Cm::Ast::ForStatementNode* forStatementNode = static_cast<Cm::Ast::ForStatementNode*>(statementNode);
+    bool debugInfoDisabled = false;
+    if (GenerateDebugInfo() && forStatementNode->IsRangeForStatement())
+    {
+        PushGenDebugInfo(false);
+        debugInfoDisabled = true;
+    }
     Cm::BoundTree::BoundStatement* initS = boundForStatement.InitS();
     BeginVisitStatement(*initS);
     initS->Accept(*this);
+    if (debugInfoDisabled)
+    {
+        PopGenDebugInfo();
+    }
     if (generateDebugInfo)
     {
-        SetCfgNode(*initS, boundForStatement);
+        if (!debugInfoDisabled)
+        {
+            SetCfgNode(*initS, boundForStatement);
+        }
         if (!boundForStatement.Condition()->SyntaxNode())
         {
             throw std::runtime_error("condition syntax node not set");
@@ -2251,6 +2258,20 @@ void FunctionEmitter::PushGenDebugInfo(bool generate)
 void FunctionEmitter::PopGenDebugInfo()
 {
     generateDebugInfo = generateDebugInfoStack.top();
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundPushGenDebugInfoStatement& boundPushGenDebugInfoStatement) 
+{
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    resultStack.Push(result);
+    PushGenDebugInfo(boundPushGenDebugInfoStatement.Generate());
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundPopGenDebugInfoStatement& boundPopGenDebugInfoStatement) 
+{
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    resultStack.Push(result);
+    PopGenDebugInfo();
 }
 
 void FunctionEmitter::PushBreakTargetStatement(Cm::BoundTree::BoundStatement* statement)

@@ -13,6 +13,7 @@
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
+#include <Cm.Emit/InitDone.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
@@ -38,9 +39,12 @@ struct InitDone
         Cm::Parsing::Init();
         Cm::Ast::Init();
         Cm::Sym::Init();
+        Cm::Emit::Init();
+
     }
     ~InitDone()
     {
+        Cm::Emit::Done();
         Cm::Sym::Done();
         Cm::Ast::Done();
         Cm::Parsing::Done();
@@ -226,7 +230,7 @@ int main(int argc, const char** argv)
                 }
             }
             Cm::IrIntf::SetBackEnd(backend);
-            if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+            if (Cm::Core::GetGlobalSettings()->Config() == "debug" && backend == Cm::IrIntf::BackEnd::c)
             {
                 Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info);
             }

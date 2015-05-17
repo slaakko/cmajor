@@ -40,6 +40,8 @@ public:
     Node* BaseClassTypeExpr() const { return baseClassTypeExpr.get(); }
     WhereConstraintNode* Constraint() const { return constraint.get(); }
     void Accept(Visitor& visitor) override;
+    void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
+    CompileUnitNode* GetCompileUnit() const { return compileUnit; }
 private:
     Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;
@@ -47,6 +49,7 @@ private:
     std::unique_ptr<Node> baseClassTypeExpr;
     std::unique_ptr<WhereConstraintNode> constraint;
     NodeList members;
+    CompileUnitNode* compileUnit;
 };
 
 class InitializerNode : public Node

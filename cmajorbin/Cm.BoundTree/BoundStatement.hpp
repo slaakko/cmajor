@@ -201,6 +201,23 @@ private:
     BoundCompoundStatement* targetBlock;
 };
 
+class BoundPushGenDebugInfoStatement : public BoundStatement
+{
+public:
+    BoundPushGenDebugInfoStatement(Cm::Ast::Node* syntaxNode_, bool generate_);
+    bool Generate() const { return generate; }
+    void Accept(Visitor& visitor) override;
+private:
+    bool generate;
+};
+
+class BoundPopGenDebugInfoStatement : public BoundStatement
+{
+public:
+    BoundPopGenDebugInfoStatement(Cm::Ast::Node* syntaxNode_);
+    void Accept(Visitor& visitor) override;
+};
+
 class BoundBeginThrowStatement : public BoundStatement
 {
 public:
@@ -219,13 +236,6 @@ class BoundBeginCatchStatement : public BoundStatement
 {
 public:
     BoundBeginCatchStatement(Cm::Ast::Node* syntaxNode_);
-    void Accept(Visitor& visitor) override;
-};
-
-class BoundEndCatchStatement : public BoundStatement
-{
-public:
-    BoundEndCatchStatement(Cm::Ast::Node* syntaxNode_);
     void Accept(Visitor& visitor) override;
 };
 

@@ -130,6 +130,7 @@ void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
     Cm::Ast::IdentifierNode* classId = classNode->Id();
     uint32_t nextClassNumber = GetClassCounter()->GetNextClassNumber();
     ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true, nextClassNumber);
+    classSymbol->SetCompileUnit(classNode->GetCompileUnit());
     typeRepository.AddType(classSymbol);
     ContainerScope* classScope = classSymbol->GetContainerScope();
     nodeScopeMap[classNode] = classScope;
