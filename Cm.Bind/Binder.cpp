@@ -734,6 +734,11 @@ void Binder::Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode)
     exitTryStatementNode.Accept(binder);
 }
 
+void Binder::Visit(Cm::Ast::BeginCatchStatementNode& beginCatchStatementNode)
+{
+    AddBoundStatement(new Cm::BoundTree::BoundBeginCatchStatement(&beginCatchStatementNode));
+}
+
 void Binder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
 {
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::unit_test))

@@ -13,6 +13,7 @@
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Bind/Class.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -481,6 +482,11 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
     }
 	PrepareArguments(containerScope, boundCompileUnit, currentFunction, nullptr, mutexGuardConstructor->Parameters(), constructMutexGuardStatement->Arguments(), true, 
         boundCompileUnit.IrClassTypeRepository(), mutexGuardConstructor->IsBasicTypeOp());
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
+    {
+        currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, new Cm::BoundTree::BoundPushGenDebugInfoStatement(staticConstructorNode, false));
+        ++classObjectLayoutFunIndex;
+    }
 	currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, constructMutexGuardStatement);
 	++classObjectLayoutFunIndex;
 	currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
@@ -516,6 +522,11 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
     Cm::BoundTree::BoundAssignmentStatement* setInitializedStatement = new Cm::BoundTree::BoundAssignmentStatement(staticConstructorNode, boundInitializedVarLeft, boundTrue, boolAssignment);
     currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, setInitializedStatement);
     ++classObjectLayoutFunIndex;
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
+    {
+        currentFunction->Body()->InsertStatement(classObjectLayoutFunIndex, new Cm::BoundTree::BoundPopGenDebugInfoStatement(staticConstructorNode));
+        ++classObjectLayoutFunIndex;
+    }
     currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
 }
 

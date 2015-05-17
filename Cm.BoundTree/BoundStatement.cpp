@@ -220,6 +220,24 @@ void BoundExitBlocksStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundPushGenDebugInfoStatement::BoundPushGenDebugInfoStatement(Cm::Ast::Node* syntaxNode_, bool generate_) : BoundStatement(syntaxNode_), generate(generate_)
+{
+}
+
+void BoundPushGenDebugInfoStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundPopGenDebugInfoStatement::BoundPopGenDebugInfoStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
+{
+}
+
+void BoundPopGenDebugInfoStatement::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundBeginThrowStatement::BoundBeginThrowStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -243,15 +261,6 @@ BoundBeginCatchStatement::BoundBeginCatchStatement(Cm::Ast::Node* syntaxNode_) :
 }
 
 void BoundBeginCatchStatement::Accept(Visitor& visitor)
-{
-    visitor.Visit(*this);
-}
-
-BoundEndCatchStatement::BoundEndCatchStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
-{
-}
-
-void BoundEndCatchStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }

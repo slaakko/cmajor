@@ -15,8 +15,10 @@
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Bind/Concept.hpp>
+#include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
@@ -263,7 +265,10 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         binder.BeginVisit(*templateTypeNode);
         functionNode->Accept(binder);
         binder.EndVisit(*templateTypeNode);
-        functionNode->SetBody(nullptr);
+        if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
+        {
+            functionNode->SetBody(nullptr);
+        }
         boundCompileUnit.RemoveLastFileScope();
     }
     static bool recursed = false;

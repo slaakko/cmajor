@@ -21,7 +21,7 @@ void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUn
 void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GetLibraryDirectories(std::vector<std::string>& libraryDirectories);
 void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths,
-    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths);
+    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths);
 void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void AnalyzeControlFlow(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths);

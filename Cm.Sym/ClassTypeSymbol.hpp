@@ -99,6 +99,8 @@ public:
     const std::vector<MemberVariableSymbol*>& StaticMemberVariables() const { return staticMemberVariables; }
     void SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes_);
     const Cm::Ast::NodeList& GetUsingNodes() const;
+    const std::string& SourceFilePath() const { return sourceFilePath; }
+    void SetSourceFilePath(const std::string& sourceFilePath_) { sourceFilePath = sourceFilePath_; }
     bool IsVirtual() const
     {
         return GetFlag(ClassTypeSymbolFlags::virtual_) || baseClass && baseClass->IsVirtual();
@@ -282,6 +284,8 @@ public:
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    Cm::Ast::CompileUnitNode* CompileUnit() const { return compileUnit; }
+    void SetCompileUnit(Cm::Ast::CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
 private:
     uint32_t classNumber;
     ClassTypeSymbolFlags flags;
@@ -296,6 +300,8 @@ private:
     std::vector<Cm::Sym::FunctionSymbol*> vtbl;
     std::unordered_set<FunctionSymbol*> conversions;
     std::unique_ptr<PersistentClassData> persistentClassData;
+    std::string sourceFilePath;
+    Cm::Ast::CompileUnitNode* compileUnit;
     bool GetFlag(ClassTypeSymbolFlags flag) const
     {
         return (flags & flag) != ClassTypeSymbolFlags::none;

@@ -281,11 +281,14 @@ public:
     bool HasIncrement() const { return increment != nullptr; }
     Node* Condition() const { return condition.get(); }
     StatementNode* Action() const { return action.get(); }
+    void SetAsRangeForStatement() { rangeForStatement = true; }
+    bool IsRangeForStatement() const { return rangeForStatement; }
 private:
     std::unique_ptr<StatementNode> init;
     std::unique_ptr<Node> condition;
     std::unique_ptr<Node> increment;
     std::unique_ptr<StatementNode> action;
+    bool rangeForStatement;
 };
 
 class RangeForStatementNode : public StatementNode
@@ -305,6 +308,7 @@ public:
     IdentifierNode* VarId() const { return varId.get(); }
     Node* Container() const { return container.get(); }
     StatementNode* Action() const { return action.get(); }
+    Span VariableSpan() const;
 private:
     std::unique_ptr<Node> varTypeExpr;
     std::unique_ptr<IdentifierNode> varId;
@@ -546,6 +550,15 @@ public:
     void Accept(Visitor& visitor) override;
 private:
     TryStatementNode* tryNode;
+};
+
+class BeginCatchStatementNode : public StatementNode
+{
+public:
+    BeginCatchStatementNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::beginCatchStatementNode; }
+    virtual Node* Clone(CloneContext& cloneContext) const;
+    void Accept(Visitor& visitor) override;
 };
 
 class AssertStatementNode : public StatementNode

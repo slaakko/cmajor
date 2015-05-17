@@ -128,6 +128,7 @@ class ThrowStatementNode;
 class TryStatementNode;
 class CatchNode;
 class ExitTryStatementNode;
+class BeginCatchStatementNode;
 class AssertStatementNode;
 class CondCompDisjunctionNode;
 class CondCompConjunctionNode;
@@ -347,6 +348,7 @@ public:
     virtual void Visit(TryStatementNode& tryStatementNode) {}
     virtual void Visit(CatchNode& catchNode) {}
     virtual void Visit(ExitTryStatementNode& exitTryStatementNode) {}
+    virtual void Visit(BeginCatchStatementNode& beginCatchStatementNode) {}
     virtual void Visit(AssertStatementNode& assertStatementNode) {}
     virtual void BeginVisit(CondCompDisjunctionNode& condCompDisjunctionNode) {}
     virtual void EndVisit(CondCompDisjunctionNode& condCompDisjunctionNode) {}

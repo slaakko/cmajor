@@ -18,11 +18,11 @@
 
 namespace Cm { namespace Ast {
 
-ClassNode::ClassNode(const Span& span_) : Node(span_)
+ClassNode::ClassNode(const Span& span_) : Node(span_), compileUnit(nullptr)
 {
 }
 
-ClassNode::ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_)
+ClassNode::ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), id(id_), compileUnit(nullptr)
 {
     id->SetParent(this);
 }

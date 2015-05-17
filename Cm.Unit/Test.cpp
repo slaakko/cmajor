@@ -138,10 +138,10 @@ Cm::Ast::FunctionNode* CreateDriverFunction(const std::string& unitTestName)
 
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* project, 
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, 
-    const std::string& unitTestName)
+    std::vector<std::string>& allDebugInfoFilePaths, const std::string& unitTestName)
 {
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
-    Cm::Build::ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths);
+    Cm::Build::ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
     testUnit->GlobalNs()->AddMember(CreateDriverFunction(unitTestName));
     symbolTable.InitVirtualFunctionTables();
     Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
@@ -211,10 +211,11 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     std::vector<std::string> libraryDirs;
     Cm::Build::GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
+    std::vector<std::string> allDebugInfoFilePaths;
     std::vector<std::string> assemblyFilePaths;
     std::vector<std::string> cLibs;
     std::vector<std::string> objectFilePaths;
-    BuildSymbolTable(symbolTable, globalConceptData, testUnit, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, unitTestName);
+    BuildSymbolTable(symbolTable, globalConceptData, testUnit, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, unitTestName);
     boost::filesystem::create_directories(project->OutputBasePath());
     std::string ext;
     Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();

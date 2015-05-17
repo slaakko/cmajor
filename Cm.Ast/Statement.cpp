@@ -801,12 +801,12 @@ void DoStatementNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-ForStatementNode::ForStatementNode(const Span& span_) : StatementNode(span_)
+ForStatementNode::ForStatementNode(const Span& span_) : StatementNode(span_), rangeForStatement(false)
 {
 }
 
 ForStatementNode::ForStatementNode(const Span& span_, StatementNode* init_, Node* condition_, Node* increment_, StatementNode* action_) :
-    StatementNode(span_), init(init_), condition(condition_), increment(increment_), action(action_)
+    StatementNode(span_), init(init_), condition(condition_), increment(increment_), action(action_), rangeForStatement(false)
 {
     init->SetParent(this);
     if (condition)
@@ -996,6 +996,13 @@ void RangeForStatementNode::Accept(Visitor& visitor)
         container->Accept(visitor);
     }
     visitor.EndVisit(*this);
+}
+
+Span RangeForStatementNode::VariableSpan() const
+{
+    Span variableSpan = varTypeExpr->GetSpan();
+    variableSpan.SetEnd(varId->GetSpan().End());
+    return variableSpan;
 }
 
 CompoundStatementNode::CompoundStatementNode(const Span& span_) : StatementNode(span_)
@@ -1628,6 +1635,20 @@ Node* ExitTryStatementNode::Clone(CloneContext& cloneContext) const
 }
 
 void ExitTryStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BeginCatchStatementNode::BeginCatchStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+Node* BeginCatchStatementNode::Clone(CloneContext& cloneContext) const
+{
+    throw std::runtime_error("member function not applicable");
+}
+
+void BeginCatchStatementNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }

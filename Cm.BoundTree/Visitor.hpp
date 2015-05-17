@@ -47,10 +47,11 @@ class BoundReturnStatement;
 class BoundBeginTryStatement;
 class BoundEndTryStatement;
 class BoundExitBlocksStatement;
+class BoundPushGenDebugInfoStatement;
+class BoundPopGenDebugInfoStatement;
 class BoundBeginThrowStatement;
 class BoundEndThrowStatement;
 class BoundBeginCatchStatement;
-class BoundEndCatchStatement;
 class BoundConstructionStatement;
 class BoundDestructionStatement;
 class BoundAssignmentStatement;
@@ -115,10 +116,11 @@ public:
     virtual void Visit(BoundBeginTryStatement& boundBeginTryStatement) {}
     virtual void Visit(BoundEndTryStatement& boundEndTryStatement) {}
     virtual void Visit(BoundExitBlocksStatement& boundExitBlocksStatement) {}
+    virtual void Visit(BoundPushGenDebugInfoStatement& boundPushGenDebugInfoStatement) {}
+    virtual void Visit(BoundPopGenDebugInfoStatement& boundPopGenDebugInfoStatement) {}
     virtual void Visit(BoundBeginThrowStatement& boundBeginThrowStatement) {}
     virtual void Visit(BoundEndThrowStatement& boundEndThrowStatement) {}
     virtual void Visit(BoundBeginCatchStatement& boundBeginCatchStatement) {}
-    virtual void Visit(BoundEndCatchStatement& boundBeginCatchStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
     virtual void Visit(BoundDestructionStatement& boundDestructionStatement) {}
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}
