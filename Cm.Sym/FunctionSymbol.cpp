@@ -142,7 +142,7 @@ PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), speci
 }
 
 FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
-    classObjectResultIrParam(nullptr), mutexId(-1)
+    classObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr)
 {
 }
 
@@ -762,6 +762,15 @@ FileScope* FunctionSymbol::GetFileScope(ContainerScope* containerScope)
 void FunctionSymbol::SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_)
 {
     globalNs.reset(globalNs_);
+}
+
+void FunctionSymbol::AddToOverrideSet(FunctionSymbol* overrideFun)
+{
+    overrideSet.insert(overrideFun);
+    if (overriddenFunction)
+    {
+        overriddenFunction->AddToOverrideSet(overrideFun);
+    }
 }
 
 } } // namespace Cm::Sym

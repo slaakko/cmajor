@@ -342,6 +342,8 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
                 f->SetVtblIndex(j);
                 vtblToInit[j] = f;
                 found = true;
+                f->SetOverriddenFunction(v);
+                v->AddToOverrideSet(f);
                 break;
             }
         }
