@@ -67,7 +67,7 @@ CFunCall::CFunCall() : funNames(), cLine(0)
 {
 }
 
-CFunCall::CFunCall(const std::vector<std::string>& funNames_, int32_t cLine_) : funNames(funNames_), cLine(cLine_)
+CFunCall::CFunCall(const std::vector<std::string>& funNames_) : funNames(funNames_), cLine(0)
 {
 } 
 
@@ -102,7 +102,7 @@ void CFunCall::Dump(Cm::Util::CodeFormatter& formatter)
 {
     for (const std::string& funName : funNames)
     {
-        formatter.WriteLine(funName);
+        formatter.WriteLine(funName + ";");
     }
     formatter.WriteLine("cline: " + std::to_string(cLine) + ";");
 }
@@ -132,12 +132,17 @@ void CfgNode::AddNext(int32_t nextNodeId)
     next.insert(nextNodeId);
 }
 
+void CfgNode::AddCFunCall(CFunCall* cFunCall)
+{
+    cFunCalls.push_back(std::unique_ptr<CFunCall>(cFunCall));
+}
+
 void CfgNode::FixCLines(int32_t offset)
 {
     cLine += offset;
-    for (CFunCall& cFunCall : cFunCalls)
+    for (const std::unique_ptr<CFunCall>& cFunCall : cFunCalls)
     {
-        cFunCall.FixCLines(offset);
+        cFunCall->FixCLines(offset);
     }
 }
 
@@ -155,9 +160,9 @@ void CfgNode::Read(Cm::Ser::BinaryReader& reader)
     int32_t nFunCalls = reader.ReadInt();
     for (int32_t i = 0; i < nFunCalls; ++i)
     {
-        CFunCall cFunCall;
-        cFunCall.Read(reader);
-        cFunCalls.push_back(cFunCall);
+        CFunCall* cFunCall = new CFunCall();
+        cFunCall->Read(reader);
+        cFunCalls.push_back(std::unique_ptr<CFunCall>(cFunCall));
     }
     kind = CfgNodeKind(reader.ReadByte());
 }
@@ -175,9 +180,9 @@ void CfgNode::Write(Cm::Ser::BinaryWriter& writer)
     }
     int32_t nFunCalls = int32_t(cFunCalls.size());
     writer.Write(nFunCalls);
-    for (CFunCall& cFunCall : cFunCalls)
+    for (const std::unique_ptr<CFunCall>& cFunCall : cFunCalls)
     {
-        cFunCall.Write(writer);
+        cFunCall->Write(writer);
     }
     writer.Write(uint8_t(kind));
 }
@@ -210,9 +215,16 @@ void CfgNode::Dump(Cm::Util::CodeFormatter& formatter)
     formatter.WriteLine("calls:");
     formatter.WriteLine("{");
     formatter.IncIndent();
-    for (CFunCall& cFunCall : cFunCalls)
+    int n = int(cFunCalls.size());
+    for (int i = 0; i < n; ++i)
     {
-        cFunCall.Dump(formatter);
+        CFunCall* cFunCall = cFunCalls[i].get();
+        formatter.WriteLine("call " + std::to_string(i) + ":");
+        formatter.WriteLine("{");
+        formatter.IncIndent();
+        cFunCall->Dump(formatter);
+        formatter.DecIndent();
+        formatter.WriteLine("}");
     }
     formatter.DecIndent();
     formatter.WriteLine("}");

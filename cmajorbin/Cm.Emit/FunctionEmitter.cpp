@@ -203,6 +203,10 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     currentFunction = &boundFunction;
+    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Swap<int>(int&, int&) where T is MoveConstructible and T is MoveAssignable and T is Destructible")
+    {
+        int x = 0;
+    }
     Cm::IrIntf::ResetLocalLabelCounter();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->GetFunctionSymbol());
     externalFunctions.insert(irFunction);
@@ -2344,6 +2348,10 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::
             memberFunctionResult.AddObject(localVariableIrObjectRepository.GetExceptionCodeVariable());
         }
         Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(memberFunctionResult.MainObject(), fun, memberFunctionResult.Args());
+        if (generateDebugInfo)
+        {
+            SetCallDebugInfoInfo(callInst, fun);
+        }
         emitter->Emit(callInst);
     }
     else
@@ -2357,11 +2365,19 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::
             }
             functionResult.AddObject(localVariableIrObjectRepository.GetExceptionCodeVariable());
             Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(functionResult.MainObject(), fun, functionResult.Args());
+            if (generateDebugInfo)
+            {
+                SetCallDebugInfoInfo(callInst, fun);
+            }
             emitter->Emit(callInst);
         }
         else
         {
             Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(result.MainObject(), fun, result.Args());
+            if (generateDebugInfo)
+            {
+                SetCallDebugInfoInfo(callInst, fun);
+            }
             emitter->Emit(callInst);
         }
     }

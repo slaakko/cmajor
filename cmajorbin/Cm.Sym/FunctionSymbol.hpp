@@ -227,6 +227,10 @@ public:
     void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);
     int GetMutexId() const { return mutexId; }
     void SetMutexId(int mutexId_) { mutexId = mutexId_; }
+    void SetOverriddenFunction(FunctionSymbol* overriddenFunction_) { overriddenFunction = overriddenFunction_; }
+    FunctionSymbol* OverriddenFunction() const { return overriddenFunction; }
+    std::unordered_set<FunctionSymbol*> OverrideSet() const { return overrideSet; }
+    void AddToOverrideSet(FunctionSymbol* overrideFun);
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
@@ -240,6 +244,8 @@ private:
     std::unique_ptr<PersistentFunctionData> persistentFunctionData;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs;
     int mutexId;
+    FunctionSymbol* overriddenFunction;
+    std::unordered_set<FunctionSymbol*> overrideSet;
     bool GetFlag(FunctionSymbolFlags flag) const
     {
         return (flags & flag) != FunctionSymbolFlags::none;

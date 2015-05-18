@@ -310,7 +310,40 @@ void CFunctionEmitter::GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::Ge
     Ir::Intf::RegVar* loadedFunctionPtr = Cm::IrIntf::CreateTemporaryRegVar(functionPtrType);
     emitter->Own(loadedFunctionPtr);
     emitter->Emit(Cm::IrIntf::Bitcast(voidPtr, loadedFunctionPtr, loadedFunctionVoidPtr, functionPtrType));
-    emitter->Emit(Cm::IrIntf::IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args()));
+    Ir::Intf::Instruction* callInst = Cm::IrIntf::IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args());
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::CfgNode* activeCfgNode = emitter->GetActiveCfgNode();
+        if (activeCfgNode)
+        {
+            std::vector<std::string> funNames;
+            funNames.push_back(IrFunctionRepository().CreateIrFunction(fun)->Name());
+            for (Cm::Sym::FunctionSymbol* overrideFun : fun->OverrideSet())
+            {
+                funNames.push_back(IrFunctionRepository().CreateIrFunction(overrideFun)->Name());
+            }
+            Cm::Core::CFunCall* cFunCall = new Cm::Core::CFunCall(funNames);
+            activeCfgNode->AddCFunCall(cFunCall);
+            callInst->SetFunCallNode(cFunCall);
+        }
+    }
+    emitter->Emit(callInst);
+}
+
+void CFunctionEmitter::SetCallDebugInfoInfo(Ir::Intf::Instruction* callInst, Ir::Intf::Function* fun)
+{
+    if (GenerateDebugInfo())
+    {
+        Cm::Core::CfgNode* activeCfgNode = Emitter()->GetActiveCfgNode();
+        if (activeCfgNode)
+        {
+            std::vector<std::string> funNames;
+            funNames.push_back(fun->Name());
+            Cm::Core::CFunCall* cFunCall = new Cm::Core::CFunCall(funNames);
+            activeCfgNode->AddCFunCall(cFunCall);
+            callInst->SetFunCallNode(cFunCall);
+        }
+    }
 }
 
 Ir::Intf::LabelObject* CFunctionEmitter::CreateLandingPadLabel(int landingPadId)

@@ -33,6 +33,7 @@ public:
     void Visit(Cm::BoundTree::BoundInitVPtrStatement& boundInitVPtrStatement) override;
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) override;
     void GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) override;
+    void SetCallDebugInfoInfo(Ir::Intf::Instruction* callInst, Ir::Intf::Function* fun) override;
     Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) override;
     void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) override;
     Ir::Intf::Object* MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source) override;

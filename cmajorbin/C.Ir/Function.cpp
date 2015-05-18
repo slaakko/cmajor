@@ -161,6 +161,12 @@ void Function::WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inli
             cDebugNode->SetCLine(formatter.Line());
         }
         formatter.WriteLine(s);
+        Ir::Intf::CDebugNode* funCallNode = inst->GetFunCallNode();
+        if (funCallNode)
+        {
+            funCallNode->SetCLine(formatter.Line());
+            formatter.WriteLine("_V__X_dummy = true;");
+        }
         prev = inst;
     }
     formatter.DecIndent();

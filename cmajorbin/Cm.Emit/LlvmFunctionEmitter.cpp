@@ -258,6 +258,11 @@ Ir::Intf::Object* LlvmFunctionEmitter::MakeLocalVarIrObject(Cm::Sym::TypeSymbol*
     return source;
 }
 
+void LlvmFunctionEmitter::SetCallDebugInfoInfo(Ir::Intf::Instruction* callInst, Ir::Intf::Function* fun)
+{
+    // nothing to do for LLVM backend
+}
+
 void LlvmFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes)
 {
     // nothing to do for LLVM backend

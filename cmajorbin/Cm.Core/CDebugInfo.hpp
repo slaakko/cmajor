@@ -39,11 +39,12 @@ private:
 
 SourceSpan FromSpan(const char* start, const char* end, const Cm::Parsing::Span& span);
 
-class CFunCall
+class CFunCall : public Ir::Intf::CDebugNode
 {
 public:
     CFunCall();
-    CFunCall(const std::vector<std::string>& funNames_, int32_t cLine_);
+    CFunCall(const std::vector<std::string>& funNames_);
+    void SetCLine(int32_t cLine_) override { cLine = cLine_; }
     void FixCLines(int32_t offset);
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);
@@ -68,7 +69,8 @@ public:
     int32_t CLine() const { return cLine; }
     void SetCLine(int32_t cLine_) override { cLine = cLine_; }
     const std::unordered_set<int32_t>& Next() const { return next; }
-    const std::vector<CFunCall>& CFunCalls() const { return cFunCalls; }
+    const std::vector<std::unique_ptr<CFunCall>>& CFunCalls() const { return cFunCalls; }
+    void AddCFunCall(CFunCall* cFunCall);
     CfgNodeKind Kind() const { return kind; }
     void SetKind(CfgNodeKind kind_) { kind = kind_; }
     void AddNext(int32_t nextNodeId);
@@ -81,7 +83,7 @@ private:
     SourceSpan sourceSpan;
     int32_t cLine;
     std::unordered_set<int32_t> next;
-    std::vector<CFunCall> cFunCalls;
+    std::vector<std::unique_ptr<CFunCall>> cFunCalls;
     CfgNodeKind kind;
 };
 
