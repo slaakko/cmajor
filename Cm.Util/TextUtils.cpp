@@ -216,4 +216,49 @@ bool LastComponentsEqual(const std::string& s0, const std::string& s1, char comp
     return true;
 }
 
+bool StartsWith(const std::string& s, const std::string& prefix)
+{
+    int n = int(prefix.length());    
+    return int(s.length()) >= n && s.substr(0, n) == prefix;
+}
+
+bool EndsWith(const std::string& s, const std::string& suffix)
+{
+    int n = int(suffix.length());
+    int m = int(s.length());
+    return m >= n && s.substr(m - n, n) == suffix;
+}
+
+std::string NarrowString(const char* str, int length)
+{
+#if defined(__linux) || defined(__posix) || defined(__unix)
+    return std::string(str, length);
+#elif defined(WIN32)
+    std::string narrow;
+    narrow.reserve(length);
+    int state = 0;
+    for (int i = 0; i < length; ++i)
+    {
+        char c = str[i];
+        switch (state)
+        {
+            case 0:
+            {
+                if (c == '\r') state = 1; else narrow.append(1, c);
+                break;
+            }
+            case 1:
+            {
+                if (c == '\n') narrow.append(1, '\n'); else narrow.append(1, '\r').append(1, c);
+                state = 0;
+                break;
+            }
+        }
+    }
+    return narrow;
+#else
+    #error unknown platform
+#endif
+}
+
 } } // namespace Cm::Util

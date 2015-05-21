@@ -370,12 +370,12 @@ void ControlFlowGraph::Dump(Cm::Util::CodeFormatter& formatter)
     formatter.WriteLine("}");
 }
 
-CFunctionDebugInfo::CFunctionDebugInfo() : isMain(false), isUnique(false)
+CFunctionDebugInfo::CFunctionDebugInfo() : isMain(false), isUnique(false), file(nullptr)
 {
 }
 
 CFunctionDebugInfo::CFunctionDebugInfo(const std::string& mangledFunctionName_): isMain(false), mangledFunctionName(mangledFunctionName_), functionDisplayName(), cfg(), sourceFilePath(), 
-    isUnique(false)
+    isUnique(false), file(nullptr)
 {
 }
 
@@ -487,6 +487,21 @@ void CDebugInfoFile::Dump(Cm::Util::CodeFormatter& formatter)
     {
         functionDebugInfo->Dump(formatter);
     }
+}
+
+void CDebugInfoFile::AddFunctionDebugInfoToMap(CFunctionDebugInfo* functionDebugInfo)
+{
+    functionDebugInfoMap[functionDebugInfo->MangledFunctionName()] = functionDebugInfo;
+}
+
+CFunctionDebugInfo* CDebugInfoFile::GetFunctionDebugInfo(const std::string& mangledFunctionName) const
+{
+    FunctionDebugInfoMapIt i = functionDebugInfoMap.find(mangledFunctionName);
+    if (i != functionDebugInfoMap.cend())
+    {
+        return i->second;
+    }
+    return nullptr;
 }
 
 } } // namespace Cm::Core

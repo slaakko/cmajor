@@ -688,7 +688,6 @@ void CreateDebugInfoFile(const std::string& executableFilePath, const std::vecto
         Cm::Ser::BinaryReader reader(nonEmptyDebugInfoFilePath);
         Cm::Core::CDebugInfoFile debugInfoFile;
         debugInfoFile.Read(reader);
-        writer.Write(nonEmptyDebugInfoFilePath);
         debugInfoFile.Write(writer);
     }
     if (!quiet)
