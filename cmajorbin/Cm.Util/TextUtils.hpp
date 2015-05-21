@@ -25,6 +25,9 @@ std::string StringStr(const std::string& s);
 std::string QuotedPath(const std::string& path);
 std::string ReadFile(const std::string& fileName);
 bool LastComponentsEqual(const std::string& s0, const std::string& s1, char componentSeparator);
+bool StartsWith(const std::string& s, const std::string& prefix);
+bool EndsWith(const std::string& s, const std::string& suffix);
+std::string NarrowString(const char* str, int length);
 
 } } // namespace Cm::Util
 

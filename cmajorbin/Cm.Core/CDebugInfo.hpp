@@ -13,6 +13,7 @@
 #include <Cm.Ser\BinaryReader.hpp>
 #include <Cm.Ser\BinaryWriter.hpp>
 #include <Ir.Intf/Metadata.hpp>
+#include <unordered_map>
 #include <unordered_set>
 #include <stdint.h>
 
@@ -111,6 +112,8 @@ private:
     std::unordered_set<CfgNode*> prevNodes;
 };
 
+class CDebugInfoFile;
+
 class CFunctionDebugInfo
 {
 public:
@@ -132,6 +135,8 @@ public:
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);
     void Dump(Cm::Util::CodeFormatter& formatter);
+    CDebugInfoFile* File() const { return file; }
+    void SetFile(CDebugInfoFile* file_) { file = file_; }
 private:
     std::string mangledFunctionName;
     bool isMain;
@@ -140,6 +145,7 @@ private:
     ControlFlowGraph cfg;
     std::string sourceFilePath;
     std::string cFilePath;
+    CDebugInfoFile* file;
 };
 
 class CDebugInfoFile
@@ -152,8 +158,13 @@ public:
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);
     void Dump(Cm::Util::CodeFormatter& formatter);
+    void AddFunctionDebugInfoToMap(CFunctionDebugInfo* functionDebugInfo);
+    CFunctionDebugInfo* GetFunctionDebugInfo(const std::string& mangledFunctionName) const;
 private:
     std::vector<std::unique_ptr<CFunctionDebugInfo>> functionDebugInfos;
+    typedef std::unordered_map<std::string, CFunctionDebugInfo*> FunctionDebugInfoMap;
+    typedef FunctionDebugInfoMap::const_iterator FunctionDebugInfoMapIt;
+    FunctionDebugInfoMap functionDebugInfoMap;
 };
 
 } } // namespace Cm::Core
