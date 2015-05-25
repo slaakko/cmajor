@@ -265,10 +265,6 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         binder.BeginVisit(*templateTypeNode);
         functionNode->Accept(binder);
         binder.EndVisit(*templateTypeNode);
-        if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
-        {
-            functionNode->SetBody(nullptr);
-        }
         boundCompileUnit.RemoveLastFileScope();
     }
     static bool recursed = false;

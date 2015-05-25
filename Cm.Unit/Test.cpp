@@ -25,6 +25,7 @@
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Core/ConceptRepository.hpp>
 #include <Cm.Core/InitSymbolTable.hpp>
+#include <Cm.Core/CompileUnitMap.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/MutexTable.hpp>
@@ -197,6 +198,8 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
 
 std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* project, const std::string& unitTestName)
 {
+    Cm::Core::CompileUnitMap compileUnitMap;
+    Cm::Core::SetCompileUnitMap(&compileUnitMap);
     Cm::Core::GlobalConceptData globalConceptData;
     Cm::Core::SetGlobalConceptData(&globalConceptData);
     Cm::Sym::SymbolTable symbolTable;
@@ -248,6 +251,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     boost::filesystem::create_directories(p.parent_path());
     std::string testUnitIrFilePath = Cm::Util::GetFullPath(p.generic_string());
     Cm::BoundTree::BoundCompileUnit boundCompileUnit(testUnit, testUnitIrFilePath, symbolTable);
+    compileUnitMap.MapCompileUnit(testUnit, &boundCompileUnit);
     boundCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
     boundCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(boundCompileUnit));
     boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));

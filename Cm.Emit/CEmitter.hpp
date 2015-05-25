@@ -33,7 +33,6 @@ private:
     std::unique_ptr<Cm::Core::CDebugInfoFile> debugInfoFile;
     std::unique_ptr<Cm::Util::MappedInputFile> currentSourceFile;
     int funLine;
-    Cm::Sym::SymbolTable* symbolTable;
     std::string cFilePath;
 };
 

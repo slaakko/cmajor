@@ -173,6 +173,7 @@ public:
     void Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
     void Visit(Cm::BoundTree::BoundPushGenDebugInfoStatement& boundPushGenDebugInfoStatement) override;
     void Visit(Cm::BoundTree::BoundPopGenDebugInfoStatement& boundPopGenDebugInfoStatement) override;
+    void SetSymbolTable(Cm::Sym::SymbolTable* symbolTable_) { symbolTable = symbolTable_; }
 protected:
     Cm::Core::Emitter* Emitter() { return emitter.get(); }
     Cm::Core::GenFlags GenFlags() { return genFlags; }
@@ -233,7 +234,8 @@ private:
 	Cm::Sym::FunctionSymbol* leaveFrameFun;
     Cm::Sym::FunctionSymbol* enterTracedCallFun;
     Cm::Sym::FunctionSymbol* leaveTracedCallFun;
-	void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
+    Cm::Sym::SymbolTable* symbolTable;
+    void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
     void ExitCompound(Cm::Core::GenResult& result, const CompoundDestructionStack& compoundDestructionStack, bool& first);
     void ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromCompound, Cm::BoundTree::BoundCompoundStatement* targetCompound, Cm::Core::GenResult& result);
     void ExitFunction(Cm::Core::GenResult& result);
