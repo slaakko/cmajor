@@ -57,7 +57,6 @@ public:
     void PatchPrevDebugNodes(Cm::BoundTree::BoundStatement& statement) override;
     void SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
     void PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode) override;
-    void SetSymbolTable(Cm::Sym::SymbolTable* symbolTable_) { symbolTable = symbolTable_; }
     void SetCFilePath(const std::string& cFilePath_) { cFilePath = cFilePath_; }
 private:
     std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap;
@@ -66,7 +65,6 @@ private:
     const char* start;
     const char* end;
     std::vector<std::unordered_set<Cm::Core::CfgNode*>> debugNodeSets;
-    Cm::Sym::SymbolTable* symbolTable;
     std::string cFilePath;
 };
 

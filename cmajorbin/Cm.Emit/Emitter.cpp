@@ -18,7 +18,7 @@ Emitter::Emitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRep
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
     Cm::BoundTree::Visitor(false), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_),
     externalConstantRepository(externalConstantRepository_), irFile(irFilePath), codeFormatter(irFile), currentClass(nullptr), enterFrameFun(nullptr), leaveFrameFun(nullptr),
-    enterTracedCallFun(nullptr), leaveTracedCallFun(nullptr)
+    enterTracedCallFun(nullptr), leaveTracedCallFun(nullptr), symbolTable(nullptr)
 {
 }
 
@@ -32,6 +32,7 @@ void Emitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     leaveFrameFun = compileUnit.SymbolTable().GetOverload("leave_frame");
     enterTracedCallFun = compileUnit.SymbolTable().GetOverload("enter_traced_call");
     leaveTracedCallFun = compileUnit.SymbolTable().GetOverload("leave_traced_call");
+    symbolTable = &compileUnit.SymbolTable();
 }
 
 } } // namespace Cm::Emit

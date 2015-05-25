@@ -196,17 +196,13 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     staticMemberVariableRepository(staticMemberVariableRepository_), externalConstantRepository(externalConstantRepository_),
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), 
     currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_),
-    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), generateDebugInfo(generateDebugInfo_)
+    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr)
 {
 }
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     currentFunction = &boundFunction;
-    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Swap<int>(int&, int&) where T is MoveConstructible and T is MoveAssignable and T is Destructible")
-    {
-        int x = 0;
-    }
     Cm::IrIntf::ResetLocalLabelCounter();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->GetFunctionSymbol());
     externalFunctions.insert(irFunction);
@@ -282,6 +278,22 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
     bool inline_ = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize) && functionSymbol->IsInline();
     irFunction->WriteDefinition(codeFormatter, weakOdr, inline_);
     currentFunction = nullptr;
+
+    Cm::Sym::FunctionSymbol* currentFunctionSymbol = boundFunction.GetFunctionSymbol();
+    if (currentFunctionSymbol->Parent() && currentFunctionSymbol->Parent()->IsTemplateTypeSymbol())
+    {
+        Cm::Ast::Node* node = symbolTable->GetNode(currentFunctionSymbol, false);
+        if (node)
+        {
+            if (!node->IsFunctionNode())
+            {
+                throw std::runtime_error("not function node");
+            }
+            Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
+            functionNode->SetBody(nullptr);
+        }
+    }
+
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLiteral& boundLiteral)
@@ -1437,6 +1449,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundExitBlocksStatement& boundExitBl
 void FunctionEmitter::Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginThrowStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    result->SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
     DoNothing(*result);
     resultStack.Push(result);
 }
@@ -1444,6 +1457,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBeginThrowStatement& boundBeginT
 void FunctionEmitter::Visit(Cm::BoundTree::BoundEndThrowStatement& boundEndThrowStatement)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    result->SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
     DoNothing(*result);
     resultStack.Push(result);
 }

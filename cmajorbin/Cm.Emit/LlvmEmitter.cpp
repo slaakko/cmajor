@@ -57,8 +57,13 @@ void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
+    if (boundFunction.GetFunctionSymbol()->FullName() == "System.String.StartsWith(const System.String*, const System.String&) const")
+    {
+        int x = 0;
+    }
     LlvmFunctionEmitter functionEmitter(CodeFormatter(), TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(), 
         ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun());
+    functionEmitter.SetSymbolTable(SymbolTable());
     boundFunction.Accept(functionEmitter);
 }
 

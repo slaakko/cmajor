@@ -25,7 +25,7 @@ CFunctionEmitter::CFunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::
     Cm::Sym::FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_, bool generateDebugInfo_) :
     FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
     internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_, externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCalllFun_,
-    leaveTracedCallFun_, generateDebugInfo_), functionMap(nullptr), start(start_), end(end_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr)
+    leaveTracedCallFun_, generateDebugInfo_), functionMap(nullptr), start(start_), end(end_), generateDebugInfo(generateDebugInfo_)
 {
 }
 
@@ -84,23 +84,6 @@ void CFunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 void CFunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     FunctionEmitter::EndVisit(boundFunction);
-    if (GenerateDebugInfo())
-    {
-        Cm::Sym::FunctionSymbol* currentFunctionSymbol = boundFunction.GetFunctionSymbol();
-        if (currentFunctionSymbol->Parent() && currentFunctionSymbol->Parent()->IsTemplateTypeSymbol())
-        {
-            Cm::Ast::Node* node = symbolTable->GetNode(currentFunctionSymbol, false);
-            if (node)
-            {
-                if (!node->IsFunctionNode())
-                {
-                    throw std::runtime_error("not function node");
-                }
-                Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
-                functionNode->SetBody(nullptr);
-            }
-        }
-    }
 }
 
 void CFunctionEmitter::EmitDummyVar(Cm::Core::Emitter* emitter)
@@ -556,15 +539,8 @@ void CFunctionEmitter::CreateEntryDebugNode(Cm::BoundTree::BoundStatement& state
         cfg.PatchPrevNodes(cfgNode);
         statement.SetCfgNode(cfgNode);
         Emitter()->UseCDebugNode(cfgNode);
-        Ir::Intf::LabelObject* entryLabel = Cm::IrIntf::CreateNextLocalLabel();
-        Emitter()->Own(entryLabel);
-        Emitter()->AddNextInstructionLabel(entryLabel);
         Cm::Core::GenResult result;
         DoNothing(result);
-        if (CompoundResult())
-        {
-            CompoundResult()->BackpatchNextTargets(entryLabel);
-        }
         cfg.AddToPrevNodes(cfgNode);
         Emitter()->SetActiveCfgNode(cfgNode);
     }
@@ -578,12 +554,8 @@ void CFunctionEmitter::CreateExitDebugNode(Cm::BoundTree::BoundStatement& statem
         Cm::Core::CfgNode* cfgNode = cfg.CreateNode(span, start, end);
         cfg.PatchPrevNodes(cfgNode);
         Emitter()->UseCDebugNode(cfgNode);
-        Ir::Intf::LabelObject* exitLabel = Cm::IrIntf::CreateNextLocalLabel();
-        Emitter()->Own(exitLabel);
-        Emitter()->AddNextInstructionLabel(exitLabel);
         Cm::Core::GenResult result;
         DoNothing(result);
-        CompoundResult()->BackpatchNextTargets(exitLabel);
         cfg.AddToPrevNodes(cfgNode);
         Emitter()->SetActiveCfgNode(cfgNode);
     }
