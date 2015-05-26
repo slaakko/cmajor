@@ -539,10 +539,14 @@ void CFunctionEmitter::CreateEntryDebugNode(Cm::BoundTree::BoundStatement& state
         cfg.PatchPrevNodes(cfgNode);
         statement.SetCfgNode(cfgNode);
         Emitter()->UseCDebugNode(cfgNode);
-        Cm::Core::GenResult result;
-        DoNothing(result);
+        std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(Emitter(), GenFlags()));
+        Ir::Intf::LabelObject* entryLabel = Cm::IrIntf::CreateNextLocalLabel();
+        Emitter()->Own(entryLabel);
+        Emitter()->AddNextInstructionLabel(entryLabel);
+        DoNothing(*result);
         cfg.AddToPrevNodes(cfgNode);
         Emitter()->SetActiveCfgNode(cfgNode);
+        ResultStack().Push(result);
     }
 }
 
@@ -554,10 +558,14 @@ void CFunctionEmitter::CreateExitDebugNode(Cm::BoundTree::BoundStatement& statem
         Cm::Core::CfgNode* cfgNode = cfg.CreateNode(span, start, end);
         cfg.PatchPrevNodes(cfgNode);
         Emitter()->UseCDebugNode(cfgNode);
-        Cm::Core::GenResult result;
-        DoNothing(result);
+        std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(Emitter(), GenFlags()));
+        Ir::Intf::LabelObject* exitLabel = Cm::IrIntf::CreateNextLocalLabel();
+        Emitter()->Own(exitLabel);
+        Emitter()->AddNextInstructionLabel(exitLabel);
+        DoNothing(*result);
         cfg.AddToPrevNodes(cfgNode);
         Emitter()->SetActiveCfgNode(cfgNode);
+        ResultStack().Push(result);
     }
 }
 
