@@ -106,10 +106,6 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
-    if (boundFunction.GetFunctionSymbol()->FullName() == "System.String.StartsWith(const System.String*, const System.String&) const")
-    {
-        int x = 0;
-    }
     Cm::Util::CodeFormatter funFormatter(funFile);
     funFormatter.SetLine(funLine);
     const char* start = nullptr;

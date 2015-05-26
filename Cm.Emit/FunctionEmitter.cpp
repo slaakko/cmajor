@@ -1209,6 +1209,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCom
     {
         PushGenDebugInfo(generateDebugInfo && boundCompoundStatement.SyntaxNode() != nullptr);
     }
+    std::shared_ptr<Cm::Core::GenResult> entryResult = nullptr;
     if (generateDebugInfo)
     {
         if (!boundCompoundStatement.SyntaxNode())
@@ -1217,9 +1218,16 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCom
         }
         Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(boundCompoundStatement.SyntaxNode());
         CreateEntryDebugNode(boundCompoundStatement, compoundStatementNode->BeginBraceSpan());
+        entryResult = resultStack.Pop();
     }
     compoundResultStack.Push(compoundResult);
     compoundResult = std::shared_ptr<Cm::Core::GenResult>(new Cm::Core::GenResult(emitter.get(), Cm::Core::GenFlags::none));
+    if (entryResult)
+    {
+        compoundResult->Merge(entryResult);
+        compoundResult->SetLabel(entryResult->GetLabel());
+        compoundResult->SetLabelSet();
+    }
     if (boundCompoundStatement.IsEmpty())
     {
         compoundResult->SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
@@ -1240,6 +1248,8 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompo
         }
         Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(boundCompoundStatement.SyntaxNode());
         CreateExitDebugNode(boundCompoundStatement, compoundStatementNode->EndBraceSpan());
+        std::shared_ptr<Cm::Core::GenResult> exitResult = resultStack.Pop();
+        compoundResult->Merge(exitResult);
     }
     if (!boundCompoundStatement.Parent())
     {
@@ -1334,6 +1344,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCallStatement& boundFunc
 void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) 
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    std::shared_ptr<Cm::Core::GenResult> entryResult = nullptr;
+    Ir::Intf::LabelObject* resultLabel = nullptr;
     if (generateDebugInfo)
     {
         if (!boundReturnStatement.SyntaxNode())
@@ -1341,6 +1353,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
             throw std::runtime_error("no syntax node");
         }
         CreateEntryDebugNode(boundReturnStatement, boundReturnStatement.SyntaxNode()->GetSpan());
+        entryResult = resultStack.Pop();
+        resultLabel = entryResult->GetLabel();
+        compoundResult->Merge(entryResult);
     }
     if (boundReturnStatement.Expression())
     {
@@ -1360,7 +1375,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
             result->SetMainObject(boundReturnStatement.GetReturnType(), typeRepository);
         }
         std::shared_ptr<Cm::Core::GenResult> retValResult = resultStack.Pop();
-        Ir::Intf::LabelObject* resultLabel = retValResult->GetLabel();
+        if (!resultLabel)
+        {
+            resultLabel = retValResult->GetLabel();
+        }
         if (ctor->IsDelegateFromFunCtor())
         {
             result->SetMainObject(retValResult->MainObject());
@@ -1390,6 +1408,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
             }
             Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(currentFunction->Body()->SyntaxNode());
             CreateExitDebugNode(boundReturnStatement, compoundStatementNode->EndBraceSpan());
+            std::shared_ptr<Cm::Core::GenResult> exitResult = resultStack.Pop();
+            compoundResult->Merge(exitResult);
         }
         if (returnsClassObjectByValue)
         {
@@ -1415,8 +1435,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
             }
             Cm::Ast::CompoundStatementNode* compoundStatementNode = static_cast<Cm::Ast::CompoundStatementNode*>(currentFunction->Body()->SyntaxNode());
             CreateExitDebugNode(boundReturnStatement, compoundStatementNode->EndBraceSpan());
+            std::shared_ptr<Cm::Core::GenResult> exitResult = resultStack.Pop();
+            compoundResult->Merge(exitResult);
         }
         emitter->Emit(Cm::IrIntf::Ret());
+        if (resultLabel)
+        {
+            result->SetLabel(resultLabel);
+        }
     }
     resultStack.Push(result);
 }
