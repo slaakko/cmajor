@@ -19,6 +19,45 @@
 
 namespace Cm { namespace Core {
 
+class SourceFileLine
+{
+public:
+    SourceFileLine();
+    SourceFileLine(const std::string& sourceFilePath_, int sourceLineNumber_);
+    bool IsEmpty() const { return sourceLineNumber == 0; }
+    const std::string& SourceFilePath() const { return sourceFilePath; }
+    int SourceLineNumber() const { return sourceLineNumber; }
+    void SetSourceFilePath(const std::string& sourceFilePath_) { sourceFilePath = sourceFilePath_; }
+    void SetSourceLineNumber(int n) { sourceLineNumber = n; }
+    std::string ToString() const;
+private:
+    std::string sourceFilePath;
+    int sourceLineNumber;
+};
+
+bool operator==(const SourceFileLine& left, const SourceFileLine& right);
+bool operator<(const SourceFileLine& left, const SourceFileLine& right);
+
+inline bool operator!=(const SourceFileLine& left, const SourceFileLine& right)
+{
+    return std::rel_ops::operator!=(left, right);
+}
+
+inline bool operator>(const SourceFileLine& left, const SourceFileLine& right)
+{
+    return std::rel_ops::operator>(left, right);
+}
+
+inline bool operator>=(const SourceFileLine& left, const SourceFileLine& right)
+{
+    return std::rel_ops::operator>=(left, right);
+}
+
+inline bool operator<=(const SourceFileLine& left, const SourceFileLine& right)
+{
+    return std::rel_ops::operator<=(left, right);
+}
+
 class SourceSpan
 { 
 public:
@@ -40,25 +79,41 @@ private:
 
 SourceSpan FromSpan(const char* start, const char* end, const Cm::Parsing::Span& span);
 
+class CfgNode;
+
 class CFunCall : public Ir::Intf::CDebugNode
 {
 public:
     CFunCall();
     CFunCall(const std::vector<std::string>& funNames_);
+    const std::vector<std::string>& FunNames() const { return funNames; }
+    int32_t ReturnCLine() const { return cLine; }
+    int32_t CallCLine() const { return cLine - 1; }
     void SetCLine(int32_t cLine_) override { cLine = cLine_; }
     void FixCLines(int32_t offset);
+    CfgNode* Node() const { return cfgNode; }
+    void SetNode(CfgNode* cfgNode_) { cfgNode = cfgNode_; }
+    int Index() const { return index; }
+    void SetIndex(int index_) { index = index_; }
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);
     void Dump(Cm::Util::CodeFormatter& formatter);
+    SourceFileLine GetCallCFileLine() const;
+    SourceFileLine GetReturnCFileLine() const;
+    bool IsLastCall() const;
 private:
     std::vector<std::string> funNames;
     int32_t cLine;
+    CfgNode* cfgNode;
+    int index;
 };
 
 enum class CfgNodeKind : uint8_t
 {
     regularNode, throwNode, catchNode
 };
+
+class CFunctionDebugInfo;
 
 class CfgNode : public Ir::Intf::CDebugNode
 {
@@ -72,6 +127,7 @@ public:
     const std::unordered_set<int32_t>& Next() const { return next; }
     const std::vector<std::unique_ptr<CFunCall>>& CFunCalls() const { return cFunCalls; }
     void AddCFunCall(CFunCall* cFunCall);
+    CFunCall* GetCFunCall(int index) const;
     CfgNodeKind Kind() const { return kind; }
     void SetKind(CfgNodeKind kind_) { kind = kind_; }
     void AddNext(int32_t nextNodeId);
@@ -79,6 +135,9 @@ public:
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);
     void Dump(Cm::Util::CodeFormatter& formatter);
+    CFunctionDebugInfo* Function() const { return function; }
+    void SetFunction(CFunctionDebugInfo* function_) { function = function_; }
+    SourceFileLine GetCFileLine() const;
 private:
     int32_t id;
     SourceSpan sourceSpan;
@@ -86,6 +145,7 @@ private:
     std::unordered_set<int32_t> next;
     std::vector<std::unique_ptr<CFunCall>> cFunCalls;
     CfgNodeKind kind;
+    CFunctionDebugInfo* function;
 };
 
 class ControlFlowGraph
@@ -96,6 +156,7 @@ public:
     const std::vector<std::unique_ptr<CfgNode>>& Nodes() const { return nodes; }
     void AddNode(CfgNode* node);
     CfgNode* GetNode(int32_t nodeId) const;
+    CfgNode* FindNode(int sourceLineNumber) const;
     std::unordered_set<int32_t> GetNodeSetIncluding(int32_t nodeId) const;
     void AddToPrevNodes(CfgNode* node);
     void AddToPrevNodes(const std::unordered_set<CfgNode*>& nodes);
@@ -137,6 +198,7 @@ public:
     void Dump(Cm::Util::CodeFormatter& formatter);
     CDebugInfoFile* File() const { return file; }
     void SetFile(CDebugInfoFile* file_) { file = file_; }
+    CfgNode* Entry() const;
 private:
     std::string mangledFunctionName;
     bool isMain;

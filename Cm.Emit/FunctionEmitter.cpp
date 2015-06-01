@@ -2178,9 +2178,16 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCaseStatement& boundCaseStatemen
             {
                 throw std::runtime_error("condition syntax node not set");
             }
-            CreateDebugNode(boundCaseStatement, boundCaseStatement.SyntaxNode()->GetSpan(), true);
+            CreateEntryDebugNode(boundCaseStatement, boundCaseStatement.SyntaxNode()->GetSpan());
+            std::shared_ptr<Cm::Core::GenResult> entryResult = ResultStack().Pop();
+            result->Merge(entryResult);
+            result->SetLabel(entryResult->GetLabel());
+            switchCaseLabel->Set(entryResult->GetLabel());
         }
-        emitter->AddNextInstructionLabel(switchCaseLabel);
+        else
+        {
+            emitter->AddNextInstructionLabel(switchCaseLabel);
+        }
         for (std::unique_ptr<Cm::BoundTree::BoundStatement>& statement : boundCaseStatement.Statements())
         {
             statement->Accept(*this);
@@ -2209,9 +2216,16 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundDefaultStatement& boundDefaultSt
             {
                 throw std::runtime_error("condition syntax node not set");
             }
-            CreateDebugNode(boundDefaultStatement, boundDefaultStatement.SyntaxNode()->GetSpan(), true);
+            CreateEntryDebugNode(boundDefaultStatement, boundDefaultStatement.SyntaxNode()->GetSpan());
+            std::shared_ptr<Cm::Core::GenResult> entryResult = ResultStack().Pop();
+            result->Merge(entryResult);
+            result->SetLabel(entryResult->GetLabel());
+            switchCaseLabel->Set(entryResult->GetLabel());
         }
-        emitter->AddNextInstructionLabel(switchCaseLabel);
+        else
+        {
+            emitter->AddNextInstructionLabel(switchCaseLabel);
+        }
         for (std::unique_ptr<Cm::BoundTree::BoundStatement>& statement : boundDefaultStatement.Statements())
         {
             statement->Accept(*this);

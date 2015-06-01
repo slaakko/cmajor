@@ -11,6 +11,33 @@
 
 namespace Cm { namespace Core {
 
+SourceFileLine::SourceFileLine() : sourceFilePath(), sourceLineNumber(0)
+{
+}
+
+SourceFileLine::SourceFileLine(const std::string& sourceFilePath_, int sourceLineNumber_) : sourceFilePath(sourceFilePath_), sourceLineNumber(sourceLineNumber_)
+{
+}
+
+std::string SourceFileLine::ToString() const
+{
+    std::string s;
+    s.append(sourceFilePath).append(":").append(std::to_string(sourceLineNumber));
+    return s;
+}
+
+bool operator==(const SourceFileLine& left, const SourceFileLine& right)
+{
+    return left.SourceFilePath() == right.SourceFilePath() && left.SourceLineNumber() == right.SourceLineNumber();
+}
+
+bool operator<(const SourceFileLine& left, const SourceFileLine& right)
+{
+    if (left.SourceFilePath() < right.SourceFilePath()) return true;
+    else if (left.SourceFilePath() > right.SourceFilePath()) return false;
+    else return left.SourceLineNumber() < right.SourceLineNumber();
+}
+
 void SourceSpan::Read(Cm::Ser::BinaryReader& reader)
 {
     line = reader.ReadInt();
@@ -63,11 +90,11 @@ SourceSpan FromSpan(const char* start, const char* end, const Cm::Parsing::Span&
     return SourceSpan(span.LineNumber(), startCol, endCol);
 }
 
-CFunCall::CFunCall() : funNames(), cLine(0)
+CFunCall::CFunCall() : funNames(), cLine(0), cfgNode(nullptr), index(-1)
 {
 }
 
-CFunCall::CFunCall(const std::vector<std::string>& funNames_) : funNames(funNames_), cLine(0)
+CFunCall::CFunCall(const std::vector<std::string>& funNames_) : funNames(funNames_), cLine(0), cfgNode(nullptr), index(-1)
 {
 } 
 
@@ -107,6 +134,43 @@ void CFunCall::Dump(Cm::Util::CodeFormatter& formatter)
     formatter.WriteLine("cline: " + std::to_string(cLine) + ";");
 }
 
+SourceFileLine CFunCall::GetCallCFileLine() const
+{
+    if (!cfgNode)
+    {
+        throw std::runtime_error("cfg node of function call not set");
+    }
+    CFunctionDebugInfo* function = cfgNode->Function();
+    if (!function)
+    {
+        throw std::runtime_error("function debug info of cfg node not set");
+    }
+    return SourceFileLine(function->CFilePath(), cLine - 1);
+}
+
+SourceFileLine CFunCall::GetReturnCFileLine() const
+{
+    if (!cfgNode)
+    {
+        throw std::runtime_error("cfg node of function call not set");
+    }
+    CFunctionDebugInfo* function = cfgNode->Function();
+    if (!function)
+    {
+        throw std::runtime_error("function debug info of cfg node not set");
+    }
+    return SourceFileLine(function->CFilePath(), cLine);
+}
+
+bool CFunCall::IsLastCall() const
+{
+    if (!cfgNode)
+    {
+        throw std::runtime_error("cfg node of function call not set");
+    }
+    return index >= int(cfgNode->CFunCalls().size()) - 1;
+}
+
 std::string CfgNodeKindStr(CfgNodeKind kind)
 {
     switch (kind)
@@ -118,12 +182,12 @@ std::string CfgNodeKindStr(CfgNodeKind kind)
     return "";
 }
 
-CfgNode::CfgNode() : id(-1), sourceSpan(), cLine(-1), kind(CfgNodeKind::regularNode)
+CfgNode::CfgNode() : id(-1), sourceSpan(), cLine(-1), kind(CfgNodeKind::regularNode), function(nullptr)
 {
 
 }
 
-CfgNode::CfgNode(int32_t id_, const SourceSpan& sourceSpan_) : id(id_), sourceSpan(sourceSpan_), cLine(-1), kind(CfgNodeKind::regularNode)
+CfgNode::CfgNode(int32_t id_, const SourceSpan& sourceSpan_) : id(id_), sourceSpan(sourceSpan_), cLine(-1), kind(CfgNodeKind::regularNode), function(nullptr)
 {
 }
 
@@ -135,6 +199,15 @@ void CfgNode::AddNext(int32_t nextNodeId)
 void CfgNode::AddCFunCall(CFunCall* cFunCall)
 {
     cFunCalls.push_back(std::unique_ptr<CFunCall>(cFunCall));
+}
+
+CFunCall* CfgNode::GetCFunCall(int index) const
+{
+    if (index >= 0 && index < int(cFunCalls.size()))
+    {
+        return cFunCalls[index].get();
+    }
+    return nullptr;
 }
 
 void CfgNode::FixCLines(int32_t offset)
@@ -233,6 +306,15 @@ void CfgNode::Dump(Cm::Util::CodeFormatter& formatter)
     formatter.WriteLine("}");
 }
 
+SourceFileLine CfgNode::GetCFileLine() const
+{
+    if (!function)
+    {
+        throw std::runtime_error("cfg node function not set");
+    }
+    return SourceFileLine(function->CFilePath(), cLine);
+}
+
 ControlFlowGraph::ControlFlowGraph()
 {
 }
@@ -253,6 +335,15 @@ CfgNode* ControlFlowGraph::GetNode(int32_t nodeId) const
 {
     if (nodeId < int32_t(0) || nodeId >= int32_t(nodes.size())) throw std::runtime_error("invalid C debug node id");
     return nodes[nodeId].get();
+}
+
+CfgNode* ControlFlowGraph::FindNode(int sourceLineNumber) const
+{
+    for (const std::unique_ptr<CfgNode>& node : nodes)
+    {
+        if (node->GetSourceSpan().Line() == sourceLineNumber) return node.get();
+    }
+    return nullptr;
 }
 
 bool Found(const ControlFlowGraph& cfg, const std::unordered_set<int32_t>& nodeIds, int32_t nodeId, std::unordered_set<int32_t>& s, std::unordered_set<int32_t>& checked)
@@ -434,6 +525,15 @@ void CFunctionDebugInfo::Dump(Cm::Util::CodeFormatter& formatter)
     cfg.Dump(formatter);
     formatter.DecIndent();
     formatter.WriteLine("}");
+}
+
+CfgNode* CFunctionDebugInfo::Entry() const
+{
+    if (cfg.IsEmpty())
+    {
+        throw std::runtime_error("cfg for function '" + mangledFunctionName + "' is empty");
+    }
+    return cfg.GetNode(0);
 }
 
 CDebugInfoFile::CDebugInfoFile()

@@ -167,16 +167,28 @@
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="DebugInfo.cpp" />
     <ClCompile Include="Gdb.cpp" />
+    <ClCompile Include="GdbReply.cpp" />
     <ClCompile Include="InputReader.cpp" />
+    <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Shell.cpp" />
+    <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Command.hpp" />
     <ClInclude Include="DebugInfo.hpp" />
     <ClInclude Include="Gdb.hpp" />
+    <ClInclude Include="GdbReply.hpp" />
     <ClInclude Include="InputReader.hpp" />
+    <ClInclude Include="Interpreter.hpp" />
     <ClInclude Include="Shell.hpp" />
+    <ClInclude Include="Util.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GdbReply.parser" />
+    <None Include="Interpreter.parser" />
+    <None Include="Parsers.pl" />
+    <None Include="Parsers.pp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

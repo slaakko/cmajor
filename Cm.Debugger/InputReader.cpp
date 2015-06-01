@@ -19,7 +19,7 @@ void RunInputReader(InputReader* inputReader)
     inputReader->Run();
 }
 
-InputReader::InputReader(Gdb& gdb_) : gdb(gdb_), exiting(false), readerThread(), lineSet(false), proceed(0)
+InputReader::InputReader(Gdb& gdb_) : gdb(gdb_), lineSet(false), exiting(false), redirecting(false), proceed(0)
 {
 }
 
