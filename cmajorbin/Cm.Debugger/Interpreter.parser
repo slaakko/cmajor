@@ -1,0 +1,70 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Debugger/Command.hpp>
+[cpp]#include <Cm.Core/CDebugInfo.hpp>
+
+namespace Cm.Debugger 
+{
+    grammar InterpreterGrammar
+    {
+        using stdlib.spaces;
+        using stdlib.int;
+        using stdlib.qualified_id;
+        skip spaces;
+        
+        Command: CommandPtr
+            ::= (keyword("start")){ value = CommandPtr(new StartCommand()); }
+            |   (keyword("quit") | keyword("q")){ value = CommandPtr(new QuitCommand()); }
+            |   (keyword("help") | keyword("h")){ value = CommandPtr(new HelpCommand()); }
+            |   (keyword("continue") | keyword("c")){ value = CommandPtr(new ContinueCommand()); }
+            |   (keyword("next") | keyword("n")){ value = CommandPtr(new NextCommand()); }
+            |   (keyword("step") | keyword("s")){ value = CommandPtr(new StepCommand()); }
+            |   (keyword("out") | keyword("o")){ value = CommandPtr(new OutCommand()); }
+            |   ((keyword("break") | keyword("b")) SourceFileLine:bsfl){ value = CommandPtr(new BreakCommand(bsfl)); }
+            |   ((keyword("clear") | keyword("cl")) int:bp){ value = CommandPtr(new ClearCommand(bp)); }
+            |   ((keyword("inspect") | keyword("i")) InspectExpr:expr){ value = CommandPtr(new InspectCommand(expr)); } 
+            |   (keyword("list") | keyword("l"))
+                (   SourceFileLine:lsfl{ value = CommandPtr(new ListCommand(lsfl)); } 
+                |   '*'{ value = CommandPtr(new ListCommand("*")); } 
+                |   ('+' | empty){ value = CommandPtr(new ListCommand("+")); }
+                )
+            |   (keyword("callstack") | keyword("ca")){ value = CommandPtr(new CallStackCommand()); }
+            |   ((keyword("frame") | keyword("f")) int:frame){ value = CommandPtr(new FrameCommand(frame)); }
+            |   (keyword("show") keyword("breakpoints")){ value = CommandPtr(new ShowBreakpointsCommand()); }
+            |   (keyword("show") keyword("libraries")){ value = CommandPtr(new ShowLibrariesCommand()); }
+            |   keyword("set") keyword("debug") keyword("library") qualified_id:libName
+                    (keyword("on"){ value = CommandPtr(new SetDebugLibraryStatusCommand(libName, true)); } 
+                |   keyword("off"){ value = CommandPtr(new SetDebugLibraryStatusCommand(libName, false)); }
+                )
+            |   keyword("set") keyword("break") keyword("on") keyword("throw") 
+                    (keyword("on"){ value = CommandPtr(new SetBreakOnThrowCommand(true)); }
+                |   keyword("off"){ value = CommandPtr(new SetBreakOnThrowCommand(false)); }
+                )
+            |   empty{ value = CommandPtr(); }
+            ;
+
+        SourceFileLine(var std::string filePath): Cm::Core::SourceFileLine
+            ::= token(((FilePath:file ':'){ filePath = file; })? int:line){ value = Cm::Core::SourceFileLine(filePath, line); }
+            ;
+
+        FilePath: std::string
+            ::= token(Drive? (anychar - ':')+){ value = std::string(matchBegin, matchEnd); }
+            ;
+
+        Drive
+            ::= letter ':'
+            ;
+
+        InspectExpr: std::string
+            ::= token(anychar+){ value = std::string(matchBegin, matchEnd); }
+            ;
+    }
+
+} // namespace Cm.Debugger

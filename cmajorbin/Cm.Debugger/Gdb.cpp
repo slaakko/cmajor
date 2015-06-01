@@ -8,14 +8,20 @@
 ========================================================================*/
 
 #include <Cm.Debugger/Gdb.hpp>
+#include <Cm.Debugger/GdbReply.hpp>
 #include <Cm.Util/System.hpp>
 #include <Cm.Util/TextUtils.hpp>
+#include <iostream>
 
 namespace Cm { namespace Debugger {
 
 std::mutex pipeReadMutex;
 std::mutex pipeWriteMutex;
 std::mutex commandMutex;
+
+ContinueReplyData::ContinueReplyData() : exitCode(0)
+{
+}
 
 GdbCommand::GdbCommand(const std::string& message_) : message(message_)
 {
@@ -30,7 +36,35 @@ void GdbCommand::SetReplyMessage(const std::string& replyMessage_)
     replyMessage = replyMessage_;
 }
 
+GdbSetWidthUnlimitedCommand::GdbSetWidthUnlimitedCommand() : GdbCommand("set width 0")
+{
+}
+
+GdbSetHeightUnlimitedCommand::GdbSetHeightUnlimitedCommand() : GdbCommand("set height 0")
+{
+}
+
+GdbStartCommand::GdbStartCommand() : GdbCommand("start")
+{
+}
+
 GdbQuitCommand::GdbQuitCommand() : GdbCommand("quit")
+{
+}
+
+GdbBreakCommand::GdbBreakCommand(const std::string& cFileLine_) : GdbCommand("break " + cFileLine_)
+{
+}
+
+GdbContinueCommand::GdbContinueCommand() : GdbCommand("continue")
+{
+}
+
+GdbClearCommand::GdbClearCommand(const std::string& cFileLine_) : GdbCommand("clear " + cFileLine_)
+{
+}
+
+GdbBackTraceCommand::GdbBackTraceCommand() : GdbCommand("backtrace")
 {
 }
 
@@ -88,8 +122,16 @@ void Gdb::DoRun()
             Write(message);
             if (cmd->ReplyExpected())
             {
-                std::string replyMessage = Read();
-                cmd->SetReplyMessage(replyMessage);
+                if (cmd->IsContinueCommand())
+                {
+                    std::string replyMessage = ReadContinueReply();
+                    cmd->SetReplyMessage(replyMessage);
+                }
+                else
+                {
+                    std::string replyMessage = Read();
+                    cmd->SetReplyMessage(replyMessage);
+                }
             }
             hasReply = true;
             replyReady.notify_one();
@@ -98,8 +140,21 @@ void Gdb::DoRun()
     }
     catch (const std::exception& ex)
     {
-        // todo
+        int x = 0;
     }
+}
+
+std::shared_ptr<GdbCommand> Gdb::Start()
+{
+    if (firstStart)
+    {
+        firstStart = false;
+        ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetWidthUnlimitedCommand()));
+        ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetHeightUnlimitedCommand()));
+    }
+    std::shared_ptr<GdbCommand> startCommand(new GdbStartCommand());
+    ExecuteCommand(startCommand);
+    return startCommand;
 }
 
 void Gdb::Quit()
@@ -111,6 +166,34 @@ void Gdb::Quit()
         gdbHandle = -1;
     }
     gdbThread.join();
+}
+
+std::shared_ptr<GdbCommand> Gdb::Break(const std::string& cFileLine)
+{
+    std::shared_ptr<GdbCommand> breakCommand(new GdbBreakCommand(cFileLine));
+    ExecuteCommand(breakCommand);
+    return breakCommand;
+}
+
+std::shared_ptr<GdbCommand> Gdb::Continue()
+{
+    std::shared_ptr<GdbCommand> continueCommand(new GdbContinueCommand());
+    ExecuteCommand(continueCommand);
+    return continueCommand;
+}
+
+std::shared_ptr<GdbCommand> Gdb::Clear(const std::string& cFileLine)
+{
+    std::shared_ptr<GdbCommand> clearCommand(new GdbClearCommand(cFileLine));
+    ExecuteCommand(clearCommand);
+    return clearCommand;
+}
+
+std::shared_ptr<GdbCommand> Gdb::BackTrace()
+{
+    std::shared_ptr<GdbCommand> backTraceCommand(new GdbBackTraceCommand());
+    ExecuteCommand(backTraceCommand);
+    return backTraceCommand;
 }
 
 std::string Gdb::Read()
@@ -140,6 +223,88 @@ std::string Gdb::Read()
         }
     }
     return Cm::Util::Trim(message.substr(0, message.length() - gdbPrompt.length()));
+}
+
+ContinueReplyGrammar* continueReplyGrammar = nullptr;
+
+std::string Gdb::ReadContinueReply()
+{
+    if (!continueReplyGrammar)
+    {
+        continueReplyGrammar = ContinueReplyGrammar::Create();
+    }
+    static char buf[8192];
+    std::string gdbPrompt("(gdb) ");
+    ContinueReplyData data;
+    ContinueReplyState state = ContinueReplyState::start;
+    std::string combinedMessage;
+    while (state != ContinueReplyState::prompt)
+    {
+        std::string message;
+        int bytesRead = -1;
+        {
+            std::lock_guard<std::mutex> lck(pipeReadMutex);
+            bytesRead = Cm::Util::ReadFromPipe(pipeHandles[1], buf, sizeof(buf) - 1);
+        }
+        if (bytesRead == -1)
+        {
+            std::string errorMessage = strerror(errno);
+            throw std::runtime_error(errorMessage);
+        }
+        if (bytesRead > 0)
+        {
+            message.append(Cm::Util::NarrowString(buf, bytesRead));
+            combinedMessage.append(message);
+            std::string consoleLines;
+            bool consoleLinesSet = false;
+            std::vector<std::string> lines = Cm::Util::Split(message, '\n');
+            for (const std::string& line : lines)
+            {
+                switch (state)
+                {
+                    case ContinueReplyState::start:
+                    {
+                        state = continueReplyGrammar->Parse(line.c_str(), line.c_str() + line.length(), 0, "", &data);
+                        if (state == ContinueReplyState::consoleLine)
+                        {
+                            if (consoleLinesSet)
+                            {
+                                consoleLines.append("\n");
+                            }
+                            consoleLines.append(data.ConsoleLine());
+                            consoleLinesSet = true;
+                            state = ContinueReplyState::start;
+                        }
+                        else if (state == ContinueReplyState::exit)
+                        {
+                            state = ContinueReplyState::start;
+                        }
+                        else if (state == ContinueReplyState::continuing)
+                        {
+                            state = ContinueReplyState::start;
+                        }
+                        break;
+                    }
+                    case ContinueReplyState::breakpoint:
+                    {
+                        state = ContinueReplyState::start;
+                        break;
+                    }
+                    case ContinueReplyState::signal:
+                    {
+                        state = ContinueReplyState::start;
+                        break;
+                    }
+                }
+            }
+            if (consoleLinesSet)
+            {
+                std::cout << consoleLines;
+                std::cout.flush();
+            }
+        }
+    }
+    return Cm::Util::Trim(combinedMessage.substr(0, combinedMessage.length() - gdbPrompt.length()));
 }
 
 void Gdb::Write(const std::string& message)

@@ -16,6 +16,24 @@
 
 namespace Cm { namespace Debugger {
 
+enum class ContinueReplyState
+{
+    start, continuing, exit, breakpoint, signal, prompt, consoleLine
+};
+
+class ContinueReplyData
+{
+public:
+    ContinueReplyData();
+    void SetConsoleLine(const std::string& consoleLine_) { consoleLine = consoleLine_; }
+    const std::string& ConsoleLine() const { return consoleLine; }
+    void SetExitCode(int exitCode_) { exitCode = exitCode_; }
+    int ExitCode() const { return exitCode; }
+private:
+    std::string consoleLine;
+    int exitCode;
+};
+
 class GdbCommand
 {
 public:
@@ -26,9 +44,28 @@ public:
     const std::string& ReplyMessage() const { return replyMessage; }
     virtual bool ReplyExpected() const { return true; }
     virtual bool IsQuitCommand() const { return false; }
+    virtual bool IsContinueCommand() const { return false; }
 private:
     std::string message;
     std::string replyMessage;
+};
+
+class GdbSetWidthUnlimitedCommand : public GdbCommand
+{
+public:
+    GdbSetWidthUnlimitedCommand();
+};
+
+class GdbSetHeightUnlimitedCommand : public GdbCommand
+{
+public:
+    GdbSetHeightUnlimitedCommand();
+};
+
+class GdbStartCommand : public GdbCommand
+{
+public:
+    GdbStartCommand();
 };
 
 class GdbQuitCommand : public GdbCommand
@@ -39,14 +76,45 @@ public:
     bool ReplyExpected() const override { return false; }
 };
 
+class GdbBreakCommand : public GdbCommand
+{
+public:
+    GdbBreakCommand(const std::string& cFileLine_);
+};
+
+class GdbContinueCommand : public GdbCommand
+{
+public:
+    GdbContinueCommand();
+    bool IsContinueCommand() const override { return true; }
+};
+
+class GdbClearCommand : public GdbCommand
+{
+public:
+    GdbClearCommand(const std::string& cFileLine_);
+};
+
+class GdbBackTraceCommand : public GdbCommand
+{
+public:
+    GdbBackTraceCommand();
+};
+
 class Gdb
 {
 public:
     Gdb(const std::string& program_, const std::vector<std::string>& args_);
     void Run();
     void DoRun();
+    std::shared_ptr<GdbCommand> Start();
     void Quit();
+    std::shared_ptr<GdbCommand> Break(const std::string& cFileLine);
+    std::shared_ptr<GdbCommand> Continue();
+    std::shared_ptr<GdbCommand> Clear(const std::string& cFileLine);
+    std::shared_ptr<GdbCommand> BackTrace();
     std::string Read();
+    std::string ReadContinueReply();
     void Write(const std::string& message);
     void ExecuteCommand(std::shared_ptr<GdbCommand>& command);
 private:

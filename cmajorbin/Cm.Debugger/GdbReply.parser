@@ -1,0 +1,96 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+ [hpp]#include <Cm.Debugger/Util.hpp>
+ [hpp]#include <Cm.Debugger/Gdb.hpp>
+ 
+namespace Cm.Debugger 
+{
+    grammar BackTraceReplyGrammar
+    {
+        using stdlib.int;
+        using stdlib.newline;
+
+        BackTraceReply: CallStack
+            ::= (Frame{ value.AddFrame(Frame); } % newline)*
+            ;
+
+        Frame: Frame
+            ::= ('#' int:frameNumber (anychar - " at ")*
+                " at " ' '* SourceFileLine (anychar - newline)*){ value = Frame(frameNumber, SourceFileLine); }
+            ;
+
+        SourceFileLine: Cm::Core::SourceFileLine
+            ::= (FilePath ':' Line){ value = Cm::Core::SourceFileLine(FilePath, Line); }
+            ;
+
+        FilePath: std::string
+            ::= (Drive? (anychar - ':')+){ value = std::string(matchBegin, matchEnd); }
+            ;
+
+        Drive
+            ::= letter ':'
+            ;
+
+        Line: int
+            ::= int:line{ value = line; }
+            ;
+    }
+
+    grammar ContinueReplyGrammar
+    {
+        using stdlib.int;
+        using stdlib.identifier;
+        using stdlib.spaces;
+        skip spaces;
+
+        ReplyLine(ContinueReplyData* data) : ContinueReplyState
+            ::= ContinuingLine{ value = ContinueReplyState::continuing; }
+            |   InferiorExit{ data->SetExitCode(InferiorExit); value = ContinueReplyState::exit; }
+            |   Breakpoint{ value = ContinueReplyState::breakpoint; }
+            |   Signal{ value = ContinueReplyState::signal; }
+            |   Prompt{ value = ContinueReplyState::prompt; }
+            |   ConsoleLine{ data->SetConsoleLine(ConsoleLine); value = ContinueReplyState::consoleLine; }
+            ;
+
+        ContinuingLine
+            ::= "Continuing."
+            ;
+
+        InferiorExit: int
+            ::= '[' keyword("Inferior") int:id '(' keyword("process") int:procId ')' keyword("exited") ((keyword("normally"){ value = 0; }) | 
+                (keyword("with") keyword("code") octal:exitCode{ value = exitCode; })) 
+                ']'
+            ;
+
+        octal: int
+            ::= (octaldigit:o{ value = 8 * value + o; })+
+            ;
+
+        octaldigit: int
+            ::= [0-7]{ value = *matchBegin - '0'; }
+            ;
+
+        Breakpoint
+            ::= keyword("Breakpoint") int:bp token(anychar*)
+            ;
+
+        Signal
+            ::= keyword("Program") keyword("received") keyword("signal") identifier:id token(anychar*)
+            ;
+
+        Prompt
+            ::= "(gdb) "
+            ;
+
+        ConsoleLine: std::string
+            ::= token(anychar*){ value = std::string(matchBegin, matchEnd); }
+            ;
+    }
+}
