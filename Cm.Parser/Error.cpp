@@ -31,7 +31,7 @@ std::string Expand(const std::string& errorMessage, const Span& span, const std:
     std::string expandedMessage = "Error: " + errorMessage;
     if (span.Valid())
     {
-        FileRegistry* currentFileRegistry = GetCurrentFileRegistry();
+        FileRegistry* currentFileRegistry = FileRegistry::Instance();
         if (currentFileRegistry)
         {
             const std::string& fileName = currentFileRegistry->GetParsedFileName(span.FileIndex());

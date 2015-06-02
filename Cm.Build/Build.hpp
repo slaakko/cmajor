@@ -14,7 +14,6 @@
 
 namespace Cm { namespace Build {
 
-std::string GetCurrentProjectName();
 void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames);
 bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames);
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);

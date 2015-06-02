@@ -72,7 +72,7 @@ void CFunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
         else
         {
             int32_t fileIndex = currentFunctionSymbol->GetSpan().FileIndex();
-            const std::string& sourceFilePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(fileIndex);
+            const std::string& sourceFilePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(fileIndex);
             functionDebugInfo->SetSourceFilePath(sourceFilePath);
             SourceFile& sourceFile = SourceFileCache::Instance().GetSourceFile(sourceFilePath);
             start = sourceFile.Begin();

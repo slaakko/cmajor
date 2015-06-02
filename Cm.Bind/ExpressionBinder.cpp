@@ -2338,7 +2338,7 @@ Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUni
     int funId = boundCompileUnit.StringRepository().Install(funFullName);
     Cm::BoundTree::BoundStringLiteral* funLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, funId);
     funLiteral->SetType(constCharPtrType);
-    std::string filePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(span.FileIndex());
+    std::string filePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(span.FileIndex());
     int fileId = boundCompileUnit.StringRepository().Install(filePath);
     Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, fileId);
     fileLiteral->SetType(constCharPtrType);

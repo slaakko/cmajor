@@ -12,18 +12,6 @@
 
 namespace Cm { namespace Parser {
 
-FileRegistry* currentFileRegistry = nullptr;
-
-FileRegistry* GetCurrentFileRegistry()
-{
-    return currentFileRegistry;
-}
-
-void SetCurrentFileRegistry(FileRegistry* fileRegistry)
-{
-    currentFileRegistry = fileRegistry;
-}
-
 int FileRegistry::RegisterParsedFile(const std::string& filePath)
 {
     int fileIndex = int(parsedFiles.size());
@@ -40,5 +28,22 @@ const std::string& FileRegistry::GetParsedFileName(int parsedFileIndex) const
     }
     return emptyFileName;
 }
+
+void FileRegistry::Init()
+{
+    instance.reset(new FileRegistry());
+}
+
+void FileRegistry::Done()
+{
+    instance.reset();
+}
+
+FileRegistry* FileRegistry::Instance()
+{
+    return instance.get();
+}
+
+std::unique_ptr<FileRegistry> FileRegistry::instance;
 
 } } // namespace Cm::Parser

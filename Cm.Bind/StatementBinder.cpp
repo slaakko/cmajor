@@ -887,8 +887,7 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
                     Cm::Sym::WriteExceptionIdToFile(BoundCompileUnit().IrFilePath(), exceptionClassType->FullName());
                     binder.AddBoundStatement(new Cm::BoundTree::BoundBeginThrowStatement(&throwStatementNode));
                     int32_t exceptionId = exceptionTable->GetExceptionId(exceptionClassType);
-                    Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::GetCurrentFileRegistry();
-                    std::string sourceFilePath = fileRegistry->GetParsedFileName(throwStatementNode.GetSpan().FileIndex());
+                    std::string sourceFilePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(throwStatementNode.GetSpan().FileIndex());
                     int32_t sourceLineNumber = throwStatementNode.GetSpan().LineNumber();
                     Cm::Ast::NewNode* newEx = new Cm::Ast::NewNode(throwStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(throwStatementNode.GetSpan(), exceptionClassType->FullName()));
                     Cm::Ast::CloneContext cloneContext;
@@ -1399,7 +1398,7 @@ Cm::BoundTree::BoundConstructionStatement* CreateTracedFunConstructionStatement(
     Cm::BoundTree::BoundStringLiteral* funLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, funId);
     funLiteral->SetType(constCharPtrType);
     arguments.Add(funLiteral);
-    std::string filePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(span.FileIndex());
+    std::string filePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(span.FileIndex());
     int fileId = boundCompileUnit.StringRepository().Install(filePath);
     Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, fileId);
     fileLiteral->SetType(constCharPtrType);
@@ -1433,7 +1432,7 @@ void AssertBinder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
     Cm::BoundTree::BoundStringLiteral* assertExprLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, assertExprId);
     assertExprLiteral->SetType(constCharPtrType);
     failAssertionArguments.Add(assertExprLiteral);
-    std::string filePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
+    std::string filePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
     int fileId = BoundCompileUnit().StringRepository().Install(filePath);
     Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, fileId);
     fileLiteral->SetType(constCharPtrType);
@@ -1499,7 +1498,7 @@ void UnitTestAssertBinder::Visit(Cm::Ast::AssertStatementNode& assertStatementNo
     Cm::BoundTree::BoundStringLiteral* assertExprLiteral2 = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, assertExprId);
     assertExprLiteral2->SetType(constCharPtrType);
     failAssertionArguments.Add(assertExprLiteral2);
-    std::string filePath = Cm::Parser::GetCurrentFileRegistry()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
+    std::string filePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
     int fileId = BoundCompileUnit().StringRepository().Install(filePath);
     Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, fileId);
     fileLiteral->SetType(constCharPtrType);

@@ -14,6 +14,7 @@
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
 #include <Cm.Emit/InitDone.hpp>
+#include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
@@ -40,7 +41,6 @@ struct InitDone
         Cm::Ast::Init();
         Cm::Sym::Init();
         Cm::Emit::Init();
-
     }
     ~InitDone()
     {
@@ -48,6 +48,7 @@ struct InitDone
         Cm::Sym::Done();
         Cm::Ast::Done();
         Cm::Parsing::Done();
+        Cm::Parser::FileRegistry::Done();
     }
 };
 
@@ -78,11 +79,11 @@ int main(int argc, const char** argv)
    //_CrtSetBreakAlloc(552062);
 #endif //  defined(_MSC_VER) && !defined(NDEBUG)
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    InitDone initDone;
     Cm::Core::GlobalSettings globalSettings;
     Cm::Core::SetGlobalSettings(&globalSettings);
     try
     {
-        InitDone initDone;
         std::vector<std::string> solutionOrProjectFilePaths;
         std::vector<std::string> compileFileNames;
         Cm::IrIntf::BackEnd backend = Cm::IrIntf::BackEnd::llvm;
@@ -296,7 +297,7 @@ int main(int argc, const char** argv)
                 std::cerr << exp.what() << std::endl;
             }
         }
-        return 4;
+        return 1;
     }
     catch (const Cm::Sym::Exception& ex)
     {
@@ -310,6 +311,7 @@ int main(int argc, const char** argv)
         {
             std::cerr << ex.what() << std::endl;
         }
+        return 1;
     }
     catch (const Cm::Core::Exception& ex)
     {
@@ -323,6 +325,7 @@ int main(int argc, const char** argv)
         {
             std::cerr << ex.what() << std::endl;
         }
+        return 1;
     }
     catch (const Cm::Core::ToolErrorExcecption& ex)
     {
@@ -337,7 +340,7 @@ int main(int argc, const char** argv)
         {
             std::cerr << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << std::endl;
         }
-        return 3;
+        return 1;
     }
     catch (const std::exception& ex)
     {
@@ -351,7 +354,7 @@ int main(int argc, const char** argv)
         {
             std::cerr << ex.what() << std::endl;
         }
-        return 2;
+        return 1;
     }
     catch (...)
     {

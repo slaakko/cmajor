@@ -12,6 +12,7 @@
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Core/Exception.hpp>
+#include <Cm.Core/CDebugInfo.hpp>
 #include <ostream>
 #include <stdexcept>
 
@@ -31,17 +32,15 @@ public:
     const std::string& Project() const { return project; }
     const std::string& Description() const { return description; }
     const std::string& File() const { return file; }
-    int Line() const { return line; }
-    int StartColumn() const { return startColumn; }
-    int EndColumn() const { return endColumn; }
+    int Line() const { return sourceSpan.Line(); }
+    int StartColumn() const { return sourceSpan.StartCol(); }
+    int EndColumn() const { return sourceSpan.EndCol(); }
 private:
     std::string tool;
     std::string project;
     std::string description;
     std::string file;
-    int line;
-    int startColumn;
-    int endColumn;
+    Cm::Core::SourceSpan sourceSpan;
 };
 
 std::ostream& operator<<(std::ostream& s, const IdeError& error);

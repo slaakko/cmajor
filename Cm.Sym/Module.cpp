@@ -213,7 +213,7 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
             referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
         }
     }
-    Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::GetCurrentFileRegistry();
+    Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::FileRegistry::Instance();
     int fileIndexOffset = 0;
     if (fileRegistry)
     {

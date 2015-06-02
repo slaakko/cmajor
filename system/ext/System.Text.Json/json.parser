@@ -31,13 +31,13 @@ namespace System.Text.Json.Data
         String: JsonString*
             ::= token('"'{ value = new JsonString(); } 
             (   [^"\\]{ value->Append(match[0]); }
-            |   escape{ value->Append(escape); } 
             |   "\\u" (hexdigit hexdigit hexdigit hexdigit)
                 { 
                     ulong u = ParseHex(match);
                     ushort c = cast<ushort>(u & 0xFFFF);
                     value->Append(ToUtf8(c)); 
                 }
+            |   escape{ value->Append(escape); } 
             )* '"')
             ;
             
