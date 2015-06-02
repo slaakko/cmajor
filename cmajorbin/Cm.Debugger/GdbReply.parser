@@ -43,6 +43,18 @@ namespace Cm.Debugger
             ;
     }
 
+    grammar FrameReplyGrammar
+    {
+        using stdlib.int;
+        using stdlib.spaces;
+        skip spaces;
+
+        Frame: int
+            ::= token(anychar - "??")* "??" token(anychar*){ value = -1; }
+            |   '#' int:frameNumber token(anychar*){ value = frameNumber; }
+            ;
+    }
+
     grammar ContinueReplyGrammar
     {
         using stdlib.int;

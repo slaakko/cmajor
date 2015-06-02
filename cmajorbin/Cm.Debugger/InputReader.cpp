@@ -9,6 +9,7 @@
 
 #include <Cm.Debugger/InputReader.hpp>
 #include <Cm.Debugger/Gdb.hpp>
+#include <Cm.Debugger/DebugInfo.hpp>
 #include <string>
 #include <iostream>
 
@@ -34,26 +35,68 @@ void InputReader::Run()
     {
         std::string s;
         std::getline(std::cin, s);
-        bool redirect = redirecting;
-        if (redirect)
+        if (ide)
         {
-            s.append("\n");
-            gdb.Write(s);
+            std::unique_ptr<IdeCommand> command;
+            try
+            {
+                command = ParseIdeCommand(s);
+            }
+            catch (const std::exception& ex)
+            {
+                command.reset(new IdeErrorCommand(ex.what()));
+            }
+            bool redirect = redirecting;
+            if (redirect && command->IsInputCommand())
+            {
+                IdeInputCommand* inputCommand = static_cast<IdeInputCommand*>(command.get());
+                s = inputCommand->Input();
+                s.append("\n");
+                gdb.Write(s);
+            }
+            else
+            {
+                if (redirect)
+                {
+                    command.reset(new IdeErrorCommand("cannot issue debugging commands while redirecting input to program"));
+                }
+                {
+                    std::unique_lock<std::mutex> lck(proceedMtx);
+                    proceed = 0;
+                }
+                {
+                    std::lock_guard<std::mutex> lck(lineMtx);
+                    ideCommand.reset(command.release());
+                    lineSet = true;
+                }
+                lineAvailable.notify_one();
+                std::unique_lock<std::mutex> lck(proceedMtx);
+                canProceed.wait(lck, [this] { return proceed > 0; });
+            }
         }
         else
         {
+            bool redirect = redirecting;
+            if (redirect)
             {
+                s.append("\n");
+                gdb.Write(s);
+            }
+            else
+            {
+                {
+                    std::unique_lock<std::mutex> lck(proceedMtx);
+                    proceed = 0;
+                }
+                {
+                    std::lock_guard<std::mutex> lck(lineMtx);
+                    line = s;
+                    lineSet = true;
+                }
+                lineAvailable.notify_one();
                 std::unique_lock<std::mutex> lck(proceedMtx);
-                proceed = 0;
+                canProceed.wait(lck, [this] { return proceed > 0; });
             }
-            {
-                std::lock_guard<std::mutex> lck(lineMtx);
-                line = s;
-                lineSet = true;
-            }
-            lineAvailable.notify_one();
-            std::unique_lock<std::mutex> lck(proceedMtx);
-            canProceed.wait(lck, [this] { return proceed > 0; });
         }
     }
 }
@@ -90,6 +133,15 @@ std::string InputReader::GetLine()
     std::string s = line;
     lineSet = false;
     return s;
+}
+
+std::unique_ptr<IdeCommand> InputReader::GetIdeCommand()
+{
+    std::unique_lock<std::mutex> lck(lineMtx);
+    lineAvailable.wait(lck, [this] { return lineSet; });
+    std::unique_ptr<IdeCommand> command = std::move(ideCommand);
+    lineSet = false;
+    return command;
 }
 
 } } // Cm::Debugger

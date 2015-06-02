@@ -12,11 +12,14 @@ const char* version = "1.0.0-beta-4";
 #include <Cm.Debugger/DebugInfo.hpp>
 #include <Cm.Debugger/Gdb.hpp>
 #include <Cm.Debugger/Shell.hpp>
+#include <Cm.Debugger/IdeOutput.hpp>
+#include <Cm.Debugger/IdeInput.hpp>
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
 #include <Cm.Emit/InitDone.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <Cm.Util/Path.hpp>
+#include <Cm.Util/TextUtils.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <stdexcept>
@@ -30,10 +33,11 @@ struct InitDone
         Cm::Ast::Init();
         Cm::Sym::Init();
         Cm::Emit::Init();
-
+        Cm::Debugger::InitIdeInput();
     }
     ~InitDone()
     {
+        Cm::Debugger::DoneIdeInput();
         Cm::Emit::Done();
         Cm::Sym::Done();
         Cm::Ast::Done();
@@ -54,11 +58,24 @@ int main(int argc, const char** argv)
         }
         std::string executable;
         std::vector<std::string> arguments;
+        bool firstNonOption = true;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
-            if (i == 1)
+            if (Cm::Util::StartsWith(arg, "-"))
             {
+                if (arg == "-ide")
+                {
+                    Cm::Debugger::ide = true;
+                }
+                else
+                {
+                    throw std::runtime_error("unknown option '" + arg + "'");
+                }
+            }
+            else if (firstNonOption)
+            {
+                firstNonOption = false;
                 executable = arg;
             }
             else
@@ -66,7 +83,10 @@ int main(int argc, const char** argv)
                 arguments.push_back(arg);
             }
         }
-        std::cout << "Cmajor Debugger version " << version << std::endl;
+        if (!Cm::Debugger::ide)
+        {
+            std::cout << "Cmajor Debugger version " << version << std::endl;
+        }
 #ifdef WIN32
         std::string ext = Cm::Util::Path::GetExtension(executable);
         if (ext.empty())
@@ -90,12 +110,26 @@ int main(int argc, const char** argv)
     }
     catch (const std::exception& ex)
     {
-        std::cerr << ex.what() << std::endl;
+        if (Cm::Debugger::ide)
+        {
+            Cm::Debugger::IdePrintError(ex.what());
+        }
+        else
+        {
+            std::cerr << ex.what() << std::endl;
+        }
         return 1;
     }
     catch (...)
     {
-        std::cerr << "unknown exception occurred" << std::endl;
+        if (Cm::Debugger::ide)
+        {
+            Cm::Debugger::IdePrintError("unknown exception occurred");
+        }
+        else
+        {
+            std::cerr << "unknown exception occurred" << std::endl;
+        }
         return 1;
     }
     return 0;

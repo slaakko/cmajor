@@ -31,6 +31,7 @@
     <None Include="Expression.parser" />
     <None Include="Function.parser" />
     <None Include="Identifier.parser" />
+    <None Include="Json.parser" />
     <None Include="Keyword.parser" />
     <None Include="Literal.parser" />
     <None Include="Parameter.parser" />
@@ -56,6 +57,7 @@
     <ClCompile Include="FileRegistry.cpp" />
     <ClCompile Include="Function.cpp" />
     <ClCompile Include="Identifier.cpp" />
+    <ClCompile Include="Json.cpp" />
     <ClCompile Include="Keyword.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="Parameter.cpp" />
@@ -82,6 +84,7 @@
     <ClInclude Include="FileRegistry.hpp" />
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="Identifier.hpp" />
+    <ClInclude Include="Json.hpp" />
     <ClInclude Include="Keyword.hpp" />
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Operator.hpp" />

@@ -9,6 +9,7 @@
 
 #ifndef CM_DEBUGGER_INPUT_READER_INCLUDED
 #define CM_DEBUGGER_INPUT_READER_INCLUDED
+#include <Cm.Debugger/IdeInput.hpp>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -28,6 +29,7 @@ public:
     void StopRedirecting();
     void Proceed();
     std::string GetLine();
+    std::unique_ptr<IdeCommand> GetIdeCommand();
 private:
     Gdb& gdb;
     std::thread readerThread;
@@ -40,6 +42,7 @@ private:
     std::mutex proceedMtx;
     std::condition_variable canProceed;
     int proceed;
+    std::unique_ptr<IdeCommand> ideCommand;
 };
 
 } } // Cm::Debugger

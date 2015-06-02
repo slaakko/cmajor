@@ -1,5 +1,5 @@
-#ifndef GdbReply_hpp_6309
-#define GdbReply_hpp_6309
+#ifndef GdbReply_hpp_5676
+#define GdbReply_hpp_5676
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -25,6 +25,19 @@ private:
     class LineRule;
 };
 
+class FrameReplyGrammar : public Cm::Parsing::Grammar
+{
+public:
+    static FrameReplyGrammar* Create();
+    static FrameReplyGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
+    int Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
+private:
+    FrameReplyGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
+    virtual void CreateRules();
+    virtual void GetReferencedGrammars();
+    class FrameRule;
+};
+
 class ContinueReplyGrammar : public Cm::Parsing::Grammar
 {
 public:
@@ -44,4 +57,4 @@ private:
 
 } } // namespace Cm.Debugger
 
-#endif // GdbReply_hpp_6309
+#endif // GdbReply_hpp_5676

@@ -23,6 +23,7 @@ enum class State
 };
 
 extern int numListLines;
+extern bool ide;
 
 class Breakpoint
 {
@@ -109,12 +110,21 @@ public:
     SourceFile* GetSourceFile(const std::string& filePath, bool throw_) const;
     SourceFile* GetCurrentSourceFile() const { return currentSourceFile; }
     void SetCurrentSourceFile(SourceFile* currentSourceFile_) { currentSourceFile = currentSourceFile_; }
+    const std::unordered_set<Cm::Core::CfgNode*>& ThrowNodes() const { return throwNodes; }
+    void RemoveThrowNode(Cm::Core::CfgNode* throwNode);
+    void SetThrowCFileLines(const std::vector<std::string>& throwCFileLines_);
+    const std::vector<std::string>& ThrowCFileLines() const { return throwCFileLines; }
+    const std::unordered_set<Cm::Core::CfgNode*>& CatchNodes() const { return catchNodes; }
+    void RemoveCatchNode(Cm::Core::CfgNode* catchNode);
 private:
     State state;
     std::vector<std::unique_ptr<Cm::Core::CDebugInfoFile>> files;
     Cm::Core::CFunctionDebugInfo* mainFunctionDebugInfo;
     Cm::Core::CfgNode* currentNode;
     SourceFile* currentSourceFile;
+    std::unordered_set<Cm::Core::CfgNode*> throwNodes;
+    std::vector<std::string> throwCFileLines;
+    std::unordered_set<Cm::Core::CfgNode*> catchNodes;
     typedef std::unordered_map<std::string, Cm::Core::CFunctionDebugInfo*> UniqueFunctionDebugInfoMap;
     typedef UniqueFunctionDebugInfoMap::const_iterator UniqueFunctionDebugInfoMapIt;
     UniqueFunctionDebugInfoMap uniqueFunctionDebugInfoMap;
