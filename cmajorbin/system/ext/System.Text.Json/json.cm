@@ -334,13 +334,13 @@ namespace System.Text.Json.Data
             }
             public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
             {
-                context.value->Append(context.fromescape);
-            }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
-            {
                 ulong u = ParseHex(match);
                 ushort c = cast<ushort>(u & 0x000000000000FFFF);
                 context.value->Append(ToUtf8(c));
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            {
+                context.value->Append(context.fromescape);
             }
             public throw void Postescape(Stack<UniquePtr<Object>>& stack, bool matched)
             {
@@ -418,8 +418,8 @@ namespace System.Text.Json.Data
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
-            AddRuleLink(new RuleLink("escape", this, "System.Text.Parsing.stdlib.escape"));
             AddRuleLink(new RuleLink("number", this, "System.Text.Parsing.stdlib.number"));
+            AddRuleLink(new RuleLink("escape", this, "System.Text.Parsing.stdlib.escape"));
             AddRule(new ValueRule("Value", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(
@@ -478,18 +478,18 @@ namespace System.Text.Json.Data
                                     new AlternativeParser(
                                         new ActionParser("A1",
                                             new CharSetParser("\"\\", true)),
-                                        new ActionParser("A2",
-                                            new NonterminalParser("escape", "escape", 0))),
-                                    new SequenceParser(
-                                        new StringParser("\\u"),
-                                        new ActionParser("A3",
-                                            new SequenceParser(
+                                        new SequenceParser(
+                                            new StringParser("\\u"),
+                                            new ActionParser("A2",
                                                 new SequenceParser(
                                                     new SequenceParser(
-                                                        new HexDigitParser(),
+                                                        new SequenceParser(
+                                                            new HexDigitParser(),
+                                                            new HexDigitParser()),
                                                         new HexDigitParser()),
-                                                    new HexDigitParser()),
-                                                new HexDigitParser())))))),
+                                                    new HexDigitParser())))),
+                                    new ActionParser("A3",
+                                        new NonterminalParser("escape", "escape", 0))))),
                         new CharParser('"')))));
             AddRule(new NumberRule("Number", GetScope(),
                 new ActionParser("A0",

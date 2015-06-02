@@ -408,9 +408,8 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
             compileUnitGrammar = Cm::Parser::CompileUnitGrammar::Create();
         }
         Cm::Util::MappedInputFile sourceFile(sourceFilePath);
-        Cm::Parser::FileRegistry fileRegistry;
-        Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
-        int sourceFileIndex = fileRegistry.RegisterParsedFile(sourceFilePath);
+        Cm::Parser::FileRegistry::Init();
+        int sourceFileIndex = Cm::Parser::FileRegistry::Instance()->RegisterParsedFile(sourceFilePath);
         Cm::Parser::ParsingContext ctx;
         std::unique_ptr<Cm::Ast::CompileUnitNode> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), sourceFileIndex, sourceFilePath, &ctx));
         std::vector<std::pair<std::unique_ptr<Cm::Ast::CompileUnitNode>, std::string>> testUnits = SplitIntoTestUnits(compileUnit.get());
@@ -452,6 +451,7 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
     projectExceptions += fileExceptions;
     projectCrashed += fileCrashed;
     projectUnknown += fileUnknown;
+    Cm::Parser::FileRegistry::Done();
 }
 
 bool SourceFileNameEquals(const std::string& fileName, const std::string& sourceFilePath)

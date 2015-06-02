@@ -9,6 +9,7 @@
 
 #ifndef CM_PARSER_FILE_REGISTRY
 #define CM_PARSER_FILE_REGISTRY
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -17,15 +18,16 @@ namespace Cm { namespace Parser {
 class FileRegistry
 {
 public:
+    static void Init();
+    static void Done();
+    static FileRegistry* Instance();
     int RegisterParsedFile(const std::string& filePath);
     const std::string& GetParsedFileName(int parsedFileIndex) const;
     int GetNumberOfParsedFiles() const { return int(parsedFiles.size()); }
 private:
+    static std::unique_ptr<FileRegistry> instance;
     std::vector<std::string> parsedFiles;
 };
-
-FileRegistry* GetCurrentFileRegistry();
-void SetCurrentFileRegistry(FileRegistry* fileRegistry);
 
 } } // namespace Cm::Parser
 

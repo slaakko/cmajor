@@ -52,13 +52,6 @@
 
 namespace Cm { namespace Build {
 
-Cm::Ast::Project* currentProject = nullptr;
-
-std::string GetCurrentProjectName()
-{
-    return currentProject ? currentProject->Name() : "";
-}
-
 char GetPlatformPathSeparatorChar()
 {
 #ifdef WIN32
@@ -735,7 +728,6 @@ void CleanProject(Cm::Ast::Project* project)
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames)
 {
     bool changed = false;
-    currentProject = project;
     Cm::Core::GetGlobalSettings()->SetCurrentProjectName(project->Name());
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
@@ -743,9 +735,8 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         std::cout << (rebuild ? "Rebuilding" : "Building") << " project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << 
             ") using " << Cm::Core::GetGlobalSettings()->Config() << " configuration..." << std::endl;
     }
-    Cm::Parser::FileRegistry fileRegistry;
-    Cm::Parser::SetCurrentFileRegistry(&fileRegistry);
-    Cm::Ast::SyntaxTree syntaxTree = ParseSources(fileRegistry, project->SourceFilePaths());
+    Cm::Parser::FileRegistry::Init();
+    Cm::Ast::SyntaxTree syntaxTree = ParseSources(*Cm::Parser::FileRegistry::Instance(), project->SourceFilePaths());
     std::vector<std::string> assemblyFilePaths;
     assemblyFilePaths.push_back(project->AssemblyFilePath());
     std::vector<std::string> cLibs;
@@ -804,7 +795,6 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         allDebugInfoFilePaths.insert(allDebugInfoFilePaths.end(), debugInfoFilePaths.begin(), debugInfoFilePaths.end());
         CreateDebugInfoFile(project->ExecutableFilePath(), allDebugInfoFilePaths);
     }
-    Cm::Parser::SetCurrentFileRegistry(nullptr);
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);
     Cm::Sym::SetMutexTable(nullptr);
@@ -820,7 +810,6 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
             std::cout << "Project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << ") built successfully" << std::endl;
         }
     }
-    currentProject = nullptr;
     Cm::Core::GetGlobalSettings()->SetCurrentProjectName("");
     return changed;
 }
