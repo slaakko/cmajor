@@ -130,12 +130,6 @@ public:
         a17ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A17Action));
         Cm::Parsing::ActionParser* a18ActionParser = GetAction("A18");
         a18ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A18Action));
-        Cm::Parsing::ActionParser* a19ActionParser = GetAction("A19");
-        a19ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A19Action));
-        Cm::Parsing::ActionParser* a20ActionParser = GetAction("A20");
-        a20ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A20Action));
-        Cm::Parsing::ActionParser* a21ActionParser = GetAction("A21");
-        a21ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A21Action));
         Cm::Parsing::NonterminalParser* bsflNonterminalParser = GetNonterminal("bsfl");
         bsflNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postbsfl));
         Cm::Parsing::NonterminalParser* bpNonterminalParser = GetNonterminal("bp");
@@ -146,8 +140,6 @@ public:
         lsflNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postlsfl));
         Cm::Parsing::NonterminalParser* frameNonterminalParser = GetNonterminal("frame");
         frameNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postframe));
-        Cm::Parsing::NonterminalParser* libNameNonterminalParser = GetNonterminal("libName");
-        libNameNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<CommandRule>(this, &CommandRule::PostlibName));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -215,25 +207,13 @@ public:
     }
     void A16Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new ShowLibrariesCommand);
+        context.value = CommandPtr(new SetBreakOnThrowCommand(true));
     }
     void A17Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new SetDebugLibraryStatusCommand(context.fromlibName, true));
-    }
-    void A18Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
-    {
-        context.value = CommandPtr(new SetDebugLibraryStatusCommand(context.fromlibName, false));
-    }
-    void A19Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
-    {
-        context.value = CommandPtr(new SetBreakOnThrowCommand(true));
-    }
-    void A20Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
-    {
         context.value = CommandPtr(new SetBreakOnThrowCommand(false));
     }
-    void A21Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A18Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = CommandPtr();
     }
@@ -282,26 +262,16 @@ public:
             stack.pop();
         }
     }
-    void PostlibName(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        if (matched)
-        {
-            std::unique_ptr<Cm::Parsing::Object> fromlibName_value = std::move(stack.top());
-            context.fromlibName = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromlibName_value.get());
-            stack.pop();
-        }
-    }
 private:
     struct Context
     {
-        Context(): value(), frombsfl(), frombp(), fromexpr(), fromlsfl(), fromframe(), fromlibName() {}
+        Context(): value(), frombsfl(), frombp(), fromexpr(), fromlsfl(), fromframe() {}
         CommandPtr value;
         Cm::Core::SourceFileLine frombsfl;
         int frombp;
         std::string fromexpr;
         Cm::Core::SourceFileLine fromlsfl;
         int fromframe;
-        std::string fromlibName;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -475,8 +445,8 @@ void InterpreterGrammar::GetReferencedGrammars()
 
 void InterpreterGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
     AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
     AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRule(new CommandRule("Command", GetScope(),
         new Cm::Parsing::AlternativeParser(
@@ -494,97 +464,78 @@ void InterpreterGrammar::CreateRules()
                                                         new Cm::Parsing::AlternativeParser(
                                                             new Cm::Parsing::AlternativeParser(
                                                                 new Cm::Parsing::AlternativeParser(
-                                                                    new Cm::Parsing::AlternativeParser(
+                                                                    new Cm::Parsing::ActionParser("A0",
+                                                                        new Cm::Parsing::KeywordParser("start")),
+                                                                    new Cm::Parsing::ActionParser("A1",
                                                                         new Cm::Parsing::AlternativeParser(
-                                                                            new Cm::Parsing::ActionParser("A0",
-                                                                                new Cm::Parsing::KeywordParser("start")),
-                                                                            new Cm::Parsing::ActionParser("A1",
-                                                                                new Cm::Parsing::AlternativeParser(
-                                                                                    new Cm::Parsing::KeywordParser("quit"),
-                                                                                    new Cm::Parsing::KeywordParser("q")))),
-                                                                        new Cm::Parsing::ActionParser("A2",
-                                                                            new Cm::Parsing::AlternativeParser(
-                                                                                new Cm::Parsing::KeywordParser("help"),
-                                                                                new Cm::Parsing::KeywordParser("h")))),
-                                                                    new Cm::Parsing::ActionParser("A3",
-                                                                        new Cm::Parsing::AlternativeParser(
-                                                                            new Cm::Parsing::KeywordParser("continue"),
-                                                                            new Cm::Parsing::KeywordParser("c")))),
-                                                                new Cm::Parsing::ActionParser("A4",
+                                                                            new Cm::Parsing::KeywordParser("quit"),
+                                                                            new Cm::Parsing::KeywordParser("q")))),
+                                                                new Cm::Parsing::ActionParser("A2",
                                                                     new Cm::Parsing::AlternativeParser(
-                                                                        new Cm::Parsing::KeywordParser("next"),
-                                                                        new Cm::Parsing::KeywordParser("n")))),
-                                                            new Cm::Parsing::ActionParser("A5",
+                                                                        new Cm::Parsing::KeywordParser("help"),
+                                                                        new Cm::Parsing::KeywordParser("h")))),
+                                                            new Cm::Parsing::ActionParser("A3",
                                                                 new Cm::Parsing::AlternativeParser(
-                                                                    new Cm::Parsing::KeywordParser("step"),
-                                                                    new Cm::Parsing::KeywordParser("s")))),
-                                                        new Cm::Parsing::ActionParser("A6",
+                                                                    new Cm::Parsing::KeywordParser("continue"),
+                                                                    new Cm::Parsing::KeywordParser("c")))),
+                                                        new Cm::Parsing::ActionParser("A4",
                                                             new Cm::Parsing::AlternativeParser(
-                                                                new Cm::Parsing::KeywordParser("out"),
-                                                                new Cm::Parsing::KeywordParser("o")))),
-                                                    new Cm::Parsing::ActionParser("A7",
-                                                        new Cm::Parsing::SequenceParser(
-                                                            new Cm::Parsing::AlternativeParser(
-                                                                new Cm::Parsing::KeywordParser("break"),
-                                                                new Cm::Parsing::KeywordParser("b")),
-                                                            new Cm::Parsing::NonterminalParser("bsfl", "SourceFileLine", 0)))),
-                                                new Cm::Parsing::ActionParser("A8",
-                                                    new Cm::Parsing::SequenceParser(
+                                                                new Cm::Parsing::KeywordParser("next"),
+                                                                new Cm::Parsing::KeywordParser("n")))),
+                                                    new Cm::Parsing::ActionParser("A5",
                                                         new Cm::Parsing::AlternativeParser(
-                                                            new Cm::Parsing::KeywordParser("clear"),
-                                                            new Cm::Parsing::KeywordParser("cl")),
-                                                        new Cm::Parsing::NonterminalParser("bp", "int", 0)))),
-                                            new Cm::Parsing::ActionParser("A9",
+                                                            new Cm::Parsing::KeywordParser("step"),
+                                                            new Cm::Parsing::KeywordParser("s")))),
+                                                new Cm::Parsing::ActionParser("A6",
+                                                    new Cm::Parsing::AlternativeParser(
+                                                        new Cm::Parsing::KeywordParser("out"),
+                                                        new Cm::Parsing::KeywordParser("o")))),
+                                            new Cm::Parsing::ActionParser("A7",
                                                 new Cm::Parsing::SequenceParser(
                                                     new Cm::Parsing::AlternativeParser(
-                                                        new Cm::Parsing::KeywordParser("inspect"),
-                                                        new Cm::Parsing::KeywordParser("i")),
-                                                    new Cm::Parsing::NonterminalParser("expr", "InspectExpr", 0)))),
+                                                        new Cm::Parsing::KeywordParser("break"),
+                                                        new Cm::Parsing::KeywordParser("b")),
+                                                    new Cm::Parsing::NonterminalParser("bsfl", "SourceFileLine", 0)))),
+                                        new Cm::Parsing::ActionParser("A8",
+                                            new Cm::Parsing::SequenceParser(
+                                                new Cm::Parsing::AlternativeParser(
+                                                    new Cm::Parsing::KeywordParser("clear"),
+                                                    new Cm::Parsing::KeywordParser("cl")),
+                                                new Cm::Parsing::NonterminalParser("bp", "int", 0)))),
+                                    new Cm::Parsing::ActionParser("A9",
                                         new Cm::Parsing::SequenceParser(
                                             new Cm::Parsing::AlternativeParser(
-                                                new Cm::Parsing::KeywordParser("list"),
-                                                new Cm::Parsing::KeywordParser("l")),
+                                                new Cm::Parsing::KeywordParser("inspect"),
+                                                new Cm::Parsing::KeywordParser("i")),
+                                            new Cm::Parsing::NonterminalParser("expr", "InspectExpr", 0)))),
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::AlternativeParser(
+                                        new Cm::Parsing::KeywordParser("list"),
+                                        new Cm::Parsing::KeywordParser("l")),
+                                    new Cm::Parsing::AlternativeParser(
+                                        new Cm::Parsing::AlternativeParser(
+                                            new Cm::Parsing::ActionParser("A10",
+                                                new Cm::Parsing::NonterminalParser("lsfl", "SourceFileLine", 0)),
+                                            new Cm::Parsing::ActionParser("A11",
+                                                new Cm::Parsing::CharParser('*'))),
+                                        new Cm::Parsing::ActionParser("A12",
                                             new Cm::Parsing::AlternativeParser(
-                                                new Cm::Parsing::AlternativeParser(
-                                                    new Cm::Parsing::ActionParser("A10",
-                                                        new Cm::Parsing::NonterminalParser("lsfl", "SourceFileLine", 0)),
-                                                    new Cm::Parsing::ActionParser("A11",
-                                                        new Cm::Parsing::CharParser('*'))),
-                                                new Cm::Parsing::ActionParser("A12",
-                                                    new Cm::Parsing::AlternativeParser(
-                                                        new Cm::Parsing::CharParser('+'),
-                                                        new Cm::Parsing::EmptyParser()))))),
-                                    new Cm::Parsing::ActionParser("A13",
-                                        new Cm::Parsing::AlternativeParser(
-                                            new Cm::Parsing::KeywordParser("callstack"),
-                                            new Cm::Parsing::KeywordParser("ca")))),
-                                new Cm::Parsing::ActionParser("A14",
-                                    new Cm::Parsing::SequenceParser(
-                                        new Cm::Parsing::AlternativeParser(
-                                            new Cm::Parsing::KeywordParser("frame"),
-                                            new Cm::Parsing::KeywordParser("f")),
-                                        new Cm::Parsing::NonterminalParser("frame", "int", 0)))),
-                            new Cm::Parsing::ActionParser("A15",
-                                new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::KeywordParser("show"),
-                                    new Cm::Parsing::KeywordParser("breakpoints")))),
-                        new Cm::Parsing::ActionParser("A16",
+                                                new Cm::Parsing::CharParser('+'),
+                                                new Cm::Parsing::EmptyParser()))))),
+                            new Cm::Parsing::ActionParser("A13",
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::KeywordParser("callstack"),
+                                    new Cm::Parsing::KeywordParser("ca")))),
+                        new Cm::Parsing::ActionParser("A14",
                             new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::KeywordParser("show"),
-                                new Cm::Parsing::KeywordParser("libraries")))),
-                    new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::KeywordParser("frame"),
+                                    new Cm::Parsing::KeywordParser("f")),
+                                new Cm::Parsing::NonterminalParser("frame", "int", 0)))),
+                    new Cm::Parsing::ActionParser("A15",
                         new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::KeywordParser("set"),
-                                    new Cm::Parsing::KeywordParser("debug")),
-                                new Cm::Parsing::KeywordParser("library")),
-                            new Cm::Parsing::NonterminalParser("libName", "qualified_id", 0)),
-                        new Cm::Parsing::AlternativeParser(
-                            new Cm::Parsing::ActionParser("A17",
-                                new Cm::Parsing::KeywordParser("on")),
-                            new Cm::Parsing::ActionParser("A18",
-                                new Cm::Parsing::KeywordParser("off"))))),
+                            new Cm::Parsing::KeywordParser("show"),
+                            new Cm::Parsing::KeywordParser("breakpoints")))),
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::SequenceParser(
@@ -594,11 +545,11 @@ void InterpreterGrammar::CreateRules()
                             new Cm::Parsing::KeywordParser("on")),
                         new Cm::Parsing::KeywordParser("throw")),
                     new Cm::Parsing::AlternativeParser(
-                        new Cm::Parsing::ActionParser("A19",
+                        new Cm::Parsing::ActionParser("A16",
                             new Cm::Parsing::KeywordParser("on")),
-                        new Cm::Parsing::ActionParser("A20",
+                        new Cm::Parsing::ActionParser("A17",
                             new Cm::Parsing::KeywordParser("off"))))),
-            new Cm::Parsing::ActionParser("A21",
+            new Cm::Parsing::ActionParser("A18",
                 new Cm::Parsing::EmptyParser()))));
     AddRule(new SourceFileLineRule("SourceFileLine", GetScope(),
         new Cm::Parsing::ActionParser("A0",

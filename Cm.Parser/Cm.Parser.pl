@@ -131,6 +131,14 @@ namespace Cm.Parser
         Identifier: Cm::Ast::IdentifierNode*;
         QualifiedId: Cm::Ast::IdentifierNode*;
     }
+    grammar JsonGrammar
+    {
+        Value: Cm::Core::JsonValue*;
+        Object: Cm::Core::JsonObject*;
+        Array: Cm::Core::JsonArray*;
+        String: Cm::Core::JsonString*;
+        Number: Cm::Core::JsonNumber*;
+    }
     grammar KeywordGrammar
     {
         Keyword;

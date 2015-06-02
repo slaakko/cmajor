@@ -412,6 +412,159 @@ void BackTraceReplyGrammar::CreateRules()
             new Cm::Parsing::NonterminalParser("line", "int", 0))));
 }
 
+FrameReplyGrammar* FrameReplyGrammar::Create()
+{
+    return Create(new Cm::Parsing::ParsingDomain());
+}
+
+FrameReplyGrammar* FrameReplyGrammar::Create(Cm::Parsing::ParsingDomain* parsingDomain)
+{
+    RegisterParsingDomain(parsingDomain);
+    FrameReplyGrammar* grammar(new FrameReplyGrammar(parsingDomain));
+    parsingDomain->AddGrammar(grammar);
+    grammar->CreateRules();
+    grammar->Link();
+    return grammar;
+}
+
+FrameReplyGrammar::FrameReplyGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::Parsing::Grammar("FrameReplyGrammar", parsingDomain_->GetNamespaceScope("Cm.Debugger"), parsingDomain_)
+{
+    SetOwner(0);
+}
+
+int FrameReplyGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
+{
+    Cm::Parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
+    std::unique_ptr<Cm::Parsing::XmlLog> xmlLog;
+    if (Log())
+    {
+        xmlLog.reset(new Cm::Parsing::XmlLog(*Log(), MaxLogLineLength()));
+        scanner.SetLog(xmlLog.get());
+        xmlLog->WriteBeginRule("parse");
+    }
+    Cm::Parsing::ObjectStack stack;
+    Cm::Parsing::Match match = Cm::Parsing::Grammar::Parse(scanner, stack);
+    Cm::Parsing::Span stop = scanner.GetSpan();
+    if (Log())
+    {
+        xmlLog->WriteEndRule("parse");
+    }
+    if (!match.Hit() || stop.Start() != int(end - start))
+    {
+        if (StartRule())
+        {
+            throw Cm::Parsing::ExpectationFailure(StartRule()->Info(), fileName, stop, start, end);
+        }
+        else
+        {
+            throw Cm::Parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+        }
+    }
+    std::unique_ptr<Cm::Parsing::Object> value = std::move(stack.top());
+    int result = *static_cast<Cm::Parsing::ValueObject<int>*>(value.get());
+    stack.pop();
+    return result;
+}
+
+class FrameReplyGrammar::FrameRule : public Cm::Parsing::Rule
+{
+public:
+    FrameRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        SetValueTypeName("int");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<int>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<FrameRule>(this, &FrameRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<FrameRule>(this, &FrameRule::A1Action));
+        Cm::Parsing::NonterminalParser* frameNumberNonterminalParser = GetNonterminal("frameNumber");
+        frameNumberNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<FrameRule>(this, &FrameRule::PostframeNumber));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = -1;
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromframeNumber;
+    }
+    void PostframeNumber(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromframeNumber_value = std::move(stack.top());
+            context.fromframeNumber = *static_cast<Cm::Parsing::ValueObject<int>*>(fromframeNumber_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): value(), fromframeNumber() {}
+        int value;
+        int fromframeNumber;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+void FrameReplyGrammar::GetReferencedGrammars()
+{
+    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    if (!grammar0)
+    {
+        grammar0 = Cm::Parsing::stdlib::Create(pd);
+    }
+    AddGrammarReference(grammar0);
+}
+
+void FrameReplyGrammar::CreateRules()
+{
+    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
+    AddRule(new FrameRule("Frame", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::KleeneStarParser(
+                        new Cm::Parsing::TokenParser(
+                            new Cm::Parsing::DifferenceParser(
+                                new Cm::Parsing::AnyCharParser(),
+                                new Cm::Parsing::StringParser("??")))),
+                    new Cm::Parsing::StringParser("??")),
+                new Cm::Parsing::ActionParser("A0",
+                    new Cm::Parsing::TokenParser(
+                        new Cm::Parsing::KleeneStarParser(
+                            new Cm::Parsing::AnyCharParser())))),
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::CharParser('#'),
+                    new Cm::Parsing::NonterminalParser("frameNumber", "int", 0)),
+                new Cm::Parsing::ActionParser("A1",
+                    new Cm::Parsing::TokenParser(
+                        new Cm::Parsing::KleeneStarParser(
+                            new Cm::Parsing::AnyCharParser())))))));
+    SetSkipRuleName("spaces");
+}
+
 ContinueReplyGrammar* ContinueReplyGrammar::Create()
 {
     return Create(new Cm::Parsing::ParsingDomain());

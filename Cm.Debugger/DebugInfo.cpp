@@ -17,6 +17,7 @@
 namespace Cm { namespace Debugger {
 
 int numListLines = 10;
+bool ide = false;
 
 Breakpoint::Breakpoint() : cFileLine(), node(nullptr), number(-1)
 {
@@ -447,6 +448,21 @@ SourceFile* DebugInfo::GetSourceFile(const std::string& filePath, bool throw_) c
     return nullptr;
 }
 
+void DebugInfo::RemoveThrowNode(Cm::Core::CfgNode* throwNode)
+{
+    throwNodes.erase(throwNode);
+}
+
+void DebugInfo::SetThrowCFileLines(const std::vector<std::string>& throwCFileLines_)
+{
+    throwCFileLines = throwCFileLines_;
+}
+
+void DebugInfo::RemoveCatchNode(Cm::Core::CfgNode* catchNode)
+{
+    catchNodes.erase(catchNode);
+}
+
 void DebugInfo::SetSourceFile(const std::string& filePath, SourceFile* sourceFile)
 {
     sourceFileMap[filePath] = sourceFile;
@@ -485,6 +501,14 @@ void DebugInfo::Process(Cm::Core::CDebugInfoFile* file)
         for (const std::unique_ptr<Cm::Core::CfgNode>& node : cfg.Nodes())
         {
             node->SetFunction(functionDebugInfo.get());
+            if (node->Kind() == Cm::Core::CfgNodeKind::throwNode)
+            {
+                throwNodes.insert(node.get());
+            }
+            else if (node->Kind() == Cm::Core::CfgNodeKind::catchNode)
+            {
+                catchNodes.insert(node.get());
+            }
             Cm::Core::CfgNode* cfgNode = cFile->GetNode(node->CLine());
             if (!cfgNode)
             {

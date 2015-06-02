@@ -126,22 +126,6 @@ public:
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
-class ShowLibrariesCommand : public Command
-{
-public:
-    void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
-};
-
-class SetDebugLibraryStatusCommand : public Command
-{
-public:
-    SetDebugLibraryStatusCommand(const std::string& libName_, bool enabled_);
-    void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
-private:
-    std::string libName;
-    bool enabled;
-};
-
 class SetBreakOnThrowCommand : public Command
 {
 public:

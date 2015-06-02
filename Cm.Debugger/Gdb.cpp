@@ -9,6 +9,8 @@
 
 #include <Cm.Debugger/Gdb.hpp>
 #include <Cm.Debugger/GdbReply.hpp>
+#include <Cm.Debugger/DebugInfo.hpp>
+#include <Cm.Debugger/IdeOutput.hpp>
 #include <Cm.Util/System.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <iostream>
@@ -65,6 +67,10 @@ GdbClearCommand::GdbClearCommand(const std::string& cFileLine_) : GdbCommand("cl
 }
 
 GdbBackTraceCommand::GdbBackTraceCommand() : GdbCommand("backtrace")
+{
+}
+
+GdbFrameCommand::GdbFrameCommand(int frameNumber) : GdbCommand("frame " + std::to_string(frameNumber))
 {
 }
 
@@ -140,7 +146,14 @@ void Gdb::DoRun()
     }
     catch (const std::exception& ex)
     {
-        int x = 0;
+        if (ide)
+        {
+            IdePrintError(std::string("stopped running: ") + ex.what());
+        }
+        else
+        {
+            std::cerr << "stopped running: " << ex.what() << std::endl;
+        }
     }
 }
 
@@ -194,6 +207,13 @@ std::shared_ptr<GdbCommand> Gdb::BackTrace()
     std::shared_ptr<GdbCommand> backTraceCommand(new GdbBackTraceCommand());
     ExecuteCommand(backTraceCommand);
     return backTraceCommand;
+}
+
+std::shared_ptr<GdbCommand> Gdb::Frame(int frameNumber)
+{
+    std::shared_ptr<GdbCommand> frameCommand(new GdbFrameCommand(frameNumber));
+    ExecuteCommand(frameCommand);
+    return frameCommand;
 }
 
 std::string Gdb::Read()
@@ -299,8 +319,15 @@ std::string Gdb::ReadContinueReply()
             }
             if (consoleLinesSet)
             {
-                std::cout << consoleLines;
-                std::cout.flush();
+                if (ide)
+                {
+                    IdePrintOutput(consoleLines);
+                }
+                else
+                {
+                    std::cout << consoleLines;
+                    std::cout.flush();
+                }
             }
         }
     }

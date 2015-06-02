@@ -101,6 +101,12 @@ public:
     GdbBackTraceCommand();
 };
 
+class GdbFrameCommand : public GdbCommand
+{
+public:
+    GdbFrameCommand(int frameNumber);
+};
+
 class Gdb
 {
 public:
@@ -113,6 +119,7 @@ public:
     std::shared_ptr<GdbCommand> Continue();
     std::shared_ptr<GdbCommand> Clear(const std::string& cFileLine);
     std::shared_ptr<GdbCommand> BackTrace();
+    std::shared_ptr<GdbCommand> Frame(int frameNumber);
     std::string Read();
     std::string ReadContinueReply();
     void Write(const std::string& message);

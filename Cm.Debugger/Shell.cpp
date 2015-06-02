@@ -13,6 +13,7 @@
 #include <Cm.Debugger/InputReader.hpp>
 #include <Cm.Debugger/Interpreter.hpp>
 #include <Cm.Debugger/GdbReply.hpp>
+#include <Cm.Debugger/IdeOutput.hpp>
 #include <iostream>
 
 namespace Cm { namespace Debugger {
@@ -46,10 +47,23 @@ bool Shell::ExecuteNextCommand()
     {
         interpreterGrammar = InterpreterGrammar::Create();
     }
-    std::string commandLine = inputReader.GetLine();
+    std::string commandLine;
+    if (!ide)
+    {
+        commandLine = inputReader.GetLine();
+    }
     try
     {
-        CommandPtr command = interpreterGrammar->Parse(commandLine.c_str(), commandLine.c_str() + commandLine.length(), 0, std::string());
+        CommandPtr command = nullptr;
+        if (ide)
+        {
+            std::unique_ptr<IdeCommand> ideCommand = inputReader.GetIdeCommand();
+            command = ideCommand->ToShellCommand();
+        }
+        else
+        {
+            interpreterGrammar->Parse(commandLine.c_str(), commandLine.c_str() + commandLine.length(), 0, std::string());
+        }
         if (!command)
         {
             command = lastCommand;
@@ -69,12 +83,26 @@ bool Shell::ExecuteNextCommand()
         }
         catch (const std::exception& ex)
         {
-            std::cerr << "error: " << ex.what() << "." << std::endl;
+            if (Cm::Debugger::ide)
+            {
+                Cm::Debugger::IdePrintError(ex.what());
+            }
+            else
+            {
+                std::cerr << "error: " << ex.what() << "." << std::endl;
+            }
         }
     }
     catch (const std::exception& ex)
     {
-        std::cerr << "error: " << ex.what() << ". Try \"help\"." << std::endl;
+        if (Cm::Debugger::ide)
+        {
+            Cm::Debugger::IdePrintError(ex.what());
+        }
+        else
+        {
+            std::cerr << "error: " << ex.what() << ". Try \"help\"." << std::endl;
+        }
     }
     return true;
 }
@@ -87,10 +115,20 @@ void Shell::Execute()
     while (execute)
     {
         inputReader.Proceed();
-        std::cout << "(cmdb) ";
+        if (!ide)
+        {
+            std::cout << "(cmdb) ";
+        }
         execute = ExecuteNextCommand();
     }
-    std::cout << "bye!" << std::endl;
+    if (ide)
+    {
+        IdePrintState("bye");
+    }
+    else
+    {
+        std::cout << "bye!" << std::endl;
+    }
 }
 
 } } // Cm::Debugger

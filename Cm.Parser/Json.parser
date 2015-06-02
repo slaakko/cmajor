@@ -1,0 +1,51 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+ [hpp]#include <Cm.Core/Json.hpp>
+
+namespace Cm.Parser
+{
+    grammar JsonGrammar
+    {
+        using stdlib.spaces;
+        using stdlib.escape;
+        using stdlib.number;
+
+        skip spaces;
+     
+        Value: Cm::Core::JsonValue*
+            ::= String{ value = String; }
+            |   Number{ value = Number; }
+            |   Object{ value = Object; }
+            |   Array{ value = Array; }
+            |   keyword("true"){ value = new Cm::Core::JsonBool(true); }
+            |   keyword("false"){ value = new Cm::Core::JsonBool(false); }
+            |   keyword("null"){ value = new Cm::Core::JsonNull(); }
+            ;
+            
+        Object: Cm::Core::JsonObject*
+            ::= '{'{ value = new Cm::Core::JsonObject(); } ((String:name ':' Value:val){ value->AddField(std::move(*name), val); delete name; } % ',')? '}'
+            ;
+            
+        Array: Cm::Core::JsonArray*
+            ::= '['{ value = new Cm::Core::JsonArray(); } (Value:item{ value->AddItem(item); } % ',')? ']'
+            ;
+            
+        String: Cm::Core::JsonString*
+            ::= token('"'{ value = new Cm::Core::JsonString(); } 
+            (   [^"\\]{ value->Append(*matchBegin); }
+            |   escape{ value->Append(escape); } 
+            )* '"')
+            ;
+            
+        Number: Cm::Core::JsonNumber*
+            ::= number{ value = new Cm::Core::JsonNumber(number); }
+            ;
+    }
+}

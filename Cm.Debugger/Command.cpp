@@ -13,9 +13,79 @@
 #include <Cm.Debugger/DebugInfo.hpp>
 #include <Cm.Debugger/Shell.hpp>
 #include <Cm.Debugger/Util.hpp>
+#include <Cm.Debugger/GdbReply.hpp>
+#include <Cm.Debugger/IdeOutput.hpp>
 #include <iostream>
 
 namespace Cm { namespace Debugger {
+
+bool breakOnThrow = true;
+
+void SetThrowBreakpoints(DebugInfo& debugInfo, Gdb& gdb)
+{
+    if (!breakOnThrow) return;
+    std::vector<std::string> throwCFileLines;
+    std::vector<Cm::Core::CfgNode*> throwNodesToRemove;
+    for (Cm::Core::CfgNode* throwNode : debugInfo.ThrowNodes())
+    {
+        std::string throwCFileLine = throwNode->GetCFileLine().ToString();
+        bool hasBreakpoint = debugInfo.HasCBreakpoint(throwCFileLine);
+        if (!hasBreakpoint)
+        {
+            std::shared_ptr<GdbCommand> breakCommand = gdb.Break(throwCFileLine);
+            if (breakCommand->ReplyMessage().find("Make breakpoint pending") != std::string::npos)
+            {
+                throwNodesToRemove.push_back(throwNode);
+            }
+            else
+            {
+                throwCFileLines.push_back(throwCFileLine);
+            }
+        }
+    }
+    for (Cm::Core::CfgNode* throwNode : throwNodesToRemove)
+    {
+        debugInfo.RemoveThrowNode(throwNode);
+    }
+    debugInfo.SetThrowCFileLines(throwCFileLines);
+}
+
+void RemoveThrowBreakpoints(DebugInfo& debugInfo, Gdb& gdb)
+{
+    for (const std::string& throwCFileLine : debugInfo.ThrowCFileLines())
+    {
+        if (!debugInfo.HasCBreakpoint(throwCFileLine))
+        {
+            std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(throwCFileLine);
+        }
+    }
+}
+
+void SetCatchBreakpoints(std::vector<std::string>& nextCFileLines, DebugInfo& debugInfo, Gdb& gdb)
+{
+    std::vector<Cm::Core::CfgNode*> catchNodesToRemove;
+    for (Cm::Core::CfgNode* cathcNode : debugInfo.CatchNodes())
+    {
+        std::string catchCFileLine = cathcNode->GetCFileLine().ToString();
+        bool hasBreakpoint = debugInfo.HasCBreakpoint(catchCFileLine);
+        if (!hasBreakpoint)
+        {
+            std::shared_ptr<GdbCommand> breakCommand = gdb.Break(catchCFileLine);
+            if (breakCommand->ReplyMessage().find("Make breakpoint pending") != std::string::npos)
+            {
+                catchNodesToRemove.push_back(cathcNode);
+            }
+            else
+            {
+                nextCFileLines.push_back(catchCFileLine);
+            }
+        }
+    }
+    for (Cm::Core::CfgNode* cathcNode : catchNodesToRemove)
+    {
+        debugInfo.RemoveCatchNode(cathcNode);
+    }
+}
 
 Command::~Command()
 {
@@ -51,11 +121,20 @@ void StartCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
     {
         std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(mainEntryCFileLine);
     }
-    SourceFile* currentSourceFile = debugInfo.GetSourceFile(main->SourceFilePath());
-    debugInfo.SetCurrentSourceFile(currentSourceFile);
-    currentSourceFile->SetActiveLineNumber(mainEntry->GetSourceSpan().Line());
-    currentSourceFile->SetListLineNumber(0);
-    std::cout << "debugging started" << std::endl;
+    SetThrowBreakpoints(debugInfo, gdb);
+    if (ide)
+    {
+        IdePrintPosition(mainEntry);
+        IdePrintState("started");
+    }
+    else
+    {
+        SourceFile* currentSourceFile = debugInfo.GetSourceFile(main->SourceFilePath());
+        debugInfo.SetCurrentSourceFile(currentSourceFile);
+        currentSourceFile->SetActiveLineNumber(mainEntry->GetSourceSpan().Line());
+        currentSourceFile->SetListLineNumber(0);
+        std::cout << "debugging started" << std::endl;
+    }
 }
 
 void QuitCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
@@ -118,33 +197,75 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
     {
         throw std::runtime_error("not started");
     }
-    std::cout << "continuing" << std::endl;
+    if (!ide)
+    {
+        std::cout << "continuing" << std::endl;
+    }
+    std::vector<std::string> nextCFileLines;
     ExecContinue exec(gdb, inputReader);
     std::shared_ptr<GdbCommand> continueCommand = exec.Continue();
+    for (const std::string& nextCFileLine : nextCFileLines)
+    {
+        std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
+    }
     std::shared_ptr<GdbCommand> backTraceCommand = gdb.BackTrace();
     CallStack callStack = shell.ParseBackTraceReply(backTraceCommand->ReplyMessage());
     if (callStack.Frames().empty())
     {
         debugInfo.SetCurrentNode(nullptr);
         debugInfo.SetState(State::idle);
-        std::cout << "program exited" << std::endl;
+        if (ide)
+        {
+            IdePrintState("exit");
+        }
+        else
+        {
+            std::cout << "program exited" << std::endl;
+        }
     }
     else
     {
-        Breakpoint* bp = debugInfo.GetBreakpoint(callStack.Frames()[0].SourceFileLine().ToString());
+        const Cm::Core::SourceFileLine& cFileLineAfter = callStack.Frames()[0].SourceFileLine();
+        Breakpoint* bp = debugInfo.GetBreakpoint(cFileLineAfter.ToString());
         if (bp)
         {
             Cm::Core::CfgNode* currentNode = bp->Node();
             debugInfo.SetCurrentNode(currentNode);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(currentNode->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
-            Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), currentNode->GetSourceSpan().Line());
-            std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
-            currentSourceFile->SetActiveLineNumber(currentNode->GetSourceSpan().Line());
-            currentSourceFile->ListLine(currentNode->GetSourceSpan().Line(), debugInfo.Breakpoints());
+            if (ide)
+            {
+                IdePrintPosition(currentNode);
+            }
+            else
+            {
+                SourceFile* currentSourceFile = debugInfo.GetSourceFile(currentNode->Function()->SourceFilePath());
+                debugInfo.SetCurrentSourceFile(currentSourceFile);
+                Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), currentNode->GetSourceSpan().Line());
+                std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                currentSourceFile->SetActiveLineNumber(currentNode->GetSourceSpan().Line());
+                currentSourceFile->ListLine(currentNode->GetSourceSpan().Line(), debugInfo.Breakpoints());
+            }
         }
         else
         {
+            Cm::Core::CfgNode* nodeAfter = debugInfo.GetNodeByCFileLine(cFileLineAfter, false);
+            if (nodeAfter)
+            {
+                debugInfo.SetCurrentNode(nodeAfter);
+                if (ide)
+                {
+                    IdePrintPosition(nodeAfter);
+                }
+                else
+                {
+                    SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                    debugInfo.SetCurrentSourceFile(currentSourceFile);
+                    Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                    std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                    currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                    currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                }
+                return;
+            }
             throw std::runtime_error("breakpoint not found");
         }
     }
@@ -161,10 +282,13 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
     {
         throw std::runtime_error("not started");
     }
-    SourceFile* currentSourceFile = debugInfo.GetCurrentSourceFile();
-    if (currentSourceFile)
+    if (!ide)
     {
-        currentSourceFile->ResetListLineNumber();
+        SourceFile* currentSourceFile = debugInfo.GetCurrentSourceFile();
+        if (currentSourceFile)
+        {
+            currentSourceFile->ResetListLineNumber();
+        }
     }
     std::shared_ptr<GdbCommand> backTraceBeforeCommand = gdb.BackTrace();
     CallStack callStackBefore = shell.ParseBackTraceReply(backTraceBeforeCommand->ReplyMessage());
@@ -193,8 +317,12 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
     }
     while (true)
     {
-        Cm::Core::CfgNode* currentNode = debugInfo.CurrentNode();
         std::vector<std::string> nextCFileLines;
+        Cm::Core::CfgNode* currentNode = debugInfo.CurrentNode();
+        if (nodeBefore && nodeBefore->Kind() == Cm::Core::CfgNodeKind::throwNode || currentNode->Kind() == Cm::Core::CfgNodeKind::throwNode)
+        {
+            SetCatchBreakpoints(nextCFileLines, debugInfo, gdb);
+        }
         if (!currentNode->Function()->IsMain() && callStackBefore.Frames().size() > 1)
         {
             const Cm::Core::SourceFileLine& parentCallLine = callStackBefore.Frames()[1].SourceFileLine();
@@ -225,7 +353,14 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
         {
             debugInfo.SetCurrentNode(nullptr);
             debugInfo.SetState(State::idle);
-            std::cout << "program exited" << std::endl;
+            if (ide)
+            {
+                IdePrintState("exit");
+            }
+            else
+            {
+                std::cout << "program exited" << std::endl;
+            }
             return;
         }
         const Cm::Core::SourceFileLine& cFileLineAfter = callStackAfter.Frames()[0].SourceFileLine();
@@ -234,12 +369,19 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
         {
             Cm::Core::CfgNode* nodeAfter = bp->Node();
             debugInfo.SetCurrentNode(nodeAfter);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
-            Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-            std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
-            currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
-            currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+            if (ide)
+            {
+                IdePrintPosition(nodeAfter);
+            }
+            else
+            {
+                SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                debugInfo.SetCurrentSourceFile(currentSourceFile);
+                Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+            }
             return;
         }
         Cm::Core::CfgNode* nodeAfter = debugInfo.GetNodeByCFileLine(cFileLineAfter, false);
@@ -248,15 +390,23 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
             debugInfo.SetCurrentNode(nodeAfter);
             SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
             debugInfo.SetCurrentSourceFile(currentSourceFile);
-            if (callStackAfter.Frames().size() <= callStackBefore.Frames().size() && !nodeAfter->GetSourceSpan().IsNull())
+            bool nodeAfterIsBreakThrowNode = breakOnThrow && nodeAfter->Kind() == Cm::Core::CfgNodeKind::throwNode;
+            if ((nodeAfterIsBreakThrowNode || callStackAfter.Frames().size() <= callStackBefore.Frames().size()) && !nodeAfter->GetSourceSpan().IsNull())
             {
-                if (fromOut || nodeBefore && nodeBefore->Function() != nodeAfter->Function())
+                if (ide)
                 {
-                    Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                    std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                    IdePrintPosition(nodeAfter);
                 }
-                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
-                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                else
+                {
+                    if (fromOut || nodeBefore && nodeBefore->Function() != nodeAfter->Function())
+                    {
+                        Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                        std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                    }
+                    currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                    currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                }
                 return;
             }
         }
@@ -269,8 +419,11 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 throw std::runtime_error("function call node not set");
             }
             debugInfo.SetCurrentNode(nodeAfter);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
+            if (!ide)
+            {
+                SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                debugInfo.SetCurrentSourceFile(currentSourceFile);
+            }
         }
     }
 }
@@ -281,10 +434,13 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
     {
         throw std::runtime_error("not started");
     }
-    SourceFile* currentSourceFile = debugInfo.GetCurrentSourceFile();
-    if (currentSourceFile)
+    if (!ide)
     {
-        currentSourceFile->ResetListLineNumber();
+        SourceFile* currentSourceFile = debugInfo.GetCurrentSourceFile();
+        if (currentSourceFile)
+        {
+            currentSourceFile->ResetListLineNumber();
+        }
     }
     std::shared_ptr<GdbCommand> backTraceBeforeCommand = gdb.BackTrace();
     CallStack callStackBefore = shell.ParseBackTraceReply(backTraceBeforeCommand->ReplyMessage());
@@ -313,6 +469,10 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
     {
         Cm::Core::CfgNode* currentNode = debugInfo.CurrentNode();
         std::vector<std::string> nextCFileLines;
+        if (nodeBefore && nodeBefore->Kind() == Cm::Core::CfgNodeKind::throwNode || currentNode->Kind() == Cm::Core::CfgNodeKind::throwNode)
+        {
+            SetCatchBreakpoints(nextCFileLines, debugInfo, gdb);
+        }
         if (!currentNode->Function()->IsMain() && callStackBefore.Frames().size() > 1)
         {
             const Cm::Core::SourceFileLine& parentCallLine = callStackBefore.Frames()[1].SourceFileLine();
@@ -367,7 +527,14 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
         {
             debugInfo.SetCurrentNode(nullptr);
             debugInfo.SetState(State::idle);
-            std::cout << "program exited" << std::endl;
+            if (ide)
+            {
+                IdePrintState("exit");
+            }
+            else
+            {
+                std::cout << "program exited" << std::endl;
+            }
             return;
         }
         const Cm::Core::SourceFileLine& cFileLineAfter = callStackAfter.Frames()[0].SourceFileLine();
@@ -376,12 +543,19 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
         {
             Cm::Core::CfgNode* nodeAfter = bp->Node();
             debugInfo.SetCurrentNode(nodeAfter);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
-            Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-            std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
-            currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
-            currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+            if (ide)
+            {
+                IdePrintPosition(nodeAfter);
+            }
+            else
+            {
+                SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                debugInfo.SetCurrentSourceFile(currentSourceFile);
+                Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+            }
             return;
         }
         Cm::Core::CfgNode* nodeAfter = debugInfo.GetNodeByCFileLine(cFileLineAfter, false);
@@ -389,18 +563,26 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
         {
             funCallIndex = 0;
             debugInfo.SetCurrentNode(nodeAfter);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
             bool nodeAfterIsEntryNode = entryNodes.find(nodeAfter) != entryNodes.end();
-            if (nodeAfterIsEntryNode || callStackAfter.Frames().size() <= callStackBefore.Frames().size() && !nodeAfter->GetSourceSpan().IsNull())
+            bool nodeAfterIsBreakThrowNode = breakOnThrow && nodeAfter->Kind() == Cm::Core::CfgNodeKind::throwNode;
+            if ((nodeAfterIsBreakThrowNode || nodeAfterIsEntryNode || callStackAfter.Frames().size() <= callStackBefore.Frames().size()) && !nodeAfter->GetSourceSpan().IsNull())
             {
-                if (nodeAfterIsEntryNode || nodeBefore && nodeBefore->Function() != nodeAfter->Function())
+                if (ide)
                 {
-                    Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                    std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                    IdePrintPosition(nodeAfter);
                 }
-                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
-                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                else
+                {
+                    SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                    debugInfo.SetCurrentSourceFile(currentSourceFile);
+                    if (nodeAfterIsEntryNode || nodeBefore && nodeBefore->Function() != nodeAfter->Function())
+                    {
+                        Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                        std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                    }
+                    currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                    currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                }
                 return;
             }
         }
@@ -413,8 +595,11 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 throw std::runtime_error("function call node not set");
             }
             debugInfo.SetCurrentNode(nodeAfter);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
+            if (!ide)
+            {
+                SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                debugInfo.SetCurrentSourceFile(currentSourceFile);
+            }
             ++funCallIndex;
         }
     }
@@ -426,10 +611,13 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
     {
         throw std::runtime_error("not started");
     }
-    SourceFile* currentSourceFile = debugInfo.GetCurrentSourceFile();
-    if (currentSourceFile)
+    if (!ide)
     {
-        currentSourceFile->ResetListLineNumber();
+        SourceFile* currentSourceFile = debugInfo.GetCurrentSourceFile();
+        if (currentSourceFile)
+        {
+            currentSourceFile->ResetListLineNumber();
+        }
     }
     std::shared_ptr<GdbCommand> backTraceBeforeCommand = gdb.BackTrace();
     CallStack callStackBefore = shell.ParseBackTraceReply(backTraceBeforeCommand->ReplyMessage());
@@ -460,6 +648,10 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
     {
         Cm::Core::CfgNode* currentNode = debugInfo.CurrentNode();
         std::vector<std::string> nextCFileLines;
+        if (nodeBefore && nodeBefore->Kind() == Cm::Core::CfgNodeKind::throwNode || currentNode->Kind() == Cm::Core::CfgNodeKind::throwNode)
+        {
+            SetCatchBreakpoints(nextCFileLines, debugInfo, gdb);
+        }
         if (!currentNode->Function()->IsMain() && callStackBefore.Frames().size() > 1)
         {
             const Cm::Core::SourceFileLine& parentCallLine = callStackBefore.Frames()[1].SourceFileLine();
@@ -479,7 +671,14 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
         {
             debugInfo.SetCurrentNode(nullptr);
             debugInfo.SetState(State::idle);
-            std::cout << "program exited" << std::endl;
+            if (ide)
+            {
+                IdePrintState("exit");
+            }
+            else
+            {
+                std::cout << "program exited" << std::endl;
+            }
             return;
         }
         const Cm::Core::SourceFileLine& cFileLineAfter = callStackAfter.Frames()[0].SourceFileLine();
@@ -488,26 +687,40 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
         {
             Cm::Core::CfgNode* nodeAfter = bp->Node();
             debugInfo.SetCurrentNode(nodeAfter);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
-            Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-            std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
-            currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
-            currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+            if (ide)
+            {
+                IdePrintPosition(nodeAfter);
+            }
+            else
+            {
+                SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                debugInfo.SetCurrentSourceFile(currentSourceFile);
+                Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+            }
             return;
         }
         Cm::Core::CfgNode* nodeAfter = debugInfo.GetNodeByCFileLine(cFileLineAfter, false);
         if (nodeAfter)
         {
             debugInfo.SetCurrentNode(nodeAfter);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
             if (callStackAfter.Frames().size() <= callStackBefore.Frames().size() && !nodeAfter->GetSourceSpan().IsNull())
             {
-                Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                std::cout << "at " << sourceFileLine.ToString() << std::endl;
-                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
-                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                if (ide)
+                {
+                    IdePrintPosition(nodeAfter);
+                }
+                else
+                {
+                    SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                    debugInfo.SetCurrentSourceFile(currentSourceFile);
+                    Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                    std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                    currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                    currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                }
                 return;
             }
         }
@@ -527,14 +740,22 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
                 throw std::runtime_error("function call node not set");
             }
             debugInfo.SetCurrentNode(nodeAfter);
-            SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
-            debugInfo.SetCurrentSourceFile(currentSourceFile);
-            if (callStackAfter.Frames().size() <= callStackBefore.Frames().size() && !nodeAfter->GetSourceSpan().IsNull())
+            if (((breakOnThrow && nodeAfter->Kind() == Cm::Core::CfgNodeKind::throwNode) || callStackAfter.Frames().size() <= callStackBefore.Frames().size()) && 
+                !nodeAfter->GetSourceSpan().IsNull())
             {
-                Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                std::cout << "at " << sourceFileLine.ToString() << std::endl;
-                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
-                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                if (ide)
+                {
+                    IdePrintPosition(nodeAfter);
+                }
+                else
+                {
+                    SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
+                    debugInfo.SetCurrentSourceFile(currentSourceFile);
+                    Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                    std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                    currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                    currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
+                }
                 return;
             }
         }
@@ -551,10 +772,20 @@ void BreakCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
     if (node)
     {
         Cm::Core::SourceFileLine cFileLine = node->GetCFileLine();
-        std::shared_ptr<GdbCommand> breakCommand = gdb.Break(cFileLine.ToString());
+        if (!breakOnThrow || breakOnThrow && debugInfo.ThrowNodes().find(node) == debugInfo.ThrowNodes().end())
+        {
+            std::shared_ptr<GdbCommand> breakCommand = gdb.Break(cFileLine.ToString());
+        }
         int bpNum = debugInfo.SetBreakpoint(new Breakpoint(cFileLine.ToString(), node));
         Cm::Core::SourceFileLine bpLine(node->Function()->SourceFilePath(), node->GetSourceSpan().Line());
-        std::cout << "breakpoint " << bpNum << " set at " << bpLine.ToString() << std::endl;
+        if (ide)
+        {
+            IdePrintBreakpointSet(bpNum);
+        }
+        else
+        {
+            std::cout << "breakpoint " << bpNum << " set at " << bpLine.ToString() << std::endl;
+        }
     }
     else
     {
@@ -571,9 +802,19 @@ void ClearCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
     Breakpoint* bp = debugInfo.GetBreakpoint(bpNum);
     if (bp)
     {
-        std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(bp->CFileLine());
+        if (!breakOnThrow || breakOnThrow && debugInfo.ThrowNodes().find(bp->Node()) == debugInfo.ThrowNodes().end())
+        {
+            std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(bp->CFileLine());
+        }
         debugInfo.RemoveBreakpoint(bpNum);
-        std::cout << "breakpoint " << bpNum << " deleted" << std::endl;
+        if (ide)
+        {
+            IdePrintBreakpointRemoved(bpNum);
+        }
+        else
+        {
+            std::cout << "breakpoint " << bpNum << " deleted" << std::endl;
+        }
     }
     else
     {
@@ -618,9 +859,14 @@ void ListCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
 
 void CallStackCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
 {
+    if (debugInfo.GetState() == State::idle)
+    {
+        throw std::runtime_error("not started");
+    }
     std::shared_ptr<GdbCommand> backTraceCommand = gdb.BackTrace();
     CallStack callStack = shell.ParseBackTraceReply(backTraceCommand->ReplyMessage());
     int n = int(callStack.Frames().size());
+    std::vector<Cm::Core::CfgNode*> nodes;
     for (int i = 0; i < n; ++i)
     {
         const Frame& frame = callStack.Frames()[i];
@@ -628,7 +874,14 @@ void CallStackCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inpu
         Cm::Core::CfgNode* node = debugInfo.GetNodeByCFileLine(cFileLine, false);
         if (node)
         {
-            std::cout << "#" << i << " " << node->Function()->FunctionDisplayName() << " at " << node->Function()->SourceFilePath() << ":" << node->GetSourceSpan().Line() << std::endl;
+            if (ide)
+            {
+                nodes.push_back(node);
+            }
+            else
+            {
+                std::cout << "#" << i << " " << node->Function()->FunctionDisplayName() << " at " << node->Function()->SourceFilePath() << ":" << node->GetSourceSpan().Line() << std::endl;
+            }
         }
         else
         {
@@ -637,9 +890,20 @@ void CallStackCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inpu
             if (call)
             {
                 Cm::Core::CfgNode* node = call->Node();
-                std::cout << "#" << i << " " << node->Function()->FunctionDisplayName() << " at " << node->Function()->SourceFilePath() << ":" << node->GetSourceSpan().Line() << std::endl;
+                if (ide)
+                {
+                    nodes.push_back(node);
+                }
+                else
+                {
+                    std::cout << "#" << i << " " << node->Function()->FunctionDisplayName() << " at " << node->Function()->SourceFilePath() << ":" << node->GetSourceSpan().Line() << std::endl;
+                }
             }
         }
+    }
+    if (ide)
+    {
+        IdePrintCallStack(nodes);
     }
 }
 
@@ -647,34 +911,66 @@ FrameCommand::FrameCommand(int frameNumber_) : frameNumber(frameNumber_)
 {
 }
 
+FrameReplyGrammar* frameReplyGrammar = nullptr;
+
 void FrameCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
 {
-    // todo
+    if (debugInfo.GetState() == State::idle)
+    {
+        throw std::runtime_error("not started");
+    }
+    std::shared_ptr<GdbCommand> frameCommand = gdb.Frame(frameNumber);
+    try
+    {
+        if (!frameReplyGrammar)
+        {
+            frameReplyGrammar = FrameReplyGrammar::Create();
+        }
+        const std::string& replyMessage = frameCommand->ReplyMessage();
+        int frame = frameReplyGrammar->Parse(replyMessage.c_str(), replyMessage.c_str() + replyMessage.length(), 0, "");
+        if (frame != -1)
+        {
+            if (ide)
+            {
+                IdePrintFrameReply(frame);
+            }
+            else
+            {
+                std::cout << "frame #" << frame << " selected" << std::endl;
+            }
+        }
+        else
+        {
+            throw std::runtime_error("invalid frame number " + std::to_string(frameNumber));
+        }
+    }
+    catch (const std::exception&)
+    {
+        throw std::runtime_error("invalid frame number " + std::to_string(frameNumber));
+    }
 }
 
 void ShowBreakpointsCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
 {
+    std::vector<Breakpoint*> breakpoints;
     for (const std::pair<int, const std::unique_ptr<Breakpoint>&>& p : debugInfo.Breakpoints())
     {
         const std::unique_ptr<Breakpoint>& bp = p.second;
         Cm::Core::CfgNode* node = bp->Node();
         Cm::Core::SourceFileLine sourceFileLine(node->Function()->SourceFilePath(), node->GetSourceSpan().Line());
-        std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+        if (ide)
+        {
+            breakpoints.push_back(bp.get());
+        }
+        else
+        {
+            std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+        }
     }
-}
-
-void ShowLibrariesCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
-{
-    // todo
-}
-
-SetDebugLibraryStatusCommand::SetDebugLibraryStatusCommand(const std::string& libName_, bool enabled_) : libName(libName_), enabled(enabled_)
-{
-}
-
-void SetDebugLibraryStatusCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
-{
-    // todo
+    if (ide)
+    {
+        IdePrintShowBreakpoints(breakpoints);
+    }
 }
 
 SetBreakOnThrowCommand::SetBreakOnThrowCommand(bool enabled_) : enabled(enabled_)
@@ -683,7 +979,23 @@ SetBreakOnThrowCommand::SetBreakOnThrowCommand(bool enabled_) : enabled(enabled_
 
 void SetBreakOnThrowCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
 {
-    // todo
+    if (breakOnThrow && !enabled)
+    {
+        RemoveThrowBreakpoints(debugInfo, gdb);
+    }
+    else if (!breakOnThrow && enabled)
+    {
+        SetThrowBreakpoints(debugInfo, gdb);
+    }
+    breakOnThrow = enabled;
+    if (ide)
+    {
+        IdePrintBreakOnThrowReply(enabled);
+    }
+    else
+    {
+        std::cout << "break on throw set " << (breakOnThrow ? "on" : "off") << std::endl;
+    }
 }
 
 InspectCommand::InspectCommand(const std::string& expr_) : expr(expr_)

@@ -168,6 +168,8 @@
     <ClCompile Include="DebugInfo.cpp" />
     <ClCompile Include="Gdb.cpp" />
     <ClCompile Include="GdbReply.cpp" />
+    <ClCompile Include="IdeInput.cpp" />
+    <ClCompile Include="IdeOutput.cpp" />
     <ClCompile Include="InputReader.cpp" />
     <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -179,6 +181,8 @@
     <ClInclude Include="DebugInfo.hpp" />
     <ClInclude Include="Gdb.hpp" />
     <ClInclude Include="GdbReply.hpp" />
+    <ClInclude Include="IdeInput.hpp" />
+    <ClInclude Include="IdeOutput.hpp" />
     <ClInclude Include="InputReader.hpp" />
     <ClInclude Include="Interpreter.hpp" />
     <ClInclude Include="Shell.hpp" />

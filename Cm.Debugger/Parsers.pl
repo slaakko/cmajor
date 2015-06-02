@@ -17,6 +17,10 @@ namespace Cm.Debugger
         Drive;
         Line: int;
     }
+    grammar FrameReplyGrammar
+    {
+        Frame: int;
+    }
     grammar ContinueReplyGrammar
     {
         ReplyLine(ContinueReplyData* data): ContinueReplyState;

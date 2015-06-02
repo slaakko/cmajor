@@ -38,11 +38,6 @@ namespace Cm.Debugger
             |   (keyword("callstack") | keyword("ca")){ value = CommandPtr(new CallStackCommand()); }
             |   ((keyword("frame") | keyword("f")) int:frame){ value = CommandPtr(new FrameCommand(frame)); }
             |   (keyword("show") keyword("breakpoints")){ value = CommandPtr(new ShowBreakpointsCommand()); }
-            |   (keyword("show") keyword("libraries")){ value = CommandPtr(new ShowLibrariesCommand()); }
-            |   keyword("set") keyword("debug") keyword("library") qualified_id:libName
-                    (keyword("on"){ value = CommandPtr(new SetDebugLibraryStatusCommand(libName, true)); } 
-                |   keyword("off"){ value = CommandPtr(new SetDebugLibraryStatusCommand(libName, false)); }
-                )
             |   keyword("set") keyword("break") keyword("on") keyword("throw") 
                     (keyword("on"){ value = CommandPtr(new SetBreakOnThrowCommand(true)); }
                 |   keyword("off"){ value = CommandPtr(new SetBreakOnThrowCommand(false)); }
