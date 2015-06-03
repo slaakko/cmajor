@@ -490,6 +490,12 @@ void DebugInfo::Process(Cm::Core::CDebugInfoFile* file)
     for (const std::unique_ptr<Cm::Core::CFunctionDebugInfo>& functionDebugInfo : file->FunctionDebugInfos())
     {
         functionDebugInfo->SetFile(file);
+        SourceFile* sourceFile = GetSourceFile(functionDebugInfo->SourceFilePath(), false);
+        if (!sourceFile)
+        {
+            sourceFile = new SourceFile(functionDebugInfo->SourceFilePath());
+            SetSourceFile(sourceFile->FilePath(), sourceFile);
+        }
         const std::string& cFilePath = functionDebugInfo->CFilePath();
         CFile* cFile = GetCFile(cFilePath);
         if (!cFile)
