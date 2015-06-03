@@ -120,7 +120,6 @@ void StartCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
     {
         std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(mainEntryCFileLine);
     }
-    SetThrowBreakpoints(debugInfo, gdb);
     if (ide)
     {
         IdePrintPosition(mainEntry);
