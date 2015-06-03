@@ -21,7 +21,7 @@ std::mutex pipeReadMutex;
 std::mutex pipeWriteMutex;
 std::mutex commandMutex;
 
-ContinueReplyData::ContinueReplyData() : exitCode(0)
+ContinueReplyData::ContinueReplyData() : exitCode(0), exitCodeSet(false)
 {
 }
 
@@ -130,8 +130,9 @@ void Gdb::DoRun()
             {
                 if (cmd->IsContinueCommand())
                 {
-                    std::string replyMessage = ReadContinueReply();
-                    cmd->SetReplyMessage(replyMessage);
+                    GdbContinueCommand* continueCommand = static_cast<GdbContinueCommand*>(cmd.get());
+                    ContinueReplyData continueReplyData = ReadContinueReply();
+                    continueCommand->SetContinueReplyData(continueReplyData);
                 }
                 else
                 {
@@ -188,10 +189,11 @@ std::shared_ptr<GdbCommand> Gdb::Break(const std::string& cFileLine)
     return breakCommand;
 }
 
-std::shared_ptr<GdbCommand> Gdb::Continue()
+std::shared_ptr<GdbContinueCommand> Gdb::Continue()
 {
-    std::shared_ptr<GdbCommand> continueCommand(new GdbContinueCommand());
-    ExecuteCommand(continueCommand);
+    std::shared_ptr<GdbContinueCommand> continueCommand(new GdbContinueCommand());
+    std::shared_ptr<GdbCommand> command = continueCommand;
+    ExecuteCommand(command);
     return continueCommand;
 }
 
@@ -247,7 +249,7 @@ std::string Gdb::Read()
 
 ContinueReplyGrammar* continueReplyGrammar = nullptr;
 
-std::string Gdb::ReadContinueReply()
+ContinueReplyData Gdb::ReadContinueReply()
 {
     if (!continueReplyGrammar)
     {
@@ -331,7 +333,7 @@ std::string Gdb::ReadContinueReply()
             }
         }
     }
-    return Cm::Util::Trim(combinedMessage.substr(0, combinedMessage.length() - gdbPrompt.length()));
+    return data;
 }
 
 void Gdb::Write(const std::string& message)

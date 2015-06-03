@@ -62,7 +62,7 @@ bool Shell::ExecuteNextCommand()
         }
         else
         {
-            interpreterGrammar->Parse(commandLine.c_str(), commandLine.c_str() + commandLine.length(), 0, std::string());
+            command = interpreterGrammar->Parse(commandLine.c_str(), commandLine.c_str() + commandLine.length(), 0, std::string());
         }
         if (!command)
         {
@@ -123,7 +123,7 @@ void Shell::Execute()
     }
     if (ide)
     {
-        IdePrintState("bye");
+        IdePrintState("bye", 0);
     }
     else
     {

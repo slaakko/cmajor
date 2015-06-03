@@ -118,7 +118,7 @@ void IdeInputCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     }
     if (jsonValue->IsString())
     {
-        input = jsonValue->ToString();
+        input = static_cast<Cm::Core::JsonString*>(jsonValue)->Value();
     }
     else
     {
@@ -177,7 +177,7 @@ void IdeBreakCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
         }
         if (file->IsString())
         {
-            sourceFileLine.SetSourceFilePath(file->ToString());
+            sourceFileLine.SetSourceFilePath(static_cast<Cm::Core::JsonString*>(file)->Value());
         }
         else
         {
@@ -215,27 +215,14 @@ void IdeClearCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     {
         throw std::runtime_error("IDE clear command contains no data field");
     }
-    if (jsonValue->IsObject())
+    if (jsonValue->IsNumber())
     {
-        Cm::Core::JsonObject* data = static_cast<Cm::Core::JsonObject*>(jsonValue);
-        Cm::Core::JsonValue* bpNum = data->GetField(Cm::Core::JsonString("bpNum"));
-        if (!bpNum)
-        {
-            throw std::runtime_error("IDE clear command data contains no bpNum attribute");
-        }
-        if (bpNum->IsNumber())
-        {
-            Cm::Core::JsonNumber* bpNumber = static_cast<Cm::Core::JsonNumber*>(bpNum);
-            breakpointNumber = static_cast<int>(bpNumber->Value());
-        }
-        else
-        {
-            throw std::runtime_error("IDE clear command bpNum attribute is not a JSON number");
-        }
+        Cm::Core::JsonNumber* bpNum = static_cast<Cm::Core::JsonNumber*>(jsonValue);
+        breakpointNumber = static_cast<int>(bpNum->Value());
     }
     else
     {
-        throw std::runtime_error("IDE clear command data is not a JSON object");
+        throw std::runtime_error("IDE clear command data is not a JSON number");
     }
 }
 
@@ -255,27 +242,14 @@ void IdeFrameCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     {
         throw std::runtime_error("IDE frame command contains no data field");
     }
-    if (jsonValue->IsObject())
+    if (jsonValue->IsNumber())
     {
-        Cm::Core::JsonObject* data = static_cast<Cm::Core::JsonObject*>(jsonValue);
-        Cm::Core::JsonValue* frameNum = data->GetField(Cm::Core::JsonString("frameNum"));
-        if (!frameNum)
-        {
-            throw std::runtime_error("IDE frame command data contains no frameNum attribute");
-        }
-        if (frameNum->IsNumber())
-        {
-            Cm::Core::JsonNumber* frameNr = static_cast<Cm::Core::JsonNumber*>(frameNum);
-            frameNumber = static_cast<int>(frameNr->Value());
-        }
-        else
-        {
-            throw std::runtime_error("IDE frame command frameNum attribute is not a JSON number");
-        }
+        Cm::Core::JsonNumber* frameNum = static_cast<Cm::Core::JsonNumber*>(jsonValue);
+        frameNumber = static_cast<int>(frameNum->Value());
     }
     else
     {
-        throw std::runtime_error("IDE frame command data is not a JSON object");
+        throw std::runtime_error("IDE frame command data is not a JSON number");
     }
 }
 
@@ -295,27 +269,14 @@ void IdeSetBreakOnThrowCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     {
         throw std::runtime_error("IDE set break on throw command contains no data field");
     }
-    if (jsonValue->IsObject())
+    if (jsonValue->IsBool())
     {
-        Cm::Core::JsonObject* data = static_cast<Cm::Core::JsonObject*>(jsonValue);
-        Cm::Core::JsonValue* setOn = data->GetField(Cm::Core::JsonString("on"));
-        if (!setOn)
-        {
-            throw std::runtime_error("IDE set break on throw command data contains no on attribute");
-        }
-        if (setOn->IsBool())
-        {
-            Cm::Core::JsonBool* on = static_cast<Cm::Core::JsonBool*>(setOn);
-            enable = on->Value();
-        }
-        else
-        {
-            throw std::runtime_error("IDE set break on throw command on attribute is not a JSON Boolean");
-        }
+        Cm::Core::JsonBool* on = static_cast<Cm::Core::JsonBool*>(jsonValue);
+        enable = on->Value();
     }
     else
     {
-        throw std::runtime_error("IDE set break on throw command data is not a JSON object");
+        throw std::runtime_error("IDE set break on throw command data is not a JSON Boolean");
     }
 }
 
@@ -342,7 +303,8 @@ std::unique_ptr<IdeCommand> ParseIdeCommand(const std::string& commandLine)
     {
         throw std::runtime_error("IDE command's command field is not a JSON string");
     }
-    std::unique_ptr<IdeCommand> ideCommand(IdeCommandFactory::Instance().CreateCommand(commandName->ToString()));
+    const std::string& command = static_cast<Cm::Core::JsonString*>(commandName)->Value();
+    std::unique_ptr<IdeCommand> ideCommand(IdeCommandFactory::Instance().CreateCommand(command));
     Cm::Core::JsonValue* dataField = commandObject->GetField(Cm::Core::JsonString("data"));
     ideCommand->SetDataFrom(dataField);
     return ideCommand;
