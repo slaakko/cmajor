@@ -19,11 +19,10 @@
 
 namespace Cm { namespace Debugger {
 
-bool breakOnThrow = true;
+bool breakOnThrow = false;
 
 void SetThrowBreakpoints(DebugInfo& debugInfo, Gdb& gdb)
 {
-    if (!breakOnThrow) return;
     std::vector<std::string> throwCFileLines;
     std::vector<Cm::Core::CfgNode*> throwNodesToRemove;
     for (Cm::Core::CfgNode* throwNode : debugInfo.ThrowNodes())
@@ -116,7 +115,7 @@ void StartCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
     {
         std::shared_ptr<GdbCommand> breakCommand = gdb.Break(mainEntryCFileLine);
     }
-    std::shared_ptr<GdbCommand> continueCommand = gdb.Continue();
+    std::shared_ptr<GdbContinueCommand> continueCommand = gdb.Continue();
     if (!hasBreakpointAtMainEntryPoint)
     {
         std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(mainEntryCFileLine);
@@ -125,7 +124,6 @@ void StartCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
     if (ide)
     {
         IdePrintPosition(mainEntry);
-        IdePrintState("started");
     }
     else
     {
@@ -179,7 +177,7 @@ struct ExecContinue
     {
         inputReader.StartRedirecting();
     }
-    std::shared_ptr<GdbCommand> Continue()
+    std::shared_ptr<GdbContinueCommand> Continue()
     {
         return gdb.Continue();
     }
@@ -203,7 +201,12 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
     }
     std::vector<std::string> nextCFileLines;
     ExecContinue exec(gdb, inputReader);
-    std::shared_ptr<GdbCommand> continueCommand = exec.Continue();
+    std::shared_ptr<GdbContinueCommand> continueCommand = exec.Continue();
+    int exitCode = 0;
+    if (continueCommand->GetContinueReplyData().ExitCodeSet())
+    {
+        exitCode = continueCommand->GetContinueReplyData().ExitCode();
+    }
     for (const std::string& nextCFileLine : nextCFileLines)
     {
         std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
@@ -216,11 +219,11 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
         debugInfo.SetState(State::idle);
         if (ide)
         {
-            IdePrintState("exit");
+            IdePrintState("exit", exitCode);
         }
         else
         {
-            std::cout << "program exited" << std::endl;
+            std::cout << "program exited with code " << exitCode << std::endl;
         }
     }
     else
@@ -342,7 +345,12 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
             }
         }
         ExecContinue exec(gdb, inputReader);
-        std::shared_ptr<GdbCommand> continueCommand = exec.Continue();
+        std::shared_ptr<GdbContinueCommand> continueCommand = exec.Continue();
+        int exitCode = 0;
+        if (continueCommand->GetContinueReplyData().ExitCodeSet())
+        {
+            exitCode = continueCommand->GetContinueReplyData().ExitCode();
+        }
         for (const std::string& nextCFileLine : nextCFileLines)
         {
             std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
@@ -355,7 +363,7 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
             debugInfo.SetState(State::idle);
             if (ide)
             {
-                IdePrintState("exit");
+                IdePrintState("exit", exitCode);
             }
             else
             {
@@ -516,7 +524,12 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
             }
         }
         ExecContinue exec(gdb, inputReader);
-        std::shared_ptr<GdbCommand> continueCommand = exec.Continue();
+        std::shared_ptr<GdbContinueCommand> continueCommand = exec.Continue();
+        int exitCode = 0;
+        if (continueCommand->GetContinueReplyData().ExitCodeSet())
+        {
+            exitCode = continueCommand->GetContinueReplyData().ExitCode();
+        }
         for (const std::string& nextCFileLine : nextCFileLines)
         {
             std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
@@ -529,7 +542,7 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
             debugInfo.SetState(State::idle);
             if (ide)
             {
-                IdePrintState("exit");
+                IdePrintState("exit", exitCode);
             }
             else
             {
@@ -660,7 +673,12 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
             nextCFileLines.push_back(returnCFileLine);
         }
         ExecContinue exec(gdb, inputReader);
-        std::shared_ptr<GdbCommand> continueCommand = exec.Continue();
+        std::shared_ptr<GdbContinueCommand> continueCommand = exec.Continue();
+        int exitCode = 0;
+        if (continueCommand->GetContinueReplyData().ExitCodeSet())
+        {
+            exitCode = continueCommand->GetContinueReplyData().ExitCode();
+        }
         for (const std::string& nextCFileLine : nextCFileLines)
         {
             std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
@@ -673,7 +691,7 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
             debugInfo.SetState(State::idle);
             if (ide)
             {
-                IdePrintState("exit");
+                IdePrintState("exit", exitCode);
             }
             else
             {

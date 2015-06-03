@@ -12,10 +12,14 @@
 
 namespace Cm { namespace Core {
 
-std::string ToHexString(unsigned short x)
+std::string JsonStringCharHexEscape(uint32_t x)
 {
     std::stringstream s;
-    s << std::hex << x;
+    uint8_t x0 = (x >> (3 * 8)) & 0xFF;
+    uint8_t x1 = (x >> (2 * 8)) & 0xFF;
+    uint8_t x2 = (x >> 8) & 0xFF;
+    uint8_t x3 = x & 0xFF;
+    s << std::hex << x0 << x1 << x2 << x3;
     return s.str();
 }
 
@@ -41,20 +45,39 @@ void JsonString::Append(const std::string& s)
     value.append(s);
 }
 
+std::string JsonStringCharStr(char c)
+{
+    switch (c)
+    {
+        case '\"': return "\\\"";
+        case '\\': return "\\\\";
+        case '\a': return "\\a";
+        case '\b': return "\\b";
+        case '\f': return "\\f";
+        case '\n': return "\\n";
+        case '\r': return "\\r";
+        case '\t': return "\\t";
+        case '\v': return "\\v";
+        default:
+        {
+            if (c >= 32 && c <= 126)
+            {
+                return std::string(1, c);
+            }
+            else
+            {
+                return "\\u" + JsonStringCharHexEscape(uint32_t(c));
+            }
+        }
+    }
+}
+
 std::string JsonString::ToString() const 
 {
     std::string s = "\"";
     for (char c : value)
     {
-        if (isprint(c))
-        {
-            s.append(1, c);
-        }
-        else
-        {
-            s.append("\\u");
-            s.append(ToHexString(static_cast<unsigned short>(c)));
-        }
+        s.append(JsonStringCharStr(c));
     }
     s.append("\"");
     return s;

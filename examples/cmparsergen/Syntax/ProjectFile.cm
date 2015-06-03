@@ -8,7 +8,7 @@ namespace Syntax
     {
         public static ProjectFileGrammar* Create()
         {
-            return Create(new ParsingDomain());
+            return Create(new ParsingDomain()); 
         }
         public static ProjectFileGrammar* Create(ParsingDomain* parsingDomain)
         {

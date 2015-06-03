@@ -27,11 +27,13 @@ public:
     ContinueReplyData();
     void SetConsoleLine(const std::string& consoleLine_) { consoleLine = consoleLine_; }
     const std::string& ConsoleLine() const { return consoleLine; }
-    void SetExitCode(int exitCode_) { exitCode = exitCode_; }
+    bool ExitCodeSet() const { return exitCodeSet; }
+    void SetExitCode(int exitCode_) { exitCode = exitCode_; exitCodeSet = true; }
     int ExitCode() const { return exitCode; }
 private:
     std::string consoleLine;
     int exitCode;
+    bool exitCodeSet;
 };
 
 class GdbCommand
@@ -87,6 +89,10 @@ class GdbContinueCommand : public GdbCommand
 public:
     GdbContinueCommand();
     bool IsContinueCommand() const override { return true; }
+    void SetContinueReplyData(const ContinueReplyData& continueReplyData_) { continueReplyData = continueReplyData_; }
+    const ContinueReplyData& GetContinueReplyData() const { return continueReplyData; }
+private:
+    ContinueReplyData continueReplyData;
 };
 
 class GdbClearCommand : public GdbCommand
@@ -116,12 +122,12 @@ public:
     std::shared_ptr<GdbCommand> Start();
     void Quit();
     std::shared_ptr<GdbCommand> Break(const std::string& cFileLine);
-    std::shared_ptr<GdbCommand> Continue();
+    std::shared_ptr<GdbContinueCommand> Continue();
     std::shared_ptr<GdbCommand> Clear(const std::string& cFileLine);
     std::shared_ptr<GdbCommand> BackTrace();
     std::shared_ptr<GdbCommand> Frame(int frameNumber);
     std::string Read();
-    std::string ReadContinueReply();
+    ContinueReplyData ReadContinueReply();
     void Write(const std::string& message);
     void ExecuteCommand(std::shared_ptr<GdbCommand>& command);
 private:
