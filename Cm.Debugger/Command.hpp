@@ -59,9 +59,6 @@ class NextCommand : public Command
 public:
     NextCommand();
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
-    void SetFromOut() { fromOut = true; }
-private:
-    bool fromOut;
 };
 
 class StepCommand : public Command

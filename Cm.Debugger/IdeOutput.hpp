@@ -16,7 +16,7 @@ namespace Cm { namespace Debugger {
 
 void IdePrintError(const std::string& errorMessage);
 
-void IdePrintState(const std::string& state, int exitCode);
+void IdePrintState(const std::string& state, int exitCode, const std::string& signal, const std::string& signaCallStack);
 
 void IdePrintOutput(const std::string& output);
 

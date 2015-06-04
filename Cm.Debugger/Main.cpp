@@ -53,9 +53,14 @@ int main(int argc, const char** argv)
         if (argc < 2)
         {
             std::cout << "Cmajor Debugger version " << version << "\n" <<
-                "Usage: cmdb <executable> [arguments...]" << std::endl;
+                "Usage: cmdb [options] <executable> [arguments...]\n" << 
+                "options:\n" << 
+                "-ide       : use IDE command reply format\n" << 
+                "-file=FILE : read commands from FILE" <<
+                std::endl;
             return 1;
         }
+        std::string commandFileName;
         std::string executable;
         std::vector<std::string> arguments;
         bool firstNonOption = true;
@@ -67,6 +72,25 @@ int main(int argc, const char** argv)
                 if (arg == "-ide")
                 {
                     Cm::Debugger::ide = true;
+                }
+                else if (arg.find('=') != std::string::npos)
+                {
+                    std::vector<std::string> components = Cm::Util::Split(arg, '=');
+                    if (components.size() == 2)
+                    {
+                        if (components[0] == "-file")
+                        {
+                            commandFileName = components[1];
+                        }
+                        else
+                        {
+                            throw std::runtime_error("unknown option '" + arg + "'");
+                        }
+                    }
+                    else
+                    {
+                        throw std::runtime_error("unknown option '" + arg + "'");
+                    }
                 }
                 else
                 {
@@ -105,7 +129,7 @@ int main(int argc, const char** argv)
         }
         Cm::Debugger::DebugInfo debugInfo(cmdbFilePath);
         Cm::Debugger::Gdb gdb(executable, arguments);
-        Cm::Debugger::Shell shell(debugInfo, gdb);
+        Cm::Debugger::Shell shell(debugInfo, gdb, commandFileName);
         shell.Execute();
     }
     catch (const std::exception& ex)

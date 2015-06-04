@@ -66,7 +66,7 @@ namespace Cm.Debugger
             ::= ContinuingLine{ value = ContinueReplyState::continuing; }
             |   InferiorExit{ data->SetExitCode(InferiorExit); value = ContinueReplyState::exit; }
             |   Breakpoint{ value = ContinueReplyState::breakpoint; }
-            |   Signal{ value = ContinueReplyState::signal; }
+            |   Signal{ data->SetSignal(Signal); value = ContinueReplyState::signal; }
             |   Prompt{ value = ContinueReplyState::prompt; }
             |   ConsoleLine{ data->SetConsoleLine(ConsoleLine); value = ContinueReplyState::consoleLine; }
             ;
@@ -93,8 +93,8 @@ namespace Cm.Debugger
             ::= keyword("Breakpoint") int:bp token(anychar*)
             ;
 
-        Signal
-            ::= keyword("Program") keyword("received") keyword("signal") identifier:id token(anychar*)
+        Signal: std::string
+            ::= (keyword("Program") keyword("received") keyword("signal") identifier:id token(anychar*)){ value = id; }
             ;
 
         Prompt

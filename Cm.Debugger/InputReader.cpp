@@ -10,6 +10,7 @@
 #include <Cm.Debugger/InputReader.hpp>
 #include <Cm.Debugger/Gdb.hpp>
 #include <Cm.Debugger/DebugInfo.hpp>
+#include <Cm.Debugger/IdeOutput.hpp>
 #include <string>
 #include <iostream>
 
@@ -20,8 +21,12 @@ void RunInputReader(InputReader* inputReader)
     inputReader->Run();
 }
 
-InputReader::InputReader(Gdb& gdb_) : gdb(gdb_), lineSet(false), exiting(false), redirecting(false), proceed(0)
+InputReader::InputReader(Gdb& gdb_, const std::string& commandFileName_) : gdb(gdb_), lineSet(false), exiting(false), redirecting(false), proceed(0), commandFileName(commandFileName_)
 {
+    if (!commandFileName.empty())
+    {
+        commandFile.open(commandFileName.c_str());
+    }
 }
 
 void InputReader::Start()
@@ -34,13 +39,31 @@ void InputReader::Run()
     while (!exiting)
     {
         std::string s;
-        std::getline(std::cin, s);
+        bool noMoreCommands = false;
+        if (commandFileName.empty())
+        {
+            std::getline(std::cin, s);
+        }
+        else
+        {
+            if (!std::getline(commandFile, s))
+            {
+                noMoreCommands = true;
+            }
+        }
         if (ide)
         {
             std::unique_ptr<IdeCommand> command;
             try
             {
-                command = ParseIdeCommand(s);
+                if (noMoreCommands)
+                {
+                    command.reset(new IdeQuitCommand());
+                }
+                else
+                {
+                    command = ParseIdeCommand(s);
+                }
             }
             catch (const std::exception& ex)
             {
@@ -56,9 +79,10 @@ void InputReader::Run()
             }
             else
             {
-                if (redirect)
+                if (redirect && !noMoreCommands)
                 {
-                    command.reset(new IdeErrorCommand("cannot issue debugging commands while redirecting input to program"));
+                    IdePrintError("cannot issue debugging commands while redirecting input to program");
+                    continue;
                 }
                 {
                     std::unique_lock<std::mutex> lck(proceedMtx);

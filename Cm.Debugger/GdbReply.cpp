@@ -662,6 +662,8 @@ public:
         a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ReplyLineRule>(this, &ReplyLineRule::A5Action));
         Cm::Parsing::NonterminalParser* inferiorExitNonterminalParser = GetNonterminal("InferiorExit");
         inferiorExitNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ReplyLineRule>(this, &ReplyLineRule::PostInferiorExit));
+        Cm::Parsing::NonterminalParser* signalNonterminalParser = GetNonterminal("Signal");
+        signalNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ReplyLineRule>(this, &ReplyLineRule::PostSignal));
         Cm::Parsing::NonterminalParser* consoleLineNonterminalParser = GetNonterminal("ConsoleLine");
         consoleLineNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ReplyLineRule>(this, &ReplyLineRule::PostConsoleLine));
     }
@@ -680,6 +682,7 @@ public:
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
+        context.data->SetSignal(context.fromSignal);
         context.value = ContinueReplyState::signal;
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
@@ -700,6 +703,15 @@ public:
             stack.pop();
         }
     }
+    void PostSignal(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromSignal_value = std::move(stack.top());
+            context.fromSignal = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromSignal_value.get());
+            stack.pop();
+        }
+    }
     void PostConsoleLine(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
@@ -712,10 +724,11 @@ public:
 private:
     struct Context
     {
-        Context(): data(), value(), fromInferiorExit(), fromConsoleLine() {}
+        Context(): data(), value(), fromInferiorExit(), fromSignal(), fromConsoleLine() {}
         ContinueReplyData* data;
         ContinueReplyState value;
         int fromInferiorExit;
+        std::string fromSignal;
         std::string fromConsoleLine;
     };
     std::stack<Context> contextStack;
@@ -899,6 +912,59 @@ private:
     Context context;
 };
 
+class ContinueReplyGrammar::SignalRule : public Cm::Parsing::Rule
+{
+public:
+    SignalRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        SetValueTypeName("std::string");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<std::string>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SignalRule>(this, &SignalRule::A0Action));
+        Cm::Parsing::NonterminalParser* idNonterminalParser = GetNonterminal("id");
+        idNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<SignalRule>(this, &SignalRule::Postid));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromid;
+    }
+    void Postid(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromid_value = std::move(stack.top());
+            context.fromid = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromid_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): value(), fromid() {}
+        std::string value;
+        std::string fromid;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 class ContinueReplyGrammar::ConsoleLineRule : public Cm::Parsing::Rule
 {
 public:
@@ -1019,18 +1085,19 @@ void ContinueReplyGrammar::CreateRules()
             new Cm::Parsing::TokenParser(
                 new Cm::Parsing::KleeneStarParser(
                     new Cm::Parsing::AnyCharParser())))));
-    AddRule(new Cm::Parsing::Rule("Signal", GetScope(),
-        new Cm::Parsing::SequenceParser(
+    AddRule(new SignalRule("Signal", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::KeywordParser("Program"),
-                        new Cm::Parsing::KeywordParser("received")),
-                    new Cm::Parsing::KeywordParser("signal")),
-                new Cm::Parsing::NonterminalParser("id", "identifier", 0)),
-            new Cm::Parsing::TokenParser(
-                new Cm::Parsing::KleeneStarParser(
-                    new Cm::Parsing::AnyCharParser())))));
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::KeywordParser("Program"),
+                            new Cm::Parsing::KeywordParser("received")),
+                        new Cm::Parsing::KeywordParser("signal")),
+                    new Cm::Parsing::NonterminalParser("id", "identifier", 0)),
+                new Cm::Parsing::TokenParser(
+                    new Cm::Parsing::KleeneStarParser(
+                        new Cm::Parsing::AnyCharParser()))))));
     AddRule(new Cm::Parsing::Rule("Prompt", GetScope(),
         new Cm::Parsing::StringParser("(gdb) ")));
     AddRule(new ConsoleLineRule("ConsoleLine", GetScope(),

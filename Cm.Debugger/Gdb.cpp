@@ -21,7 +21,7 @@ std::mutex pipeReadMutex;
 std::mutex pipeWriteMutex;
 std::mutex commandMutex;
 
-ContinueReplyData::ContinueReplyData() : exitCode(0), exitCodeSet(false)
+ContinueReplyData::ContinueReplyData() : exitCode(0), exitCodeSet(false), signalSet(false)
 {
 }
 
@@ -319,7 +319,7 @@ ContinueReplyData Gdb::ReadContinueReply()
                     }
                 }
             }
-            if (consoleLinesSet)
+            if (consoleLinesSet && !data.SignalSet())
             {
                 if (ide)
                 {
