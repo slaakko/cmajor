@@ -29,7 +29,7 @@ namespace Cm.Debugger
         octal: int;
         octaldigit: int;
         Breakpoint;
-        Signal;
+        Signal: std::string;
         Prompt;
         ConsoleLine: std::string;
     }

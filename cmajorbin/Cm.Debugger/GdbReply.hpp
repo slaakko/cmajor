@@ -1,5 +1,5 @@
-#ifndef GdbReply_hpp_5676
-#define GdbReply_hpp_5676
+#ifndef GdbReply_hpp_21588
+#define GdbReply_hpp_21588
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -52,9 +52,10 @@ private:
     class InferiorExitRule;
     class octalRule;
     class octaldigitRule;
+    class SignalRule;
     class ConsoleLineRule;
 };
 
 } } // namespace Cm.Debugger
 
-#endif // GdbReply_hpp_5676
+#endif // GdbReply_hpp_21588

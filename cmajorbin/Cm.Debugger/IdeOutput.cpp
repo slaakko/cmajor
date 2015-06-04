@@ -22,7 +22,7 @@ void IdePrintError(const std::string& errorMessage)
     std::cout << reply.ToString() << std::endl;
 }
 
-void IdePrintState(const std::string& state, int exitCode)
+void IdePrintState(const std::string& state, int exitCode, const std::string& signal, const std::string& signalCallStack)
 {
     Cm::Core::JsonObject reply;
     reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("state"));
@@ -30,6 +30,11 @@ void IdePrintState(const std::string& state, int exitCode)
     if (state == "exit")
     {
         reply.AddField(Cm::Core::JsonString("exitCode"), new Cm::Core::JsonNumber(exitCode));
+    }
+    else if (state == "signal")
+    {
+        reply.AddField(Cm::Core::JsonString("signal"), new Cm::Core::JsonString(signal));
+        reply.AddField(Cm::Core::JsonString("signalCallStack"), new Cm::Core::JsonString(signalCallStack));
     }
     std::cout << reply.ToString() << std::endl;
 }

@@ -202,13 +202,33 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
     ExecContinue exec(gdb, inputReader);
     std::shared_ptr<GdbContinueCommand> continueCommand = exec.Continue();
     int exitCode = 0;
+    std::string signal;
     if (continueCommand->GetContinueReplyData().ExitCodeSet())
     {
         exitCode = continueCommand->GetContinueReplyData().ExitCode();
     }
+    if (continueCommand->GetContinueReplyData().SignalSet())
+    {
+        signal = continueCommand->GetContinueReplyData().Signal();
+    }
     for (const std::string& nextCFileLine : nextCFileLines)
     {
         std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
+    }
+    if (!signal.empty())
+    {
+        debugInfo.SetCurrentNode(nullptr);
+        debugInfo.SetState(State::idle);
+        std::shared_ptr<GdbCommand> backTraceCommand = gdb.BackTrace();
+        if (ide)
+        {
+            IdePrintState("signal", exitCode, signal, backTraceCommand->ReplyMessage());
+        }
+        else
+        {
+            std::cout << "program received signal " << signal << "\n" << backTraceCommand->ReplyMessage() << std::endl;
+        }
+        return;
     }
     std::shared_ptr<GdbCommand> backTraceCommand = gdb.BackTrace();
     CallStack callStack = shell.ParseBackTraceReply(backTraceCommand->ReplyMessage());
@@ -218,7 +238,7 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
         debugInfo.SetState(State::idle);
         if (ide)
         {
-            IdePrintState("exit", exitCode);
+            IdePrintState("exit", exitCode, signal, "");
         }
         else
         {
@@ -273,9 +293,8 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
     }
 }
 
-NextCommand::NextCommand() : fromOut(false)
+NextCommand::NextCommand()
 {
-
 }
 
 void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
@@ -346,13 +365,33 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
         ExecContinue exec(gdb, inputReader);
         std::shared_ptr<GdbContinueCommand> continueCommand = exec.Continue();
         int exitCode = 0;
+        std::string signal;
         if (continueCommand->GetContinueReplyData().ExitCodeSet())
         {
             exitCode = continueCommand->GetContinueReplyData().ExitCode();
         }
+        if (continueCommand->GetContinueReplyData().SignalSet())
+        {
+            signal = continueCommand->GetContinueReplyData().Signal();
+        }
         for (const std::string& nextCFileLine : nextCFileLines)
         {
             std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
+        }
+        if (!signal.empty())
+        {
+            debugInfo.SetCurrentNode(nullptr);
+            debugInfo.SetState(State::idle);
+            std::shared_ptr<GdbCommand> backTraceCommand = gdb.BackTrace();
+            if (ide)
+            {
+                IdePrintState("signal", exitCode, signal, backTraceCommand->ReplyMessage());
+            }
+            else
+            {
+                std::cout << "program received signal " << signal << "\n" << backTraceCommand->ReplyMessage() << std::endl;
+            }
+            return;
         }
         std::shared_ptr<GdbCommand> backTraceAfterCommand = gdb.BackTrace();
         CallStack callStackAfter = shell.ParseBackTraceReply(backTraceAfterCommand->ReplyMessage());
@@ -362,7 +401,7 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
             debugInfo.SetState(State::idle);
             if (ide)
             {
-                IdePrintState("exit", exitCode);
+                IdePrintState("exit", exitCode, signal, "");
             }
             else
             {
@@ -406,7 +445,7 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 }
                 else
                 {
-                    if (fromOut || nodeBefore && nodeBefore->Function() != nodeAfter->Function())
+                    if (nodeBefore && nodeBefore->Function() != nodeAfter->Function())
                     {
                         Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
                         std::cout << "at " << sourceFileLine.ToString() << std::endl;
@@ -426,11 +465,25 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 throw std::runtime_error("function call node not set");
             }
             debugInfo.SetCurrentNode(nodeAfter);
-            if (!ide)
+            if (nodeBefore->Kind() == Cm::Core::CfgNodeKind::throwNode) continue;
+            if (ide)
             {
+                IdePrintPosition(nodeAfter);
+            }
+            else
+            {
+                debugInfo.SetCurrentNode(nodeAfter);
                 SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
                 debugInfo.SetCurrentSourceFile(currentSourceFile);
+                if (nodeBefore && nodeBefore->Function() != nodeAfter->Function())
+                {
+                    Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                    std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                }
+                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
             }
+            return;
         }
     }
 }
@@ -525,13 +578,33 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
         ExecContinue exec(gdb, inputReader);
         std::shared_ptr<GdbContinueCommand> continueCommand = exec.Continue();
         int exitCode = 0;
+        std::string signal;
         if (continueCommand->GetContinueReplyData().ExitCodeSet())
         {
             exitCode = continueCommand->GetContinueReplyData().ExitCode();
         }
+        if (continueCommand->GetContinueReplyData().SignalSet())
+        {
+            signal = continueCommand->GetContinueReplyData().Signal();
+        }
         for (const std::string& nextCFileLine : nextCFileLines)
         {
             std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
+        }
+        if (!signal.empty())
+        {
+            debugInfo.SetCurrentNode(nullptr);
+            debugInfo.SetState(State::idle);
+            std::shared_ptr<GdbCommand> backTraceCommand = gdb.BackTrace();
+            if (ide)
+            {
+                IdePrintState("signal", exitCode, signal, backTraceCommand->ReplyMessage());
+            }
+            else
+            {
+                std::cout << "program received signal " << signal << "\n" << backTraceCommand->ReplyMessage() << std::endl;
+            }
+            return;
         }
         std::shared_ptr<GdbCommand> backTraceAfterCommand = gdb.BackTrace();
         CallStack callStackAfter = shell.ParseBackTraceReply(backTraceAfterCommand->ReplyMessage());
@@ -541,7 +614,7 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
             debugInfo.SetState(State::idle);
             if (ide)
             {
-                IdePrintState("exit", exitCode);
+                IdePrintState("exit", exitCode, signal, "");
             }
             else
             {
@@ -607,12 +680,25 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 throw std::runtime_error("function call node not set");
             }
             debugInfo.SetCurrentNode(nodeAfter);
-            if (!ide)
+            if (nodeBefore->Kind() == Cm::Core::CfgNodeKind::throwNode) continue;
+            if (ide)
             {
+                IdePrintPosition(nodeAfter);
+            }
+            else
+            {
+                debugInfo.SetCurrentNode(nodeAfter);
                 SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
                 debugInfo.SetCurrentSourceFile(currentSourceFile);
+                if (nodeBefore && nodeBefore->Function() != nodeAfter->Function())
+                {
+                    Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
+                    std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                }
+                currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
+                currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
             }
-            ++funCallIndex;
+            return;
         }
     }
 }
@@ -674,13 +760,33 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
         ExecContinue exec(gdb, inputReader);
         std::shared_ptr<GdbContinueCommand> continueCommand = exec.Continue();
         int exitCode = 0;
+        std::string signal;
         if (continueCommand->GetContinueReplyData().ExitCodeSet())
         {
             exitCode = continueCommand->GetContinueReplyData().ExitCode();
         }
+        if (continueCommand->GetContinueReplyData().SignalSet())
+        {
+            signal = continueCommand->GetContinueReplyData().Signal();
+        }
         for (const std::string& nextCFileLine : nextCFileLines)
         {
             std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(nextCFileLine);
+        }
+        if (!signal.empty())
+        {
+            debugInfo.SetCurrentNode(nullptr);
+            debugInfo.SetState(State::idle);
+            std::shared_ptr<GdbCommand> backTraceCommand = gdb.BackTrace();
+            if (ide)
+            {
+                IdePrintState("signal", exitCode, signal, backTraceCommand->ReplyMessage());
+            }
+            else
+            {
+                std::cout << "program received signal " << signal << "\n" << backTraceCommand->ReplyMessage() << std::endl;
+            }
+            return;
         }
         std::shared_ptr<GdbCommand> backTraceAfterCommand = gdb.BackTrace();
         CallStack callStackAfter = shell.ParseBackTraceReply(backTraceAfterCommand->ReplyMessage());
@@ -690,7 +796,7 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
             debugInfo.SetState(State::idle);
             if (ide)
             {
-                IdePrintState("exit", exitCode);
+                IdePrintState("exit", exitCode, signal, "");
             }
             else
             {
@@ -744,19 +850,13 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
         Cm::Core::CFunCall* funCallAfter = debugInfo.GetFunCallByCFileLine(cFileLineAfter, false);
         if (funCallAfter)
         {
-            if (funCallAfter->IsLastCall())
-            {
-                NextCommand nextCommand;
-                nextCommand.SetFromOut();
-                nextCommand.Execute(debugInfo, gdb, inputReader, shell);
-                return;
-            }
             Cm::Core::CfgNode* nodeAfter = funCallAfter->Node();
             if (!nodeAfter)
             {
                 throw std::runtime_error("function call node not set");
             }
             debugInfo.SetCurrentNode(nodeAfter);
+            if (nodeBefore->Kind() == Cm::Core::CfgNodeKind::throwNode) continue;
             if (((breakOnThrow && nodeAfter->Kind() == Cm::Core::CfgNodeKind::throwNode) || callStackAfter.Frames().size() <= callStackBefore.Frames().size()) && 
                 !nodeAfter->GetSourceSpan().IsNull())
             {
@@ -876,10 +976,6 @@ void ListCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
 
 void CallStackCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
 {
-    if (debugInfo.GetState() == State::idle)
-    {
-        throw std::runtime_error("not started");
-    }
     std::shared_ptr<GdbCommand> backTraceCommand = gdb.BackTrace();
     CallStack callStack = shell.ParseBackTraceReply(backTraceCommand->ReplyMessage());
     int n = int(callStack.Frames().size());

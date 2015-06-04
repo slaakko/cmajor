@@ -21,7 +21,7 @@ namespace Cm { namespace Debugger {
 InterpreterGrammar* interpreterGrammar = nullptr;
 BackTraceReplyGrammar* backTraceReplyGrammar = nullptr;
 
-Shell::Shell(DebugInfo& debugInfo_, Gdb& gdb_) : debugInfo(debugInfo_), gdb(gdb_), inputReader(gdb)
+Shell::Shell(DebugInfo& debugInfo_, Gdb& gdb_, const std::string& commandFileName_) : debugInfo(debugInfo_), gdb(gdb_), inputReader(gdb, commandFileName_)
 {
 }
 
@@ -123,7 +123,7 @@ void Shell::Execute()
     }
     if (ide)
     {
-        IdePrintState("bye", 0);
+        IdePrintState("bye", 0, "", "");
     }
     else
     {

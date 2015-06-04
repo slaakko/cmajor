@@ -11,7 +11,7 @@ public class DcGrammar: System.Text.Parsing.Grammar
     public static DcGrammar* Create(ParsingDomain* parsingDomain)
     {
         RegisterParsingDomain(parsingDomain);
-        DcGrammar* grammar(new DcGrammar(parsingDomain));
+        DcGrammar* grammar = new DcGrammar(parsingDomain);
         parsingDomain->AddGrammar(grammar);
         grammar->CreateRules();
         grammar->Link();

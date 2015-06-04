@@ -22,7 +22,7 @@ typedef std::shared_ptr<Command> CommandPtr;
 class Shell
 {
 public:
-    Shell(DebugInfo& debugInfo_, Gdb& gdb_);
+    Shell(DebugInfo& debugInfo_, Gdb& gdb_, const std::string& commandFileName_);
     void Execute();
     void SetLastCommand(CommandPtr lastCommand_) { lastCommand = lastCommand_; }
     CallStack ParseBackTraceReply(const std::string& backTraceReply) const;

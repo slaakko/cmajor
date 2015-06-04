@@ -27,13 +27,18 @@ public:
     ContinueReplyData();
     void SetConsoleLine(const std::string& consoleLine_) { consoleLine = consoleLine_; }
     const std::string& ConsoleLine() const { return consoleLine; }
-    bool ExitCodeSet() const { return exitCodeSet; }
     void SetExitCode(int exitCode_) { exitCode = exitCode_; exitCodeSet = true; }
     int ExitCode() const { return exitCode; }
+    bool ExitCodeSet() const { return exitCodeSet; }
+    void SetSignal(const std::string& signal_) { signal = signal_; signalSet = true; }
+    const std::string& Signal() const { return signal; }
+    bool SignalSet() const { return signalSet; }
 private:
     std::string consoleLine;
     int exitCode;
     bool exitCodeSet;
+    std::string signal;
+    bool signalSet;
 };
 
 class GdbCommand

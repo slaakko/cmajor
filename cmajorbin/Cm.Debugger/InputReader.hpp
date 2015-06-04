@@ -13,6 +13,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <fstream>
 
 namespace Cm { namespace Debugger {
 
@@ -21,7 +22,7 @@ class Gdb;
 class InputReader
 {
 public:
-    InputReader(Gdb& gdb_);
+    InputReader(Gdb& gdb_, const std::string& commandFileName_);
     void Start();
     void Run();
     void Exit();
@@ -32,6 +33,8 @@ public:
     std::unique_ptr<IdeCommand> GetIdeCommand();
 private:
     Gdb& gdb;
+    std::string commandFileName;
+    std::ifstream commandFile;
     std::thread readerThread;
     std::string line;
     bool lineSet;
