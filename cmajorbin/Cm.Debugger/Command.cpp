@@ -328,7 +328,6 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
                     }
                     return;
                 }
-                throw std::runtime_error("breakpoint not found");
             }
         }
     }
