@@ -14,29 +14,29 @@
 
 namespace Cm { namespace Debugger {
 
-void IdePrintError(const std::string& errorMessage);
+void IdePrintError(int sequenceNumber, const std::string& errorMessage);
 
-void IdePrintError(const std::string& errorMessage, bool redirectError);
+void IdePrintError(int sequenceNumber, const std::string& errorMessage, bool redirectError);
 
-void IdePrintState(const std::string& state, int exitCode, const std::string& signal, const std::string& signaCallStack);
+void IdePrintState(int sequenceNumber, const std::string& state, int exitCode, const std::string& signal, const std::string& signaCallStack);
 
-void IdePrintOutput(const std::string& output);
+void IdePrintOutput(int sequenceNumber, const std::string& output);
 
-void IdePrintPosition(Cm::Core::CfgNode* node);
+void IdePrintPosition(int sequenceNumber, Cm::Core::CfgNode* node);
 
-void IdePrintBreakpointSet(int bpNum);
+void IdePrintBreakpointSet(int sequenceNumber, int bpNum);
 
-void IdePrintBreakpointRemoved(int bpNum);
+void IdePrintBreakpointRemoved(int sequenceNumber, int bpNum);
 
-void IdePrintCallStack(const std::vector<Cm::Core::CfgNode*>& nodes);
+void IdePrintCallStack(int sequenceNumber, const std::vector<Cm::Core::CfgNode*>& nodes);
 
-void IdePrintFrameReply(int frame);
+void IdePrintFrameReply(int sequenceNumber, int frame);
 
 class Breakpoint;
 
-void IdePrintShowBreakpoints(const std::vector<Breakpoint*>& breakpoints);
+void IdePrintShowBreakpoints(int sequenceNumber, const std::vector<Breakpoint*>& breakpoints);
 
-void IdePrintBreakOnThrowReply(bool enabled);
+void IdePrintBreakOnThrowReply(int sequenceNumber, bool enabled);
 
 } } // Cm::Debugger
 

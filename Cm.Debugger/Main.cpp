@@ -136,7 +136,7 @@ int main(int argc, const char** argv)
     {
         if (Cm::Debugger::ide)
         {
-            Cm::Debugger::IdePrintError(ex.what());
+            Cm::Debugger::IdePrintError(-1, ex.what());
         }
         else
         {
@@ -148,7 +148,7 @@ int main(int argc, const char** argv)
     {
         if (Cm::Debugger::ide)
         {
-            Cm::Debugger::IdePrintError("unknown exception occurred");
+            Cm::Debugger::IdePrintError(-1, "unknown exception occurred");
         }
         else
         {

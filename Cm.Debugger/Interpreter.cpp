@@ -143,11 +143,11 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new StartCommand);
+        context.value = CommandPtr(new StartCommand(-1));
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new QuitCommand);
+        context.value = CommandPtr(new QuitCommand(-1));
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -155,31 +155,31 @@ public:
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new ContinueCommand);
+        context.value = CommandPtr(new ContinueCommand(-1));
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new NextCommand);
+        context.value = CommandPtr(new NextCommand(-1));
     }
     void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new StepCommand);
+        context.value = CommandPtr(new StepCommand(-1));
     }
     void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new OutCommand);
+        context.value = CommandPtr(new OutCommand(-1));
     }
     void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new BreakCommand(context.frombsfl));
+        context.value = CommandPtr(new BreakCommand(-1, context.frombsfl));
     }
     void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new ClearCommand(context.frombp));
+        context.value = CommandPtr(new ClearCommand(-1, context.frombp));
     }
     void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new InspectCommand(context.fromexpr));
+        context.value = CommandPtr(new InspectCommand(-1, context.fromexpr));
     }
     void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -195,23 +195,23 @@ public:
     }
     void A13Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new CallStackCommand);
+        context.value = CommandPtr(new CallStackCommand(-1));
     }
     void A14Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new FrameCommand(context.fromframe));
+        context.value = CommandPtr(new FrameCommand(-1, context.fromframe));
     }
     void A15Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new ShowBreakpointsCommand);
+        context.value = CommandPtr(new ShowBreakpointsCommand(-1));
     }
     void A16Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new SetBreakOnThrowCommand(true));
+        context.value = CommandPtr(new SetBreakOnThrowCommand(-1, true));
     }
     void A17Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = CommandPtr(new SetBreakOnThrowCommand(false));
+        context.value = CommandPtr(new SetBreakOnThrowCommand(-1, false));
     }
     void A18Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -445,8 +445,8 @@ void InterpreterGrammar::GetReferencedGrammars()
 
 void InterpreterGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
+    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
     AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRule(new CommandRule("Command", GetScope(),
         new Cm::Parsing::AlternativeParser(
