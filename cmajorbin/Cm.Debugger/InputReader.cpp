@@ -81,7 +81,7 @@ void InputReader::Run()
             {
                 if (redirect && !noMoreCommands)
                 {
-                    IdePrintError("cannot issue debugging commands while redirecting input to program");
+                    IdePrintError("cannot issue debugging commands while redirecting input to program", true);
                     continue;
                 }
                 {

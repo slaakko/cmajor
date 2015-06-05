@@ -16,9 +16,15 @@ namespace Cm { namespace Debugger {
 
 void IdePrintError(const std::string& errorMessage)
 {
+    IdePrintError(errorMessage, false);
+}
+
+void IdePrintError(const std::string& errorMessage, bool redirectError)
+{
     Cm::Core::JsonObject reply;
     reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("error"));
     reply.AddField(Cm::Core::JsonString("errorMessage"), new Cm::Core::JsonString(errorMessage));
+    reply.AddField(Cm::Core::JsonString("redirect"), new Cm::Core::JsonBool(redirectError));
     std::cout << reply.ToString() << std::endl;
 }
 
