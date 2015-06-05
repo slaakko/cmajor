@@ -20,27 +20,27 @@ namespace Cm.Debugger
         skip spaces;
         
         Command: CommandPtr
-            ::= (keyword("start")){ value = CommandPtr(new StartCommand()); }
-            |   (keyword("quit") | keyword("q")){ value = CommandPtr(new QuitCommand()); }
+            ::= (keyword("start")){ value = CommandPtr(new StartCommand(-1)); }
+            |   (keyword("quit") | keyword("q")){ value = CommandPtr(new QuitCommand(-1)); }
             |   (keyword("help") | keyword("h")){ value = CommandPtr(new HelpCommand()); }
-            |   (keyword("continue") | keyword("c")){ value = CommandPtr(new ContinueCommand()); }
-            |   (keyword("next") | keyword("n")){ value = CommandPtr(new NextCommand()); }
-            |   (keyword("step") | keyword("s")){ value = CommandPtr(new StepCommand()); }
-            |   (keyword("out") | keyword("o")){ value = CommandPtr(new OutCommand()); }
-            |   ((keyword("break") | keyword("b")) SourceFileLine:bsfl){ value = CommandPtr(new BreakCommand(bsfl)); }
-            |   ((keyword("clear") | keyword("cl")) int:bp){ value = CommandPtr(new ClearCommand(bp)); }
-            |   ((keyword("inspect") | keyword("i")) InspectExpr:expr){ value = CommandPtr(new InspectCommand(expr)); } 
+            |   (keyword("continue") | keyword("c")){ value = CommandPtr(new ContinueCommand(-1)); }
+            |   (keyword("next") | keyword("n")){ value = CommandPtr(new NextCommand(-1)); }
+            |   (keyword("step") | keyword("s")){ value = CommandPtr(new StepCommand(-1)); }
+            |   (keyword("out") | keyword("o")){ value = CommandPtr(new OutCommand(-1)); }
+            |   ((keyword("break") | keyword("b")) SourceFileLine:bsfl){ value = CommandPtr(new BreakCommand(-1, bsfl)); }
+            |   ((keyword("clear") | keyword("cl")) int:bp){ value = CommandPtr(new ClearCommand(-1, bp)); }
+            |   ((keyword("inspect") | keyword("i")) InspectExpr:expr){ value = CommandPtr(new InspectCommand(-1, expr)); } 
             |   (keyword("list") | keyword("l"))
                 (   SourceFileLine:lsfl{ value = CommandPtr(new ListCommand(lsfl)); } 
                 |   '*'{ value = CommandPtr(new ListCommand("*")); } 
                 |   ('+' | empty){ value = CommandPtr(new ListCommand("+")); }
                 )
-            |   (keyword("callstack") | keyword("ca")){ value = CommandPtr(new CallStackCommand()); }
-            |   ((keyword("frame") | keyword("f")) int:frame){ value = CommandPtr(new FrameCommand(frame)); }
-            |   (keyword("show") keyword("breakpoints")){ value = CommandPtr(new ShowBreakpointsCommand()); }
+            |   (keyword("callstack") | keyword("ca")){ value = CommandPtr(new CallStackCommand(-1)); }
+            |   ((keyword("frame") | keyword("f")) int:frame){ value = CommandPtr(new FrameCommand(-1, frame)); }
+            |   (keyword("show") keyword("breakpoints")){ value = CommandPtr(new ShowBreakpointsCommand(-1)); }
             |   keyword("set") keyword("break") keyword("on") keyword("throw") 
-                    (keyword("on"){ value = CommandPtr(new SetBreakOnThrowCommand(true)); }
-                |   keyword("off"){ value = CommandPtr(new SetBreakOnThrowCommand(false)); }
+                    (keyword("on"){ value = CommandPtr(new SetBreakOnThrowCommand(-1, true)); }
+                |   keyword("off"){ value = CommandPtr(new SetBreakOnThrowCommand(-1, false)); }
                 )
             |   empty{ value = CommandPtr(); }
             ;

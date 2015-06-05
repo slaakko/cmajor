@@ -22,17 +22,21 @@ typedef std::shared_ptr<Command> CommandPtr;
 class IdeCommand
 {
 public:
+    IdeCommand(int sequenceNumber_);
     virtual ~IdeCommand();
     virtual void SetDataFrom(Cm::Core::JsonValue* jsonValue);
     virtual CommandPtr ToShellCommand() const;
     virtual bool IsInputCommand() const { return false; }
+    int SequenceNumber() const { return sequenceNumber; }
+private:
+    int sequenceNumber;
 };
 
 class IdeErrorCommand : public IdeCommand
 {
 public:
-    IdeErrorCommand();
-    IdeErrorCommand(const std::string& errorMessage_);
+    IdeErrorCommand(int sequenceNumber_);
+    IdeErrorCommand(int sequenceNumber_, const std::string& errorMessage_);
     CommandPtr ToShellCommand() const override;
 private:
     std::string errorMessage;
@@ -41,6 +45,7 @@ private:
 class IdeInputCommand : public IdeCommand
 {
 public:
+    IdeInputCommand(int sequenceNumber_);
     void SetDataFrom(Cm::Core::JsonValue* jsonValue) override;
     bool IsInputCommand() const override { return true; }
     const std::string& Input() const { return input; }
@@ -51,42 +56,49 @@ private:
 class IdeStartCommand : public IdeCommand
 {
 public:
+    IdeStartCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
 };
 
 class IdeQuitCommand : public IdeCommand
 {
 public:
+    IdeQuitCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
 };
 
 class IdeContinueCommand : public IdeCommand
 {
 public:
+    IdeContinueCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
 };
 
 class IdeStepOverCommand : public IdeCommand
 {
 public:
+    IdeStepOverCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
 };
 
 class IdeStepIntoCommand : public IdeCommand
 {
 public:
+    IdeStepIntoCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
 };
 
 class IdeStepOutCommand : public IdeCommand
 {
 public:
+    IdeStepOutCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
 };
 
 class IdeBreakCommand : public IdeCommand
 {
 public:
+    IdeBreakCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
     void SetDataFrom(Cm::Core::JsonValue* jsonValue) override;
 private:
@@ -96,6 +108,7 @@ private:
 class IdeClearCommand : public IdeCommand
 {
 public:
+    IdeClearCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
     void SetDataFrom(Cm::Core::JsonValue* jsonValue) override;
 private:
@@ -105,12 +118,14 @@ private:
 class IdeCallStackCommand : public IdeCommand
 {
 public:
+    IdeCallStackCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
 };
 
 class IdeFrameCommand : public IdeCommand
 {
 public:
+    IdeFrameCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
     void SetDataFrom(Cm::Core::JsonValue* jsonValue) override;
 private:
@@ -120,12 +135,14 @@ private:
 class IdeShowBreakpointsCommand : public IdeCommand
 {
 public:
+    IdeShowBreakpointsCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
 };
 
 class IdeSetBreakOnThrowCommand : public IdeCommand
 {
 public:
+    IdeSetBreakOnThrowCommand(int sequenceNumber_);
     CommandPtr ToShellCommand() const override;
     void SetDataFrom(Cm::Core::JsonValue* jsonValue) override;
 private:

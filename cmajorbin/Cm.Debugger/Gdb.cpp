@@ -149,7 +149,7 @@ void Gdb::DoRun()
     {
         if (ide)
         {
-            IdePrintError(std::string("stopped running: ") + ex.what());
+            IdePrintError(-1, std::string("gdb component stopped running: ") + ex.what());
         }
         else
         {
@@ -323,7 +323,7 @@ ContinueReplyData Gdb::ReadContinueReply()
             {
                 if (ide)
                 {
-                    IdePrintOutput(consoleLines);
+                    IdePrintOutput(-1, consoleLines);
                 }
                 else
                 {

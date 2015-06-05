@@ -20,7 +20,7 @@ public:
     IdeCommandCreator(const std::string& commandName_);
     virtual ~IdeCommandCreator();
     const std::string& CommandName() const { return commandName; }
-    virtual IdeCommand* CreateCommand() const = 0;
+    virtual IdeCommand* CreateCommand(int sequenceNumber) const = 0;
 private:
     std::string commandName;
 };
@@ -39,7 +39,7 @@ public:
     static void Init();
     static void Done();
     static IdeCommandFactory& Instance();
-    IdeCommand* CreateCommand(const std::string& command);
+    IdeCommand* CreateCommand(int sequenceNumber, const std::string& command);
     void Register(IdeCommandCreator* creator);
 private:
     static std::unique_ptr<IdeCommandFactory> instance;
@@ -66,13 +66,13 @@ IdeCommandFactory& IdeCommandFactory::Instance()
     return *instance;
 }
 
-IdeCommand* IdeCommandFactory::CreateCommand(const std::string& command)
+IdeCommand* IdeCommandFactory::CreateCommand(int sequenceNumber, const std::string& command)
 {
     CreatorMapIt i = creatorMap.find(command);
     if (i != creatorMap.end())
     {
         IdeCommandCreator* creator = i->second;
-        return creator->CreateCommand();
+        return creator->CreateCommand(sequenceNumber);
     }
     throw std::runtime_error("IDE command '" + command + "' not found");
 }
@@ -83,6 +83,9 @@ void IdeCommandFactory::Register(IdeCommandCreator* creator)
     creators.push_back(std::unique_ptr<IdeCommandCreator>(creator));
 }
 
+IdeCommand::IdeCommand(int sequenceNumber_) : sequenceNumber(sequenceNumber_)
+{
+}
 
 IdeCommand::~IdeCommand()
 {
@@ -97,17 +100,21 @@ CommandPtr IdeCommand::ToShellCommand() const
     throw std::runtime_error("internal error: command not implemented");
 }
 
-IdeErrorCommand::IdeErrorCommand() : errorMessage("internal error: no message")
+IdeErrorCommand::IdeErrorCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_), errorMessage("internal error: no message")
 {
 }
 
-IdeErrorCommand::IdeErrorCommand(const std::string& errorMessage_) : errorMessage(errorMessage_)
+IdeErrorCommand::IdeErrorCommand(int sequenceNumber_, const std::string& errorMessage_) : IdeCommand(sequenceNumber_), errorMessage(errorMessage_)
 {
 }
 
 CommandPtr IdeErrorCommand::ToShellCommand() const
 {
     throw std::runtime_error(errorMessage);
+}
+
+IdeInputCommand::IdeInputCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 void IdeInputCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
@@ -126,39 +133,67 @@ void IdeInputCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     }
 }
 
+IdeStartCommand::IdeStartCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
+}
+
 CommandPtr IdeStartCommand::ToShellCommand() const
 {
-    return CommandPtr(new StartCommand());
+    return CommandPtr(new StartCommand(SequenceNumber()));
+}
+
+IdeQuitCommand::IdeQuitCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 CommandPtr IdeQuitCommand::ToShellCommand() const
 {
-    return CommandPtr(new QuitCommand());
+    return CommandPtr(new QuitCommand(SequenceNumber()));
+}
+
+IdeContinueCommand::IdeContinueCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 CommandPtr IdeContinueCommand::ToShellCommand() const
 {
-    return CommandPtr(new ContinueCommand());
+    return CommandPtr(new ContinueCommand(SequenceNumber()));
+}
+
+IdeStepOverCommand::IdeStepOverCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 CommandPtr IdeStepOverCommand::ToShellCommand() const
 {
-    return CommandPtr(new NextCommand());
+    return CommandPtr(new NextCommand(SequenceNumber()));
+}
+
+IdeStepIntoCommand::IdeStepIntoCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 CommandPtr IdeStepIntoCommand::ToShellCommand() const
 {
-    return CommandPtr(new StepCommand());
+    return CommandPtr(new StepCommand(SequenceNumber()));
+}
+
+IdeStepOutCommand::IdeStepOutCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 CommandPtr IdeStepOutCommand::ToShellCommand() const
 {
-    return CommandPtr(new OutCommand());
+    return CommandPtr(new OutCommand(SequenceNumber()));
+}
+
+IdeBreakCommand::IdeBreakCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 CommandPtr IdeBreakCommand::ToShellCommand() const
 {
-    return CommandPtr(new BreakCommand(sourceFileLine));
+    return CommandPtr(new BreakCommand(SequenceNumber(), sourceFileLine));
 }
 
 void IdeBreakCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
@@ -204,9 +239,13 @@ void IdeBreakCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     }
 }
 
+IdeClearCommand::IdeClearCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
+}
+
 CommandPtr IdeClearCommand::ToShellCommand() const
 {
-    return CommandPtr(new ClearCommand(breakpointNumber));
+    return CommandPtr(new ClearCommand(SequenceNumber(), breakpointNumber));
 }
 
 void IdeClearCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
@@ -226,14 +265,22 @@ void IdeClearCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     }
 }
 
+IdeCallStackCommand::IdeCallStackCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
+}
+
 CommandPtr IdeCallStackCommand::ToShellCommand() const
 {
-    return CommandPtr(new CallStackCommand());
+    return CommandPtr(new CallStackCommand(SequenceNumber()));
+}
+
+IdeFrameCommand::IdeFrameCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 CommandPtr IdeFrameCommand::ToShellCommand() const
 {
-    return CommandPtr(new FrameCommand(frameNumber));
+    return CommandPtr(new FrameCommand(SequenceNumber(), frameNumber));
 }
 
 void IdeFrameCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
@@ -253,14 +300,22 @@ void IdeFrameCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     }
 }
 
+IdeShowBreakpointsCommand::IdeShowBreakpointsCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
+}
+
 CommandPtr IdeShowBreakpointsCommand::ToShellCommand() const
 {
-    return CommandPtr(new ShowBreakpointsCommand());
+    return CommandPtr(new ShowBreakpointsCommand(SequenceNumber()));
+}
+
+IdeSetBreakOnThrowCommand::IdeSetBreakOnThrowCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
 }
 
 CommandPtr IdeSetBreakOnThrowCommand::ToShellCommand() const
 {
-    return CommandPtr(new SetBreakOnThrowCommand(enable));
+    return CommandPtr(new SetBreakOnThrowCommand(SequenceNumber(), enable));
 }
 
 void IdeSetBreakOnThrowCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
@@ -303,8 +358,18 @@ std::unique_ptr<IdeCommand> ParseIdeCommand(const std::string& commandLine)
     {
         throw std::runtime_error("IDE command's command field is not a JSON string");
     }
+    Cm::Core::JsonValue* sequenceNumberField = commandObject->GetField(Cm::Core::JsonString("sequence"));
+    if (!sequenceNumberField)
+    {
+        throw std::runtime_error("IDE command contains no sequence field");
+    }
+    if (!sequenceNumberField->IsNumber())
+    {
+        throw std::runtime_error("IDE command's sequence field is not a JSON number");
+    }
+    int sequenceNumber = static_cast<int>(static_cast<Cm::Core::JsonNumber*>(sequenceNumberField)->Value());
     const std::string& command = static_cast<Cm::Core::JsonString*>(commandName)->Value();
-    std::unique_ptr<IdeCommand> ideCommand(IdeCommandFactory::Instance().CreateCommand(command));
+    std::unique_ptr<IdeCommand> ideCommand(IdeCommandFactory::Instance().CreateCommand(sequenceNumber, command));
     Cm::Core::JsonValue* dataField = commandObject->GetField(Cm::Core::JsonString("data"));
     ideCommand->SetDataFrom(dataField);
     return ideCommand;
@@ -317,9 +382,9 @@ public:
     ConcreteIdeCommandCreator(const std::string& commandName_) : IdeCommandCreator(commandName_)
     {
     }
-    IdeCommand* CreateCommand() const
+    IdeCommand* CreateCommand(int sequenceNumber) const
     {
-        return new CommandT();
+        return new CommandT(sequenceNumber);
     }
 };
 

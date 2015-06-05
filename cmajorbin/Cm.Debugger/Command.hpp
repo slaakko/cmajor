@@ -19,12 +19,25 @@ class Gdb;
 class InputReader;
 class Shell;
 
+class CommandError : public std::runtime_error
+{
+public:
+    CommandError(int sequenceNumber_, const std::string& message_);
+    int SequenceNumber() const { return sequenceNumber; }
+private:
+    int sequenceNumber;
+};
+
 class Command
 {
 public:
+    Command(int sequenceNumber_);
     virtual ~Command();
     virtual void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell);
     virtual bool IsQuit() const { return false; }
+    int SequenceNumber() const { return sequenceNumber; }
+private:
+    int sequenceNumber;
 };
 
 typedef std::shared_ptr<Command> CommandPtr;
@@ -32,12 +45,14 @@ typedef std::shared_ptr<Command> CommandPtr;
 class StartCommand : public Command
 {
 public:
+    StartCommand(int sequenceNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
 class QuitCommand : public Command
 {
 public:
+    QuitCommand(int sequenceNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
     bool IsQuit() const override { return true; }
 };
@@ -45,38 +60,42 @@ public:
 class HelpCommand : public Command
 {
 public:
+    HelpCommand();
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
 class ContinueCommand : public Command
 {
 public:
+    ContinueCommand(int sequenceNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
 class NextCommand : public Command
 {
 public:
-    NextCommand();
+    NextCommand(int sequenceNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
 class StepCommand : public Command
 {
 public:
+    StepCommand(int sequenceNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
 class OutCommand : public Command
 {
 public:
+    OutCommand(int sequenceNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
 class BreakCommand : public Command
 {
 public:
-    BreakCommand(const Cm::Core::SourceFileLine& sourceFileLine_);
+    BreakCommand(int sequenceNumber_, const Cm::Core::SourceFileLine& sourceFileLine_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 private:
     Cm::Core::SourceFileLine sourceFileLine;
@@ -85,7 +104,7 @@ private:
 class ClearCommand : public Command
 {
 public:
-    ClearCommand(int bpNum_);
+    ClearCommand(int sequenceNumber_, int bpNum_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 private:
     int bpNum;
@@ -105,13 +124,14 @@ private:
 class CallStackCommand : public Command
 {
 public:
+    CallStackCommand(int sequenceNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
 class FrameCommand : public Command
 {
 public:
-    FrameCommand(int frameNumber_);
+    FrameCommand(int sequenceNumber_, int frameNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 private:
     int frameNumber;
@@ -120,13 +140,14 @@ private:
 class ShowBreakpointsCommand : public Command
 {
 public:
+    ShowBreakpointsCommand(int sequenceNumber_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 };
 
 class SetBreakOnThrowCommand : public Command
 {
 public:
-    SetBreakOnThrowCommand(bool enabled_);
+    SetBreakOnThrowCommand(int sequenceNumber_, bool enabled_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 private:
     bool enabled;
@@ -135,7 +156,7 @@ private:
 class InspectCommand : public Command
 {
 public:
-    InspectCommand(const std::string& expr_);
+    InspectCommand(int sequenceNumber_, const std::string& expr_);
     void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
 private:
     std::string expr;

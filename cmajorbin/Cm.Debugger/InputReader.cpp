@@ -21,7 +21,8 @@ void RunInputReader(InputReader* inputReader)
     inputReader->Run();
 }
 
-InputReader::InputReader(Gdb& gdb_, const std::string& commandFileName_) : gdb(gdb_), lineSet(false), exiting(false), redirecting(false), proceed(0), commandFileName(commandFileName_)
+InputReader::InputReader(Gdb& gdb_, const std::string& commandFileName_) : gdb(gdb_), lineSet(false), exiting(false), redirecting(false), proceed(0), commandFileName(commandFileName_),
+    quitSequenceNumber(-1)
 {
     if (!commandFileName.empty())
     {
@@ -58,7 +59,7 @@ void InputReader::Run()
             {
                 if (noMoreCommands)
                 {
-                    command.reset(new IdeQuitCommand());
+                    command.reset(new IdeQuitCommand(-1));
                 }
                 else
                 {
@@ -67,7 +68,7 @@ void InputReader::Run()
             }
             catch (const std::exception& ex)
             {
-                command.reset(new IdeErrorCommand(ex.what()));
+                command.reset(new IdeErrorCommand(-1, ex.what()));
             }
             bool redirect = redirecting;
             if (redirect && command->IsInputCommand())
@@ -81,7 +82,12 @@ void InputReader::Run()
             {
                 if (redirect && !noMoreCommands)
                 {
-                    IdePrintError("cannot issue debugging commands while redirecting input to program", true);
+                    int sequenceNumber = -1;
+                    if (command)
+                    {
+                        sequenceNumber = command->SequenceNumber();
+                    }
+                    IdePrintError(sequenceNumber, "cannot issue debugging commands while redirecting input to program", true);
                     continue;
                 }
                 {
@@ -125,11 +131,12 @@ void InputReader::Run()
     }
 }
 
-void InputReader::Exit()
+void InputReader::Exit(int quitSequenceNumber_)
 {
     exiting = true;
     Proceed();
     readerThread.join();
+    quitSequenceNumber = quitSequenceNumber_;
 }
 
 void InputReader::StartRedirecting()

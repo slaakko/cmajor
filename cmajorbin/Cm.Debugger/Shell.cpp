@@ -81,11 +81,22 @@ bool Shell::ExecuteNextCommand()
                 return false;
             }
         }
+        catch (const CommandError& ex)
+        {
+            if (Cm::Debugger::ide)
+            {
+                Cm::Debugger::IdePrintError(ex.SequenceNumber(), ex.what());
+            }
+            else
+            {
+                std::cerr << "error: " << ex.what() << "." << std::endl;
+            }
+        }
         catch (const std::exception& ex)
         {
             if (Cm::Debugger::ide)
             {
-                Cm::Debugger::IdePrintError(ex.what());
+                Cm::Debugger::IdePrintError(-1, ex.what());
             }
             else
             {
@@ -97,7 +108,7 @@ bool Shell::ExecuteNextCommand()
     {
         if (Cm::Debugger::ide)
         {
-            Cm::Debugger::IdePrintError(ex.what());
+            Cm::Debugger::IdePrintError(-1, ex.what());
         }
         else
         {
@@ -123,7 +134,7 @@ void Shell::Execute()
     }
     if (ide)
     {
-        IdePrintState("bye", 0, "", "");
+        IdePrintState(inputReader.QuitSequenceNumber(), "bye", 0, "", "");
     }
     else
     {

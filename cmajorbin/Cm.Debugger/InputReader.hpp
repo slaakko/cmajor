@@ -25,12 +25,13 @@ public:
     InputReader(Gdb& gdb_, const std::string& commandFileName_);
     void Start();
     void Run();
-    void Exit();
+    void Exit(int quitSequenceNumber_);
     void StartRedirecting();
     void StopRedirecting();
     void Proceed();
     std::string GetLine();
     std::unique_ptr<IdeCommand> GetIdeCommand();
+    int QuitSequenceNumber() const { return quitSequenceNumber;  }
 private:
     Gdb& gdb;
     std::string commandFileName;
@@ -46,6 +47,7 @@ private:
     std::condition_variable canProceed;
     int proceed;
     std::unique_ptr<IdeCommand> ideCommand;
+    int quitSequenceNumber;
 };
 
 } } // Cm::Debugger
