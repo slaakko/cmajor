@@ -961,12 +961,23 @@ void BreakCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
     try
     {
         Cm::Core::CfgNode* node = debugInfo.GetNode(sourceFileLine);
+        Cm::Core::SourceFileLine cFileLine = node->GetCFileLine();
         if (node)
         {
-            Cm::Core::SourceFileLine cFileLine = node->GetCFileLine();
-            if (!breakOnThrow || breakOnThrow && debugInfo.ThrowNodes().find(node) == debugInfo.ThrowNodes().end())
+            if (node->Kind() == Cm::Core::CfgNodeKind::exitNode)
             {
-                std::shared_ptr<GdbCommand> breakCommand = gdb.Break(cFileLine.ToString());
+                for (Cm::Core::CfgNode* exitNode : node->Function()->Cfg().Exits())
+                {
+                    Cm::Core::SourceFileLine exitCFileLine = exitNode->GetCFileLine();
+                    std::shared_ptr<GdbCommand> breakCommand = gdb.Break(exitCFileLine.ToString());
+                }
+            }
+            else
+            {
+                if (!breakOnThrow || breakOnThrow && debugInfo.ThrowNodes().find(node) == debugInfo.ThrowNodes().end())
+                {
+                    std::shared_ptr<GdbCommand> breakCommand = gdb.Break(cFileLine.ToString());
+                }
             }
             int bpNum = debugInfo.SetBreakpoint(new Breakpoint(cFileLine.ToString(), node));
             Cm::Core::SourceFileLine bpLine(node->Function()->SourceFilePath(), node->GetSourceSpan().Line());
@@ -1001,9 +1012,19 @@ void ClearCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
         Breakpoint* bp = debugInfo.GetBreakpoint(bpNum);
         if (bp)
         {
-            if (!breakOnThrow || breakOnThrow && debugInfo.ThrowNodes().find(bp->Node()) == debugInfo.ThrowNodes().end())
+            if (bp->Node()->Kind() == Cm::Core::CfgNodeKind::exitNode)
             {
-                std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(bp->CFileLine());
+                for (Cm::Core::CfgNode* exitNode : bp->Node()->Function()->Cfg().Exits())
+                {
+                    std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(exitNode->GetCFileLine().ToString());
+                }
+            }
+            else
+            {
+                if (!breakOnThrow || breakOnThrow && debugInfo.ThrowNodes().find(bp->Node()) == debugInfo.ThrowNodes().end())
+                {
+                    std::shared_ptr<GdbCommand> clearCommand = gdb.Clear(bp->CFileLine());
+                }
             }
             debugInfo.RemoveBreakpoint(bpNum);
             if (ide)

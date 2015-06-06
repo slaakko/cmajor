@@ -176,6 +176,7 @@ std::string CfgNodeKindStr(CfgNodeKind kind)
     switch (kind)
     {
         case CfgNodeKind::regularNode: return "regular";
+        case CfgNodeKind::exitNode: return "exit";
         case CfgNodeKind::throwNode: return "throw";
         case CfgNodeKind::catchNode: return "catch";
     }
@@ -459,6 +460,11 @@ void ControlFlowGraph::Dump(Cm::Util::CodeFormatter& formatter)
     }
     formatter.DecIndent();
     formatter.WriteLine("}");
+}
+
+void ControlFlowGraph::AddExit(CfgNode* exitNode)
+{
+    exits.insert(exitNode);
 }
 
 CFunctionDebugInfo::CFunctionDebugInfo() : isMain(false), isUnique(false), file(nullptr)

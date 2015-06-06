@@ -137,6 +137,7 @@ public:
     void Visit(Cm::BoundTree::BoundConjunction& boundConjunction) override;
     void Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncDecExpr) override;
     void BeginVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
+    void BackpatchNextTargets(Ir::Intf::LabelObject* label);
     void EndVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
     void BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
     void EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
@@ -235,6 +236,7 @@ private:
     Cm::Sym::FunctionSymbol* enterTracedCallFun;
     Cm::Sym::FunctionSymbol* leaveTracedCallFun;
     Cm::Sym::SymbolTable* symbolTable;
+    std::stack<std::vector<Ir::Intf::LabelObject*>> nextTargetsStack;
     void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
     void ExitCompound(Cm::Core::GenResult& result, const CompoundDestructionStack& compoundDestructionStack, bool& first);
     void ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromCompound, Cm::BoundTree::BoundCompoundStatement* targetCompound, Cm::Core::GenResult& result);

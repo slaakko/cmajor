@@ -1177,6 +1177,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixI
 void FunctionEmitter::BeginVisitStatement(Cm::BoundTree::BoundStatement& statement)
 {
     genFlags = Cm::Core::GenFlags::none;
+    nextTargetsStack.push(compoundResult->NextTargets());
+    compoundResult->NextTargets().clear();
     if (!statement.Label().empty())
     {
         Ir::Intf::LabelObject* label = Cm::IrIntf::CreateLabel(statement.Label());
@@ -1185,9 +1187,24 @@ void FunctionEmitter::BeginVisitStatement(Cm::BoundTree::BoundStatement& stateme
     }
 }
 
+void FunctionEmitter::BackpatchNextTargets(Ir::Intf::LabelObject* label)
+{
+    std::vector<Ir::Intf::LabelObject*> nextTargets = nextTargetsStack.top();
+    nextTargetsStack.pop();
+    if (label)
+    {
+        Ir::Intf::Backpatch(nextTargets, label);
+    }
+    else
+    {
+        compoundResult->MergeTargets(compoundResult->NextTargets(), nextTargets);
+    }
+}
+
 void FunctionEmitter::EndVisitStatement(Cm::BoundTree::BoundStatement& statement)
 {
     std::shared_ptr<Cm::Core::GenResult> statementResult = resultStack.Pop();
+    BackpatchNextTargets(statementResult->GetLabel());
     if (statementResult->GetLabel())
     {
         compoundResult->BackpatchNextTargets(statementResult->GetLabel());
@@ -1796,6 +1813,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
     }
     std::shared_ptr<Cm::Core::GenResult> thenResult = resultStack.Pop();
     conditionResult->BackpatchTrueTargets(thenResult->GetLabel());
+    BackpatchNextTargets(thenResult->GetLabel());
     Ir::Intf::LabelObject* next = Cm::IrIntf::CreateNextLocalLabel();
     emitter->Own(next);
     result->AddNextTarget(next);
@@ -1817,6 +1835,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundConditionalStatement& boundCo
         }
         std::shared_ptr<Cm::Core::GenResult> elseResult = resultStack.Pop();
         conditionResult->BackpatchFalseTargets(elseResult->GetLabel());
+        BackpatchNextTargets(elseResult->GetLabel());
         result->Merge(elseResult);
     }
     else
@@ -1868,6 +1887,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileSta
     emitter->Emit(Cm::IrIntf::Br(conditionResult->GetLabel()));
     conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
     statementResult->BackpatchNextTargets(conditionResult->GetLabel());
+    BackpatchNextTargets(statementResult->GetLabel());
     result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
     result->MergeTargets(result->NextTargets(), boundWhileStatement.BreakTargetLabels());
     Ir::Intf::Backpatch(boundWhileStatement.ContinueTargetLabels(), conditionResult->GetLabel());
@@ -1921,6 +1941,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement
     std::shared_ptr<Cm::Core::GenResult> conditionResult = resultStack.Pop();
     statementResult->BackpatchNextTargets(conditionResult->GetLabel());
     conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
+    BackpatchNextTargets(statementResult->GetLabel());
     result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
     result->MergeTargets(result->NextTargets(), boundDoStatement.BreakTargetLabels());
     Ir::Intf::Backpatch(boundDoStatement.ContinueTargetLabels(), conditionResult->GetLabel());
@@ -1991,6 +2012,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     condition->Accept(*this);
     std::shared_ptr<Cm::Core::GenResult> conditionResult = resultStack.Pop();
     initResult->BackpatchNextTargets(conditionResult->GetLabel());
+    BackpatchNextTargets(initLabel);
     Cm::BoundTree::BoundStatement* action = boundForStatement.Action();
     BeginVisitStatement(*action);
     action->Accept(*this);
@@ -2000,6 +2022,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     }
     std::shared_ptr<Cm::Core::GenResult> actionResult = resultStack.Pop();
     conditionResult->BackpatchTrueTargets(actionResult->GetLabel());
+    BackpatchNextTargets(actionResult->GetLabel());
     result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
     Cm::BoundTree::BoundExpression* increment = boundForStatement.Increment();
     if (generateDebugInfo)

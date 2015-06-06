@@ -563,6 +563,7 @@ void CFunctionEmitter::CreateExitDebugNode(Cm::BoundTree::BoundStatement& statem
         Emitter()->Own(exitLabel);
         Emitter()->AddNextInstructionLabel(exitLabel);
         DoNothing(*result);
+        CompoundResult()->BackpatchNextTargets(result->GetLabel());
         cfg.AddToPrevNodes(cfgNode);
         Emitter()->SetActiveCfgNode(cfgNode);
         ResultStack().Push(result);
