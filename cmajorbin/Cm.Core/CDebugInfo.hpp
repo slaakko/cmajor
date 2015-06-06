@@ -110,7 +110,7 @@ private:
 
 enum class CfgNodeKind : uint8_t
 {
-    regularNode, throwNode, catchNode
+    regularNode, exitNode, throwNode, catchNode
 };
 
 class CFunctionDebugInfo;
@@ -168,9 +168,12 @@ public:
     void Write(Cm::Ser::BinaryWriter& writer);
     void Dump(Cm::Util::CodeFormatter& formatter);
     bool IsEmpty() const { return nodes.empty(); }
+    const std::unordered_set<CfgNode*>& Exits() const { return exits; }
+    void AddExit(CfgNode* exitNode);
 private:
     std::vector<std::unique_ptr<CfgNode>> nodes;
     std::unordered_set<CfgNode*> prevNodes;
+    std::unordered_set<CfgNode*> exits;
 };
 
 class CDebugInfoFile;

@@ -507,13 +507,23 @@ void DebugInfo::Process(Cm::Core::CDebugInfoFile* file)
         for (const std::unique_ptr<Cm::Core::CfgNode>& node : cfg.Nodes())
         {
             node->SetFunction(functionDebugInfo.get());
-            if (node->Kind() == Cm::Core::CfgNodeKind::throwNode)
+            switch (node->Kind())
             {
-                throwNodes.insert(node.get());
-            }
-            else if (node->Kind() == Cm::Core::CfgNodeKind::catchNode)
-            {
-                catchNodes.insert(node.get());
+                case Cm::Core::CfgNodeKind::exitNode:
+                {
+                    cfg.AddExit(node.get());
+                    break;
+                }
+                case Cm::Core::CfgNodeKind::throwNode:
+                {
+                    throwNodes.insert(node.get());
+                    break;
+                }
+                case Cm::Core::CfgNodeKind::catchNode:
+                {
+                    catchNodes.insert(node.get());
+                    break;
+                }
             }
             Cm::Core::CfgNode* cfgNode = cFile->GetNode(node->CLine());
             if (!cfgNode)

@@ -10,6 +10,7 @@
 #include <Cm.Core/GenData.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <Cm.Core/CDebugInfo.hpp>
 #include <Ir.Intf/Label.hpp>
 #include <iostream>
 #include <stdexcept>
@@ -202,6 +203,13 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
         cDebugNode = nullptr;
     }
     irFunction->AddInstruction(instruction);
+    if (instruction->IsRet())
+    {
+        if (activeCfgNode)
+        {
+            activeCfgNode->SetKind(CfgNodeKind::exitNode);
+        }
+    }
 }
 
 void Emitter::Own(Ir::Intf::Object* object)
