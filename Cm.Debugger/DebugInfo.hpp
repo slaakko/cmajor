@@ -97,7 +97,9 @@ public:
     Breakpoint* GetBreakpoint(const std::string& cFileLine) const;
     Breakpoint* GetBreakpoint(int bpNum) const;
     int SetBreakpoint(Breakpoint* bp);
+    void SetBreakpoint(const std::string& cFileLine, Breakpoint* bp);
     void RemoveBreakpoint(int bpNum);
+    void RemoveBreakpoint(const std::string& cFileLine);
     const BpNumBreakpointMap& Breakpoints() const { return bpNumBreakpointMap; }
     Cm::Core::CfgNode* CurrentNode() const { return currentNode; }
     void SetCurrentNode(Cm::Core::CfgNode* currentNode_) { currentNode = currentNode_; }

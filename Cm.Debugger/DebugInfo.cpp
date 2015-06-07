@@ -274,6 +274,11 @@ int DebugInfo::SetBreakpoint(Breakpoint* bp)
     return bpNum;
 }
 
+void DebugInfo::SetBreakpoint(const std::string& cFileLine, Breakpoint* bp)
+{
+    cFileLineBreakpointMap[cFileLine] = bp;
+}
+
 void DebugInfo::RemoveBreakpoint(int bpNum)
 {
     Breakpoint* bp = GetBreakpoint(bpNum);
@@ -287,6 +292,11 @@ void DebugInfo::RemoveBreakpoint(int bpNum)
     {
         throw std::runtime_error("breakpoint number " + std::to_string(bpNum) + " not found");
     }
+}
+
+void DebugInfo::RemoveBreakpoint(const std::string& cFileLine)
+{
+    cFileLineBreakpointMap.erase(cFileLine);
 }
 
 Cm::Core::CfgNode* DebugInfo::GetNode(const Cm::Core::SourceFileLine& sourceFileLine) const
