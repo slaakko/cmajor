@@ -153,6 +153,13 @@ private:
     bool enabled;
 };
 
+class SourcesCommand : public Command
+{
+public:
+    SourcesCommand(int sequenceNumber_);
+    void Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell) override;
+};
+
 class InspectCommand : public Command
 {
 public:

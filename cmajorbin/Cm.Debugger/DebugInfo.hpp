@@ -118,6 +118,7 @@ public:
     const std::vector<std::string>& ThrowCFileLines() const { return throwCFileLines; }
     const std::unordered_set<Cm::Core::CfgNode*>& CatchNodes() const { return catchNodes; }
     void RemoveCatchNode(Cm::Core::CfgNode* catchNode);
+    const std::vector<std::unique_ptr<SourceFile>>& SourceFiles() const { return sourceFiles; }
 private:
     State state;
     std::vector<std::unique_ptr<Cm::Core::CDebugInfoFile>> files;

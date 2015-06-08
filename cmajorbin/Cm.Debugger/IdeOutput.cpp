@@ -143,4 +143,18 @@ void IdePrintBreakOnThrowReply(int sequenceNumber, bool enabled)
     std::cout << reply.ToString() << std::endl;
 }
 
+void IdePrintSources(int sequenceNumber, const std::vector<std::string>& sources)
+{
+    Cm::Core::JsonObject reply;
+    reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("sources"));
+    reply.AddField(Cm::Core::JsonString("sequence"), new Cm::Core::JsonNumber(sequenceNumber));
+    Cm::Core::JsonArray* sourcesArray = new Cm::Core::JsonArray();
+    for (const std::string& source : sources)
+    {
+        sourcesArray->AddItem(new Cm::Core::JsonString(source));
+    }
+    reply.AddField(Cm::Core::JsonString("sources"), sourcesArray);
+    std::cout << reply.ToString() << std::endl;
+}
+
 } } // Cm::Debugger
