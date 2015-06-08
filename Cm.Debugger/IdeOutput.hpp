@@ -38,6 +38,8 @@ void IdePrintShowBreakpoints(int sequenceNumber, const std::vector<Breakpoint*>&
 
 void IdePrintBreakOnThrowReply(int sequenceNumber, bool enabled);
 
+void IdePrintSources(int sequenceNumber, const std::vector<std::string>& sources);
+
 } } // Cm::Debugger
 
 #endif // CM_DEBUGGER_IDE_OUTPUT_INCLUDED

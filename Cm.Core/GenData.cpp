@@ -205,7 +205,7 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
     irFunction->AddInstruction(instruction);
     if (instruction->IsRet())
     {
-        if (activeCfgNode)
+        if (activeCfgNode && activeCfgNode->Kind() == CfgNodeKind::regularNode)
         {
             activeCfgNode->SetKind(CfgNodeKind::exitNode);
         }

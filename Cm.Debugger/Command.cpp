@@ -15,6 +15,7 @@
 #include <Cm.Debugger/Util.hpp>
 #include <Cm.Debugger/GdbReply.hpp>
 #include <Cm.Debugger/IdeOutput.hpp>
+#include <algorithm>
 #include <iostream>
 
 namespace Cm { namespace Debugger {
@@ -1255,6 +1256,31 @@ void SetBreakOnThrowCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader
     catch (const std::exception& ex)
     {
         throw CommandError(SequenceNumber(), ex.what());
+    }
+}
+
+SourcesCommand::SourcesCommand(int sequenceNumber_) : Command(sequenceNumber_)
+{
+}
+
+void SourcesCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReader, Shell& shell)
+{
+    std::vector<std::string> sources;
+    for (const std::unique_ptr<SourceFile>& sourceFile : debugInfo.SourceFiles())
+    {
+        sources.push_back(sourceFile->FilePath());
+    }
+    std::sort(sources.begin(), sources.end());
+    if (ide)
+    {
+        IdePrintSources(SequenceNumber(), sources);
+    }
+    else
+    {
+        for (const std::string& source : sources)
+        {
+            std::cout << source << std::endl;
+        }
     }
 }
 

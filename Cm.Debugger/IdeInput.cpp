@@ -335,6 +335,15 @@ void IdeSetBreakOnThrowCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
     }
 }
 
+IdeSourcesCommand::IdeSourcesCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
+}
+
+CommandPtr IdeSourcesCommand::ToShellCommand() const
+{
+    return CommandPtr(new SourcesCommand(SequenceNumber()));
+}
+
 Cm::Parser::JsonGrammar* jsonGrammar = nullptr;
 
 std::unique_ptr<IdeCommand> ParseIdeCommand(const std::string& commandLine)
@@ -404,6 +413,7 @@ void InitIdeInput()
     IdeCommandFactory::Instance().Register(new ConcreteIdeCommandCreator<IdeFrameCommand>("frame"));
     IdeCommandFactory::Instance().Register(new ConcreteIdeCommandCreator<IdeShowBreakpointsCommand>("showBreakpoints"));
     IdeCommandFactory::Instance().Register(new ConcreteIdeCommandCreator<IdeSetBreakOnThrowCommand>("setBreakOnThrow"));
+    IdeCommandFactory::Instance().Register(new ConcreteIdeCommandCreator<IdeSourcesCommand>("sources"));
 }
 
 void DoneIdeInput()

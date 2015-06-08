@@ -149,6 +149,13 @@ private:
     bool enable;
 };
 
+class IdeSourcesCommand : public IdeCommand
+{
+public:
+    IdeSourcesCommand(int sequenceNumber_);
+    CommandPtr ToShellCommand() const override;
+};
+
 std::unique_ptr<IdeCommand> ParseIdeCommand(const std::string& commandLine);
 
 void InitIdeInput();
