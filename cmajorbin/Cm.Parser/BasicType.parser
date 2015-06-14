@@ -16,7 +16,7 @@ namespace Cm.Parser
     grammar BasicTypeGrammar
     {
         BasicType: Cm::Ast::Node*
-            ::= keyword("bool"){ value = new BoolNode(span); }
+            ::=  keyword("bool"){ value = new BoolNode(span); }
             |    keyword("sbyte"){ value = new SByteNode(span); }
             |    keyword("byte"){ value = new ByteNode(span); }
             |    keyword("short"){ value = new ShortNode(span); }

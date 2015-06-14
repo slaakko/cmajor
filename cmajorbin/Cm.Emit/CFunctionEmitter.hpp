@@ -42,7 +42,7 @@ public:
     void Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBeginCatchStatement) override;
     Cm::Core::CFunctionDebugInfo* ReleaseFunctionDebugInfo() { return functionDebugInfo.release(); }
 
-    void CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevSet) override;
+    Cm::Core::CfgNode* CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevSet) override;
     void CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span) override;
     void AddDebugNodeTransition(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
     void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundStatement& toStatement) override;
@@ -58,6 +58,7 @@ public:
     void SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
     void PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode) override;
     void SetCFilePath(const std::string& cFilePath_) { cFilePath = cFilePath_; }
+    Cm::Core::CFunctionDebugInfo* GetFunctionDebugInfo() const override { return functionDebugInfo.get(); }
 private:
     std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap;
     bool generateDebugInfo;

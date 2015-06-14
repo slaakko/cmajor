@@ -34,6 +34,7 @@ private:
     std::unique_ptr<Cm::Util::MappedInputFile> currentSourceFile;
     int funLine;
     std::string cFilePath;
+    void GenerateDebugInfo(Cm::Sym::ClassTypeSymbol* classTypeSymbol);
 };
 
 } } // namespace Cm::Emit

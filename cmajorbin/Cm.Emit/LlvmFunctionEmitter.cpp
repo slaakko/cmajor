@@ -263,9 +263,10 @@ void LlvmFunctionEmitter::SetCallDebugInfoInfo(Ir::Intf::Instruction* callInst, 
     // nothing to do for LLVM backend
 }
 
-void LlvmFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes)
+Cm::Core::CfgNode* LlvmFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes)
 {
     // nothing to do for LLVM backend
+    return nullptr;
 }
 
 void LlvmFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span)

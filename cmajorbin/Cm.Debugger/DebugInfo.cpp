@@ -473,6 +473,16 @@ void DebugInfo::RemoveCatchNode(Cm::Core::CfgNode* catchNode)
     catchNodes.erase(catchNode);
 }
 
+Cm::Core::ClassDebugInfo* DebugInfo::GetClassDebugInfo(const std::string& fullClassName) const
+{
+    ClassDebugInfoMapIt i = classDebugInfoMap.find(fullClassName);
+    if (i != classDebugInfoMap.end())
+    {
+        return i->second;
+    }
+    return nullptr;
+}
+
 void DebugInfo::SetSourceFile(const std::string& filePath, SourceFile* sourceFile)
 {
     sourceFileMap[filePath] = sourceFile;
@@ -588,6 +598,10 @@ void DebugInfo::Process(Cm::Core::CDebugInfoFile* file)
         {
             file->AddFunctionDebugInfoToMap(functionDebugInfo.get());
         }
+    }
+    for (const std::unique_ptr<Cm::Core::ClassDebugInfo>& classDebugInfo : file->ClassDebugInfos())
+    {
+        classDebugInfoMap[classDebugInfo->FullName()] = classDebugInfo.get();
     }
 }
 

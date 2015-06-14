@@ -344,6 +344,31 @@ CommandPtr IdeSourcesCommand::ToShellCommand() const
     return CommandPtr(new SourcesCommand(SequenceNumber()));
 }
 
+IdeInspectCommand::IdeInspectCommand(int sequenceNumber_) : IdeCommand(sequenceNumber_)
+{
+}
+
+CommandPtr IdeInspectCommand::ToShellCommand() const
+{
+    return CommandPtr(new InspectCommand(SequenceNumber(), expr));
+}
+
+void IdeInspectCommand::SetDataFrom(Cm::Core::JsonValue* jsonValue)
+{
+    if (!jsonValue)
+    {
+        throw std::runtime_error("IDE inspect command contains no data field");
+    }
+    if (jsonValue->IsString())
+    {
+        expr = static_cast<Cm::Core::JsonString*>(jsonValue)->Value();
+    }
+    else
+    {
+        throw std::runtime_error("IDE inspect command data is not a JSON string");
+    }
+}
+
 Cm::Parser::JsonGrammar* jsonGrammar = nullptr;
 
 std::unique_ptr<IdeCommand> ParseIdeCommand(const std::string& commandLine)
@@ -414,6 +439,7 @@ void InitIdeInput()
     IdeCommandFactory::Instance().Register(new ConcreteIdeCommandCreator<IdeShowBreakpointsCommand>("showBreakpoints"));
     IdeCommandFactory::Instance().Register(new ConcreteIdeCommandCreator<IdeSetBreakOnThrowCommand>("setBreakOnThrow"));
     IdeCommandFactory::Instance().Register(new ConcreteIdeCommandCreator<IdeSourcesCommand>("sources"));
+    IdeCommandFactory::Instance().Register(new ConcreteIdeCommandCreator<IdeInspectCommand>("inspect"));
 }
 
 void DoneIdeInput()

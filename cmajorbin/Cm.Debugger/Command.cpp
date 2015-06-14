@@ -15,6 +15,7 @@
 #include <Cm.Debugger/Util.hpp>
 #include <Cm.Debugger/GdbReply.hpp>
 #include <Cm.Debugger/IdeOutput.hpp>
+#include <Cm.Debugger/Inspect.hpp>
 #include <algorithm>
 #include <iostream>
 
@@ -1292,7 +1293,20 @@ void InspectCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputR
 {
     try
     {
-        // todo
+        Cm::Core::CfgNode* currentNode = debugInfo.CurrentNode();
+        if (!currentNode)
+        {
+            throw std::runtime_error("current node not set");
+        }
+        Cm::Core::CFunctionDebugInfo* currentFunction = currentNode->Function();
+        if (!currentFunction)
+        {
+            throw std::runtime_error("current function not set");
+        }
+        Inspector inspector(gdb, debugInfo, currentNode);
+        inspector.Parse(expr);
+        std::vector<std::unique_ptr<Result>> results = inspector.GetResults();
+        IdePrintInspectResults(SequenceNumber(), results);
     }
     catch (const std::exception& ex)
     {

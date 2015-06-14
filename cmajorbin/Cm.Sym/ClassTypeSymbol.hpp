@@ -41,7 +41,8 @@ enum class ClassTypeSymbolFlags : uint32_t
     generateMoveConstructor = 1 << 18,
     generateCopyAssignment = 1 << 19,
     generateMoveAssignment = 1 << 20,
-    generateDestructor = 1 << 21
+    generateDestructor = 1 << 21,
+    debugInfoGenerated = 1 << 22
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -268,6 +269,14 @@ public:
     void SetGenerateDestructor()
     {
         SetFlag(ClassTypeSymbolFlags::generateDestructor);
+    }
+    bool DebugInfoGenerated() const 
+    {
+        return GetFlag(ClassTypeSymbolFlags::debugInfoGenerated);
+    }
+    void SetDebugInfoGenerated()
+    {
+        SetFlag(ClassTypeSymbolFlags::debugInfoGenerated);
     }
     FunctionSymbol* Destructor() const { return destructor; }
     FunctionSymbol* StaticConstructor() const { return staticConstructor; }

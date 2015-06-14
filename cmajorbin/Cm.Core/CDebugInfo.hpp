@@ -176,6 +176,41 @@ private:
     std::unordered_set<CfgNode*> exits;
 };
 
+class Local
+{
+public:
+    Local();
+    Local(const std::string& name_, const std::string& irName_, const std::string& typeName_, int32_t defNode_);
+    const std::string& Name() const { return name; }
+    const std::string& IrName() const { return irName; }
+    const std::string& TypeName() const { return typeName; }
+    void Read(Cm::Ser::BinaryReader& reader);
+    void Write(Cm::Ser::BinaryWriter& writer);
+    void Dump(Cm::Util::CodeFormatter& formatter);
+    int32_t DefNode() const { return defNode; }
+private:
+    std::string name;
+    std::string irName;
+    std::string typeName;
+    int32_t defNode;
+};
+
+class LocalSection
+{
+public:
+    LocalSection();
+    void AddLocal(Local* local);
+    Local* GetLocal(const std::string& localName) const;
+    void Read(Cm::Ser::BinaryReader& reader);
+    void Write(Cm::Ser::BinaryWriter& writer);
+    void Dump(Cm::Util::CodeFormatter& formatter);
+private:
+    typedef std::unordered_map<std::string, Local*> LocalMap;
+    typedef LocalMap::const_iterator LocalMapIt;
+    LocalMap localMap;
+    std::vector<std::unique_ptr<Local>> locals;
+};
+
 class CDebugInfoFile;
 
 class CFunctionDebugInfo
@@ -191,6 +226,7 @@ public:
     void SetFunctionDisplayName(const std::string& functionDisplayName_);
     const std::string& FunctionDisplayName() const { return functionDisplayName; }
     ControlFlowGraph& Cfg() { return cfg; }
+    LocalSection& Locals() { return locals; }
     void SetSourceFilePath(const std::string& sourceFilePath_);
     const std::string& SourceFilePath() const { return sourceFilePath; }
     void SetCFilePath(const std::string& cFilePath_);
@@ -210,7 +246,68 @@ private:
     ControlFlowGraph cfg;
     std::string sourceFilePath;
     std::string cFilePath;
+    LocalSection locals;
     CDebugInfoFile* file;
+};
+
+enum class ClassDebugInfoFlags : uint8_t
+{
+    none = 0,
+    isVirtual = 1 << 0, 
+    hasVptr = 1 << 1
+};
+
+inline ClassDebugInfoFlags operator|(ClassDebugInfoFlags left, ClassDebugInfoFlags right)
+{
+    return ClassDebugInfoFlags(uint8_t(left) | uint8_t(right));
+}
+
+inline ClassDebugInfoFlags operator&(ClassDebugInfoFlags left, ClassDebugInfoFlags right)
+{
+    return ClassDebugInfoFlags(uint8_t(left) & uint8_t(right));
+}
+
+class MemberVariableDebugInfo
+{
+public:
+    MemberVariableDebugInfo();
+    MemberVariableDebugInfo(const std::string& memberVarName_, const std::string& memberVarTypeName_);
+    const std::string& MemberVarName() const { return memberVarName; }
+    const std::string& MemberVarTypeName() const { return memberVarTypeName; }
+    void Read(Cm::Ser::BinaryReader& reader);
+    void Write(Cm::Ser::BinaryWriter& writer);
+    void Dump(Cm::Util::CodeFormatter& formatter);
+private:
+    std::string memberVarName;
+    std::string memberVarTypeName;
+};
+
+class ClassDebugInfo
+{
+public:
+    ClassDebugInfo();
+    ClassDebugInfo(const std::string& fullName_, const std::string& baseClassFullName_, const std::string& irTypeName_);
+    bool IsVirtual() const { return GetFlag(ClassDebugInfoFlags::isVirtual); }
+    void SetVirtual() { SetFlag(ClassDebugInfoFlags::isVirtual); }
+    bool HasVptr() const { return GetFlag(ClassDebugInfoFlags::hasVptr); }
+    void SetHasVptr() { SetFlag(ClassDebugInfoFlags::hasVptr); }
+    const std::string& FullName() const { return fullName; }
+    const std::string& BaseClassFullName() const { return baseClassFullName; }
+    const std::string& IrTypeName() const { return irTypeName; }
+    void AddMemberVariable(const MemberVariableDebugInfo& memberVariable);
+    const std::vector<MemberVariableDebugInfo>& MemberVariables() const { return memberVariables; }
+    MemberVariableDebugInfo* GetMemberVariable(const std::string& memberVarName) const;
+    void Read(Cm::Ser::BinaryReader& reader);
+    void Write(Cm::Ser::BinaryWriter& writer);
+    void Dump(Cm::Util::CodeFormatter& formatter);
+private:
+    ClassDebugInfoFlags flags;
+    std::string fullName;
+    std::string baseClassFullName;
+    std::string irTypeName;
+    std::vector<MemberVariableDebugInfo> memberVariables;
+    bool GetFlag(ClassDebugInfoFlags flag) const { return (flags & flag) != ClassDebugInfoFlags::none; }
+    void SetFlag(ClassDebugInfoFlags flag) { flags = flags | flag; }
 };
 
 class CDebugInfoFile
@@ -225,11 +322,14 @@ public:
     void Dump(Cm::Util::CodeFormatter& formatter);
     void AddFunctionDebugInfoToMap(CFunctionDebugInfo* functionDebugInfo);
     CFunctionDebugInfo* GetFunctionDebugInfo(const std::string& mangledFunctionName) const;
+    void AddClassDebugInfo(ClassDebugInfo* classDebugInfo);
+    const std::vector<std::unique_ptr<ClassDebugInfo>>& ClassDebugInfos() const { return classDebugInfos; }
 private:
     std::vector<std::unique_ptr<CFunctionDebugInfo>> functionDebugInfos;
     typedef std::unordered_map<std::string, CFunctionDebugInfo*> FunctionDebugInfoMap;
     typedef FunctionDebugInfoMap::const_iterator FunctionDebugInfoMapIt;
     FunctionDebugInfoMap functionDebugInfoMap;
+    std::vector<std::unique_ptr<ClassDebugInfo>> classDebugInfos;
 };
 
 } } // namespace Cm::Core

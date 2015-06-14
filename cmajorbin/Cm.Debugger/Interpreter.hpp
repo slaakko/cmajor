@@ -1,5 +1,5 @@
-#ifndef Interpreter_hpp_25326
-#define Interpreter_hpp_25326
+#ifndef Interpreter_hpp_1883
+#define Interpreter_hpp_1883
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -25,4 +25,4 @@ private:
 
 } } // namespace Cm.Debugger
 
-#endif // Interpreter_hpp_25326
+#endif // Interpreter_hpp_1883

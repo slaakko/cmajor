@@ -171,10 +171,17 @@
     <ClCompile Include="IdeInput.cpp" />
     <ClCompile Include="IdeOutput.cpp" />
     <ClCompile Include="InputReader.cpp" />
+    <ClCompile Include="Inspect.cpp" />
+    <ClCompile Include="InspectExpr.cpp" />
+    <ClCompile Include="InspectNode.cpp" />
     <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Result.cpp" />
     <ClCompile Include="Shell.cpp" />
+    <ClCompile Include="Type.cpp" />
+    <ClCompile Include="TypeExpr.cpp" />
     <ClCompile Include="Util.cpp" />
+    <ClCompile Include="Value.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Command.hpp" />
@@ -184,15 +191,25 @@
     <ClInclude Include="IdeInput.hpp" />
     <ClInclude Include="IdeOutput.hpp" />
     <ClInclude Include="InputReader.hpp" />
+    <ClInclude Include="Inspect.hpp" />
+    <ClInclude Include="InspectExpr.hpp" />
+    <ClInclude Include="InspectNode.hpp" />
     <ClInclude Include="Interpreter.hpp" />
+    <ClInclude Include="Result.hpp" />
     <ClInclude Include="Shell.hpp" />
+    <ClInclude Include="Type.hpp" />
+    <ClInclude Include="TypeExpr.hpp" />
     <ClInclude Include="Util.hpp" />
+    <ClInclude Include="Value.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GdbReply.parser" />
+    <None Include="InspectExpr.parser" />
     <None Include="Interpreter.parser" />
     <None Include="Parsers.pl" />
     <None Include="Parsers.pp" />
+    <None Include="Result.parser" />
+    <None Include="TypeExpr.parser" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
