@@ -40,6 +40,10 @@ void IdePrintBreakOnThrowReply(int sequenceNumber, bool enabled);
 
 void IdePrintSources(int sequenceNumber, const std::vector<std::string>& sources);
 
+class Result;
+
+void IdePrintInspectResults(int sequenceNumber, const std::vector<std::unique_ptr<Result>>& results);
+
 } } // Cm::Debugger
 
 #endif // CM_DEBUGGER_IDE_OUTPUT_INCLUDED

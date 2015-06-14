@@ -83,6 +83,21 @@ void DerivationList::RemoveReference()
     numDerivations -= uint8_t(&derivations[numDerivations] - new_end);
 }
 
+struct IsReferenceOrRvalueRef
+{
+    bool operator()(Derivation derivation) const
+    {
+        return derivation == Derivation::reference || derivation == Derivation::rvalueRef;
+    }
+};
+
+void DerivationList::RemoveReferenceOrRvalueRef()
+{
+    Derivation* new_end = std::remove_if(&derivations[0], &derivations[numDerivations], IsReferenceOrRvalueRef());
+    std::fill(new_end, &derivations[numDerivations], Derivation());
+    numDerivations -= uint8_t(&derivations[numDerivations] - new_end);
+}
+
 bool operator==(const DerivationList& left, const DerivationList& right)
 {
     uint8_t n = left.NumDerivations();

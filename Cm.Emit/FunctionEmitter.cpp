@@ -1280,6 +1280,40 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompo
 void FunctionEmitter::Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveStatement)
 {
     Cm::Sym::ParameterSymbol* parameterSymbol = boundReceiveStatement.GetParameterSymbol();
+    if (generateDebugInfo)
+    {
+        Cm::Parsing::Span span = Cm::Parsing::Span(0, 0, 0, 0);
+        if (boundReceiveStatement.SyntaxNode())
+        {
+            span = boundReceiveStatement.SyntaxNode()->GetSpan();
+        }
+        Cm::Core::CfgNode* node = CreateDebugNode(boundReceiveStatement, span, true);
+        if (!node)
+        {
+            throw std::runtime_error("node is null");
+        }
+        int32_t defNode = node->Id();
+        std::string irName;
+        Ir::Intf::Object* irObject = localVariableIrObjectRepository.GetLocalVariableIrObject(parameterSymbol);
+        if (irObject)
+        {
+            irName = irObject->Name();
+        }
+        else
+        {
+            throw std::runtime_error("irObject is null");
+        }
+        std::string typeName = parameterSymbol->GetType()->FullName();
+        Cm::Core::CFunctionDebugInfo* functionDebugInfo = GetFunctionDebugInfo();
+        if (functionDebugInfo)
+        {
+            functionDebugInfo->Locals().AddLocal(new Cm::Core::Local(parameterSymbol->Name(), irName, typeName, defNode));
+        }
+        else
+        {
+            throw std::runtime_error("functionDebugInfo is null");
+        }
+    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     result->SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(parameterSymbol));
     Ir::Intf::Parameter* irParameter = irFunctionRepository.CreateIrParameter(parameterSymbol);
@@ -1514,7 +1548,33 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConstructionStatement& boundCons
         {
             throw std::runtime_error("syntax node not set");
         }
-        CreateDebugNode(boundConstructionStatement, boundConstructionStatement.SyntaxNode()->GetSpan(), true);
+        Cm::Core::CfgNode* node = CreateDebugNode(boundConstructionStatement, boundConstructionStatement.SyntaxNode()->GetSpan(), true);
+        if (!node)
+        {
+            throw std::runtime_error("node is null");
+        }
+        int32_t defNode = node->Id();
+        Cm::Sym::LocalVariableSymbol* variable = boundConstructionStatement.LocalVariable();
+        std::string irName;
+        Ir::Intf::Object* irObject = localVariableIrObjectRepository.GetLocalVariableIrObject(variable);
+        if (irObject)
+        {
+            irName = irObject->Name();
+        }
+        else
+        {
+            throw std::runtime_error("irObject is null");
+        }
+        std::string typeName = variable->GetType()->FullName();
+        Cm::Core::CFunctionDebugInfo* functionDebugInfo = GetFunctionDebugInfo();
+        if (functionDebugInfo)
+        {
+            functionDebugInfo->Locals().AddLocal(new Cm::Core::Local(variable->Name(), irName, typeName, defNode));
+        }
+        else
+        {
+            throw std::runtime_error("functionDebugInfo is null");
+        }
     }
     int n = boundConstructionStatement.Arguments().Count();
     Ir::Intf::LabelObject* resultLabel = nullptr;

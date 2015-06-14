@@ -467,6 +467,90 @@ void ControlFlowGraph::AddExit(CfgNode* exitNode)
     exits.insert(exitNode);
 }
 
+Local::Local() : name(), irName(), typeName(), defNode(-1)
+{
+}
+
+Local::Local(const std::string& name_, const std::string& irName_, const std::string& typeName_, int32_t defNode_) : name(name_), irName(irName_), typeName(typeName_), defNode(defNode_)
+{
+}
+
+void Local::Read(Cm::Ser::BinaryReader& reader)
+{
+    name = reader.ReadString();
+    irName = reader.ReadString();
+    typeName = reader.ReadString();
+    defNode = reader.ReadInt();
+}
+
+void Local::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(name);
+    writer.Write(irName);
+    writer.Write(typeName);
+    writer.Write(defNode);
+}
+
+void Local::Dump(Cm::Util::CodeFormatter& formatter)
+{
+    formatter.WriteLine(name + ":" + irName + ":" + typeName + ":" + std::to_string(defNode));
+}
+
+LocalSection::LocalSection()
+{
+}
+
+void LocalSection::AddLocal(Local* local)
+{
+    locals.push_back(std::unique_ptr<Local>(local));
+    localMap[local->Name()] = local;
+}
+
+Local* LocalSection::GetLocal(const std::string& localName) const
+{
+    LocalMapIt i = localMap.find(localName);
+    if (i != localMap.end())
+    {
+        return i->second;
+    }
+    return nullptr;
+}
+
+void LocalSection::Read(Cm::Ser::BinaryReader& reader)
+{
+    int32_t n = reader.ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Local* local = new Local();
+        local->Read(reader);
+        AddLocal(local);
+    }
+}
+
+void LocalSection::Write(Cm::Ser::BinaryWriter& writer)
+{
+    int32_t n = int32_t(locals.size());
+    writer.Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        const std::unique_ptr<Local>& local = locals[i];
+        local->Write(writer);
+    }
+}
+
+void LocalSection::Dump(Cm::Util::CodeFormatter& formatter)
+{
+    formatter.WriteLine("locals:");
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    for (const std::unique_ptr<Local>& local : locals)
+    {
+        local->Dump(formatter);
+    }
+    formatter.DecIndent();
+    formatter.WriteLine("}");
+}
+
 CFunctionDebugInfo::CFunctionDebugInfo() : isMain(false), isUnique(false), file(nullptr)
 {
 }
@@ -505,6 +589,7 @@ void CFunctionDebugInfo::Read(Cm::Ser::BinaryReader& reader)
     cfg.Read(reader);
     sourceFilePath = reader.ReadString();
     cFilePath = reader.ReadString();
+    locals.Read(reader);
 }
 
 void CFunctionDebugInfo::Write(Cm::Ser::BinaryWriter& writer)
@@ -516,6 +601,7 @@ void CFunctionDebugInfo::Write(Cm::Ser::BinaryWriter& writer)
     cfg.Write(writer);
     writer.Write(sourceFilePath);
     writer.Write(cFilePath);
+    locals.Write(writer);
 }
 
 void CFunctionDebugInfo::Dump(Cm::Util::CodeFormatter& formatter)
@@ -529,6 +615,7 @@ void CFunctionDebugInfo::Dump(Cm::Util::CodeFormatter& formatter)
     formatter.WriteLine("source file path: " + sourceFilePath + ";");
     formatter.WriteLine("C file path: " + cFilePath + ";");
     cfg.Dump(formatter);
+    locals.Dump(formatter);
     formatter.DecIndent();
     formatter.WriteLine("}");
 }
@@ -540,6 +627,109 @@ CfgNode* CFunctionDebugInfo::Entry() const
         throw std::runtime_error("cfg for function '" + mangledFunctionName + "' is empty");
     }
     return cfg.GetNode(0);
+}
+
+MemberVariableDebugInfo::MemberVariableDebugInfo() : memberVarName(), memberVarTypeName()
+{
+}
+
+MemberVariableDebugInfo::MemberVariableDebugInfo(const std::string& memberVarName_, const std::string& memberVarTypeName_) : memberVarName(memberVarName_), memberVarTypeName(memberVarTypeName_)
+{
+}
+
+void MemberVariableDebugInfo::Read(Cm::Ser::BinaryReader& reader)
+{
+    memberVarName = reader.ReadString();
+    memberVarTypeName = reader.ReadString();
+}
+
+void MemberVariableDebugInfo::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(memberVarName);
+    writer.Write(memberVarTypeName);
+}
+
+void MemberVariableDebugInfo::Dump(Cm::Util::CodeFormatter& formatter)
+{
+    formatter.WriteLine("name=" + memberVarName + ":type=" + memberVarTypeName + ";");
+}
+
+ClassDebugInfo::ClassDebugInfo() : flags(ClassDebugInfoFlags::none), fullName(), baseClassFullName(), memberVariables()
+{
+}
+
+ClassDebugInfo::ClassDebugInfo(const std::string& fullName_, const std::string& baseClassFullName_, const std::string& irTypeName_) : 
+    flags(ClassDebugInfoFlags::none), fullName(fullName_), baseClassFullName(baseClassFullName_), irTypeName(irTypeName_)
+{
+}
+
+void ClassDebugInfo::AddMemberVariable(const MemberVariableDebugInfo& memberVariable)
+{
+    memberVariables.push_back(memberVariable);
+}
+
+MemberVariableDebugInfo* ClassDebugInfo::GetMemberVariable(const std::string& memberVarName) const
+{
+    for (const MemberVariableDebugInfo& memberVar : memberVariables)
+    {
+        if (memberVar.MemberVarName() == memberVarName) return const_cast<MemberVariableDebugInfo*>(&memberVar);
+    }
+    return nullptr;
+}
+
+void ClassDebugInfo::Read(Cm::Ser::BinaryReader& reader)
+{
+    flags = ClassDebugInfoFlags(reader.ReadByte());
+    fullName = reader.ReadString();
+    baseClassFullName = reader.ReadString();
+    irTypeName = reader.ReadString();
+    int n = reader.ReadInt();
+    for (int i = 0; i < n; ++i)
+    {
+        MemberVariableDebugInfo memberVar;
+        memberVar.Read(reader);
+        AddMemberVariable(memberVar);
+    }
+}
+void ClassDebugInfo::Write(Cm::Ser::BinaryWriter& writer)
+{
+    writer.Write(uint8_t(flags));
+    writer.Write(fullName);
+    writer.Write(baseClassFullName);
+    writer.Write(irTypeName);
+    int n = int(memberVariables.size());
+    writer.Write(n);
+    for (MemberVariableDebugInfo& memberVar : memberVariables)
+    {
+        memberVar.Write(writer);
+    }
+}
+
+void ClassDebugInfo::Dump(Cm::Util::CodeFormatter& formatter)
+{
+    std::string derivation;
+    if (!baseClassFullName.empty())
+    {
+        derivation.append(" : ").append(baseClassFullName);
+    }
+    formatter.WriteLine("class " + fullName + derivation);
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    formatter.WriteLine("irTypeName=" + irTypeName + ";");
+    if (IsVirtual())
+    {
+        formatter.WriteLine("virtual;");
+    }
+    if (HasVptr())
+    {
+        formatter.WriteLine("hasVptr;");
+    }
+    for (MemberVariableDebugInfo& memberVar : memberVariables)
+    {
+        memberVar.Dump(formatter);
+    }
+    formatter.DecIndent();
+    formatter.WriteLine("}");
 }
 
 CDebugInfoFile::CDebugInfoFile()
@@ -575,6 +765,13 @@ void CDebugInfoFile::Read(Cm::Ser::BinaryReader& reader)
         functionDebugInfo->Read(reader);
         AddFunctionDebugInfo(functionDebugInfo);
     }
+    int32_t nClassDebugInfos = reader.ReadInt();
+    for (int i = 0; i < nClassDebugInfos; ++i)
+    {
+        ClassDebugInfo* classDebugInfo = new ClassDebugInfo();
+        classDebugInfo->Read(reader);
+        AddClassDebugInfo(classDebugInfo);
+    }
 }
 
 void CDebugInfoFile::Write(Cm::Ser::BinaryWriter& writer)
@@ -585,6 +782,12 @@ void CDebugInfoFile::Write(Cm::Ser::BinaryWriter& writer)
     {
         functionDebugInfo->Write(writer);
     }
+    int32_t nClassDebugInfos = int32_t(classDebugInfos.size());
+    writer.Write(nClassDebugInfos);
+    for (const std::unique_ptr<ClassDebugInfo>& classDebugInfo : classDebugInfos)
+    {
+        classDebugInfo->Write(writer);
+    }
 }
 
 void CDebugInfoFile::Dump(Cm::Util::CodeFormatter& formatter)
@@ -592,6 +795,10 @@ void CDebugInfoFile::Dump(Cm::Util::CodeFormatter& formatter)
     for (const std::unique_ptr<CFunctionDebugInfo>& functionDebugInfo : functionDebugInfos)
     {
         functionDebugInfo->Dump(formatter);
+    }
+    for (const std::unique_ptr<ClassDebugInfo>& classDebugInfo : classDebugInfos)
+    {
+        classDebugInfo->Dump(formatter);
     }
 }
 
@@ -608,6 +815,11 @@ CFunctionDebugInfo* CDebugInfoFile::GetFunctionDebugInfo(const std::string& mang
         return i->second;
     }
     return nullptr;
+}
+
+void CDebugInfoFile::AddClassDebugInfo(ClassDebugInfo* classDebugInfo)
+{
+    classDebugInfos.push_back(std::unique_ptr<ClassDebugInfo>(classDebugInfo));
 }
 
 } } // namespace Cm::Core

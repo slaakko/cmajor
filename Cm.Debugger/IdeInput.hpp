@@ -156,6 +156,16 @@ public:
     CommandPtr ToShellCommand() const override;
 };
 
+class IdeInspectCommand : public IdeCommand
+{
+public:
+    IdeInspectCommand(int sequenceNumber_);
+    CommandPtr ToShellCommand() const override;
+    void SetDataFrom(Cm::Core::JsonValue* jsonValue) override;
+private:
+    std::string expr;
+};
+
 std::unique_ptr<IdeCommand> ParseIdeCommand(const std::string& commandLine);
 
 void InitIdeInput();

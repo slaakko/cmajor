@@ -118,6 +118,12 @@ public:
     GdbFrameCommand(int frameNumber);
 };
 
+class GdbPrintCommand : public GdbCommand
+{
+public:    
+    GdbPrintCommand(const std::string& expr);
+};
+
 class Gdb
 {
 public:
@@ -131,6 +137,7 @@ public:
     std::shared_ptr<GdbCommand> Clear(const std::string& cFileLine);
     std::shared_ptr<GdbCommand> BackTrace();
     std::shared_ptr<GdbCommand> Frame(int frameNumber);
+    std::shared_ptr<GdbCommand> Print(const std::string& expr);
     std::string Read();
     ContinueReplyData ReadContinueReply();
     void Write(const std::string& message);

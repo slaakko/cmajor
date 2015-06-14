@@ -119,6 +119,7 @@ public:
     const std::unordered_set<Cm::Core::CfgNode*>& CatchNodes() const { return catchNodes; }
     void RemoveCatchNode(Cm::Core::CfgNode* catchNode);
     const std::vector<std::unique_ptr<SourceFile>>& SourceFiles() const { return sourceFiles; }
+    Cm::Core::ClassDebugInfo* GetClassDebugInfo(const std::string& fullClassName) const;
 private:
     State state;
     std::vector<std::unique_ptr<Cm::Core::CDebugInfoFile>> files;
@@ -144,6 +145,9 @@ private:
     typedef CFileMap::const_iterator CFileMapIt;
     CFileMap cFileMap;
     std::vector<std::unique_ptr<CFile>> cFiles;
+    typedef std::unordered_map<std::string, Cm::Core::ClassDebugInfo*> ClassDebugInfoMap;
+    typedef ClassDebugInfoMap::const_iterator ClassDebugInfoMapIt;
+    ClassDebugInfoMap classDebugInfoMap;
     void SetSourceFile(const std::string& filePath, SourceFile* sourceFile);
     CFile* GetCFile(const std::string& cFilePath) const;
     void SetCFile(const std::string& cFilePath, CFile* cFile);

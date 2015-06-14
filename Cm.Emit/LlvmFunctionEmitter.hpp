@@ -34,7 +34,7 @@ public:
     Ir::Intf::Object* MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source) override;
     void SetCallDebugInfoInfo(Ir::Intf::Instruction* callInst, Ir::Intf::Function* fun) override;
 
-    void CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes) override;
+    Cm::Core::CfgNode* CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes) override;
     void CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span) override;
     void AddDebugNodeTransition(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) override;
     void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundStatement& toStatement) override;

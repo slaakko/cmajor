@@ -27,8 +27,8 @@ class LocalVariableIrObjectRepository
 {
 public:
     LocalVariableIrObjectRepository(Cm::Core::IrFunctionRepository* irFunctionRepository_);
-    Ir::Intf::Object* CreateLocalVariableIrObjectFor(Cm::Sym::Symbol *localVariableOrParameter);
-    Ir::Intf::Object* GetLocalVariableIrObject(Cm::Sym::Symbol *localVariableOrParameter);
+    Ir::Intf::Object* CreateLocalVariableIrObjectFor(Cm::Sym::Symbol* localVariableOrParameter);
+    Ir::Intf::Object* GetLocalVariableIrObject(Cm::Sym::Symbol* localVariableOrParameter);
     void SetExceptionCodeVariable(Ir::Intf::Object* exceptionCodeVariable_) { exceptionCodeVariable = exceptionCodeVariable_; }
     Ir::Intf::Object* GetExceptionCodeVariable() const { return exceptionCodeVariable; }
 private:
@@ -97,7 +97,7 @@ public:
     virtual void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) = 0;
     virtual Ir::Intf::Object* MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source) = 0;
 
-    virtual void CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes) = 0;
+    virtual Cm::Core::CfgNode* CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes) = 0;
     virtual void CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span) = 0;
     virtual void AddDebugNodeTransition(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) = 0;
     virtual void AddDebugNodeTransition(Cm::BoundTree::BoundExpression& fromExpression, Cm::BoundTree::BoundStatement& toStatement) = 0;
@@ -188,6 +188,7 @@ protected:
     void PushGenDebugInfo(bool generate);
     void PopGenDebugInfo();
     bool GenerateDebugInfo() const { return generateDebugInfo; }
+    virtual Cm::Core::CFunctionDebugInfo* GetFunctionDebugInfo() const { return nullptr; }
 private:
     bool generateDebugInfo;
     std::stack<bool> generateDebugInfoStack;

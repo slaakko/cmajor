@@ -1,0 +1,64 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+ [hpp]#include <Cm.Debugger/InspectNode.hpp>
+
+namespace Cm.Debugger 
+{
+    grammar InspectExprGrammar
+    {
+        using stdlib.identifier;
+        using stdlib.int;
+        using stdlib.spaces;
+
+        skip spaces;
+
+        InspectExpr: InspectNode*
+            ::= ContentExpr{ value = ContentExpr; }
+            ;
+
+        ContentExpr: InspectNode*
+            ::= '@' PrefixExpr:content{ value = new ContentNode(content); }
+            |   PrefixExpr:single{ value = new SingleNode(single); }
+            ;
+
+
+        PrefixExpr: InspectNode*
+            ::= '*' PrefixExpr{ value = new DerefNode(PrefixExpr); }
+            |   PostfixExpr{ value = PostfixExpr; }
+            ;
+
+        PostfixExpr(var std::unique_ptr<InspectNode> expr): InspectNode*
+            ::= (PrimaryExpr{ expr.reset(PrimaryExpr); }
+                (   '.' MemberId:dotMember{ expr.reset(new DotNode(expr.release(), dotMember)); }
+                |   "->" MemberId:arrowMember{ expr.reset(new ArrowNode(expr.release(), arrowMember)); }
+                )*
+            )
+            {
+                value = expr.release();
+            }
+            ;
+
+        MemberId: std::string
+            ::= identifier{ value = std::string(matchBegin, matchEnd); }
+            |   keyword("base"){ value = "base"; }
+            ;
+
+        PrimaryExpr: InspectNode*
+            ::= keyword("this"){ value = new LocalNode("this"); }
+            |   identifier:localVarName{ value = new LocalNode(localVarName); }
+            |   (token('$' int:handle) TypeExprPart){ value = new HandleNode(handle, TypeExprPart); }
+            |   ('(' PrefixExpr ')'){ value = new ParenthesesNode(PrefixExpr); }
+            ;
+
+        TypeExprPart: std::string
+            ::= '[' token((anychar - ']')+){ value = std::string(matchBegin, matchEnd); } ']'
+            ;
+    }
+}

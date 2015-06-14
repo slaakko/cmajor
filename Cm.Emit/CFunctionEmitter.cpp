@@ -398,7 +398,7 @@ void CFunctionEmitter::Visit(Cm::BoundTree::BoundBeginCatchStatement& boundBegin
     ResultStack().Push(result);
 }
 
-void CFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes)
+Cm::Core::CfgNode* CFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement, const Cm::Parsing::Span& span, bool addToPrevNodes)
 {
     if (GenerateDebugInfo())
     {
@@ -412,7 +412,9 @@ void CFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundStatement& statement,
         {
             cfg.AddToPrevNodes(cfgNode);
         }
+        return cfgNode;
     }
+    return nullptr;
 }
 
 void CFunctionEmitter::CreateDebugNode(Cm::BoundTree::BoundExpression& expr, const Cm::Parsing::Span& span)

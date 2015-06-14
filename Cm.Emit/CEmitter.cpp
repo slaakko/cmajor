@@ -93,6 +93,7 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
     Cm::Sym::ClassTypeSymbol* classTypeSymbol = boundClass.Symbol();
     if (ProcessedClasses().find(classTypeSymbol) != ProcessedClasses().end()) return;
     ProcessedClasses().insert(classTypeSymbol);
+    GenerateDebugInfo(classTypeSymbol);
     for (Cm::Sym::MemberVariableSymbol* staticMemberVarSymbol : classTypeSymbol->StaticMemberVariables())
     {
         staticMemberVariableRepository.Add(staticMemberVarSymbol);
@@ -139,6 +140,40 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
             throw std::runtime_error("has no function debug info");
         }
     }
+}
+
+void CEmitter::GenerateDebugInfo(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
+{
+    if (!debugInfoFile) return;
+    if (classTypeSymbol->DebugInfoGenerated()) return;
+    classTypeSymbol->SetDebugInfoGenerated();
+    Cm::Sym::ClassTypeSymbol* baseClass = classTypeSymbol->BaseClass();
+    std::string baseClassFullName;
+    if (baseClass)
+    {
+        GenerateDebugInfo(baseClass);
+        baseClassFullName = baseClass->FullName();
+    }
+    std::string irTypeName = "struct " + classTypeSymbol->GetMangleId() + "_";
+    Cm::Core::ClassDebugInfo* classDebugInfo = new Cm::Core::ClassDebugInfo(classTypeSymbol->FullName(), baseClassFullName, irTypeName);
+    if (classTypeSymbol->IsVirtual())
+    {
+        classDebugInfo->SetVirtual();
+        if (classTypeSymbol->VPtrIndex() != -1)
+        {
+            classDebugInfo->SetHasVptr();
+        }
+    }
+    for (Cm::Sym::MemberVariableSymbol* memberVar : classTypeSymbol->MemberVariables())
+    {
+        classDebugInfo->AddMemberVariable(Cm::Core::MemberVariableDebugInfo(memberVar->Name(), memberVar->GetType()->FullName()));
+        if (memberVar->GetType()->GetBaseType()->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVar->GetType()->GetBaseType());
+            GenerateDebugInfo(memberVarClassType);
+        }
+    }
+    debugInfoFile->AddClassDebugInfo(classDebugInfo);
 }
 
 } } // namespace Cm::Emit

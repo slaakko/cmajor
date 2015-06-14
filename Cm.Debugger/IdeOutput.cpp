@@ -9,7 +9,8 @@
 
 #include <Cm.Debugger/IdeOutput.hpp>
 #include <Cm.Debugger/DebugInfo.hpp>
-#include <Cm.Core/Json.hpp>
+#include <Cm.Debugger/Value.hpp>
+#include <Cm.Core/Json.cpp>
 #include <iostream>
 
 namespace Cm { namespace Debugger {
@@ -154,6 +155,27 @@ void IdePrintSources(int sequenceNumber, const std::vector<std::string>& sources
         sourcesArray->AddItem(new Cm::Core::JsonString(source));
     }
     reply.AddField(Cm::Core::JsonString("sources"), sourcesArray);
+    std::cout << reply.ToString() << std::endl;
+}
+
+void IdePrintInspectResults(int sequenceNumber, const std::vector<std::unique_ptr<Result>>& results)
+{
+    Cm::Core::JsonObject reply;
+    reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("inspectResult"));
+    reply.AddField(Cm::Core::JsonString("sequence"), new Cm::Core::JsonNumber(sequenceNumber));
+    Cm::Core::JsonArray* resultsArray = new Cm::Core::JsonArray();
+    for (const std::unique_ptr<Result>& result : results)
+    {
+        Cm::Core::JsonObject* resultObject = new Cm::Core::JsonObject();
+        resultObject->AddField(Cm::Core::JsonString("name"), new Cm::Core::JsonString(result->Name()));
+        resultObject->AddField(Cm::Core::JsonString("handle"), new Cm::Core::JsonNumber(result->Handle()));
+        resultObject->AddField(Cm::Core::JsonString("value"), new Cm::Core::JsonString(result->GetValue()->ToString()));
+        resultObject->AddField(Cm::Core::JsonString("type"), new Cm::Core::JsonString(result->Type()));
+        resultObject->AddField(Cm::Core::JsonString("displayType"), new Cm::Core::JsonString(result->DisplayType()));
+        resultObject->AddField(Cm::Core::JsonString("hasSubItems"), new Cm::Core::JsonBool(result->GetValue()->HasSubItems()));
+        resultsArray->AddItem(resultObject);
+    }
+    reply.AddField(Cm::Core::JsonString("results"), resultsArray);
     std::cout << reply.ToString() << std::endl;
 }
 

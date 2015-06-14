@@ -74,6 +74,10 @@ GdbFrameCommand::GdbFrameCommand(int frameNumber) : GdbCommand("frame " + std::t
 {
 }
 
+GdbPrintCommand::GdbPrintCommand(const std::string& expr) : GdbCommand("print " + expr)
+{
+}
+
 unsigned long long SpawnGdb(std::vector<std::string> args)
 {
     std::string gdb = "gdb";
@@ -216,6 +220,13 @@ std::shared_ptr<GdbCommand> Gdb::Frame(int frameNumber)
     std::shared_ptr<GdbCommand> frameCommand(new GdbFrameCommand(frameNumber));
     ExecuteCommand(frameCommand);
     return frameCommand;
+}
+
+std::shared_ptr<GdbCommand> Gdb::Print(const std::string& expr)
+{
+    std::shared_ptr<GdbCommand> printCommand(new GdbPrintCommand(expr));
+    ExecuteCommand(printCommand);
+    return printCommand;
 }
 
 std::string Gdb::Read()
