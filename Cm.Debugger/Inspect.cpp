@@ -370,8 +370,8 @@ void Inspector::InspectClass(const PrintExpr& printExpr, TypeExpr* typeExpr)
             {
                 std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "",
                     "[" + classDebugInfo->BaseClassFullName() + "]"));
-                result->SetDisplayType(baseClassPrintExpr.GetDisplayTypeExpr()->ToString());
                 result->SetType(baseClassPrintExpr.GetTypeExpr()->ToString());
+                result->SetDisplayType(baseClassPrintExpr.GetDisplayTypeExpr()->ToString());
                 results.push_back(std::move(result));
             }
         }
@@ -428,22 +428,41 @@ void Inspector::InspectPointer(const PrintExpr& printExpr, TypeExpr* typeExpr)
     }
     else
     {
-        std::string classTypeName = typeExpr->ToString();
-        Cm::Core::ClassDebugInfo* classDebugInfo = debugInfo.GetClassDebugInfo(classTypeName);
-        if (classDebugInfo)
+        if (typeExpr->IsBasicTypeExpr())
         {
-            if (!classDebugInfo->IsVirtual())
+            std::shared_ptr<GdbCommand> command = gdb.Print(derefExpr.Text());
+            if (command->ReplyMessage().empty())
             {
-                InspectClass(derefExpr, typeExpr);
+                std::unique_ptr<Result> errorResult = MakeErrorResult("could not evaluate debugger expression '" + derefExpr.Text() + "'", "*");
+                results.push_back(std::move(errorResult));
             }
             else
             {
-                InspectVirtualClass(classDebugInfo, printExpr, derefExpr, typeExpr);
+                std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", "*"));
+                result->SetType(typeExpr->ToString());
+                result->SetDisplayType(typeExpr->ToString());
+                results.push_back(std::move(result));
             }
         }
         else
         {
-            throw std::runtime_error("debug info for class '" + classTypeName + "' not found");
+            std::string classTypeName = typeExpr->ToString();
+            Cm::Core::ClassDebugInfo* classDebugInfo = debugInfo.GetClassDebugInfo(classTypeName);
+            if (classDebugInfo)
+            {
+                if (!classDebugInfo->IsVirtual())
+                {
+                    InspectClass(derefExpr, typeExpr);
+                }
+                else
+                {
+                    InspectVirtualClass(classDebugInfo, printExpr, derefExpr, typeExpr);
+                }
+            }
+            else
+            {
+                throw std::runtime_error("debug info for class '" + classTypeName + "' not found");
+            }
         }
     }
 }

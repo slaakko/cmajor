@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Debugger/Value.hpp>
+#include <Cm.Debugger/Type.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <sstream>
 
@@ -78,6 +79,12 @@ std::string AddressValue::ToString() const
         s << "0x" << std::hex << address;
         return s.str();
     }
+}
+
+bool AddressValue::HasSubItems() const 
+{
+    if (address == 0) return false;
+    return true;
 }
 
 CharValue::CharValue(char value_) : value(value_)
