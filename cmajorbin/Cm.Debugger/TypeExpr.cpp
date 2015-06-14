@@ -346,20 +346,23 @@ void TypeExprGrammar::GetReferencedGrammars()
 
 void TypeExprGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
     AddRule(new TypeExprRule("TypeExpr", GetScope(),
         new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::AlternativeParser(
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::NonterminalParser("BasicType", "BasicType", 0)),
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::ActionParser("A1",
-                        new Cm::Parsing::NonterminalParser("TypeName", "TypeName", 0)),
-                    new Cm::Parsing::OptionalParser(
-                        new Cm::Parsing::ActionParser("A2",
-                            new Cm::Parsing::NonterminalParser("TypeArguments", "TypeArguments", 0))))),
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::OptionalParser(
+                    new Cm::Parsing::KeywordParser("const")),
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::ActionParser("A0",
+                        new Cm::Parsing::NonterminalParser("BasicType", "BasicType", 0)),
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::ActionParser("A1",
+                            new Cm::Parsing::NonterminalParser("TypeName", "TypeName", 0)),
+                        new Cm::Parsing::OptionalParser(
+                            new Cm::Parsing::ActionParser("A2",
+                                new Cm::Parsing::NonterminalParser("TypeArguments", "TypeArguments", 0)))))),
             new Cm::Parsing::KleeneStarParser(
                 new Cm::Parsing::AlternativeParser(
                     new Cm::Parsing::AlternativeParser(

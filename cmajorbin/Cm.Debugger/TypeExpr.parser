@@ -20,7 +20,8 @@ namespace Cm.Debugger
         skip spaces;
 
         TypeExpr: TypeExpr*
-            ::= (BasicType{ value = BasicType; }
+            ::= keyword("const")? 
+            (   BasicType{ value = BasicType; }
             |   TypeName{ value = new TypeExpr(TypeName); } (TypeArguments{ value->TypeArguments() = MakeTemplateArgumentList(TypeArguments); })?
             )
             (   "&&"{ value->Derivations().Add(Cm::Ast::Derivation::rvalueRef); }

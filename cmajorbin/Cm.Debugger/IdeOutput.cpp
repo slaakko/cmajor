@@ -172,7 +172,7 @@ void IdePrintInspectResults(int sequenceNumber, const std::vector<std::unique_pt
         resultObject->AddField(Cm::Core::JsonString("value"), new Cm::Core::JsonString(result->GetValue()->ToString()));
         resultObject->AddField(Cm::Core::JsonString("type"), new Cm::Core::JsonString(result->Type()));
         resultObject->AddField(Cm::Core::JsonString("displayType"), new Cm::Core::JsonString(result->DisplayType()));
-        resultObject->AddField(Cm::Core::JsonString("hasSubItems"), new Cm::Core::JsonBool(result->GetValue()->HasSubItems()));
+        resultObject->AddField(Cm::Core::JsonString("hasSubItems"), new Cm::Core::JsonBool(result->GetValue()->HasSubItems() && result->Type() != "void*"));
         resultsArray->AddItem(resultObject);
     }
     reply.AddField(Cm::Core::JsonString("results"), resultsArray);

@@ -51,7 +51,7 @@ class AddressValue : public Value
 public:
     AddressValue(uint64_t address_);
     std::string ToString() const override;
-    bool HasSubItems() const override { return address != 0; }
+    bool HasSubItems() const override;
 private:
     uint64_t address;
 };
