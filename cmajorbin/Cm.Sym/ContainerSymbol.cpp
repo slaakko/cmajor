@@ -127,6 +127,7 @@ ConceptGroupSymbol* ContainerSymbol::MakeConceptGroupSymbol(const std::string& g
 
 void ContainerSymbol::Dump(CodeFormatter& formatter)
 {
+    if (!IsProject() && !IsNamespaceSymbol()) return;
     Symbol::Dump(formatter);
     formatter.IncIndent();
     for (const std::unique_ptr<Symbol>& symbol : symbols)

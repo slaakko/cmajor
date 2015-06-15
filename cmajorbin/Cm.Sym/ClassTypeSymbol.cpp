@@ -461,6 +461,7 @@ void ClassTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& 
 
 void ClassTypeSymbol::Dump(CodeFormatter& formatter)
 {
+    if (!IsProject()) return;
     std::string f = SymbolFlagStr(Flags(), DeclaredAccess(), true);
     if (!f.empty())
     {

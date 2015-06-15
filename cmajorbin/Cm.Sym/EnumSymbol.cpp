@@ -80,6 +80,7 @@ void EnumConstantSymbol::SetValue(Value* value_)
 
 void EnumConstantSymbol::Dump(CodeFormatter& formatter)
 {
+    if (!IsProject()) return;
     std::string valueStr;
     if (value)
     {

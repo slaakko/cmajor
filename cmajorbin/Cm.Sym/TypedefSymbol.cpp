@@ -62,6 +62,7 @@ void TypedefSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& co
 
 void TypedefSymbol::Dump(CodeFormatter& formatter)
 {
+    if (!IsProject()) return;
     std::string typeString;
     if (type)
     {

@@ -68,6 +68,7 @@ void ConceptSymbol::AddSymbol(Symbol* symbol)
 void ConceptSymbol::Dump(CodeFormatter& formatter)
 {
     if (isIntrinsicConcept) return;
+    if (!IsProject()) return;
     ContainerSymbol::Dump(formatter);
 }
 

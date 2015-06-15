@@ -124,6 +124,8 @@ public:
     void SetParent(Symbol* parent_) { parent = parent_; }
     bool IsReplica() const { return GetFlag(SymbolFlags::replica); }
     void SetReplica() { SetFlag(SymbolFlags::replica); }
+    bool IsProject() const { return GetFlag(SymbolFlags::project); }
+    void SetProject() { SetFlag(SymbolFlags::project); }
     virtual std::string TypeString() const { return "symbol"; };
     virtual void SetType(TypeSymbol* typeSymbol, int index);
     virtual ContainerScope* GetContainerScope() const { return nullptr; }

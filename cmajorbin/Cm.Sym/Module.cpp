@@ -274,6 +274,12 @@ void Module::Dump()
     Cm::Sym::SymbolTypeSetCollection symbolTypeSetCollection;
     Cm::Sym::SetSymbolTypeSetCollection(&symbolTypeSetCollection);
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
+    Cm::Sym::ExceptionTable exceptionTable;
+    Cm::Sym::SetExceptionTable(&exceptionTable);
+    Cm::Sym::MutexTable mutexTable;
+    Cm::Sym::SetMutexTable(&mutexTable);
+    Cm::Sym::ClassCounter classCounter;
+    Cm::Sym::SetClassCounter(&classCounter);
     Reader reader(filePath, symbolTable);
     char readModuleFileId[4];
     try
@@ -298,6 +304,21 @@ void Module::Dump()
     ReadReferenceFilePaths(reader);
     ReadCLibraryFilePaths(reader);
     ReadDebugInfoFilePaths(reader);
+    std::unordered_set<std::string> importedModules;
+    std::vector<std::string> assemblyFilePaths;
+    std::vector<std::string> cLibs;
+    std::vector<std::string> allReferenceFilePaths;
+    std::vector<std::string> allDebugInfoFilePaths;
+    for (const std::string& referenceFilePath : referenceFilePaths)
+    {
+        if (importedModules.find(referenceFilePath) == importedModules.end())
+        {
+            importedModules.insert(referenceFilePath);
+            Module referencedModule(referenceFilePath);
+            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+        }
+    }
+    reader.MarkSymbolsProject();
     symbolTable.Import(reader, false);
     int32_t nt = reader.GetBinaryReader().ReadInt();
     for (int32_t i = 0; i < nt; ++i)
