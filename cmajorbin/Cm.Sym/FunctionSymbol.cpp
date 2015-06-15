@@ -22,18 +22,6 @@ namespace Cm { namespace Sym {
 std::string FunctionSymbolFlagString(FunctionSymbolFlags flags)
 {
     std::string s;
-    if ((flags & FunctionSymbolFlags::constructorOrDestructorSymbol) != FunctionSymbolFlags::none)
-    {
-        s.append("constructor|destructor");
-    }
-    if ((flags & FunctionSymbolFlags::memberFunctionSymbol) != FunctionSymbolFlags::none)
-    {
-        if (!s.empty())
-        {
-            s.append(1, ' ');
-        }
-        s.append("member function");
-    }
     if ((flags & FunctionSymbolFlags::cdecl_) != FunctionSymbolFlags::none)
     {
         if (!s.empty())
@@ -82,14 +70,6 @@ std::string FunctionSymbolFlagString(FunctionSymbolFlags flags)
         }
         s.append("inline");
     }
-    if ((flags & FunctionSymbolFlags::replicated) != FunctionSymbolFlags::none)
-    {
-        if (!s.empty())
-        {
-            s.append(1, ' ');
-        }
-        s.append("replicated");
-    }
     if ((flags & FunctionSymbolFlags::suppressed) != FunctionSymbolFlags::none)
     {
         if (!s.empty())
@@ -113,22 +93,6 @@ std::string FunctionSymbolFlagString(FunctionSymbolFlags flags)
             s.append(1, ' ');
         }
         s.append("explicit");
-    }
-    if ((flags & FunctionSymbolFlags::conversion) != FunctionSymbolFlags::none)
-    {
-        if (!s.empty())
-        {
-            s.append(1, ' ');
-        }
-        s.append("conversion");
-    }
-    if ((flags & FunctionSymbolFlags::templateSpecialization) != FunctionSymbolFlags::none)
-    {
-        if (!s.empty())
-        {
-            s.append(1, ' ');
-        }
-        s.append("template specialization");
     }
     return s;
 }
@@ -673,22 +637,30 @@ void FunctionSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& c
 
 void FunctionSymbol::Dump(CodeFormatter& formatter)
 {
-    std::string s = SymbolFlagStr(Flags(), DeclaredAccess());
+    if (IsBasicTypeOp()) return;
+    std::string s = SymbolFlagStr(Flags(), DeclaredAccess(), true);
+    std::string fs = FunctionSymbolFlagString(flags);
+    if (!fs.empty())
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append(fs);
+    }
+    if (returnType)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append(returnType->FullName());
+    }
     if (!s.empty())
     {
         s.append(1, ' ');
     }
-    s.append(FunctionSymbolFlagString(flags));
-    formatter.Write(s);
-    if (!s.empty())
-    {
-        formatter.Write(" ");
-    }
-    if (returnType)
-    {
-        formatter.Write(returnType->FullName() + " ");
-    }
-    formatter.Write(groupName);
+    s.append(groupName);
     if (!typeParameters.empty())
     {
         std::string t = "<";
@@ -706,7 +678,7 @@ void FunctionSymbol::Dump(CodeFormatter& formatter)
             t.append(typeParam->Name());
         }
         t.append(">");
-        formatter.Write(t);
+        s.append(t);
     }
     std::string p = "(";
     bool first = true;
@@ -727,8 +699,8 @@ void FunctionSymbol::Dump(CodeFormatter& formatter)
         p.append(param->Name());
     }
     p.append(")");
-    formatter.Write(p);
-    formatter.WriteLine();
+    s.append(p);
+    formatter.WriteLine(s);
 }
 
 FileScope* FunctionSymbol::GetFileScope(ContainerScope* containerScope)

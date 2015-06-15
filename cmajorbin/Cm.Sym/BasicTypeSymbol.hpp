@@ -28,6 +28,7 @@ public:
     std::string TypeString() const override { return "basic type"; };
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     bool IsValueTypeSymbol() const override { return true; }
+    void Dump(CodeFormatter& formatter) override;
 };
 
 class BoolTypeSymbol : public BasicTypeSymbol

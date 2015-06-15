@@ -482,6 +482,11 @@ void SymbolTable::Export(Writer& writer)
 
 void SymbolTable::Import(Reader& reader)
 {
+    Import(reader, true);
+}
+
+void SymbolTable::Import(Reader& reader, bool importTypeRepository)
+{
     std::unique_ptr<Symbol> symbol(reader.ReadSymbol());
     if (symbol->IsNamespaceSymbol())
     {
@@ -492,7 +497,10 @@ void SymbolTable::Import(Reader& reader)
     {
         throw std::runtime_error("namespace symbol expected");
     }
-    typeRepository.Import(reader);
+    if (importTypeRepository)
+    {
+        typeRepository.Import(reader);
+    }
 }
 
 void SymbolTable::AddPredefinedSymbolToGlobalScope(Symbol* symbol)

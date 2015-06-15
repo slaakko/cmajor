@@ -39,21 +39,17 @@ std::string AccessStr(SymbolAccess access)
     return accessStr[uint8_t(access)];
 }
 
-std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess)
+std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess, bool addAccess)
 {
     SymbolAccess access = SymbolAccess(flags & SymbolFlags::access);
     if (access != declaredAccess)
     {
         access = declaredAccess;
     }
-    std::string s = AccessStr(access);
-    if ((flags & SymbolFlags::bound) != SymbolFlags::none)
+    std::string s;
+    if (addAccess)
     {
-        if (!s.empty())
-        {
-            s.append(" ");
-        }
-        s.append("bound");
+        s.append(AccessStr(access));
     }
     if ((flags & SymbolFlags::static_) != SymbolFlags::none)
     {
@@ -70,14 +66,6 @@ std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess)
             s.append(1, ' ');
         }
         s.append("external");
-    }
-    if ((flags & SymbolFlags::project) != SymbolFlags::none)
-    {
-        if (!s.empty())
-        {
-            s.append(" ");
-        }
-        s.append("project");
     }
     return s;
 }
@@ -266,12 +254,18 @@ ContainerSymbol* Symbol::ClassOrNs() const
 
 void Symbol::Dump(CodeFormatter& formatter)
 {
-    std::string f = SymbolFlagStr(flags, DeclaredAccess());
+    std::string f = SymbolFlagStr(flags, DeclaredAccess(), !IsNamespaceSymbol());
     if (!f.empty())
     {
         f.append(1, ' ');
     }
-    formatter.WriteLine(f + TypeString() + " " + Name());
+    f.append(TypeString());
+    if (!f.empty())
+    {
+        f.append(1, ' ');
+    }
+    f.append(Name());
+    formatter.WriteLine(f);
 }
 
 void Symbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)

@@ -72,4 +72,8 @@ void MemberVariableSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbo
 	}
 }
 
+void MemberVariableSymbol::Dump(CodeFormatter& formatter)
+{
+}
+
 } } // namespace Cm::Sym

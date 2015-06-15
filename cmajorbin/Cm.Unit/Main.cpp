@@ -37,7 +37,7 @@ struct InitDone
     }
 };
 
-const char* version = "1.0.0-beta-4";
+const char* version = "1.0.0-beta-5";
 
 const char* Name()
 {

@@ -65,6 +65,12 @@ void ConceptSymbol::AddSymbol(Symbol* symbol)
     }
 }
 
+void ConceptSymbol::Dump(CodeFormatter& formatter)
+{
+    if (isIntrinsicConcept) return;
+    ContainerSymbol::Dump(formatter);
+}
+
 std::string MakeInstantiatedConceptSymbolName(ConceptSymbol* conceptSymbol, const std::vector<TypeSymbol*>& typeArguments)
 {
     std::string s = conceptSymbol->GroupName();

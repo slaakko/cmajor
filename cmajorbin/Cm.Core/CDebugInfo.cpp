@@ -74,6 +74,15 @@ const char* LineStart(const char* start, const char* pos)
     return pos;
 }
 
+const char* LineEnd(const char* end, const char* pos)
+{
+    while (pos < end && *pos != '\n' && *pos != '\r')
+    {
+        ++pos;
+    }
+    return pos;
+}
+
 SourceSpan FromSpan(const char* start, const char* end, const Cm::Parsing::Span& span)
 {
     if (span.IsNull())
@@ -85,6 +94,11 @@ SourceSpan FromSpan(const char* start, const char* end, const Cm::Parsing::Span&
     const char* e = start + span.End();
     if (e < start || e >= end) return SourceSpan();
     const char* lineStart = LineStart(start, s);
+    const char* lineEnd = LineEnd(end, s);
+    if (e > lineEnd)
+    {
+        e = lineEnd;
+    }
     int32_t startCol = int32_t(s - lineStart) + 1;
     int32_t endCol = int32_t(e - lineStart) + 1;
     return SourceSpan(span.LineNumber(), startCol, endCol);

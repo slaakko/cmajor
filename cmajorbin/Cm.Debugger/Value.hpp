@@ -24,6 +24,7 @@ public:
     virtual bool IsStringValue() const { return false; }
     virtual bool IsIntegerValue() const { return false; }
     virtual bool IsStructureValue() const { return false; }
+    virtual bool IsAddressValue() const { return false; }
 };
 
 class ErrorValue : public Value
@@ -52,9 +53,22 @@ public:
     AddressValue(uint64_t address_);
     std::string ToString() const override;
     bool HasSubItems() const override;
+    bool IsNull() const { return address == 0; }
+    uint64_t Value() const { return address; }
+    bool IsAddressValue() const override { return true; }
 private:
     uint64_t address;
 };
+
+inline bool operator==(AddressValue left, AddressValue right)
+{
+    return left.Value() == right.Value();
+}
+
+inline bool operator!=(AddressValue left, AddressValue right)
+{
+    return std::rel_ops::operator!=(left, right);
+}
 
 class CharValue : public Value
 {

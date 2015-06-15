@@ -134,6 +134,7 @@ void ContainerSymbol::Dump(CodeFormatter& formatter)
         symbol->Dump(formatter);
     }
     formatter.DecIndent();
+    formatter.WriteLine("end of " + TypeString() + " " + Name());
 }
 
 void ContainerSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)

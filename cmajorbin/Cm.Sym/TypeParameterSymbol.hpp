@@ -28,6 +28,7 @@ public:
     int Index() const { return index; }
     void SetIndex(int index_) { index = index_; }
     std::string FullName() const override {return Name(); }
+    void Dump(CodeFormatter& formatter) override;
 private:
     int index;
 };
@@ -42,6 +43,7 @@ public:
     bool IsExportSymbol() const override { return false; }
     TypeSymbol* GetType() const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
+    void Dump(CodeFormatter& formatter) override;
 private:
     TypeSymbol* type;
 };

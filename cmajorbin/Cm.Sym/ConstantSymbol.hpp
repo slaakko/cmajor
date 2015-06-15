@@ -33,6 +33,7 @@ public:
     bool Evaluating() const { return evaluating; }
     void SetEvaluating() { evaluating = true; }
     void ResetEvaluating() { evaluating = false; }
+    void Dump(CodeFormatter& formatter) override;
 private:
     TypeSymbol* type;
     std::unique_ptr<Value> value;

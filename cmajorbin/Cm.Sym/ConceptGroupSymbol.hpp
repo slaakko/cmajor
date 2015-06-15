@@ -25,6 +25,7 @@ public:
     ContainerScope* GetContainerScope() const override { return const_cast<ContainerScope*>(containerScope); }
     void AddConcept(ConceptSymbol* concept);
     ConceptSymbol* GetConcept(int arity) const;
+    void Dump(CodeFormatter& formatter) override;
 private:
     ContainerScope* containerScope;
     typedef std::unordered_map<int, ConceptSymbol*> ArityConceptMap;

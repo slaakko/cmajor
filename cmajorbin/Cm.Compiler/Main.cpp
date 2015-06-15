@@ -31,7 +31,7 @@
     #include <crtdbg.h>
 #endif
 
-const char* version = "1.0.0-beta-4";
+const char* version = "1.0.0-beta-5";
 
 struct InitDone
 {
@@ -104,7 +104,6 @@ int main(int argc, const char** argv)
                 "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
                 "-backend=llvm   : use LLVM backend (default)\n" <<
                 "-backend=c      : use C backend\n" <<
-                "-g              : generate debug info (enabled by default for debug config)\n" <<
                 "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
                 "-quiet          : write no output messages for successful compiles\n" << 
                 "-trace          : instrument program/library with tracing enabled\n" <<
@@ -181,10 +180,6 @@ int main(int argc, const char** argv)
                         else if (arg == "-c")
                         {
                             prevWasCompile = true;
-                        }
-                        else if (arg == "-g")
-                        {
-                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info);
                         }
                         else if (arg == "-emit-opt")
                         {

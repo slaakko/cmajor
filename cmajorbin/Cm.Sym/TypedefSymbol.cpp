@@ -60,4 +60,14 @@ void TypedefSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& co
     }
 }
 
+void TypedefSymbol::Dump(CodeFormatter& formatter)
+{
+    std::string typeString;
+    if (type)
+    {
+        typeString.append(type->FullName()).append(" ");
+    }
+    formatter.WriteLine(SymbolFlagStr(Flags(), DeclaredAccess(), true) + " " + TypeString() + " " + typeString + Name());
+}
+
 } } // namespace Cm::Sym
