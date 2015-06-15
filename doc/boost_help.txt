@@ -1,2 +1,0 @@
-sudo ./b2 -sNO_BZIP2=1 -sNO_ZLIB=1 --with-iostreams install
-
