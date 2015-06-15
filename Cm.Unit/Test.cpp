@@ -479,7 +479,7 @@ bool TestProject(Cm::Ast::Project* project, const std::string& fileName, const s
     projectExceptions = 0;
     projectCrashed = 0;
     projectUnknown = 0;
-    std::cerr << "testing project '" << project->Name() << "'..." << std::endl;
+    std::cerr << "testing project '" << project->Name() << "' using " + Cm::IrIntf::GetBackEndStr() + " backend and " + Cm::Core::GetGlobalSettings()->Config()  + " configuration..." << std::endl;
     for (const std::string& sourceFilePath : project->SourceFilePaths())
     {
         if (!fileName.empty())
@@ -548,7 +548,7 @@ bool TestSolution(const std::string& solutionFilePath, const std::string& fileNa
     Cm::Util::MappedInputFile solutionFile(solutionFilePath);
     std::unique_ptr<Cm::Ast::Solution> solution(solutionGrammar->Parse(solutionFile.Begin(), solutionFile.End(), 0, solutionFilePath));
     solution->ResolveDeclarations();
-    std::cerr << "testing solution '" << solution->Name() << "'..." << std::endl;
+    std::cerr << "testing solution '" << solution->Name() << "' using " + Cm::IrIntf::GetBackEndStr() + " backend and " + Cm::Core::GetGlobalSettings()->Config() + " configuration..." << std::endl;
     for (const std::string& projectFilePath : solution->ProjectFilePaths())
     {
         boost::filesystem::path pfp = projectFilePath;

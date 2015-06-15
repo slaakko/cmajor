@@ -15,7 +15,8 @@
 
 namespace Cm { namespace Sym {
 
-Reader::Reader(const std::string& fileName, SymbolTable& symbolTable_) : binaryReader(fileName), astReader(binaryReader), symbolTable(symbolTable_), spanFileIndexOffset(0), markSymbolsBound(false)
+Reader::Reader(const std::string& fileName, SymbolTable& symbolTable_) : binaryReader(fileName), astReader(binaryReader), symbolTable(symbolTable_), spanFileIndexOffset(0), markSymbolsBound(false),
+    markSymbolsProject(false)
 {
 }
 
@@ -27,6 +28,11 @@ void Reader::SetSpanFileIndexOffset(int spanFileIndexOffset_)
 void Reader::MarkSymbolsBound()
 {
     markSymbolsBound = true;
+}
+
+void Reader::MarkSymbolsProject()
+{
+    markSymbolsProject = true;
 }
 
 SymbolType Reader::ReadSymbolType()
@@ -139,6 +145,10 @@ Symbol* Reader::ReadSymbol()
             symbol->SetBound();
         }
         symbol->Read(*this);
+        if (markSymbolsProject)
+        {
+            symbol->SetProject();
+        }
         if (symbol->IsTemplateTypeSymbol())
         {
             symbol->ResetFlag(SymbolFlags::bound);

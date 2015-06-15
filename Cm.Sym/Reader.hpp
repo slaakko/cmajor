@@ -48,6 +48,7 @@ public:
     void BackpatchType(TypeSymbol* type);
     void SetSpanFileIndexOffset(int spanFileIndexOffset_);
     void MarkSymbolsBound();
+    void MarkSymbolsProject();
     bool AllTypesFetched();
     void EnqueueMakeIrTypeFor(Symbol* symbol);
     void MakeIrTypes();
@@ -61,6 +62,7 @@ private:
     FetchTypeMap fetchTypeMap;
     int spanFileIndexOffset;
     bool markSymbolsBound;
+    bool markSymbolsProject;
     std::unordered_set<Symbol*> makeIrTypeSet;
 };
 

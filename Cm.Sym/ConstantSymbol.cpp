@@ -51,6 +51,7 @@ void ConstantSymbol::SetValue(Value* value_)
 
 void ConstantSymbol::Dump(CodeFormatter& formatter)
 {
+    if (!IsProject()) return;
     std::string valueStr;
     if (value)
     {

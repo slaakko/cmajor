@@ -637,6 +637,7 @@ void FunctionSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& c
 
 void FunctionSymbol::Dump(CodeFormatter& formatter)
 {
+    if (!IsProject()) return;
     if (IsBasicTypeOp()) return;
     std::string s = SymbolFlagStr(Flags(), DeclaredAccess(), true);
     std::string fs = FunctionSymbolFlagString(flags);
