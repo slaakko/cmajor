@@ -15,6 +15,7 @@
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Core/InitSymbolTable.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
@@ -267,8 +268,11 @@ void Module::ImportExceptionTable(SymbolTable& symbolTable, Reader& reader)
 
 void Module::Dump()
 {
-    SymbolTable symbolTable;
     Cm::Core::GlobalConceptData globalConceptData;
+    Cm::Core::SetGlobalConceptData(&globalConceptData);
+    SymbolTable symbolTable;
+    Cm::Sym::SymbolTypeSetCollection symbolTypeSetCollection;
+    Cm::Sym::SetSymbolTypeSetCollection(&symbolTypeSetCollection);
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
     Reader reader(filePath, symbolTable);
     char readModuleFileId[4];
@@ -291,36 +295,37 @@ void Module::Dump()
     formatter.IndentSize() = 1;
     formatter.WriteLine("module code file '" + filePath + "' version " + readVersion + " (version " + expectedVersion + " expected).");
     ReadSourceFilePaths(reader);
-    std::unique_ptr<Symbol> symbol(reader.ReadSymbol());
-    if (symbol->IsNamespaceSymbol())
+    ReadReferenceFilePaths(reader);
+    ReadCLibraryFilePaths(reader);
+    ReadDebugInfoFilePaths(reader);
+    symbolTable.Import(reader, false);
+    int32_t nt = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < nt; ++i)
     {
-        NamespaceSymbol* ns = static_cast<NamespaceSymbol*>(symbol.get());
-        ns->Dump(formatter);
+        Symbol* symbol = reader.ReadSymbol();
+        if (symbol->IsTemplateTypeSymbol())
+        {
+            TemplateTypeSymbol* templateTypeSymbol = static_cast<TemplateTypeSymbol*>(symbol);
+        }
+        else
+        {
+            throw std::runtime_error("template type symbol expected");
+        }
     }
-    else
-    {
-        throw std::runtime_error("namespace symbol expected");
-    }
-    formatter.WriteLine("derived and template types:");
     int32_t n = reader.GetBinaryReader().ReadInt();
     for (int32_t i = 0; i < n; ++i)
     {
         Symbol* symbol = reader.ReadSymbol();
         if (symbol->IsTypeSymbol())
         {
-            std::unique_ptr<TypeSymbol> typeSymbol(static_cast<TypeSymbol*>(symbol));
-            typeSymbol->Dump(formatter);
+            TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
         }
         else
         {
             throw std::runtime_error("type symbol expected");
         }
     }
-    formatter.WriteLine("end of module code file");
-    if (!reader.AllTypesFetched())
-    {
-        formatter.WriteLine("not all types fetched!");
-    }
+    symbolTable.GlobalNs().Dump(formatter);
 }
 
 } } // namespace Cm::Sym

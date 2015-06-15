@@ -32,6 +32,10 @@ BasicTypeSymbol::BasicTypeSymbol(const std::string& name_, ShortBasicTypeId id_)
     SetPublic();
 }
 
+void BasicTypeSymbol::Dump(CodeFormatter& formatter)
+{
+}
+
 BoolTypeSymbol::BoolTypeSymbol() : BasicTypeSymbol("bool", ShortBasicTypeId::boolId)
 {
     SetIrType(Cm::IrIntf::I1());

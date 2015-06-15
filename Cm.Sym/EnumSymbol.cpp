@@ -78,4 +78,14 @@ void EnumConstantSymbol::SetValue(Value* value_)
     value.reset(value_);
 }
 
+void EnumConstantSymbol::Dump(CodeFormatter& formatter)
+{
+    std::string valueStr;
+    if (value)
+    {
+        valueStr.append(" = ").append(value->ToString());
+    }
+    formatter.WriteLine(TypeString() + " " + Name() + valueStr);
+}
+
 } } // namespace Cm::Sym

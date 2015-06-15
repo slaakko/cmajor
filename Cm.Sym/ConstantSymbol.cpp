@@ -49,4 +49,14 @@ void ConstantSymbol::SetValue(Value* value_)
     value.reset(value_);
 }
 
+void ConstantSymbol::Dump(CodeFormatter& formatter)
+{
+    std::string valueStr;
+    if (value)
+    {
+        valueStr.append(" = ").append(value->ToString());
+    }
+    formatter.WriteLine(SymbolFlagStr(Flags(), DeclaredAccess(), true) + " " + TypeString() + " " + Name() + valueStr);
+}
+
 } } // namespace Cm::Sym

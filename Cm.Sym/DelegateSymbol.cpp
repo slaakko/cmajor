@@ -127,6 +127,45 @@ void DelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*
     }
 }
 
+void DelegateTypeSymbol::Dump(CodeFormatter& formatter)
+{
+    std::string s = SymbolFlagStr(Flags(), DeclaredAccess(), true);
+    if (returnType)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append(returnType->FullName());
+    }
+    if (!s.empty())
+    {
+        s.append(1, ' ');
+    }
+    s.append(Name());
+    std::string p = "(";
+    bool first = true;
+    for (ParameterSymbol* param : parameters)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            p.append(", ");
+        }
+        if (param->GetType())
+        {
+            p.append(param->GetType()->FullName() + " ");
+        }
+        p.append(param->Name());
+    }
+    p.append(")");
+    s.append(p);
+    formatter.WriteLine(s);
+}
+
 ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : ClassTypeSymbol(span_, name_), flags(ClassDelegateTypeSymbolFlags::none), returnType(nullptr)
 {
 }

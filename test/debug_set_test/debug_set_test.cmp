@@ -1,0 +1,4 @@
+project DebugSetTest;
+target=program;
+assembly <debug_set_test.cma>;
+source <debug_set_test.cm>;

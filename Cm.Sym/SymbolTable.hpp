@@ -69,6 +69,7 @@ public:
     FunctionSymbol* GetFunctionSymbol(Cm::Ast::Node* functionNode) const;
     void Export(Writer& writer);
     void Import(Reader& reader);
+    void Import(Reader& reader, bool importTypeRepository);
     ContainerSymbol* Container() const { return container; }
     ClassTypeSymbol* CurrentClass() const { return currentClass; }
     void SetCurrentClass(ClassTypeSymbol* currentClass_) { currentClass = currentClass_; }
@@ -81,6 +82,7 @@ public:
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
     Cm::Sym::FunctionSymbol* UserMainFunction() const { return userMainFunction; }
+    NamespaceSymbol& GlobalNs() { return globalNs; }
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;

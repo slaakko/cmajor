@@ -78,7 +78,7 @@ enum class SymbolFlags : uint8_t
     replica = 1 << 7
 };
 
-std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess);
+std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess, bool addAccess);
 
 inline SymbolFlags operator~(SymbolFlags flag)
 {

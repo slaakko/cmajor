@@ -7,7 +7,7 @@
 
 ========================================================================*/
 
-const char* version = "1.0.0-beta-4";
+const char* version = "1.0.0-beta-5";
 
 #include <Cm.Debugger/DebugInfo.hpp>
 #include <Cm.Debugger/Gdb.hpp>

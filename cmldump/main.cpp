@@ -33,9 +33,11 @@ int main(int argc, const char** argv)
             Cm::Sym::Module projectModule(fileName);
             projectModule.Dump();
         }
+        return 0;
     }
     catch (std::exception& ex)
     {
         std::cerr << ex.what() << std::endl;
+        return 1;
     }
 }

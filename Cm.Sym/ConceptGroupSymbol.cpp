@@ -16,6 +16,10 @@ ConceptGroupSymbol::ConceptGroupSymbol(const Span& span_, const std::string& nam
 {
 }
 
+void ConceptGroupSymbol::Dump(CodeFormatter& formatter)
+{
+}
+
 void ConceptGroupSymbol::AddConcept(ConceptSymbol* concept)
 {
     if (concept->GroupName() != Name())

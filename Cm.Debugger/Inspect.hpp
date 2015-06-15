@@ -67,6 +67,7 @@ private:
     void InspectList(const PrintExpr& printExpr);
     void InspectSet(const PrintExpr& printExpr);
     void InspectMap(const PrintExpr& printExpr);
+    void InspectTree(const PrintExpr& printExpr);
 };
 
 } } // Cm::Debugger

@@ -33,6 +33,7 @@ public:
     void SetLayoutIndex(int layoutIndex_) { layoutIndex = layoutIndex_; }
 	void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
 	void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    void Dump(CodeFormatter& formatter) override;
 private:
     TypeSymbol* type;
     int layoutIndex;

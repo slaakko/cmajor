@@ -26,7 +26,15 @@ void TypeParameterSymbol::Read(Reader& reader)
     TypeSymbol::Read(reader);
 }
 
+void TypeParameterSymbol::Dump(CodeFormatter& formatter)
+{
+}
+
 BoundTypeParameterSymbol::BoundTypeParameterSymbol(const Span& span_, const std::string& name_): Symbol(span_, name_), type(nullptr)
+{
+}
+
+void BoundTypeParameterSymbol::Dump(CodeFormatter& formatter)
 {
 }
 

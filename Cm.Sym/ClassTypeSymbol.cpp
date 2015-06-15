@@ -459,4 +459,46 @@ void ClassTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& 
     }
 }
 
+void ClassTypeSymbol::Dump(CodeFormatter& formatter)
+{
+    std::string f = SymbolFlagStr(Flags(), DeclaredAccess(), true);
+    if (!f.empty())
+    {
+        f.append(1, ' ');
+    }
+    f.append(TypeString());
+    if (!f.empty())
+    {
+        f.append(1, ' ');
+    }
+    f.append(Name());
+    formatter.Write(f);
+    if (!typeParameters.empty())
+    {
+        formatter.Write("<");
+        bool first = true;
+        for (TypeParameterSymbol* typeParam : typeParameters)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                formatter.Write(", ");
+            }
+            formatter.Write(typeParam->Name());
+        }
+        formatter.Write(">");
+    }
+    formatter.WriteLine();
+    formatter.IncIndent();
+    for (const std::unique_ptr<Symbol>& symbol : Symbols())
+    {
+        symbol->Dump(formatter);
+    }
+    formatter.DecIndent();
+    formatter.WriteLine("end of " + TypeString() + " " + Name());
+}
+
 } } // namespace Cm::Sym

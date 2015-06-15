@@ -34,6 +34,7 @@ public:
     ConceptSymbol* RefinedConcept() const { return refinedConcept; }
     void SetRefinedConcept(ConceptSymbol* refinedConcept_) { refinedConcept = refinedConcept_; }
     void SetIntrinsicConcept() { isIntrinsicConcept = true; }
+    void Dump(CodeFormatter& formatter) override;
 private:
     bool isIntrinsicConcept;
     TypeId id;

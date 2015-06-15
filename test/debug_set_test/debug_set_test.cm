@@ -1,0 +1,39 @@
+using System;
+using System.Collections;
+
+void main()
+{
+    Console.Write("seed> ");
+    string s = Console.ReadLine();
+    uint seed = ParseUInt(s);
+    Console.Write("n or exit> ");
+    string nn = Console.ReadLine();
+    while (nn != "exit")
+    {
+        int n = ParseInt(nn);
+        Set<int> set;
+        srand(seed);    
+        for (int i = 0; i < n; ++i)
+        {
+            int r = rand();
+            set.Insert(r);
+        }
+        int x = 0;
+        bool first = true;
+        for (int x : set)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                Console.Write(", ");
+            }
+            Console.Write(x);
+        }
+        Console.WriteLine();
+        Console.Write("n or exit> ");
+        nn = Console.ReadLine();
+    }
+}

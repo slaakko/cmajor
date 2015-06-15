@@ -552,14 +552,14 @@ void Inspector::InspectList(const PrintExpr& printExpr)
     {
         throw std::runtime_error("could not evaluate debugger expression '" + printExpr.Text() + "'");
     }
-    std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", "System.List"));
+    std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", "System.Collections.List"));
     if (result->GetValue()->IsStructureValue())
     {
         StructureValue* listStruct = static_cast<StructureValue*>(result->GetValue());
         Value* countValue = listStruct->GetFieldValue("count");
         if (!countValue)
         {
-            throw std::runtime_error("count field not found in System.List");
+            throw std::runtime_error("count field not found in System.Collections.List");
         }
         if (countValue->IsIntegerValue())
         {
@@ -596,7 +596,7 @@ void Inspector::InspectList(const PrintExpr& printExpr)
         }
         else
         {
-            throw std::runtime_error("count of System.List not integer");
+            throw std::runtime_error("count of System.Collections.List not integer");
         }
     }
     else
@@ -607,12 +607,257 @@ void Inspector::InspectList(const PrintExpr& printExpr)
 
 void Inspector::InspectSet(const PrintExpr& printExpr)
 {
-
+    InspectTree(printExpr);
 }
 
 void Inspector::InspectMap(const PrintExpr& printExpr)
 {
+    InspectTree(printExpr);
+}
 
+AddressValue LeftNode(AddressValue n, const std::string& nodePtrCast, Gdb& gdb)
+{
+    std::string nodeExpr = "(" + nodePtrCast + n.ToString() + ").__base.left";
+    std::shared_ptr<GdbCommand> nodeCommand = gdb.Print(nodeExpr);
+    if (nodeCommand->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + nodeExpr + "'");
+    }
+    std::unique_ptr<Result> nodeResult(resultGrammar->Parse(nodeCommand->ReplyMessage().c_str(), nodeCommand->ReplyMessage().c_str() + nodeCommand->ReplyMessage().length(), 0, "", "left"));
+    Value* value = nodeResult->GetValue();
+    if (value->IsAddressValue())
+    {
+        return *static_cast<AddressValue*>(value);
+    }
+    else
+    {
+        throw std::runtime_error("left not address");
+    }
+}
+
+AddressValue RightNode(AddressValue n, const std::string& nodePtrCast, Gdb& gdb)
+{
+    std::string nodeExpr = "(" + nodePtrCast + n.ToString() + ").__base.right";
+    std::shared_ptr<GdbCommand> nodeCommand = gdb.Print(nodeExpr);
+    if (nodeCommand->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + nodeExpr + "'");
+    }
+    std::unique_ptr<Result> nodeResult(resultGrammar->Parse(nodeCommand->ReplyMessage().c_str(), nodeCommand->ReplyMessage().c_str() + nodeCommand->ReplyMessage().length(), 0, "", "right"));
+    Value* value = nodeResult->GetValue();
+    if (value->IsAddressValue())
+    {
+        return *static_cast<AddressValue*>(value);
+    }
+    else
+    {
+        throw std::runtime_error("right not address");
+    }
+}
+
+AddressValue ParentNode(AddressValue n, const std::string& nodePtrCast, Gdb& gdb)
+{
+    std::string nodeExpr = "(" + nodePtrCast + n.ToString() + ").__base.parent";
+    std::shared_ptr<GdbCommand> nodeCommand = gdb.Print(nodeExpr);
+    if (nodeCommand->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + nodeExpr + "'");
+    }
+    std::unique_ptr<Result> nodeResult(resultGrammar->Parse(nodeCommand->ReplyMessage().c_str(), nodeCommand->ReplyMessage().c_str() + nodeCommand->ReplyMessage().length(), 0, "", "parent"));
+    Value* value = nodeResult->GetValue();
+    if (value->IsAddressValue())
+    {
+        return *static_cast<AddressValue*>(value);
+    }
+    else
+    {
+        throw std::runtime_error("parent not address");
+    }
+}
+
+AddressValue MinNode(AddressValue n, const std::string& nodePtrCast, Gdb& gdb)
+{
+    if (n.IsNull())
+    {
+        throw std::runtime_error("MinNode got null node address");
+    }
+    AddressValue left = LeftNode(n, nodePtrCast, gdb);
+    while (!left.IsNull())
+    {
+        n = left;
+        left = LeftNode(n, nodePtrCast, gdb);
+    }
+    return n;
+}
+
+AddressValue NextNode(AddressValue n, const std::string& nodePtrCast, Gdb& gdb)
+{
+    if (n.IsNull())
+    {
+        throw std::runtime_error("NextNode got null node address");
+    }
+    AddressValue right = RightNode(n, nodePtrCast, gdb);
+    if (!right.IsNull())
+    {
+        return MinNode(right, nodePtrCast, gdb);
+    }
+    else
+    {
+        AddressValue u = ParentNode(n, nodePtrCast, gdb);
+        AddressValue uRight = RightNode(u, nodePtrCast, gdb);
+        while (n == uRight)
+        {
+            n = u;
+            u = ParentNode(u, nodePtrCast, gdb);
+            uRight = RightNode(u, nodePtrCast, gdb);
+        }
+        AddressValue nRight = RightNode(n, nodePtrCast, gdb);
+        if (nRight != u)
+        {
+            return u;
+        }
+        return n;
+    }
+}
+
+void Inspector::InspectTree(const PrintExpr& printExpr)
+{
+    TypeExpr* typeExpr = printExpr.GetTypeExpr();
+    std::string classTypeName = typeExpr->ToString();
+    Cm::Core::ClassDebugInfo* classDebugInfo = debugInfo.GetClassDebugInfo(classTypeName);
+    if (!classDebugInfo)
+    {
+        throw std::runtime_error("class '" + classTypeName + "' not found");
+    }
+    Cm::Core::MemberVariableDebugInfo* treeMemberVar = classDebugInfo->GetMemberVariable("tree");
+    if (!treeMemberVar)
+    {
+        throw std::runtime_error("tree member not found");
+    }
+    const std::string& treeTypeName = treeMemberVar->MemberVarTypeName();
+    Cm::Core::ClassDebugInfo* treeDebugInfo = debugInfo.GetClassDebugInfo(treeTypeName);
+    if (!treeDebugInfo)
+    {
+        throw std::runtime_error("tree type not found");
+    }
+    Cm::Core::MemberVariableDebugInfo* header = treeDebugInfo->GetMemberVariable("header");
+    if (!header)
+    {
+        throw std::runtime_error("header member not found");
+    }
+    const std::string& headerTypeName = header->MemberVarTypeName();
+    Cm::Core::ClassDebugInfo* headerType = debugInfo.GetClassDebugInfo(headerTypeName);
+    if (!headerType)
+    {
+        throw std::runtime_error("header type not found");
+    }
+    Cm::Core::MemberVariableDebugInfo* ptr = headerType->GetMemberVariable("ptr");
+    if (!ptr)
+    {
+        throw std::runtime_error("ptr member not found");
+    }
+    const std::string& ptrTypeName = ptr->MemberVarTypeName();
+    TypeExpr* ptrTypeExpr = typeExprParser->Parse(ptrTypeName.c_str(), ptrTypeName.c_str() + ptrTypeName.length(), 0, "");
+    ptrTypeExpr->Derivations().RemoveLastPointer();
+    std::string nodeTypeName = ptrTypeExpr->ToString();
+    Cm::Core::ClassDebugInfo* nodeDebugInfo = debugInfo.GetClassDebugInfo(nodeTypeName);
+    if (!nodeDebugInfo)
+    {
+        throw std::runtime_error("node type not found");
+    }
+    Cm::Core::MemberVariableDebugInfo* valueMember = nodeDebugInfo->GetMemberVariable("value");
+    if (!valueMember)
+    {
+        throw std::runtime_error("value member not found");
+    }
+    const std::string& valueTypeName = valueMember->MemberVarTypeName();
+    std::string nodePtrIrType = nodeDebugInfo->IrTypeName() + "*";
+    std::string nodePtrCast = "*(" + nodePtrIrType + ")";
+    std::shared_ptr<GdbCommand> treeCommand = gdb.Print(printExpr.Text() + ".tree");
+    if (treeCommand->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + printExpr.Text() + ".tree'");
+    }
+    std::unique_ptr<Result> treeResult(resultGrammar->Parse(treeCommand->ReplyMessage().c_str(), treeCommand->ReplyMessage().c_str() + treeCommand->ReplyMessage().length(), 0, "", "tree"));
+    if (treeResult->GetValue()->IsStructureValue())
+    {
+        StructureValue* treeStruct = static_cast<StructureValue*>(treeResult->GetValue());
+        Value* countValue = treeStruct->GetFieldValue("count");
+        if (!countValue)
+        {
+            throw std::runtime_error("count field not found in tree type");
+        }
+        if (countValue->IsIntegerValue())
+        {
+            IntegerValue* count = static_cast<IntegerValue*>(countValue);
+            if (count->IsNegative())
+            {
+                throw std::runtime_error("count is negative");
+            }
+            uint64_t n = count->AbsoluteValue();
+            if (n == 0)
+            {
+                std::unique_ptr<Result> result(new Result("count", -1));
+                result->SetValue(new IntegerValue(0, false));
+                result->SetType("int");
+                result->SetDisplayType("int");
+                results.push_back(std::move(result));
+            }
+            else
+            {
+                std::string headerPtrExpr = "$" + std::to_string(treeResult->Handle()) + ".header.ptr";
+                std::shared_ptr<GdbCommand> headerPtrCommand = gdb.Print(headerPtrExpr);
+                if (headerPtrCommand->ReplyMessage().empty())
+                {
+                    throw std::runtime_error("could not evaluate debugger expression '" + headerPtrExpr + "'");
+                }
+                std::unique_ptr<Result> headerPtrResult(resultGrammar->Parse(headerPtrCommand->ReplyMessage().c_str(), headerPtrCommand->ReplyMessage().c_str() + headerPtrCommand->ReplyMessage().length(), 0, "", "ptr"));
+                Value* headerPtrValue = headerPtrResult->GetValue();
+                if (!headerPtrValue->IsAddressValue())
+                {
+                    throw std::runtime_error("header.ptr not address");
+                }
+                AddressValue e = *static_cast<AddressValue*>(headerPtrValue);
+                std::string leftmostExpr = "$" + std::to_string(headerPtrResult->Handle()) + "->__base.left";
+                std::shared_ptr<GdbCommand> leftmostCommand = gdb.Print(leftmostExpr);
+                if (leftmostCommand->ReplyMessage().empty())
+                {
+                    throw std::runtime_error("could not evaluate debugger expression '" + leftmostExpr + "'");
+                }
+                std::unique_ptr<Result> leftmostResult(resultGrammar->Parse(leftmostCommand->ReplyMessage().c_str(), leftmostCommand->ReplyMessage().c_str() + leftmostCommand->ReplyMessage().length(), 0, "", "leftmost"));
+                Value* leftmostValue = leftmostResult->GetValue();
+                if (!leftmostValue->IsAddressValue())
+                {
+                    throw std::runtime_error("leftmost not address");
+                }
+                AddressValue i = *static_cast<AddressValue*>(leftmostValue);
+                int index = 0;
+                while (i != e)
+                {
+                    std::string valueExpr = "(" + nodePtrCast + i.ToString() + ").value";
+                    std::shared_ptr<GdbCommand> valueCommand = gdb.Print(valueExpr);
+                    if (valueCommand->ReplyMessage().empty())
+                    {
+                        throw std::runtime_error("could not evaluate debugger expression '" + valueExpr + "'");
+                    }
+                    std::unique_ptr<Result> valueResult(resultGrammar->Parse(valueCommand->ReplyMessage().c_str(), valueCommand->ReplyMessage().c_str() + valueCommand->ReplyMessage().length(), 0, "",
+                        "[" + std::to_string(index++) + "]"));
+                    valueResult->SetType(valueTypeName);
+                    valueResult->SetDisplayType(valueTypeName);
+                    results.push_back(std::move(valueResult));
+                    i = NextNode(i, nodePtrCast, gdb);
+                }
+            }
+        }
+        else
+        {
+            throw std::runtime_error("count of tree type not integer");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("structure expected");
+    }
 }
 
 } } // Cm::Debugger

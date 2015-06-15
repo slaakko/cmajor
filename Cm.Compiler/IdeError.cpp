@@ -22,6 +22,7 @@ std::string GetFilePath(int fileIndex)
 
 Cm::Core::SourceSpan GetSourceSpan(const Cm::Parsing::Span& fromSpan)
 {
+    if (!fromSpan.Valid()) return Cm::Core::SourceSpan();
     std::string filePath = GetFilePath(fromSpan.FileIndex());
     Cm::Emit::SourceFile& file = Cm::Emit::SourceFileCache::Instance().GetSourceFile(filePath);
     const char* start = file.Begin();

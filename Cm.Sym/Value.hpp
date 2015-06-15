@@ -13,6 +13,7 @@
 #include <Cm.Ser/BinaryReader.hpp>
 #include <Cm.Ser/BinaryWriter.hpp>
 #include <Cm.Parsing/Scanner.hpp>
+#include <Cm.Util/TextUtils.hpp>
 #include <Ir.Intf/Object.hpp>
 #include <stdint.h>
 
@@ -41,6 +42,7 @@ public:
     virtual Ir::Intf::Object* CreateIrObject() const = 0;
     virtual bool IsScopedValue() const { return false; }
     virtual bool IsNull() const { return false; }
+    virtual std::string ToString() const { return ""; }
 };
 
 class BoolValue : public Value
@@ -56,6 +58,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     bool Value() const { return value; }
+    std::string ToString() const override { return value ? "true" : "false"; }
 private:
     bool value;
 };
@@ -73,6 +76,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     char Value() const { return value; }
+    std::string ToString() const override { return "'" + Cm::Util::CharStr(value) + "'"; }
 private:
     char value;
 };
@@ -90,6 +94,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     int8_t Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     int8_t value;
 };
@@ -107,6 +112,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     uint8_t Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     uint8_t value;
 };
@@ -124,6 +130,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     int16_t Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     int16_t value;
 };
@@ -141,6 +148,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     uint16_t Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     uint16_t value;
 };
@@ -158,6 +166,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     int32_t Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     int32_t value;
 };
@@ -175,6 +184,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     uint32_t Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     uint32_t value;
 };
@@ -192,6 +202,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     int64_t Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     int64_t value;
 };
@@ -209,6 +220,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     uint64_t Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     uint64_t value;
 };
@@ -226,6 +238,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     float Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     float value;
 };
@@ -243,6 +256,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     double Value() const { return value; }
+    std::string ToString() const override { return std::to_string(value); }
 private:
     double value;
 };
@@ -259,6 +273,7 @@ public:
     Ir::Intf::Object* CreateIrObject() const override;
     bool IsNull() const override { return true; }
     void SetType(Cm::Sym::TypeSymbol* type_) { type = type_; }
+    std::string ToString() const override { return "null"; }
 private:
     Cm::Sym::TypeSymbol* type;
 };
@@ -275,6 +290,7 @@ public:
     Value* As(ValueType targetType, bool cast, const Span& span) const override;
     Ir::Intf::Object* CreateIrObject() const override;
     const std::string& Value() const { return value; }
+    std::string ToString() const override { return "\"" + Cm::Util::StringStr(value) + "\""; }
 private:
     std::string value;
 };
