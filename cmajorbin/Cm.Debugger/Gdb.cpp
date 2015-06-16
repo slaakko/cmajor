@@ -46,6 +46,10 @@ GdbSetHeightUnlimitedCommand::GdbSetHeightUnlimitedCommand() : GdbCommand("set h
 {
 }
 
+GdbSetPrintElementsCommand::GdbSetPrintElementsCommand() : GdbCommand("set print elements 0")
+{
+}
+
 GdbStartCommand::GdbStartCommand() : GdbCommand("start")
 {
 }
@@ -169,6 +173,7 @@ std::shared_ptr<GdbCommand> Gdb::Start()
         firstStart = false;
         ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetWidthUnlimitedCommand()));
         ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetHeightUnlimitedCommand()));
+        ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetPrintElementsCommand()));
     }
     std::shared_ptr<GdbCommand> startCommand(new GdbStartCommand());
     ExecuteCommand(startCommand);

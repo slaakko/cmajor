@@ -951,15 +951,15 @@ void ResultGrammar::GetReferencedGrammars()
 
 void ResultGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
-    AddRuleLink(new Cm::Parsing::RuleLink("real", this, "Cm.Parsing.stdlib.real"));
+    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRuleLink(new Cm::Parsing::RuleLink("long", this, "Cm.Parsing.stdlib.long"));
     AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
+    AddRuleLink(new Cm::Parsing::RuleLink("real", this, "Cm.Parsing.stdlib.real"));
+    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRuleLink(new Cm::Parsing::RuleLink("hex_literal", this, "Cm.Parsing.stdlib.hex_literal"));
     AddRuleLink(new Cm::Parsing::RuleLink("bool", this, "Cm.Parsing.stdlib.bool"));
-    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
-    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRule(new ResultRule("Result", GetScope(),
         new Cm::Parsing::ActionParser("A0",
@@ -995,9 +995,12 @@ void ResultGrammar::CreateRules()
                 new Cm::Parsing::NonterminalParser("StructureValue", "StructureValue", 0)))));
     AddRule(new StringValueRule("StringValue", GetScope(),
         new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::NonterminalParser("x", "hex_literal", 0),
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("s", "string", 0)))));
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::NonterminalParser("x", "hex_literal", 0),
+                new Cm::Parsing::ActionParser("A0",
+                    new Cm::Parsing::NonterminalParser("s", "string", 0))),
+            new Cm::Parsing::OptionalParser(
+                new Cm::Parsing::StringParser("...")))));
     AddRule(new Cm::Parsing::Rule("ParenthesizedExpr", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(

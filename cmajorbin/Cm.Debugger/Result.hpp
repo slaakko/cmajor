@@ -1,5 +1,5 @@
-#ifndef Result_hpp_31556
-#define Result_hpp_31556
+#ifndef Result_hpp_4380
+#define Result_hpp_4380
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -33,4 +33,4 @@ private:
 
 } } // namespace Cm.Debugger
 
-#endif // Result_hpp_31556
+#endif // Result_hpp_4380

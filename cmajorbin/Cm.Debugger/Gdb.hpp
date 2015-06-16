@@ -69,6 +69,12 @@ public:
     GdbSetHeightUnlimitedCommand();
 };
 
+class GdbSetPrintElementsCommand : public GdbCommand
+{
+public:
+    GdbSetPrintElementsCommand();
+};
+
 class GdbStartCommand : public GdbCommand
 {
 public:
