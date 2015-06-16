@@ -41,7 +41,7 @@
             ;
 
         StringValue: Value*
-            ::= hex_literal:x string:s{ value = new StringValue(s); }
+            ::= hex_literal:x string:s{ value = new StringValue(s); } "..."?
             ;
 
         ParenthesizedExpr
