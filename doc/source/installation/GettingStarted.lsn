@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<latexSolution>
+    <solutionName>GettingStarted</solutionName>
+    <activeProject>GettingStarted</activeProject>
+    <projectFiles>
+        <projectFile>
+            <projectName>GettingStarted</projectName>
+            <projectPath>.\GettingStarted.lpr</projectPath>
+        </projectFile>
+    </projectFiles>
+</latexSolution>
