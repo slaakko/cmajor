@@ -293,7 +293,6 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
             functionNode->SetBody(nullptr);
         }
     }
-
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundLiteral& boundLiteral)

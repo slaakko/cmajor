@@ -10,6 +10,7 @@
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Sym/Factory.hpp>
 #include <Cm.Sym/NameMangling.hpp>
+#include <Cm.Sym/Warning.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -17,10 +18,12 @@ void Init()
 {
     InitFactory();
     InitNameMangling();
+    InitWarning();
 }
 
 void Done()
 {
+    DoneWarning();
     DoneNameMangling();
     DoneFactory();
 }

@@ -58,6 +58,7 @@
     <ClInclude Include="TypeRepository.hpp" />
     <ClInclude Include="TypeSymbol.hpp" />
     <ClInclude Include="Value.hpp" />
+    <ClInclude Include="Warning.hpp" />
     <ClInclude Include="Writer.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -100,6 +101,7 @@
     <ClCompile Include="TypeRepository.cpp" />
     <ClCompile Include="TypeSymbol.cpp" />
     <ClCompile Include="Value.cpp" />
+    <ClCompile Include="Warning.cpp" />
     <ClCompile Include="Writer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

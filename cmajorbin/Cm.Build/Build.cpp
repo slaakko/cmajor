@@ -150,6 +150,7 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
             importedModules.insert(libraryReferencePath);
             Cm::Sym::Module module(libraryReferencePath);
             module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+            module.CheckUpToDate();
         }
     }
 }
@@ -280,8 +281,29 @@ void GenerateOptimizedLlvmCodeFile(Cm::BoundTree::BoundCompileUnit& boundCompile
     boost::filesystem::remove(optllErrorFilePath);
 }
 
-void CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
+bool CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
 {
+    bool changed = false;
+    for (const std::string& asmSourceFilePath : project->AsmSourceFilePaths())
+    {
+        std::string objectFilePath = Cm::Util::GetFullPath((project->OutputBasePath() / boost::filesystem::path(asmSourceFilePath).filename().replace_extension(".o")).generic_string());
+        boost::filesystem::path ofp = objectFilePath;
+        objectFilePaths.push_back(objectFilePath);
+        if (!boost::filesystem::exists(ofp))
+        {
+            changed = true;
+        }
+        else
+        {
+            boost::filesystem::path afp = asmSourceFilePath;
+            if (boost::filesystem::last_write_time(afp) > boost::filesystem::last_write_time(ofp))
+            {
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (!changed) return false;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !project->AsmSourceFilePaths().empty())
     {
@@ -291,7 +313,6 @@ void CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& obje
     {
         std::string llErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(asmSourceFilePath).replace_extension(".ll.error").generic_string());
         std::string objectFilePath = Cm::Util::GetFullPath((project->OutputBasePath() / boost::filesystem::path(asmSourceFilePath).filename().replace_extension(".o")).generic_string());
-        objectFilePaths.push_back(objectFilePath);
         std::string command = "llc";
         command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
         command.append(" -filetype=obj").append(" -o ").append(Cm::Util::QuotedPath(objectFilePath)).append(" ").append(Cm::Util::QuotedPath(asmSourceFilePath));
@@ -323,10 +344,32 @@ void CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& obje
         }
         boost::filesystem::remove(llErrorFilePath);
     }
+    return true;
 }
 
-void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
+bool CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
 {
+    bool changed = false;
+    for (const std::string& cSourceFilePath : project->CSourceFilePaths())
+    {
+        std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cSourceFilePath).filename().replace_extension(".o")).generic_string());
+        objectFilePaths.push_back(objectFilePath);
+        boost::filesystem::path ofp = objectFilePath;
+        if (!boost::filesystem::exists(ofp))
+        {
+            changed = true;
+        }
+        else
+        {
+            boost::filesystem::path cfp = cSourceFilePath;
+            if (boost::filesystem::last_write_time(cfp) > boost::filesystem::last_write_time(ofp))
+            {
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (!changed) return false;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !project->CSourceFilePaths().empty())
     {
@@ -342,7 +385,6 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
         std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cSourceFilePath).filename().replace_extension(".o")).generic_string());
         std::string ccCommand = "gcc " + gFlag + "-O" + std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel());
         ccCommand.append(" -pthread -c ").append(Cm::Util::QuotedPath(cSourceFilePath)).append(" -o ").append(Cm::Util::QuotedPath(objectFilePath));
-        objectFilePaths.push_back(objectFilePath);
         std::string ccErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(objectFilePath).replace_extension(".c.error").generic_string());
         try
         {
@@ -372,6 +414,7 @@ void CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
         }
         boost::filesystem::remove(ccErrorFilePath);
     }
+    return true;
 }
 
 bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, 
@@ -379,10 +422,6 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
 {
     bool changed = false;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
-    if (!quiet && !syntaxTree.CompileUnits().empty())
-    {
-        std::cout << "Compiling..." << std::endl;
-    }
     boost::filesystem::path outputBase(outputBasePath);
     std::string ext;
     Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
@@ -498,10 +537,16 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         }
     }
     int index = 0;
+    bool first = true;
     for (const std::unique_ptr<Cm::BoundTree::BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
     {
         if (rebuild || buildSet.find(boundCompileUnit.get()) != buildSet.end())
         {
+            if (!quiet && first)
+            {
+                first = false;
+                std::cout << "Compiling..." << std::endl;
+            }
             if (!quiet)
             {
                 std::cout << "> " << Cm::Util::GetFullPath(boundCompileUnit->SyntaxUnit()->FilePath()) << std::endl;
@@ -540,8 +585,28 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
     return changed;
 }
 
-void Archive(const std::vector<std::string>& objectFilePaths, const std::string& assemblyFilePath)
+bool Archive(const std::vector<std::string>& objectFilePaths, const std::string& assemblyFilePath)
 {
+    bool changed = false;
+    boost::filesystem::path afp = assemblyFilePath;
+    if (!boost::filesystem::exists(afp))
+    {
+        changed = true;
+    }
+    else
+    {
+        for (const std::string& objectFilePath : objectFilePaths)
+        {
+            boost::filesystem::path ofp = objectFilePath;
+            if (boost::filesystem::last_write_time(ofp) > boost::filesystem::last_write_time(afp))
+            {
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (!changed) return false;
+    boost::filesystem::remove(assemblyFilePath);
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !objectFilePaths.empty())
     {
@@ -585,10 +650,35 @@ void Archive(const std::vector<std::string>& objectFilePaths, const std::string&
         }
     }
     boost::filesystem::remove(arErrorFilePath);
+    return true;
 }
 
-void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<std::string>& cLibs, const std::string& executableFilePath)
+bool Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<std::string>& cLibs, const std::string& executableFilePath)
 {
+    bool changed = false;
+#ifdef WIN32
+    std::string exePath = Cm::Util::GetFullPath(boost::filesystem::path(executableFilePath).replace_extension(".exe").generic_string());
+#else
+    std::string exePath = Cm::Util::GetFullPath(executableFilePath);
+#endif    
+    boost::filesystem::path efp = exePath;
+    if (!boost::filesystem::exists(efp))
+    {
+        changed = true;
+    }
+    else 
+    {
+        for (const std::string& assemblyFilePath : assemblyFilePaths)
+        {
+            boost::filesystem::path afp = assemblyFilePath;
+            if (boost::filesystem::last_write_time(afp) > boost::filesystem::last_write_time(efp))
+            {
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (!changed) return false;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !assemblyFilePaths.empty())
     {
@@ -641,23 +731,38 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
     boost::filesystem::remove(exeErrorFilePath);
     if (!quiet)
     {
-#ifdef WIN32
-        std::string exePath = Cm::Util::GetFullPath(boost::filesystem::path(executableFilePath).replace_extension(".exe").generic_string());
-#else
-        std::string exePath = Cm::Util::GetFullPath(executableFilePath);
-#endif    
         std::cout << "=> " << exePath << std::endl;
     }
+    return true;
 }
 
-void CreateDebugInfoFile(const std::string& executableFilePath, const std::vector<std::string>& allDebugInfoFilePaths)
+bool CreateDebugInfoFile(const std::string& executableFilePath, const std::vector<std::string>& allDebugInfoFilePaths)
 {
+    bool changed = false;
+    std::string cmdbFilePath = Cm::Util::GetFullPath(boost::filesystem::path(executableFilePath).replace_extension(".cmdb").generic_string());
+    boost::filesystem::path cfp = cmdbFilePath;
+    if (!boost::filesystem::exists(cfp))
+    {
+        changed = true;
+    }
+    else
+    {
+        for (const std::string& debugInfoFilePath : allDebugInfoFilePaths)
+        {
+            boost::filesystem::path dfp = debugInfoFilePath;
+            if (boost::filesystem::last_write_time(dfp) > boost::filesystem::last_write_time(cfp))
+            {
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (!changed) return false;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
         std::cout << "Creating debug info file..." << std::endl;
     }
-    std::string cmdbFilePath = Cm::Util::GetFullPath(boost::filesystem::path(executableFilePath).replace_extension(".cmdb").generic_string());
     std::vector<std::string> nonEmptyDebugInfoFilePaths;
     for (const std::string& debugInfoFilePath : allDebugInfoFilePaths)
     {
@@ -687,9 +792,10 @@ void CreateDebugInfoFile(const std::string& executableFilePath, const std::vecto
     {
         std::cout << "=> " << cmdbFilePath << std::endl;
     }
+    return true;
 }
 
-void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths)
+bool GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths, bool changed)
 {
     boost::filesystem::path outputBase(projectOutputBasePath);
     Cm::Parsing::Span span;
@@ -706,9 +812,28 @@ void GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::st
     }
     std::string exceptionTableCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__exception_table__" + ext)).generic_string());
     Cm::BoundTree::BoundCompileUnit exceptionTableCompileUnit(&syntaxUnit, exceptionTableCompileUnitIrFilePath, symbolTable);
+    objectFilePaths.push_back(exceptionTableCompileUnit.ObjectFilePath());
+    if (!changed)
+    {
+        boost::filesystem::path ifp = exceptionTableCompileUnit.IrFilePath();
+        boost::filesystem::path ofp = exceptionTableCompileUnit.ObjectFilePath();
+        if (!boost::filesystem::exists(ifp))
+        {
+            changed = true;
+        }
+        else if (!boost::filesystem::exists(ofp))
+        {
+            changed = true;
+        }
+        else if (boost::filesystem::last_write_time(ifp) > boost::filesystem::last_write_time(ofp))
+        {
+            changed = true;
+        }
+    }
+    if (!changed) return false;
     Cm::Sym::GetExceptionTable()->GenerateExceptionTableUnit(exceptionTableCompileUnitIrFilePath);
     GenerateObjectCode(exceptionTableCompileUnit);
-    objectFilePaths.push_back(exceptionTableCompileUnit.ObjectFilePath());
+    return true;
 }
 
 void CleanProject(Cm::Ast::Project* project)
@@ -759,8 +884,16 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
     boost::filesystem::create_directories(project->OutputBasePath());
     std::vector<std::string> objectFilePaths;
-    CompileCFiles(project, objectFilePaths);
-    CompileAsmSources(project, objectFilePaths);
+    bool cFilesChanged = CompileCFiles(project, objectFilePaths);
+    if (!changed)
+    {
+        changed = cFilesChanged;
+    }
+    bool asmSourcesChanged = CompileAsmSources(project, objectFilePaths);
+    if (!changed)
+    {
+        changed = asmSourcesChanged;
+    }
     std::vector<std::string> debugInfoFilePaths;
     if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths))
     {
@@ -768,32 +901,55 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     }
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
-        GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths);
-        GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths);
+        bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, changed || rebuild);
+        if (!changed)
+        {
+            changed = mainCompileUnitGenerated;
+        }
+        bool exceptionTableUnitGenerated = GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, changed || rebuild);
+        if (!changed)
+        {
+            changed = exceptionTableUnitGenerated;
+        }
     }
-    boost::filesystem::remove(project->AssemblyFilePath());
-    Archive(objectFilePaths, project->AssemblyFilePath());
+    bool objectFilesChanged = Archive(objectFilePaths, project->AssemblyFilePath());
+    if (!changed)
+    {
+        changed = objectFilesChanged;
+    }
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
-        Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
+        bool linked = Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
+        if (!changed)
+        {
+            changed = linked;
+        }
     }
-    boost::filesystem::path outputBasePath = project->OutputBasePath();
-    std::string cmlFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".cml")).generic_string());
-    if (!quiet)
+    if (changed)
     {
-        std::cout << "Generating library file..." << std::endl;
-        std::cout << "=> " << cmlFilePath << std::endl;
+        boost::filesystem::path outputBasePath = project->OutputBasePath();
+        std::string cmlFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".cml")).generic_string());
+        if (!quiet)
+        {
+            std::cout << "Generating library file..." << std::endl;
+            std::cout << "=> " << cmlFilePath << std::endl;
+        }
+        Cm::Sym::Module projectModule(cmlFilePath);
+        projectModule.SetName(project->Name());
+        projectModule.SetSourceFilePaths(project->SourceFilePaths());
+        projectModule.SetReferenceFilePaths(allReferenceFilePaths);
+        projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
+        projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
+        projectModule.Export(symbolTable);
     }
-    Cm::Sym::Module projectModule(cmlFilePath);
-    projectModule.SetSourceFilePaths(project->SourceFilePaths());
-    projectModule.SetReferenceFilePaths(allReferenceFilePaths);
-    projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
-    projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
-    projectModule.Export(symbolTable);
     if (project->GetTarget() == Cm::Ast::Target::program && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
     {
         allDebugInfoFilePaths.insert(allDebugInfoFilePaths.end(), debugInfoFilePaths.begin(), debugInfoFilePaths.end());
-        CreateDebugInfoFile(project->ExecutableFilePath(), allDebugInfoFilePaths);
+        bool debugInfoFileCreated = CreateDebugInfoFile(project->ExecutableFilePath(), allDebugInfoFilePaths);
+        if (!changed)
+        {
+            changed = debugInfoFileCreated;
+        }
     }
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);

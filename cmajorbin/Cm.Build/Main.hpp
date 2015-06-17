@@ -13,7 +13,7 @@
 
 namespace Cm { namespace Build {
 
-void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths);
+bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, bool changed);
 
 } } // namespace Bm::Build
 

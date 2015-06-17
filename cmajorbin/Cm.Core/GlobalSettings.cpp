@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Core/GlobalSettings.hpp>
+#include <Cm.Sym/Warning.hpp>
 
 namespace Cm { namespace Core {
 
@@ -56,6 +57,7 @@ void GlobalSettings::SetConfig(const std::string& config_)
 void GlobalSettings::SetCurrentProjectName(const std::string& currentProjectName_)
 {
     currentProjectName = currentProjectName_;
+    Cm::Sym::CompileWarningCollection::Instance().SetCurrentProjectName(currentProjectName);
 }
 
 GlobalSettings* globalSettings = nullptr;

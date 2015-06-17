@@ -16,6 +16,7 @@
 #include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/Warning.hpp>
 #include <Cm.Core/InitSymbolTable.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
@@ -37,6 +38,11 @@ const char moduleFileId[4] = { 'M', 'C', '1', '0' };
 
 Module::Module(const std::string& filePath_) : filePath(filePath_)
 {
+}
+
+void Module::SetName(const std::string& name_)
+{
+    name = name_;
 }
 
 void Module::SetSourceFilePaths(const std::vector<std::string>& sourceFilePaths_)
@@ -65,6 +71,11 @@ void Module::WriteModuleFileId(Writer& writer)
     {
         writer.GetBinaryWriter().Write(moduleFileId[i]);
     }
+}
+
+void Module::WriteName(Writer& writer)
+{
+    writer.GetBinaryWriter().Write(name);
 }
 
 void Module::WriteSourceFilePaths(Writer& writer)
@@ -111,6 +122,7 @@ void Module::Export(SymbolTable& symbolTable)
 {
     Writer writer(filePath, &symbolTable);
     WriteModuleFileId(writer);
+    WriteName(writer);
     WriteSourceFilePaths(writer);
     WriteReferenceFilePaths(writer);
     WriteCLibraryFilePaths(writer);
@@ -147,6 +159,11 @@ void Module::CheckModuleFileId(Reader& reader)
         expectedVersion.append(".").append(1, moduleFileId[3]);
         throw ModuleFileVersionMismatch(readVersion, expectedVersion);
     }
+}
+
+void Module::ReadName(Reader& reader)
+{
+    name = reader.GetBinaryReader().ReadString();
 }
 
 void Module::ReadSourceFilePaths(Reader& reader)
@@ -199,6 +216,7 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
     allReferenceFilePaths.push_back(filePath);
     Reader reader(filePath, symbolTable);
     CheckModuleFileId(reader);
+    ReadName(reader);
     ReadSourceFilePaths(reader);
     ReadReferenceFilePaths(reader);
     ReadCLibraryFilePaths(reader);
@@ -212,6 +230,7 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
             importedModules.insert(referenceFilePath);
             Module referencedModule(referenceFilePath);
             referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+            referencedModule.CheckUpToDate();
         }
     }
     Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::FileRegistry::Instance();
@@ -300,6 +319,7 @@ void Module::Dump()
     Cm::Util::CodeFormatter formatter(std::cout);
     formatter.IndentSize() = 1;
     formatter.WriteLine("module code file '" + filePath + "' version " + readVersion + " (version " + expectedVersion + " expected).");
+    ReadName(reader);
     ReadSourceFilePaths(reader);
     ReadReferenceFilePaths(reader);
     ReadCLibraryFilePaths(reader);
@@ -347,6 +367,47 @@ void Module::Dump()
         }
     }
     symbolTable.GlobalNs().Dump(formatter);
+}
+
+void Module::CheckUpToDate()
+{
+    boost::filesystem::path mfp = filePath;
+    bool changed = false;
+    if (!boost::filesystem::exists(mfp))
+    {
+        std::string warningMessage = "library '" + name + "' is not up-to-date, because library file '" + filePath + "' does not exist";
+        std::cout << "warning: " << warningMessage << std::endl;
+        CompileWarningCollection::Instance().AddWarning(Warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage));
+        changed = true;
+    }
+    else
+    {
+        for (const std::string& sourceFilePath : sourceFilePaths)
+        {
+            boost::filesystem::path sfp = sourceFilePath;
+            if (boost::filesystem::last_write_time(sfp) > boost::filesystem::last_write_time(mfp))
+            {
+                std::string warningMessage = "library '" + name + "' is not up-to-date, because source file '" + sourceFilePath + "' is newer than library file '" + filePath + "'";
+                std::cout << "warning: " << warningMessage << std::endl;
+                CompileWarningCollection::Instance().AddWarning(Warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage));
+                changed = true; 
+                break;
+            }
+        }
+    }
+    if (!changed)
+    {
+        for (const std::string& referenceFilePath : referenceFilePaths)
+        {
+            boost::filesystem::path rfp = referenceFilePath;
+            if (boost::filesystem::last_write_time(rfp) > boost::filesystem::last_write_time(mfp))
+            {
+                std::string warningMessage = "library '" + name + "' is not up-to-date, because referenced library file '" + referenceFilePath + " is newer than library file '" + filePath + "'";
+                std::cout << "warning: " << warningMessage << std::endl;
+                CompileWarningCollection::Instance().AddWarning(Warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage));
+            }
+        }
+    }
 }
 
 } } // namespace Cm::Sym

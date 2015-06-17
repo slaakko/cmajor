@@ -11,6 +11,7 @@
 #define CM_COMPILER_IDE_ERROR_INCLUDED
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Sym/Exception.hpp>
+#include <Cm.Sym/Warning.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/CDebugInfo.hpp>
 #include <ostream>
@@ -28,7 +29,9 @@ public:
     IdeError(const std::exception& ex);
     IdeError(const std::string& message);
     IdeError(const Cm::Parsing::Span& reference);
+    IdeError(const Cm::Sym::Warning& warning);
     const std::string& Tool() const { return tool; }
+    const std::string& Category() const { return category; }
     const std::string& Project() const { return project; }
     const std::string& Description() const { return description; }
     const std::string& File() const { return file; }
@@ -37,6 +40,7 @@ public:
     int EndColumn() const { return sourceSpan.EndCol(); }
 private:
     std::string tool;
+    std::string category;
     std::string project;
     std::string description;
     std::string file;
@@ -48,12 +52,14 @@ std::ostream& operator<<(std::ostream& s, const IdeError& error);
 class IdeErrorCollection
 {
 public:
+    IdeErrorCollection();
     IdeErrorCollection(const Cm::Parsing::CombinedParsingError& ex);
     IdeErrorCollection(const Cm::Sym::Exception& ex);
     IdeErrorCollection(const Cm::Core::Exception& ex);
     IdeErrorCollection(const Cm::Core::ToolErrorExcecption& ex);
     IdeErrorCollection(const std::exception& ex);
     IdeErrorCollection(const std::string& message);
+    void AddWarnings(const std::vector<Cm::Sym::Warning>& warnings);
     const std::vector<IdeError>& Errors() const { return errors; }
 private:
     std::vector<IdeError> errors;
