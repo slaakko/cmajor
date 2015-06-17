@@ -1,0 +1,250 @@
+\documentclass[oneside, a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{a4wide}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+
+\begin{document}
+
+\title{Getting Started Guide for Cmajor 1.0.0-beta-5}
+\author{Seppo Laakko}
+\maketitle
+
+\section{Installation in Windows}
+
+\subsection{Prerequisites}
+
+Note:
+You must uninstall any previous Cmajor version before installing
+this version (1.0.0-beta-5).
+
+It is also recommended that you delete the
+\verb|%APPDATA%\Cmajor| directory before installing
+this version because configuration files and system library files
+have been changed.
+
+\begin{itemize}
+
+\item
+Download and install Mingw\_w64 GCC:\\
+\url{http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download}
+
+Installation settings for my system:
+\begin{itemize}
+\item
+Version 5.1.0
+\item
+Architecture: x86\_64
+\item
+Threads: \textbf{posix}
+\item
+Exception: sjlj
+\item
+Build revision: 0
+\end{itemize}
+
+Note: Threads setting must be ``posix''.
+
+After installation insert the bin-directory to the \textbf{PATH} environment variable.
+In my system this is\\
+\verb|C:\Program Files\mingw-w64\x86_64-5.1.0-posix-sjlj-rt_v4-rev0\mingw64\bin| directory.
+
+\end{itemize}
+
+\subsection{Cmajor Installation}
+
+\begin{itemize}
+
+\item
+Download and run \textbf{cmajor-1.0.0-beta-5-win-x86-setup.exe} (for 32-bit Windows) or
+\textbf{cmajor-1.0.0-beta-5-win-x64-setup.exe} (for 64-bit Windows).
+
+\item
+Cmajor is installed by default to \verb|C:\Program Files\Cmajor| directory (under 32-bit Windows) or
+to \verb|C:\Program Files (x86)\Cmajor| directory (32-bit and 64-bit versions under 64-bit Windows).
+
+Note: The x64 version is also installed by default under
+\verb|C:\Program Files (x86)| directory although the programs are genuingly 64-bit versions).
+This is due to restrictions of InstallShield Limited Edition.
+You may want to change the install location under \verb|C:\Program Files| directory in this case.
+
+\item
+The setup adds \verb|C:\Program Files\Cmajor\bin| directory (or whereever you installed it) to your systems
+\textbf{PATH} environment variable, so the Cmajor programs can be executed from any directory from the
+command prompt without specifying full paths.
+
+\item
+The setup also adds a \textbf{CM\_LIBRARY\_PATH} environment variable and
+sets it to contain a path to the Cmajor System Library directory
+that is \verb|%APPDATA%\Cmajor\system|. If you need to modify the
+\textbf{CM\_LIBRARY\_PATH} environment variable, you can find it from the Advanced System Settings pane in the System Control Panel.
+
+In my computer the \verb|%APPDATA%| points actually to the
+\verb|C:\Users\Seppo\AppData\Roaming\| directory. The \textbf{AppData} folder
+is hidden by default. To see it you will have to modify the settings in
+the \emph{Folder Options} Control Panel.
+
+\item
+The setup adds an icon to \textbf{Cmajor Development Environment} to the desktop.
+
+\item
+After installation you have to build the Cmajor System Library.
+
+
+\end{itemize}
+
+\subsection{Building the Cmajor System Library}
+
+\begin{itemize}
+
+\item
+Option 1: using batch file:
+
+\begin{itemize}
+
+\item
+Open command prompt and change to Cmajor system directory by issuing command
+\verb|cd %APPDATA%\Cmajor\system|.
+
+\item
+Run \textbf{build.bat}.
+This builds the Cmajor System Libary for each backend (LLVM/C) and
+configuration (debug/release).
+
+\item
+Now the Cmajor system is ready for building user projects.
+
+\end{itemize}
+
+\item
+Option 2: using IDE:
+
+\begin{itemize}
+
+\item
+Start \textbf{Cmajor Development Environment}.
+
+\item
+Open the \verb!File|Built-in Projects|System Library! project.
+
+\item
+Run \verb!Build|Rebuild Solution! command for the \verb|debug| configuration.
+
+\item
+Select \verb|release| configuration from the configuration combo box
+and run \verb!Build|Rebuild Solution! command for the \verb|release| configuration.
+
+\item
+Select \verb|debug| configuration from the configuration combo box and
+\verb|C| backend from the backend combo box
+and run \verb!Build|Rebuild Solution! command for the \verb|C| backend and the \verb|debug| configuration.
+
+\item
+Select \verb|release| configuration from the configuration combo box
+and run \verb!Build|Rebuild Solution! command for the \verb|C| backend and for the \verb|release| configuration.
+
+\item
+Now the Cmajor system is ready for building user projects.
+
+\end{itemize}
+
+Note: If you are updating from previous Cmajor version, it is important to issue the \textbf{rebuild} command (not just build command),
+because System Library directories are not cleared when uninstalling Cmajor.
+
+\end{itemize}
+
+\subsection{Troubleshooting}
+
+\begin{itemize}
+
+\item
+cmc I2 error \textbf{library reference 'system.cml' not found}.
+
+You have to build the System Library for the used configuration (debug/release) and backend (LLVM/C) first.
+
+\item
+\textbf{Cannot start llc.exe because libgcc\_s\_sjlj-1.dll is missing} (or something like that).
+
+The bin directory of mingw\_w6\\
+(in my machine\\
+\verb|C:\Program Files\mingw-w64\x86_64-5.1.0-posix-sjlj-rt_v4-rev0\mingw64\bin|)
+must be in the PATH environment variable.
+
+\item
+The compiler is still in experimental stage, so surely many bugs exist...
+
+\end{itemize}
+
+Hope this helps!
+
+\section{Installation in Linux}
+
+\subsection{Prerequisites}
+
+\begin{itemize}
+
+\item
+GCC\\
+Must be recent enough to compile C++11 code.
+
+\item
+Download, build and install Boost (\url{http://www.boost.org/}). You will need to build and install the filesystem library.
+
+\item
+Donwload, build and install LLVM tools (\url{http://llvm.org/}).
+Installation instructions can be found in \url{http://llvm.org/docs/GettingStarted.html} document.
+
+\end{itemize}
+
+\subsection{Cmajor Installation}
+
+\begin{itemize}
+
+\item
+Download and extract \textbf{cmajor-1.0.0-src.tar.gz} to some directory here called \verb|<cmajor>|.
+
+\item
+Change to \verb|<cmajor>| directory and run \verb|make| and then \verb|[sudo] make install|.
+
+\item
+Set an environment variable \verb|CM_LIBRARY_PATH| to contain path to \verb|<cmajor>/system| directory.
+You may want to insert a statement like:\\
+\verb|export CM_LIBRARY_PATH=/path/to/cmajor/system|\\
+into you .bashrc script.
+
+\end{itemize}
+
+\subsection{Building the System Library}
+
+\begin{itemize}
+
+\item
+Run command \verb|make sys| from \verb|<cmajor>| directory.
+
+\item
+Now the Cmajor system is ready for building user projects.
+
+\end{itemize}
+
+\subsection{Troubleshooting}
+
+\begin{itemize}
+
+\item
+library reference 'system.cml' not found
+
+You have to build the System Library for the used configuration (debug/release) and backend (LLVM/C) first.
+
+\item
+sh: 1: llc: not found
+
+You have probably not installed LLVM tools.
+
+\item
+The compiler is still in experimental stage, so surely many bugs exist...
+
+Hope this helps!
+\end{itemize}
+
+\end{document}
