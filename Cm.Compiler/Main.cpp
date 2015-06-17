@@ -17,6 +17,7 @@
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <Cm.Sym/Exception.hpp>
+#include <Cm.Sym/Warning.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Util/TextUtils.hpp>
@@ -258,6 +259,15 @@ int main(int argc, const char** argv)
                     throw std::runtime_error(solutionOrProjectFilePath + " is not Cmajor solution or project file");
                 }
             }
+            if (!Cm::Sym::CompileWarningCollection::Instance().Warnings().empty())
+            {
+                if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+                {
+                    Cm::Compiler::IdeErrorCollection errorCollection;
+                    errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
+                    std::cerr << errorCollection << std::endl;
+                }
+            }
         }
         bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
         if (!quiet && !solutionOrProjectFilePaths.empty())
@@ -279,6 +289,7 @@ int main(int argc, const char** argv)
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
             Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
             std::cerr << errorCollection << std::endl;
         }
         for (const Cm::Parsing::ExpectationFailure& exp : ex.Errors())
@@ -299,6 +310,7 @@ int main(int argc, const char** argv)
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
             Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
             std::cerr << errorCollection << std::endl;
             std::cout << ex.what() << std::endl;
         }
@@ -313,6 +325,7 @@ int main(int argc, const char** argv)
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
             Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
             std::cerr << errorCollection << std::endl;
             std::cout << ex.what() << std::endl;
         }
@@ -328,6 +341,7 @@ int main(int argc, const char** argv)
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
             Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
             std::cerr << errorCollection << std::endl;
             std::cout << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << std::endl;
         }
@@ -342,6 +356,7 @@ int main(int argc, const char** argv)
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
             Cm::Compiler::IdeErrorCollection errorCollection(ex);
+            errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
             std::cerr << errorCollection << std::endl;
             std::cout << ex.what() << std::endl;
         }
@@ -356,6 +371,7 @@ int main(int argc, const char** argv)
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
             Cm::Compiler::IdeErrorCollection errorCollection("unknown exception occurred");
+            errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
             std::cerr << errorCollection << std::endl;
             std::cout << "unknown exception occurred" << std::endl;
         }

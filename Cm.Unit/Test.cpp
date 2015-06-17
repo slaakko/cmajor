@@ -266,7 +266,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     Cm::Build::Emit(symbolTable.GetTypeRepository(), boundCompileUnit);
     Cm::Build::GenerateObjectCode(boundCompileUnit);
     objectFilePaths.push_back(boundCompileUnit.ObjectFilePath());
-    Cm::Build::GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths);
+    Cm::Build::GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, true);
     std::string exeExt;
 #ifdef WIN32
     exeExt = ".exe";

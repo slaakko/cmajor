@@ -43,10 +43,6 @@ void SourceSpan::Read(Cm::Ser::BinaryReader& reader)
     line = reader.ReadInt();
     startCol = reader.ReadInt();
     endCol = reader.ReadInt();
-    if (!Valid())
-    {
-        int x = 0;
-    }
 }
 
 void SourceSpan::Write(Cm::Ser::BinaryWriter& writer)
@@ -90,9 +86,9 @@ SourceSpan FromSpan(const char* start, const char* end, const Cm::Parsing::Span&
         return SourceSpan(0, 0, 0);
     }
     const char* s = start + span.Start();
-    if (s < start || s >= end) return SourceSpan();
+    if (s < start || s > end) return SourceSpan();
     const char* e = start + span.End();
-    if (e < start || e >= end) return SourceSpan();
+    if (e < start || e > end) return SourceSpan();
     const char* lineStart = LineStart(start, s);
     const char* lineEnd = LineEnd(end, s);
     if (e > lineEnd)

@@ -35,7 +35,7 @@
 
 namespace Cm { namespace Build {
 
-void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths)
+bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, bool changed)
 {
     Cm::Sym::FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
     if (!userMainFunction)
@@ -63,6 +63,25 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     mainCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(mainCompileUnit));
     mainCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(mainCompileUnit));
     mainCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(mainCompileUnit));
+    objectFilePaths.push_back(mainCompileUnit.ObjectFilePath());
+    if (!changed)
+    {
+        boost::filesystem::path ifp = mainCompileUnit.IrFilePath();
+        boost::filesystem::path ofp = mainCompileUnit.ObjectFilePath();
+        if (!boost::filesystem::exists(ifp))
+        {
+            changed = true;
+        }
+        else if (!boost::filesystem::exists(ofp))
+        {
+            changed = true;
+        }
+        else if (boost::filesystem::last_write_time(ifp) > boost::filesystem::last_write_time(ofp))
+        {
+            changed = true;
+        }
+    }
+    if (!changed) return false;
     std::unique_ptr<Cm::Sym::FunctionSymbol> mainFunctionSymbol(new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "main"));
     mainFunctionSymbol->SetCDecl();
     Cm::Sym::TypeSymbol* intType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
@@ -342,7 +361,7 @@ void GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     mainFunctionSymbol->SetParent(userMainFunction->Parent());
     Emit(symbolTable.GetTypeRepository(), mainCompileUnit);
     GenerateObjectCode(mainCompileUnit);
-    objectFilePaths.push_back(mainCompileUnit.ObjectFilePath());
+    return true;
 }
 
 } } // namespace Bm::Build

@@ -31,48 +31,58 @@ Cm::Core::SourceSpan GetSourceSpan(const Cm::Parsing::Span& fromSpan)
 }
 
 IdeError::IdeError(const Cm::Parsing::ExpectationFailure& ex) :
-    tool("cmc.syntax"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.Message()), file(ex.FileName()), sourceSpan(GetSourceSpan(ex.GetSpan()))
+    tool("cmc.syntax"), category("error"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.Message()), file(ex.FileName()), sourceSpan(GetSourceSpan(ex.GetSpan()))
 {
 }
 
 IdeError::IdeError(const Cm::Sym::Exception& ex) :
-    tool("cmc.symbols"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.Message()), file(GetFilePath(ex.Defined().FileIndex())), 
+    tool("cmc.symbols"), category("error"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.Message()), file(GetFilePath(ex.Defined().FileIndex())),
     sourceSpan(GetSourceSpan(ex.Defined()))
 {
 }
 
 IdeError::IdeError(const Cm::Core::Exception& ex) :
-    tool("cmc.bind"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.Message()), file(GetFilePath(ex.Defined().FileIndex())), 
+    tool("cmc.bind"), category("error"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.Message()), file(GetFilePath(ex.Defined().FileIndex())),
     sourceSpan(GetSourceSpan(ex.Defined()))
 {
 }
 
 IdeError::IdeError(const Cm::Core::ToolErrorExcecption& ex) :
-    tool(ex.Error().ToolName()), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.Error().Message()), file(ex.Error().FilePath()), 
+    tool(ex.Error().ToolName()), category("error"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.Error().Message()), file(ex.Error().FilePath()),
     sourceSpan(ex.Error().Line(), ex.Error().Column(), ex.Error().Column())
 {
 }
 
 IdeError::IdeError(const std::exception& ex) :
-    tool("cmc.internal"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.what()), file(), sourceSpan()
+    tool("cmc.internal"), category("error"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(ex.what()), file(), sourceSpan()
 {
 }
 
 IdeError::IdeError(const std::string& message) :
-    tool("cmc.internal"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(message), file(), sourceSpan()
+    tool("cmc.internal"), category("error"), project(Cm::Core::GetGlobalSettings()->CurrentProjectName()), description(message), file(), sourceSpan()
 {
 }
 
 IdeError::IdeError(const Cm::Parsing::Span& reference) :
-    tool("cmc.reference"), project(""), description("see reference to:"), file(GetFilePath(reference.FileIndex())), sourceSpan(GetSourceSpan(reference))
+    tool("cmc.reference"), category("info"), project(""), description("see reference to:"), file(GetFilePath(reference.FileIndex())), sourceSpan(GetSourceSpan(reference))
 {
 }
 
+IdeError::IdeError(const Cm::Sym::Warning& warning) : 
+    tool("cmc"), category("warning"), project(warning.Project()), description(warning.Message()), file(), sourceSpan()
+{
+}
+
+
 std::ostream& operator<<(std::ostream& s, const IdeError& error)
 {
-    return s << "{ \"tool\" : \"" << error.Tool() << "\", \"project\" : \"" << error.Project() << "\", \"description\" : \"" << Cm::Util::StringStr(error.Description()) << 
-        "\", \"file\" : \"" << error.File() << "\", " << "\"line\" : " << error.Line() << ", \"startColumn\" : " << error.StartColumn() << ", \"endColumn\" : " << error.EndColumn() <<
-        " }";
+    return s << "{ \"tool\" : \"" << error.Tool() << "\", \"category\" : \"" << error.Category() << "\", \"project\" : \"" << error.Project() << "\", \"description\" : \"" << 
+        Cm::Util::StringStr(error.Description()) << "\", \"file\" : \"" << error.File() << "\", " << "\"line\" : " << error.Line() << ", \"startColumn\" : " << 
+        error.StartColumn() << ", \"endColumn\" : " << error.EndColumn() << " }";
+}
+
+IdeErrorCollection::IdeErrorCollection()
+{
 }
 
 IdeErrorCollection::IdeErrorCollection(const Cm::Parsing::CombinedParsingError& ex)
@@ -114,6 +124,15 @@ IdeErrorCollection::IdeErrorCollection(const std::exception& ex)
 IdeErrorCollection::IdeErrorCollection(const std::string& message)
 {
     errors.push_back(IdeError(message));
+}
+
+void IdeErrorCollection::AddWarnings(const std::vector<Cm::Sym::Warning>& warnings)
+{
+    for (const Cm::Sym::Warning& warning : warnings)
+    {
+        IdeError error(warning);
+        errors.push_back(error);
+    }
 }
 
 std::ostream& operator<<(std::ostream& s, const IdeErrorCollection& errorCollection)

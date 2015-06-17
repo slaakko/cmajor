@@ -43,7 +43,6 @@ void PrintReport(JsonValue* value)
     Console.Out() << "downloads: " << statistics.summaries.time.downloads << endl();
     Console.Out() << "---------------------------------------------" << endl();
     Console.Out() << "total: " << statistics.total << endl();
-
 }
 
 int main(int argc, const char** argv)

@@ -39,6 +39,7 @@ class Module
 {
 public:
     Module(const std::string& filePath_);
+    void SetName(const std::string& name_);
     void SetSourceFilePaths(const std::vector<std::string>& sourceFilePaths_);
     void SetReferenceFilePaths(const std::vector<std::string>& referenceFilePaths_);
     void SetCLibraryFilePaths(const std::vector<std::string>& cLibraryFilePaths_);
@@ -47,18 +48,22 @@ public:
     void Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs,
         std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths);
     void Dump();
+    void CheckUpToDate();
 private:
+    std::string name;
     std::string filePath;
     std::vector<std::string> sourceFilePaths;
     std::vector<std::string> referenceFilePaths;
     std::vector<std::string> cLibraryFilePaths;
     std::vector<std::string> debugInfoFilePaths;
     void WriteModuleFileId(Writer& writer);
+    void WriteName(Writer& writer);
     void WriteSourceFilePaths(Writer& writer);
     void WriteReferenceFilePaths(Writer& writer);
     void WriteCLibraryFilePaths(Writer& writer);
     void WriteDebugInfoFilePaths(Writer& writer);
     void CheckModuleFileId(Reader& reader);
+    void ReadName(Reader& reader);
     void ReadSourceFilePaths(Reader& reader);
     void ReadReferenceFilePaths(Reader& reader);
     void ReadCLibraryFilePaths(Reader& reader);

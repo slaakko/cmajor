@@ -61,12 +61,11 @@ inline bool operator<=(const SourceFileLine& left, const SourceFileLine& right)
 class SourceSpan
 { 
 public:
-    SourceSpan() : line(-1), startCol(-1), endCol(-1) {}
+    SourceSpan() : line(0), startCol(0), endCol(0) {}
     SourceSpan(int32_t line_, int32_t startCol_, int32_t endCol_) : line(line_), startCol(startCol_), endCol(endCol_) {}
     int32_t Line() const { return line; }
     int32_t StartCol() const { return startCol; }
     int32_t EndCol() const { return endCol; }
-    bool Valid() const { return line != -1 && startCol != -1 && endCol != -1; }
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);
     void Dump(Cm::Util::CodeFormatter& formatter);
