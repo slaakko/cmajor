@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<latexSolution>
+    <solutionName>UserManual</solutionName>
+    <activeProject>UserManual</activeProject>
+    <projectFiles>
+        <projectFile>
+            <projectName>UserManual</projectName>
+            <projectPath>.\UserManual.lpr</projectPath>
+        </projectFile>
+    </projectFiles>
+</latexSolution>
