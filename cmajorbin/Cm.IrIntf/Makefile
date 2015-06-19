@@ -1,6 +1,6 @@
 include ../Makefile.common
 
-OBJECTS = BackEnd.o LlvmBackEnd.o Rep.o
+OBJECTS = BackEnd.o CBackEnd.o LlvmBackEnd.o Rep.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

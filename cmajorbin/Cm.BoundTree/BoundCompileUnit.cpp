@@ -13,6 +13,7 @@
 #include <Cm.Util/Path.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <boost/filesystem.hpp>
+#include <fstream>
 
 namespace Cm { namespace BoundTree {
 

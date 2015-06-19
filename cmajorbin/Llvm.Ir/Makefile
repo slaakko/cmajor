@@ -1,7 +1,6 @@
 include ../Makefile.common
 
-OBJECTS = Constant.o Factory.o Function.o Global.o Instruction.o Label.o MemberVar.o Metadata.o Parameter.o RefVar.o RegVar.o StackVar.o Temporary.o Type.o \
-Util.o
+OBJECTS = Constant.o Factory.o Function.o Global.o Instruction.o Label.o MemberVar.o Metadata.o Parameter.o RefVar.o RegVar.o StackVar.o Type.o Util.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

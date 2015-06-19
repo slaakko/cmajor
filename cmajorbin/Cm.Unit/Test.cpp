@@ -36,6 +36,7 @@
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Statement.hpp>
 #include <Cm.Ast/Expression.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.Util/TextUtils.hpp>

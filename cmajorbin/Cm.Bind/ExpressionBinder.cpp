@@ -34,6 +34,7 @@
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/BasicType.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 

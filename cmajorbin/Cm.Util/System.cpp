@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
 #ifdef WIN32
 #include <process.h>
 #include <Windows.h>

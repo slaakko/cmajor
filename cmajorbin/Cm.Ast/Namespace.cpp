@@ -13,6 +13,7 @@
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <Cm.Ast/Function.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <algorithm>
 

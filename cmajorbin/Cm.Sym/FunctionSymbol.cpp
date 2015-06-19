@@ -15,6 +15,7 @@
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <stdexcept>
 
 namespace Cm { namespace Sym {

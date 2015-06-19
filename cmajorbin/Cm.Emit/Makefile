@@ -1,6 +1,6 @@
 include ../Makefile.common
 
-OBJECTS = EmittingVisitor.o FunctionEmitter.o
+OBJECTS = CEmitter.o CFunctionEmitter.o Emitter.o FunctionEmitter.o InitDone.o LlvmEmitter.o LlvmFunctionEmitter.o SourceFileCache.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

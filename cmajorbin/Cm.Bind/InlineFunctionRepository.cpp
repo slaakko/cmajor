@@ -13,6 +13,7 @@
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
+#include <Cm.Ast/Clone.hpp>
 
 namespace Cm { namespace Bind {
 

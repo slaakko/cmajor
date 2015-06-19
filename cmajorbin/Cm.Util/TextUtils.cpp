@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iterator>
 #include <algorithm>
+#include <stdexcept>
 
 namespace Cm { namespace Util {
 
