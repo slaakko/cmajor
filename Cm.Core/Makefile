@@ -1,9 +1,9 @@
 include ../Makefile.common
 
-OBJECTS = Argument.o BasicTypeOp.o ClassConversionTable.o ClassDelegateTypeOpRepository.o ClassTemplateRepository.o ConceptRepository.o \
-DelegateTypeOpRepository.o DerivedTypeOpRepository.o EnumTypeOpRepository.o Exception.o ExternalConstantRepository.o \
-FunctionTemplateRepository.o GenData.o GlobalSettings.o InitSymbolTable.o InlineFunctionRepository.o IrClassTypeRepository.o IrFunctionRepository.o \
-StaticMemberVariableRepository.o StringRepository.o SynthesizedClassFunRepository.o
+OBJECTS = Argument.o BasicTypeOp.o CDebugInfo.o ClassConversionTable.o ClassDelegateTypeOpRepository.o ClassTemplateRepository.o \
+CompileUnitMap.o ConceptRepository.o DelegateTypeOpRepository.o DerivedTypeOpRepository.o EnumTypeOpRepository.o Exception.o \
+ExternalConstantRepository.o FunctionTemplateRepository.o GenData.o GlobalSettings.o InitSymbolTable.o InlineFunctionRepository.o \
+IrClassTypeRepository.o IrFunctionRepository.o Json.o StaticMemberVariableRepository.o StringRepository.o SynthesizedClassFunRepository.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

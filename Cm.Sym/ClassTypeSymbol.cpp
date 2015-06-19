@@ -17,6 +17,7 @@
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {

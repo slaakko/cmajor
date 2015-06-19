@@ -15,6 +15,7 @@
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <Cm.Util/TextUtils.hpp>
 
 namespace Cm { namespace Bind {

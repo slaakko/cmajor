@@ -21,6 +21,8 @@ build:
 	$(MAKE) -C Cm.Emit
 	$(MAKE) -C Cm.Build
 	$(MAKE) -C Cm.Compiler
+	$(MAKE) -C Cm.Unit
+	$(MAKE) -C cdidump
 	$(MAKE) -C cmldump
 	$(MAKE) -C SourceLines
 
@@ -31,8 +33,10 @@ install:
 	cp bin/* $(prefix)/bin
 
 sys:
-	cmc -config=debug system/system.cms
-	cmc -config=release system/system.cms
+	cmc -backend=llvm -config=debug system/system.cms
+	cmc -backend=llvm -config=release system/system.cms
+	cmc -backend=c -config=debug system/system.cms
+	cmc -backend=c -config=release system/system.cms
 
 clean:
 	$(MAKE) -C Cm.Util clean
@@ -55,6 +59,8 @@ clean:
 	$(MAKE) -C Cm.Emit clean
 	$(MAKE) -C Cm.Build clean
 	$(MAKE) -C Cm.Compiler clean
+	$(MAKE) -C Cm.Unit clean
+	$(MAKE) -C cdidump clean
 	$(MAKE) -C cmldump clean
 	$(MAKE) -C SourceLines clean
 

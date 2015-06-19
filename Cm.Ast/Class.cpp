@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Ast/Class.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <Cm.Ast/Concept.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Reader.hpp>

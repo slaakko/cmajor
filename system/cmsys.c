@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
+#include <signal.h>
 #ifdef LINUX
 #include <unistd.h>
 #include <sys/types.h>

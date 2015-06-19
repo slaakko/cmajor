@@ -21,6 +21,7 @@
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Ast/Clone.hpp>
 
 namespace Cm { namespace Bind {
 

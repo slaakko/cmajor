@@ -1,6 +1,6 @@
 include ../Makefile.common
 
-OBJECTS = IdeError.o Main.o
+OBJECTS = Main.o Test.o
 
 LIBRARIES = ../lib/libcmutil.a ../lib/libcmparsingcppobjectmodel.a ../lib/libcmparsing.a ../lib/libcmser.a ../lib/libirintf.a ../lib/libdwarf.a ../lib/libllvmir.a \
 ../lib/libcir.a ../lib/libcmast.a ../lib/libcmparser.a ../lib/libcmirintf.a ../lib/libcmsym.a ../lib/libcmcore.a ../lib/libcmboundtree.a \
@@ -10,9 +10,9 @@ LIBRARIES = ../lib/libcmutil.a ../lib/libcmparsingcppobjectmodel.a ../lib/libcmp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 ifeq ($(config),debug)
-    exename=cmcd
+    exename=cmunitd
 else
-    exename=cmc
+    exename=cmunit
 endif
 
 ../bin/$(exename): $(OBJECTS) $(LIBRARIES)

@@ -10,8 +10,8 @@
 #ifndef CM_CORE_CDEBUG_INFO_INCLUDED
 #define CM_CORE_CDEBUG_INFO_INCLUDED
 #include <Cm.Parsing/Scanner.hpp>
-#include <Cm.Ser\BinaryReader.hpp>
-#include <Cm.Ser\BinaryWriter.hpp>
+#include <Cm.Ser/BinaryReader.hpp>
+#include <Cm.Ser/BinaryWriter.hpp>
 #include <Ir.Intf/Metadata.hpp>
 #include <unordered_map>
 #include <unordered_set>

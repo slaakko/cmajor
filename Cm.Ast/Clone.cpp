@@ -9,6 +9,8 @@
 
 #include <Cm.Ast/Clone.hpp>
 #include <Cm.Ast/Function.hpp>
+#include <Cm.Ast/Statement.hpp>
+#include <Cm.Ast/Concept.hpp>
 
 namespace Cm { namespace Ast {
 

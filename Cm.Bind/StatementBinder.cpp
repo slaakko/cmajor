@@ -31,6 +31,7 @@
 #include <Cm.Ast/Expression.hpp>
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/BasicType.hpp>
+#include <Cm.Ast/Clone.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <boost/filesystem.hpp>
