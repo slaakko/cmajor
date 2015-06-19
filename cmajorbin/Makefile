@@ -11,6 +11,7 @@ build:
 	$(MAKE) -C Ir.Intf
 	$(MAKE) -C Dwarf
 	$(MAKE) -C Llvm.Ir
+	$(MAKE) -C C.Ir
 	$(MAKE) -C Cm.Ast
 	$(MAKE) -C Cm.Parser
 	$(MAKE) -C Cm.IrIntf
@@ -49,6 +50,7 @@ clean:
 	$(MAKE) -C Ir.Intf clean
 	$(MAKE) -C Dwarf clean
 	$(MAKE) -C Llvm.Ir clean
+	$(MAKE) -C C.Ir clean
 	$(MAKE) -C Cm.Ast clean
 	$(MAKE) -C Cm.Parser clean
 	$(MAKE) -C Cm.IrIntf clean
