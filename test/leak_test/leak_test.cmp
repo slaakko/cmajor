@@ -1,0 +1,4 @@
+project LeakTest;
+target=program;
+assembly <leak_test.cma>;
+source <leak_test.cm>;

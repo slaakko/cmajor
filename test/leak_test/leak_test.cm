@@ -1,0 +1,10 @@
+void leak()
+{
+    int* x = new int(1);
+}
+
+void main()
+{
+    dbgheap_watch(0);
+    leak();
+}

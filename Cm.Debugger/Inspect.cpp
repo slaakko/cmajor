@@ -173,11 +173,6 @@ void Inspector::Visit(LocalNode& localNode)
     {
         throw std::runtime_error("local variable '" + localNode.LocalVarName() + "' not found");
     }
-    std::unordered_set<int32_t> nodeSet = currentFunction->Cfg().GetNodeSetIncluding(currentNode->Id());
-    if (local->DefNode() == currentNode->Id() || nodeSet.find(local->DefNode()) == nodeSet.end())
-    {
-        throw std::runtime_error("local variable '" + localNode.LocalVarName() + "' not initialized yet");
-    }
     const std::string& irName = local->IrName();
     TypeExpr* typeExpr = typeExprParser->Parse(local->TypeName().c_str(), local->TypeName().c_str() + local->TypeName().length(), 0, "");
     PrintExpr printExpr(irName, typeExpr);

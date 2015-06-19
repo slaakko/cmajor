@@ -1,0 +1,4 @@
+project Tracing;
+target=program;
+assembly <tracing.cma>;
+source <tracing.cm>;

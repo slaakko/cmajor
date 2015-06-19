@@ -1,0 +1,16 @@
+using System;
+
+int foo(int x)
+{
+    return 1;
+}
+
+void bar(double x)
+{
+    foo(0);
+}
+
+void main()
+{
+    bar(2.0);
+}
