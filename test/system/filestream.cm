@@ -18,12 +18,13 @@ namespace Test.System.FileStream
             #assert(standardInput.EndOfStream() == false);
         }
 
+        string textFileName;
+    #if (WINDOWS)
+        textFileName = "textfile.win.txt";
+    #else
+        textFileName = "textfile.lnx.txt";
+    #endif
         {
-        #if (WINDOWS)
-            string textFileName = "textfile.win.txt";
-        #else
-            string textFileName = "textfile.lnx.txt";
-        #endif
             InputFileStream textFile(textFileName);
             string emptyLine = textFile.ReadLine();
             #assert(emptyLine.IsEmpty());
