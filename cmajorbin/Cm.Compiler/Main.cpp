@@ -83,6 +83,7 @@ int main(int argc, const char** argv)
     InitDone initDone;
     Cm::Core::GlobalSettings globalSettings;
     Cm::Core::SetGlobalSettings(&globalSettings);
+    std::unordered_set<std::string> defines;
     try
     {
         std::vector<std::string> solutionOrProjectFilePaths;
@@ -90,6 +91,7 @@ int main(int argc, const char** argv)
         Cm::IrIntf::BackEnd backend = Cm::IrIntf::BackEnd::llvm;
         bool rebuild = false;
         bool prevWasCompile = false;
+        bool prevWasDefine = false;
         if (argc < 2)
         {
             std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
@@ -102,6 +104,7 @@ int main(int argc, const char** argv)
                 "-c FILENAME     : compile only FILENAME, do not link\n" <<
                 "-config=debug   : use debug configuration (default)\n" <<
                 "-config=release : use release configuration\n" <<
+                "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" << 
                 "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
                 "-backend=llvm   : use LLVM backend (default)\n" <<
                 "-backend=c      : use C backend\n" <<
@@ -182,6 +185,10 @@ int main(int argc, const char** argv)
                         {
                             prevWasCompile = true;
                         }
+                        else if (arg == "-D")
+                        {
+                            prevWasDefine = true;
+                        }
                         else if (arg == "-emit-opt")
                         {
                             Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt);
@@ -213,6 +220,11 @@ int main(int argc, const char** argv)
                         {
                             compileFileNames.push_back(arg);
                             prevWasCompile = false;
+                        }
+                        else if (prevWasDefine)
+                        {
+                            defines.insert(arg);
+                            prevWasDefine = false;
                         }
                         else
                         {
@@ -248,11 +260,11 @@ int main(int argc, const char** argv)
                 std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
                 if (ext == ".cms")
                 {
-                    Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames);
+                    Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines);
                 }
                 else if (ext == ".cmp")
                 {
-                    Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames);
+                    Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines);
                 }
                 else
                 {

@@ -24,6 +24,7 @@
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/Conditional.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -665,6 +666,7 @@ void Binder::Visit(Cm::Ast::GotoStatementNode& gotoStatementNode)
 
 void Binder::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
 {
+    // todo
 }
 
 void Binder::BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
@@ -755,48 +757,101 @@ void Binder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
     }
 }
 
-void Binder::BeginVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode)
-{
-}
-
 void Binder::EndVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode)
 {
+    bool right = PopCondCompValue();
+    bool left = PopCondCompValue();
+    PushCondCompValue(left || right);
 }
 
-void Binder::BeginVisit(Cm::Ast::CondCompConjunctionNode& condCompDisjunctionNode)
+void Binder::EndVisit(Cm::Ast::CondCompConjunctionNode& condCompConjunctionNode)
 {
-}
-
-void Binder::EndVisit(Cm::Ast::CondCompConjunctionNode& condCompDisjunctionNode)
-{
-}
-
-void Binder::BeginVisit(Cm::Ast::CondCompNotNode& condCompNotNode)
-{
+    bool right = PopCondCompValue();
+    bool left = PopCondCompValue();
+    PushCondCompValue(left && right);
 }
 
 void Binder::EndVisit(Cm::Ast::CondCompNotNode& condCompNotNode)
 {
+    bool value = PopCondCompValue();
+    PushCondCompValue(!value);
 }
 
 void Binder::Visit(Cm::Ast::CondCompPrimaryNode& condCompPrimaryNode)
 {
+    bool defined = Cm::Sym::IsSymbolDefined(condCompPrimaryNode.Symbol()->Str());
+    PushCondCompValue(defined);
 }
 
-void Binder::BeginVisit(Cm::Ast::CondCompilationPartNode& condCompilationPartNode)
+void Binder::Visit(Cm::Ast::CondCompStatementNode& condCompStatementNode)
 {
+    if (!condCompilationEvaluationStack.empty())
+    {
+        throw std::runtime_error("conditional compilation evaluation stack is not empty");
+    }
+    Cm::Ast::CondCompilationPartNode* ifPartNode = condCompStatementNode.IfPart();
+    if (!ifPartNode)
+    {
+        throw std::runtime_error("conditional compilation statement if part is empty");
+    }
+    if (!ifPartNode->Expr())
+    {
+        throw std::runtime_error("conditional compilation statement if part expression is empty");
+    }
+    ifPartNode->Expr()->Accept(*this);
+    bool execute = PopCondCompValue();
+    if (execute)
+    {
+        ifPartNode->Accept(*this);
+    }
+    else
+    {
+        Cm::Ast::CondCompilationPartNodeList& elifPartNodes = condCompStatementNode.ElifParts();
+        int n = elifPartNodes.Count();
+        for (int i = 0; i < n; ++i)
+        {
+            Cm::Ast::CondCompilationPartNode* elifPartNode = elifPartNodes[i];
+            if (!elifPartNode)
+            {
+                throw std::runtime_error("conditional compilation statement elif part is empty");
+            }
+            if (!elifPartNode->Expr())
+            {
+                throw std::runtime_error("conditional compilation statement elif part expression is empty");
+            }
+            elifPartNode->Expr()->Accept(*this);
+            execute = PopCondCompValue();
+            if (execute)
+            {
+                elifPartNode->Accept(*this);
+                break;
+            }
+        }
+        if (!execute)
+        {
+            Cm::Ast::CondCompilationPartNode* elsePartNode = condCompStatementNode.ElsePart();
+            if (elsePartNode)
+            {
+                elsePartNode->Accept(*this);
+            }
+        }
+    }
 }
 
-void Binder::EndVisit(Cm::Ast::CondCompilationPartNode& condCompilationPartNode)
+void Binder::PushCondCompValue(bool value)
 {
+    condCompilationEvaluationStack.push(value);
 }
 
-void Binder::BeginVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode)
+bool Binder::PopCondCompValue()
 {
-}
-
-void Binder::EndVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode)
-{
+    if (condCompilationEvaluationStack.empty())
+    {
+        throw std::runtime_error("conditional compilation evaluation stack is empty");
+    }
+    bool value = condCompilationEvaluationStack.top();
+    condCompilationEvaluationStack.pop();
+    return value;
 }
 
 } } // namespace Cm::Bind

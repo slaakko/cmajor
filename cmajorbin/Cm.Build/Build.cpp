@@ -26,6 +26,7 @@
 #include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/SymbolTypeSet.hpp>
+#include <Cm.Sym/Conditional.hpp>
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/Binder.hpp>
@@ -850,7 +851,37 @@ void CleanProject(Cm::Ast::Project* project)
     }
 }
 
-bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames)
+void ReadIdeDefines(std::unordered_set<std::string>& defines, Cm::Ast::Project* project)
+{
+    boost::filesystem::path projectDefinePath = project->OutputBasePath();
+    projectDefinePath /= boost::filesystem::path(project->FilePath()).filename().replace_extension(".cmp.sym");
+    std::string cmpSymFilePath = Cm::Util::GetFullPath(projectDefinePath.generic_string());
+    std::ifstream cmpSymFile(cmpSymFilePath);
+    std::string symbol;
+    while (std::getline(cmpSymFile, symbol))
+    {
+        defines.insert(symbol);
+    }
+}
+
+void AddPlatformAndConfigDefines(std::unordered_set<std::string>& defines)
+{
+#ifdef WIN32
+    defines.insert("WINDOWS");
+#else
+    defines.insert("LINUX");
+#endif
+    if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+    {
+        defines.insert("DEBUG");
+    }
+    else
+    {
+        defines.insert("RELEASE");
+    }
+}
+
+bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
 {
     bool changed = false;
     Cm::Core::GetGlobalSettings()->SetCurrentProjectName(project->Name());
@@ -860,6 +891,13 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         std::cout << (rebuild ? "Rebuilding" : "Building") << " project '" << project->Name() << "' (" << Cm::Util::GetFullPath(project->FilePath()) << 
             ") using " << Cm::Core::GetGlobalSettings()->Config() << " configuration..." << std::endl;
     }
+    std::unordered_set<std::string> allDefines = defines;
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+    {
+        ReadIdeDefines(allDefines, project);
+    }
+    AddPlatformAndConfigDefines(allDefines);
+    Cm::Sym::Define(allDefines);
     Cm::Parser::FileRegistry::Init();
     Cm::Ast::SyntaxTree syntaxTree = ParseSources(*Cm::Parser::FileRegistry::Instance(), project->SourceFilePaths());
     std::vector<std::string> assemblyFilePaths;
@@ -972,7 +1010,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
 
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;
 
-bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames)
+bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
 {
     if (!boost::filesystem::exists(projectFilePath))
     {
@@ -993,13 +1031,13 @@ bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::v
     }
     else
     {
-        return BuildProject(project.get(), rebuild, compileFileNames);
+        return BuildProject(project.get(), rebuild, compileFileNames, defines);
     }
 }
 
 Cm::Parser::SolutionGrammar* solutionGrammar = nullptr;
 
-void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames)
+void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
 {
     int built = 0;
     int uptodate = 0;
@@ -1052,7 +1090,7 @@ void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std:
         }
         else
         {
-            bool projectChanged = BuildProject(project, rebuild, compileFileNames);
+            bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines);
             if (projectChanged)
             {
                 rebuild = true;

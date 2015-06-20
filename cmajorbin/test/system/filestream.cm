@@ -19,7 +19,12 @@ namespace Test.System.FileStream
         }
 
         {
-            InputFileStream textFile("textfile.txt");
+        #if (WINDOWS)
+            string textFileName = "textfile.win.txt";
+        #else
+            string textFileName = "textfile.lnx.txt";
+        #endif
+            InputFileStream textFile(textFileName);
             string emptyLine = textFile.ReadLine();
             #assert(emptyLine.IsEmpty());
             #assert(emptyLine.Length() == 0);
@@ -35,7 +40,7 @@ namespace Test.System.FileStream
             #assert(textFile.EndOfStream());
         }
        
-        string text = ReadFile("textfile.txt");
+        string text = ReadFile(textFileName);
         #assert(!text.IsEmpty());
         #assert(text.Length() == 54);
 
@@ -48,7 +53,7 @@ namespace Test.System.FileStream
             textFile.WriteLine("The quick brown fox jumps over the lazy dog");
         }
 
-        #assert(FileContentsEqual("textfile.txt", "file.txt"));
+        #assert(FileContentsEqual(textFileName, "file.txt"));
 
         {
             BinaryFileStream file("file.dat", OpenMode.writeOnly);

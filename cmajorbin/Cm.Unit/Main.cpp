@@ -85,10 +85,13 @@ int main(int argc, const char** argv)
                 "-file=FILE      : run only unit tests in file FILE\n" <<
                 "-test=TEST      : run only unit test TEST\n" <<
                 "-verbose        : print also passed assertions\n" <<
+                "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" <<
                 std::endl;
         }
         else
         {
+            bool prevWasDefine = false;
+            std::unordered_set<std::string> defines;
             for (int i = 1; i < argc; ++i)
             {
                 std::string arg = argv[i];
@@ -96,7 +99,11 @@ int main(int argc, const char** argv)
                 {
                     if (arg[0] == '-')
                     {
-                        if (arg.find('=') != std::string::npos)
+                        if (arg == "-D")
+                        { 
+                            prevWasDefine = true;
+                        }
+                        else if (arg.find('=') != std::string::npos)
                         {
                             std::vector<std::string> v = Cm::Util::Split(arg, '=');
                             if (v.size() == 2)
@@ -153,6 +160,11 @@ int main(int argc, const char** argv)
                             throw std::runtime_error("unknown argument '" + arg + "'");
                         }
                     }
+                    else if (prevWasDefine)
+                    {
+                        defines.insert(arg);
+                        prevWasDefine = false;
+                    }
                     else
                     {
                         std::string ext = Cm::Util::Path::GetExtension(arg);
@@ -171,7 +183,7 @@ int main(int argc, const char** argv)
                 std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
                 if (ext == ".cms")
                 {
-                    bool solutionPassed = Cm::Unit::TestSolution(solutionOrProjectFilePath, fileName, testName);
+                    bool solutionPassed = Cm::Unit::TestSolution(solutionOrProjectFilePath, fileName, testName, defines);
                     if (!solutionPassed)
                     {
                         passed = false;
@@ -179,7 +191,7 @@ int main(int argc, const char** argv)
                 }
                 else if (ext == ".cmp")
                 {
-                    bool projectPassed = Cm::Unit::TestProject(solutionOrProjectFilePath, fileName, testName);
+                    bool projectPassed = Cm::Unit::TestProject(solutionOrProjectFilePath, fileName, testName, defines);
                     if (!projectPassed)
                     {
                         passed = false;

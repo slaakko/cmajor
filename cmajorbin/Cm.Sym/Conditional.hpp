@@ -7,28 +7,19 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/InitDone.hpp>
-#include <Cm.Sym/Factory.hpp>
-#include <Cm.Sym/NameMangling.hpp>
-#include <Cm.Sym/Warning.hpp>
-#include <Cm.Sym/Conditional.hpp>
+#ifndef CM_SYM_CONDITIONAL_INCLUDED
+#define CM_SYM_CONDITIONAL_INCLUDED
+#include <string>
+#include <unordered_set>
 
 namespace Cm { namespace Sym {
 
-void Init()
-{
-    InitFactory();
-    InitNameMangling();
-    InitWarning();
-    InitConditional();
-}
+void Define(const std::unordered_set<std::string>& symbols);
+bool IsSymbolDefined(const std::string& symbol);
 
-void Done()
-{
-    DoneConditional();
-    DoneWarning();
-    DoneNameMangling();
-    DoneFactory();
-}
+void InitConditional();
+void DoneConditional();
 
 } } // namespace Cm::Sym
+
+#endif // CM_SYM_CONDITIONAL_INCLUDED

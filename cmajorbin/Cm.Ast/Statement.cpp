@@ -1958,7 +1958,6 @@ void CondCompilationPartNode::Print(CodeFormatter& formatter)
 void CondCompilationPartNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    expr->Accept(visitor);
     statements.Accept(visitor);
     visitor.EndVisit(*this);
 }
@@ -2106,14 +2105,7 @@ void CondCompStatementNode::AddElseStatement(const Span& span, StatementNode* el
 
 void CondCompStatementNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    ifPart->Accept(visitor);
-    elifParts.Accept(visitor);
-    if (elsePart)
-    {
-        elsePart->Accept(visitor);
-    }
-    visitor.EndVisit(*this);
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::Ast

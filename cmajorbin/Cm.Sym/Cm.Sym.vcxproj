@@ -24,6 +24,7 @@
     <ClInclude Include="ClassTypeSymbol.hpp" />
     <ClInclude Include="ConceptGroupSymbol.hpp" />
     <ClInclude Include="ConceptSymbol.hpp" />
+    <ClInclude Include="Conditional.hpp" />
     <ClInclude Include="ConversionTable.hpp" />
     <ClInclude Include="DeclarationBlock.hpp" />
     <ClInclude Include="ConstantSymbol.hpp" />
@@ -67,6 +68,7 @@
     <ClCompile Include="ClassTypeSymbol.cpp" />
     <ClCompile Include="ConceptGroupSymbol.cpp" />
     <ClCompile Include="ConceptSymbol.cpp" />
+    <ClCompile Include="Conditional.cpp" />
     <ClCompile Include="ConversionTable.cpp" />
     <ClCompile Include="DeclarationBlock.cpp" />
     <ClCompile Include="ConstantSymbol.cpp" />
