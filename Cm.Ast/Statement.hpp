@@ -588,6 +588,7 @@ public:
     void Write(Writer& writer) override;
     std::string ToString() const override { return symbol; }
     virtual bool IsCondCompSymbolNode() const { return true; }
+    const std::string& Str() const { return symbol; }
 private:
     std::string symbol;
 };
@@ -723,6 +724,9 @@ public:
     void AddElifStatement(StatementNode* elifS);
     void AddElseStatement(const Span& span, StatementNode* elseS);
     void Accept(Visitor& visitor) override;
+    CondCompilationPartNode* IfPart() const { return ifPart.get(); }
+    CondCompilationPartNodeList& ElifParts() { return elifParts; }
+    CondCompilationPartNode* ElsePart() const { return elsePart.get(); }
 private:
     std::unique_ptr<CondCompilationPartNode> ifPart;
     CondCompilationPartNodeList elifParts;

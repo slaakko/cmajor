@@ -31,6 +31,7 @@
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
+#include <Cm.Sym/Conditional.hpp>
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/BasicType.hpp>
 #include <Cm.Ast/Literal.hpp>
@@ -197,7 +198,7 @@ void Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
     boost::filesystem::remove(exeErrorFilePath);
 }
 
-std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* project, const std::string& unitTestName)
+std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* project, const std::string& unitTestName, const std::unordered_set<std::string>& defines)
 {
     Cm::Core::CompileUnitMap compileUnitMap;
     Cm::Core::SetCompileUnitMap(&compileUnitMap);
@@ -219,6 +220,9 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     std::vector<std::string> assemblyFilePaths;
     std::vector<std::string> cLibs;
     std::vector<std::string> objectFilePaths;
+    std::unordered_set<std::string> allDefines = defines;
+    Cm::Build::AddPlatformAndConfigDefines(allDefines);
+    Cm::Sym::Define(allDefines);
     BuildSymbolTable(symbolTable, globalConceptData, testUnit, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, unitTestName);
     boost::filesystem::create_directories(project->OutputBasePath());
     std::string ext;
@@ -299,13 +303,13 @@ int fileExceptions = 0;
 int fileCrashed = 0;
 int fileUnknown = 0;
 
-void TestUnit(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* project, const std::string& unitTestName)
+void TestUnit(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* project, const std::string& unitTestName, const std::unordered_set<std::string>& defines)
 {
     ++numFileTests;
     std::string executableFilePath;
     try
     {
-        executableFilePath = Compile(testUnit, project, unitTestName);
+        executableFilePath = Compile(testUnit, project, unitTestName, defines);
     }
     catch (const std::exception& ex)
     {
@@ -392,7 +396,7 @@ bool TestNameEquals(const std::string& testName, const std::string& testUnitName
     return true;
 }
 
-void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project, const std::string& testName)
+void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project, const std::string& testName, const std::unordered_set<std::string>& defines)
 {
     numFileTests = 0;
     filePassed = 0;
@@ -420,7 +424,7 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
             {
                 if (!TestNameEquals(testName, testUnit.second)) continue;
             }
-            TestUnit(testUnit.first.get(), project, testUnit.second);
+            TestUnit(testUnit.first.get(), project, testUnit.second, defines);
         }
     }
     catch (const Cm::Parsing::CombinedParsingError& ex)
@@ -471,7 +475,7 @@ bool SourceFileNameEquals(const std::string& fileName, const std::string& source
 
 }
 
-bool TestProject(Cm::Ast::Project* project, const std::string& fileName, const std::string& testName)
+bool TestProject(Cm::Ast::Project* project, const std::string& fileName, const std::string& testName, const std::unordered_set<std::string>& defines)
 {
     numProjectTests = 0;
     projectPassed = 0;
@@ -487,7 +491,7 @@ bool TestProject(Cm::Ast::Project* project, const std::string& fileName, const s
         {
             if (!SourceFileNameEquals(fileName, sourceFilePath)) continue;
         }
-        TestSourceFile(sourceFilePath, project, testName);
+        TestSourceFile(sourceFilePath, project, testName, defines);
     }
     std::cerr << "test results for project '" << project->Name() << "' (ran " << numProjectTests << " tests):\n" <<
         "passed             : " << projectPassed << "\n" <<
@@ -509,7 +513,7 @@ bool TestProject(Cm::Ast::Project* project, const std::string& fileName, const s
 
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;
 
-bool TestProject(const std::string& projectFilePath, const std::string& fileName, const std::string& testName)
+bool TestProject(const std::string& projectFilePath, const std::string& fileName, const std::string& testName, const std::unordered_set<std::string>& defines)
 {
     if (!boost::filesystem::exists(projectFilePath))
     {
@@ -523,12 +527,12 @@ bool TestProject(const std::string& projectFilePath, const std::string& fileName
     std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(),
         Cm::IrIntf::GetBackEndStr(), GetOs()));
     project->ResolveDeclarations();
-    return TestProject(project.get(), fileName, testName);
+    return TestProject(project.get(), fileName, testName, defines);
 }
 
 Cm::Parser::SolutionGrammar* solutionGrammar = nullptr;
 
-bool TestSolution(const std::string& solutionFilePath, const std::string& fileName, const std::string& testName)
+bool TestSolution(const std::string& solutionFilePath, const std::string& fileName, const std::string& testName, const std::unordered_set<std::string>& defines)
 {
     boost::filesystem::path currentPath = boost::filesystem::current_path();
     numSolutionTests = 0;
@@ -554,7 +558,7 @@ bool TestSolution(const std::string& solutionFilePath, const std::string& fileNa
     {
         boost::filesystem::path pfp = projectFilePath;
         boost::filesystem::current_path(pfp.parent_path());
-        TestProject(projectFilePath, fileName, testName);
+        TestProject(projectFilePath, fileName, testName, defines);
     }
     std::cerr << "test results for solution '" << solution->Name() << "' (ran " << numSolutionTests << " tests):\n" <<
         "passed             : " << solutionPassed << "\n" <<

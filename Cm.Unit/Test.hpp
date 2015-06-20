@@ -10,11 +10,12 @@
 #ifndef CM_UNIT_TEST_INCLUDED
 #define CM_UNIT_TEST_INCLUDED
 #include <string>
+#include <unordered_set>
 
 namespace Cm { namespace Unit {
 
-bool TestSolution(const std::string& solutionFilePath, const std::string& fileName, const std::string& testName);
-bool TestProject(const std::string& projectFilePath, const std::string& fileName, const std::string& testName);
+bool TestSolution(const std::string& solutionFilePath, const std::string& fileName, const std::string& testName, const std::unordered_set<std::string>& defines);
+bool TestProject(const std::string& projectFilePath, const std::string& fileName, const std::string& testName, const std::unordered_set<std::string>& defines);
 
 } } // Cm::Unit
 

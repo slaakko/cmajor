@@ -14,8 +14,8 @@
 
 namespace Cm { namespace Build {
 
-void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames);
-bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames);
+void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines);
+bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines);
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GetLibraryDirectories(std::vector<std::string>& libraryDirectories);
@@ -24,6 +24,7 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
 void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void AnalyzeControlFlow(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 bool GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths, bool changed);
+void AddPlatformAndConfigDefines(std::unordered_set<std::string>& defines);
 
 } } // namespace Bm::Build
 

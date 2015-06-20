@@ -77,17 +77,11 @@ public:
     void Visit(Cm::Ast::ExitTryStatementNode& exitTryStatementNode) override;
     void Visit(Cm::Ast::BeginCatchStatementNode& beginCatchStatementNode) override;
     void Visit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
-    void BeginVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode) override;
     void EndVisit(Cm::Ast::CondCompDisjunctionNode& condCompDisjunctionNode) override;
-    void BeginVisit(Cm::Ast::CondCompConjunctionNode& condCompDisjunctionNode) override;
-    void EndVisit(Cm::Ast::CondCompConjunctionNode& condCompDisjunctionNode) override;
-    void BeginVisit(Cm::Ast::CondCompNotNode& condCompNotNode) override;
+    void EndVisit(Cm::Ast::CondCompConjunctionNode& condCompConjunctionNode) override;
     void EndVisit(Cm::Ast::CondCompNotNode& condCompNotNode) override;
     void Visit(Cm::Ast::CondCompPrimaryNode& condCompPrimaryNode) override;
-    void BeginVisit(Cm::Ast::CondCompilationPartNode& condCompilationPartNode) override;
-    void EndVisit(Cm::Ast::CondCompilationPartNode& condCompilationPartNode) override;
-    void BeginVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode) override;
-    void EndVisit(Cm::Ast::CondCompStatementNode& condCompStatementNode) override;
+    void Visit(Cm::Ast::CondCompStatementNode& condCompStatementNode) override;
     void BeginContainerScope(Cm::Sym::ContainerScope* containerScope);
     void EndContainerScope();
     void AddBoundStatement(Cm::BoundTree::BoundStatement* boundStatement);
@@ -104,6 +98,9 @@ private:
     std::unique_ptr<Cm::BoundTree::BoundParentStatement> currentParent;
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
     Cm::BoundTree::BoundSwitchStatement* switchStatement;
+    std::stack<bool> condCompilationEvaluationStack;
+    void PushCondCompValue(bool value);
+    bool PopCondCompValue();
 };
 
 } } // namespace Cm::Bind

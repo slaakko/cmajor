@@ -359,8 +359,7 @@ public:
     virtual void Visit(CondCompPrimaryNode& condCompPrimaryNode) {}
     virtual void BeginVisit(CondCompilationPartNode& condCompilationPartNode) {}
     virtual void EndVisit(CondCompilationPartNode& condCompilationPartNode) {}
-    virtual void BeginVisit(CondCompStatementNode& condCompStatementNode) {}
-    virtual void EndVisit(CondCompStatementNode& condCompStatementNode) {}
+    virtual void Visit(CondCompStatementNode& condCompStatementNode) {}
 
     virtual void Visit(MemberInitializerNode& memberInitializerNode) {}
     virtual void Visit(BaseInitializerNode& baseInitializerNode) {}
