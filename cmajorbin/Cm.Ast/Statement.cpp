@@ -1916,7 +1916,12 @@ void CondCompilationPartNode::AddStatement(StatementNode* statement)
 
 Node* CondCompilationPartNode::Clone(CloneContext& cloneContext) const
 {
-    CondCompilationPartNode* clone = new CondCompilationPartNode(GetSpan(), static_cast<CondCompExprNode*>(expr->Clone(cloneContext)));
+    CondCompExprNode* clonedExpr = nullptr;
+    if (expr)
+    {
+        clonedExpr = static_cast<CondCompExprNode*>(expr->Clone(cloneContext));
+    }
+    CondCompilationPartNode* clone = new CondCompilationPartNode(GetSpan(), clonedExpr);
     for (const std::unique_ptr<StatementNode>& statement : statements)
     {
         clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
@@ -2012,7 +2017,10 @@ CondCompStatementNode::CondCompStatementNode(const Span& span_, CondCompExprNode
 
 Node* CondCompStatementNode::Clone(CloneContext& cloneContext) const
 {
-    CondCompStatementNode* clone = new CondCompStatementNode(GetSpan(), static_cast<CondCompExprNode*>(ifPart->Expr()->Clone(cloneContext)));
+    CondCompStatementNode* clone = new CondCompStatementNode(GetSpan());
+    CondCompilationPartNode* clonedIfPart = static_cast<CondCompilationPartNode*>(ifPart->Clone(cloneContext));
+    clonedIfPart->SetParent(clone);
+    clone->ifPart.reset(clonedIfPart);
     for (const std::unique_ptr<CondCompilationPartNode>& elifPart : elifParts)
     {
         CondCompilationPartNode* clonedElifPart = static_cast<CondCompilationPartNode*>(elifPart->Clone(cloneContext));
