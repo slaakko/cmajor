@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<latexSolution>
+    <solutionName>cmdb</solutionName>
+    <activeProject>cmdb</activeProject>
+    <projectFiles>
+        <projectFile>
+            <projectName>cmdb</projectName>
+            <projectPath>.\cmdb.lpr</projectPath>
+        </projectFile>
+    </projectFiles>
+</latexSolution>
