@@ -1,0 +1,5 @@
+project TestFoo;
+target=program;
+assembly <testfoo.cma>;
+reference <../foo.cml>;
+source <testfoo.cm>;

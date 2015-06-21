@@ -372,6 +372,7 @@ std::vector<std::pair<std::unique_ptr<Cm::Ast::CompileUnitNode>, std::string>> S
         Cm::Ast::CloneContext testUnitContext;
         std::pair<std::unique_ptr<Cm::Ast::CompileUnitNode>, std::string> testUnit = std::make_pair(
             std::unique_ptr<Cm::Ast::CompileUnitNode>(static_cast<Cm::Ast::CompileUnitNode*>(environmentNode->Clone(testUnitContext))), unitTestName);
+        testUnit.first->GlobalNs()->AddMember(new Cm::Ast::NamespaceImportNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "System")));
         Cm::Ast::NamespaceNode* ns = testUnit.first->GetNamespace(unitTestFunction->Parent()->FullName());
         Cm::Ast::FunctionNode* unitTestFun = unitTestFunction.release();
         ns->AddMember(unitTestFun);

@@ -45,6 +45,7 @@ public:
     void EndEnumScope();
     void AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode);
     void AddTypedef(Cm::Ast::TypedefNode* typedefNode);
+    void AddTypedef(Cm::Ast::TypedefStatementNode* typedefStatementNode);
     void BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, FunctionSymbolFlags flags);
     void EndFunctionScope();
     void BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode);

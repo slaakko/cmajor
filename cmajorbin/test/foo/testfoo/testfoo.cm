@@ -1,0 +1,25 @@
+using Foo;
+
+namespace Tests
+{
+    public unit_test void TestAdd()
+    {
+        #assert(Add(1, 2) == 3);
+        #assert(Add(0, 100) == 100);
+        // ...
+    }
+
+    public unit_test void TestSub()
+    {
+        #assert(Sub(1, 2) == -1);
+        // ...
+    }
+
+    public unit_test void TestCls()
+    {
+        Cls c;
+        #assert(c.Twice(3) == 6);
+        #assert(c.Square(2) == 4);
+        // ...
+    }
+}

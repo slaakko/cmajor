@@ -283,6 +283,11 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::ConstructionStatementNode& construc
     symbolTable.AddLocalVariable(&constructionStatementNode);
 }
 
+void DeclarationVisitor::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
+{
+    symbolTable.AddTypedef(&typedefStatementNode);
+}
+
 void DeclarationVisitor::Visit(Cm::Ast::ConceptNode& conceptNode)
 {
     symbolTable.BeginConceptScope(&conceptNode);

@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<latexSolution>
+    <solutionName>cmunit</solutionName>
+    <activeProject>cmunit</activeProject>
+    <projectFiles>
+        <projectFile>
+            <projectName>cmunit</projectName>
+            <projectPath>.\cmunit.lpr</projectPath>
+        </projectFile>
+    </projectFiles>
+</latexSolution>

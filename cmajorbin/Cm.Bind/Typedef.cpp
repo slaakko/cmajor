@@ -46,6 +46,37 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     }
 }
 
+void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefStatementNode* typedefStatementNode)
+{
+    Cm::Sym::Symbol* symbol = containerScope->Lookup(typedefStatementNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupTypedef);
+    if (!symbol)
+    {
+        for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
+        {
+            symbol = fileScope->Lookup(typedefStatementNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupTypedef);
+            if (symbol) break;
+        }
+    }
+    if (symbol)
+    {
+        if (symbol->IsTypedefSymbol())
+        {
+            Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
+            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefStatementNode, typedefSymbol);
+        }
+        else
+        {
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a typedef", symbol->GetSpan());
+        }
+    }
+    else
+    {
+        throw Cm::Core::Exception("typedef symbol '" + typedefStatementNode->Id()->Str() + "' not found");
+    }
+
+}
+
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol)
 {
@@ -115,6 +146,25 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     }
     typedefSymbol->SetEvaluating();
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefNode->TypeExpr());
+    typedefSymbol->ResetEvaluating();
+    typedefSymbol->SetType(type);
+    typedefSymbol->SetBound();
+}
+
+void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefStatementNode* typedefStatementNode, Cm::Sym::TypedefSymbol* typedefSymbol)
+{
+    if (typedefSymbol->Evaluating())
+    {
+        throw Cm::Core::Exception("cyclic typedef definitions detected", typedefSymbol->GetSpan());
+    }
+    if (typedefSymbol->Bound())
+    {
+        return;
+    }
+    SetAccess(typedefSymbol, Cm::Ast::Specifiers::public_, false);
+    typedefSymbol->SetEvaluating();
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefStatementNode->TypeExpr());
     typedefSymbol->ResetEvaluating();
     typedefSymbol->SetType(type);
     typedefSymbol->SetBound();

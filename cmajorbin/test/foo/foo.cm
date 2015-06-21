@@ -1,0 +1,24 @@
+namespace Foo
+{
+    public int Add(int x, int y)
+    {
+        return x + y;
+    }
+
+    public int Sub(int x, int y)
+    {
+        return x - y;
+    }
+
+    public class Cls
+    {
+        public int Twice(int x)
+        {
+            return 2 * x;
+        }
+        public int Square(int x)
+        {
+            return x * x;
+        }
+    }
+}

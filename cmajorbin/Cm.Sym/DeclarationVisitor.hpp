@@ -51,6 +51,7 @@ public:
     void BeginVisit(Cm::Ast::ForStatementNode& forStatementNode) override;
     void EndVisit(Cm::Ast::ForStatementNode& forStatementNode) override;
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
+    void Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode) override;
     void Visit(Cm::Ast::ConstantNode& constantNode) override;
     void Visit(Cm::Ast::TemplateParameterNode& templateParameterNode) override;
     void Visit(Cm::Ast::ParameterNode& parameterNode) override;

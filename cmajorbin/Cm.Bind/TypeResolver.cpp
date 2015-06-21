@@ -224,9 +224,15 @@ void TypeResolver::ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(typedefNode);
                 BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefNode, typedefSymbol);
             }
+            else if (tn->IsTypedefStatementNode())
+            {
+                Cm::Ast::TypedefStatementNode* typedefStatementNode = static_cast<Cm::Ast::TypedefStatementNode*>(tn);
+                Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(typedefStatementNode);
+                BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefStatementNode, typedefSymbol);
+            }
             else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
             {
-                throw std::runtime_error("node is not typedef node");
+                throw std::runtime_error("node is not typedef node or typedef statement node");
             }
             else
             {

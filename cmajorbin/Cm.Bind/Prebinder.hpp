@@ -47,6 +47,7 @@ public:
     void EndVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
     void Visit(Cm::Ast::EnumConstantNode& enumConstantNode) override;
     void Visit(Cm::Ast::TypedefNode& typedefNode) override;
+    void Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode) override;
     void Visit(Cm::Ast::ConstantNode& constantNode) override;
     void Visit(Cm::Ast::ParameterNode& parameterNode) override;
 

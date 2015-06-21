@@ -178,6 +178,10 @@ int main(int argc, const char** argv)
             }
             Cm::IrIntf::SetBackEnd(backend);
             bool passed = true;
+            if (solutionOrProjectFilePaths.empty())
+            {
+                throw std::runtime_error("no project or solution given");
+            }
             for (const std::string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
             {
                 std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
