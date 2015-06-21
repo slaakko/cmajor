@@ -1,0 +1,211 @@
+\documentclass[oneside, a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{a4wide}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+\usepackage{syntax}
+
+\begin{document}
+
+\title{Debugging with Cmajor Debugger}
+\author{Seppo Laakko}
+\maketitle
+
+\section{Introduction}
+
+Cmajor programs can be debugged using the Cmajor source level debugger (cmdb).
+Currently the program to be debugged and libraries it uses must be first compiled with Cmajor compiler (cmc)
+using the ``C backend'' option (-backend=c) and the debug configuration.
+In Windows programs can be debugged directly in Cmajor Development Environment (IDE) that talks to cmdb behind the scenes.
+Cmajor debugger in turn talks to GNU debugger (gdb) behind the scenes.
+
+\section{Debugging Commands}
+
+Table \ref{tab:commands} lists available debugging commands, their abbreviations and IDE equivalents.
+
+\begin{table}[htb]
+\caption{Debugging Commands}\label{tab:commands}
+\begin{tabular}{lll}
+\textbf{Command} & \textbf{Abbreviation} & \textbf{IDE command}\\
+\hline
+start & &\\
+quit & q & \verb/Stop Debugging/\\
+help & h & \verb/Help | Debugging/\\
+continue & c & \verb/Debug | Continue/\\
+next & n & \verb/Debug | Step Over/\\
+step & s & \verb/Debug | Step Into/\\
+out & o & \verb/Debug | Step Out/\\
+break [FILE:]LINE & b [FILE:]LINE & \verb/Debug | Toggle breakpoint/\\
+clear N & cl N & \verb/Debug | Toggle breakpoint/\\
+callstack & ca\\
+frame N & f N\\
+list [FILE:]LINE & l [FILE:]LINE &\\
+list* & l* &\\
+list & l &\\
+inspect EXPR & i EXPR& \verb/Debug | Inspect.../\\
+show breakpoints\\
+set break on throw (on / off)\\
+empty line & ENTER\\
+\end{tabular}
+\end{table}
+
+Descriptions of the commands:
+
+\begin{itemize}
+
+\item start
+
+Starts a debugging session.
+
+\item quit
+
+Ends debugging session and exits.
+
+\item continue
+
+Runs program until it stops to a breakpoint or exits.
+
+\item next
+
+Goes to next source line by stepping over function calls.
+
+\item step
+
+Goes to next source line or steps into a function.
+
+\item out
+
+Goes out of function.
+
+\item break [FILE:]LINE
+
+Sets a breakpoint to a source line.
+
+\item clear N
+
+Clears breakpoint number N.
+
+\item callstack
+
+Shows current call stack.
+
+\item frame N
+
+Sets current call frame for inspecting.
+
+\item list [FILE:]LINE
+
+Lists source code around line LINE.
+
+\item list*
+
+Lists source code around current position.
+
+\item list
+
+Lists next lines.
+
+\item inspect EXPR
+
+Inspects value of expression EXPR.
+
+\item show breakpoints
+
+Shows list of breakpoints.
+
+\item set break on throw on
+
+Sets implicit breakpoint in each throw statement.
+
+\item set break on throw off
+
+Clears implicit breakpoint in each throw statement.
+
+\item empty line
+
+Repeats last command.
+
+\end{itemize}
+
+\section{Inspect Expressions}
+
+Inspect expression is a content expression.
+
+\begin{grammar}
+<inspect-expr> ::= <content-expr>
+\end{grammar}
+
+\subsection{Content Expression}
+
+Content expression is either an \emph{at} character followed
+by a prefix expression, or a sole prefix expression.
+
+\begin{grammar}
+<content-expr> ::= '@' <prefix-expr> | <prefix-expr>
+\end{grammar}
+
+\emph{at}-prefixed content expression evaluates a content
+of a class or pointer to a class.
+Specializations of \emph{System.Collections.List},
+\emph{System.Collections.Set} and \emph{System.Collections.Map},
+receive special treatment from the debugger to print the
+contents of them. \emph{at}-prefixed content expression for an ordinary class
+prints values of its member variables.
+\emph{at}-prefixed content expression for a pointer evaluates the
+dynamic type of the class pointed and prints its content.
+
+\subsection{Prefix Expression}
+
+A prefix expression consists of a prefix operator '*' followed by
+another prefix expression, or a postfix expression.
+
+\begin{grammar}
+<prefix-expr> ::= ("*" <prefix-expr>)
+\alt <postfix-expr>
+\end{grammar}
+
+The '*' prefix operator derefences a following pointer expression.
+
+\subsection{Postfix Expression}
+
+A postfix expression consists of a primary expression followed by zero or more
+postfix operations.
+
+\begin{grammar}
+<postfix-expr> ::= <primary-expr> ("." <member-id> | "->" <member-id>)*
+
+<member-id> ::= <identifier> | \lit*{base}
+
+<identifier> ::= (letter | '_') (letter | digit | '_')*
+\end{grammar}
+
+A '.' postfix operation selects a member of a class.
+
+A '$->$' postfix operation selects a member of an expression that has a type of a pointer to class.
+
+\subsection{Primary Expression}
+
+A primary expression is a this-pointer, a name of a local variable a handle expression or a parenthesized perfix expression.
+
+\begin{grammar}
+<primary-expr> ::= \lit*{this} | <identifier> | "$" <int> <type-expr-part> | "(" <prefix-expr> ")"
+
+<type-expr-part> ::= '[' (anychar - ']')+ ']'
+\end{grammar}
+
+A handle expression consists of a '\$' character followed by a handle returned by GDB
+and a type expression enclosed in brackets. Handle expression refers to previously
+evaluated expressions.
+
+\section{Usage}
+
+\begin{verbatim}
+usage: cmdb [options] program [arguments...]
+options:
+-----------------------------------------
+-ide:             use IDE mode
+-file=FILE        read commands from FILE
+\end{verbatim}
+
+\end{document}
