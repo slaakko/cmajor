@@ -98,6 +98,7 @@ public:
     virtual bool IsEnumTypeNode() const { return false; }
     virtual bool IsEnumConstantNode() const { return false; }
     virtual bool IsTypedefNode() const { return false; }
+    virtual bool IsTypedefStatementNode() const { return false; }
     virtual bool IsThisNode() const { return false; }
     virtual bool IsUnsignedTypeNode() const { return false; }
     virtual bool IsIdentifierNode() const { return false; }

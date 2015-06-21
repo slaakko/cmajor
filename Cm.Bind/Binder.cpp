@@ -664,11 +664,6 @@ void Binder::Visit(Cm::Ast::GotoStatementNode& gotoStatementNode)
     currentParent->AddStatement(boundGotoStatement);
 }
 
-void Binder::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
-{
-    // todo
-}
-
 void Binder::BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 {
     SimpleStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());

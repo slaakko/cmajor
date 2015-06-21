@@ -390,6 +390,7 @@ public:
     TypedefStatementNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::typedefStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    bool IsTypedefStatementNode() const override { return true; }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;

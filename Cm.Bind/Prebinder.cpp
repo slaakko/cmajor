@@ -230,6 +230,11 @@ void Prebinder::Visit(Cm::Ast::TypedefNode& typedefNode)
     BindTypedef(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &typedefNode);
 }
 
+void Prebinder::Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode)
+{
+    BindTypedef(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &typedefStatementNode);
+}
+
 void Prebinder::Visit(Cm::Ast::EnumConstantNode& enumConstantNode)
 {
     BindEnumConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &enumConstantNode);

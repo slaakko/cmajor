@@ -208,6 +208,14 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
     symbolNodeMap[typedefSymbol] = typedefNode;
 }
 
+void SymbolTable::AddTypedef(Cm::Ast::TypedefStatementNode* typedefStatementNode)
+{
+    Cm::Ast::IdentifierNode* typedefId = typedefStatementNode->Id();
+    TypedefSymbol* typedefSymbol = new TypedefSymbol(typedefId->GetSpan(), typedefId->Str());
+    container->AddSymbol(typedefSymbol);
+    symbolNodeMap[typedefSymbol] = typedefStatementNode;
+}
+
 void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, FunctionSymbolFlags flags)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());

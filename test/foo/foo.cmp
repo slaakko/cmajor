@@ -1,0 +1,4 @@
+project Foo;
+target=library;
+assembly <foo.cma>;
+source <foo.cm>;

@@ -65,7 +65,6 @@ public:
     void Visit(Cm::Ast::BreakStatementNode& breakStatementNode) override;
     void Visit(Cm::Ast::ContinueStatementNode& continueStatementNode) override;
     void Visit(Cm::Ast::GotoStatementNode& gotoStatementNode) override;
-    void Visit(Cm::Ast::TypedefStatementNode& typedefStatementNode) override;
     void BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
     void BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;

@@ -1,0 +1,186 @@
+\documentclass[oneside, a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{a4wide}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+\usepackage{listings}
+\lstdefinelanguage{Cmajor}{morekeywords={assert, bool, true, false, sbyte, byte, short, ushort, int, uint, long, ulong,
+float, double, char, void, enum, cast, namespace, using, static, extern, is, explicit, delegate, inline, cdecl, nothrow,
+public, protected, private, internal, virtual, abstract, override, suppress, default, operator, class, return, if, else,
+switch, case, default, while, do, for, break, continue, goto, typedef, typename, const, null, this, base, unit_test,
+construct, destroy, new, delete, sizeof, try, catch, throw, concept, where, axiom, and, or, not},sensitive=true,morecomment=[l]{//},morecomment=[s]{/*}{*/},morestring=[b]\",morestring=[b]',}
+\lstloadlanguages{Cmajor}
+\lstset{language=Cmajor,showstringspaces=false,breaklines=true,basicstyle=\small,frameround=fttt}
+
+\begin{document}
+
+\title{Unit Testing in Cmajor}
+\author{Seppo Laakko}
+\maketitle
+
+\section{Tutorial}
+
+Cmajor has a command line tool named \textbf{cmunit}, that
+eases testing Cmajor libraries.
+Assume that you have a library \emph{Foo} that contains some
+functions and classes to be tested (Fig. \ref{fig:foo}).
+
+\begin{figure}[htb]\caption{Foo}\label{fig:foo}
+\begin{lstlisting}[frame=trBL]
+using System;
+
+namespace Foo
+{
+    public int Add(int x, int y)
+    {
+        return x + y;
+    }
+
+    public int Sub(int x, int y)
+    {
+        return x - y;
+    }
+
+    public class Cls
+    {
+        public int Twice(int x)
+        {
+            return 2 * x;
+        }
+        public int Square(int x)
+        {
+            return x * x;
+        }
+
+    }
+}
+\end{lstlisting}
+\end{figure}
+
+\clearpage
+First we create a project file for the test project:
+
+\begin{verbatim}
+project TestFoo;
+target=program;
+assembly <testfoo.cma>;
+reference <../foo.cml>;
+source <testfoo.cm>;
+\end{verbatim}
+
+It references the library \textbf{foo.cml} to be tested and
+contains one source file \textbf{testfoo.cm} that will contain the
+tests.
+
+Next we create that source file (Fig. \ref{fig:testfoo}).
+
+\begin{figure}[htb]\caption{testfoo.cm}\label{fig:testfoo}
+\begin{lstlisting}[frame=trBL]
+using System;
+using Foo;
+
+namespace Tests
+{
+    public unit_test void TestAdd()
+    {
+        #assert(Add(1, 2) == 3);
+        #assert(Add(0, 100) == 100);
+        // ...
+    }
+
+    public unit_test void TestSub()
+    {
+        #assert(Sub(1, 2) == -1);
+        // ...
+    }
+
+    public unit_test void TestCls()
+    {
+        Cls c;
+        #assert(c.Twice(3) == 6);
+        #assert(c.Square(2) == 4);
+        // ...
+    }
+
+}
+\end{lstlisting}
+\end{figure}
+
+The source file contains functions
+that have a \textbf{unit\_test} specifier
+and assert statements.
+The \textbf{unit\_test} specifier
+tells \textbf{cmunit} program that
+the function is a unit test and not
+just an ordinary function.
+The asserts contain test expressions
+that should be true.
+The \textbf{cmunit} executes
+the asserts and counts how many of them
+succeeded and how many failed.
+
+Next we run the tests using \textbf{cmunit}:
+
+\begin{verbatim}
+C:\Programming\cmajorbin\test\foo\testfoo>cmunit testfoo.cmp
+testing project 'TestFoo' using llvm backend and debug configuration...
+C:/Programming/cmajorbin/test/foo/testfoo/testfoo.cm
+> Tests.TestAdd
+< Tests.TestAdd: 2 assertions, 2 passed, 0 failed
+> Tests.TestSub
+< Tests.TestSub: 1 assertions, 1 passed, 0 failed
+> Tests.TestCls
+< Tests.TestCls: 2 assertions, 2 passed, 0 failed
+C:/Programming/cmajorbin/test/foo/testfoo/testfoo.cm (ran 3 tests): 3 passed, 0
+failed (0 did not compile, 0 exceptions, 0 crashed, 0 unknown results)
+test results for project 'TestFoo' (ran 3 tests):
+passed             : 3
+failed:            : 0
+  did not compile  : 0
+  exceptions       : 0
+  crashed          : 0
+  unknown result   : 0
+
+9 seconds
+\end{verbatim}
+
+\textbf{cmunit} takes each unit test in turn and creates a
+program whose main() function calls the unit test.
+It then compiles the program. If the compilation fails, the
+test fails right away. Otherwise \textbf{cmunit}
+executes the program. Each assert is executed and the results
+for them are printed. If all asserts succeed the test program returns 0,
+if some assertion failed the test program returns 1.
+If the unit test threw an exception, the test program returns 2.
+If the program receives a segmentation violation signal, 255 is returned.
+\textbf{cmunit} records the return values and prints a report.
+
+\section{Reference}
+
+\begin{verbatim}
+Cmajor release mode unit test engine version 1.0.0
+Usage: cmunit [options] {file.cms | file.cmp}
+Compile and run unit tests in solution file.cms or project file.cmp
+options:
+-config=debug   : use debug configuration (default)
+-config=release : use release configuration
+-backend=llvm   : use LLVM backend (default)
+-backend=c      : use C backend
+-file=FILE      : run only unit tests in file FILE
+-test=TEST      : run only unit test TEST
+-verbose        : print also passed assertions
+-D SYMBOL       : define conditional compilation symbol SYMBOL\end{verbatim}
+
+By default \textbf{cmunit} compiles and runs all tests in the given project or solution
+using debug configuration and LLVM backend settings.
+The configuration used can be given using the -config option and the backend used
+using the -backend option.
+
+By using the -file=FILE option together with a project or solution compiles and
+runs only tests in the source file FILE.
+
+By using the -test=TEST option together with a project or solution compiles and
+runs only given test named TEST.
+
+\end{document}
