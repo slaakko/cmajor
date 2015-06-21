@@ -28,8 +28,6 @@ functions and classes to be tested (Fig. \ref{fig:foo}).
 
 \begin{figure}[htb]\caption{Foo}\label{fig:foo}
 \begin{lstlisting}[frame=trBL]
-using System;
-
 namespace Foo
 {
     public int Add(int x, int y)
@@ -77,7 +75,6 @@ Next we create that source file (Fig. \ref{fig:testfoo}).
 
 \begin{figure}[htb]\caption{testfoo.cm}\label{fig:testfoo}
 \begin{lstlisting}[frame=trBL]
-using System;
 using Foo;
 
 namespace Tests
@@ -146,15 +143,56 @@ failed:            : 0
 \end{verbatim}
 
 \textbf{cmunit} takes each unit test in turn and creates a
-program whose main() function calls the unit test.
+program for each. Program's main() function calls the unit test.
 It then compiles the program. If the compilation fails, the
 test fails right away. Otherwise \textbf{cmunit}
-executes the program. Each assert is executed and the results
+executes the program. Each assert is executed and results
 for them are printed. If all asserts succeed the test program returns 0,
 if some assertion failed the test program returns 1.
 If the unit test threw an exception, the test program returns 2.
 If the program receives a segmentation violation signal, 255 is returned.
 \textbf{cmunit} records the return values and prints a report.
+
+Now if Sub function is modified to simulate a bug (Fig. \ref{fig:modifiedfoo}),
+
+\begin{figure}[htb]\caption{Modified Foo}\label{fig:modifiedfoo}
+\begin{lstlisting}[frame=trBL]
+// ...
+public int Sub(int x, int y)
+{
+    return x - y - 1;
+}
+// ...
+\end{lstlisting}
+\end{figure}
+
+and \textbf{cmunit} is executed again. We will see the result of a failed
+assertion:
+
+\begin{verbatim}
+C:\Programming\cmajorbin\test\foo\testfoo>cmunit testfoo.cmp
+testing project 'TestFoo' using llvm backend and debug configuration...
+C:/Programming/cmajorbin/test/foo/testfoo/testfoo.cm
+> Tests.TestAdd
+< Tests.TestAdd: 2 assertions, 2 passed, 0 failed
+> Tests.TestSub
+  assertion 'Sub(1, 2) == -1' FAILED in file C:/Programming/cmajorbin/test/foo/t
+estfoo/testfoo.cm at line 14
+< Tests.TestSub: 1 assertions, 0 passed, 1 failed
+> Tests.TestCls
+< Tests.TestCls: 2 assertions, 2 passed, 0 failed
+C:/Programming/cmajorbin/test/foo/testfoo/testfoo.cm (ran 3 tests): 2 passed, 1
+failed (0 did not compile, 0 exceptions, 0 crashed, 0 unknown results)
+test results for project 'TestFoo' (ran 3 tests):
+passed             : 2
+failed:            : 1
+  did not compile  : 0
+  exceptions       : 0
+  crashed          : 0
+  unknown result   : 0
+
+7 seconds
+\end{verbatim}
 
 \section{Reference}
 
@@ -177,10 +215,10 @@ using debug configuration and LLVM backend settings.
 The configuration used can be given using the -config option and the backend used
 using the -backend option.
 
-By using the -file=FILE option together with a project or solution compiles and
+By using the -file=FILE option together with a project or solution \textbf{cmunit} compiles and
 runs only tests in the source file FILE.
 
-By using the -test=TEST option together with a project or solution compiles and
+By using the -test=TEST option together with a project or solution \textbf{cmunit} compiles and
 runs only given test named TEST.
 
 \end{document}
