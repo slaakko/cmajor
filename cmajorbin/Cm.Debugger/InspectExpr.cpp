@@ -454,8 +454,6 @@ public:
         localVarNameNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryExprRule>(this, &PrimaryExprRule::PostlocalVarName));
         Cm::Parsing::NonterminalParser* handleNonterminalParser = GetNonterminal("handle");
         handleNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryExprRule>(this, &PrimaryExprRule::Posthandle));
-        Cm::Parsing::NonterminalParser* typeExprPartNonterminalParser = GetNonterminal("TypeExprPart");
-        typeExprPartNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryExprRule>(this, &PrimaryExprRule::PostTypeExprPart));
         Cm::Parsing::NonterminalParser* prefixExprNonterminalParser = GetNonterminal("PrefixExpr");
         prefixExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryExprRule>(this, &PrimaryExprRule::PostPrefixExpr));
     }
@@ -469,7 +467,7 @@ public:
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new HandleNode(context.fromhandle, context.fromTypeExprPart);
+        context.value = new HandleNode(context.fromhandle);
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -493,15 +491,6 @@ public:
             stack.pop();
         }
     }
-    void PostTypeExprPart(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        if (matched)
-        {
-            std::unique_ptr<Cm::Parsing::Object> fromTypeExprPart_value = std::move(stack.top());
-            context.fromTypeExprPart = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromTypeExprPart_value.get());
-            stack.pop();
-        }
-    }
     void PostPrefixExpr(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
@@ -514,53 +503,11 @@ public:
 private:
     struct Context
     {
-        Context(): value(), fromlocalVarName(), fromhandle(), fromTypeExprPart(), fromPrefixExpr() {}
+        Context(): value(), fromlocalVarName(), fromhandle(), fromPrefixExpr() {}
         InspectNode* value;
         std::string fromlocalVarName;
         int fromhandle;
-        std::string fromTypeExprPart;
         InspectNode* fromPrefixExpr;
-    };
-    std::stack<Context> contextStack;
-    Context context;
-};
-
-class InspectExprGrammar::TypeExprPartRule : public Cm::Parsing::Rule
-{
-public:
-    TypeExprPartRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
-    {
-        SetValueTypeName("std::string");
-    }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
-    {
-        contextStack.push(std::move(context));
-        context = Context();
-    }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        if (matched)
-        {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<std::string>(context.value)));
-        }
-        context = std::move(contextStack.top());
-        contextStack.pop();
-    }
-    virtual void Link()
-    {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<TypeExprPartRule>(this, &TypeExprPartRule::A0Action));
-    }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
-    {
-        context.value = std::string(matchBegin, matchEnd);
-    }
-private:
-    struct Context
-    {
-        Context(): value() {}
-        std::string value;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -579,9 +526,9 @@ void InspectExprGrammar::GetReferencedGrammars()
 
 void InspectExprGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
     AddRule(new InspectExprRule("InspectExpr", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("ContentExpr", "ContentExpr", 0))));
@@ -631,29 +578,16 @@ void InspectExprGrammar::CreateRules()
                     new Cm::Parsing::ActionParser("A1",
                         new Cm::Parsing::NonterminalParser("localVarName", "identifier", 0))),
                 new Cm::Parsing::ActionParser("A2",
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::TokenParser(
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::CharParser('$'),
-                                new Cm::Parsing::NonterminalParser("handle", "int", 0))),
-                        new Cm::Parsing::NonterminalParser("TypeExprPart", "TypeExprPart", 0)))),
+                    new Cm::Parsing::TokenParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::CharParser('$'),
+                            new Cm::Parsing::NonterminalParser("handle", "int", 0))))),
             new Cm::Parsing::ActionParser("A3",
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::CharParser('('),
                         new Cm::Parsing::NonterminalParser("PrefixExpr", "PrefixExpr", 0)),
                     new Cm::Parsing::CharParser(')'))))));
-    AddRule(new TypeExprPartRule("TypeExprPart", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::CharParser('['),
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::TokenParser(
-                        new Cm::Parsing::PositiveParser(
-                            new Cm::Parsing::DifferenceParser(
-                                new Cm::Parsing::AnyCharParser(),
-                                new Cm::Parsing::CharParser(']')))))),
-            new Cm::Parsing::CharParser(']'))));
     SetSkipRuleName("spaces");
 }
 

@@ -1,0 +1,16 @@
+using System;
+using System.Concepts;
+
+class Tester<T, U> where Convertible<T, U>
+{
+}
+
+void main()
+{
+    Tester<int, int> ii;    // ok, trivially convertible
+    Tester<int, double> id; // ok, promotion
+    Tester<double, int> di; // Error: cannot instantiate class 'Tester<double, int>' because:
+                            // types ('double', 'int') do not fulfill the requirements of
+                            // concept Convertible<T, U> because:
+                            // type 'double' is not convertible to type 'int'
+}

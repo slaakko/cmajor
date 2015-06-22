@@ -1,0 +1,4 @@
+project ExplicitlyConvertible;
+target=program;
+assembly <explicitlyconvertible.cma>;
+source <explicitlyconvertible.cm>;

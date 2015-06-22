@@ -1,0 +1,17 @@
+using System;
+using System.Concepts;
+
+class Tester<T, U> where ExplicitlyConvertible<T, U>
+{
+}
+
+void main()
+{
+    Tester<int, int> ii;    //  ok, trivially explicitly convertible
+    Tester<int, double> id; //  ok, promotion
+    Tester<double, int> di; //  ok, explicitly convertible
+    Tester<void*, int> vi;  //  error: Error T138 in file C:/.../explicitlyconvertible.cm at line 13:
+                            //  types (void*, int) do not satisfy the requirements of concept 'System.Concepts.ExplicitlyConvertible' because
+                            //  type 'void*' is not explicitly convertible to type 'int'
+}
+

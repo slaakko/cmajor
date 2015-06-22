@@ -1,0 +1,32 @@
+\ProvidesPackage{CmBook}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{graphicx}
+\RequirePackage{pifont}
+\RequirePackage{url}
+\RequirePackage[colorlinks=true,linkcolor=blue]{hyperref}
+\RequirePackage{float}
+\RequirePackage{listings}
+\RequirePackage{a4wide}
+\RequirePackage{tabularx}
+\RequirePackage{supertabular}
+\RequirePackage{syntax}
+\RequirePackage{amsmath}
+\RequirePackage{tocbibind}
+\RequirePackage[colorlinks=true,linkcolor=blue]{hyperref}
+\newenvironment{HandList}{\renewcommand\labelitemi {\ding{43}}\begin{itemize}}{\end{itemize}}
+\lstdefinelanguage{Cmajor}
+{
+    morekeywords={bool, true, false, sbyte, byte, short, ushort, int, uint, long, ulong, float, double, char, void, enum, cast, namespace, using, static, extern, is, explicit, delegate, inline, cdecl, nothrow, public, protected, private, internal, virtual, abstract, override, suppress, default, operator, class, return, if, else, switch, case, default, while, do, for, break, continue, goto, typedef, typename, const, null, this, base, construct, destroy, new, delete, sizeof, try, catch, throw, concept, where, axiom, and, or, not},
+	sensitive=true,
+	morecomment=[l]{//},
+	morecomment=[s]{/*}{*/},
+	morestring=[b]",
+	morestring=[b]',
+}
+\lstloadlanguages{Cmajor, [Sharp]C,C++}
+\lstset{language=Cmajor,showstringspaces=false,breaklines=true,basicstyle=\small,numberstyle=\tiny,numbers=left}
+\setcounter{secnumdepth}{3} % numbering subsubsections
+\setcounter{tocdepth}{3}    % subsubsections to toc
+\def\csharp{$\textrm{C}^\#$}
+\def\bf{\textbf}
+\def\tt{\texttt}

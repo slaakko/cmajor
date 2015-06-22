@@ -1,0 +1,4 @@
+project Additive;
+target=program;
+assembly <additive.cma>;
+source <additive.cm>;

@@ -74,7 +74,7 @@ void LocalNode::Accept(InspectNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
-HandleNode::HandleNode(int handle_, const std::string& typeExpr_) : handle(handle_), typeExpr(typeExpr_)
+HandleNode::HandleNode(int handle_) : handle(handle_)
 {
 }
 

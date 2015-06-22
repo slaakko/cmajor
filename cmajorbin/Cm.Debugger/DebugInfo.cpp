@@ -483,6 +483,21 @@ Cm::Core::ClassDebugInfo* DebugInfo::GetClassDebugInfo(const std::string& fullCl
     return nullptr;
 }
 
+void DebugInfo::SetTypeForHandle(int handle, const std::string& type)
+{
+    handleTypeMap[handle] = type;
+}
+
+const std::string& DebugInfo::GetTypeForHandle(int handle) const
+{
+    HandleTypeMapIt i = handleTypeMap.find(handle);
+    if (i != handleTypeMap.end())
+    {
+        return i->second;
+    }
+    throw std::runtime_error("type for handle " + std::to_string(handle) + " not found");
+}
+
 void DebugInfo::SetSourceFile(const std::string& filePath, SourceFile* sourceFile)
 {
     sourceFileMap[filePath] = sourceFile;

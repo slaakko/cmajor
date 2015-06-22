@@ -1,0 +1,17 @@
+using System;
+using System.Concepts;
+
+class Tester<T, U> where Common<T, U>
+{
+}
+
+void main()
+{
+    Tester<int, int> ii;    //  ok, trivially common
+    Tester<int, double> id; //  ok, double
+    Tester<double, int> di; //  ok, double
+    Tester<void*, int> vi;  //  Error: cannot instantiate class 'Tester<void*, int>' because:
+                            //  types ('void*', 'int') do not fulfill the requirements of concept
+                            //  Common<T, U> because:
+                            //  types 'void*' and 'int' have no common type
+}

@@ -28,7 +28,6 @@ namespace Cm.Debugger
         PostfixExpr(var std::unique_ptr<InspectNode> expr): InspectNode*;
         MemberId: std::string;
         PrimaryExpr: InspectNode*;
-        TypeExprPart: std::string;
     }
     grammar ContinueReplyGrammar
     {

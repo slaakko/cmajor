@@ -87,6 +87,7 @@ void GetLibraryDirectories(std::vector<std::string>& libraryDirectories)
 
 std::string ResolveLibraryReference(const boost::filesystem::path& projectOutputBase, const std::string& config, const std::vector<std::string>& libraryDirs, const std::string& libraryReferencePath)
 {
+    std::vector<std::string> searched;
     boost::filesystem::path lrp(libraryReferencePath);
     boost::filesystem::path libParent = lrp.parent_path();
     boost::filesystem::path projectBase = projectOutputBase.parent_path().parent_path();
@@ -94,6 +95,7 @@ std::string ResolveLibraryReference(const boost::filesystem::path& projectOutput
     libDir /= config;
     libDir /= Cm::IrIntf::GetBackEndStr();
     boost::filesystem::path fp(absolute(lrp.filename(), libDir));
+    searched.push_back(fp.generic_string());
     if (exists(fp))
     {
         return Cm::Util::GetFullPath(fp.generic_string());
@@ -105,12 +107,27 @@ std::string ResolveLibraryReference(const boost::filesystem::path& projectOutput
         ld /= config;
         ld /= Cm::IrIntf::GetBackEndStr();
         boost::filesystem::path fp(absolute(lrp.filename(), ld));
+        searched.push_back(fp.generic_string());
         if (exists(fp))
         {
             return Cm::Util::GetFullPath(fp.generic_string());
         }
     }
-    throw std::runtime_error("library reference '" + libraryReferencePath + "' not found");
+    std::string s;
+    bool first = true;
+    for (const std::string& srh : searched)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            s.append(";");
+        }
+        s.append(srh);
+    }
+    throw std::runtime_error("library reference '" + libraryReferencePath + "' not found (seached: " + s + ")");
 }
 
 Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const std::vector<std::string>& sourceFilePaths)

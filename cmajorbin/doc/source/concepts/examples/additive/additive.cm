@@ -1,0 +1,20 @@
+using System;
+
+concept Additive<T>
+{
+    T(const T&);
+    T operator+(T, T);
+}
+
+T Add<T>(T a, T b) where T is Additive
+{
+    return a + b;
+}
+
+void main()
+{
+    int a = 1;
+    int b = 2;
+    int si = Add(a, b);         //  ok
+    bool sb = Add(true, false); //  error
+}

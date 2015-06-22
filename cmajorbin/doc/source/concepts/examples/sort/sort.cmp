@@ -1,0 +1,4 @@
+project Sort;
+target=program;
+assembly <sort.cma>;
+source <sort.cm>;

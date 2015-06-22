@@ -1,0 +1,4 @@
+project Convertible;
+target=program;
+assembly <convertible.cma>;
+source <convertible.cm>;

@@ -85,13 +85,11 @@ private:
 class HandleNode : public InspectNode
 {
 public:
-    HandleNode(int handle_, const std::string& typeExpr_);
+    HandleNode(int handle_);
     int Handle() const { return handle; }
-    const std::string& TypeExpr() const { return typeExpr; }
     void Accept(InspectNodeVisitor& visitor) override;
 private:
     int handle;
-    std::string typeExpr;
 };
 
 class ParenthesesNode : public InspectNode

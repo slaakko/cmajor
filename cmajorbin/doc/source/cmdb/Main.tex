@@ -186,17 +186,16 @@ A '$->$' postfix operation selects a member of an expression that has a type of 
 
 \subsection{Primary Expression}
 
-A primary expression is a this-pointer, a name of a local variable a handle expression or a parenthesized perfix expression.
+A primary expression is a this-pointer, a name of a local variable, a handle expression or a parenthesized perfix expression.
 
 \begin{grammar}
-<primary-expr> ::= \lit*{this} | <identifier> | "$" <int> <type-expr-part> | "(" <prefix-expr> ")"
+<primary-expr> ::= \lit*{this} | <local-variable-name> | "$" <int> | "(" <prefix-expr> ")"
 
-<type-expr-part> ::= '[' (anychar - ']')+ ']'
+<local-variable-name> ::= <identifier>
 \end{grammar}
 
-A handle expression consists of a '\$' character followed by a handle returned by GDB
-and a type expression enclosed in brackets. Handle expression refers to previously
-evaluated expressions.
+A handle expression consists of a '\$' character followed by a integer handle returned by GDB.
+Using handle expression one can refer to previously evaluated expressions.
 
 \section{Usage}
 

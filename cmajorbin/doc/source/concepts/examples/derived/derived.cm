@@ -1,0 +1,28 @@
+using System;
+using System.Concepts;
+
+class A
+{
+}
+
+class B: A
+{
+}
+
+class C: B
+{
+}
+
+class Tester<T, U> where Derived<T, U>
+{
+}
+
+void main()
+{
+    Tester<B, A> ba;    // ok
+    Tester<C, B> cb;    // ok
+    Tester<C, A> ca;    // ok
+    Tester<B, C> bc;    // error: types (B, C) do not satisfy the requirements of concept 'System.Concepts.Derived' because type 'B' is not derived from type 'C'
+    Tester<A, B> ab;    // error: types (A, B) do not satisfy the requirements of concept 'System.Concepts.Derived' because type 'A' is not derived from type 'B'
+    Tester<A, C> ac;    // error: types (A, C) do not satisfy the requirements of concept 'System.Concepts.Derived' because type 'A' is not derived from type 'C'
+}
