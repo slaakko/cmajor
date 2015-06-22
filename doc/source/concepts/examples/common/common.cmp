@@ -1,0 +1,4 @@
+project Common;
+target=program;
+assembly <common.cma>;
+source <common.cm>;

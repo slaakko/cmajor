@@ -7,7 +7,7 @@
 
 \begin{document}
 
-\title{Getting Started Guide for Cmajor 1.0.0-beta-5}
+\title{Getting Started Guide for Cmajor 1.0.0}
 \author{Seppo Laakko}
 \maketitle
 
@@ -17,7 +17,7 @@
 
 Note:
 You must uninstall any previous Cmajor version before installing
-this version (1.0.0-beta-5).
+this version (1.0.0).
 
 It is also recommended that you delete the
 \verb|%APPDATA%\Cmajor| directory before installing
@@ -27,7 +27,7 @@ have been changed.
 \begin{itemize}
 
 \item
-Download and install Mingw\_w64 GCC:\\
+Download and install MinGW\_w64 GCC:\\
 \url{http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download}
 
 Installation settings for my system:
@@ -57,8 +57,8 @@ In my system this is\\
 \begin{itemize}
 
 \item
-Download and run \textbf{cmajor-1.0.0-beta-5-win-x86-setup.exe} (for 32-bit Windows) or
-\textbf{cmajor-1.0.0-beta-5-win-x64-setup.exe} (for 64-bit Windows).
+Download and run \textbf{cmajor-1.0.0-win-x86-setup.exe} (for 32-bit Windows) or
+\textbf{cmajor-1.0.0-win-x64-setup.exe} (for 64-bit Windows).
 
 \item
 Cmajor is installed by default to \verb|C:\Program Files\Cmajor| directory (under 32-bit Windows) or
@@ -166,9 +166,14 @@ library reference 'system.cml' not found.
 You have to build the System Library for the used configuration (debug/release) and backend (LLVM/C) first.
 
 \item
+
+\textbf{gcc is not recognized as an internal or external command...}
+
+or
+
 \textbf{Cannot start llc.exe because libgcc\_s\_sjlj-1.dll is missing} (or something like that).
 
-The bin directory of mingw\_w6\\
+The bin directory of mingw\_w64\\
 (in my machine\\
 \verb|C:\Program Files\mingw-w64\x86_64-5.1.0-posix-sjlj-rt_v4-rev0\mingw64\bin|)
 must be in the PATH environment variable.
@@ -260,6 +265,11 @@ You have probably not installed LLVM tools.
 Build seems to succeed but program does not work, or other mysterious error.
 
 Try \textbf{rebuild} command (-R option) or \textbf{clean} and then \textbf{build}.
+
+\item
+Ubuntu Document Viewer does not show PDF documents included in Cmajor.
+
+At least \textbf{okular} shows them beautifully.
 
 \item
 The compiler is still in experimental stage, so surely many bugs exist...

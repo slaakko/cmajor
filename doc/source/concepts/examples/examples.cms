@@ -1,0 +1,16 @@
+solution ConceptExamples;
+project <additive/additive.cmp>;
+project <common/common.cmp>;
+project <convertible/convertible.cmp>;
+project <derived/derived.cmp>;
+project <explicitlyconvertible/explicitlyconvertible.cmp>;
+project <lowerbound/lowerbound.cmp>;
+project <sort/sort.cmp>;
+activeProject LowerBound;
+dependency Additive();
+dependency Common();
+dependency Convertible();
+dependency Derived();
+dependency ExplicitlyConvertible();
+dependency LowerBound();
+dependency Sort();

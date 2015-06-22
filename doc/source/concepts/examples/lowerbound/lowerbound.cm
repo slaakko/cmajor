@@ -1,0 +1,34 @@
+using System;
+using System.Collections;
+using System.IO;
+
+void main()
+{
+    List<int> list;
+    int n = 5;
+    for (int i = 0; i < n; ++i)
+    {
+        list.Add(i);
+    }
+    Console.Out() << "list: " << list << endl();
+
+    List<int>.ConstIterator li1 = LowerBound(list.CBegin(), list.CEnd(), 1);
+    if (li1 != list.CEnd())
+    {
+        Console.Out() << "list[" << Distance(list.CBegin(), li1) << "] == " << *li1 << endl();
+    }
+
+    ForwardList<int> fwdlist;
+    ForwardList<int>.Iterator addIt = fwdlist.Begin();
+    for (int i = 0; i < n; ++i)
+    {
+        addIt = fwdlist.InsertAfter(addIt, i);
+    }
+    Console.Out() << "forward list: " << fwdlist << endl();
+
+    ForwardList<int>.ConstIterator fi1 = LowerBound(fwdlist.CBegin(), fwdlist.CEnd(), 1);
+    if (fi1 != fwdlist.CEnd())
+    {
+        Console.Out() << "fwdlist[" << Distance(fwdlist.CBegin(), fi1) << "] == " << *fi1 << endl();
+    }
+}

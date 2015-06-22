@@ -53,12 +53,8 @@ namespace Cm.Debugger
         PrimaryExpr: InspectNode*
             ::= keyword("this"){ value = new LocalNode("this"); }
             |   identifier:localVarName{ value = new LocalNode(localVarName); }
-            |   (token('$' int:handle) TypeExprPart){ value = new HandleNode(handle, TypeExprPart); }
+            |   token('$' int:handle){ value = new HandleNode(handle); }
             |   ('(' PrefixExpr ')'){ value = new ParenthesesNode(PrefixExpr); }
-            ;
-
-        TypeExprPart: std::string
-            ::= '[' token((anychar - ']')+){ value = std::string(matchBegin, matchEnd); } ']'
             ;
     }
 }

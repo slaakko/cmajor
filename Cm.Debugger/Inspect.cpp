@@ -117,6 +117,7 @@ void Inspector::Visit(SingleNode& singleNode)
     {
         std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", expr));
         result->SetType(printExpr.GetTypeExpr()->ToString());
+        debugInfo.SetTypeForHandle(result->Handle(), printExpr.GetTypeExpr()->ToString());
         result->SetDisplayType(printExpr.GetDisplayTypeExpr()->ToString());
         results.push_back(std::move(result));
     }
@@ -191,7 +192,8 @@ void Inspector::Visit(LocalNode& localNode)
 
 void Inspector::Visit(HandleNode& handleNode)
 {
-    TypeExpr* typeExpr = typeExprParser->Parse(handleNode.TypeExpr().c_str(), handleNode.TypeExpr().c_str() + handleNode.TypeExpr().length(), 0, "");
+    const std::string& type = debugInfo.GetTypeForHandle(handleNode.Handle());
+    TypeExpr* typeExpr = typeExprParser->Parse(type.c_str(), type.c_str() + type.length(), 0, "");
     std::string handleExpr = "$" + std::to_string(handleNode.Handle());
     PrintExpr printExpr(handleExpr, typeExpr);
     if (HasReferenceOrRvalueRefDerivation(typeExpr->Derivations()))
@@ -366,6 +368,7 @@ void Inspector::InspectClass(const PrintExpr& printExpr, TypeExpr* typeExpr)
                 std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "",
                     "[" + classDebugInfo->BaseClassFullName() + "]"));
                 result->SetType(baseClassPrintExpr.GetTypeExpr()->ToString());
+                debugInfo.SetTypeForHandle(result->Handle(), baseClassPrintExpr.GetTypeExpr()->ToString());
                 result->SetDisplayType(baseClassPrintExpr.GetDisplayTypeExpr()->ToString());
                 results.push_back(std::move(result));
             }
@@ -394,6 +397,7 @@ void Inspector::InspectClass(const PrintExpr& printExpr, TypeExpr* typeExpr)
             {
                 std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", memberVar.MemberVarName()));
                 result->SetType(memberVarPrintExpr.GetTypeExpr()->ToString());
+                debugInfo.SetTypeForHandle(result->Handle(), memberVarPrintExpr.GetTypeExpr()->ToString());
                 result->SetDisplayType(memberVarPrintExpr.GetDisplayTypeExpr()->ToString());
                 results.push_back(std::move(result));
             }
@@ -435,6 +439,7 @@ void Inspector::InspectPointer(const PrintExpr& printExpr, TypeExpr* typeExpr)
             {
                 std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", "*"));
                 result->SetType(typeExpr->ToString());
+                debugInfo.SetTypeForHandle(result->Handle(), typeExpr->ToString());
                 result->SetDisplayType(typeExpr->ToString());
                 results.push_back(std::move(result));
             }
@@ -475,6 +480,7 @@ void Inspector::InspectVirtualClass(Cm::Core::ClassDebugInfo* classDebugInfo, co
         {
             std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", "[" + actualClassName + "]"));
             result->SetType(actualClassName);
+            debugInfo.SetTypeForHandle(result->Handle(), actualClassName);
             result->SetDisplayType(actualClassName);
             results.push_back(std::move(result));
         }
@@ -584,6 +590,7 @@ void Inspector::InspectList(const PrintExpr& printExpr)
                     }
                     std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", "[" + std::to_string(i) + "]"));
                     result->SetType(itemType->ToString());
+                    debugInfo.SetTypeForHandle(result->Handle(), itemType->ToString());
                     result->SetDisplayType(itemType->ToString());
                     results.push_back(std::move(result));
                 }
@@ -838,6 +845,7 @@ void Inspector::InspectTree(const PrintExpr& printExpr)
                     std::unique_ptr<Result> valueResult(resultGrammar->Parse(valueCommand->ReplyMessage().c_str(), valueCommand->ReplyMessage().c_str() + valueCommand->ReplyMessage().length(), 0, "",
                         "[" + std::to_string(index++) + "]"));
                     valueResult->SetType(valueTypeName);
+                    debugInfo.SetTypeForHandle(valueResult->Handle(), valueTypeName);
                     valueResult->SetDisplayType(valueTypeName);
                     results.push_back(std::move(valueResult));
                     i = NextNode(i, nodePtrCast, gdb);

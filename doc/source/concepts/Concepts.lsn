@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<latexSolution>
+    <solutionName>Concepts</solutionName>
+    <activeProject>Concepts</activeProject>
+    <projectFiles>
+        <projectFile>
+            <projectName>Concepts</projectName>
+            <projectPath>.\Concepts.lpr</projectPath>
+        </projectFile>
+    </projectFiles>
+</latexSolution>

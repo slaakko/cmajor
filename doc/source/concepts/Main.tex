@@ -1,0 +1,655 @@
+\documentclass[oneside, a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{a4wide}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+\usepackage{listings}
+\lstdefinelanguage{Cmajor}{morekeywords={assert, bool, true, false, sbyte, byte, short, ushort, int, uint, long, ulong,
+float, double, char, void, enum, cast, namespace, using, static, extern, is, explicit, delegate, inline, cdecl, nothrow,
+public, protected, private, internal, virtual, abstract, override, suppress, default, operator, class, return, if, else,
+switch, case, default, while, do, for, break, continue, goto, typedef, typename, const, null, this, base,
+construct, destroy, new, delete, sizeof, try, catch, throw, concept, where, axiom, and, or, not},sensitive=true,morecomment=[l]{//},morecomment=[s]{/*}{*/},morestring=[b]\",morestring=[b]',}
+\lstloadlanguages{Cmajor}
+\lstset{language=Cmajor,showstringspaces=false,breaklines=true,basicstyle=\small,frameround=fttt}
+
+\begin{document}
+
+\title{Cmajor Concepts}
+\author{Seppo Laakko}
+\date{\today}
+\maketitle
+
+\section{Introduction}
+
+In Cmajor programming language functions and classes can be parameterized with types.
+A set of syntactic and semantic requirements for the actual types that can correctly be
+substituted for a formal type parameter in such a parameterized function or class is
+called a \emph{concept}.
+
+Concepts as a feature of a programming language enable the compiler to give better error
+messages when a substituted type does not satisfy syntactic requirements.
+They also enable the compiler to check that a formal type parameter
+constrained by a concept has all the necessary operations when it compiles a body of a
+parameterized function.
+
+In this tutorial we will look over the tools that Cmajor programming language has to offer
+with respect to concepts.
+
+\section{Signature Constraints}
+
+In Cmajor programming language functions and classes can be parameterized with types.
+A parameterized function is called a \emph{function template} and
+a parameterized class is called a \emph{class template}.
+Cmajor follows the same naming convention as C++ in this respect.
+Figure \ref{fig:funtemplate} shows an example of a function template in Cmajor.
+
+\begin{figure}[htb]\caption{Function Template}\label{fig:funtemplate}
+\begin{lstlisting}[frame=trBL]
+T Add<T>(T a, T b)
+{
+    return a + b;
+}
+\end{lstlisting}
+\end{figure}
+
+In case of Add function template it is natural to ask, what the type parameter T can be.
+Surely one must be able to pass object of type T as a parameter and return it by value.
+This requires that one can copy objects of type T, i.e. T must be \emph{copy constructible}.
+One must also be able to add together two objects of type T.
+For now we can say that T must be additive.
+In Cmajor those requirements for template parameter types can be collected together and
+form a \emph{concept}. Figure \ref{fig:additive} shows the definition of this additive concept.
+
+\begin{figure}[htb]\caption{Additive Concept}\label{fig:additive}
+\begin{lstlisting}[frame=trBL]
+concept Additive<T>
+{
+    T(const T&);
+    T operator+(T, T);
+}
+\end{lstlisting}
+\end{figure}
+
+The requirement that T must be copy constructible is expressed by \verb|T(const T&)| and
+the requirement that one must be able to add two objects of T is expressed by \verb|T operator+(T, T)|.
+A synonym for a syntactic requirement like the preceding is a \emph{constraint},
+because it constrains what type T can be.
+Requirements that one must be able to do certain operations with objects of type T are called
+\emph{signature constraints} in Cmajor.
+
+Now we can rewrite the Add function template with Additive concept requirements to form a
+\emph{constrained function template}. Figure \ref{fig:constrainedfuntemplate} shows the
+rewritten Add function template.
+
+\begin{figure}[htb]\caption{Constrained Function Template}\label{fig:constrainedfuntemplate}
+\begin{lstlisting}[frame=trBL]
+T Add<T>(T a, T b) where T is Additive
+{
+    return a + b;
+}
+\end{lstlisting}
+\end{figure}
+
+The \textbf{where} clause states that the template parameter T must satisfy the requirements of Additive concept.
+
+\begin{figure}[htb]\caption{Additive Test}\label{fig:additivetest}
+\begin{lstlisting}[frame=trBL]
+using System;
+
+concept Additive<T>
+{
+    T(const T&);
+    T operator+(T, T);
+}
+
+T Add<T>(T a, T b) where T is Additive
+{
+    return a + b;
+}
+
+void main()
+{
+    int a = 1;
+    int b = 2;
+    int si = Add(a, b);             //  ok
+    bool sb = Add(true, false);     //  error
+}
+\end{lstlisting}
+\end{figure}
+
+Let us now see what the Cmajor compiler thinks about the preceding definitions.
+When compiling the test program in figure \ref{fig:additivetest} the
+Add function call with two integer arguments compiles fine,
+because surely one can copy integers and add them together.
+However calling the Add function with two Boolean values fails with an error message like this:
+
+\begin{verbatim}
+Error: overload resolution failed: 'Add(bool, bool)' not found, or there are no
+acceptable conversions for all argument types. 1 viable functions examined:
+type 'bool' does not fulfill the requirements of concept Additive<T> because:
+function signature 'operator+(bool, bool)' not found (file 'C:/Programming/cmajo
+rbin/doc/source/concepts/examples/additive/additive.cm', line 19):
+    bool sb = Add(true, false); //  error
+              ^^^^^^^^^^^^^^^^
+\end{verbatim}
+
+It means that the Add function template has not been instantiated for \textbf{bool} type,
+because \textbf{bool} does not conform to Additive concept. It does not conform,
+because there is no \verb|operator+| member function in Boolean type and no
+free \verb|operator+| function that takes Boolean parameters.
+Because of these facts, the overload resolution fails with the \verb|Add(bool, bool)| function
+not found.
+
+\section{Associated Types and Typename Constraints}
+
+Techniques used in generic programming are somewhat different to traditional object oriented programming.
+In generic programming the types often do not form hierarchies, but they are otherwise related:
+one type is \emph{associated} with another. An associated type is defined inside another type or
+there is a \textbf{typedef} inside a type that names the associated type.
+
+For example in List class template the type contained in list is an associated type of the List type,
+and it is named ValueType (Fig. \ref{fig:list}.)
+
+\begin{figure}[htb]\caption{List Class Template}\label{fig:list}
+\begin{lstlisting}[frame=trBL]
+class List<T> where T is Semiregular
+{
+    public typedef T ValueType;
+//  ...
+}
+\end{lstlisting}
+\end{figure}
+
+To express that a type has an associated type in relation to Cmajor concepts, one
+can define a \emph{typename constraint} in a concept definition.
+For example in the definition of Container concept there is a requirement that
+a type conforming to Container concept has an associated type called ValueType
+(Fig. \ref{fig:container}.) \footnote{The syntax of typename constraint has
+changed since version 0.9.1.}
+
+\begin{figure}[htb]\caption{Container Concept}\label{fig:container}
+\begin{lstlisting}[frame=trBL]
+concept Container<T>
+{
+    typename T.ValueType;
+//  ...
+}
+\end{lstlisting}
+\end{figure}
+
+The List class template has the associated type ValueType in form of \textbf{typedef} definition,
+so it conforms to Container concept in this respect.
+
+\section{Embedded Constraints}
+
+A concept definition can state additional requirements for the template type parameter or
+for an associated type in form of an \emph{embedded constraint}.
+
+For example Semiregular concept (Fig. \ref{fig:semiregular}) has an embedded constraint that
+a semiregular type is DefaultConstructible, CopyConstructible, Destructible and Assignable,
+where DefaultConstructible, CopyConstructible, Destructible and Assignable are concepts defined
+elsewhere.
+
+\begin{figure}[htb]\caption{Semiregular Concept}\label{fig:semiregular}
+\begin{lstlisting}[frame=trBL]
+concept Semiregular<T>
+{
+    where T is DefaultConstructible and T is CopyConstructible and T is Destructible and T is Assignable;
+}
+\end{lstlisting}
+\end{figure}
+
+\section{Multiparameter Constraints}
+
+Sometimes a concept involves two or more types.
+For example Assignable$<$T, U$>$ (Fig. \ref{fig:multiconcept})
+concept states the requirement that type T implements an assignment operator that
+takes type U parameter.
+
+\begin{figure}[htb]\caption{Multiparameter Concept}\label{fig:multiconcept}
+\begin{lstlisting}[frame=trBL]
+concept Assignable<T, U>
+{
+    void operator=(const U&);
+}
+\end{lstlisting}
+\end{figure}
+
+\section{Concept Hierarchies}
+
+In generic programming classes do not often form hierarchies, while concepts often do.
+When a class derives from another class, it inherits the members of the base class and it can
+\emph{override} virtual functions defined in the base class.
+With respect to concepts, a concept can \emph{refine} another concept.
+When concept refines another, it can define additional requirements and \emph{redefine}
+requirements defined in the refined concept for parameterized types and for types
+associated with the parameterized types.
+
+\subsection{Iterator Hierarchy}
+
+The Cmajor System library borrows and adapts the implementation of many algorithms, containers and concepts from
+the C++ Standard Template Library \cite{STL}, among other things iterator concepts.
+Iterators in Cmajor form a refinement hierarchy shown in figure \ref{fig:iteratorhierarchy}.
+
+\begin{figure}[htb]
+\caption{Iterator Hierarchy}
+\label{fig:iteratorhierarchy}
+\vspace{0.5cm}
+\includegraphics{concepts2}
+\end{figure}
+
+\begin{figure}[htb]\caption{Trivial, Input and Output Iterators}
+\label{fig:trivioiterators}
+\begin{lstlisting}[frame=trBL]
+concept TrivialIterator<T> where T is Semiregular
+{
+    typename T.ValueType;
+    where T.ValueType is Semiregular;
+    typename T.ReferenceType;
+    where T.ReferenceType is T.ValueType&;
+    T.ReferenceType operator*();
+    typename T.PointerType;
+    where T.PointerType is T.ValueType*;
+    T.PointerType operator->();
+}
+
+concept OutputIterator<T>: TrivialIterator<T>
+{
+    T& operator++();
+}
+
+concept InputIterator<T>: TrivialIterator<T>
+{
+    T& operator++();
+    where T is Regular;
+}
+\end{lstlisting}
+\end{figure}
+
+The TrivialIterator (Fig. \ref{fig:trivioiterators}) is a concept that collects
+the common typename and signature requirements for all iterator types.
+There is no class in Cmajor that is a model of bare trivial iterator concept.
+Every iterator must define associated types ValueType, ReferenceType and
+PointerType: these are typename constraints.
+ValueType must be semiregular: this is an embedded constraint.
+Every iterator must also define \verb|operator->| function that
+returns a PointerType: this is a signature constraint.
+
+The OutputIterator concept refines the TrivialIterator concept by
+adding \verb|operator++| signature constraint.
+We can say that an output iterator is a trivial iterator that can
+be incremented.
+Likewise an input iterator is a trivial iterator that can be incremented and
+compared for equality and inequality.
+That is the requirement added by the Regular concept.
+
+\begin{figure}[htb]\caption{Forward, Bidirectional and Random Access Iterators}\label{fig:fwdbidraiterators}
+\begin{lstlisting}[frame=trBL]
+concept ForwardIterator<T>: InputIterator<T>
+{
+    where T is OutputIterator;
+}
+
+concept BidirectionalIterator<T>: ForwardIterator<T>
+{
+    T& operator--();
+}
+
+concept RandomAccessIterator<T>: BidirectionalIterator<T>
+{
+    T.ReferenceType operator[](int index);
+    T operator+(T, int);
+    T operator+(int, T);
+    T operator-(T, int);
+    int operator-(T, T);
+    where T is LessThanComparable;
+}
+\end{lstlisting}
+\end{figure}
+
+A forward iterator (Fig. \ref{fig:fwdbidraiterators}) refines in a sense both input and output iterators, but Cmajor lacks
+multiple refinement, so the requirement that forward iterator is an output iterator is
+expressed as an embedded constraint.
+Additionally, a forward iterator is a multipass input iterator, but this requirement cannot
+be expressed in Cmajor syntax.
+
+Some algorithms require an iterator that can walk both forwards and backwards, but cannot ``jump'':
+this is what a bidirectional iterator can do.
+
+Finally some algorithms require pointer-like operations: indexing, moving arbitrary offsets forwards and backwards,
+computing the distance between two iterators and comparing two iterators with less than, greater than,
+less or equal to and greater or equal to relations.
+This is what a random access iterator can do.
+
+In analogy to class inheritance where a derived class can be used in place of the base class
+(the \emph{derived} IS-A \emph{base}), the same applies to concept refinement:
+a type that conforms to a more constrained concept, can be used in context where
+a type that conforms only to a less constrained concept is required.
+Thus a random access iterator IS-A bidirectional iterator IS-A forward iterator.
+
+\subsection{Container Hierarchy}
+
+The container hierarchy goes parallel with the iterator hierarchy.
+
+\begin{figure}[htb]\caption{Container Concept}\label{fig:containerconcepts}
+\begin{lstlisting}[frame=trBL]
+concept Container<T> where T is Semiregular
+{
+    typename T.ValueType;
+    typename T.Iterator;
+    typename T.ConstIterator;
+    where T.Iterator is TrivialIterator and T.ConstIterator is TrivialIterator and T.ValueType is T.Iterator.ValueType;
+    T.Iterator T.Begin();
+    T.ConstIterator T.CBegin();
+    T.Iterator T.End();
+    T.ConstIterator T.CEnd();
+    int T.Count();
+    bool T.IsEmpty();
+}
+\end{lstlisting}
+\end{figure}
+
+The container concept (Fig. \ref{fig:containerconcepts}) defines some common requirements
+for all container types.
+It requires that the container has associated iterator and constant iterator types
+that conform to trivial iterator concept.
+
+It also links the value type of the container to the value type of the iterator by
+requiring them to be the same type.
+It finally requires that the container has member functions that return
+iterator types and some other member functions common to all containers.
+
+\begin{figure}[htb]\caption{Forward Container Concept}\label{fig:fwdcontainer}
+\begin{lstlisting}[frame=trBL]
+concept ForwardContainer<T>: Container<T>
+{
+    where T.Iterator is ForwardIterator and T.ConstIterator is ForwardIterator;
+}
+\end{lstlisting}
+\end{figure}
+
+A forward container concept (Fig. \ref{fig:fwdcontainer})
+redefines the requirement in container concept for the iterator type to be not just
+a trivial iterator but a forward iterator.
+Likewise bidirectional container refines forward container and redefines the requirement
+for the iterator type to be not just a forward iterator but a bidirectional iterator,
+and random access container refines bidirectional container and redefines the iterator
+type to be not just a bidirectional iterator but a random access iterator.
+
+\section{Built-in Concepts}
+
+There are some concepts built into the Cmajor language.
+
+The \textbf{Same$<$T, U$>$} concept sets a requirement that T and U are exactly
+the same type. For example if A is \textbf{const int\&}, B is \textbf{const int\&} and
+C is \textbf{int\&}, Same$<$A, B$>$ is true, but Same$<$A, C$>$ is false.
+
+The \textbf{Derived$<$T, U$>$} concept sets a requirement that T and U are class types and
+T is derived from U.
+
+The \textbf{Convertible$<$T, U$>$} concept sets a requirement that type T is implicitly convertible
+to U. For example \textbf{int} is implicitly convertible to \textbf{double}, but not vice versa.
+
+The \textbf{ExplicitlyConvertible$<$T, U$>$} concept sets a requirement that T can be implicitly or
+explicitly converted to U. For example \textbf{double} is explicitly convertible to \textbf{int}
+(by using a cast), but \textbf{void*} is not explicitly convertible to \textbf{int}.
+
+The \textbf{Common$<$T, U$>$} concept sets a requirement that T and U have a common type that both are
+convertible to. The concept exposes the common type as a typedef CommonType.
+For example \textbf{Common$<$int, double$>$} is true and their common type is \textbf{double},
+but \textbf{Common$<$void*, int$>$} is false.
+
+\section{Axioms}
+
+So far the requirements for parameterized types have been purely syntactic ---
+the type must have certain operation or it must have an associated type of the given name.
+
+In Cmajor one can also express semantic requirements for parameterized types
+in form of \emph{axioms} (Fig. \ref{fig:equalitycomparable}.)
+
+\begin{figure}[htb]\caption{Equality Comparable Concept}\label{fig:equalitycomparable}
+\begin{lstlisting}[frame=trBL]
+concept EqualityComparable<T>
+{
+    bool operator==(T, T);
+    axiom equal(T a, T b) { a == b <=> eq(a, b); }
+    axiom reflexive(T a) { a == a; }
+    axiom symmetric(T a, T b) { a == b => b == a; }
+    axiom transitive(T a, T b, T c) { a == b && b == c => a == c; }
+    axiom notEqualTo(T a, T b) { a != b <=> !(a == b); }
+}
+\end{lstlisting}
+\end{figure}
+
+Axioms are not processed by the Cmajor compiler in any other way than
+parsing their syntax.
+Axioms are documentation for the programmer so the programmer can reason
+how a type that models a concept behaves.
+
+\section{Using Concepts}
+
+Now we have roughly walked through the tools Cmajor has to offer for defining concepts.
+So how do we use them?
+
+\subsection{Generic Algorithm}
+
+\begin{figure}[htb]\caption{Copy Algorithm}\label{fig:copy}
+\begin{lstlisting}[frame=trBL]
+public O Copy<I, O>(I begin, I end, O to)
+    where I is InputIterator and O is OutputIterator and
+    Assignable<O.ValueType, I.ValueType>
+{
+    while (begin != end)
+    {
+        *to = *begin;
+        ++begin;
+        ++to;
+    }
+}
+\end{lstlisting}
+\end{figure}
+
+Let us take a look at the copy algorithm that copies an input sequence to an output sequence.
+The Copy function has a \textbf{where} clause that lists the requirements for the template parameters I and O
+combining them with \textbf{and} connective (Fig. \ref{fig:copy}.)
+
+First Copy requires that I template parameter is a model of an input iterator,
+because we need it to iterate through the input sequence and
+to test whether we have reached the end of the input sequence. That is what input iterators can do.
+Then it requires that O template parameter is a model of an output iterator, because we need it to
+generate the output sequence. That is what output iterators can do.
+Finally we need to assign an object that is of type ValueType associated with input iterator type (I.ValueType
+\footnote{Associated types are referred to using the \textbf{.} notation in Cmajor.}) to an
+object that is of type ValueType associated with output iterator type (O.ValueType).
+That is how we copy values from input sequence to output sequence.
+It takes a form of a multiparameter Assignable$<$T, U$>$ constraint.
+
+You can pass random access iterators to the Copy function (because they are input and output iterators),
+but the algorithm requires only input and output iterators. This makes it generic.
+
+\subsection{Container Concepts and Overloading}
+
+\begin{figure}[htb]\caption{Sorting a Container}\label{fig:sort}
+\begin{lstlisting}[frame=trBL]
+public void Sort<C>(C& c)
+    where C is RandomAccessContainer and C.Iterator.ValueType is TotallyOrdered
+{
+    // ...
+}
+
+public void Sort<C>(C& c)
+    where C is ForwardContainer and C.Iterator.ValueType is TotallyOrdered
+{
+    List<C.ValueType> list;
+    Copy(c.CBegin(), c.CEnd(), BackInserter(list));
+    Sort(list);
+    Copy(list.CBegin(), list.CEnd(), c.Begin());
+}
+\end{lstlisting}
+\end{figure}
+
+Let us take a look at the sort algorithm for containers (Fig. \ref{fig:sort}.)
+It has two overloads. Both take a container parameter, but one constrains the container
+to be a random access container, and the other constrains the container
+to be just a forward container.
+
+Suppose you have a \verb|List<int> list| that need to be sorted
+\footnote{In spite of its name, System.List is functionally equal to
+STL's std::vector class template.}.
+List is a model of a random access container, because the iterators it provides are
+random access iterators.
+
+Now you call \verb|Sort(list)|. The compiler checks the sort overloads.
+First it finds that sort overload for a random access container is a match,
+because List is a random access container. Then it finds that the sort overload for
+a forward container matches also, because the constraint check for a forward
+container succeeds, when the container is actually a random access container.
+However the sort for a random access container is a better match,
+because random access container concept refines forward container concept,
+so the sort for a random access container gets instantiated and called.
+
+Suppose now that you have a \verb|ForwardList<int> fwdlist|.
+System.Collections.ForwardList is a model of a forward container
+\footnote{System.Collections.ForwardList is a singly linked list.}.
+Now you call \verb|Sort(fwdlist)|. Again the compiler checks the sort overloads,
+but this time it rejects the sort for a random access container, because
+ForwardList fails the constraint check for this overload.
+So the one that gets instantiated and called this time is the sort for a forward
+container --- a slower version of the sort algorithm.
+
+\subsection{Iterator Concepts and Overloading}
+
+First take a look at overloads of Distance function that
+returns a distance between two iterators.
+It has two overloads.
+
+\begin{figure}[htb]\caption{Distance for Forward Iterators}\label{fig:distanceslow}
+\begin{lstlisting}[frame=trBL]
+public nothrow int Distance<I>(I first, I last)
+    where I is ForwardItetor
+{
+    int distance = 0;
+    while (first != last)
+    {
+        ++first;
+        ++distance;
+    }
+    return distance;
+}
+\end{lstlisting}
+\end{figure}
+
+\begin{figure}[htb]\caption{Distance for Random Access Iterators}\label{fig:distancefast}
+\begin{lstlisting}[frame=trBL]
+public nothrow inline int Distance<I>(I first, I last)
+    where I is RandomAccessIterator
+{
+    return last - first;
+}
+\end{lstlisting}
+\end{figure}
+
+The first one is a slow version for a forward iterator (Fig. \ref{fig:distanceslow}.)
+It counts the number of steps it takes to reach iterator \emph{last} from iterator \emph{first}.
+
+The second one is a fast version  for a random access iterator (Fig. \ref{fig:distancefast}.)
+It simply returns the difference of \emph{last} and \emph{first} iterators.
+It can do this because random access iterators support this operation.
+
+\begin{figure}[htb]\caption{Next for Forward Iterators}\label{fig:nextslow}
+\begin{lstlisting}[frame=trBL]
+public nothrow I Next<I>(I i, int n)
+    where I is ForwardIterator
+{
+    #assert(n >= 0);
+    while (n > 0)
+    {
+        ++i;
+        --n;
+    }
+    return i;
+}
+\end{lstlisting}
+\end{figure}
+
+\begin{figure}[htb]\caption{Next for Random Access Iterators}\label{fig:nextfast}
+\begin{lstlisting}[frame=trBL]
+public nothrow inline I Next<I>(I i, int n)
+    where I is RandomAccessIterator
+{
+    return i + n;
+}
+\end{lstlisting}
+\end{figure}
+
+Then look at the overloads of a Next function, that
+returns an iterator advanced the specified number of steps.
+Again two overloads, one for forward iterators and one for random access
+iterators.
+The first version (Fig. \ref{fig:nextslow}) increments a forward iterator given
+number of steps.
+The second version (Fig. \ref{fig:nextfast}) simply returns a sum of a random access iterator
+and an offset.
+
+\clearpage
+\begin{figure}[htb]\caption{Lower Bound}\label{fig:lowerbound}
+\begin{lstlisting}[frame=trBL]
+public nothrow I LowerBound<I, T>(I first, I last, const T& value) where I is ForwardIterator and TotallyOrdered<T, I.ValueType>
+{
+    int len = Distance(first, last);
+    while (len > 0)
+    {
+        int half = len >> 1;
+        I middle = Next(first, half);
+        if (value > *middle)
+        {
+            first = middle;
+            ++first;
+            len = len - half - 1;
+        }
+        else // value <= *middle
+        {
+            len = half;
+        }
+    }
+    return first;
+}
+\end{lstlisting}
+\end{figure}
+
+Finally take a look at the lower bound function (Fig. \ref{fig:lowerbound}.)
+It searches a value in a sorted sequence using binary search and
+returns an iterator pointing to the first position that has a value that is equal to or greater than the given value.
+It uses the Distance and Next helper functions.
+
+Now comes the clue of this story. There is only one version and that is for the forward iterator.
+Where's the random access version?
+We don't need it, because when the lower bound function is instantiated with a random access iterator, the
+compiler instantiates the fast random access versions of the Distance and Next functions and they will be called.
+
+\begin{thebibliography}{5}
+
+\bibitem{ACDSTL}
+A Concept Design for the STL\\
+\url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3351.pdf}
+
+\bibitem{LSGPCPP}
+Concepts: Linguistic Suppport for Generic Progamming in C++\\
+\url{http://www.osl.iu.edu/publications/prints/2006/Gregor06:Concepts.pdf}
+
+\bibitem{CLCTP}
+Concepts Lite: Constraining Templates with Predicates\\
+\url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3580.pdf}
+
+\bibitem{DCLCPP}
+Design of Concept Libraries for C++\\
+\url{http://www.stroustrup.com/sle2011-concepts.pdf}
+
+\bibitem{STL}
+Standard Template Library Programmer's Guide\\
+\url{http://www.sgi.com/tech/stl/}
+
+\end{thebibliography}
+
+\end{document}

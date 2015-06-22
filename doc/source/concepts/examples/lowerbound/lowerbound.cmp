@@ -1,0 +1,4 @@
+project LowerBound;
+target=program;
+assembly <lowerbound.cma>;
+source <lowerbound.cm>;

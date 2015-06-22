@@ -1,5 +1,5 @@
-#ifndef InspectExpr_hpp_8062
-#define InspectExpr_hpp_8062
+#ifndef InspectExpr_hpp_20739
+#define InspectExpr_hpp_20739
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -23,9 +23,8 @@ private:
     class PostfixExprRule;
     class MemberIdRule;
     class PrimaryExprRule;
-    class TypeExprPartRule;
 };
 
 } } // namespace Cm.Debugger
 
-#endif // InspectExpr_hpp_8062
+#endif // InspectExpr_hpp_20739

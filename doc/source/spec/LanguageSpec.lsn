@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<latexSolution>
+    <solutionName>LanguageSpec</solutionName>
+    <activeProject>LanguageSpec</activeProject>
+    <projectFiles>
+        <projectFile>
+            <projectName>LanguageSpec</projectName>
+            <projectPath>.\LanguageSpec.lpr</projectPath>
+        </projectFile>
+    </projectFiles>
+</latexSolution>

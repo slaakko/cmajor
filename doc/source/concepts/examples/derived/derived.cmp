@@ -1,0 +1,4 @@
+project Derived;
+target=program;
+assembly <derived.cma>;
+source <derived.cm>;
