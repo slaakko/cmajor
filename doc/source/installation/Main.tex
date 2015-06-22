@@ -27,15 +27,29 @@ have been changed.
 \begin{itemize}
 
 \item
-Download and install MinGW\_w64 GCC:\\
+Download and install MinGW-w64 GCC:\\
 \url{http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download}
 
-Installation settings for my system:
+Installation settings for my system (64-bit Windows):
 \begin{itemize}
 \item
 Version 5.1.0
 \item
 Architecture: x86\_64
+\item
+Threads: \textbf{posix}
+\item
+Exception: sjlj
+\item
+Build revision: 0
+\end{itemize}
+
+Installation settings for 32-bit Windows:
+\begin{itemize}
+\item
+Version 5.1.0
+\item
+Architecture: i686
 \item
 Threads: \textbf{posix}
 \item
@@ -161,22 +175,30 @@ Note: If you are updating from previous Cmajor version, it is important to issue
 \begin{itemize}
 
 \item
-library reference 'system.cml' not found.
+\textbf{library reference 'system.cml' not found.}
 
 You have to build the System Library for the used configuration (debug/release) and backend (LLVM/C) first.
 
 \item
 
-\textbf{gcc is not recognized as an internal or external command...}
+\textbf{gcc is not recognized as an internal or external command, operable program or batch file.}
+
+or \textbf{'ar' is not recognized as an internal or external command, operable program or batch file.}
 
 or
 
 \textbf{Cannot start llc.exe because libgcc\_s\_sjlj-1.dll is missing} (or something like that).
 
-The bin directory of mingw\_w64\\
+The bin directory of mingw-w64\\
 (in my machine\\
 \verb|C:\Program Files\mingw-w64\x86_64-5.1.0-posix-sjlj-rt_v4-rev0\mingw64\bin|)
 must be in the PATH environment variable.
+
+\item
+\textbf{undefined reference to `WinMain' collect2.exe: error: ld returned 1 exit status}
+
+You have probably 32-bit Cmajor and 64-bit MinGW-w64's gcc.
+Both must be either 32-bit or 64-bit.
 
 \item
 Build seems to succeed but program does not work, or other mysterious error.
@@ -187,6 +209,11 @@ Try \textbf{rebuild} command (-R option) or \textbf{clean} and then \textbf{buil
 IDE messes up things.
 
 Try using the command line compiler (cmc.exe).
+
+\item
+How to generate 32-bit executables in a 64-bit system.
+
+Just use 32-bit MinGW-w64 (i686) and 32-bit Cmajor.
 
 \item
 The compiler is still in experimental stage, so surely many bugs exist...
