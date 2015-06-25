@@ -1414,17 +1414,26 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
     if (boundReturnStatement.ReturnsValue())
     {
         bool resultSet = false;
+        std::shared_ptr<Cm::Core::GenResult> retValResult = resultStack.Pop();
         Cm::Sym::FunctionSymbol* ctor = boundReturnStatement.Constructor();
         bool returnsClassObjectByValue = currentFunction->GetFunctionSymbol()->ReturnsClassObjectByValue();
         if (returnsClassObjectByValue)
         {
             result->SetMainObject(currentFunction->GetFunctionSymbol()->ClassObjectResultIrParam());
         }
+        else if (boundReturnStatement.Temporary())
+        {
+            std::shared_ptr<Cm::Core::GenResult> temporaryResult(new Cm::Core::GenResult(emitter.get(), genFlags));
+            temporaryResult->SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundReturnStatement.Temporary()->Symbol()));
+            temporaryResult->Merge(retValResult);
+            GenerateCall(ctor, boundReturnStatement.GetTraceCallInfo(), *temporaryResult);
+            result->SetMainObject(boundReturnStatement.GetReturnType(), typeRepository);
+            result->Merge(temporaryResult);
+        }
         else
         {
             result->SetMainObject(boundReturnStatement.GetReturnType(), typeRepository);
         }
-        std::shared_ptr<Cm::Core::GenResult> retValResult = resultStack.Pop();
         if (!resultLabel)
         {
             resultLabel = retValResult->GetLabel();

@@ -10,6 +10,9 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#if defined(_WIN32)
+#define _CRT_RAND_S
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -21,7 +24,7 @@
 #include <sys/types.h>
 #endif
 #include <pthread.h>
-#ifdef WIN32
+#if defined(_WIN32)
 #include <pthread_time.h>
 #endif
 
@@ -46,7 +49,7 @@ int get_errno()
 
 int get_default_pmode()
 {
-#if defined(WIN32)
+#if defined(_WIN32)
 
     return S_IREAD | S_IWRITE;
 
@@ -63,7 +66,7 @@ int get_default_pmode()
 
 int create_directory(const char* directoryName)
 {
-#if defined(WIN32)
+#if defined(_WIN32)
 
     return mkdir(directoryName);
 
@@ -110,7 +113,7 @@ int open_file(const char* filename, enum OpenFlags openFlags, int pmode)
     {
         oflags |= O_TRUNC;
     }
-#ifdef WIN32
+#if defined(_WIN32)
     if ((openFlags & text) != none)
     {
         oflags |= O_TEXT;
@@ -125,7 +128,7 @@ int open_file(const char* filename, enum OpenFlags openFlags, int pmode)
 
 int file_exists(const char* filePath)
 {
-#ifdef WIN32
+#if defined(_WIN32)
     struct _stat statBuf;
     int result = _stat(filePath, &statBuf);
     if (result == 0)
@@ -154,7 +157,7 @@ int file_exists(const char* filePath)
 
 int directory_exists(const char* directoryPath)
 {
-#ifdef WIN32
+#if defined(_WIN32)
     struct _stat statBuf;
     int result = _stat(directoryPath, &statBuf);
     if (result == 0)
@@ -183,7 +186,7 @@ int directory_exists(const char* directoryPath)
 
 int path_exists(const char* path)
 {
-#ifdef WIN32
+#if defined(_WIN32)
     struct _stat statBuf;
     return _stat(path, &statBuf) == 0 ? 1 : 0;
 #elif defined(__linux) || defined(__unix) || defined(__posix)
@@ -196,7 +199,7 @@ int path_exists(const char* path)
 
 char* get_current_working_directory(char* buf, int bufSize)
 {
-#if defined(WIN32)
+#if defined(_WIN32)
 
     return _getcwd(buf, bufSize);
 
@@ -397,6 +400,46 @@ int get_current_date(char* dateBuf)
     timeInfo = localtime(&rawTime);
     return strftime(dateBuf, 11, "%Y-%m-%d", timeInfo);
 }
+
+#if defined(_WIN32)
+
+unsigned int get_random_seed_from_system()
+{
+    unsigned int seed = 0;
+    errno_t retval = rand_s(&seed);
+    if (retval != 0)
+    {
+        perror("get_random_seed_from_system() failed");
+        exit(1);
+    }
+    return seed;
+}
+
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+
+unsigned int get_random_seed_from_system()
+{
+    unsigned int seed = 0;
+    int fn = open("/dev/urandom", O_RDONLY);
+    if (fn == -1)
+    {
+        perror("get_random_seed_from_system() failed");
+        exit(1);
+    }
+    if (read(fn, &seed, 4) != 4)
+    {
+        perror("get_random_seed_from_system() failed");
+        exit(1);
+    }
+    close(fn);
+    return seed;
+}
+
+#else
+
+    #error unknown platform
+
+#endif
 
 static int traceLevel = 0;
 

@@ -335,6 +335,17 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                     Cm::Core::Argument& sourceArgument = resolutionArguments[1];
                     sourceArgument.SetBindToRvalueRef();
                 }
+                if (returnValue->IsBoundMemberVariable())
+                {
+                    Cm::BoundTree::BoundMemberVariable* memberVar = static_cast<Cm::BoundTree::BoundMemberVariable*>(returnValue);
+                    if (memberVar->Symbol()->IsStatic() && returnType->IsNonClassReferenceType() && !returnValue->GetType()->IsReferenceType())
+                    {
+                        Cm::BoundTree::BoundLocalVariable* boundTemporary = new Cm::BoundTree::BoundLocalVariable(&returnStatementNode, CurrentFunction()->CreateTempLocalVariable(returnType));
+                        boundTemporary->SetType(returnType);
+                        boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+                        returnStatement->SetBoundTemporary(boundTemporary);
+                    }
+                }
                 Cm::Sym::FunctionLookupSet functionLookups;
                 functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, returnType->GetContainerScope()->ClassOrNsScope()));
                 std::vector<Cm::Sym::FunctionSymbol*> conversions;

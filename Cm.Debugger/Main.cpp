@@ -111,7 +111,7 @@ int main(int argc, const char** argv)
         {
             std::cout << "Cmajor Debugger version " << version << std::endl;
         }
-#ifdef WIN32
+#ifdef _WIN32
         std::string ext = Cm::Util::Path::GetExtension(executable);
         if (ext.empty())
         {

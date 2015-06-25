@@ -234,7 +234,7 @@ std::string NarrowString(const char* str, int length)
 {
 #if defined(__linux) || defined(__posix) || defined(__unix)
     return std::string(str, length);
-#elif defined(WIN32)
+#elif defined(_WIN32)
     std::string narrow;
     narrow.reserve(length);
     int state = 0;

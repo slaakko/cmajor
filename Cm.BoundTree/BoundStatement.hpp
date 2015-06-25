@@ -167,11 +167,14 @@ public:
     void SetReturnType(Cm::Sym::TypeSymbol* returnType_) { returnType = returnType_; }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
     TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
+    void SetBoundTemporary(Cm::BoundTree::BoundLocalVariable* boundTemporary_);
+    Cm::BoundTree::BoundLocalVariable* Temporary() const { return boundTemporary.get(); }
 private:
     std::unique_ptr<BoundExpression> expression;
     Cm::Sym::FunctionSymbol* ctor;
     Cm::Sym::TypeSymbol* returnType;
     std::unique_ptr<TraceCallInfo> traceCallInfo;
+    std::unique_ptr<Cm::BoundTree::BoundLocalVariable> boundTemporary;
 };
 
 class BoundBeginTryStatement : public BoundStatement

@@ -132,6 +132,7 @@ public:
     std::string TypeString() const override { return "function"; };
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
+    virtual bool IsBasicTypeCopyCtor() const { return false; }
     virtual bool IsDelegateFromFunCtor() const { return false; }
     virtual bool IsClassDelegateFromFunCtor() const { return false; }
     virtual bool IsDelegateFromFunAssignment() const { return false; }

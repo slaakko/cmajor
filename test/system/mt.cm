@@ -1,0 +1,24 @@
+using System;
+using System.IO;
+
+namespace Test.System.Rand
+{
+    public unit_test void RandTest()
+    {
+        string mt19937FileName;
+    #if (WINDOWS)
+        mt19937FileName = "mt19937.win.txt";
+    #else
+        mt19937FileName = "mt19937.lnx.txt";
+    #endif
+        InputFileStream mt19937(mt19937FileName);
+        MT.Init(123456u);
+        for (int i = 0; i < 1000; ++i)
+        {
+            uint x = Rand();
+            string rand = mt19937.ReadLine();
+            uint mtx = ParseUInt(rand);
+            #assert(x == mtx);
+        }
+    }
+}
