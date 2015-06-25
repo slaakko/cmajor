@@ -41,6 +41,7 @@ class CopyCtor : public BasicTypeOp
 public:
     CopyCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    bool IsBasicTypeCopyCtor() const override { return true; }
 };
 
 class CopyAssignment : public BasicTypeOp

@@ -15,6 +15,7 @@ source <iterator.cm>;
 source <limits.cm>;
 source <list.cm>;
 source <map.cm>;
+source <mt.cm>;
 source <pair.cm>;
 source <path.cm>;
 source <ptr.cm>;

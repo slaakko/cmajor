@@ -51,7 +51,7 @@ namespace Cm { namespace Unit {
 
 std::string GetOs()
 {
-#ifdef WIN32
+#ifdef _WIN32
     return "windows";
 #else
     return "linux";
@@ -273,7 +273,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     objectFilePaths.push_back(boundCompileUnit.ObjectFilePath());
     Cm::Build::GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, true);
     std::string exeExt;
-#ifdef WIN32
+#ifdef _WIN32
     exeExt = ".exe";
 #endif
     std::string executableFilePath = Cm::Util::GetFullPath(p.replace_extension(exeExt).generic_string());

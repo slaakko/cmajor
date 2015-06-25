@@ -55,7 +55,7 @@ namespace Cm { namespace Build {
 
 char GetPlatformPathSeparatorChar()
 {
-#ifdef WIN32
+#ifdef _WIN32
     return ';';
 #else
     return ':';
@@ -64,7 +64,7 @@ char GetPlatformPathSeparatorChar()
 
 std::string GetOs()
 {
-#ifdef WIN32
+#ifdef _WIN32
     return "windows";
 #else
     return "linux";
@@ -674,7 +674,7 @@ bool Archive(const std::vector<std::string>& objectFilePaths, const std::string&
 bool Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<std::string>& cLibs, const std::string& executableFilePath)
 {
     bool changed = false;
-#ifdef WIN32
+#ifdef _WIN32
     std::string exePath = Cm::Util::GetFullPath(boost::filesystem::path(executableFilePath).replace_extension(".exe").generic_string());
 #else
     std::string exePath = Cm::Util::GetFullPath(executableFilePath);
@@ -883,7 +883,7 @@ void ReadIdeDefines(std::unordered_set<std::string>& defines, Cm::Ast::Project* 
 
 void AddPlatformAndConfigDefines(std::unordered_set<std::string>& defines)
 {
-#ifdef WIN32
+#ifdef _WIN32
     defines.insert("WINDOWS");
 #else
     defines.insert("LINUX");

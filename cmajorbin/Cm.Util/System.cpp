@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#ifdef WIN32
+#ifdef _WIN32
 #include <process.h>
 #include <Windows.h>
 #include <io.h>
@@ -27,7 +27,7 @@
 
 namespace Cm { namespace Util {
 
-#ifdef WIN32
+#ifdef _WIN32
 
 int dup2(int oldFd, int newFd)
 {
@@ -45,7 +45,7 @@ int pipe(int pipefd[2])
 
 int get_default_pmode()
 {
-#if defined(WIN32)
+#if defined(_WIN32)
 
     return S_IREAD | S_IWRITE;
 
@@ -97,7 +97,7 @@ void System(const std::string& command, int redirectFd, const std::string& toFil
     }
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 unsigned long long Spawn(const std::string& filename, const std::vector<std::string>& args)
 {

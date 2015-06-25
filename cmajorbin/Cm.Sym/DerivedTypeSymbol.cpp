@@ -223,7 +223,7 @@ void DerivedTypeSymbol::MakeIrType()
     if (IrTypeMade()) return;
     if (!baseType)
     {
-        throw std::runtime_error("base type not set for derived type '" + FullName() + "'");
+        throw std::runtime_error("base type not set for derived type");
     }
     baseType->MakeIrType();
     SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));

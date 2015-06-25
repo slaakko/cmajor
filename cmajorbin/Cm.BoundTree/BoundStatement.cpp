@@ -193,6 +193,11 @@ void BoundReturnStatement::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
     traceCallInfo.reset(traceCallInfo_);
 }
 
+void BoundReturnStatement::SetBoundTemporary(Cm::BoundTree::BoundLocalVariable* boundTemporary_)
+{
+    boundTemporary.reset(boundTemporary_);
+}
+
 BoundBeginTryStatement::BoundBeginTryStatement(Cm::Ast::Node* syntaxNode_, int firstCatchId_) : BoundStatement(syntaxNode_), firstCatchId(firstCatchId_)
 {
 }

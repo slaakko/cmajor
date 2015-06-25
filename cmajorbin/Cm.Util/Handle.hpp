@@ -9,7 +9,7 @@
 
 #ifndef CM_UTIL_HANDLE_INCLUDED
 #define CM_UTIL_HANDLE_INCLUDED
-#if defined(WIN32)
+#if defined(_WIN32)
 #include <io.h>
 #elif defined(__linux) || defined(__posix) || defined(__unix)
 #include <unistd.h>

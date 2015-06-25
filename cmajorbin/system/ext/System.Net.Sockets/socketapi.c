@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
-#ifdef WIN32
+#ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>    
 #elif defined(__linux) || defined(__unix) || defined(__posix)
@@ -25,7 +25,7 @@
 
 int init_sockets()
 {
-#ifdef WIN32
+#ifdef _WIN32
     WORD ver = MAKEWORD(2, 2);
     WSADATA wsaData;
     return WSAStartup(ver, &wsaData);
@@ -35,14 +35,14 @@ int init_sockets()
 
 void done_sockets()
 {
-#ifdef WIN32
+#ifdef _WIN32
     WSACleanup();
 #endif
 }
 
 int get_last_socket_error()
 {
-#ifdef WIN32
+#ifdef _WIN32
     return WSAGetLastError();
 #elif defined(__linux) || defined(__unix) || defined(__posix)
     return get_errno();
@@ -67,7 +67,7 @@ void end_get_socket_error_str()
 
 const char* get_socket_error_str(int errorCode)
 {
-#ifdef WIN32
+#ifdef _WIN32
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errorCode, 0, socket_error_buf, sizeof(socket_error_buf), NULL);
 #elif defined(__linux) || defined(__unix) || defined(__posix)
     strncpy(socket_error_buf, strerror(errorCode), sizeof(socket_error_buf));
@@ -105,7 +105,7 @@ int accept_socket(int socket)
 
 int close_socket(int socket)
 {
-#ifdef WIN32
+#ifdef _WIN32
     return closesocket(socket);
 #elif defined(__linux) || defined(__unix) || defined(__posix)
     return close(socket);
@@ -122,7 +122,7 @@ enum ShutdownMode
 
 int shutdown_socket(int socket, enum ShutdownMode mode)
 {
-#ifdef WIN32    
+#ifdef _WIN32    
     int how = SD_RECEIVE;
     switch (mode)
     {

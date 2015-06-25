@@ -15,7 +15,7 @@
 #include <vector>
 #include <string>
 #include <cctype>
-#ifdef WIN32
+#ifdef _WIN32
     #include <direct.h>
 #elif defined(__linux) || defined(__unix) || defined(__posix)
     #include <unistd.h>
@@ -26,7 +26,7 @@ namespace Cm { namespace Util {
 std::string GetCurrentWorkingDirectory()
 {
     char buf[4096];
-#ifdef WIN32
+#ifdef _WIN32
     char* wd = _getcwd(buf, 4096);
 #elif defined(__linux) || defined(__unix) || defined(__posix)
     char* wd = getcwd(buf, 4096);
@@ -45,7 +45,7 @@ std::string GetCurrentWorkingDirectory()
 
 bool FileExists(const std::string& filePath)
 {
-#ifdef WIN32
+#ifdef _WIN32
     struct _stat statBuf;
     int result = _stat(filePath.c_str(), &statBuf);
     if (result == 0)
@@ -74,7 +74,7 @@ bool FileExists(const std::string& filePath)
 
 bool DirectoryExists(const std::string& directoryPath)
 {
-#ifdef WIN32
+#ifdef _WIN32
     struct _stat statBuf;
     int result = _stat(directoryPath.c_str(), &statBuf);
     if (result == 0)
@@ -103,7 +103,7 @@ bool DirectoryExists(const std::string& directoryPath)
 
 bool PathExists(const std::string& path)
 {
-#ifdef WIN32
+#ifdef _WIN32
     struct _stat statBuf;
     return _stat(path.c_str(), &statBuf) == 0 ? true : false;
 #elif defined(__linux) || defined(__unix) || defined(__posix)
