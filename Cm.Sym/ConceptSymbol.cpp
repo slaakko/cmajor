@@ -114,8 +114,13 @@ TypeId ComputeInstantiatedConceptSymbolTypeId(ConceptSymbol* conceptSymbol, cons
 }
 
 InstantiatedConceptSymbol::InstantiatedConceptSymbol(ConceptSymbol* conceptSymbol_, const std::vector<TypeSymbol*>& typeArguments_) :
-    Symbol(conceptSymbol_->GetSpan(), MakeInstantiatedConceptSymbolName(conceptSymbol_, typeArguments_)), conceptSymbol(conceptSymbol_), typeArguments(typeArguments_)
+    Symbol(conceptSymbol_->GetSpan(), MakeInstantiatedConceptSymbolName(conceptSymbol_, typeArguments_)), conceptSymbol(conceptSymbol_), typeArguments(typeArguments_), commonType(nullptr)
 {
+}
+
+void InstantiatedConceptSymbol::SetCommonType(TypeSymbol* commonType_)
+{
+    commonType = commonType_;
 }
 
 } } // namespace Cm::Sym

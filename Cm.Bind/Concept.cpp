@@ -155,6 +155,12 @@ void ConstraintChecker::Visit(Cm::Ast::ConceptIdNode& conceptIdNode)
         if (instantiatedConcept)
         {
             constraintCheckStack.Push(true);
+            if (instantiatedConcept->CommonType())
+            {
+                Cm::Sym::BoundTypeParameterSymbol* commonType = new Cm::Sym::BoundTypeParameterSymbol(Cm::Parsing::Span(), "CommonType");
+                commonType->SetType(instantiatedConcept->CommonType());
+                containerScope->Install(commonType);
+            }
         }
         else
         {
@@ -393,6 +399,12 @@ void ConstraintChecker::Visit(Cm::Ast::IsConstraintNode& isConstraintNode)
         if (instantiatedConcept)
         {
             constraintCheckStack.Push(true);
+            if (instantiatedConcept->CommonType())
+            {
+                Cm::Sym::BoundTypeParameterSymbol* commonType = new Cm::Sym::BoundTypeParameterSymbol(Cm::Parsing::Span(), "CommonType");
+                commonType->SetType(instantiatedConcept->CommonType());
+                containerScope->Install(commonType);
+            }
         }
         else
         {
@@ -436,6 +448,12 @@ void ConstraintChecker::Visit(Cm::Ast::MultiParamConstraintNode& multiParamConst
         if (instantiatedConcept)
         {
             constraintCheckStack.Push(true);
+            if (instantiatedConcept->CommonType())
+            {
+                Cm::Sym::BoundTypeParameterSymbol* commonType = new Cm::Sym::BoundTypeParameterSymbol(Cm::Parsing::Span(), "CommonType");
+                commonType->SetType(instantiatedConcept->CommonType());
+                containerScope->Install(commonType);
+            }
         }
         else
         {
@@ -865,10 +883,16 @@ Cm::Sym::InstantiatedConceptSymbol* Instantiate(Cm::Sym::ContainerScope* contain
         if (result)
         {
             Cm::Sym::InstantiatedConceptSymbol* instantiatedConceptSymbol = new Cm::Sym::InstantiatedConceptSymbol(conceptSymbol, typeArguments);
-            Cm::Sym::Symbol* commonType = instantiationScope.Lookup("CommonType", Cm::Sym::SymbolTypeSetId::lookupTypeSymbols);
-            if (commonType)
+            Cm::Sym::Symbol* commonTypeSymbol = instantiationScope.Lookup("CommonType", Cm::Sym::SymbolTypeSetId::lookupTypeSymbols);
+            if (commonTypeSymbol)
             {
+                if (!commonTypeSymbol->IsBoundTypeParameterSymbol())
+                {
+                    throw std::runtime_error("common type not bound type parameter symbol");
+                }
+                Cm::Sym::BoundTypeParameterSymbol* commonType = static_cast<Cm::Sym::BoundTypeParameterSymbol*>(commonTypeSymbol);
                 containerScope->Install(commonType);
+                instantiatedConceptSymbol->SetCommonType(commonType->GetType());
             }
             return instantiatedConceptSymbol;
         }

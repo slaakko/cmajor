@@ -13,6 +13,7 @@ source <function.cm>;
 source <fwdlist.cm>;
 source <iterator.cm>;
 source <limits.cm>;
+source <linkedlist.cm>;
 source <list.cm>;
 source <map.cm>;
 source <mt.cm>;

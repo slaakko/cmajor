@@ -43,10 +43,6 @@ std::vector<std::unique_ptr<TypeExpr>> MakeTemplateArgumentList(const std::vecto
 std::string TypeExpr::ToString() const
 {
     std::string s = primaryTypeName;
-    if (derivations.NumDerivations() > 0)
-    {
-        s = Cm::Ast::MakeDerivedTypeName(derivations, s);
-    }
     if (!typeArguments.empty())
     {
         s.append("<");
@@ -64,6 +60,10 @@ std::string TypeExpr::ToString() const
             s.append(typeArg->ToString());
         }
         s.append(">");
+    }
+    if (derivations.NumDerivations() > 0)
+    {
+        s = Cm::Ast::MakeDerivedTypeName(derivations, s);
     }
     return s;
 }
