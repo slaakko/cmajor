@@ -54,9 +54,12 @@ public:
     bool IsExportSymbol() const override { return false; }
     ConceptSymbol* Concept() const { return conceptSymbol; }
     const std::vector<TypeSymbol*>& TypeArguments() const { return typeArguments; }
+    void SetCommonType(TypeSymbol* commonType_);
+    TypeSymbol* CommonType() const { return commonType; }
 private:
     ConceptSymbol* conceptSymbol;
     std::vector<TypeSymbol*> typeArguments;
+    TypeSymbol* commonType;
 };
 
 } } // namespace Cm::Sym

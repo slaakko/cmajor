@@ -1,0 +1,35 @@
+using System;
+using System.Collections;
+
+namespace Test.System.Collections.LinkedList
+{
+    public unit_test void LinkedListIntTest()
+    {
+        LinkedList<int> list0;
+        #assert(list0.IsEmpty());
+        #assert(list0.Count() == 0);
+        LinkedList<int> list01;
+        #assert(list0 == list01);
+        LinkedList<int> list02(list0);
+        #assert(list0 == list02);
+        LinkedList<int> list03;
+        list03 = list0;
+        #assert(list0 == list03);
+        LinkedList<int> list1;
+        list1.Add(0);
+        #assert(!list1.IsEmpty());
+        #assert(list1.Count() == 1);
+        #assert(*list1.CBegin() == 0);
+        LinkedList<int> list11(list1);
+        #assert(!list11.IsEmpty());
+        #assert(list11.Count() == 1);
+        #assert(*list11.CBegin() == 0);
+        #assert(list1 == list11);
+        LinkedList<int> list12;
+        list12.Add(1);
+        #assert(list1 < list12);
+        LinkedList<int> list13;
+        list13 = list1;
+        #assert(list1 == list13);
+    }
+ }
