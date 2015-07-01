@@ -911,7 +911,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
             {
                 return function;
             }
-            boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, function);
+            if (!function->IsAbstract())
+            {
+                boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, function);
+            }
         }
         else if (function->IsInline() && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
         {

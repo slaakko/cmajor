@@ -131,6 +131,7 @@ public:
     ULongTypeSymbol();
     SymbolType GetSymbolType() const override { return SymbolType::ulongSymbol; }
     bool IsIntegerTypeSymbol() const override { return true; }
+    bool IsUlongType() const override { return true; }
     std::string GetMangleId() const override { return "ul"; }
 };
 

@@ -288,7 +288,10 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
                 Cm::Sym::TypeSymbol* parentType = static_cast<Cm::Sym::TypeSymbol*>(parent);
                 if (Cm::Sym::TypesEqual(parentType, templateTypeSymbol))
                 {
-                    Instantiate(containerScope, virtualFunction);
+                    if (!virtualFunction->IsAbstract())
+                    {
+                        Instantiate(containerScope, virtualFunction);
+                    }
                 }
             }
         }

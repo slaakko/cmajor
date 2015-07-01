@@ -870,4 +870,21 @@ namespace System
             }
         }
     }
+    
+    public nothrow inline uint RandomNumber(uint n)
+    {
+        return Rand() % n;
+    }
+    
+    public nothrow void RandomShuffle<I>(I begin, I end) where I is RandomAccessIterator
+    {
+        if (begin == end) return;
+        for (I i = begin + 1; i != end; ++i)
+        {
+            int d = (i - begin) + 1;
+            int r = cast<int>(RandomNumber(cast<uint>(d)));
+            I j = begin + r;
+            Swap(*i, *j);
+        }
+    }
 }
