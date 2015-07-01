@@ -1,0 +1,174 @@
+using System;
+using System.Collections;
+
+namespace Test.HashMap
+{
+    public bool HashMapIntStringEqualToMapIntString(const HashMap<int, string>& hm, const Map<int, string>& m)
+    {
+        if (hm.Count() != m.Count()) return false;
+        for (const Pair<int, string>& x : hm)
+        {
+            Map<int, string>.ConstIterator i = m.CFind(x.first);
+            if (i == m.End())
+            {
+                return false;
+            }
+            if (i->second != x.second) return false;
+        }
+        for (const Pair<int, string>& x : m)
+        {
+            HashMap<int, string>.ConstIterator i = hm.CFind(x.first);
+            if (i == hm.End())
+            {
+                return false;
+            }
+            if (i->second != x.second) return false;
+        }
+        return true;
+    }
+
+    public bool HashMapStringIntEqualToMapStringInt(const HashMap<string, int>& hm, const Map<string, int>& m)
+    {
+        if (hm.Count() != m.Count()) return false;
+        for (const Pair<string, int>& x : hm)
+        {
+            Map<string, int>.ConstIterator i = m.CFind(x.first);
+            if (i == m.End())
+            {
+                return false;
+            }
+            if (i->second != x.second) return false;
+        }
+        for (const Pair<string, int>& x : m)
+        {
+            HashMap<string, int>.ConstIterator i = hm.CFind(x.first);
+            if (i == hm.End())
+            {
+                return false;
+            }
+            if (i->second != x.second) return false;
+        }
+        return true;
+    }
+
+    public void TestIntString(int n)
+    {
+        List<int> list;
+        HashMap<int, string> hm;
+        Map<int, string> m;
+        for (int i = 0; i < n; ++i)
+        {
+            int x = cast<int>(Rand());
+            hm.Insert(MakePair(x, ToString(x)));
+            m.Insert(MakePair(x, ToString(x)));
+            list.Add(x);
+        }
+        HashMap<int, string> hm2(hm);
+        #assert(hm == hm2);
+        HashMap<int, string> hm3;
+        hm3 = hm;
+        #assert(hm == hm3);
+        #assert(HashMapIntStringEqualToMapIntString(hm, m));
+        RandomShuffle(list.Begin(), list.End());
+        for (int x : list)
+        {
+            hm.Remove(x);
+            m.Remove(x);
+        }
+        #assert(hm.IsEmpty());
+        #assert(hm.Count() == 0);
+        #assert(m.IsEmpty());
+        #assert(m.Count() == 0);
+    }
+
+    public unit_test void HashMapIntStringTest()
+    {
+        MT.Init(123456u);
+        TestIntString(0);
+        TestIntString(1);
+        TestIntString(2);
+        TestIntString(3);
+        TestIntString(10);
+        TestIntString(20);
+        TestIntString(30);
+        TestIntString(40);
+        TestIntString(50);
+        TestIntString(100);
+        TestIntString(150);
+        TestIntString(200);
+        TestIntString(250);
+        TestIntString(300);
+        TestIntString(350);
+        TestIntString(400);
+        TestIntString(450);
+        TestIntString(500);
+        TestIntString(1000);
+        TestIntString(2000);
+        TestIntString(3000);
+        TestIntString(4000);
+        TestIntString(5000);
+        TestIntString(10000);
+        TestIntString(100000);
+    }
+
+    public void TestStringInt(int n)
+    {
+        List<string> list;
+        HashMap<string, int> hm;
+        Map<string, int> m;
+        for (int i = 0; i < n; ++i)
+        {
+            int r = cast<int>(Rand());
+            string x = ToString(r);
+            hm.Insert(MakePair(x, r));
+            m.Insert(MakePair(x, r));
+            list.Add(x);
+        }
+        HashMap<string, int> hm2(hm);
+        #assert(hm == hm2);
+        HashMap<string, int> hm3;
+        hm3 = hm;
+        #assert(hm == hm3);
+        #assert(HashMapStringIntEqualToMapStringInt(hm, m));
+        RandomShuffle(list.Begin(), list.End());
+        for (const string& x : list)
+        {
+            hm.Remove(x);
+            m.Remove(x);
+        }
+        #assert(hm.IsEmpty());
+        #assert(hm.Count() == 0);
+        #assert(m.IsEmpty());
+        #assert(m.Count() == 0);
+    }
+
+    public unit_test void HashMapStringIntTest()
+    {
+        MT.Init(123456u);
+        TestStringInt(0);
+        TestStringInt(1);
+        TestStringInt(2);
+        TestStringInt(3);
+        TestStringInt(10);
+        TestStringInt(20);
+        TestStringInt(30);
+        TestStringInt(40);
+        TestStringInt(50);
+        TestStringInt(100);
+        TestStringInt(150);
+        TestStringInt(200);
+        TestStringInt(250);
+        TestStringInt(300);
+        TestStringInt(350);
+        TestStringInt(400);
+        TestStringInt(450);
+        TestStringInt(500);
+        TestStringInt(1000);
+        TestStringInt(2000);
+        TestStringInt(3000);
+        TestStringInt(4000);
+        TestStringInt(5000);
+        TestStringInt(10000);
+        TestStringInt(100000);
+    }
+}

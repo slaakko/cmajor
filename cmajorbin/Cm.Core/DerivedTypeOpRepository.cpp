@@ -505,6 +505,18 @@ Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetNullPtrToPtrConversion(Cm::Sym::
     return nullPtrToPtrConversion.get();
 }
 
+Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetVoidPtrToUlongConversion(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type, Cm::Sym::ConversionTable& conversionTable, const Span& span)
+{
+    if (!voidPtrToULongConversion)
+    {
+        Cm::Sym::TypeSymbol* ulongType = typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+        Cm::Sym::TypeSymbol* voidPtrType = typeRepository.MakePointerType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), span);
+        voidPtrToULongConversion.reset(new ConvertingCtor(typeRepository, ulongType, voidPtrType, Cm::Sym::ConversionType::explicit_, ConversionInst::ptrtoint, Cm::Sym::ConversionRank::conversion, 100));
+        conversionTable.AddConversion(voidPtrToULongConversion.get());
+    }
+    return voidPtrToULongConversion.get();
+}
+
 Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type)
 {
     if (!copyAssignment)
@@ -765,6 +777,15 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
                         DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
                         viableFunctions.insert(cache.GetMoveCtor(typeRepository, pointerType));
                     }
+                }
+            }
+            else if (leftType->IsPointerType() && leftType->GetPointerCount() == 1 && leftType->GetBaseType()->IsUlongType())
+            {
+                Cm::Sym::TypeSymbol* rightType = arguments[1].Type();
+                if (rightType->IsVoidPtrType())
+                {
+                    DerivedTypeOpCache& cache = derivedTypeOpCacheMap[rightType];
+                    viableFunctions.insert(cache.GetVoidPtrToUlongConversion(typeRepository, rightType, conversionTable, span));
                 }
             }
             break;

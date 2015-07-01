@@ -672,6 +672,26 @@ namespace System.Collections
             }
             return CEnd();
         }
+        public nothrow ConstIterator CFind(const KeyType& key) const
+        {
+            Node* x = Root();
+            while (x != null)
+            {
+                if (Comp(key, KeyOf(x->Value())))
+                {
+                    x = cast<Node*>(x->Left());
+                }
+                else if (Comp(KeyOf(x->Value()), key))
+                {
+                    x = cast<Node*>(x->Right());
+                }
+                else
+                {
+                    return ConstIterator(x);
+                }
+            }
+            return CEnd();
+        }
         public Pair<Iterator, bool> Insert(const ValueType& value) where ValueType is Copyable
         {
             Node* x = Root();

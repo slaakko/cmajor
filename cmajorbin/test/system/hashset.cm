@@ -1,0 +1,169 @@
+using System;
+using System.Collections;
+
+namespace Test.HashSet
+{
+    public bool HashSetIntEqualToSetInt(const HashSet<int>& hs, const Set<int>& s)
+    {
+        if (hs.Count() != s.Count()) return false;
+        for (int x : hs)
+        {
+            Set<int>.ConstIterator i = s.Find(x);
+            if (i == s.End())
+            {
+                return false;
+            }
+        }
+        for (int x : s)
+        {
+            HashSet<int>.ConstIterator i = hs.Find(x);
+            if (i == hs.End())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public bool HashSetStringEqualToSetString(const HashSet<string>& hs, const Set<string>& s)
+    {
+        if (hs.Count() != s.Count()) return false;
+        for (const string& x : hs)
+        {
+            Set<string>.ConstIterator i = s.Find(x);
+            if (i == s.End())
+            {
+                return false;
+            }
+        }
+        for (const string& x : s)
+        {
+            HashSet<string>.ConstIterator i = hs.Find(x);
+            if (i == hs.End())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void TestInt(int n)
+    {
+        List<int> list;
+        HashSet<int> hs;
+        Set<int> s;
+        for (int i = 0; i < n; ++i)
+        {
+            int x = cast<int>(Rand());
+            hs.Insert(x);
+            s.Insert(x);
+            list.Add(x);
+        }
+        HashSet<int> hs2(hs);
+        #assert(hs == hs2);
+        HashSet<int> hs3;
+        hs3 = hs;
+        #assert(hs == hs3);
+        #assert(HashSetIntEqualToSetInt(hs, s));
+        RandomShuffle(list.Begin(), list.End());
+        for (int x : list)
+        {
+            hs.Remove(x);
+            s.Remove(x);
+        }
+        #assert(hs.IsEmpty());
+        #assert(hs.Count() == 0);
+        #assert(s.IsEmpty());
+        #assert(s.Count() == 0);
+    }
+
+    public unit_test void HashSetIntTest()
+    {
+        MT.Init(123456u);
+        TestInt(0);
+        TestInt(1);
+        TestInt(2);
+        TestInt(3);
+        TestInt(10);
+        TestInt(20);
+        TestInt(30);
+        TestInt(40);
+        TestInt(50);
+        TestInt(100);
+        TestInt(150);
+        TestInt(200);
+        TestInt(250);
+        TestInt(300);
+        TestInt(350);
+        TestInt(400);
+        TestInt(450);
+        TestInt(500);
+        TestInt(1000);
+        TestInt(2000);
+        TestInt(3000);
+        TestInt(4000);
+        TestInt(5000);
+        TestInt(10000);
+        TestInt(100000);
+    }
+
+    public void TestString(int n)
+    {
+        List<string> list;
+        HashSet<string> hs;
+        Set<string> s;
+        for (int i = 0; i < n; ++i)
+        {
+            string x = ToString(cast<int>(Rand()));
+            hs.Insert(x);
+            s.Insert(x);
+            list.Add(x);
+        }
+        HashSet<string> hs2(hs);
+        #assert(hs == hs2);
+        HashSet<string> hs3;
+        hs3 = hs;
+        #assert(hs == hs3);
+        #assert(HashSetStringEqualToSetString(hs, s));
+        RandomShuffle(list.Begin(), list.End());
+        for (const string& x : list)
+        {
+            hs.Remove(x);
+            s.Remove(x);
+        }
+        #assert(hs.IsEmpty());
+        #assert(hs.Count() == 0);
+        #assert(s.IsEmpty());
+        #assert(s.Count() == 0);
+    }
+
+    public unit_test void HashSetStringTest()
+    {
+        MT.Init(123456u);
+        TestString(0);
+        TestString(1);
+        TestString(2);
+        TestString(3);
+        TestString(10);
+        TestString(20);
+        TestString(30);
+        TestString(40);
+        TestString(50);
+        TestString(100);
+        TestString(150);
+        TestString(200);
+        TestString(250);
+        TestString(300);
+        TestString(350);
+        TestString(400);
+        TestString(450);
+        TestString(500);
+        TestString(1000);
+        TestString(2000);
+        TestString(3000);
+        TestString(4000);
+        TestString(5000);
+        TestString(10000);
+        TestString(100000);
+    }
+}

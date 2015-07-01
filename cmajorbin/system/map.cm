@@ -33,6 +33,10 @@ namespace System.Collections
         {
             return tree.Begin();
         }
+        public nothrow inline ConstIterator Begin() const
+        {
+            return tree.CBegin();
+        }
         public nothrow inline ConstIterator CBegin() const
         {
             return tree.CBegin();
@@ -40,6 +44,10 @@ namespace System.Collections
         public nothrow inline Iterator End()
         {
             return tree.End();
+        }
+        public nothrow inline ConstIterator End() const
+        {
+            return tree.CEnd();
         }
         public nothrow inline ConstIterator CEnd() const
         {
@@ -60,6 +68,14 @@ namespace System.Collections
         public nothrow inline Iterator Find(const KeyType& key)
         {
             return tree.Find(key);
+        }
+        public nothrow ConstIterator Find(const KeyType& key) const
+        {
+            return tree.CFind(key);
+        }
+        public nothrow ConstIterator CFind(const KeyType& key) const
+        {
+            return tree.CFind(key);
         }
         public MappedType& operator[](const KeyType& key)
         {

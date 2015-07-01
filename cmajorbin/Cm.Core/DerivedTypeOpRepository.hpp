@@ -27,6 +27,7 @@ public:
     Cm::Sym::FunctionSymbol* GetPtrToVoidPtrConversion(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type, Cm::Sym::ConversionTable& conversionTable, const Span& span);
     Cm::Sym::FunctionSymbol* GetVoidPtrToPtrConversion(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type, const Span& span);
     Cm::Sym::FunctionSymbol* GetNullPtrToPtrConversion(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type, Cm::Sym::ConversionTable& conversionTable);
+    Cm::Sym::FunctionSymbol* GetVoidPtrToUlongConversion(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type, Cm::Sym::ConversionTable& conversionTable, const Span& span);
     Cm::Sym::FunctionSymbol* GetCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type);
     Cm::Sym::FunctionSymbol* GetMoveAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type);
     Cm::Sym::FunctionSymbol* GetOpEqual(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type);
@@ -47,6 +48,7 @@ private:
     std::unique_ptr<Cm::Sym::FunctionSymbol> ptrToVoidPtrConversion;
     std::unique_ptr<Cm::Sym::FunctionSymbol> voidPtrToPtrConversion;
     std::unique_ptr<Cm::Sym::FunctionSymbol> nullPtrToPtrConversion;
+    std::unique_ptr<Cm::Sym::FunctionSymbol> voidPtrToULongConversion;
     std::unique_ptr<Cm::Sym::FunctionSymbol> copyAssignment;
     std::unique_ptr<Cm::Sym::FunctionSymbol> moveAssignment;
     std::unique_ptr<Cm::Sym::FunctionSymbol> opEqual;

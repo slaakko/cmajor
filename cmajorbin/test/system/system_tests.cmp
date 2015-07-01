@@ -11,6 +11,8 @@ source <exception.cm>;
 source <filestream.cm>;
 source <function.cm>;
 source <fwdlist.cm>;
+source <hashmap.cm>;
+source <hashset.cm>;
 source <iterator.cm>;
 source <limits.cm>;
 source <linkedlist.cm>;

@@ -15,15 +15,21 @@ namespace Test.System.Collections.LinkedList
         LinkedList<int> list03;
         list03 = list0;
         #assert(list0 == list03);
+
         LinkedList<int> list1;
         list1.Add(0);
+        #assert(list0 < list1);
         #assert(!list1.IsEmpty());
         #assert(list1.Count() == 1);
         #assert(*list1.CBegin() == 0);
+        #assert(list1.Front() == 0);
+        #assert(list1.Back() == 0);
         LinkedList<int> list11(list1);
         #assert(!list11.IsEmpty());
         #assert(list11.Count() == 1);
         #assert(*list11.CBegin() == 0);
+        #assert(list11.Front() == 0);
+        #assert(list11.Back() == 0);
         #assert(list1 == list11);
         LinkedList<int> list12;
         list12.Add(1);
@@ -31,5 +37,191 @@ namespace Test.System.Collections.LinkedList
         LinkedList<int> list13;
         list13 = list1;
         #assert(list1 == list13);
+        list1.RemoveFirst();
+        #assert(list1.IsEmpty());
+        #assert(list1.Count() == 0);
+        #assert(list1 == list0);
+        list11.RemoveLast();
+        #assert(list11.IsEmpty());
+        #assert(list11.Count() == 0);
+        #assert(list11 == list0);
+        list12.Remove(list12.Begin());
+        #assert(list12.IsEmpty());
+        #assert(list12.Count() == 0);
+        #assert(list12 == list0);
+        list13.Remove(0);
+        #assert(list13.IsEmpty());
+        #assert(list13.Count() == 0);
+        #assert(list13 == list0);
+        list1.Add(0);
+
+        LinkedList<int> list2;
+        list2.InsertFront(1);
+        list2.Insert(list2.Begin(), 0);
+        #assert(!list2.IsEmpty());
+        #assert(list2.Count() == 2);
+        #assert(*list2.CBegin() == 0);
+        LinkedList<int>.ConstIterator i = list2.CBegin();
+        ++i;
+        #assert(*i == 1);
+        #assert(list2.Front() == 0);
+        #assert(list2.Back() == 1);
+        LinkedList<int> list21;
+        list21.Insert(list21.Begin(), 0);
+        list21.Insert(list21.End(), 1);
+        #assert(!list21.IsEmpty());
+        #assert(list21.Count() == 2);
+        #assert(list21 == list2);
+        #assert(list21.Front() == 0);
+        #assert(list21.Back() == 1);
+        LinkedList<int> list22;
+        list22.Add(0);
+        list22.Add(2);
+        #assert(!list22.IsEmpty());
+        #assert(list22.Count() == 2);
+        #assert(list22.Front() == 0);
+        #assert(list22.Back() == 2);
+        #assert(list0 < list22);
+        #assert(list1 < list22);
+        #assert(list2 < list22);
+        LinkedList<int> list23(list2);
+        #assert(list23 == list2);
+        list23.RemoveLast();
+        #assert(!list23.IsEmpty());
+        #assert(list23.Count() == 1);
+        list23.Add(0);
+        #assert(!list23.IsEmpty());
+        #assert(list23.Count() == 2);
+        #assert(list23 < list2);
+        list23.Remove(0);
+        #assert(list23.IsEmpty());
+        #assert(list23.Count() == 0);
+        LinkedList<int> list24;
+        list24 = list2;
+        #assert(!list24.IsEmpty());
+        #assert(list24.Count() == 2);
+        #assert(list24 == list2);
+        LinkedList<int>.Iterator j = list24.End();
+        --j;
+        list24.Remove(j);
+        #assert(!list24.IsEmpty());
+        #assert(list24.Count() == 1);
+        #assert(list24 == list1);
+        list24.Remove(list24.Begin());
+        #assert(list24.IsEmpty());
+        #assert(list24.Count() == 0);
+        #assert(list24 == list0);
+        list22.Remove(0);
+        #assert(!list22.IsEmpty());
+        #assert(list22.Count() == 1);
+        list22.Remove(2);
+        #assert(list22.IsEmpty());
+        #assert(list22.Count() == 0);
+        list21.RemoveFirst();
+        #assert(!list21.IsEmpty());
+        #assert(list21.Count() == 1);
+        #assert(list21.Front() == 1);
+        #assert(list21.Back() == 1);
+        list21.RemoveFirst();
+        #assert(list21.IsEmpty());
+        #assert(list21.Count() == 0);
+        LinkedList<int> list25(list2);
+        #assert(list25 == list2);
+        list25.RemoveLast();
+        #assert(!list25.IsEmpty());
+        #assert(list25.Count() == 1);
+        #assert(list25.Front() == 0);
+        #assert(list25.Back() == 0);
+        list25.RemoveLast();
+        #assert(list25.IsEmpty());
+        #assert(list25.Count() == 0);
+
+        LinkedList<int> list3;
+        list3.Add(0);
+        list3.Add(1);
+        list3.Add(2);
+        #assert(!list3.IsEmpty());
+        #assert(list3.Count() == 3);
+        LinkedList<int> list31(list3);
+        #assert(!list31.IsEmpty());
+        #assert(list31.Count() == 3);
+        #assert(list31 == list3);
+        LinkedList<int>.Iterator k = list31.Begin();
+        ++k;
+        list31.Remove(k);
+        #assert(!list31.IsEmpty());
+        #assert(list31.Count() == 2);
+        #assert(list31.Front() == 0);
+        #assert(list31.Back() == 2);
+        LinkedList<int>.Iterator k2 = list31.Begin();
+        ++k2;
+        list31.Insert(k2, 1);
+        #assert(!list31.IsEmpty());
+        #assert(list31.Count() == 3);
+        #assert(list31 == list3);
+        LinkedList<int> list32;
+        list32 = list3;
+        #assert(!list32.IsEmpty());
+        #assert(list32.Count() == 3);
+        list32.RemoveLast();
+        #assert(!list32.IsEmpty());
+        #assert(list32.Count() == 2);
+        #assert(list32.Front() == 0);
+        #assert(list32.Back() == 1);
+        list32.Add(1);
+        #assert(!list32.IsEmpty());
+        #assert(list32.Count() == 3);
+        #assert(list32.Front() == 0);
+        #assert(list32.Back() == 1);
+        #assert(list32 < list3);
+
+        LinkedList<int> list100;
+        List<int> l100;
+        for (int n = 0; n < 100; ++n)
+        {
+            int x = cast<int>(Rand());
+            list100.Add(x);
+            l100.Add(x);
+        }
+        #assert(!list100.IsEmpty());
+        #assert(list100.Count() == 100);
+        #assert(Equal(list100.CBegin(), list100.CEnd(), l100.CBegin(), l100.CEnd()));
     }
- }
+
+    public class X
+    {
+        public X(int id_): id(id_)
+        {
+        }
+        public nothrow int Id() const
+        {
+            return id;
+        }
+        private int id;
+    }
+
+    public nothrow bool operator==(const X& left, const X& right)
+    {
+        return left.Id() == right.Id();
+    }
+
+    public nothrow bool operator<(const X& left, const X& right)
+    {
+        return left.Id() < right.Id();
+    }
+
+    public unit_test void LinkedListXTest()
+    {
+        LinkedList<X> list0;
+        #assert(list0.IsEmpty());
+        #assert(list0.Count() == 0);
+        LinkedList<X> list1;
+        #assert(list0 == list1);
+        list1.Add(X(0));
+        #assert(!list1.IsEmpty());
+        #assert(list1.Count() == 1);
+        #assert(list0 < list1);
+        list1.Remove(X(0));
+        #assert(list0 == list1);
+    }
+}

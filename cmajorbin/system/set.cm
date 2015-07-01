@@ -32,6 +32,10 @@ namespace System.Collections
         {
             return tree.Begin();
         }
+        public nothrow inline ConstIterator Begin() const
+        {
+            return tree.CBegin();
+        }
         public nothrow inline ConstIterator CBegin() const
         {
             return tree.CBegin();
@@ -39,6 +43,10 @@ namespace System.Collections
         public nothrow inline Iterator End() 
         {
             return tree.End();
+        }
+        public nothrow inline ConstIterator End() const
+        {
+            return tree.CEnd();
         }
         public nothrow inline ConstIterator CEnd() const
         {
@@ -59,6 +67,14 @@ namespace System.Collections
         public nothrow inline Iterator Find(const KeyType& key)
         {
             return tree.Find(key);
+        }
+        public nothrow inline ConstIterator Find(const KeyType& key) const
+        {
+            return tree.CFind(key);
+        }
+        public nothrow inline ConstIterator CFind(const KeyType& key) const
+        {
+            return tree.CFind(key);
         }
         public inline Pair<Iterator, bool> Insert(const ValueType& value) where T is Copyable
         {
