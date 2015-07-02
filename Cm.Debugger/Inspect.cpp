@@ -143,6 +143,14 @@ void Inspector::Visit(ContentNode& contentNode)
         {
             InspectList(printExpr);
         }
+        else if (typeExpr->PrimaryTypeName() == "System.Collections.ForwardList")
+        {
+            InspectForwardList(printExpr);
+        }
+        else if (typeExpr->PrimaryTypeName() == "System.Collections.LinkedList")
+        {
+            InspectLinkedList(printExpr);
+        }
         else if (typeExpr->PrimaryTypeName() == "System.Collections.Set")
         {
             InspectSet(printExpr);
@@ -150,6 +158,14 @@ void Inspector::Visit(ContentNode& contentNode)
         else if (typeExpr->PrimaryTypeName() == "System.Collections.Map")
         {
             InspectMap(printExpr);
+        }
+        else if (typeExpr->PrimaryTypeName() == "System.Collections.HashSet")
+        {
+            InspectHashSet(printExpr);
+        }
+        else if (typeExpr->PrimaryTypeName() == "System.Collections.HashMap")
+        {
+            InspectHashMap(printExpr);
         }
         else
         {
@@ -545,7 +561,7 @@ void Inspector::InspectList(const PrintExpr& printExpr)
     TypeExpr* type = printExpr.GetTypeExpr();
     if (type->TypeArguments().size() != 1)
     {
-        throw std::runtime_error("number of type arguments in System.List is not 1");
+        throw std::runtime_error("number of type arguments in System.Collections.List is not 1");
     }
     TypeExpr* itemType = type->TypeArguments()[0].get();
     std::shared_ptr<GdbCommand> command = gdb.Print(printExpr.Text());
@@ -599,6 +615,221 @@ void Inspector::InspectList(const PrintExpr& printExpr)
         else
         {
             throw std::runtime_error("count of System.Collections.List not integer");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("structure expected");
+    }
+}
+
+void Inspector::InspectForwardList(const PrintExpr& printExpr)
+{
+    TypeExpr* type = printExpr.GetTypeExpr();
+    if (type->TypeArguments().size() != 1)
+    {
+        throw std::runtime_error("number of type arguments in System.Collections.ForwardList is not 1");
+    }
+    TypeExpr* itemType = type->TypeArguments()[0].get();
+    std::shared_ptr<GdbCommand> command = gdb.Print(printExpr.Text());
+    if (command->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + printExpr.Text() + "'");
+    }
+    std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", "System.Collections.ForwardList"));
+    if (result->GetValue()->IsStructureValue())
+    {
+        StructureValue* forwardListStruct = static_cast<StructureValue*>(result->GetValue());
+        Value* headValue = forwardListStruct->GetFieldValue("head");
+        if (!headValue)
+        {
+            throw std::runtime_error("head field not found in System.Collections.ForwardList");
+        }
+        if (headValue->IsAddressValue())
+        {
+            AddressValue* head = static_cast<AddressValue*>(headValue);
+            if (head->IsNull())
+            {
+                std::unique_ptr<Result> result(new Result("count", -1));
+                result->SetValue(new IntegerValue(0, false));
+                result->SetType("int");
+                result->SetDisplayType("int");
+                results.push_back(std::move(result));
+            }
+            else
+            {
+                std::string classTypeName = type->ToString();
+                Cm::Core::ClassDebugInfo* classDebugInfo = debugInfo.GetClassDebugInfo(classTypeName);
+                if (!classDebugInfo)
+                {
+                    throw std::runtime_error("class '" + classTypeName + "' not found");
+                }
+                Cm::Core::MemberVariableDebugInfo* headMemberVar = classDebugInfo->GetMemberVariable("head");
+                if (!headMemberVar)
+                {
+                    throw std::runtime_error("head member not found");
+                }
+                const std::string& headTypeName = headMemberVar->MemberVarTypeName();
+                TypeExpr* nodePtrTypeExpr = typeExprParser->Parse(headTypeName.c_str(), headTypeName.c_str() + headTypeName.length(), 0, "");
+                PrintExpr headExpr("$" + std::to_string(result->Handle()) + ".head", nodePtrTypeExpr);
+                std::shared_ptr<GdbCommand> headCommand = gdb.Print(headExpr.Text());
+                if (headCommand->ReplyMessage().empty())
+                {
+                    throw std::runtime_error("could not evaluate debugger expression '" + headExpr.Text() + "'");
+                }
+                std::unique_ptr<Result> headResult(resultGrammar->Parse(headCommand->ReplyMessage().c_str(), headCommand->ReplyMessage().c_str() + headCommand->ReplyMessage().length(), 0, "", "head"));
+                int handle = headResult->Handle();
+                int index = 0;
+                AddressValue nodeAddress = *static_cast<AddressValue*>(head);
+                while (!nodeAddress.IsNull())
+                {
+                    PrintExpr valueExpr("$" + std::to_string(handle) + "->value", itemType->Clone());
+                    std::shared_ptr<GdbCommand> valueCommand = gdb.Print(valueExpr.Text());
+                    if (valueCommand->ReplyMessage().empty())
+                    {
+                        throw std::runtime_error("could not evaluate value expression '" + valueExpr.Text() + "'");
+                    }
+                    std::unique_ptr<Result> valueResult(resultGrammar->Parse(valueCommand->ReplyMessage().c_str(), valueCommand->ReplyMessage().c_str() + valueCommand->ReplyMessage().length(), 0, "", "[" + std::to_string(index) + "]"));
+                    valueResult->SetType(itemType->ToString());
+                    debugInfo.SetTypeForHandle(valueResult->Handle(), itemType->ToString());
+                    valueResult->SetDisplayType(itemType->ToString());
+                    results.push_back(std::move(valueResult));
+                    PrintExpr nextExpr("$" + std::to_string(handle) + "->next", nodePtrTypeExpr->Clone());
+                    std::shared_ptr<GdbCommand> nextCommand = gdb.Print(nextExpr.Text());
+                    if (nextCommand->ReplyMessage().empty())
+                    {
+                        throw std::runtime_error("could not evaluate debugger expression '" + nextExpr.Text() + "'");
+                    }
+                    std::unique_ptr<Result> nextResult(resultGrammar->Parse(nextCommand->ReplyMessage().c_str(), nextCommand->ReplyMessage().c_str() + nextCommand->ReplyMessage().length(), 0, "", "next"));
+                    if (nextResult->GetValue()->IsAddressValue())
+                    {
+                        AddressValue* next = static_cast<AddressValue*>(nextResult->GetValue());
+                        nodeAddress = *static_cast<AddressValue*>(next);
+                        handle = nextResult->Handle();
+                    }
+                    else
+                    {
+                        throw std::runtime_error("next of System.Collections.ForwardListNode not address");
+                    }
+                    ++index;
+                }
+            }
+        }
+        else
+        {
+            throw std::runtime_error("head of System.Collections.ForwardList not address");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("structure expected");
+    }
+}
+
+void Inspector::InspectLinkedList(const PrintExpr& printExpr)
+{
+    TypeExpr* type = printExpr.GetTypeExpr();
+    if (type->TypeArguments().size() != 1)
+    {
+        throw std::runtime_error("number of type arguments in System.Collections.LinkedList is not 1");
+    }
+    TypeExpr* itemType = type->TypeArguments()[0].get();
+    std::shared_ptr<GdbCommand> command = gdb.Print(printExpr.Text());
+    if (command->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + printExpr.Text() + "'");
+    }
+    std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "", "System.Collections.LinkedList"));
+    if (result->GetValue()->IsStructureValue())
+    {
+        StructureValue* forwardListStruct = static_cast<StructureValue*>(result->GetValue());
+        Value* headValue = forwardListStruct->GetFieldValue("head");
+        if (!headValue)
+        {
+            throw std::runtime_error("head field not found in System.Collections.LinkedList");
+        }
+        if (headValue->IsAddressValue())
+        {
+            AddressValue* head = static_cast<AddressValue*>(headValue);
+            if (head->IsNull())
+            {
+                std::unique_ptr<Result> result(new Result("count", -1));
+                result->SetValue(new IntegerValue(0, false));
+                result->SetType("int");
+                result->SetDisplayType("int");
+                results.push_back(std::move(result));
+            }
+            else
+            {
+                std::string classTypeName = type->ToString();
+                Cm::Core::ClassDebugInfo* classDebugInfo = debugInfo.GetClassDebugInfo(classTypeName);
+                if (!classDebugInfo)
+                {
+                    throw std::runtime_error("class '" + classTypeName + "' not found");
+                }
+                Cm::Core::MemberVariableDebugInfo* headMemberVar = classDebugInfo->GetMemberVariable("head");
+                if (!headMemberVar)
+                {
+                    throw std::runtime_error("head member not found");
+                }
+                const std::string& headTypeName = headMemberVar->MemberVarTypeName();
+                TypeExpr* nodePtrTypeExpr = typeExprParser->Parse(headTypeName.c_str(), headTypeName.c_str() + headTypeName.length(), 0, "");
+                std::unique_ptr<TypeExpr> nodeTypeExpr(nodePtrTypeExpr->Clone());
+                nodeTypeExpr->Derivations().RemoveLastPointer();
+                std::string nodeTypeName = nodeTypeExpr->ToString();
+                Cm::Core::ClassDebugInfo* nodeDebugInfo = debugInfo.GetClassDebugInfo(nodeTypeName);
+                if (!nodeDebugInfo)
+                {
+                    throw std::runtime_error("node type not found");
+                }
+                std::string nodePtrCast = nodeDebugInfo->IrTypeName() + "*";
+                PrintExpr headExpr("$" + std::to_string(result->Handle()) + ".head", nodePtrTypeExpr);
+                std::shared_ptr<GdbCommand> headCommand = gdb.Print(headExpr.Text());
+                if (headCommand->ReplyMessage().empty())
+                {
+                    throw std::runtime_error("could not evaluate debugger expression '" + headExpr.Text() + "'");
+                }
+                std::unique_ptr<Result> headResult(resultGrammar->Parse(headCommand->ReplyMessage().c_str(), headCommand->ReplyMessage().c_str() + headCommand->ReplyMessage().length(), 0, "", "head"));
+                int handle = headResult->Handle();
+                int index = 0;
+                AddressValue nodeAddress = *static_cast<AddressValue*>(head);
+                while (!nodeAddress.IsNull())
+                {
+                    PrintExpr valueExpr("$" + std::to_string(handle) + "->value", itemType->Clone());
+                    std::shared_ptr<GdbCommand> valueCommand = gdb.Print(valueExpr.Text());
+                    if (valueCommand->ReplyMessage().empty())
+                    {
+                        throw std::runtime_error("could not evaluate value expression '" + valueExpr.Text() + "'");
+                    }
+                    std::unique_ptr<Result> valueResult(resultGrammar->Parse(valueCommand->ReplyMessage().c_str(), valueCommand->ReplyMessage().c_str() + valueCommand->ReplyMessage().length(), 0, "", "[" + std::to_string(index) + "]"));
+                    valueResult->SetType(itemType->ToString());
+                    debugInfo.SetTypeForHandle(valueResult->Handle(), itemType->ToString());
+                    valueResult->SetDisplayType(itemType->ToString());
+                    results.push_back(std::move(valueResult));
+                    PrintExpr nextExpr("(" + nodePtrCast + ")$" + std::to_string(handle) + "->__base.next", nodePtrTypeExpr->Clone());
+                    std::shared_ptr<GdbCommand> nextCommand = gdb.Print(nextExpr.Text());
+                    if (nextCommand->ReplyMessage().empty())
+                    {
+                        throw std::runtime_error("could not evaluate debugger expression '" + nextExpr.Text() + "'");
+                    }
+                    std::unique_ptr<Result> nextResult(resultGrammar->Parse(nextCommand->ReplyMessage().c_str(), nextCommand->ReplyMessage().c_str() + nextCommand->ReplyMessage().length(), 0, "", "next"));
+                    if (nextResult->GetValue()->IsAddressValue())
+                    {
+                        AddressValue* next = static_cast<AddressValue*>(nextResult->GetValue());
+                        nodeAddress = *static_cast<AddressValue*>(next);
+                        handle = nextResult->Handle();
+                    }
+                    else
+                    {
+                        throw std::runtime_error("next of System.Collections.LinkedListNode not address");
+                    }
+                    ++index;
+                }
+            }
+        }
+        else
+        {
+            throw std::runtime_error("head of System.Collections.LinkedList not address");
         }
     }
     else
@@ -855,6 +1086,172 @@ void Inspector::InspectTree(const PrintExpr& printExpr)
         else
         {
             throw std::runtime_error("count of tree type not integer");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("structure expected");
+    }
+}
+
+void Inspector::InspectHashSet(const PrintExpr& printExpr)
+{
+    InspectHashtable(printExpr);
+}
+
+void Inspector::InspectHashMap(const PrintExpr& printExpr)
+{
+    InspectHashtable(printExpr);
+}
+
+AddressValue BucketAddress(Gdb& gdb, int tableHandle, int bucketIndex, TypeExpr* bucketPtrType)
+{
+    PrintExpr bucketExpr("$" + std::to_string(tableHandle) + ".buckets.items[" + std::to_string(bucketIndex) + "]", bucketPtrType->Clone());
+    std::shared_ptr<GdbCommand> bucketCommand = gdb.Print(bucketExpr.Text());
+    if (bucketCommand->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + bucketExpr.Text() + "'");
+    }
+    std::unique_ptr<Result> bucketResult(resultGrammar->Parse(bucketCommand->ReplyMessage().c_str(), bucketCommand->ReplyMessage().c_str() + bucketCommand->ReplyMessage().length(), 0, "", "bucket"));
+    Value* value = bucketResult->GetValue();
+    if (value->IsAddressValue())
+    {
+        return *static_cast<AddressValue*>(value);
+    }
+    else
+    {
+        throw std::runtime_error("bucket not address");
+    }
+}
+
+AddressValue NextBucket(Gdb& gdb, AddressValue bucket, const std::string& bucketPtrIrTypeName)
+{
+    std::string nextExpr = "((" + bucketPtrIrTypeName + ")" + bucket.ToString() + ")->next";
+    std::shared_ptr<GdbCommand> nextCommand = gdb.Print(nextExpr);
+    if (nextCommand->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + nextExpr + "'");
+    }
+    std::unique_ptr<Result> nextResult(resultGrammar->Parse(nextCommand->ReplyMessage().c_str(), nextCommand->ReplyMessage().c_str() + nextCommand->ReplyMessage().length(), 0, "", "next"));
+    Value* value = nextResult->GetValue();
+    if (value->IsAddressValue())
+    {
+        return *static_cast<AddressValue*>(value);
+    }
+    else
+    {
+        throw std::runtime_error("next not address");
+    }
+}
+
+void Inspector::InspectHashtable(const PrintExpr& printExpr)
+{
+    TypeExpr* typeExpr = printExpr.GetTypeExpr();
+    std::string classTypeName = typeExpr->ToString();
+    Cm::Core::ClassDebugInfo* classDebugInfo = debugInfo.GetClassDebugInfo(classTypeName);
+    if (!classDebugInfo)
+    {
+        throw std::runtime_error("class '" + classTypeName + "' not found");
+    }
+    Cm::Core::MemberVariableDebugInfo* tableMemberVar = classDebugInfo->GetMemberVariable("table");
+    if (!tableMemberVar)
+    {
+        throw std::runtime_error("table member not found");
+    }
+    const std::string& tableTypeName = tableMemberVar->MemberVarTypeName();
+    Cm::Core::ClassDebugInfo* tableDebugInfo = debugInfo.GetClassDebugInfo(tableTypeName);
+    if (!tableDebugInfo)
+    {
+        throw std::runtime_error("table type not found");
+    }
+    TypeExpr* tableTypeExpr = typeExprParser->Parse(tableTypeName.c_str(), tableTypeName.c_str() + tableTypeName.length(), 0, "");
+    if (tableTypeExpr->TypeArguments().size() != 5)
+    {
+        throw std::runtime_error("wrong number of type arguments");
+    }
+    TypeExpr* itemTypeExpr = tableTypeExpr->TypeArguments()[1].get();
+    std::string itemTypeName = itemTypeExpr->ToString();
+    std::shared_ptr<GdbCommand> tableCommand = gdb.Print(printExpr.Text() + ".table");
+    if (tableCommand->ReplyMessage().empty())
+    {
+        throw std::runtime_error("could not evaluate debugger expression '" + printExpr.Text() + ".table'");
+    }
+    std::unique_ptr<Result> tableResult(resultGrammar->Parse(tableCommand->ReplyMessage().c_str(), tableCommand->ReplyMessage().c_str() + tableCommand->ReplyMessage().length(), 0, "", "table"));
+    if (tableResult->GetValue()->IsStructureValue())
+    {
+        StructureValue* tableStruct = static_cast<StructureValue*>(tableResult->GetValue());
+        Value* countValue = tableStruct->GetFieldValue("count");
+        if (!countValue)
+        {
+            throw std::runtime_error("count field not found in table type");
+        }
+        if (countValue->IsIntegerValue())
+        {
+            IntegerValue* count = static_cast<IntegerValue*>(countValue);
+            if (count->IsNegative())
+            {
+                throw std::runtime_error("count is negative");
+            }
+            uint64_t n = count->AbsoluteValue();
+            if (n == 0)
+            {
+                std::unique_ptr<Result> result(new Result("count", -1));
+                result->SetValue(new IntegerValue(0, false));
+                result->SetType("int");
+                result->SetDisplayType("int");
+                results.push_back(std::move(result));
+            }
+            else
+            {
+                Cm::Core::MemberVariableDebugInfo* bucketsMemberVar = tableDebugInfo->GetMemberVariable("buckets");
+                std::string bucketsListTypeName = bucketsMemberVar->MemberVarTypeName();
+                std::unique_ptr<TypeExpr> bucketsListTypeExpr(typeExprParser->Parse(bucketsListTypeName.c_str(), bucketsListTypeName.c_str() + bucketsListTypeName.length(), 0, ""));
+                if (bucketsListTypeExpr->TypeArguments().size() != 1)
+                {
+                    throw std::runtime_error("wrong number of type arguments");
+                }
+                TypeExpr* bucketPtrType = bucketsListTypeExpr->TypeArguments()[0].get();
+                int bucketIndex = 0;
+                std::unique_ptr<TypeExpr> bucketType(bucketPtrType->Clone());
+                bucketType->Derivations().RemoveLastPointer();
+                std::string bucketTypeName = bucketType->ToString();
+                Cm::Core::ClassDebugInfo* bucketClassDebugInfo = debugInfo.GetClassDebugInfo(bucketTypeName);
+                std::string bucketPtrIrTypeName = bucketClassDebugInfo->IrTypeName() + "*";
+                AddressValue bucketAddress = BucketAddress(gdb, tableResult->Handle(), bucketIndex, bucketPtrType);
+                while (bucketAddress.IsNull())
+                {
+                    ++bucketIndex;
+                    bucketAddress = BucketAddress(gdb, tableResult->Handle(), bucketIndex, bucketPtrType);
+                }
+                for (uint64_t i = 0; i < n; ++i)
+                {
+                    std::string valueExpr = "((" + bucketPtrIrTypeName + ")" + bucketAddress.ToString() + ")->value";
+                    std::shared_ptr<GdbCommand> valueCommand = gdb.Print(valueExpr);
+                    if (valueCommand->ReplyMessage().empty())
+                    {
+                        throw std::runtime_error("could not evaluate debugger expression '" + valueExpr + "'");
+                    }
+                    std::unique_ptr<Result> valueResult(resultGrammar->Parse(valueCommand->ReplyMessage().c_str(), valueCommand->ReplyMessage().c_str() + valueCommand->ReplyMessage().length(), 0, "", 
+                        "[" + std::to_string(i) + "]"));
+                    valueResult->SetType(itemTypeName);
+                    debugInfo.SetTypeForHandle(valueResult->Handle(), itemTypeName);
+                    valueResult->SetDisplayType(itemTypeName);
+                    results.push_back(std::move(valueResult));
+                    if (int(i) < int(n) - 1)
+                    {
+                        bucketAddress = NextBucket(gdb, bucketAddress, bucketPtrIrTypeName);
+                        while (bucketAddress.IsNull())
+                        {
+                            ++bucketIndex;
+                            bucketAddress = BucketAddress(gdb, tableResult->Handle(), bucketIndex, bucketPtrType);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            throw std::runtime_error("count of table type not integer");
         }
     }
     else

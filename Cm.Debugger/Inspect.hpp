@@ -65,9 +65,14 @@ private:
     void InspectVirtualClass(Cm::Core::ClassDebugInfo* classDebugInfo, const PrintExpr& printExpr, const PrintExpr& derefExpr, TypeExpr* typeExpr);
     std::string GetActualClassName(Cm::Core::ClassDebugInfo* classDebugInfo, const PrintExpr& printExpr);
     void InspectList(const PrintExpr& printExpr);
+    void InspectForwardList(const PrintExpr& printExpr);
+    void InspectLinkedList(const PrintExpr& printExpr);
     void InspectSet(const PrintExpr& printExpr);
     void InspectMap(const PrintExpr& printExpr);
     void InspectTree(const PrintExpr& printExpr);
+    void InspectHashSet(const PrintExpr& printExpr);
+    void InspectHashMap(const PrintExpr& printExpr);
+    void InspectHashtable(const PrintExpr& printExpr);
 };
 
 } } // Cm::Debugger
