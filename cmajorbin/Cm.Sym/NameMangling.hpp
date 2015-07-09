@@ -17,6 +17,7 @@ namespace Cm { namespace Sym {
 
 std::string MakeAssemblyName(const std::string& name);
 std::string MangleName(const std::string& namespaceName, const std::string& functionGroupName, const std::vector<TypeSymbol*>& templateArguments, const std::vector<ParameterSymbol*>& parameters);
+std::string MakeGroupDocId(const std::string& functionGroupName);
 
 void InitNameMangling();
 void DoneNameMangling();

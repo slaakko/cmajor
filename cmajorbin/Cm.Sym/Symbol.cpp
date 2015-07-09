@@ -70,6 +70,10 @@ std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess, bool a
     return s;
 }
 
+SymbolCollector::~SymbolCollector()
+{
+}
+
 Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), flags(), parent(nullptr)
 {
     SetSource(SymbolSource::project);
@@ -283,6 +287,29 @@ void Symbol::InitVirtualFunctionTables()
 void Symbol::MakeIrType()
 {
     SetIrTypeMade();
+}
+
+std::string Symbol::FullDocId() const
+{
+    std::string parentDocId;
+    Symbol* p = Parent();
+    if (p)
+    {
+        parentDocId = p->FullDocId();
+    }
+    if (parentDocId.empty())
+    {
+        return DocId();
+    }
+    else
+    {
+        return parentDocId + "." + DocId();
+    }
+}
+
+void Symbol::Collect(SymbolCollector& collector)
+{
+    collector.Add(this);
 }
 
 } } // namespace Cm::Sym

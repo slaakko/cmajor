@@ -22,7 +22,8 @@ enum class Derivation: uint8_t
     rvalueRef = 3,
     pointer = 4,
     leftParen = 5,
-    rightParen = 6
+    rightParen = 6,
+    array_ = 7
 };
 
 std::string DerivationStr(Derivation d);
@@ -49,7 +50,8 @@ private:
     Derivation derivations[maxDerivations];
 };
 
-std::string MakeDerivedTypeName(const DerivationList& derivations, const std::string& baseTypeFullName);
+std::string MakeDerivedTypeName(const DerivationList& derivations, const std::string& baseTypeFullName, const std::vector<std::unique_ptr<Node>>& arrayDimensions);
+std::string MakeDerivedTypeName(const DerivationList& derivations, const std::string& baseTypeFullName, const std::vector<int>& arrayDimensions);
 
 bool operator==(const DerivationList& left, const DerivationList& right);
 bool operator<(const DerivationList& left, const DerivationList& right);
@@ -65,6 +67,7 @@ public:
     const DerivationList& Derivations() const { return derivations; }
     Node* BaseTypeExprNode() const { return baseTypeExprNode.get();  }
     Node* ReleaseBaseTypeExprNode() { return baseTypeExprNode.release();  }
+    Node* ArrayDimensionNode(int index) const { return arrayDimensionNodes[index].get(); }
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     void Accept(Visitor& visitor) override;
@@ -76,10 +79,15 @@ public:
     void AddPointer() { Add(Derivation::pointer); }
     void AddLeftParen() { Add(Derivation::leftParen); }
     void AddRightParen() { Add(Derivation::rightParen); }
+    void AddArray() { Add(Derivation::array_); }
     void SetBaseTypeExpr(Node* baseTypeExprNode_);
+    void AddArrayDimensionNode(Node* arrayDimensionNode);
+    int NumArrayDimensions() const { return int(arrayDimensionNodes.size()); }
+    std::string DocId() const override;
 private:
     DerivationList derivations;
     std::unique_ptr<Node> baseTypeExprNode;
+    std::vector<std::unique_ptr<Node>> arrayDimensionNodes;
 };
 
 Node* MakeTypeExprNode(DerivedTypeExprNode* derivedTypeExprNode);

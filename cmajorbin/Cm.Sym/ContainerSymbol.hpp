@@ -34,6 +34,7 @@ public:
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     void InitVirtualFunctionTables();
+    void Collect(SymbolCollector& collector) override;
 private:
     ContainerScope containerScope;
     std::vector<std::unique_ptr<Symbol>> symbols;

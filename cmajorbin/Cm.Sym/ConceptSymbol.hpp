@@ -35,6 +35,7 @@ public:
     void SetRefinedConcept(ConceptSymbol* refinedConcept_) { refinedConcept = refinedConcept_; }
     void SetIntrinsicConcept() { isIntrinsicConcept = true; }
     void Dump(CodeFormatter& formatter) override;
+    std::string DocId() const override;
 private:
     bool isIntrinsicConcept;
     TypeId id;

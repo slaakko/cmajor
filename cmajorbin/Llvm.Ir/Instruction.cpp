@@ -272,17 +272,18 @@ void SwitchInst::AddTargetLabels(std::set<std::string>& targetLabels)
     }
 }
 
-AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_): Instruction("alloca"), type(type_), result(result_), elementType(nullptr), numElements(0), alignment(0)
+AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_): Instruction("alloca"), type(type_), result(result_), numElementsType(nullptr), numElements(0), alignment(0)
 {
 }
 
-AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Type* elementType_, int numElements_): Ir::Intf::Instruction("alloca"), type(type_), result(result_), elementType(elementType_), numElements(numElements_), alignment(0)
+AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Type* numElementsType_, int numElements_): Ir::Intf::Instruction("alloca"), type(type_), result(result_),
+    numElementsType(numElementsType_), numElements(numElements_), alignment(0)
 {
 }
 
 Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result) { return new AllocaInst(type, result); }
 
-Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* elementType, int numElements) { return new AllocaInst(type, result, elementType, numElements); }
+Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* numElementsType, int numElements) { return new AllocaInst(type, result, numElementsType, numElements); }
 
 void AllocaInst::SetAlignment(int alignment_)
 {
@@ -297,7 +298,7 @@ std::string AllocaInst::ToString() const
     alloca.append(result->Name()).append(" = ").append(Name()).append(space).append(type->Name());
     if (numElements > 0)
     {
-        alloca.append(comma).append(elementType->Name()).append(space).append(std::to_string(numElements));
+        alloca.append(comma).append(numElementsType->Name()).append(space).append(std::to_string(numElements));
     }
     if (alignment > 0)
     {
@@ -686,5 +687,23 @@ std::string DbgDeclareInst::ToString() const
 }
 
 Ir::Intf::Instruction* DbgDeclare(Ir::Intf::Object* variable, Ir::Intf::MetadataNode* descriptor) { return new DbgDeclareInst(variable, descriptor); }
+
+MemSetInst::MemSetInst(Ir::Intf::Object* dest_, Ir::Intf::Object* value_, Ir::Intf::Object* len_, int align_, bool isVolatile_): 
+    Ir::Intf::Instruction("memset"), dest(dest_), value(value_), len(len_), align(align_), isVolatile(isVolatile_)
+{
+}
+
+std::string MemSetInst::ToString() const
+{
+    std::string s;
+    s.append("call void @llvm.memset.p0i8.i64(i8* " + dest->Name() + ", i8 " + value->Name() + ", i64 " + len->Name() + ", i32 " + std::to_string(align) + ", i1 " +
+        (isVolatile ? "true" : "false") + ")");
+    return s;
+}
+
+Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return new MemSetInst(dest, value, len, align, isVolatile);
+}
 
 } // namespace Llvm

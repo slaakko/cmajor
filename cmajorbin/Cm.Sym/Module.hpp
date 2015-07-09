@@ -49,6 +49,7 @@ public:
         std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths);
     void Dump();
     void CheckUpToDate();
+    void BuildSymbolTable(SymbolTable& symbolTable);
 private:
     std::string name;
     std::string filePath;

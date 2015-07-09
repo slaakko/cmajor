@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Argument.hpp" />
+    <ClInclude Include="ArrayTypeOpRepository.hpp" />
     <ClInclude Include="BasicTypeOp.hpp" />
     <ClInclude Include="CDebugInfo.hpp" />
     <ClInclude Include="ClassConversionTable.hpp" />
@@ -46,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Argument.cpp" />
+    <ClCompile Include="ArrayTypeOpRepository.cpp" />
     <ClCompile Include="BasicTypeOp.cpp" />
     <ClCompile Include="CDebugInfo.cpp" />
     <ClCompile Include="ClassConversionTable.cpp" />

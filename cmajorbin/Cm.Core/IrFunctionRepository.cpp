@@ -51,6 +51,17 @@ Ir::Intf::Function* IrFunctionRepository::GetDoNothingFunction()
     return doNothingFunction.get();
 }
 
+Ir::Intf::Function* IrFunctionRepository::GetMemSetFunction()
+{
+    if (!memSetFunction)
+    {
+        Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1);
+        Own(i8Ptr);
+        memSetFunction.reset(Cm::IrIntf::CreateMemSetFunction(i8Ptr));
+    }
+    return memSetFunction.get();
+}
+
 Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymbol* function)
 {
     IrFunctionMapIt i = irFunctionMap.find(function);

@@ -29,14 +29,18 @@ public:
     bool ContainsExceptionCodeParam() const override;
     bool IsDoNothingFunction() const override { return isDoNothingFunction; }
     void SetDoNothingFunction() { isDoNothingFunction = true; }
+    bool IsMemSetFunction() const override { return isMemSetFunction; }
+    void SetMemSetFunction() { isMemSetFunction = true; }
 protected:
     std::string ParameterListStr() const override;
 private:
     bool isDoNothingFunction;
+    bool isMemSetFunction;
 };
 
 Ir::Intf::Function* CreateDoNothingFunction();
 Ir::Intf::Function* CreateDbgDeclareFunction();
+Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr);
 
 } // namespace Llvm
 

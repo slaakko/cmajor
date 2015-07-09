@@ -25,6 +25,7 @@ public:
     virtual void Generate(Emitter& emitter, GenResult& result) = 0;
     Ir::Intf::Type* GetIrType() const { return type->GetIrType(); }
     Ir::Intf::Object* GetDefaultIrValue() const { return type->GetDefaultIrValue(); }
+    virtual bool IsPrimitiveArrayTypeDefaultConstructor() const { return false; }
 private:
     Cm::Sym::TypeSymbol* type;
 };

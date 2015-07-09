@@ -558,6 +558,11 @@ std::string DotNode::ToString() const
     return s;
 }
 
+std::string DotNode::DocId() const
+{
+    return Child()->DocId() + "." + memberId->DocId();
+}
+
 void DotNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);

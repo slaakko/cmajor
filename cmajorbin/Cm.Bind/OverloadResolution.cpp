@@ -420,7 +420,7 @@ bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol
             Cm::Sym::TypeSymbol* plainArgumentType = argumentType->GetBaseType();
             if (argumentTypeDerivations.NumDerivations() > 0)
             {
-                plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), Cm::Parsing::Span());
+                plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), std::vector<int>(), Cm::Parsing::Span());
             }
             if (plainArgumentType->IsTemplateTypeSymbol())
             {
@@ -465,7 +465,7 @@ bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol
             Cm::Sym::TypeSymbol* plainArgumentType = argumentType->GetBaseType();
             if (argumentTypeDerivations.NumDerivations() > 0)
             { 
-                plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), Cm::Parsing::Span());
+                plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), std::vector<int>(), Cm::Parsing::Span());
             }
             if (Bind(boundCompileUnit, parameterType->GetBaseType(), plainArgumentType, templateArguments, boundType))
             {
@@ -632,6 +632,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     if ((flags & OverloadResolutionFlags::bindOnlyMemberFunctions) == OverloadResolutionFlags::none)
     {
         boundCompileUnit.DerivedTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
+        boundCompileUnit.ArrayTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, span, viableFunctions);
         boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
         boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
     }

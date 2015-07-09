@@ -24,6 +24,7 @@
 #include <Cm.Core/ConceptRepository.hpp>
 #include <Cm.Core/ExternalConstantRepository.hpp>
 #include <Cm.Core/InlineFunctionRepository.hpp>
+#include <Cm.Core/ArrayTypeOpRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -74,6 +75,8 @@ public:
     void SetDelegateTypeOpRepository(Cm::Core::DelegateTypeOpRepository* delegateTypeOpRepository_);
     Cm::Core::ClassDelegateTypeOpRepository& ClassDelegateTypeOpRepository() { return *classDelegateTypeOpRepository; }
     void SetClassDelegateTypeOpRepository(Cm::Core::ClassDelegateTypeOpRepository* classDelegateTypeOpRepository_);
+    Cm::Core::ArrayTypeOpRepository& ArrayTypeOpRepository() { return *arrayTypeOpRepository; }
+    void SetArrayTypeOpRepository(Cm::Core::ArrayTypeOpRepository* arrayTypeOpRepository_);
     Cm::Core::ConceptRepository& ConceptRepository() { return conceptRepository; }
     void AddBoundNode(BoundNode* boundNode);
     void Accept(Visitor& visitor);
@@ -118,6 +121,7 @@ private:
     std::unique_ptr<Cm::Core::InlineFunctionRepository> inlineFunctionRepository;
     std::unique_ptr<Cm::Core::DelegateTypeOpRepository> delegateTypeOpRepository;
     std::unique_ptr<Cm::Core::ClassDelegateTypeOpRepository> classDelegateTypeOpRepository;
+    std::unique_ptr<Cm::Core::ArrayTypeOpRepository> arrayTypeOpRepository;
     Cm::Core::ConceptRepository conceptRepository;
     std::vector<std::unique_ptr<BoundNode>> boundNodes;
     std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionSymbols;

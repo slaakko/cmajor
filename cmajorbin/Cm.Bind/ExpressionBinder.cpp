@@ -986,7 +986,23 @@ void ExpressionBinder::Visit(Cm::Ast::VoidNode& voidNode)
 void ExpressionBinder::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
     Cm::Sym::TypeSymbol* baseType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), derivedTypeExprNode.BaseTypeExprNode());
-    Cm::Sym::TypeSymbol* derivedTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan());
+    std::vector<int> arrayDimensions;
+    int n = derivedTypeExprNode.NumArrayDimensions();
+    if (n > 0)
+    {
+        for (int i = 0; i < n; ++i)
+        {
+            Cm::Sym::Value* value = Evaluate(Cm::Sym::ValueType::intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository());
+            Cm::Sym::IntValue* intValue = static_cast<Cm::Sym::IntValue*>(value);
+            int arrayDimension = intValue->Value();
+            if (arrayDimension <= 0)
+            {
+                throw Cm::Core::Exception("array dimension must be positive", derivedTypeExprNode.GetSpan());
+            }
+            arrayDimensions.push_back(arrayDimension);
+        }
+    }
+    Cm::Sym::TypeSymbol* derivedTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, arrayDimensions, derivedTypeExprNode.GetSpan());
     Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&derivedTypeExprNode, derivedTypeSymbol);
     typeExpression->SetType(derivedTypeSymbol);
     boundExpressionStack.Push(typeExpression);

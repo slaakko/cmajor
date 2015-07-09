@@ -20,6 +20,7 @@ class IrFunctionRepository
 public:
     IrFunctionRepository();
     Ir::Intf::Function* GetDoNothingFunction();
+    Ir::Intf::Function* GetMemSetFunction();
     Ir::Intf::Function* CreateIrFunction(Cm::Sym::FunctionSymbol* function);
     Ir::Intf::Object* GetFunctionId(Cm::Sym::FunctionSymbol* function, Cm::Sym::TypeSymbol* functionPtrPtrType);
     Ir::Intf::Type* CreateIrPointerToDelegateType(Cm::Sym::DelegateTypeSymbol* delegateType);
@@ -37,6 +38,7 @@ private:
     IrFunTypeMap irFunPtrMap;
     FunctionIdMap functionIdMap;
     std::unique_ptr<Ir::Intf::Function> doNothingFunction;
+    std::unique_ptr<Ir::Intf::Function> memSetFunction;
     std::vector<std::unique_ptr<Ir::Intf::Function>> ownedIrFunctions;
     std::vector<std::unique_ptr<Ir::Intf::Type>> ownedIrTypes;
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedObjects;

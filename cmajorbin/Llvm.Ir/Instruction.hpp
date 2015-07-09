@@ -249,20 +249,20 @@ class AllocaInst: public Ir::Intf::Instruction
 {
 public:
     AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_);
-    AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Type* elementType_, int numElements_);
+    AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Type* numElementsType_, int numElements_);
     void SetAlignment(int alignment_) override;
     std::string ToString() const override;
     Ir::Intf::Object* GetResult() const override { return result; }
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
-    Ir::Intf::Type* elementType;
+    Ir::Intf::Type* numElementsType;
     int numElements;
     int alignment;
 };
 
 Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result);
-Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* elementType, int numElements);
+Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* numElementsType, int numElements);
 
 class LoadInst: public Ir::Intf::Instruction
 {
@@ -516,6 +516,21 @@ private:
 };
 
 Ir::Intf::Instruction* DbgDeclare(Ir::Intf::Object* variable, Ir::Intf::MetadataNode* descriptor);
+
+class MemSetInst : public Ir::Intf::Instruction
+{
+public:
+    MemSetInst(Ir::Intf::Object* dest_, Ir::Intf::Object* value_, Ir::Intf::Object* len_, int align_, bool isVolatile_);
+    std::string ToString() const override;
+private:
+    Ir::Intf::Object* dest;
+    Ir::Intf::Object* value;
+    Ir::Intf::Object* len;
+    int align;
+    bool isVolatile;
+};
+
+Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile);
 
 } // namespace Llvm
 

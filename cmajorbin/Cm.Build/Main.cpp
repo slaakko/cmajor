@@ -19,6 +19,7 @@
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/InlineFunctionRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
+#include <Cm.Bind/ArrayTypeOpRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
@@ -63,6 +64,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     mainCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(mainCompileUnit));
     mainCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(mainCompileUnit));
     mainCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(mainCompileUnit));
+    mainCompileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(mainCompileUnit));
     objectFilePaths.push_back(mainCompileUnit.ObjectFilePath());
     if (!changed)
     {

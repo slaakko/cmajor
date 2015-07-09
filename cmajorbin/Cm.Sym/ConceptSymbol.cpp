@@ -72,6 +72,16 @@ void ConceptSymbol::Dump(CodeFormatter& formatter)
     ContainerSymbol::Dump(formatter);
 }
 
+std::string ConceptSymbol::DocId() const
+{
+    std::string docId = groupName;
+    for (TypeParameterSymbol* typeParam : typeParameters)
+    {
+        docId.append(1, '.').append(typeParam->FullDocId());
+    }
+    return docId;
+}
+
 std::string MakeInstantiatedConceptSymbolName(ConceptSymbol* conceptSymbol, const std::vector<TypeSymbol*>& typeArguments)
 {
     std::string s = conceptSymbol->GroupName();

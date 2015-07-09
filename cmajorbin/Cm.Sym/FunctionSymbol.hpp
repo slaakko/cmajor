@@ -232,6 +232,8 @@ public:
     FunctionSymbol* OverriddenFunction() const { return overriddenFunction; }
     std::unordered_set<FunctionSymbol*> OverrideSet() const { return overrideSet; }
     void AddToOverrideSet(FunctionSymbol* overrideFun);
+    void SetConstraintDocId(const std::string& constraintDocId_);
+    std::string FullDocId() const override;
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
@@ -247,6 +249,7 @@ private:
     int mutexId;
     FunctionSymbol* overriddenFunction;
     std::unordered_set<FunctionSymbol*> overrideSet;
+    std::string constraintDocId;
     bool GetFlag(FunctionSymbolFlags flag) const
     {
         return (flags & flag) != FunctionSymbolFlags::none;

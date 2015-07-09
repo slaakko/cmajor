@@ -28,6 +28,7 @@ public:
     int Index() const { return index; }
     void SetIndex(int index_) { index = index_; }
     std::string FullName() const override {return Name(); }
+    std::string FullDocId() const override { return Name(); }
     void Dump(CodeFormatter& formatter) override;
 private:
     int index;

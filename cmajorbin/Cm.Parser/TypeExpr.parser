@@ -14,6 +14,7 @@
  [cpp]#include <Cm.Parser/BasicType.hpp>
  [cpp]#include <Cm.Parser/Identifier.hpp>
  [cpp]#include <Cm.Parser/Template.hpp>
+ [cpp]#include <Cm.Parser/Expression.hpp>
  
  namespace Cm.Parser
  {
@@ -25,6 +26,7 @@
         using IdentifierGrammar.Identifier;
         using IdentifierGrammar.QualifiedId;
         using TemplateGrammar.TemplateId;
+        using ExpressionGrammar.Expression;
 
         TypeExpr(ParsingContext* ctx, var std::unique_ptr<DerivedTypeExprNode> node): Cm::Ast::Node*
             ::= empty{ ctx->BeginParsingTypeExpr(); node.reset(new DerivedTypeExprNode(span)); }
@@ -33,7 +35,7 @@
 
         PrefixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node)
             ::= keyword("const"){ node->AddConst(); } PostfixTypeExpr(ctx, node):c
-            |    PostfixTypeExpr(ctx, node)
+            |   PostfixTypeExpr(ctx, node)
             ;
 
         PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node, var Span s)
@@ -42,6 +44,7 @@
             |   "&&"{ node->AddRvalueRef(); }
             |    '&'{ node->AddReference(); }
             |    '*'{ node->AddPointer(); }
+            |   '['{ node->AddArray(); } Expression(ctx):dim{node->AddArrayDimensionNode(dim); } ']'
             )*
             ;
 

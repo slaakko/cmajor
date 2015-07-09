@@ -27,11 +27,11 @@ public:
     void BeginParsingTemplateId();
     void EndParsingTemplateId();
     bool ParsingSimpleStatement() const { return parsingSimpleStatement; }
-    void BeginParsingSimpleStatement();
-    void EndParsingSimpleStatement();
+    void PushParsingSimpleStatement(bool enable);
+    void PopParsingSimpleStatement();
     bool ParsingLvalue() const { return parsingLvalue; }
-    void BeginParsingLvalue();
-    void EndParsingLvalue();
+    void PushParsingLvalue(bool enable);
+    void PopParsingLvalue();
     bool ParsingArguments() const { return parsingArguments; }
     void BeginParsingArguments();
     void EndParsingArguments();

@@ -24,7 +24,8 @@ enum class GlobalFlags : uint16_t
     debug_heap = 1 << 5,
     clean = 1 << 6,
     unit_test = 1 << 7,
-    generate_debug_info = 1 << 8
+    generate_debug_info = 1 << 8,
+    generate_docs = 1 << 9
 };
 
 inline GlobalFlags operator|(GlobalFlags left, GlobalFlags right)

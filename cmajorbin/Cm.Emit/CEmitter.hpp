@@ -12,7 +12,6 @@
 #include <Cm.Emit/Emitter.hpp>
 #include <Cm.Core/CDebugInfo.hpp>
 
-
 namespace Cm { namespace Emit {
 
 class CEmitter : public Emitter

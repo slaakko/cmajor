@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArrayTypeOpRepository.hpp" />
     <ClInclude Include="Binder.hpp" />
     <ClInclude Include="Class.hpp" />
     <ClInclude Include="ClassDelegateTypeOpRepository.hpp" />
@@ -48,6 +49,7 @@
     <ClInclude Include="VirtualBinder.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ArrayTypeOpRepository.cpp" />
     <ClCompile Include="Binder.cpp" />
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="ClassDelegateTypeOpRepository.cpp" />

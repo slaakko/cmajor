@@ -13,6 +13,7 @@
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Clone.hpp>
@@ -141,11 +142,21 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Core::FunctionTemplateRepository& funct
         functionTemplateInstance->SetName(functionTemplateInstance->Name() + " " + constraintStr);
     }
     prebinder.EndCompileUnit();
-    Cm::Sym::FileScope* fileScope = prebinder.ReleaseFileScope();
-    boundCompileUnit.AddFileScope(fileScope);
-    Binder binder(boundCompileUnit);
-    globalNs->Accept(binder);
-    boundCompileUnit.RemoveLastFileScope();
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs))
+    {
+        if (functionTemplate->Constraint())
+        {
+            functionTemplateInstance->SetConstraintDocId(functionTemplate->Constraint()->DocId());
+        }
+    }
+    else
+    {
+        Cm::Sym::FileScope* fileScope = prebinder.ReleaseFileScope();
+        boundCompileUnit.AddFileScope(fileScope);
+        Binder binder(boundCompileUnit);
+        globalNs->Accept(binder);
+        boundCompileUnit.RemoveLastFileScope();
+    }
     functionTemplateInstance->SetGlobalNs(globalNs.release());
     return functionTemplateInstance;
 }

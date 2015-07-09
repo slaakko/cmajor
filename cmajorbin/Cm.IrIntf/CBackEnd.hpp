@@ -46,6 +46,8 @@ public:
     Ir::Intf::Function* CreateFunction(const std::string& name, Ir::Intf::Type* returnType, const std::vector<Ir::Intf::Parameter*>& parameters) override;
     Ir::Intf::Function* CreateDoNothingFunction() override;
     Ir::Intf::Function* CreateDbgDeclareFunction() override;
+    Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr) override;
+    Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile) override;
     void ResetLocalLabelCounter() override;
     std::string MakeAssemblyName(const std::string& name) override;
     std::string MakeClassNameAssemblyName(const std::string& fullClassName) override;
@@ -140,7 +142,7 @@ public:
     Ir::Intf::Instruction* Br(Ir::Intf::Object* cond, Ir::Intf::LabelObject* trueLabel, Ir::Intf::LabelObject* falseLabel) override;
     Ir::Intf::Instruction* Switch(Ir::Intf::Type* integerType, Ir::Intf::Object* value, Ir::Intf::LabelObject* defaultDest, const std::vector<std::pair<Ir::Intf::Object*, Ir::Intf::LabelObject*>>& destinations) override;
     Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result) override;
-    Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* elementType, int numElements) override;
+    Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* numElementsType, int numElements) override;
     Ir::Intf::Instruction* Load(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Object* ptr) override;
     Ir::Intf::Instruction* Load(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Object* ptr, Ir::Intf::Indirection leftIndirection, Ir::Intf::Indirection rightIndirection) override;
     Ir::Intf::Instruction* Store(Ir::Intf::Type* type, Ir::Intf::Object* value, Ir::Intf::Object* ptr) override;

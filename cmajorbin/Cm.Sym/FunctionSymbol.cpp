@@ -14,6 +14,7 @@
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Clone.hpp>
 #include <stdexcept>
@@ -569,6 +570,47 @@ void FunctionSymbol::ComputeName()
     SetName(s);
 }
 
+std::string FunctionSymbol::FullDocId() const
+{
+    std::string fullDocId;
+    Symbol* p = Parent();
+    if (p)
+    {
+        fullDocId = p->FullDocId();
+    }
+    if (!fullDocId.empty())
+    {
+        fullDocId.append(1, '.');
+    }
+    fullDocId.append(Cm::Sym::MakeGroupDocId(groupName));
+    if (!typeParameters.empty())
+    {
+        for (TypeParameterSymbol* typeParam : typeParameters)
+        {
+            fullDocId.append(1, '.').append(typeParam->Name());
+        }
+    }
+    if (!typeArguments.empty())
+    {
+        for (TypeSymbol* typeArgument : typeArguments)
+        {
+            fullDocId.append(1, '.').append(typeArgument->Name());
+        }
+    }
+    if (!IsFunctionTemplate())
+    {
+        for (ParameterSymbol* parameter : parameters)
+        {
+            fullDocId.append(1, '.').append(parameter->GetType()->FullDocId());
+        }
+    }
+    if (!constraintDocId.empty())
+    {
+        fullDocId.append(1, '.').append(constraintDocId);
+    }
+    return fullDocId;
+}
+
 TypeSymbol* FunctionSymbol::GetTargetType() const
 {
     if (IsConvertingConstructor())
@@ -745,6 +787,11 @@ void FunctionSymbol::AddToOverrideSet(FunctionSymbol* overrideFun)
     {
         overriddenFunction->AddToOverrideSet(overrideFun);
     }
+}
+
+void FunctionSymbol::SetConstraintDocId(const std::string& constraintDocId_)
+{
+    constraintDocId = constraintDocId_;
 }
 
 } } // namespace Cm::Sym

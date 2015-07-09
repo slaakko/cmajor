@@ -176,4 +176,14 @@ void ContainerSymbol::InitVirtualFunctionTables()
     }
 }
 
+void ContainerSymbol::Collect(SymbolCollector& collector)
+{
+    Symbol::Collect(collector);
+    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    {
+        symbol->Collect(collector);
+    }
+    collector.EndContainer();
+}
+
 } } // namespace Cm::Sym
