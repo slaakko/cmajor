@@ -58,6 +58,8 @@ public:
     virtual Ir::Intf::Function* CreateFunction(const std::string& name, Ir::Intf::Type* returnType, const std::vector<Ir::Intf::Parameter*>& parameters) = 0;
     virtual Ir::Intf::Function* CreateDoNothingFunction() = 0;
     virtual Ir::Intf::Function* CreateDbgDeclareFunction() = 0;
+    virtual Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr) = 0;
+    virtual Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile) = 0;
     virtual void ResetLocalLabelCounter() = 0;
     virtual std::string MakeAssemblyName(const std::string& name) = 0;
     virtual std::string MakeClassNameAssemblyName(const std::string& fullClassName) = 0;
@@ -152,7 +154,7 @@ public:
     virtual Ir::Intf::Instruction* Br(Ir::Intf::Object* cond, Ir::Intf::LabelObject* trueLabel, Ir::Intf::LabelObject* falseLabel) = 0;
     virtual Ir::Intf::Instruction* Switch(Ir::Intf::Type* integerType, Ir::Intf::Object* value, Ir::Intf::LabelObject* defaultDest, const std::vector<std::pair<Ir::Intf::Object*, Ir::Intf::LabelObject*>>& destinations) = 0;
     virtual Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result) = 0;
-    virtual Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* elementType, int numElements) = 0;
+    virtual Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* numElementsType, int numElements) = 0;
     virtual Ir::Intf::Instruction* Load(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Object* ptr) = 0;
     virtual Ir::Intf::Instruction* Load(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Object* ptr, Ir::Intf::Indirection leftIndirection, Ir::Intf::Indirection rightIndirection) = 0;
     virtual Ir::Intf::Instruction* Store(Ir::Intf::Type* type, Ir::Intf::Object* value, Ir::Intf::Object* ptr) = 0;

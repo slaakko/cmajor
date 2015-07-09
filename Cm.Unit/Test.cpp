@@ -16,6 +16,7 @@
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
+#include <Cm.Bind/ArrayTypeOpRepository.hpp>
 #include <Cm.Parser/Project.hpp>
 #include <Cm.Parser/Solution.hpp>
 #include <Cm.Parser/CompileUnit.hpp>
@@ -243,6 +244,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
     prebindCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(prebindCompileUnit));
     prebindCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(prebindCompileUnit));
+    prebindCompileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(prebindCompileUnit));
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
     Cm::Bind::Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository());
     testUnit->Accept(prebinder);
@@ -262,6 +264,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
     boundCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(boundCompileUnit));
     boundCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(boundCompileUnit));
+    boundCompileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(boundCompileUnit));
     boundCompileUnit.AddFileScope(fileScopes[0].release());
     Cm::Build::Bind(testUnit, boundCompileUnit);
     if (boundCompileUnit.HasGotos())

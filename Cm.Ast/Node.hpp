@@ -110,6 +110,7 @@ public:
     void SetParent(Node* parent_) { parent = parent_; }
     virtual std::string Name() const;
     std::string FullName() const;
+    virtual std::string DocId() const { return Name(); }
     virtual void Accept(Visitor& visitor);
     virtual FunctionNode* GetFunction() const;
 private:

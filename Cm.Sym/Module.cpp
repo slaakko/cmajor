@@ -30,11 +30,11 @@ ModuleFileFormatError::ModuleFileFormatError(const std::string& filePath_) : std
 }
 
 ModuleFileVersionMismatch::ModuleFileVersionMismatch(const std::string& readVersion_, const std::string& expectedVersion_) : 
-    std::runtime_error("library file version mismatch: " + readVersion_ + " read, " + expectedVersion_ + " expected."), readVersion(readVersion_), expectedVersion(expectedVersion_)
+    std::runtime_error("library file version mismatch: " + readVersion_ + " read, " + expectedVersion_ + " expected, please rebuild."), readVersion(readVersion_), expectedVersion(expectedVersion_)
 {
 }
 
-const char moduleFileId[4] = { 'M', 'C', '1', '0' };
+const char moduleFileId[4] = { 'M', 'C', '1', '1' };
 
 Module::Module(const std::string& filePath_) : filePath(filePath_)
 {
@@ -406,6 +406,74 @@ void Module::CheckUpToDate()
                 std::cout << "warning: " << warningMessage << std::endl;
                 CompileWarningCollection::Instance().AddWarning(Warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage));
             }
+        }
+    }
+}
+
+void Module::BuildSymbolTable(SymbolTable& symbolTable)
+{
+    Reader reader(filePath, symbolTable);
+    char readModuleFileId[4];
+    try
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            readModuleFileId[i] = reader.GetBinaryReader().ReadChar();
+        }
+    }
+    catch (...)
+    {
+        throw std::runtime_error("corrupted module code file '" + filePath + "'");
+    }
+    std::string readVersion(1, readModuleFileId[2]);
+    readVersion.append(".").append(1, readModuleFileId[3]);
+    std::string expectedVersion(1, moduleFileId[2]);
+    expectedVersion.append(".").append(1, moduleFileId[3]);
+    ReadName(reader);
+    ReadSourceFilePaths(reader);
+    ReadReferenceFilePaths(reader);
+    ReadCLibraryFilePaths(reader);
+    ReadDebugInfoFilePaths(reader);
+    std::unordered_set<std::string> importedModules;
+    std::vector<std::string> assemblyFilePaths;
+    std::vector<std::string> cLibs;
+    std::vector<std::string> allReferenceFilePaths;
+    std::vector<std::string> allDebugInfoFilePaths;
+    for (const std::string& referenceFilePath : referenceFilePaths)
+    {
+        if (importedModules.find(referenceFilePath) == importedModules.end())
+        {
+            importedModules.insert(referenceFilePath);
+            Module referencedModule(referenceFilePath);
+            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+        }
+    }
+    reader.MarkSymbolsProject();
+    symbolTable.Import(reader, false);
+    int32_t nt = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < nt; ++i)
+    {
+        Symbol* symbol = reader.ReadSymbol();
+        if (symbol->IsTemplateTypeSymbol())
+        {
+            TemplateTypeSymbol* templateTypeSymbol = static_cast<TemplateTypeSymbol*>(symbol);
+        }
+        else
+        {
+            throw std::runtime_error("template type symbol expected");
+        }
+    }
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Symbol* symbol = reader.ReadSymbol();
+        if (symbol->IsTypeSymbol())
+        {
+            TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
+        }
+        else
+        {
+            throw std::runtime_error("type symbol expected");
         }
     }
 }

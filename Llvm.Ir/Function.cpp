@@ -12,6 +12,7 @@
 #include <Llvm.Ir/Instruction.hpp>
 #include <Llvm.Ir/Parameter.hpp>
 #include <Llvm.Ir/Factory.hpp>
+#include <Llvm.Ir/Type.hpp>
 
 namespace Llvm { 
 
@@ -153,6 +154,18 @@ Ir::Intf::Function* CreateDbgDeclareFunction()
     parameters.push_back(new Parameter("description", metadataType));
     Ir::Intf::Function* dbgDeclareFun(new Function("llvm.dbg.declare", Ir::Intf::GetFactory()->GetVoid(), parameters));
     return dbgDeclareFun;
+}
+
+Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
+{
+    std::vector<Ir::Intf::Parameter*> parameters;
+    parameters.push_back(new Parameter("dest", i8Ptr));
+    parameters.push_back(new Parameter("value", Ir::Intf::GetFactory()->GetI8()));
+    parameters.push_back(new Parameter("len", Ir::Intf::GetFactory()->GetI64()));
+    parameters.push_back(new Parameter("align", Ir::Intf::GetFactory()->GetI32()));
+    parameters.push_back(new Parameter("isVolatile", Ir::Intf::GetFactory()->GetI1()));
+    Function* memSetFun(new Function("llvm.memset.p0i8.i64", Ir::Intf::GetFactory()->GetVoid(), parameters));
+    return memSetFun;
 }
 
 } // namespace Llvm

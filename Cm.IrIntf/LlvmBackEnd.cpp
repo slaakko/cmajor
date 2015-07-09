@@ -186,6 +186,16 @@ Ir::Intf::Function* LlvmBackEnd::CreateDbgDeclareFunction()
     return Llvm::CreateDbgDeclareFunction();
 }
 
+Ir::Intf::Function* LlvmBackEnd::CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
+{
+    return Llvm::CreateMemSetFunction(i8Ptr);
+}
+
+Ir::Intf::Instruction* LlvmBackEnd::MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return Llvm::MemSet(dest, value, len, align, isVolatile);
+}
+
 void LlvmBackEnd::ResetLocalLabelCounter()
 {
     Llvm::ResetLocalLabelCounter();
@@ -674,9 +684,9 @@ Ir::Intf::Instruction* LlvmBackEnd::Alloca(Ir::Intf::Type* type, Ir::Intf::Objec
     return Llvm::Alloca(type, result);
 }
 
-Ir::Intf::Instruction* LlvmBackEnd::Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* elementType, int numElements)
+Ir::Intf::Instruction* LlvmBackEnd::Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* numElementsType, int numElements)
 {
-    return Llvm::Alloca(type, result, elementType, numElements);
+    return Llvm::Alloca(type, result, numElementsType, numElements);
 }
 
 Ir::Intf::Instruction* LlvmBackEnd::Load(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Object* ptr)

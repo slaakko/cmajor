@@ -185,6 +185,16 @@ Ir::Intf::Function* CBackEnd::CreateDbgDeclareFunction()
     throw std::runtime_error("member function not applicable to C backend");
 }
 
+Ir::Intf::Function* CBackEnd::CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
+{
+    throw std::runtime_error("not implemented in C backend yet");
+}
+
+Ir::Intf::Instruction* CBackEnd::MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    throw std::runtime_error("not implemented in C backend yet");
+}
+
 void CBackEnd::ResetLocalLabelCounter()
 {
     C::ResetLocalLabelCounter();
@@ -674,9 +684,9 @@ Ir::Intf::Instruction* CBackEnd::Alloca(Ir::Intf::Type* type, Ir::Intf::Object* 
     return C::Alloca(type, result);
 }
 
-Ir::Intf::Instruction* CBackEnd::Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* elementType, int numElements)
+Ir::Intf::Instruction* CBackEnd::Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* numElementsType, int numElements)
 {
-    return C::Alloca(type, result, elementType, numElements);
+    return C::Alloca(type, result, numElementsType, numElements);
 }
 
 Ir::Intf::Instruction* CBackEnd::Load(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Object* ptr)

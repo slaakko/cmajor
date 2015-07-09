@@ -230,7 +230,17 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     for (Cm::Sym::ParameterSymbol* parameter : boundFunction.GetFunctionSymbol()->Parameters())
     {
         Ir::Intf::Object* localVariableIrObject = localVariableIrObjectRepository.CreateLocalVariableIrObjectFor(parameter);
-        emitter->Emit(Cm::IrIntf::Alloca(parameter->GetType()->GetIrType(), localVariableIrObject));
+        Cm::Sym::TypeSymbol* parameterType = parameter->GetType();
+        Ir::Intf::Type* parameterIrType = parameterType->GetIrType();
+        if (parameterType->IsArrayType())
+        {
+            parameterIrType = parameterType->GetBaseType()->GetIrType();
+            emitter->Emit(Cm::IrIntf::Alloca(parameterIrType, localVariableIrObject, Ir::Intf::GetFactory()->GetI32(), parameterType->GetLastArrayDimension()));
+        }
+        else
+        {
+            emitter->Emit(Cm::IrIntf::Alloca(parameterIrType, localVariableIrObject));
+        }
         if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol() && !currentFunction->GetFunctionSymbol()->IsStatic() && parameterIndex == 0)
         {
             thisParam = parameter;
@@ -241,7 +251,17 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     for (Cm::Sym::LocalVariableSymbol* localVariable : boundFunction.LocalVariables())
     {
         Ir::Intf::Object* localVariableIrObject = localVariableIrObjectRepository.CreateLocalVariableIrObjectFor(localVariable);
-        emitter->Emit(Cm::IrIntf::Alloca(localVariable->GetType()->GetIrType(), localVariableIrObject));
+        Cm::Sym::TypeSymbol* localVariableType = localVariable->GetType();
+        Ir::Intf::Type* localVariableIrType = localVariableType->GetIrType();
+        if (localVariableType->IsArrayType())
+        {
+            localVariableIrType = localVariableType->GetBaseType()->GetIrType();
+            emitter->Emit(Cm::IrIntf::Alloca(localVariableIrType, localVariableIrObject, Ir::Intf::GetFactory()->GetI32(), localVariableType->GetLastArrayDimension()));
+        }
+        else
+        {
+            emitter->Emit(Cm::IrIntf::Alloca(localVariableIrType, localVariableIrObject));
+        }
     }
 
     Ir::Intf::Object* zero = Ir::Intf::GetFactory()->GetI32()->CreateDefaultValue();
@@ -2653,6 +2673,10 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::
     {
         Cm::Core::BasicTypeOp* op = static_cast<Cm::Core::BasicTypeOp*>(fun);
         op->Generate(*emitter, result);
+        if (op->IsPrimitiveArrayTypeDefaultConstructor())
+        {
+            externalFunctions.insert(irFunctionRepository.GetMemSetFunction());
+        }
     }
     else
     {

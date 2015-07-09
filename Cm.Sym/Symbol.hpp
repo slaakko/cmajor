@@ -95,6 +95,16 @@ inline SymbolFlags operator&(SymbolFlags left, SymbolFlags right)
     return SymbolFlags(uint8_t(left) & uint8_t(right));
 }
 
+class Symbol;
+
+class SymbolCollector
+{
+public:
+    virtual ~SymbolCollector();
+    virtual void Add(Symbol* symbol) = 0;
+    virtual void EndContainer() = 0;
+};
+
 class Symbol
 {
 public:
@@ -181,6 +191,9 @@ public:
     virtual void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes);
     virtual void InitVirtualFunctionTables();
     virtual void MakeIrType();
+    virtual std::string DocId() const { return name; }
+    virtual std::string FullDocId() const;
+    virtual void Collect(SymbolCollector& collector);
 private:
     Span span;
     std::string name;

@@ -10,10 +10,12 @@
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/Typedef.hpp>
+#include <Cm.Bind/Evaluator.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Expression.hpp>
 
@@ -279,7 +281,8 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
     {
         return;
     }
-    if (typeSymbol->IsClassTypeSymbol() || typeSymbol->IsNamespaceTypeSymbol())
+    bool generateDocs = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs);
+    if (typeSymbol->IsClassTypeSymbol() || typeSymbol->IsNamespaceTypeSymbol() || generateDocs && typeSymbol->IsTypeParameterSymbol())
     {
         if (typeSymbol->IsTemplateTypeSymbol())
         {
@@ -290,7 +293,7 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
             }
         }
         Cm::Sym::Scope* containerScope = nullptr;
-        if (typeSymbol->IsClassTypeSymbol())
+        if (typeSymbol->IsClassTypeSymbol() || generateDocs && typeSymbol->IsTypeParameterSymbol())
         {
             containerScope = typeSymbol->GetContainerScope();
         }
@@ -304,6 +307,12 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
         if (symbol)
         {
             ResolveSymbol(&dotNode, symbol);
+        }
+        else if (generateDocs && typeSymbol->IsTypeParameterSymbol())
+        {
+            symbol = new Cm::Sym::TypeParameterSymbol(dotNode.GetSpan(), memberName);
+            typeSymbol->AddSymbol(symbol);
+            typeSymbol = static_cast<Cm::Sym::TypeSymbol*>(symbol);
         }
         else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
         {
@@ -332,7 +341,31 @@ void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
         typeSymbol = nullptr;
         return;
     }
-    typeSymbol = symbolTable.GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, derivedTypeExprNode.GetSpan());
+    std::vector<int> arrayDimensions;
+    int n = derivedTypeExprNode.NumArrayDimensions();
+    if (n > 0)
+    {
+        for (int i = 0; i < n; ++i)
+        {
+            Cm::Sym::Value* value = Evaluate(Cm::Sym::ValueType::intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), symbolTable, currentContainerScope, fileScopes, classTemplateRepository);
+            Cm::Sym::IntValue* intValue = static_cast<Cm::Sym::IntValue*>(value);
+            int arrayDimension = intValue->Value();
+            if (arrayDimension <= 0)
+            {
+                if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
+                {
+                    throw Cm::Core::Exception("array dimension must be positive", derivedTypeExprNode.GetSpan());
+                }
+                else
+                {
+                    typeSymbol = nullptr;
+                    return;
+                }
+            }
+            arrayDimensions.push_back(arrayDimension);
+        }
+    }
+    typeSymbol = symbolTable.GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, arrayDimensions, derivedTypeExprNode.GetSpan());
 }
 
 Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 

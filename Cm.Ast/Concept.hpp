@@ -84,6 +84,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::disjunctiveConstraintNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
+    std::string DocId() const override;
     void Accept(Visitor& visitor) override;
 };
 
@@ -95,6 +96,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::conjunctiveConstraintNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override;
+    std::string DocId() const override;
     void Accept(Visitor& visitor) override;
 };
 
@@ -108,6 +110,7 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
+    std::string DocId() const override;
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<ConstraintNode> constraint;
@@ -123,6 +126,7 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
+    std::string DocId() const override;
     Node* TypeExpr() const { return typeExpr.get(); }
     Node* ConceptOrTypeName() const { return conceptOrTypeName.get();  }
     void Accept(Visitor& visitor) override;
@@ -142,6 +146,7 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
+    std::string DocId() const override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* ConceptId() const { return conceptId.get(); }
     const NodeList& TypeExprNodes() const { return typeExprNodes; }

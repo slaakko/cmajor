@@ -14,7 +14,7 @@
 
 namespace Cm { namespace Sym {
 
-TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations)
+TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations, const std::vector<int>& arrayDimensions)
 {
     TypeId id = baseType->Id();
     int m = derivations.NumDerivations();
@@ -22,6 +22,20 @@ TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList&
     {
         uint8_t derivationCode = 1 << uint8_t(derivations[i]);
         id.Rep().Tag().data[i + 1] ^= derivationCode;
+    }
+    int b = 5;
+    int n = int(arrayDimensions.size());
+    for (int i = 0; i < n; ++i)
+    {
+        int arrayDimension = arrayDimensions[i];
+        uint8_t d0 = (arrayDimension >> 24) & 0xFF;
+        uint8_t d1 = (arrayDimension >> 16) & 0xFF;
+        uint8_t d2 = (arrayDimension >> 8) & 0xFF;
+        uint8_t d3 = arrayDimension & 0xFF;
+        id.Rep().Tag().data[b + i] ^= d0;
+        id.Rep().Tag().data[b + i + 1] ^= d1;
+        id.Rep().Tag().data[b + i + 2] ^= d2;
+        id.Rep().Tag().data[b + i + 3] ^= d3;
     }
     id.InvalidateHashCode();
     return id;
@@ -56,6 +70,22 @@ int CountPointers(const Cm::Ast::DerivationList& derivations)
     for (uint8_t i = 0; i < n; ++i)
     {
         if (derivations[i] == Cm::Ast::Derivation::pointer) ++numPointers;
+    }
+    return numPointers;
+}
+
+int CountPointersAfterArray(const Cm::Ast::DerivationList& derivations)
+{
+    int numPointers = 0;
+    uint8_t n = derivations.NumDerivations();
+    if (n > 0)
+    {
+        for (uint8_t i = n - 1; i >= 0; --i)
+        {
+            Cm::Ast::Derivation d = derivations[i];
+            if (d == Cm::Ast::Derivation::pointer) ++numPointers;
+            else if (d == Cm::Ast::Derivation::array_) break;
+        }
     }
     return numPointers;
 }
@@ -131,6 +161,16 @@ bool HasConstPointerPointerDerivation(const Cm::Ast::DerivationList& derivations
     return n == 3 && derivations[0] == Cm::Ast::Derivation::const_ && derivations[1] == Cm::Ast::Derivation::pointer && derivations[2] == Cm::Ast::Derivation::pointer;;
 }
 
+bool HasPointerToArrayDerivation(const Cm::Ast::DerivationList& derivations)
+{
+    uint8_t n = derivations.NumDerivations();
+    if (n > 1)
+    {
+        if (derivations[n - 1] == Cm::Ast::Derivation::pointer && derivations[n - 2] == Cm::Ast::Derivation::array_) return true;
+    }
+    return false;
+}
+
 DerivationCounts CountDerivations(const Cm::Ast::DerivationList& derivations)
 {
     DerivationCounts counts;
@@ -148,10 +188,11 @@ DerivationCounts CountDerivations(const Cm::Ast::DerivationList& derivations)
     return counts;
 }
 
-std::string MakeMangleId(const Cm::Ast::DerivationList& derivations)
+std::string MakeMangleId(const Cm::Ast::DerivationList& derivations, const std::vector<int>& arrayDimensions)
 {
     std::string mangleId;
     uint8_t n = derivations.NumDerivations();
+    int arrayDimIndex = 0;
     for (uint8_t i = 0; i < n; ++i)
     {
         switch (derivations[i])
@@ -162,29 +203,56 @@ std::string MakeMangleId(const Cm::Ast::DerivationList& derivations)
             case Cm::Ast::Derivation::pointer: mangleId.append(1, 'P'); break;
             case Cm::Ast::Derivation::leftParen: mangleId.append("l"); break;
             case Cm::Ast::Derivation::rightParen: mangleId.append("r"); break;
+            case Cm::Ast::Derivation::array_: mangleId.append("a").append(std::to_string(arrayDimensions[arrayDimIndex++])); break;
         }
     }
     return mangleId;
 }
 
-DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), baseType(nullptr)
+DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_), baseType(nullptr), arrayDimensions()
 {
 }
 
-DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* baseType_, const Cm::Ast::DerivationList& derivations_, const TypeId& id_) : 
-    TypeSymbol(span_, name_, id_), baseType(baseType_), derivations(derivations_)
+DerivedTypeSymbol::DerivedTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* baseType_, const Cm::Ast::DerivationList& derivations_, const std::vector<int>& arrayDimensions_, 
+    const TypeId& id_) :
+    TypeSymbol(span_, name_, id_), baseType(baseType_), derivations(derivations_), arrayDimensions(arrayDimensions_)
 {
     baseType->AddDependentType(this);
 }
 
 std::string DerivedTypeSymbol::GetMangleId() const
 {
-    return MakeMangleId(derivations) + baseType->GetMangleId();
+    return MakeMangleId(derivations, arrayDimensions) + baseType->GetMangleId();
 }
 
 std::string DerivedTypeSymbol::FullName() const
 {
-    return Cm::Ast::MakeDerivedTypeName(derivations, baseType->FullName());
+    return Cm::Ast::MakeDerivedTypeName(derivations, baseType->FullName(), arrayDimensions);
+}
+
+std::string DerivedTypeSymbol::FullDocId() const
+{
+    std::string fullDocId;
+    int arrayDimIndex = 0;
+    int n = derivations.NumDerivations();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Ast::Derivation d = derivations[i];
+        switch (d)
+        {
+            case Cm::Ast::Derivation::const_: if (!fullDocId.empty()) fullDocId.append(1, '.'); fullDocId.append("C"); break;
+            case Cm::Ast::Derivation::pointer: if (!fullDocId.empty()) fullDocId.append(1, '.'); fullDocId.append("P"); break;
+            case Cm::Ast::Derivation::reference: if (!fullDocId.empty()) fullDocId.append(1, '.'); fullDocId.append("R"); break;
+            case Cm::Ast::Derivation::rvalueRef: if (!fullDocId.empty()) fullDocId.append(1, '.'); fullDocId.append("RR"); break;
+            case Cm::Ast::Derivation::array_: if (!fullDocId.empty()) fullDocId.append(1, '.'); fullDocId.append("a").append(std::to_string(arrayDimensions[arrayDimIndex++])); break;
+        }
+    }
+    if (!fullDocId.empty())
+    {
+        fullDocId.append(1, '.');
+    }
+    fullDocId.append(baseType->FullDocId());
+    return fullDocId;
 }
 
 Symbol* DerivedTypeSymbol::Parent() const 
@@ -202,6 +270,12 @@ void DerivedTypeSymbol::Write(Writer& writer)
     TypeSymbol::Write(writer);
     writer.Write(derivations);
     writer.Write(baseType->Id());
+    uint8_t n = uint8_t(arrayDimensions.size());
+    writer.GetBinaryWriter().Write(n);
+    for (uint8_t i = 0; i < n; ++i)
+    {
+        writer.GetBinaryWriter().Write(arrayDimensions[i]);
+    }
 }
 
 void DerivedTypeSymbol::Read(Reader& reader)
@@ -210,6 +284,12 @@ void DerivedTypeSymbol::Read(Reader& reader)
     derivations = reader.ReadDerivationList();
     reader.FetchTypeFor(this, 0);
     reader.EnqueueMakeIrTypeFor(this);
+    uint8_t n = reader.GetBinaryReader().ReadByte();
+    for (uint8_t i = 0; i < n; ++i)
+    {
+        int arrayDimension = reader.GetBinaryReader().ReadInt();
+        arrayDimensions.push_back(arrayDimension);
+    }
 }
 
 void DerivedTypeSymbol::SetType(TypeSymbol* type, int index)
@@ -226,7 +306,20 @@ void DerivedTypeSymbol::MakeIrType()
         throw std::runtime_error("base type not set for derived type");
     }
     baseType->MakeIrType();
-    SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
+    uint8_t n = uint8_t(arrayDimensions.size());
+    if (n > 0)
+    {
+        Cm::Ast::DerivationList deriv = derivations;
+        for (uint8_t i = 0; i < n; ++i)
+        {
+            deriv.Add(Cm::Ast::Derivation::pointer);
+        }
+        SetIrType(Cm::Sym::MakeIrType(baseType, deriv, Cm::Parsing::Span()));
+    }
+    else
+    {
+        SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
+    }
     if (IsPointerType())
     {
         SetDefaultIrValue(GetIrType()->CreateDefaultValue());

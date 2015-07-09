@@ -63,13 +63,13 @@ namespace Cm.Parser
             ;
 
         SimpleStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): Cm::Ast::StatementNode*
-            ::= (empty{ ctx->BeginParsingSimpleStatement(); } (Expression(ctx){ expr.reset(Expression); })? ';')
+            ::= (empty{ ctx->PushParsingSimpleStatement(true); } (Expression(ctx){ expr.reset(Expression); })? ';')
             { 
-                ctx->EndParsingSimpleStatement(); value = new SimpleStatementNode(span, expr.release()); 
+                ctx->PopParsingSimpleStatement(); value = new SimpleStatementNode(span, expr.release()); 
             } 
             / 
             { 
-                ctx->EndParsingSimpleStatement(); 
+                ctx->PopParsingSimpleStatement(); 
             }
             ;
 
@@ -182,7 +182,7 @@ namespace Cm.Parser
             ;
 
         AssignmentStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): Cm::Ast::StatementNode*
-            ::= empty{ ctx->BeginParsingLvalue(); } (Expression(ctx):target{ ctx->EndParsingLvalue(); targetExpr.reset(target); } / { ctx->EndParsingLvalue(); } '=' Expression(ctx):source! ';'!)
+            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source! ';'!)
                 {
                     value = new AssignmentStatementNode(span, targetExpr.release(), source);
                 }

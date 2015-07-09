@@ -228,4 +228,14 @@ void TemplateTypeSymbol::SetConstraint(Cm::Ast::WhereConstraintNode* constraint_
     constraint.reset(constraint_);
 }
 
+std::string TemplateTypeSymbol::FullDocId() const
+{
+    std::string fullDocId = subjectType->FullDocId();
+    for (Cm::Sym::TypeSymbol* typeArgument : typeArguments)
+    {
+        fullDocId.append(1, '.').append(typeArgument->FullDocId());
+    }
+    return fullDocId;
+}
+
 } } // namespace Cm::Sym

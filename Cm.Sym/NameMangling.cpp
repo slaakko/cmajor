@@ -19,11 +19,13 @@ public:
     static void Done();
     static FunctionGroupMangleMap& Instance();
     const std::string& MangleFunctionGroupName(const std::string& functionGroupName) const;
+    const std::string& GetFunctionGroupDocId(const std::string& functionGroupName) const;
 private:
     static std::unique_ptr<FunctionGroupMangleMap> instance;
     typedef std::unordered_map<std::string, std::string> MangleMap; 
     typedef MangleMap::const_iterator MangleMapIt;
     MangleMap mangledFunctionGroupNames;
+    MangleMap functionGroupDocIds;
     FunctionGroupMangleMap();
 };
 
@@ -70,12 +72,47 @@ FunctionGroupMangleMap::FunctionGroupMangleMap()
     mangledFunctionGroupNames["@constructor"] = "ct";
     mangledFunctionGroupNames["@destructor"] = "dt";
     mangledFunctionGroupNames["@static_constructor"] = "sc";
+
+    functionGroupDocIds["operator+"] = "operator.plus";
+    functionGroupDocIds["operator-"] = "operator.minus";
+    functionGroupDocIds["operator*"] = "operator.times";
+    functionGroupDocIds["operator/"] = "operator.divides";
+    functionGroupDocIds["operator%"] = "operator.remainder";
+    functionGroupDocIds["operator=="] = "operator.equal";
+    functionGroupDocIds["operator<"] = "operator.less";
+    functionGroupDocIds["operator!"] = "operator.not";
+    functionGroupDocIds["operator~"] = "operator.complement";
+    functionGroupDocIds["operator&"] = "operator.and";
+    functionGroupDocIds["operator|"] = "operator.or";
+    functionGroupDocIds["operator^"] = "operator.xor";
+    functionGroupDocIds["operator<<"] = "operator.shiftLeft";
+    functionGroupDocIds["operator>>"] = "operator.shiftRight";
+    functionGroupDocIds["operator->"] = "operator.pointer";
+    functionGroupDocIds["operator++"] = "operator.increment";
+    functionGroupDocIds["operator--"] = "operator.decrement";
+    functionGroupDocIds["operator="] = "operator.assign";
+    functionGroupDocIds["operator()"] = "operator.apply";
+    functionGroupDocIds["operator[]"] = "operator.index";
+    functionGroupDocIds["@operator_conv"] = "operator.convert";
+    functionGroupDocIds["@constructor"] = "constructor";
+    functionGroupDocIds["@destructor"] = "destructor";
+    functionGroupDocIds["@static_constructor"] = "staticConstructor";
 }
 
 const std::string& FunctionGroupMangleMap::MangleFunctionGroupName(const std::string& functionGroupName) const
 {
     MangleMapIt i = mangledFunctionGroupNames.find(functionGroupName);
     if (i != mangledFunctionGroupNames.end())
+    {
+        return i->second;
+    }
+    return functionGroupName;
+}
+
+const std::string& FunctionGroupMangleMap::GetFunctionGroupDocId(const std::string& functionGroupName) const
+{
+    MangleMapIt i = functionGroupDocIds.find(functionGroupName);
+    if (i != functionGroupDocIds.end())
     {
         return i->second;
     }
@@ -179,6 +216,11 @@ std::string MangleName(const std::string& namespaceName, const std::string& func
     {
         return "";
     }
+}
+
+std::string MakeGroupDocId(const std::string& functionGroupName)
+{
+    return FunctionGroupMangleMap::Instance().GetFunctionGroupDocId(functionGroupName);
 }
 
 void InitNameMangling()

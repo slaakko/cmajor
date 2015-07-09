@@ -168,6 +168,16 @@ Ir::Intf::Function* CreateDbgDeclareFunction()
     return GetBackEndImpl()->CreateDbgDeclareFunction();
 }
 
+Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
+{
+    return GetBackEndImpl()->CreateMemSetFunction(i8Ptr);
+}
+
+Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return GetBackEndImpl()->MemSet(dest, value, len, align, isVolatile);
+}
+
 void ResetLocalLabelCounter()
 {
     GetBackEndImpl()->ResetLocalLabelCounter();
@@ -638,9 +648,9 @@ Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result)
     return GetBackEndImpl()->Alloca(type, result);
 }
 
-Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* elementType, int numElements)
+Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* numElementsType, int numElements)
 {
-    return GetBackEndImpl()->Alloca(type, result, elementType, numElements);
+    return GetBackEndImpl()->Alloca(type, result, numElementsType, numElements);
 }
 
 Ir::Intf::Instruction* Load(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Object* ptr)

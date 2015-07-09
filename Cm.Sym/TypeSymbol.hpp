@@ -50,6 +50,7 @@ public:
     virtual bool IsPointerType() const { return false; }
     virtual bool IsFunctionType() const { return false; }
     virtual int GetPointerCount() const { return 0; }
+    virtual int GetPointerCountAfterArray() const { return 0; }
     virtual bool IsPointerToClassType() const { return false; }
     virtual bool IsPointerToTemplateType() const { return false; }
     virtual bool IsReferenceType() const { return false; }
@@ -65,8 +66,11 @@ public:
     virtual bool IsConstPointerPointerType() const { return false; }
     virtual bool IsValueTypeSymbol() const { return false; }
     virtual bool IsUlongType() const { return false; }
+    virtual bool IsArrayType() const { return false; }
+    virtual bool IsPrimitiveSingleDimensionArrayType() const { return false; }
     virtual DerivationCounts GetDerivationCounts() const { return DerivationCounts(); }
     virtual const Cm::Ast::DerivationList& Derivations() const { return emptyDerivationList; }
+    virtual int GetLastArrayDimension() const { return 0; }
     void SetIrType(Ir::Intf::Type* irType_);
     Ir::Intf::Type* GetIrType() const;
     void SetDefaultIrValue(Ir::Intf::Object* defaultIrValue_);

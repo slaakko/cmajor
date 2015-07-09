@@ -155,7 +155,12 @@ std::string DisjunctiveConstraintNode::ToString() const
     return Left()->ToString() + " or " + Right()->ToString();
 }
 
-void DisjunctiveConstraintNode::Accept(Visitor& visitor) 
+std::string DisjunctiveConstraintNode::DocId() const
+{
+    return Left()->DocId() + ".or." + Right()->DocId();
+}
+
+void DisjunctiveConstraintNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }
@@ -176,6 +181,11 @@ Node* ConjunctiveConstraintNode::Clone(CloneContext& cloneContext) const
 std::string ConjunctiveConstraintNode::ToString() const
 {
     return Left()->ToString() + " and " + Right()->ToString();
+}
+
+std::string ConjunctiveConstraintNode::DocId() const
+{
+    return Left()->DocId() + ".and." + Right()->DocId();
 }
 
 void ConjunctiveConstraintNode::Accept(Visitor& visitor)
@@ -211,6 +221,11 @@ void WhereConstraintNode::Write(Writer& writer)
 std::string WhereConstraintNode::ToString() const
 {
     return "where " + constraint->ToString();
+}
+
+std::string WhereConstraintNode::DocId() const
+{
+    return "where." + constraint->DocId();
 }
 
 void WhereConstraintNode::Accept(Visitor& visitor)
@@ -252,6 +267,11 @@ void IsConstraintNode::Write(Writer& writer)
 std::string IsConstraintNode::ToString() const
 {
     return typeExpr->ToString() + " is " + conceptOrTypeName->ToString();
+}
+
+std::string IsConstraintNode::DocId() const
+{
+    return typeExpr->DocId() + ".is." + conceptOrTypeName->DocId();
 }
 
 void IsConstraintNode::Accept(Visitor& visitor)
@@ -319,6 +339,15 @@ std::string MultiParamConstraintNode::ToString() const
     return s;
 }
 
+std::string MultiParamConstraintNode::DocId() const
+{
+    std::string docId = conceptId->ToString();
+    for (const std::unique_ptr<Node>& typeExpr : typeExprNodes)
+    {
+        docId.append(1, '.').append(typeExpr->DocId());
+    }
+    return docId;
+}
 void MultiParamConstraintNode::Accept(Visitor& visitor)
 {
     return visitor.Visit(*this);

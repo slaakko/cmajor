@@ -51,25 +51,25 @@ void ParsingContext::EndParsingTemplateId()
     parsingTemplateIdStack.pop();
 }
 
-void ParsingContext::BeginParsingSimpleStatement()
+void ParsingContext::PushParsingSimpleStatement(bool enable)
 {
     parsingSimpleStatementStack.push(parsingSimpleStatement);
-    parsingSimpleStatement = true;
+    parsingSimpleStatement = enable;
 }
 
-void ParsingContext::EndParsingSimpleStatement() 
+void ParsingContext::PopParsingSimpleStatement()
 {
     parsingSimpleStatement = parsingSimpleStatementStack.top();
     parsingSimpleStatementStack.pop();
 }
 
-void ParsingContext::BeginParsingLvalue()
+void ParsingContext::PushParsingLvalue(bool enable)
 {
     parsingLvalueStack.push(parsingLvalue);
-    parsingLvalue = true;
+    parsingLvalue = enable;
 }
 
-void ParsingContext::EndParsingLvalue()
+void ParsingContext::PopParsingLvalue()
 {
     parsingLvalue = parsingLvalueStack.top();
     parsingLvalueStack.pop();

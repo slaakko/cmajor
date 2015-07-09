@@ -301,6 +301,7 @@ public:
     void Read(Reader& reader) override;
     void Write(Writer& writer) override;
     std::string ToString() const override;
+    std::string DocId() const override;
     Node* Subject() const { return Child(); }
     IdentifierNode* MemberId() const { return memberId.get(); }
     void Accept(Visitor& visitor) override;

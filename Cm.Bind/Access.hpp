@@ -7,8 +7,8 @@
 
 ========================================================================*/
 
-#ifndef CM_BIND_VISIBILITY_INCLUDED
-#define CM_BIND_VISIBILITY_INCLUDED
+#ifndef CM_BIND_ACCESS_INCLUDED
+#define CM_BIND_ACCESS_INCLUDED
 #include <Cm.Sym/Symbol.hpp>
 #include <Cm.Ast/Specifier.hpp>
 #include <Cm.Parsing/Scanner.hpp>
@@ -22,4 +22,4 @@ void CheckAccess(Cm::Sym::Symbol* fromSymbol, const Span& fromSpan, Cm::Sym::Sym
 
 } } // namespace Cm::Bind
 
-#endif // CM_BIND_VISIBILITY_INCLUDED
+#endif // CM_BIND_ACCESS_INCLUDED

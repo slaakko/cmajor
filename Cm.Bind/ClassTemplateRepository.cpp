@@ -135,10 +135,13 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
             }
         }
     }
-    VirtualBinder virtualBinder(boundCompileUnit.SymbolTable(), boundCompileUnit.SyntaxUnit(), boundCompileUnit);
-    globalNs->Accept(virtualBinder);
-    Binder binder(boundCompileUnit);
-    globalNs->Accept(binder);
+    if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs))
+    {
+        VirtualBinder virtualBinder(boundCompileUnit.SymbolTable(), boundCompileUnit.SyntaxUnit(), boundCompileUnit);
+        globalNs->Accept(virtualBinder);
+        Binder binder(boundCompileUnit);
+        globalNs->Accept(binder);
+    }
     templateTypeSymbol->SetGlobalNs(globalNs.release());
 }
 

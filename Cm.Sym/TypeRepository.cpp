@@ -52,9 +52,9 @@ TypeSymbol* TypeRepository::GetType(const TypeId& typeId) const
     }
 }
 
-std::string MakeDerivedTypeName(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType)
+std::string MakeDerivedTypeName(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const std::vector<int>& arrayDimensions)
 {
-    return Cm::Ast::MakeDerivedTypeName(derivations, baseType->Name());
+    return Cm::Ast::MakeDerivedTypeName(derivations, baseType->Name(), arrayDimensions);
 }
 
 void CountDerivations(const Cm::Ast::DerivationList& derivations, int& numPointers, bool& ref, bool& rvalueRef, const Span& span)
@@ -206,7 +206,7 @@ Cm::Ast::DerivationList RemoveDerivations(const Cm::Ast::DerivationList& targetD
     return result;
 }
 
-TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const Span& span)
+TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const std::vector<int>& arrayDimensions, const Span& span)
 {
     Cm::Ast::DerivationList finalDerivations = derivations;
     TypeSymbol* finalBaseType = baseType;
@@ -220,18 +220,25 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
     if (HasRvalueRefDerivation(finalDerivations) && HasReferenceDerivation(finalDerivations))
     {
         finalDerivations.RemoveReference();
-        return MakeDerivedType(finalDerivations, finalBaseType, span); // hack to remove rvalue references to reference types
+        return MakeDerivedType(finalDerivations, finalBaseType, std::vector<int>(), span); // hack to remove rvalue references to reference types
     }
-    TypeId typeId = ComputeDerivedTypeId(finalBaseType, finalDerivations);
+    TypeId typeId = ComputeDerivedTypeId(finalBaseType, finalDerivations, arrayDimensions);
     TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
     if (typeSymbol)
     {
         return typeSymbol;
     }
-    std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType), finalBaseType, finalDerivations, typeId));
+    std::string arrayDimensionStr;
+    std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType, arrayDimensions), finalBaseType, finalDerivations,
+        arrayDimensions, typeId));
     derivedTypeSymbol->SetAccess(SymbolAccess::public_);
     if (!baseType->IsTypeParameterSymbol() && !baseType->IsFunctionGroupTypeSymbol())
     {
+        uint8_t n = uint8_t(arrayDimensions.size());
+        for (uint8_t i = 0; i < n; ++i)
+        {
+            finalDerivations.Add(Cm::Ast::Derivation::pointer);
+        }
         derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span));
         derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
     }
@@ -247,11 +254,11 @@ TypeSymbol* TypeRepository::MakePointerType(TypeSymbol* baseType, const Span& sp
         DerivedTypeSymbol* derivedType = static_cast<DerivedTypeSymbol*>(baseType);
         Cm::Ast::DerivationList derivations = derivedType->Derivations();
         derivations.Add(Cm::Ast::Derivation::pointer);
-        return MakeDerivedType(derivations, derivedType->GetBaseType(), span);
+        return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetArrayDimensions(), span);
     }
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, baseType, span);
+    return MakeDerivedType(derivations, baseType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeRvalueRefType(TypeSymbol* baseType, const Span& span)
@@ -265,11 +272,11 @@ TypeSymbol* TypeRepository::MakeRvalueRefType(TypeSymbol* baseType, const Span& 
         DerivedTypeSymbol* derivedType = static_cast<DerivedTypeSymbol*>(baseType);
         Cm::Ast::DerivationList derivations = derivedType->Derivations();
         derivations.Add(Cm::Ast::Derivation::rvalueRef);
-        return MakeDerivedType(derivations, derivedType->GetBaseType(), span);
+        return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetArrayDimensions(), span);
     }
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::rvalueRef);
-    return MakeDerivedType(derivations, baseType, span);
+    return MakeDerivedType(derivations, baseType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeReferenceType(TypeSymbol* baseType, const Span& span)
@@ -286,11 +293,11 @@ TypeSymbol* TypeRepository::MakeReferenceType(TypeSymbol* baseType, const Span& 
         {
             derivations.Add(Cm::Ast::Derivation::reference);
         }
-        return MakeDerivedType(derivations, derivedType->GetBaseType(), span);
+        return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetArrayDimensions(), span);
     }
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::reference);
-    return MakeDerivedType(derivations, baseType, span);
+    return MakeDerivedType(derivations, baseType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeConstReferenceType(TypeSymbol* baseType, const Span& span)
@@ -311,12 +318,12 @@ TypeSymbol* TypeRepository::MakeConstReferenceType(TypeSymbol* baseType, const S
         {
             derivations.Add(Cm::Ast::Derivation::reference);
         }
-        return MakeDerivedType(derivations, derivedType->GetBaseType(), span);
+        return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetArrayDimensions(), span);
     }
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::reference);
-    return MakeDerivedType(derivations, baseType, span);
+    return MakeDerivedType(derivations, baseType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeConstPointerType(TypeSymbol* baseType, const Span& span)
@@ -324,7 +331,7 @@ TypeSymbol* TypeRepository::MakeConstPointerType(TypeSymbol* baseType, const Spa
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, baseType, span);
+    return MakeDerivedType(derivations, baseType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeConstCharPtrType(const Span& span)
@@ -334,7 +341,7 @@ TypeSymbol* TypeRepository::MakeConstCharPtrType(const Span& span)
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, charType, span);
+    return MakeDerivedType(derivations, charType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeConstCharPtrPtrType(const Span& span)
@@ -345,7 +352,7 @@ TypeSymbol* TypeRepository::MakeConstCharPtrPtrType(const Span& span)
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::pointer);
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, charType, span);
+    return MakeDerivedType(derivations, charType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeGenericPtrType(const Span& span)
@@ -354,7 +361,7 @@ TypeSymbol* TypeRepository::MakeGenericPtrType(const Span& span)
     TypeSymbol* voidType = GetType(voidTypeId);
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::pointer);
-    return MakeDerivedType(derivations, voidType, span);
+    return MakeDerivedType(derivations, voidType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span)
@@ -402,13 +409,13 @@ TypeSymbol* TypeRepository::MakePlainType(TypeSymbol* type)
         DerivedTypeSymbol* derivedType = static_cast<DerivedTypeSymbol*>(type);
         Cm::Ast::DerivationList derivations = derivedType->Derivations();
         derivations = ClearConstsRefsAndRvalueRefs(derivations);
-        if (derivations.NumDerivations() == 0)
+        if (derivations.NumDerivations() == 0 && !derivedType->IsArrayType())
         {
             return derivedType->GetBaseType();
         }
         else
         {
-            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan());
+            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetArrayDimensions(), derivedType->GetSpan());
         }
     }
     else
@@ -424,13 +431,13 @@ TypeSymbol* TypeRepository::MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
         DerivedTypeSymbol* derivedType = static_cast<DerivedTypeSymbol*>(type);
         Cm::Ast::DerivationList derivations = derivedType->Derivations();
         derivations = ClearConstsRefsRvalueRefsAndOnePointer(derivations);
-        if (derivations.NumDerivations() == 0)
+        if (derivations.NumDerivations() == 0 && !derivedType->IsArrayType())
         {
             return derivedType->GetBaseType();
         }
         else
         {
-            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetSpan());
+            return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->GetArrayDimensions(), derivedType->GetSpan());
         }
     }
     else

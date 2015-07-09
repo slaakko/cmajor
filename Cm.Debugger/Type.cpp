@@ -63,7 +63,8 @@ std::string TypeExpr::ToString() const
     }
     if (derivations.NumDerivations() > 0)
     {
-        s = Cm::Ast::MakeDerivedTypeName(derivations, s);
+        std::vector<int> arrayDimensions;
+        s = Cm::Ast::MakeDerivedTypeName(derivations, s, arrayDimensions);
     }
     return s;
 }

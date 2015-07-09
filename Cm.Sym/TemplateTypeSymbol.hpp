@@ -43,6 +43,7 @@ public:
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     void SetConstraint(Cm::Ast::WhereConstraintNode* constraint);
     Cm::Ast::WhereConstraintNode* GetConstraint() const { return constraint.get(); }
+    std::string FullDocId() const override;
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;

@@ -256,7 +256,7 @@ public:
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
-    Ir::Intf::Type* elementType;
+    Ir::Intf::Type* numElementsType;
     int numElements;
     int alignment;
 };

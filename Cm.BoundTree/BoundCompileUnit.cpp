@@ -126,6 +126,11 @@ void BoundCompileUnit::SetClassDelegateTypeOpRepository(Cm::Core::ClassDelegateT
     classDelegateTypeOpRepository.reset(classDelegateTypeOpRepository_);
 }
 
+void BoundCompileUnit::SetArrayTypeOpRepository(Cm::Core::ArrayTypeOpRepository* arrayTypeOpRepository_)
+{
+    arrayTypeOpRepository.reset(arrayTypeOpRepository_);
+}
+
 bool BoundCompileUnit::Changed() const
 {
     boost::filesystem::path sfp = syntaxUnit->FilePath();

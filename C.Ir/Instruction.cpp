@@ -261,11 +261,12 @@ void SwitchInst::AddTargetLabels(std::set<std::string>& targetLabels)
     }
 }
 
-AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_) : Instruction("alloca"), type(type_), result(result_), elementType(nullptr), numElements(0), alignment(0)
+AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_) : Instruction("alloca"), type(type_), result(result_), numElementsType(nullptr), numElements(0), alignment(0)
 {
 }
 
-AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Type* elementType_, int numElements_) : Ir::Intf::Instruction("alloca"), type(type_), result(result_), elementType(elementType_), numElements(numElements_), alignment(0)
+AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Type* numElementsType_, int numElements_) : Ir::Intf::Instruction("alloca"), type(type_), result(result_),
+    numElementsType(numElementsType_), numElements(numElements_), alignment(0)
 {
 }
 
