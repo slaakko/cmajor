@@ -33,6 +33,7 @@ public:
     virtual bool IsFunctionPtrPtrType() const { return false; }
     virtual bool IsLabelType() const { return false; }
     virtual bool IsTypeName() const { return false; }
+    virtual bool IsArrayType() const { return false; }
     virtual std::string Prefix() const { return Name() + " "; }
     virtual std::string Suffix() const { return std::string(); }
     virtual const std::string& GetTagName() const { return name; }

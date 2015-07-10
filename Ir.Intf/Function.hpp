@@ -67,6 +67,7 @@ private:
     std::vector<std::unique_ptr<Instruction>> ownedInstructions;
     std::vector<std::unique_ptr<Object>> ownedObjects;
     std::vector<std::unique_ptr<Function>> ownedFunctions;
+    std::vector<std::unique_ptr<Parameter>> ownedParameters;
     int instNumber;
     std::string comment;
 };

@@ -191,9 +191,19 @@ Ir::Intf::Function* LlvmBackEnd::CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
     return Llvm::CreateMemSetFunction(i8Ptr);
 }
 
+Ir::Intf::Function* LlvmBackEnd::CreateMemCopyFunction(Ir::Intf::Type* i8Ptr)
+{
+    return Llvm::CreateMemCopyFunction(i8Ptr);
+}
+
 Ir::Intf::Instruction* LlvmBackEnd::MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile)
 {
     return Llvm::MemSet(dest, value, len, align, isVolatile);
+}
+
+Ir::Intf::Instruction* LlvmBackEnd::MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* source, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return Llvm::MemCopy(dest, source, len, align, isVolatile);
 }
 
 void LlvmBackEnd::ResetLocalLabelCounter()

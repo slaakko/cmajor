@@ -187,12 +187,22 @@ Ir::Intf::Function* CBackEnd::CreateDbgDeclareFunction()
 
 Ir::Intf::Function* CBackEnd::CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
 {
-    throw std::runtime_error("not implemented in C backend yet");
+    return C::CreateMemSetFunction(i8Ptr);
+}
+
+Ir::Intf::Function* CBackEnd::CreateMemCopyFunction(Ir::Intf::Type* i8Ptr)
+{
+    return C::CreateMemCopyFunction(i8Ptr);
 }
 
 Ir::Intf::Instruction* CBackEnd::MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile)
 {
-    throw std::runtime_error("not implemented in C backend yet");
+    return C::MemSet(dest, value, len, align, isVolatile);
+}
+
+Ir::Intf::Instruction* CBackEnd::MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* source, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return C::MemCopy(dest, source, len, align, isVolatile);
 }
 
 void CBackEnd::ResetLocalLabelCounter()

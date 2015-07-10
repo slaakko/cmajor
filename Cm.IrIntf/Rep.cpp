@@ -173,9 +173,19 @@ Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
     return GetBackEndImpl()->CreateMemSetFunction(i8Ptr);
 }
 
+Ir::Intf::Function* CreateMemCopyFunction(Ir::Intf::Type* i8Ptr)
+{
+    return GetBackEndImpl()->CreateMemCopyFunction(i8Ptr);
+}
+
 Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile)
 {
     return GetBackEndImpl()->MemSet(dest, value, len, align, isVolatile);
+}
+
+Ir::Intf::Instruction* MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* source, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return GetBackEndImpl()->MemCopy(dest, source, len, align, isVolatile);
 }
 
 void ResetLocalLabelCounter()

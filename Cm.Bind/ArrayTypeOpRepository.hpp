@@ -18,8 +18,12 @@ class ArrayTypeOpCache
 {
 public:
     Cm::Sym::FunctionSymbol* GetDefaultConstructor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type);
+    Cm::Sym::FunctionSymbol* GetCopyConstructor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type);
+    Cm::Sym::FunctionSymbol* GetCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type);
 private:
     std::unique_ptr<Cm::Sym::FunctionSymbol> defaultConstructor;
+    std::unique_ptr<Cm::Sym::FunctionSymbol> copyConstructor;
+    std::unique_ptr<Cm::Sym::FunctionSymbol> copyAssignment;
 };
 
 typedef std::unordered_map<Cm::Sym::TypeSymbol*, ArrayTypeOpCache> ArrayTypeCacheMap;
@@ -40,6 +44,13 @@ public:
         int arity, const std::vector<Cm::Core::Argument>& arguments, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
 };
 
+class ArrayTypeAssignmentGroup : public ArrayTypeOpFunGroup
+{
+public:
+    void CollectViableFunctions(ArrayTypeCacheMap& cacheMap, Cm::Sym::TypeSymbol* arrayType, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm::Parsing::Span& span,
+        int arity, const std::vector<Cm::Core::Argument>& arguments, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
+};
+
 class ArrayTypeOpRepository : public Cm::Core::ArrayTypeOpRepository
 {
 public:
@@ -53,6 +64,7 @@ private:
     typedef ArrayTypeOpFunGroupMap::const_iterator ArrayTypeOpFunGroupMapIt;
     ArrayTypeOpFunGroupMap arrayTypeOpFunGroupMap;
     ArrayTypeConstructorGroup arrayTypeConstructorGroup;
+    ArrayTypeAssignmentGroup arrayTypeAssignmentGroup;
 };
 
 } } // namespace Cm::Bind

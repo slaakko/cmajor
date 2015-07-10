@@ -387,7 +387,7 @@ Cm::Ast::DerivationList ClearConstsRefsAndRvalueRefs(const Cm::Ast::DerivationLi
     for (uint8_t i = 0; i < derivations.NumDerivations(); ++i)
     {
         Cm::Ast::Derivation derivation = derivations[i];
-        if (derivation == Cm::Ast::Derivation::pointer)
+        if (derivation == Cm::Ast::Derivation::pointer || derivation == Cm::Ast::Derivation::array_)
         {
             result.Add(derivation); 
         }

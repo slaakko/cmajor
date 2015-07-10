@@ -14,6 +14,14 @@ namespace Ir { namespace Intf {
 Function::Function(const std::string& name_, Type* returnType_, const std::vector<Parameter*>& parameters_): 
     name(name_), returnType(returnType_), parameters(parameters_), instNumber(0)
 {
+    for (Parameter* parameter : parameters)
+    {
+        if (!parameter->Owned())
+        {
+            parameter->SetOwned();
+            ownedParameters.push_back(std::unique_ptr<Parameter>(parameter));
+        }
+    }
 }
 
 Function::~Function()

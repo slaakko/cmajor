@@ -47,7 +47,9 @@ public:
     Ir::Intf::Function* CreateDoNothingFunction() override;
     Ir::Intf::Function* CreateDbgDeclareFunction() override;
     Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr) override;
+    Ir::Intf::Function* CreateMemCopyFunction(Ir::Intf::Type* i8Ptr) override;
     Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile) override;
+    Ir::Intf::Instruction* MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* source, Ir::Intf::Object* len, int align, bool isVolatile) override;
     void ResetLocalLabelCounter() override;
     std::string MakeAssemblyName(const std::string& name) override;
     std::string MakeClassNameAssemblyName(const std::string& fullClassName) override;

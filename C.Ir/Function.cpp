@@ -173,4 +173,28 @@ void Function::WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inli
     formatter.WriteLine("}");
 }
 
+Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
+{
+    std::vector<Ir::Intf::Parameter*> parameters;
+    parameters.push_back(new Parameter("dest", i8Ptr));
+    parameters.push_back(new Parameter("value", Ir::Intf::GetFactory()->GetI8()));
+    parameters.push_back(new Parameter("len", Ir::Intf::GetFactory()->GetI64()));
+    parameters.push_back(new Parameter("align", Ir::Intf::GetFactory()->GetI32()));
+    parameters.push_back(new Parameter("isVolatile", Ir::Intf::GetFactory()->GetI1()));
+    Function* memSetFun(new Function("cmemset", Ir::Intf::GetFactory()->GetVoid(), parameters));
+    return memSetFun;
+}
+
+Ir::Intf::Function* CreateMemCopyFunction(Ir::Intf::Type* i8Ptr)
+{
+    std::vector<Ir::Intf::Parameter*> parameters;
+    parameters.push_back(new Parameter("dest", i8Ptr));
+    parameters.push_back(new Parameter("source", i8Ptr));
+    parameters.push_back(new Parameter("len", Ir::Intf::GetFactory()->GetI64()));
+    parameters.push_back(new Parameter("align", Ir::Intf::GetFactory()->GetI32()));
+    parameters.push_back(new Parameter("isVolatile", Ir::Intf::GetFactory()->GetI1()));
+    Function* memSetFun(new Function("cmemcpy", Ir::Intf::GetFactory()->GetVoid(), parameters));
+    return memSetFun;
+}
+
 } // namespace C

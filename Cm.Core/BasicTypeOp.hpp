@@ -26,6 +26,7 @@ public:
     Ir::Intf::Type* GetIrType() const { return type->GetIrType(); }
     Ir::Intf::Object* GetDefaultIrValue() const { return type->GetDefaultIrValue(); }
     virtual bool IsPrimitiveArrayTypeDefaultConstructor() const { return false; }
+    virtual bool IsPrimitiveArrayTypeCopyConstructorOrCopyAssignment() const { return false; }
 private:
     Cm::Sym::TypeSymbol* type;
 };

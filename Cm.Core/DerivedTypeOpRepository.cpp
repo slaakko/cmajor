@@ -29,7 +29,14 @@ public:
 OpAddPtrInt::OpAddPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
     SetGroupName("operator+");
-    SetReturnType(Type());
+    if (Type()->IsArrayType())
+    {
+        SetReturnType(typeRepository.MakePointerType(Type()->GetBaseType(), Cm::Parsing::Span()));
+    }
+    else
+    {
+        SetReturnType(Type());
+    }
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(Type());
     AddSymbol(leftParam);
@@ -43,7 +50,7 @@ void OpAddPtrInt::Generate(Emitter& emitter, GenResult& result)
 {
     Ir::Intf::Type* ptrType = Type()->GetIrType();
     Ir::Intf::Object* arg1 = result.Arg1();
-    if (!arg1->IsConstant() && !arg1->IsRegVar())
+    if (!arg1->IsConstant() && !arg1->IsRegVar() && !result.Arg1IsArray())
     {
         arg1 = Cm::IrIntf::CreateTemporaryRegVar(ptrType);
         emitter.Own(arg1);
@@ -974,7 +981,7 @@ void AdditiveOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::Co
 {
     if (arity != 2) return;
     Cm::Sym::TypeSymbol* leftType = arguments[0].Type();
-    if (leftType->IsPointerType())
+    if (leftType->IsPointerType() || leftType->IsArrayType())
     {
         if (leftType->GetBaseType()->IsVoidTypeSymbol()) return;
         Cm::Sym::TypeSymbol* rightType = arguments[1].Type();

@@ -41,6 +41,7 @@ private:
 Ir::Intf::Function* CreateDoNothingFunction();
 Ir::Intf::Function* CreateDbgDeclareFunction();
 Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr);
+Ir::Intf::Function* CreateMemCopyFunction(Ir::Intf::Type* i8Ptr);
 
 } // namespace Llvm
 

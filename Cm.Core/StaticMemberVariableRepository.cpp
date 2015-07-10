@@ -59,6 +59,11 @@ Ir::Intf::Object* StaticMemberVariableRepository::GetDestructionNode(Cm::Sym::Me
     throw Cm::Core::Exception("destruction node for '" + staticMemberVariableSymbol->FullName() + "' not found in repository", staticMemberVariableSymbol->GetSpan());
 }
 
+void StaticMemberVariableRepository::Own(Ir::Intf::Type* type)
+{
+    ownedIrTypes.push_back(std::unique_ptr<Ir::Intf::Type>(type));
+}
+
 void LlvmStaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
 {
     for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : GetStaticMemberVariableMap())
@@ -66,9 +71,19 @@ void LlvmStaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeForm
         Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol = p.first;
         Ir::Intf::Object* irObject = p.second;
         std::string declaration = irObject->Name();
-        declaration.append(" = global ").append(staticMemberVariableSymbol->GetType()->GetIrType()->Name());
-        Ir::Intf::Object* defaultValue = staticMemberVariableSymbol->GetType()->GetDefaultIrValue();
-        if (defaultValue)
+        Cm::Sym::TypeSymbol* staticMemberVarType = staticMemberVariableSymbol->GetType();
+        if (staticMemberVarType->IsArrayType())
+        {
+            Ir::Intf::Type* staticMemberVarIrArrayType = Cm::IrIntf::Array(staticMemberVarType->GetBaseType()->GetIrType(), staticMemberVarType->GetLastArrayDimension());
+            Own(staticMemberVarIrArrayType);
+            declaration.append(" = global ").append(staticMemberVarIrArrayType->Name());
+        }
+        else
+        {
+            declaration.append(" = global ").append(staticMemberVarType->GetIrType()->Name());
+        }
+        Ir::Intf::Object* defaultValue = staticMemberVarType->GetDefaultIrValue();
+        if (defaultValue && !staticMemberVarType->IsArrayType())
         {
             declaration.append(1, ' ').append(defaultValue->Name());
         }
@@ -93,8 +108,22 @@ void CStaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeFormatt
     {
         Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol = p.first;
         Ir::Intf::Object* irObject = p.second;
-        std::string declaration = staticMemberVariableSymbol->GetType()->GetIrType()->Name();
-        declaration.append(" ").append(irObject->Name()).append(";");
+        std::string declaration;
+        Cm::Sym::TypeSymbol* staticMemberVarType = staticMemberVariableSymbol->GetType();
+        if (staticMemberVarType->IsArrayType())
+        {
+            declaration.append(staticMemberVarType->GetBaseType()->GetIrType()->Name());
+        }
+        else
+        {
+            declaration.append(staticMemberVarType->GetIrType()->Name());
+        }
+        declaration.append(" ").append(irObject->Name());
+        if (staticMemberVarType->IsArrayType())
+        {
+            declaration.append("[").append(std::to_string(staticMemberVarType->GetLastArrayDimension())).append("]");
+        }
+        declaration.append(";");
         codeFormatter.WriteLine(declaration);
     }
     for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : GetDestructionNodeMap())

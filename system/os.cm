@@ -112,6 +112,8 @@ extern public cdecl int mutextbl_unlock_mtx(int mid);
 extern public cdecl int get_current_date(char* dateBuf);
 extern public cdecl uint get_random_seed_from_system();
 extern public cdecl double pow(double x, double y);
+extern public cdecl void cmemset(void* dest, byte value, ulong size, int, bool);
+extern public cdecl void cmemcpy(void* dest, void* source, ulong size, int, bool);
 extern public cdecl void enter_traced_fun(const char* fun, const char* file, int line);
 extern public cdecl void leave_traced_fun(const char* fun, const char* file, int line);
 extern public cdecl void enter_traced_call(const char* fun, const char* file, int line);
