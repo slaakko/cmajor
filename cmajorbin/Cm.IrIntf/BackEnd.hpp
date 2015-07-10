@@ -59,7 +59,9 @@ public:
     virtual Ir::Intf::Function* CreateDoNothingFunction() = 0;
     virtual Ir::Intf::Function* CreateDbgDeclareFunction() = 0;
     virtual Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr) = 0;
+    virtual Ir::Intf::Function* CreateMemCopyFunction(Ir::Intf::Type* i8Ptr) = 0;
     virtual Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile) = 0;
+    virtual Ir::Intf::Instruction* MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* source, Ir::Intf::Object* len, int align, bool isVolatile) = 0;
     virtual void ResetLocalLabelCounter() = 0;
     virtual std::string MakeAssemblyName(const std::string& name) = 0;
     virtual std::string MakeClassNameAssemblyName(const std::string& fullClassName) = 0;

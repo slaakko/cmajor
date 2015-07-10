@@ -706,6 +706,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    if (boundBinaryOp.Left()->GetType()->IsArrayType())
+    {
+        result->SetArg1IsArray();
+    }
     std::shared_ptr<Cm::Core::GenResult> right = resultStack.Pop();
     std::shared_ptr<Cm::Core::GenResult> left = resultStack.Pop();
     bool functionReturnsClassObjectByValue = boundBinaryOp.GetFunction()->ReturnsClassObjectByValue();
@@ -1369,6 +1373,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundInitMemberVariableStatement& bou
         result->Merge(argResult);
     }
     Cm::Sym::FunctionSymbol* ctor = boundInitMemberVariableStatement.Constructor();
+    result->SetMemberVar();
     GenerateCall(ctor, nullptr, *result);
     if (boundInitMemberVariableStatement.RegisterDestructor())
     {
@@ -2676,6 +2681,10 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::
         if (op->IsPrimitiveArrayTypeDefaultConstructor())
         {
             externalFunctions.insert(irFunctionRepository.GetMemSetFunction());
+        }
+        else if (op->IsPrimitiveArrayTypeCopyConstructorOrCopyAssignment())
+        {
+            externalFunctions.insert(irFunctionRepository.GetMemCopyFunction());
         }
     }
     else

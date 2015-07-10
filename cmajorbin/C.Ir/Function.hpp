@@ -33,6 +33,9 @@ private:
     std::vector<Ir::Intf::Object*> registers;
 };
 
+Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr);
+Ir::Intf::Function* CreateMemCopyFunction(Ir::Intf::Type* i8Ptr);
+
 } // namespace C
 
 #endif // C_IR_FUNCTION_INCLUDED

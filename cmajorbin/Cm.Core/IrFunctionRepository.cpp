@@ -62,6 +62,17 @@ Ir::Intf::Function* IrFunctionRepository::GetMemSetFunction()
     return memSetFunction.get();
 }
 
+Ir::Intf::Function* IrFunctionRepository::GetMemCopyFunction()
+{
+    if (!memCopyFunction)
+    {
+        Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1);
+        Own(i8Ptr);
+        memCopyFunction.reset(Cm::IrIntf::CreateMemCopyFunction(i8Ptr));
+    }
+    return memCopyFunction.get();
+}
+
 Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymbol* function)
 {
     IrFunctionMapIt i = irFunctionMap.find(function);

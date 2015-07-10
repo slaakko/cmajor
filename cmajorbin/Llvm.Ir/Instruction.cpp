@@ -706,4 +706,22 @@ Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, I
     return new MemSetInst(dest, value, len, align, isVolatile);
 }
 
+MemCopyInst::MemCopyInst(Ir::Intf::Object* dest_, Ir::Intf::Object* source_, Ir::Intf::Object* len_, int align_, bool isVolatile_):
+    Ir::Intf::Instruction("memcopy"), dest(dest_), source(source_), len(len_), align(align_), isVolatile(isVolatile_)
+{
+}
+
+std::string MemCopyInst::ToString() const
+{
+    std::string s;
+    s.append("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + dest->Name() + ", i8* " + source->Name() + ", i64 " + len->Name() + ", i32 " + std::to_string(align) + ", i1 " +
+        (isVolatile ? "true" : "false") + ")");
+    return s;
+}
+
+Ir::Intf::Instruction* MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* source, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return new MemCopyInst(dest, source, len, align, isVolatile);
+}
+
 } // namespace Llvm

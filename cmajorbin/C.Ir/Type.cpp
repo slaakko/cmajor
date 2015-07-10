@@ -426,7 +426,13 @@ StructureType::StructureType(const std::string& tagName_, const std::vector<Ir::
         else
         {
             name.append(elementType->Name());
-            name.append(" ").append(elementNames[i]).append(";");
+            name.append(" ").append(elementNames[i]);
+            if (elementType->IsArrayType())
+            {
+                ArrayType* arrayType = static_cast<ArrayType*>(elementType);
+                name.append("[").append(std::to_string(arrayType->Size())).append("]");
+            }
+            name.append(";");
         }
         ++i;
     }

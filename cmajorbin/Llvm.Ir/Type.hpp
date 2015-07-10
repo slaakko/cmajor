@@ -135,6 +135,7 @@ public:
     Ir::Intf::Type* ItemType() const { return itemType; }
     int Size() const { return size; }
     Ir::Intf::Type* Clone() const override;
+    bool IsArrayType() const override { return true; }
 private:
 	Ir::Intf::Type* itemType;
 	std::unique_ptr<Ir::Intf::Type> ownedItemType;

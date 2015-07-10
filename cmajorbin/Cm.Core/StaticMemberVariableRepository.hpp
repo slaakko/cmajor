@@ -27,11 +27,13 @@ protected:
     typedef std::unordered_map<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*> StaticMemberVariableMap;
     const StaticMemberVariableMap& GetStaticMemberVariableMap() const { return staticMemberVariableMap; }
     const StaticMemberVariableMap& GetDestructionNodeMap() const { return destructionNodeMap; }
+    void Own(Ir::Intf::Type* type);
 private:
     typedef StaticMemberVariableMap::const_iterator StaticMemberVariableMapIt;
     StaticMemberVariableMap staticMemberVariableMap;
     StaticMemberVariableMap destructionNodeMap;
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;
+    std::vector<std::unique_ptr<Ir::Intf::Type>> ownedIrTypes;
 };
 
 class LlvmStaticMemberVariableRepository : public StaticMemberVariableRepository

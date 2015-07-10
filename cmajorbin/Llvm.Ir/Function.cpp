@@ -168,4 +168,16 @@ Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr)
     return memSetFun;
 }
 
+Ir::Intf::Function* CreateMemCopyFunction(Ir::Intf::Type* i8Ptr)
+{
+    std::vector<Ir::Intf::Parameter*> parameters;
+    parameters.push_back(new Parameter("dest", i8Ptr));
+    parameters.push_back(new Parameter("source", i8Ptr));
+    parameters.push_back(new Parameter("len", Ir::Intf::GetFactory()->GetI64()));
+    parameters.push_back(new Parameter("align", Ir::Intf::GetFactory()->GetI32()));
+    parameters.push_back(new Parameter("isVolatile", Ir::Intf::GetFactory()->GetI1()));
+    Function* memSetFun(new Function("llvm.memcpy.p0i8.p0i8.i64", Ir::Intf::GetFactory()->GetVoid(), parameters));
+    return memSetFun;
+}
+
 } // namespace Llvm

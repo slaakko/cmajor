@@ -89,7 +89,16 @@ void LlvmIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classTyp
                 memberNames.push_back("__vptr");
                 ++index;
             }
-            memberTypes.push_back(memberVariable->GetType()->GetIrType()->Clone());
+            Cm::Sym::TypeSymbol* memberVarType = memberVariable->GetType();
+            if (memberVarType->IsArrayType())
+            {
+                Ir::Intf::Type* memberVarArrayType = Cm::IrIntf::Array(memberVarType->GetBaseType()->GetIrType(), memberVarType->GetLastArrayDimension());
+                memberTypes.push_back(memberVarArrayType);
+            }
+            else
+            {
+                memberTypes.push_back(memberVarType->GetIrType()->Clone());
+            }
             memberNames.push_back(memberVariable->Name());
             memberVariable->SetLayoutIndex(index);
             ++index;
@@ -299,13 +308,22 @@ void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, 
     {
         for (Cm::Sym::MemberVariableSymbol* memberVariable : classType->MemberVariables())
         {
+            Cm::Sym::TypeSymbol* memberVarType = memberVariable->GetType();
             if (index == classType->VPtrIndex())
             {
                 memberTypes.push_back(Cm::IrIntf::Pointer(Cm::IrIntf::Void(), 2));
                 memberNames.push_back("__vptr");
                 ++index;
             }
-            memberTypes.push_back(memberVariable->GetType()->GetIrType()->Clone());
+            if (memberVarType->IsArrayType())
+            {
+                Ir::Intf::Type* memberVarArrayType = Cm::IrIntf::Array(memberVarType->GetBaseType()->GetIrType(), memberVarType->GetLastArrayDimension());
+                memberTypes.push_back(memberVarArrayType);
+            }
+            else
+            {
+                memberTypes.push_back(memberVarType->GetIrType()->Clone());
+            }
             memberNames.push_back(memberVariable->Name());
             memberVariable->SetLayoutIndex(index);
             ++index;

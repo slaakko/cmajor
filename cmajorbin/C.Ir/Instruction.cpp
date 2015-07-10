@@ -272,7 +272,7 @@ AllocaInst::AllocaInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Int
 
 Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result) { return new AllocaInst(type, result); }
 
-Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* elementType, int numElements) { return new AllocaInst(type, result, elementType, numElements); }
+Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result, Ir::Intf::Type* numElementsType, int numElements) { return new AllocaInst(type, result, numElementsType, numElements); }
 
 void AllocaInst::SetAlignment(int alignment_)
 {
@@ -290,6 +290,10 @@ std::string AllocaInst::ToString() const
     else
     {
         alloca.append(type->Name()).append(space).append(result->Name());
+        if (numElements > 0)
+        {
+            alloca.append("[").append(std::to_string(numElements)).append("]");
+        }
     }
     return alloca;
 }
@@ -663,5 +667,39 @@ std::string SizeOfInst::ToString() const
 }
 
 Ir::Intf::Instruction* CreateSizeOf(Ir::Intf::Object* result, Ir::Intf::Type* type) { return new SizeOfInst(result, type); }
+
+MemSetInst::MemSetInst(Ir::Intf::Object* dest_, Ir::Intf::Object* value_, Ir::Intf::Object* len_, int align_, bool isVolatile_) :
+    Ir::Intf::Instruction("memset"), dest(dest_), value(value_), len(len_), align(align_), isVolatile(isVolatile_)
+{
+}
+
+std::string MemSetInst::ToString() const
+{
+    std::string s;
+    s.append("cmemset(" + dest->Name() + ", " + value->Name() + ", " + len->Name() + ", " + std::to_string(align) + ", " + std::to_string(isVolatile) + ")");
+    return s;
+}
+
+Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return new MemSetInst(dest, value, len, align, isVolatile);
+}
+
+MemCopyInst::MemCopyInst(Ir::Intf::Object* dest_, Ir::Intf::Object* source_, Ir::Intf::Object* len_, int align_, bool isVolatile_) :
+    Ir::Intf::Instruction("memcopy"), dest(dest_), source(source_), len(len_), align(align_), isVolatile(isVolatile_)
+{
+}
+
+std::string MemCopyInst::ToString() const
+{
+    std::string s;
+    s.append("cmemcpy(" + dest->Name() + ", " + source->Name() + ", " + len->Name() + ", " + std::to_string(align) + ", " + std::to_string(isVolatile) + ")");    
+    return s;
+}
+
+Ir::Intf::Instruction* MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* source, Ir::Intf::Object* len, int align, bool isVolatile)
+{
+    return new MemCopyInst(dest, source, len, align, isVolatile);
+}
 
 } // namespace C

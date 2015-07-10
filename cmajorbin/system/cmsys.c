@@ -441,6 +441,16 @@ unsigned int get_random_seed_from_system()
 
 #endif
 
+void cmemset(void* dest, unsigned char value, unsigned long long size, int align, _Bool isVolatile)
+{
+    memset(dest, (int)value, (size_t)size);
+}
+
+void cmemcpy(void* dest, void* source, unsigned long long size, int align, _Bool isVolatile)
+{
+    memcpy(dest, source, (size_t)size);
+}
+
 static int traceLevel = 0;
 
 void enter_traced_fun(const char* fun, const char* file, int line)

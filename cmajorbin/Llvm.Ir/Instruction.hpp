@@ -532,6 +532,21 @@ private:
 
 Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile);
 
+class MemCopyInst : public Ir::Intf::Instruction
+{
+public:
+    MemCopyInst(Ir::Intf::Object* dest_, Ir::Intf::Object* source_, Ir::Intf::Object* len_, int align_, bool isVolatile_);
+    std::string ToString() const override;
+private:
+    Ir::Intf::Object* dest;
+    Ir::Intf::Object* source;
+    Ir::Intf::Object* len;
+    int align;
+    bool isVolatile;
+};
+
+Ir::Intf::Instruction* MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile);
+
 } // namespace Llvm
 
 #endif // LLVM_IR_INSTRUCTION_INCLUDED

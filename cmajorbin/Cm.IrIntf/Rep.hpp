@@ -45,7 +45,9 @@ Ir::Intf::Function* CreateFunction(const std::string& name, Ir::Intf::Type* retu
 Ir::Intf::Function* CreateDoNothingFunction();
 Ir::Intf::Function* CreateDbgDeclareFunction();
 Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr);
+Ir::Intf::Function* CreateMemCopyFunction(Ir::Intf::Type* i8Ptr);
 Ir::Intf::Instruction* MemSet(Ir::Intf::Object* dest, Ir::Intf::Object* value, Ir::Intf::Object* len, int align, bool isVolatile);
+Ir::Intf::Instruction* MemCopy(Ir::Intf::Object* dest, Ir::Intf::Object* source, Ir::Intf::Object* len, int align, bool isVolatile);
 void ResetLocalLabelCounter();
 bool TypesEqual(Ir::Intf::Type* left, Ir::Intf::Type* right);
 std::string MakeAssemblyName(const std::string& name);
