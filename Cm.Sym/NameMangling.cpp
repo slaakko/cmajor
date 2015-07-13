@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Sym/NameMangling.hpp>
+#include <Cm.Util/TextUtils.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
@@ -18,8 +19,8 @@ public:
     static void Init();
     static void Done();
     static FunctionGroupMangleMap& Instance();
-    const std::string& MangleFunctionGroupName(const std::string& functionGroupName) const;
-    const std::string& GetFunctionGroupDocId(const std::string& functionGroupName) const;
+    std::string MangleFunctionGroupName(const std::string& functionGroupName) const;
+    std::string GetFunctionGroupDocId(const std::string& functionGroupName) const;
 private:
     static std::unique_ptr<FunctionGroupMangleMap> instance;
     typedef std::unordered_map<std::string, std::string> MangleMap; 
@@ -99,8 +100,12 @@ FunctionGroupMangleMap::FunctionGroupMangleMap()
     functionGroupDocIds["@static_constructor"] = "staticConstructor";
 }
 
-const std::string& FunctionGroupMangleMap::MangleFunctionGroupName(const std::string& functionGroupName) const
+std::string FunctionGroupMangleMap::MangleFunctionGroupName(const std::string& functionGroupName) const
 {
+    if (Cm::Util::StartsWith(functionGroupName, "@array_constructor"))
+    {
+        return "ac_" + functionGroupName.substr(19);
+    }
     MangleMapIt i = mangledFunctionGroupNames.find(functionGroupName);
     if (i != mangledFunctionGroupNames.end())
     {
@@ -109,8 +114,12 @@ const std::string& FunctionGroupMangleMap::MangleFunctionGroupName(const std::st
     return functionGroupName;
 }
 
-const std::string& FunctionGroupMangleMap::GetFunctionGroupDocId(const std::string& functionGroupName) const
+std::string FunctionGroupMangleMap::GetFunctionGroupDocId(const std::string& functionGroupName) const
 {
+    if (Cm::Util::StartsWith(functionGroupName, "@array_constructor"))
+    {
+        return "arrayConstructor_" + functionGroupName.substr(19);
+    }
     MangleMapIt i = functionGroupDocIds.find(functionGroupName);
     if (i != functionGroupDocIds.end())
     {

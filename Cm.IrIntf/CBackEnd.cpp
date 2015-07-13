@@ -664,6 +664,11 @@ Ir::Intf::Instruction* CBackEnd::FRem(Ir::Intf::Type* floatingPointType, Ir::Int
     return C::FRem(floatingPointType, result, operand1, operand2);
 }
 
+Ir::Intf::Instruction* CBackEnd::Index(Ir::Intf::Object* result, Ir::Intf::Object* array_, Ir::Intf::Object* index)
+{
+    return C::Index(result, array_, index);
+}
+
 Ir::Intf::Instruction* CBackEnd::Ret()
 {
     return C::Ret();

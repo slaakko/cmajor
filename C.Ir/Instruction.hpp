@@ -193,6 +193,21 @@ public:
 
 Ir::Intf::Instruction* FRem(Ir::Intf::Type* floatingPointType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2);
 
+class IndexInst : public Ir::Intf::Instruction
+{
+public:
+    IndexInst(Ir::Intf::Object* result_, Ir::Intf::Object* array__, Ir::Intf::Object* index_);
+    std::string ToString() const override;
+    bool ReturnsResult() const override { return true; }
+    Ir::Intf::Object* GetResult() const override { return result; }
+private:
+    Ir::Intf::Object* result;
+    Ir::Intf::Object* array_;
+    Ir::Intf::Object* index;
+};
+
+Ir::Intf::Instruction* Index(Ir::Intf::Object* result, Ir::Intf::Object* array_, Ir::Intf::Object* index);
+
 class RetInst : public Ir::Intf::Instruction
 {
 public:

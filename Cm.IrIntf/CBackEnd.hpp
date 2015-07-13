@@ -138,6 +138,7 @@ public:
     Ir::Intf::Instruction* FMul(Ir::Intf::Type* floatingPointType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) override;
     Ir::Intf::Instruction* FDiv(Ir::Intf::Type* floatingPointType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) override;
     Ir::Intf::Instruction* FRem(Ir::Intf::Type* floatingPointType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) override;
+    Ir::Intf::Instruction* Index(Ir::Intf::Object* result, Ir::Intf::Object* array_, Ir::Intf::Object* index) override;
     Ir::Intf::Instruction* Ret() override;
     Ir::Intf::Instruction* Ret(Ir::Intf::Object* value) override;
     Ir::Intf::Instruction* Br(Ir::Intf::LabelObject* dest) override;

@@ -228,19 +228,25 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
     {
         return typeSymbol;
     }
-    std::string arrayDimensionStr;
     std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType, arrayDimensions), finalBaseType, finalDerivations,
         arrayDimensions, typeId));
     derivedTypeSymbol->SetAccess(SymbolAccess::public_);
     if (!baseType->IsTypeParameterSymbol() && !baseType->IsFunctionGroupTypeSymbol())
     {
         uint8_t n = uint8_t(arrayDimensions.size());
-        for (uint8_t i = 0; i < n; ++i)
+        if (n > 0)
         {
-            finalDerivations.Add(Cm::Ast::Derivation::pointer);
+            if (n != 1)
+            {
+                throw Cm::Sym::Exception("arrays of arrays not supported", span);
+            }
+            derivedTypeSymbol->SetIrType(Cm::IrIntf::Array(finalBaseType->GetIrType(), derivedTypeSymbol->GetLastArrayDimension()));
         }
-        derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span));
-        derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
+        else
+        {
+            derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span));
+            derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
+        }
     }
     types.push_back(std::unique_ptr<TypeSymbol>(derivedTypeSymbol.get()));
     AddType(derivedTypeSymbol.get());

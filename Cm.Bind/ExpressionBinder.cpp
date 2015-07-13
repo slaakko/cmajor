@@ -1248,9 +1248,13 @@ void ExpressionBinder::Visit(Cm::Ast::IndexNode& indexNode)
     std::unique_ptr<Cm::BoundTree::BoundExpression> index(boundExpressionStack.Pop());
     Cm::Sym::TypeSymbol* subjectType = subject->GetType();
     Cm::Sym::TypeSymbol* plainSubjectType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(subjectType);
-    if (plainSubjectType->IsPointerType() || plainSubjectType->IsArrayType())
+    if (plainSubjectType->IsArrayType())
     {
-        BindIndexPointerAndArray(&indexNode, subject.release(), index.release());
+        BindIndexArray(&indexNode, subject.release(), index.release());
+    }
+    else if (plainSubjectType->IsPointerType())
+    {
+        BindIndexPointer(&indexNode, subject.release(), index.release());
     }
     else if (plainSubjectType->IsClassTypeSymbol())
     {
@@ -1262,12 +1266,19 @@ void ExpressionBinder::Visit(Cm::Ast::IndexNode& indexNode)
     }
 }
 
-void ExpressionBinder::BindIndexPointerAndArray(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index)
+void ExpressionBinder::BindIndexPointer(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index)
 {
     boundExpressionStack.Push(subject);
     boundExpressionStack.Push(index);
     BindBinaryOp(indexNode, "operator+");
     BindUnaryOp(indexNode, "operator*");
+}
+
+void ExpressionBinder::BindIndexArray(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index)
+{
+    boundExpressionStack.Push(subject);
+    boundExpressionStack.Push(index);
+    BindBinaryOp(indexNode, "operator[]");
 }
 
 void ExpressionBinder::BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index)

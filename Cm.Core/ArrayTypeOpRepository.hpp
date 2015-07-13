@@ -18,7 +18,7 @@ class ArrayTypeOpRepository
 {
 public:
     virtual ~ArrayTypeOpRepository();
-    virtual void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Argument>& arguments, const Cm::Parsing::Span& span, 
+    virtual void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Argument>& arguments, Cm::Sym::ContainerScope* containerScope, const Cm::Parsing::Span& span,
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) = 0;
 };
 

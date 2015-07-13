@@ -115,6 +115,14 @@ struct BetterFunctionMatch
         {
             return  false;
         }
+        else if (left.function->IsArrayConstructor() && !right.function->IsArrayConstructor())
+        {
+            return true;
+        }
+        else if (right.function->IsArrayConstructor() && !left.function->IsArrayConstructor())
+        {
+            return false;
+        }
         else if (left.constraint && !right.constraint)
         {
             return true;
@@ -252,6 +260,14 @@ bool FindConversion(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm:
     {
         argumentMatch = ArgumentMatch(Cm::Sym::ConversionRank::exactMatch, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
         return true;
+    }
+    if (plainArgumentType->IsArrayType() && plainParameterType->IsPointerType())
+    {
+        if (Cm::Sym::TypesEqual(plainParameterType->GetBaseType(), plainArgumentType->GetBaseType()))
+        {
+            argumentMatch = ArgumentMatch(Cm::Sym::ConversionRank::conversion, 1, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
+            return true;
+        }
     }
     int distance = 0;
     Cm::Sym::FunctionSymbol* derivedBaseConversion = nullptr;
@@ -632,7 +648,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     if ((flags & OverloadResolutionFlags::bindOnlyMemberFunctions) == OverloadResolutionFlags::none)
     {
         boundCompileUnit.DerivedTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
-        boundCompileUnit.ArrayTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, span, viableFunctions);
+        boundCompileUnit.ArrayTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, containerScope, span, viableFunctions);
         boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
         boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
     }

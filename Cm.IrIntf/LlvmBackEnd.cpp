@@ -664,6 +664,11 @@ Ir::Intf::Instruction* LlvmBackEnd::FRem(Ir::Intf::Type* floatingPointType, Ir::
     return Llvm::FRem(floatingPointType, result, operand1, operand2);
 }
 
+Ir::Intf::Instruction* LlvmBackEnd::Index(Ir::Intf::Object* result, Ir::Intf::Object* array_, Ir::Intf::Object* index)
+{
+    throw std::runtime_error("not applicable to LLVM backend");
+}
+
 Ir::Intf::Instruction* LlvmBackEnd::Ret()
 {
     return Llvm::Ret();

@@ -67,6 +67,31 @@ Cm::BoundTree::BoundCompoundStatement* Binder::GetCurrentCompound()
     }
 }
 
+void Binder::SetCurrentFunction(Cm::BoundTree::BoundFunction* function)
+{
+    boundFunction.reset(function);
+}
+
+Cm::BoundTree::BoundFunction* Binder::ReleaseCurrentFunction()
+{
+    return boundFunction.release();
+}
+
+void Binder::SetCurrentParent(Cm::BoundTree::BoundParentStatement* parent)
+{
+    currentParent.reset(parent);
+}
+
+Cm::BoundTree::BoundCompoundStatement* Binder::ReleaseCurrentCompound()
+{
+    Cm::BoundTree::BoundParentStatement* parent = currentParent.release();
+    if (!parent->IsBoundCompoundStatement())
+    {
+        throw std::runtime_error("not compound");
+    }
+    return static_cast<Cm::BoundTree::BoundCompoundStatement*>(parent);
+}
+
 void Binder::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
 {
     Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&namespaceNode);

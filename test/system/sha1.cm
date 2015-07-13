@@ -1,0 +1,12 @@
+using System;
+
+namespace Test
+{
+    public unit_test void TestSha1()
+    {
+        string s0 = GetSha1MessageDigest("");
+        #assert(s0 == "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709");
+        string s1 = GetSha1MessageDigest("The quick brown fox jumps over the lazy dog");
+        #assert(s1 == "2FD4E1C67A2D28FCED849EE1BB76E7391B93EB12");
+    }
+}

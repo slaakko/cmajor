@@ -63,7 +63,7 @@ private:
     std::vector<FunctionLookup> lookups;
 };
 
-enum class FunctionSymbolFlags: uint16_t
+enum class FunctionSymbolFlags: uint32_t
 {
     none = 0,
     constructorOrDestructorSymbol = 1 << 0,
@@ -82,24 +82,25 @@ enum class FunctionSymbolFlags: uint16_t
     conversion = 1 << 12,
     templateSpecialization = 1 << 13,
     memberOfTemplateType = 1 << 14,
-    memberOfClassTemplate = 1 << 15
+    memberOfClassTemplate = 1 << 15,
+    arrayConstructor = 1 << 16
 };
 
 std::string FunctionSymbolFlagString(FunctionSymbolFlags flags);
 
 inline FunctionSymbolFlags operator|(FunctionSymbolFlags left, FunctionSymbolFlags right)
 {
-    return FunctionSymbolFlags(uint16_t(left) | uint16_t(right));
+    return FunctionSymbolFlags(uint32_t(left) | uint32_t(right));
 }
 
 inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFlags right)
 {
-    return FunctionSymbolFlags(uint16_t(left) & uint16_t(right));
+    return FunctionSymbolFlags(uint32_t(left) & uint32_t(right));
 }
 
 inline FunctionSymbolFlags operator~(FunctionSymbolFlags flag)
 {
-    return FunctionSymbolFlags(~uint16_t(flag));
+    return FunctionSymbolFlags(~uint32_t(flag));
 }
 
 class TypeParameterSymbol;
@@ -182,6 +183,8 @@ public:
     void SetMemberOfTemplateType() { SetFlag(FunctionSymbolFlags::memberOfTemplateType); }
     bool IsMemberOfClassTemplate() const { return GetFlag(FunctionSymbolFlags::memberOfClassTemplate); }
     void SetMemberOfClassTemplate() { SetFlag(FunctionSymbolFlags::memberOfClassTemplate); }
+    bool IsArrayConstructor() const { return GetFlag(FunctionSymbolFlags::arrayConstructor); }
+    void SetArrayConstructor() { SetFlag(FunctionSymbolFlags::arrayConstructor); }
     bool IsConstructor() const;
     bool IsDefaultConstructor() const;
     bool IsCopyConstructor() const;

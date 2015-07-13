@@ -305,7 +305,7 @@ bool FunctionSymbol::IsDestructor() const
 void FunctionSymbol::Write(Writer& writer)
 {
     ContainerSymbol::Write(writer);
-    writer.GetBinaryWriter().Write(uint16_t(flags));
+    writer.GetBinaryWriter().Write(uint32_t(flags));
     writer.GetBinaryWriter().Write(groupName);
     writer.GetBinaryWriter().Write(vtblIndex);
     if (IsFunctionTemplate())
@@ -416,7 +416,7 @@ void FunctionSymbol::Write(Writer& writer)
 void FunctionSymbol::Read(Reader& reader)
 {
     ContainerSymbol::Read(reader);
-    flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUShort());
+    flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUInt());
     groupName = reader.GetBinaryReader().ReadString();
     vtblIndex = reader.GetBinaryReader().ReadShort();
     if (IsFunctionTemplate())

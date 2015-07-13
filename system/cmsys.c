@@ -446,7 +446,7 @@ void cmemset(void* dest, unsigned char value, unsigned long long size, int align
     memset(dest, (int)value, (size_t)size);
 }
 
-void cmemcpy(void* dest, void* source, unsigned long long size, int align, _Bool isVolatile)
+void cmemcpy(void* dest, const void* source, unsigned long long size, int align, _Bool isVolatile)
 {
     memcpy(dest, source, (size_t)size);
 }

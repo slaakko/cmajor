@@ -154,17 +154,17 @@ namespace System
 
     public Pair<uhuge, uhuge> mul(uhuge left, uhuge right)
     {
-        List<ulong> u(4, 0u);
+        ulong[4] u;
         u[3] = left.h >> 32u;
         u[2] = left.h & 0xFFFFFFFFu;
         u[1] = left.l >> 32u;
         u[0] = left.l & 0xFFFFFFFFu;
-        List<ulong> v(4, 0u);
+        ulong[4] v;
         v[3] = right.h >> 32u;
         v[2] = right.h & 0xFFFFFFFFu;
         v[1] = right.l >> 32u;
         v[0] = right.l & 0xFFFFFFFFu;
-        List<ulong> w(8, 0u);
+        ulong[8] w;
         for (int j = 0; j < 4; ++j)
         {
             if (v[j] != 0u)
@@ -172,13 +172,11 @@ namespace System
                 uint k = 0u;
                 for (int i = 0; i < 4; ++i)
                 {
-                    int iplusj = i + j;
-                    ulong t = u[i] * v[j] + w[iplusj] + k;
-                    w[iplusj] = t & 0xFFFFFFFFu;
+                    ulong t = u[i] * v[j] + w[i + j] + k;
+                    w[i + j] = t & 0xFFFFFFFFu;
                     k = cast<uint>(t >> 32u);
                 }
-                int jplus4 = j + 4;
-                w[jplus4] = k;
+                w[j + 4] = k;
             }
         }
         uhuge h((w[7] << 32u) + w[6], (w[5] << 32u) + w[4]);
@@ -226,17 +224,17 @@ namespace System
             return MakePair(p.first, uhuge(p.second));
         }
         ulong m = 0xFFFFFFFFu;
-        List<ulong> u(8, 0u);
+        ulong[8] u;
         u[3] = left.h >> 32u;
         u[2] = left.h & m;
         u[1] = left.l >> 32u;
         u[0] = left.l & m;
-        List<ulong> v(4, 0u);
+        ulong[4] v;
         v[3] = right.h >> 32u;
         v[2] = right.h & m;
         v[1] = right.l >> 32u;
         v[0] = right.l & m;
-        List<ulong> q(4, 0u);
+        ulong[4] q;
 //      D1. [Normalize.]
         int n = 4;
         while (v[n - 1] == 0u)

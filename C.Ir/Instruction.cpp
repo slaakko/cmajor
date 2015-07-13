@@ -155,6 +155,22 @@ FRemInst::FRemInst(Ir::Intf::Type* floatingPointType_, Ir::Intf::Object* result_
 
 Ir::Intf::Instruction* FRem(Ir::Intf::Type* floatingPointType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) { return new FRemInst(floatingPointType, result, operand1, operand2); }
 
+IndexInst::IndexInst(Ir::Intf::Object* result_, Ir::Intf::Object* array__, Ir::Intf::Object* index_) : Ir::Intf::Instruction("[]"), result(result_), array_(array__), index(index_)
+{
+}
+
+std::string IndexInst::ToString() const
+{
+    std::string s;
+    s.append(result->Name()).append(" = &").append(array_->Name()).append("[").append(index->Name()).append("]");
+    return s;
+}
+
+Ir::Intf::Instruction* Index(Ir::Intf::Object* result, Ir::Intf::Object* array_, Ir::Intf::Object* index)
+{
+    return new IndexInst(result, array_, index);
+}
+
 RetInst::RetInst() : Ir::Intf::Instruction("return"), value(nullptr)
 {
 }
