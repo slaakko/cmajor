@@ -27,6 +27,7 @@
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parser/Expression.hpp>
+#include <Cm.Parser/TypeExpr.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Expression.hpp>
 #include <Cm.Ast/Literal.hpp>
@@ -494,7 +495,7 @@ void ForStatementBinder::EndVisit(Cm::Ast::ForStatementNode& forStatementNode)
 
 Cm::Parser::ExpressionGrammar* expressionGrammar = nullptr;
 
-Cm::Ast::Node* MakeTypeIdNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing::Span& span)
+Cm::Ast::Node* MakeExpressionNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing::Span& span)
 {
     if (!expressionGrammar)
     {
@@ -504,6 +505,20 @@ Cm::Ast::Node* MakeTypeIdNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing
     int n = int(typeSymbolText.size());
     Cm::Parser::ParsingContext parsingContext;
     return expressionGrammar->Parse(&typeSymbolText[0], &typeSymbolText[n], 0, "", &parsingContext);
+}
+
+Cm::Parser::TypeExprGrammar* typeExprGrammar = nullptr;
+
+Cm::Ast::Node* MakeTypeIdNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing::Span& span)
+{
+    if (!typeExprGrammar)
+    {
+        typeExprGrammar = Cm::Parser::TypeExprGrammar::Create();
+    }
+    std::string typeSymbolText = Cm::Util::Trim(typeSymbol->FullName());
+    int n = int(typeSymbolText.size());
+    Cm::Parser::ParsingContext parsingContext;
+    return typeExprGrammar->Parse(&typeSymbolText[0], &typeSymbolText[n], 0, "", &parsingContext);
 }
 
 RangeForStatementBinder::RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_,
@@ -545,7 +560,7 @@ void RangeForStatementBinder::EndVisit(Cm::Ast::RangeForStatementNode& rangeForS
     {
         iteratorTypeId = new Cm::Ast::IdentifierNode(rangeForStatementNode.GetSpan(), "Iterator");
     }
-    Cm::Ast::Node* containerTypeId = MakeTypeIdNode(plainContainerType, rangeForStatementNode.GetSpan());
+    Cm::Ast::Node* containerTypeId = MakeExpressionNode(plainContainerType, rangeForStatementNode.GetSpan());
     Cm::Ast::DotNode* containerIterator(new Cm::Ast::DotNode(rangeForStatementNode.GetSpan(), containerTypeId, iteratorTypeId));
     Cm::Ast::ConstructionStatementNode* initNode(new Cm::Ast::ConstructionStatementNode(rangeForStatementNode.GetSpan(), containerIterator, iteratorId));
     initNode->AddArgument(invokeContainerBeginNode);

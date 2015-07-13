@@ -17,7 +17,7 @@
 
 namespace Cm { namespace Core {
 
-enum class GenFlags : uint16_t
+enum class GenFlags : uint8_t
 {
     none = 0, 
     genJumpingBoolCode = 1 << 0,
@@ -28,22 +28,21 @@ enum class GenFlags : uint16_t
     virtualCall = 1 << 5,
     labelSet = 1 << 6,
     memberVar = 1 << 7,
-    arg1IsArray = 1 << 8
 };
 
 inline GenFlags operator&(GenFlags left, GenFlags right)
 {
-    return GenFlags(uint16_t(left) & uint16_t(right));
+    return GenFlags(uint8_t(left) & uint8_t(right));
 }
 
 inline GenFlags operator|(GenFlags left, GenFlags right)
 {
-    return GenFlags(uint16_t(left) | uint16_t(right));
+    return GenFlags(uint8_t(left) | uint8_t(right));
 }
 
 inline GenFlags operator~(GenFlags flag)
 {
-    return GenFlags(~uint16_t(flag));
+    return GenFlags(~uint8_t(flag));
 }
 
 inline bool GetFlag(GenFlags flag, GenFlags flags)
@@ -170,8 +169,6 @@ public:
     void SetAddrArg() { SetFlag(GenFlags::addrArg, flags); }
     bool MemberVar() const { return GetFlag(GenFlags::memberVar, flags); }
     void SetMemberVar() { SetFlag(GenFlags::memberVar, flags); }
-    bool Arg1IsArray() const { return GetFlag(GenFlags::arg1IsArray, flags); }
-    void SetArg1IsArray() { SetFlag(GenFlags::arg1IsArray, flags); }
     bool ClassTypeToPointerTypeConversion() const { return GetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
     void SetClassTypeToPointerTypeConversion() { SetFlag(GenFlags::classTypeToPointerTypeConversion, flags); }
     bool GenerateVirtualCall() const { return GetFlag(GenFlags::virtualCall, flags); }

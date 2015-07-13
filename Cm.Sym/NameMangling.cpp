@@ -106,6 +106,10 @@ std::string FunctionGroupMangleMap::MangleFunctionGroupName(const std::string& f
     {
         return "ac_" + functionGroupName.substr(19);
     }
+    else if (Cm::Util::StartsWith(functionGroupName, "@array_assignment"))
+    {
+        return "aa_" + functionGroupName.substr(19);
+    }
     MangleMapIt i = mangledFunctionGroupNames.find(functionGroupName);
     if (i != mangledFunctionGroupNames.end())
     {
@@ -119,6 +123,10 @@ std::string FunctionGroupMangleMap::GetFunctionGroupDocId(const std::string& fun
     if (Cm::Util::StartsWith(functionGroupName, "@array_constructor"))
     {
         return "arrayConstructor_" + functionGroupName.substr(19);
+    }
+    else if (Cm::Util::StartsWith(functionGroupName, "@array_assignment"))
+    {
+        return "arrayAssignment_" + functionGroupName.substr(19);
     }
     MangleMapIt i = functionGroupDocIds.find(functionGroupName);
     if (i != functionGroupDocIds.end())

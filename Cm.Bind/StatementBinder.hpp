@@ -106,6 +106,8 @@ private:
     Cm::BoundTree::BoundForStatement* forStatement;
 };
 
+Cm::Ast::Node* MakeTypeIdNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing::Span& span);
+
 class Binder;
 
 class RangeForStatementBinder : public StatementBinder

@@ -123,6 +123,14 @@ struct BetterFunctionMatch
         {
             return false;
         }
+        else if (left.function->IsArrayAssignment() && !right.function->IsArrayAssignment())
+        {
+            return true;
+        }
+        else if (right.function->IsArrayAssignment() && !left.function->IsArrayAssignment())
+        {
+            return false;
+        }
         else if (left.constraint && !right.constraint)
         {
             return true;

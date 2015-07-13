@@ -136,7 +136,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
             }
-            else if (paramType->IsClassTypeSymbol() || paramType->IsArrayType())
+            else if (paramType->IsClassTypeSymbol() || paramType->IsArrayType() || argument->GetType()->IsArrayType())
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
             }
@@ -151,7 +151,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
         }
         else 
         {
-            if (paramType->IsClassTypeSymbol() || paramType->IsArrayType())
+            if (paramType->IsClassTypeSymbol() || paramType->IsArrayType() || argument->GetType()->IsArrayType())
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
             }
