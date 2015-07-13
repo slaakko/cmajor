@@ -139,7 +139,14 @@ Ir::Intf::Object* MemberVar::CreateAddr(Ir::Intf::Emitter& emitter, Ir::Intf::Ty
     emitter.Own(ptrType);
     Ir::Intf::RegVar* addr = CreateTemporaryRegVar(ptrType);
     emitter.Own(addr);
-    emitter.Emit(Load(GetType(), addr, this, Ir::Intf::Indirection::none, Ir::Intf::Indirection::addr));
+    if (type->IsArrayType())
+    {
+        emitter.Emit(Load(GetType(), addr, this, Ir::Intf::Indirection::none, Ir::Intf::Indirection::none));
+    }
+    else
+    {
+        emitter.Emit(Load(GetType(), addr, this, Ir::Intf::Indirection::none, Ir::Intf::Indirection::addr));
+    }
     return addr;
 }
 

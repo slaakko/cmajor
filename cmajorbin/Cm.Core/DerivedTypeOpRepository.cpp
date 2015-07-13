@@ -981,7 +981,7 @@ void AdditiveOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::Co
 {
     if (arity != 2) return;
     Cm::Sym::TypeSymbol* leftType = arguments[0].Type();
-    if (leftType->IsPointerType() || leftType->IsArrayType())
+    if (leftType->IsPointerType())
     {
         if (leftType->GetBaseType()->IsVoidTypeSymbol()) return;
         Cm::Sym::TypeSymbol* rightType = arguments[1].Type();

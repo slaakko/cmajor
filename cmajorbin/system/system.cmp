@@ -33,6 +33,7 @@ source <queue.cm>;
 source <rbtree.cm>;
 source <rvalue.cm>;
 source <set.cm>;
+source <sha1.cm>;
 source <stack.cm>;
 source <stream.cm>;
 source <string.cm>;

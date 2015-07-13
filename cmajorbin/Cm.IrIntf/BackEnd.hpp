@@ -150,6 +150,7 @@ public:
     virtual Ir::Intf::Instruction* FMul(Ir::Intf::Type* floatingPointType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) = 0;
     virtual Ir::Intf::Instruction* FDiv(Ir::Intf::Type* floatingPointType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) = 0;
     virtual Ir::Intf::Instruction* FRem(Ir::Intf::Type* floatingPointType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) = 0;
+    virtual Ir::Intf::Instruction* Index(Ir::Intf::Object* result, Ir::Intf::Object* array_, Ir::Intf::Object* index) = 0;
     virtual Ir::Intf::Instruction* Ret() = 0;
     virtual Ir::Intf::Instruction* Ret(Ir::Intf::Object* value) = 0;
     virtual Ir::Intf::Instruction* Br(Ir::Intf::LabelObject* dest) = 0;

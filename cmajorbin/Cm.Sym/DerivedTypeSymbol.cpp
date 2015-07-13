@@ -11,6 +11,8 @@
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/Exception.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -309,12 +311,12 @@ void DerivedTypeSymbol::MakeIrType()
     uint8_t n = uint8_t(arrayDimensions.size());
     if (n > 0)
     {
-        Cm::Ast::DerivationList deriv = derivations;
-        for (uint8_t i = 0; i < n; ++i)
+        if (n != 1)
         {
-            deriv.Add(Cm::Ast::Derivation::pointer);
+            throw Cm::Sym::Exception("arrays of arrays not supported", GetSpan());
         }
-        SetIrType(Cm::Sym::MakeIrType(baseType, deriv, Cm::Parsing::Span()));
+        Ir::Intf::Type* arrayType = Cm::IrIntf::Array(baseType->GetIrType(), GetLastArrayDimension());
+        SetIrType(arrayType);
     }
     else
     {

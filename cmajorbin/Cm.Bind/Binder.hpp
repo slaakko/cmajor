@@ -85,8 +85,12 @@ public:
     void EndContainerScope();
     void AddBoundStatement(Cm::BoundTree::BoundStatement* boundStatement);
     Cm::BoundTree::BoundCompoundStatement* GetCurrentCompound();
+    Cm::BoundTree::BoundCompoundStatement* ReleaseCurrentCompound();
     void BeginClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol);
     void EndClass();
+    void SetCurrentFunction(Cm::BoundTree::BoundFunction* function);
+    Cm::BoundTree::BoundFunction* ReleaseCurrentFunction();
+    void SetCurrentParent(Cm::BoundTree::BoundParentStatement* parent);
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* currentContainerScope;

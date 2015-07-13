@@ -24,6 +24,7 @@ source <path.cm>;
 source <ptr.cm>;
 source <queue.cm>;
 source <set.cm>;
+source <sha1.cm>;
 source <stack.cm>;
 source <string.cm>;
 source <stringstream.cm>;

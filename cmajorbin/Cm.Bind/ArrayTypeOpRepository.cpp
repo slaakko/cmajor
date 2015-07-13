@@ -8,6 +8,14 @@
 ========================================================================*/
 
 #include <Cm.Bind/ArrayTypeOpRepository.hpp>
+#include <Cm.Bind/Parameter.hpp>
+#include <Cm.Bind/Binder.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.Sym/DeclarationVisitor.hpp>
+#include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Ast/BasicType.hpp>
+#include <Cm.Ast/Literal.hpp>
+#include <Cm.Ast/Expression.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -187,53 +195,157 @@ void PrimitiveArrayTypeCopyAssignment::Generate(Cm::Core::Emitter& emitter, Cm::
     }
 }
 
-Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetDefaultConstructor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type)
+Cm::Sym::FunctionSymbol* GenerateArrayTypeDefaultConstructor(Cm::Sym::TypeSymbol* arrayType, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit)
+{
+    int n = arrayType->GetLastArrayDimension();
+    Cm::Sym::TypeSymbol* elementType = arrayType->GetBaseType();
+    Cm::Sym::TypeSymbol* ptrType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(elementType, Cm::Parsing::Span());
+    Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(Cm::Parsing::Span(), "this");
+    thisParam->SetType(ptrType);
+    Cm::Sym::FunctionSymbol* defaultConstructorSymbol = new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "@array_constructor");
+    defaultConstructorSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
+    defaultConstructorSymbol->SetGroupName("@array_constructor_" + std::to_string(n));
+    defaultConstructorSymbol->SetParent(containerScope->Ns());
+    defaultConstructorSymbol->SetConstructorOrDestructorSymbol();
+    defaultConstructorSymbol->SetMemberFunctionSymbol();
+    defaultConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
+    defaultConstructorSymbol->SetReplicated();
+    defaultConstructorSymbol->SetArrayConstructor();
+    defaultConstructorSymbol->AddSymbol(thisParam);
+    defaultConstructorSymbol->ComputeName();
+    std::unique_ptr<Cm::BoundTree::BoundFunction> defaultConstructor(new Cm::BoundTree::BoundFunction(nullptr, defaultConstructorSymbol));
+    Cm::Ast::CompoundStatementNode* body = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
+    defaultConstructor->Own(body);
+    Cm::Ast::ConstructionStatementNode* constructLoopVarStatement = new Cm::Ast::ConstructionStatementNode(Cm::Parsing::Span(), new Cm::Ast::IntNode(Cm::Parsing::Span()), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"));
+    constructLoopVarStatement->AddArgument(new Cm::Ast::IntLiteralNode(Cm::Parsing::Span(), n));
+    body->AddStatement(constructLoopVarStatement);
+    Cm::Ast::CompoundStatementNode* whileBlockContent = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
+    Cm::Ast::ConstructNode* constructNode = new Cm::Ast::ConstructNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), elementType->FullName()));
+    constructNode->AddArgument(new Cm::Ast::ThisNode(Cm::Parsing::Span()));
+    constructNode->AddArgument(new Cm::Ast::InvokeNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), elementType->FullName())));
+    Cm::Ast::SimpleStatementNode* constructStatement = new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), constructNode);
+    whileBlockContent->AddStatement(constructStatement);
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::ThisNode(Cm::Parsing::Span()))));;
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixDecNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"))));
+    Cm::Ast::WhileStatementNode* whileStatement = new Cm::Ast::WhileStatementNode(Cm::Parsing::Span(),
+        new Cm::Ast::GreaterNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"), new Cm::Ast::IntLiteralNode(Cm::Parsing::Span(), 0)), whileBlockContent);
+    body->AddStatement(whileStatement);
+    Cm::Sym::DeclarationVisitor declarationVisitor(compileUnit.SymbolTable());
+    body->Accept(declarationVisitor);
+    Binder binder(compileUnit);
+    binder.SetCurrentFunction(defaultConstructor.release());
+    body->Accept(binder);
+    Cm::BoundTree::BoundFunction* defaultCtor = binder.ReleaseCurrentFunction();
+    GenerateReceives(containerScope, compileUnit, defaultCtor);
+    compileUnit.AddBoundNode(defaultCtor);
+    return defaultConstructorSymbol;
+}
+
+class ArrayIndexing : public Cm::Core::BasicTypeOp
+{
+public:
+    ArrayIndexing(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
+    void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
+};
+
+ArrayIndexing::ArrayIndexing(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
+{
+    SetGroupName("operator[]");
+    SetReturnType(typeRepository.MakeReferenceType(Type()->GetBaseType(), Cm::Parsing::Span()));
+    Cm::Sym::ParameterSymbol* arrayParam(new Cm::Sym::ParameterSymbol(Cm::Parsing::Span(), "array"));
+    arrayParam->SetType(Type());
+    AddSymbol(arrayParam);
+    Cm::Sym::ParameterSymbol* indexParam(new Cm::Sym::ParameterSymbol(Cm::Parsing::Span(), "index"));
+    indexParam->SetType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
+    AddSymbol(indexParam);
+    ComputeName();
+}
+
+void ArrayIndexing::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)
+{
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
+    {
+        Ir::Intf::Object* zero = Cm::IrIntf::CreateI32Constant(0);
+        emitter.Own(zero);
+        if (result.Arg1()->IsStackVar())
+        {
+            Ir::Intf::Type* arrayPtrType = Cm::IrIntf::Pointer(Type()->GetBaseType()->GetIrType(), 1);
+            emitter.Own(arrayPtrType);
+            emitter.Emit(Cm::IrIntf::GetElementPtr(arrayPtrType, result.MainObject(), result.Arg1(), result.Arg2()));
+        }
+        else
+        {
+            Ir::Intf::Type* arrayPtrType = Cm::IrIntf::Pointer(Type()->GetIrType(), 1);
+            emitter.Own(arrayPtrType);
+            emitter.Emit(Cm::IrIntf::GetElementPtr(arrayPtrType, result.MainObject(), result.Arg1(), zero, result.Arg2()));
+        }
+    }
+    else
+    {
+        emitter.Emit(Cm::IrIntf::Index(result.MainObject(), result.Arg1(), result.Arg2()));
+    }
+}
+
+Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetDefaultConstructor(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Sym::TypeSymbol* type)
 {
     if (!defaultConstructor)
     {
         if (type->IsPrimitiveSingleDimensionArrayType())
         {
-            defaultConstructor.reset(new PrimitiveArrayTypeDefaultConstructor(typeRepository, type));
+            defaultConstructor.reset(new PrimitiveArrayTypeDefaultConstructor(compileUnit.SymbolTable().GetTypeRepository(), type));
+        }
+        else
+        {
+            defaultConstructor.reset(GenerateArrayTypeDefaultConstructor(type, containerScope, compileUnit));
         }
     }
     return defaultConstructor.get();
 }
 
-Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetCopyConstructor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type)
+Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetCopyConstructor(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Sym::TypeSymbol* type)
 {
     if (!copyConstructor)
     {
         if (type->IsPrimitiveSingleDimensionArrayType())
         {
-            copyConstructor.reset(new PrimitiveArrayTypeCopyConstructor(typeRepository, type));
+            copyConstructor.reset(new PrimitiveArrayTypeCopyConstructor(compileUnit.SymbolTable().GetTypeRepository(), type));
         }
     }
     return copyConstructor.get();
 }
 
-Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type)
+Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetCopyAssignment(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Sym::TypeSymbol* type)
 {
     if (!copyAssignment)
     {
         if (type->IsPrimitiveSingleDimensionArrayType())
         {
-            copyAssignment.reset(new PrimitiveArrayTypeCopyAssignment(typeRepository, type));
+            copyAssignment.reset(new PrimitiveArrayTypeCopyAssignment(compileUnit.SymbolTable().GetTypeRepository(), type));
         }
     }
     return copyAssignment.get();
+}
+
+Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetIndexing(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit, Cm::Sym::TypeSymbol* arrayType)
+{
+    if (!indexing)
+    {
+        indexing.reset(new ArrayIndexing(compileUnit.SymbolTable().GetTypeRepository(), arrayType));
+    }
+    return indexing.get();
 }
 
 ArrayTypeOpFunGroup::~ArrayTypeOpFunGroup()
 {
 }
 
-void ArrayTypeConstructorGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheMap, Cm::Sym::TypeSymbol* arrayType, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm::Parsing::Span& span,
-    int arity, const std::vector<Cm::Core::Argument>& arguments, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions)
+void ArrayTypeConstructorGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheMap, Cm::Sym::TypeSymbol* arrayType, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
+    const Cm::Parsing::Span& span, int arity, const std::vector<Cm::Core::Argument>& arguments, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions)
 {
     if (arity == 1)
     {
         ArrayTypeOpCache& cache = cacheMap[arrayType];
-        Cm::Sym::FunctionSymbol* defaultConstructor = cache.GetDefaultConstructor(boundCompileUnit.SymbolTable().GetTypeRepository(), arrayType);
+        Cm::Sym::FunctionSymbol* defaultConstructor = cache.GetDefaultConstructor(containerScope, boundCompileUnit, arrayType);
         if (defaultConstructor)
         {
             viableFunctions.insert(defaultConstructor);
@@ -245,7 +357,7 @@ void ArrayTypeConstructorGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheM
         if (Cm::Sym::TypesEqual(arrayType, plainArg1Type))
         {
             ArrayTypeOpCache& cache = cacheMap[arrayType];
-            Cm::Sym::FunctionSymbol* copyConstructor = cache.GetCopyConstructor(boundCompileUnit.SymbolTable().GetTypeRepository(), arrayType);
+            Cm::Sym::FunctionSymbol* copyConstructor = cache.GetCopyConstructor(containerScope, boundCompileUnit, arrayType);
             if (copyConstructor)
             {
                 viableFunctions.insert(copyConstructor);
@@ -254,8 +366,8 @@ void ArrayTypeConstructorGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheM
     }
 }
 
-void ArrayTypeAssignmentGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheMap, Cm::Sym::TypeSymbol* arrayType, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const Cm::Parsing::Span& span,
-    int arity, const std::vector<Cm::Core::Argument>& arguments, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) 
+void ArrayTypeAssignmentGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheMap, Cm::Sym::TypeSymbol* arrayType, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
+    const Cm::Parsing::Span& span, int arity, const std::vector<Cm::Core::Argument>& arguments, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) 
 {
     if (arity == 2)
     {
@@ -263,7 +375,7 @@ void ArrayTypeAssignmentGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheMa
         if (Cm::Sym::TypesEqual(arrayType, plainArg1Type))
         {
             ArrayTypeOpCache& cache = cacheMap[arrayType];
-            Cm::Sym::FunctionSymbol* copyAssignment = cache.GetCopyAssignment(boundCompileUnit.SymbolTable().GetTypeRepository(), arrayType);
+            Cm::Sym::FunctionSymbol* copyAssignment = cache.GetCopyAssignment(containerScope, boundCompileUnit, arrayType);
             if (copyAssignment)
             {
                 viableFunctions.insert(copyAssignment);
@@ -272,28 +384,52 @@ void ArrayTypeAssignmentGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheMa
     }
 }
 
+void ArrayTypeIndexGroup::CollectViableFunctions(ArrayTypeCacheMap& cacheMap, Cm::Sym::TypeSymbol* arrayType, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit,
+    const Cm::Parsing::Span& span, int arity, const std::vector<Cm::Core::Argument>& arguments, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions)
+{
+    if (arity == 2)
+    {
+        Cm::Sym::TypeSymbol* indexType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(arguments[1].Type());
+        if (indexType->IsIntegerTypeSymbol())
+        {
+            ArrayTypeOpCache& cache = cacheMap[arrayType];
+            viableFunctions.insert(cache.GetIndexing(containerScope, boundCompileUnit, arrayType));
+        }
+    }
+}
+
 ArrayTypeOpRepository::ArrayTypeOpRepository(Cm::BoundTree::BoundCompileUnit& compileUnit_) : compileUnit(compileUnit_)
 {
     arrayTypeOpFunGroupMap["@constructor"] = &arrayTypeConstructorGroup;
     arrayTypeOpFunGroupMap["operator="] = &arrayTypeAssignmentGroup;
+    arrayTypeOpFunGroupMap["operator[]"] = &arrayTypeIndexGroup;
 }
 
-void ArrayTypeOpRepository::CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span,
-    std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions)
+void ArrayTypeOpRepository::CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ContainerScope* containerScope, 
+    const Cm::Parsing::Span& span, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions)
 {
     if (arity < 1 || arity > 2) return;
     Cm::Sym::TypeSymbol* leftArgType = arguments[0].Type();
-    if (!leftArgType->IsArrayType() || leftArgType->IsReferenceType() || leftArgType->IsRvalueRefType() || !leftArgType->IsPointerType() || leftArgType->GetPointerCountAfterArray() != 1) return;
-    Cm::Sym::DerivedTypeSymbol* ptrArrayType = static_cast<Cm::Sym::DerivedTypeSymbol*>(leftArgType);
-    if (!Cm::Sym::HasPointerToArrayDerivation(ptrArrayType->Derivations())) return;
-    Cm::Ast::DerivationList derivations = ptrArrayType->Derivations();
-    derivations.RemoveLastPointer();
-    Cm::Sym::TypeSymbol* arrayType = compileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(derivations, ptrArrayType->GetBaseType(), ptrArrayType->GetArrayDimensions(), span);
+    Cm::Sym::TypeSymbol* arrayType = nullptr;
+    if (groupName != "operator[]")
+    {
+        if (!leftArgType->IsArrayType() || leftArgType->IsReferenceType() || leftArgType->IsRvalueRefType() || !leftArgType->IsPointerType() || leftArgType->GetPointerCountAfterArray() != 1) return;
+        Cm::Sym::DerivedTypeSymbol* ptrArrayType = static_cast<Cm::Sym::DerivedTypeSymbol*>(leftArgType);
+        if (!Cm::Sym::HasPointerToArrayDerivation(ptrArrayType->Derivations())) return;
+        Cm::Ast::DerivationList derivations = ptrArrayType->Derivations();
+        derivations.RemoveLastPointer();
+        arrayType = compileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(derivations, ptrArrayType->GetBaseType(), ptrArrayType->GetArrayDimensions(), span);
+    }
+    else
+    {
+        if (!leftArgType->IsArrayType()) return;
+        arrayType = leftArgType;
+    }
     ArrayTypeOpFunGroupMapIt i = arrayTypeOpFunGroupMap.find(groupName);
     if (i != arrayTypeOpFunGroupMap.end())
     {
         ArrayTypeOpFunGroup* group = i->second;
-        group->CollectViableFunctions(cacheMap, arrayType, compileUnit, span, arity, arguments, viableFunctions);
+        group->CollectViableFunctions(cacheMap, arrayType, containerScope, compileUnit, span, arity, arguments, viableFunctions);
     }
 }
 

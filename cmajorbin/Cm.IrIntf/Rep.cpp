@@ -628,6 +628,11 @@ Ir::Intf::Instruction* FRem(Ir::Intf::Type* floatingPointType, Ir::Intf::Object*
     return GetBackEndImpl()->FRem(floatingPointType, result, operand1, operand2);
 }
 
+Ir::Intf::Instruction* Index(Ir::Intf::Object* result, Ir::Intf::Object* array_, Ir::Intf::Object* index)
+{
+    return GetBackEndImpl()->Index(result, array_, index);
+}
+
 Ir::Intf::Instruction* Ret()
 {
     return GetBackEndImpl()->Ret();

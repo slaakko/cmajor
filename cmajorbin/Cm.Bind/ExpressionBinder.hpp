@@ -162,7 +162,8 @@ private:
     void BindTypedefSymbol(Cm::Ast::Node* idNode, Cm::Sym::TypedefSymbol* typedefSymbol);
     void BindBoundTypeParameterSymbol(Cm::Ast::Node* idNode, Cm::Sym::BoundTypeParameterSymbol* boundTypeParameterSymbol);
     void BindFunctionGroup(Cm::Ast::Node* idNode, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol);
-    void BindIndexPointerAndArray(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
+    void BindIndexPointer(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
+    void BindIndexArray(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
     void BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index);
     void BindInvoke(Cm::Ast::Node* node, int numArgs);
     Cm::Sym::FunctionSymbol* BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
