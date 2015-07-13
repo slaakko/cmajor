@@ -29,14 +29,7 @@ public:
 OpAddPtrInt::OpAddPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
     SetGroupName("operator+");
-    if (Type()->IsArrayType())
-    {
-        SetReturnType(typeRepository.MakePointerType(Type()->GetBaseType(), Cm::Parsing::Span()));
-    }
-    else
-    {
-        SetReturnType(Type());
-    }
+    SetReturnType(Type());
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(Type());
     AddSymbol(leftParam);
@@ -50,7 +43,7 @@ void OpAddPtrInt::Generate(Emitter& emitter, GenResult& result)
 {
     Ir::Intf::Type* ptrType = Type()->GetIrType();
     Ir::Intf::Object* arg1 = result.Arg1();
-    if (!arg1->IsConstant() && !arg1->IsRegVar() && !result.Arg1IsArray())
+    if (!arg1->IsConstant() && !arg1->IsRegVar())
     {
         arg1 = Cm::IrIntf::CreateTemporaryRegVar(ptrType);
         emitter.Own(arg1);

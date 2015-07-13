@@ -83,7 +83,8 @@ enum class FunctionSymbolFlags: uint32_t
     templateSpecialization = 1 << 13,
     memberOfTemplateType = 1 << 14,
     memberOfClassTemplate = 1 << 15,
-    arrayConstructor = 1 << 16
+    arrayConstructor = 1 << 16,
+    arrayAssignment = 1 << 17
 };
 
 std::string FunctionSymbolFlagString(FunctionSymbolFlags flags);
@@ -185,6 +186,8 @@ public:
     void SetMemberOfClassTemplate() { SetFlag(FunctionSymbolFlags::memberOfClassTemplate); }
     bool IsArrayConstructor() const { return GetFlag(FunctionSymbolFlags::arrayConstructor); }
     void SetArrayConstructor() { SetFlag(FunctionSymbolFlags::arrayConstructor); }
+    bool IsArrayAssignment() const { return GetFlag(FunctionSymbolFlags::arrayAssignment); }
+    void SetArrayAssignment() { SetFlag(FunctionSymbolFlags::arrayAssignment); }
     bool IsConstructor() const;
     bool IsDefaultConstructor() const;
     bool IsCopyConstructor() const;
@@ -214,6 +217,7 @@ public:
     const std::vector<Cm::Sym::TypeSymbol*>& TypeArguments() const { return typeArguments; }
     int Arity() const { return int(parameters.size()); }
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
+    void SetParameter(ParameterSymbol* parameter, int index) { parameters[index] = parameter; }
     void ComputeName();
     virtual TypeSymbol* GetTargetType() const;
     virtual TypeSymbol* GetSourceType() const;

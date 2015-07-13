@@ -706,10 +706,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
-    if (boundBinaryOp.Left()->GetType()->IsArrayType())
-    {
-        result->SetArg1IsArray();
-    }
     std::shared_ptr<Cm::Core::GenResult> right = resultStack.Pop();
     std::shared_ptr<Cm::Core::GenResult> left = resultStack.Pop();
     bool functionReturnsClassObjectByValue = boundBinaryOp.GetFunction()->ReturnsClassObjectByValue();
@@ -1746,7 +1742,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
     boundAssignmentStatement.Left()->Accept(*this);
     boundAssignmentStatement.Right()->Accept(*this);
     Cm::Sym::FunctionSymbol* assignment = boundAssignmentStatement.Assignment();
-    if (!assignment->IsBasicTypeOp())
+    if (!assignment->IsBasicTypeOp() && !assignment->IsArrayAssignment())
     {
         result->SetMainObject(assignment->GetReturnType(), typeRepository);
     }

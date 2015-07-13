@@ -10,6 +10,8 @@
 #include <Cm.Bind/ArrayTypeOpRepository.hpp>
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.Bind/Binder.hpp>
+#include <Cm.Bind/Prebinder.hpp>
+#include <Cm.Bind/StatementBinder.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
@@ -206,6 +208,7 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeDefaultConstructor(Cm::Sym::TypeSymbol
     defaultConstructorSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     defaultConstructorSymbol->SetGroupName("@array_constructor_" + std::to_string(n));
     defaultConstructorSymbol->SetParent(containerScope->Ns());
+    defaultConstructorSymbol->GetContainerScope()->SetParent(containerScope->Ns()->GetContainerScope());
     defaultConstructorSymbol->SetConstructorOrDestructorSymbol();
     defaultConstructorSymbol->SetMemberFunctionSymbol();
     defaultConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
@@ -220,9 +223,9 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeDefaultConstructor(Cm::Sym::TypeSymbol
     constructLoopVarStatement->AddArgument(new Cm::Ast::IntLiteralNode(Cm::Parsing::Span(), n));
     body->AddStatement(constructLoopVarStatement);
     Cm::Ast::CompoundStatementNode* whileBlockContent = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
-    Cm::Ast::ConstructNode* constructNode = new Cm::Ast::ConstructNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), elementType->FullName()));
+    Cm::Ast::ConstructNode* constructNode = new Cm::Ast::ConstructNode(Cm::Parsing::Span(), MakeTypeIdNode(elementType, Cm::Parsing::Span()));
     constructNode->AddArgument(new Cm::Ast::ThisNode(Cm::Parsing::Span()));
-    constructNode->AddArgument(new Cm::Ast::InvokeNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), elementType->FullName())));
+    constructNode->AddArgument(new Cm::Ast::InvokeNode(Cm::Parsing::Span(), MakeTypeIdNode(elementType, Cm::Parsing::Span())));
     Cm::Ast::SimpleStatementNode* constructStatement = new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), constructNode);
     whileBlockContent->AddStatement(constructStatement);
     whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::ThisNode(Cm::Parsing::Span()))));;
@@ -239,6 +242,126 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeDefaultConstructor(Cm::Sym::TypeSymbol
     GenerateReceives(containerScope, compileUnit, defaultCtor);
     compileUnit.AddBoundNode(defaultCtor);
     return defaultConstructorSymbol;
+}
+
+Cm::Sym::FunctionSymbol* GenerateArrayTypeCopyConstructor(Cm::Sym::TypeSymbol* arrayType, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit)
+{
+    int n = arrayType->GetLastArrayDimension();
+    Cm::Sym::TypeSymbol* elementType = arrayType->GetBaseType();
+    Cm::Sym::FunctionSymbol* copyConstructorSymbol = new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "@array_constructor");
+    copyConstructorSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
+    copyConstructorSymbol->SetGroupName("@array_constructor_" + std::to_string(n));
+    copyConstructorSymbol->SetParent(containerScope->Ns());
+    copyConstructorSymbol->GetContainerScope()->SetParent(containerScope->Ns()->GetContainerScope());
+    copyConstructorSymbol->SetConstructorOrDestructorSymbol();
+    copyConstructorSymbol->SetMemberFunctionSymbol();
+    copyConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
+    copyConstructorSymbol->SetReplicated();
+    copyConstructorSymbol->SetArrayConstructor();
+    std::unique_ptr<Cm::BoundTree::BoundFunction> copyConstructor(new Cm::BoundTree::BoundFunction(nullptr, copyConstructorSymbol));
+    Cm::Ast::CompoundStatementNode* body = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
+    copyConstructor->Own(body);
+    Cm::Ast::ConstructionStatementNode* constructLoopVarStatement = new Cm::Ast::ConstructionStatementNode(Cm::Parsing::Span(), new Cm::Ast::IntNode(Cm::Parsing::Span()), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"));
+    constructLoopVarStatement->AddArgument(new Cm::Ast::IntLiteralNode(Cm::Parsing::Span(), n));
+    body->AddStatement(constructLoopVarStatement);
+    Cm::Ast::CompoundStatementNode* whileBlockContent = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
+    Cm::Ast::ConstructNode* constructNode = new Cm::Ast::ConstructNode(Cm::Parsing::Span(), MakeTypeIdNode(elementType, Cm::Parsing::Span()));
+    constructNode->AddArgument(new Cm::Ast::ThisNode(Cm::Parsing::Span()));
+    Cm::Ast::InvokeNode* invokeNode = new Cm::Ast::InvokeNode(Cm::Parsing::Span(), MakeTypeIdNode(elementType, Cm::Parsing::Span()));
+    invokeNode->AddArgument(new Cm::Ast::DerefNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "that")));
+    constructNode->AddArgument(invokeNode);
+    Cm::Ast::SimpleStatementNode* constructStatement = new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), constructNode);
+    whileBlockContent->AddStatement(constructStatement);
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::ThisNode(Cm::Parsing::Span()))));;
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "that"))));
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixDecNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"))));
+    Cm::Ast::WhileStatementNode* whileStatement = new Cm::Ast::WhileStatementNode(Cm::Parsing::Span(),
+        new Cm::Ast::GreaterNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"), new Cm::Ast::IntLiteralNode(Cm::Parsing::Span(), 0)), whileBlockContent);
+    body->AddStatement(whileStatement);
+    Cm::Sym::DeclarationVisitor declarationVisitor(compileUnit.SymbolTable());
+    compileUnit.SymbolTable().BeginContainer(copyConstructorSymbol);
+    Cm::Ast::ParameterNode* thisParamNode = new Cm::Ast::ParameterNode(Cm::Parsing::Span(), MakeTypeIdNode(compileUnit.SymbolTable().GetTypeRepository().MakePointerType(elementType, Cm::Parsing::Span()),
+        Cm::Parsing::Span()), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "this"));
+    copyConstructor->Own(thisParamNode);
+    thisParamNode->Accept(declarationVisitor);
+    Cm::Ast::ParameterNode* thatParamNode = new Cm::Ast::ParameterNode(Cm::Parsing::Span(), MakeTypeIdNode(compileUnit.SymbolTable().GetTypeRepository().MakePointerType(elementType, Cm::Parsing::Span()),
+        Cm::Parsing::Span()), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "that"));
+    copyConstructor->Own(thatParamNode);
+    thatParamNode->Accept(declarationVisitor);
+    body->Accept(declarationVisitor);
+    compileUnit.SymbolTable().EndContainer();
+    Prebinder prebinder(compileUnit.SymbolTable(), compileUnit.ClassTemplateRepository());
+    prebinder.BeginContainerScope(copyConstructorSymbol->GetContainerScope());
+    thisParamNode->Accept(prebinder);
+    thatParamNode->Accept(prebinder);
+    prebinder.EndContainerScope();
+    Binder binder(compileUnit);
+    binder.SetCurrentFunction(copyConstructor.release());
+    body->Accept(binder);
+    Cm::BoundTree::BoundFunction* copyCtor = binder.ReleaseCurrentFunction();
+    copyConstructorSymbol->ComputeName();
+    GenerateReceives(containerScope, compileUnit, copyCtor);
+    compileUnit.AddBoundNode(copyCtor);
+    return copyConstructorSymbol;
+}
+
+Cm::Sym::FunctionSymbol* GenerateArrayTypeCopyAssignment(Cm::Sym::TypeSymbol* arrayType, Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& compileUnit)
+{
+    int n = arrayType->GetLastArrayDimension();
+    Cm::Sym::TypeSymbol* elementType = arrayType->GetBaseType();
+    Cm::Sym::FunctionSymbol* assignmentSymbol = new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "@array_assignment");
+    assignmentSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
+    assignmentSymbol->SetGroupName("@array_assignment_" + std::to_string(n));
+    assignmentSymbol->SetParent(containerScope->Ns());
+    assignmentSymbol->GetContainerScope()->SetParent(containerScope->Ns()->GetContainerScope());
+    assignmentSymbol->SetConstructorOrDestructorSymbol();
+    assignmentSymbol->SetMemberFunctionSymbol();
+    assignmentSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
+    assignmentSymbol->SetReplicated();
+    assignmentSymbol->SetArrayAssignment();
+    assignmentSymbol->SetReturnType(compileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)));
+    std::unique_ptr<Cm::BoundTree::BoundFunction> assignment(new Cm::BoundTree::BoundFunction(nullptr, assignmentSymbol));
+    Cm::Ast::CompoundStatementNode* body = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
+    assignment->Own(body);
+    Cm::Ast::ConstructionStatementNode* constructLoopVarStatement = new Cm::Ast::ConstructionStatementNode(Cm::Parsing::Span(), new Cm::Ast::IntNode(Cm::Parsing::Span()), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"));
+    constructLoopVarStatement->AddArgument(new Cm::Ast::IntLiteralNode(Cm::Parsing::Span(), n));
+    body->AddStatement(constructLoopVarStatement);
+    Cm::Ast::CompoundStatementNode* whileBlockContent = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
+    Cm::Ast::AssignmentStatementNode* assignmentStatement = new Cm::Ast::AssignmentStatementNode(Cm::Parsing::Span(),
+        new Cm::Ast::DerefNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "this")),
+        new Cm::Ast::DerefNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "that")));
+    whileBlockContent->AddStatement(assignmentStatement);
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::ThisNode(Cm::Parsing::Span()))));;
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "that"))));
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixDecNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"))));
+    Cm::Ast::WhileStatementNode* whileStatement = new Cm::Ast::WhileStatementNode(Cm::Parsing::Span(),
+        new Cm::Ast::GreaterNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"), new Cm::Ast::IntLiteralNode(Cm::Parsing::Span(), 0)), whileBlockContent);
+    body->AddStatement(whileStatement);
+    Cm::Sym::DeclarationVisitor declarationVisitor(compileUnit.SymbolTable());
+    compileUnit.SymbolTable().BeginContainer(assignmentSymbol);
+    Cm::Ast::ParameterNode* thisParamNode = new Cm::Ast::ParameterNode(Cm::Parsing::Span(), MakeTypeIdNode(compileUnit.SymbolTable().GetTypeRepository().MakePointerType(elementType, Cm::Parsing::Span()),
+        Cm::Parsing::Span()), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "this"));
+    assignment->Own(thisParamNode);
+    thisParamNode->Accept(declarationVisitor);
+    Cm::Ast::ParameterNode* thatParamNode = new Cm::Ast::ParameterNode(Cm::Parsing::Span(), MakeTypeIdNode(compileUnit.SymbolTable().GetTypeRepository().MakePointerType(elementType, Cm::Parsing::Span()),
+        Cm::Parsing::Span()), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "that"));
+    assignment->Own(thatParamNode);
+    thatParamNode->Accept(declarationVisitor);
+    body->Accept(declarationVisitor);
+    compileUnit.SymbolTable().EndContainer();
+    Prebinder prebinder(compileUnit.SymbolTable(), compileUnit.ClassTemplateRepository());
+    prebinder.BeginContainerScope(assignmentSymbol->GetContainerScope());
+    thisParamNode->Accept(prebinder);
+    thatParamNode->Accept(prebinder);
+    prebinder.EndContainerScope();
+    Binder binder(compileUnit);
+    binder.SetCurrentFunction(assignment.release());
+    body->Accept(binder);
+    Cm::BoundTree::BoundFunction* copyAssignment = binder.ReleaseCurrentFunction();
+    assignmentSymbol->ComputeName();
+    GenerateReceives(containerScope, compileUnit, copyAssignment);
+    compileUnit.AddBoundNode(copyAssignment);
+    return assignmentSymbol;
 }
 
 class ArrayIndexing : public Cm::Core::BasicTypeOp
@@ -310,6 +433,10 @@ Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetCopyConstructor(Cm::Sym::Container
         {
             copyConstructor.reset(new PrimitiveArrayTypeCopyConstructor(compileUnit.SymbolTable().GetTypeRepository(), type));
         }
+        else
+        {
+            copyConstructor.reset(GenerateArrayTypeCopyConstructor(type, containerScope, compileUnit));
+        }
     }
     return copyConstructor.get();
 }
@@ -321,6 +448,10 @@ Cm::Sym::FunctionSymbol* ArrayTypeOpCache::GetCopyAssignment(Cm::Sym::ContainerS
         if (type->IsPrimitiveSingleDimensionArrayType())
         {
             copyAssignment.reset(new PrimitiveArrayTypeCopyAssignment(compileUnit.SymbolTable().GetTypeRepository(), type));
+        }
+        else
+        {
+            copyAssignment.reset(GenerateArrayTypeCopyAssignment(type, containerScope, compileUnit));
         }
     }
     return copyAssignment.get();
