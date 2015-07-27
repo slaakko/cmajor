@@ -114,12 +114,18 @@ public:
         a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<TypeExprRule>(this, &TypeExprRule::A4Action));
         Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
         a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<TypeExprRule>(this, &TypeExprRule::A5Action));
+        Cm::Parsing::ActionParser* a6ActionParser = GetAction("A6");
+        a6ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<TypeExprRule>(this, &TypeExprRule::A6Action));
+        Cm::Parsing::ActionParser* a7ActionParser = GetAction("A7");
+        a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<TypeExprRule>(this, &TypeExprRule::A7Action));
         Cm::Parsing::NonterminalParser* basicTypeNonterminalParser = GetNonterminal("BasicType");
         basicTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<TypeExprRule>(this, &TypeExprRule::PostBasicType));
         Cm::Parsing::NonterminalParser* typeNameNonterminalParser = GetNonterminal("TypeName");
         typeNameNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<TypeExprRule>(this, &TypeExprRule::PostTypeName));
         Cm::Parsing::NonterminalParser* typeArgumentsNonterminalParser = GetNonterminal("TypeArguments");
         typeArgumentsNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<TypeExprRule>(this, &TypeExprRule::PostTypeArguments));
+        Cm::Parsing::NonterminalParser* dimNonterminalParser = GetNonterminal("dim");
+        dimNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<TypeExprRule>(this, &TypeExprRule::Postdim));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -144,6 +150,14 @@ public:
     void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value->Derivations().Add(Cm::Ast::Derivation::pointer);
+    }
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value->Derivations().Add(Cm::Ast::Derivation::array_);
+    }
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value->AddArrayDimension(context.fromdim);
     }
     void PostBasicType(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -172,14 +186,24 @@ public:
             stack.pop();
         }
     }
+    void Postdim(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromdim_value = std::move(stack.top());
+            context.fromdim = *static_cast<Cm::Parsing::ValueObject<int>*>(fromdim_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): value(), fromBasicType(), fromTypeName(), fromTypeArguments() {}
+        Context(): value(), fromBasicType(), fromTypeName(), fromTypeArguments(), fromdim() {}
         TypeExpr* value;
         TypeExpr* fromBasicType;
         std::string fromTypeName;
         std::vector<TypeExpr*> fromTypeArguments;
+        int fromdim;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -346,6 +370,7 @@ void TypeExprGrammar::GetReferencedGrammars()
 
 void TypeExprGrammar::CreateRules()
 {
+    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
@@ -366,12 +391,20 @@ void TypeExprGrammar::CreateRules()
             new Cm::Parsing::KleeneStarParser(
                 new Cm::Parsing::AlternativeParser(
                     new Cm::Parsing::AlternativeParser(
-                        new Cm::Parsing::ActionParser("A3",
-                            new Cm::Parsing::StringParser("&&")),
-                        new Cm::Parsing::ActionParser("A4",
-                            new Cm::Parsing::StringParser("&"))),
-                    new Cm::Parsing::ActionParser("A5",
-                        new Cm::Parsing::StringParser("*")))))));
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::ActionParser("A3",
+                                new Cm::Parsing::StringParser("&&")),
+                            new Cm::Parsing::ActionParser("A4",
+                                new Cm::Parsing::StringParser("&"))),
+                        new Cm::Parsing::ActionParser("A5",
+                            new Cm::Parsing::StringParser("*"))),
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::ActionParser("A6",
+                                new Cm::Parsing::CharParser('[')),
+                            new Cm::Parsing::ActionParser("A7",
+                                new Cm::Parsing::NonterminalParser("dim", "int", 0))),
+                        new Cm::Parsing::CharParser(']')))))));
     AddRule(new TypeArgumentsRule("TypeArguments", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(

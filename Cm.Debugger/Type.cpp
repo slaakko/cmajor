@@ -27,6 +27,10 @@ TypeExpr* TypeExpr::Clone() const
     {
         clone->typeArguments.push_back(std::unique_ptr<TypeExpr>(typeArgument->Clone()));
     }
+    for (int dim : arrayDimensions)
+    {
+        clone->AddArrayDimension(dim);
+    }
     return clone;
 }
 
@@ -38,6 +42,11 @@ std::vector<std::unique_ptr<TypeExpr>> MakeTemplateArgumentList(const std::vecto
         templateArgumentList.push_back(std::unique_ptr<TypeExpr>(typeExpr));
     }
     return templateArgumentList;
+}
+
+void TypeExpr::AddArrayDimension(int dim)
+{
+    arrayDimensions.push_back(dim);
 }
 
 std::string TypeExpr::ToString() const
@@ -61,9 +70,8 @@ std::string TypeExpr::ToString() const
         }
         s.append(">");
     }
-    if (derivations.NumDerivations() > 0)
+    if (derivations.NumDerivations() > 0 || !arrayDimensions.empty())
     {
-        std::vector<int> arrayDimensions;
         s = Cm::Ast::MakeDerivedTypeName(derivations, s, arrayDimensions);
     }
     return s;

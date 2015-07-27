@@ -23,6 +23,10 @@ public:
     Cm::Ast::DerivationList& Derivations() { return derivations; }
     const std::vector<std::unique_ptr<TypeExpr>>& TypeArguments() const { return typeArguments; }
     std::vector<std::unique_ptr<TypeExpr>>& TypeArguments() { return typeArguments; }
+    const std::vector<int> ArrayDimensions() const { return arrayDimensions; }
+    void AddArrayDimension(int dim);
+    bool IsArrayType() const { return !arrayDimensions.empty(); }
+    int GetLastArrayDimension() const { return arrayDimensions.back(); }
     bool IsBasicTypeExpr() const { return basicTypeExpr; }
     void SetBasicTypeExpr() { basicTypeExpr = true; }
     std::string ToString() const;
@@ -31,6 +35,7 @@ private:
     std::string primaryTypeName;
     Cm::Ast::DerivationList derivations;
     std::vector<std::unique_ptr<TypeExpr>> typeArguments;
+    std::vector<int> arrayDimensions;
 };
 
 std::vector<std::unique_ptr<TypeExpr>> MakeTemplateArgumentList(const std::vector<TypeExpr*>& typeArgumentList);

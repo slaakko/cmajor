@@ -60,6 +60,7 @@ private:
     void Visit(DotNode& dotNode) override;
     void Visit(ArrowNode& arrowNode) override;
     void Visit(ParenthesesNode& parenthesesNode) override;
+    void InspectArray(const PrintExpr& printExpr, TypeExpr* arrayTypeExpr);
     void InspectClass(const PrintExpr& printExpr, TypeExpr* typeExpr);
     void InspectPointer(const PrintExpr& printExpr, TypeExpr* typeExpr);
     void InspectVirtualClass(Cm::Core::ClassDebugInfo* classDebugInfo, const PrintExpr& printExpr, const PrintExpr& derefExpr, TypeExpr* typeExpr);

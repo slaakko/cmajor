@@ -137,6 +137,16 @@ private:
     std::vector<Field> fields;
 };
 
+class ArrayValue : public Value
+{
+public:
+    void AddItem(Value* item);
+    std::string ToString() const override;
+    bool HasSubItems() const override;
+private:
+    std::vector<std::unique_ptr<Value>> items;
+};
+
 class Result
 {
 public:

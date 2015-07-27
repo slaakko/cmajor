@@ -53,6 +53,7 @@ namespace Cm.Debugger
     {
         Result(std::string expr): Result*;
         Value: Value*;
+        PrimitiveValue: Value*;
         StringValue: Value*;
         ParenthesizedExpr;
         AddressValue: Value*;
@@ -62,6 +63,10 @@ namespace Cm.Debugger
         BoolValue: Value*;
         FloatingValue: Value*;
         IntegerValue: Value*;
+        ArrayValue: ArrayValue*;
+        ArrayItem: Value*;
+        RepeatedValue: ArrayValue*;
+        Repeat;
         Field: Field*;
         StructureValue: StructureValue*;
     }

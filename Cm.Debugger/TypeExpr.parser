@@ -13,6 +13,7 @@ namespace Cm.Debugger
 {
     grammar TypeExprGrammar
     {
+        using stdlib.int;
         using stdlib.identifier;
         using stdlib.qualified_id;
         using stdlib.spaces;
@@ -27,6 +28,7 @@ namespace Cm.Debugger
             (   "&&"{ value->Derivations().Add(Cm::Ast::Derivation::rvalueRef); }
             |   "&"{ value->Derivations().Add(Cm::Ast::Derivation::reference); }
             |   "*"{ value->Derivations().Add(Cm::Ast::Derivation::pointer); }
+            |   '['{ value->Derivations().Add(Cm::Ast::Derivation::array_); } int:dim{value->AddArrayDimension(dim); } ']'
             )*
             ;
 

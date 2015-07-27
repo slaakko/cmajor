@@ -15,7 +15,7 @@
 
 using System.IO;
 
-namespace System
+namespace System.Security
 {
     public nothrow inline uint LeftRotate(uint x, uint n)
     {

@@ -3,7 +3,7 @@
 
 \begin{document}
 
-\title{Cmajor Programming Language Specification\\Version 3.1}
+\title{Cmajor Programming Language Specification\\Version 3.2}
 \author{Seppo Laakko}
 \date{\today}
 \maketitle
@@ -586,9 +586,11 @@ The type of the expression is the return type of the function.
 
 \subsubsection{Indexing Operator}\label{indexing}
 
-The the left operand of the indexing operator [] shall be of a pointer type or a class type object.
-When the left operand is pointer \emph{p} the expression $p[i]$ is evaluated as *(p + i).
-When the left operand is a class type, it shall implement the \bf{operator[]} function taking one parameter.
+The the left operand of the indexing operator [] shall be of a pointer type, an array type or a class type object.
+When the left operand is pointer \emph{p}, the expression $p[i]$ is evaluated as *(p + i).
+When the left operand is an array, the expression $a[i]$ returns a reference to the i'th element of array \emph{a},
+where \emph{i} can range 0 to \emph{N} - 1, where \emph{N} is the dimension of the array \emph{a} (see \ref{sec:postfixtypeexpr}).
+When the left operand is of a class type, it shall implement the \bf{operator[]} function taking one parameter.
 
 \subsection{Primary Expression}
 
@@ -666,7 +668,7 @@ and returns a pointer to the newly constructed object.
 
 A template identifier is a primary expression.
 
-\subsection{Type Expression}
+\subsection{Type Expression}\label{sec:typeexpr}
 
 \begin{grammar}
 \label{type-expression}<type-expression> ::= <prefix-type-expr>
@@ -682,16 +684,24 @@ A template identifier is a primary expression.
 A prefix type expression is either a \bf{const} qualified postfix type expression,
 or sole postfix type expression.
 
-\subsubsection{Postfix Type Expression}
+\subsubsection{Postfix Type Expression}\label{sec:postfixtypeexpr}
 
 \begin{grammar}
-<postfix-type-expr> ::= <primary-type-expr> ('.' <identifier>\ref{identifier} | "&&" | '\&' | '*')*
+<postfix-type-expr> ::= <primary-type-expr> ('.' <identifier>\ref{identifier}
+\alt "&&"
+\alt "&"
+\alt "*"
+\alt "[" <array-dimension> "]"
+)*
+
+<array-dimension> ::= <constant-expression>\ref{constant-expression}
 \end{grammar}
 
 A postfix type expression is a primary type expression optionally followed by sequence of the
 following:
-a member selection operator '.' and an identifier, an rvalue reference operator, a reference operator
-or a pointer operator.
+a member selection operator '.' and an identifier, an rvalue reference type operator (see \ref{sec:rvaluereferencetypes}),
+an lvalue reference type operator (see \ref{sec:lvaluereferencetypes}), a pointer type operator (see \ref{sec:pointertypes}),
+or an array type operator (see \ref{sec:arraytypes}).
 
 \subsubsection{Primary Type Expression}
 
@@ -1138,9 +1148,9 @@ The type-checking of an unconstrained function template is deferred until instan
 
 \section{Derived Types}
 
-\subsection{Pointer Types}
+\subsection{Pointer Types}\label{sec:pointertypes}
 
-If $\tau$ is a type expression, $\tau*$ creates a new type representing a pointer to an object of type $\tau$.
+If $\tau$ is a type expression (\ref{sec:typeexpr}), $\tau*$ creates a new type representing a pointer to an object of type $\tau$.
 The default value of a pointer type object is \bf{null}.
 
 Unary operators $*$ and $->$, prefix operators $++$ and $--$, binary operators $+$, $-$, $==$ and $<$,
@@ -1164,9 +1174,9 @@ The null pointer type represents a pointer that does not point to any object or 
 The value of a null pointer type object is \bf{null}.
 Any pointer type can be compared with \bf{null} for equality using the $==$ operator.
 
-\subsection{Lvalue Reference Types}
+\subsection{Lvalue Reference Types}\label{sec:lvaluereferencetypes}
 
-If $\tau$ is a type expression, $\tau\&$ creates a new type representing an lvalue reference to an object of type $\tau$.
+If $\tau$ is a type expression (\ref{sec:typeexpr}), $\tau\&$ creates a new type representing an lvalue reference to an object of type $\tau$.
 Lvalue reference type objects do not have a default value and they must be initialized to refer to an object in some memory location.
 
 If T is an object type, type T\& supports the same operators as T does.
@@ -1174,10 +1184,20 @@ If T is an object type, type T\& supports the same operators as T does.
 Type T\& (an lvalue reference to an object of type T) can be implicitly converted to type \bf{const} T\&
 (an lvalue reference to a constant object of type T).
 
-\subsection{Rvalue Reference Types}
+\subsection{Rvalue Reference Types}\label{sec:rvaluereferencetypes}
 
-If $\tau$ is a type expression, $\tau\&\&$ creates a new type representing an rvalue reference to an object of type $\tau$.
+If $\tau$ is a type expression (\ref{sec:typeexpr}), $\tau\&\&$ creates a new type representing an rvalue reference to an object of type $\tau$.
 Rvalue references are used to implement move semantics.
+
+\subsection{Array Types}\label{sec:arraytypes}
+
+If $\tau$ is a type expression (\ref{sec:typeexpr}), $\tau[N]$ creates a new type representing an array whose element type is $\tau$ and dimension is $N$.
+
+Currently only single-dimensional arrays whose element type is a basic type (\ref{sec:basictypes}) or
+a class type (\ref{sec:classtypes}) are supported.
+The dimension $N$ must be a constant expression (\ref{constant-expression}).
+
+Indexing operator [] operates on array type operands (\ref{indexing}).
 
 \subsection{Constant Types}
 
@@ -1208,7 +1228,7 @@ The default value of an enumerated type object is 0, whether it is represented b
 If the first constant is not explicitly given a value, it will have a value 0.
 If any other constant is not explicitly given a value, it will have the value of the previous constant + 1.
 
-\subsection{Class Types}
+\subsection{Class Types}\label{sec:classtypes}
 
 A class type is used to define a user-defined type that can contain data members, type aliases, constants, member functions and subtypes.
 

@@ -172,6 +172,10 @@ void Inspector::Visit(ContentNode& contentNode)
             InspectClass(printExpr, typeExpr);
         }
     }
+    else if (typeExpr->IsArrayType())
+    {
+        InspectArray(printExpr, typeExpr);
+    }
     else if (HasPointerDerivation(typeExpr->Derivations()))
     {
         InspectPointer(printExpr, typeExpr);
@@ -360,6 +364,32 @@ void Inspector::Visit(ParenthesesNode& parenthesesNode)
     PrintExpr printExpr = PopPrintExpr();
     printExpr.Text() = "(" + printExpr.Text() + ")";
     printExprStack.push(std::move(printExpr));
+}
+
+void Inspector::InspectArray(const PrintExpr& printExpr, TypeExpr* arrayTypeExpr)
+{
+    int n = arrayTypeExpr->GetLastArrayDimension();
+    TypeExpr* itemTypeExpr = typeExprParser->Parse(arrayTypeExpr->PrimaryTypeName().c_str(), arrayTypeExpr->PrimaryTypeName().c_str() + arrayTypeExpr->PrimaryTypeName().length(), 0, "");
+    for (int i = 0; i < n; ++i)
+    {
+        PrintExpr itemPrintExpr(printExpr.Text() + "[" + std::to_string(i) + "]", itemTypeExpr->Clone());
+        itemPrintExpr.SetDisplayTypeExpr(itemTypeExpr->Clone());
+        std::shared_ptr<GdbCommand> command = gdb.Print(itemPrintExpr.Text());
+        if (command->ReplyMessage().empty())
+        {
+            std::unique_ptr<Result> errorResult = MakeErrorResult("could not evaluate debugger expression '" + itemPrintExpr.Text() + "'", "[" + std::to_string(i) + "]");
+            results.push_back(std::move(errorResult));
+        }
+        else
+        {
+            std::unique_ptr<Result> result(resultGrammar->Parse(command->ReplyMessage().c_str(), command->ReplyMessage().c_str() + command->ReplyMessage().length(), 0, "",
+                "[" + std::to_string(i) + "]"));
+            result->SetType(itemTypeExpr->ToString());
+            debugInfo.SetTypeForHandle(result->Handle(), itemTypeExpr->ToString());
+            result->SetDisplayType(itemTypeExpr->ToString());
+            results.push_back(std::move(result));
+        }
+    }
 }
 
 void Inspector::InspectClass(const PrintExpr& printExpr, TypeExpr* typeExpr)

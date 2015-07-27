@@ -170,6 +170,36 @@ Value* StructureValue::GetFieldValue(const std::string& fieldName) const
     return nullptr;
 }
 
+std::string ArrayValue::ToString() const 
+{
+    std::string s = "{ ";
+    bool first = true;
+    for (const std::unique_ptr<Value>& item : items)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            s.append(", ");
+        }
+        s.append(item->ToString());
+    }
+    s.append(" }");
+    return s;
+}
+
+bool ArrayValue::HasSubItems() const
+{
+    return !items.empty();
+}
+
+void ArrayValue::AddItem(Value* item)
+{
+    items.push_back(std::unique_ptr<Value>(item));
+}
+
 Result::Result(const std::string& name_, int handle_) : name(name_), handle(handle_)
 {
 }
