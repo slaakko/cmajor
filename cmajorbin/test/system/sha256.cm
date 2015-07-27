@@ -1,0 +1,14 @@
+using System;
+using System.Security;
+
+namespace Test
+{
+    public unit_test void TestSha256()
+    {
+        string s0 = GetSha256MessageDigest("");
+        #assert(s0 == "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855");
+        string s1 = GetSha256MessageDigest("The quick brown fox jumps over the lazy dog");
+        #assert(s1 == "D7A8FBB307D7809469CA9ABCB0082E4F8D5651E46D3CDB762D02D0BF37C9E592");
+    }
+}
+

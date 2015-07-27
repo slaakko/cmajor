@@ -31,13 +31,24 @@
             ;
 
         Value: Value*
+            ::= RepeatedValue{ value = RepeatedValue; }
+            |   StringValue{ value = StringValue; }
+            |   AddressValue{ value = AddressValue; }
+            |   CharValue{ value = CharValue; }
+            |   BoolValue{ value = BoolValue; }
+            |   FloatingValue{ value = FloatingValue; }
+            |   IntegerValue{ value = IntegerValue; }
+            |   ArrayValue{ value = ArrayValue; }
+            |   StructureValue{ value = StructureValue; }
+            ;
+
+        PrimitiveValue: Value*
             ::= StringValue{ value = StringValue; }
             |   AddressValue{ value = AddressValue; }
             |   CharValue{ value = CharValue; }
             |   BoolValue{ value = BoolValue; }
             |   FloatingValue{ value = FloatingValue; }
             |   IntegerValue{ value = IntegerValue; }
-            |   StructureValue{ value = StructureValue; }
             ;
 
         StringValue: Value*
@@ -61,7 +72,7 @@
             ;
 
         CharValue: Value*
-            ::= int:charCode (OctalEscape:o{ value = new CharValue(o); } | char:ch{ value = new CharValue(ch); })
+            ::= OctalEscape:oe{ value = new CharValue(oe); } | int:charCode (OctalEscape:o{ value = new CharValue(o); } | char:ch{ value = new CharValue(ch); } )
             ;
 
         BoolValue: Value*
@@ -75,6 +86,22 @@
         IntegerValue: Value*
             ::= ulong:u{ value = new IntegerValue(u, false); }
             |   long:l{ value = MakeIntegerValue(l); }
+            ;
+
+        ArrayValue: ArrayValue*
+            ::= '{'{ value = new ArrayValue(); } (ArrayItem{ value->AddItem(ArrayItem); } % ',')? '}'
+            ;
+
+        ArrayItem: Value*
+            ::= Value{ value = Value; }
+            ;
+
+        RepeatedValue: ArrayValue*
+            ::= (PrimitiveValue Repeat){ value = new ArrayValue(); value->AddItem(PrimitiveValue); }
+            ;
+
+        Repeat
+            ::= '<' "repeats" int "times" '>'
             ;
 
         Field: Field*

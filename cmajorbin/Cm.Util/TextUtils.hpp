@@ -28,6 +28,8 @@ bool LastComponentsEqual(const std::string& s0, const std::string& s1, char comp
 bool StartsWith(const std::string& s, const std::string& prefix);
 bool EndsWith(const std::string& s, const std::string& suffix);
 std::string NarrowString(const char* str, int length);
+std::string ToUpper(const std::string& s);
+std::string ToLower(const std::string& s);
 
 } } // namespace Cm::Util
 

@@ -33,21 +33,10 @@ namespace System
         
         static nothrow MT()
         {
-            try
-            {
-                mt.Resize(n);
-            }            
-            catch (const Exception& ex)
-            {
-                try
-                {
-                    Console.Error() << "Mersenne Twister init failed" << endl();
-                }
-                catch (const Exception&)
-                {
-                }
-                exit(1);
-            }
+            InitWithRandomSeed();
+        }
+        public static nothrow void InitWithRandomSeed()
+        {
             uint seed = get_random_seed_from_system();
             Init(seed);
         }
@@ -62,17 +51,8 @@ namespace System
             {
                 mt[mti] = 1812433253u * (mt[mti - 1] ^ (mt[mti - 1] >> 30u)) + cast<uint>(mti);
             }
-            mag0 = 0u;
-            mag1 = matrixA;
-        }
-        private static nothrow inline uint& Mag(uint index)
-        {
-            #assert(index >= 0 && index <= 1);
-            if (index == 0u)
-            {
-                return mag0;
-            }
-            return mag1;
+            mag[0] = 0u;
+            mag[1] = matrixA;
         }
         public static nothrow uint GenRand() 
         {
@@ -83,15 +63,15 @@ namespace System
                 for (kk = 0; kk < n - m; ++kk)
                 {
                     y = (mt[kk] & upperMask) | (mt[kk + 1] & lowerMask);
-                    mt[kk] = mt[kk + m] ^ (y >> 1u) ^ Mag(y & 0x01u);
+                    mt[kk] = mt[kk + m] ^ (y >> 1u) ^ mag[cast<int>(y & 0x01u)];
                 }
                 for (; kk < n - 1; ++kk)
                 {
                     y = (mt[kk] & upperMask) | (mt[kk + 1] & lowerMask);
-                    mt[kk] = mt[kk + (m - n)] ^ (y >> 1u) ^ Mag(y & 0x01u);
+                    mt[kk] = mt[kk + (m - n)] ^ (y >> 1u) ^ mag[cast<int>(y & 0x01u)];
                 }
                 y = (mt[n - 1] & upperMask) | (mt[0] & lowerMask);
-                mt[n - 1] = mt[m - 1] ^ (y >> 1u) ^ Mag(y & 0x01u);
+                mt[n - 1] = mt[m - 1] ^ (y >> 1u) ^ mag[cast<int>(y & 0x01u)];
                 mti = 0;
             }
             y = mt[mti++];
@@ -102,9 +82,8 @@ namespace System
             return y;
         }
         private static int mti;
-        private static List<uint> mt;
-        private static uint mag0;
-        private static uint mag1;
+        private static uint[n] mt;
+        private static uint[2] mag;
     }
     
     public nothrow uint Rand()

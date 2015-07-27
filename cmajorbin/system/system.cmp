@@ -34,6 +34,8 @@ source <rbtree.cm>;
 source <rvalue.cm>;
 source <set.cm>;
 source <sha1.cm>;
+source <sha256.cm>;
+source <sha512.cm>;
 source <stack.cm>;
 source <stream.cm>;
 source <string.cm>;

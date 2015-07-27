@@ -262,4 +262,28 @@ std::string NarrowString(const char* str, int length)
 #endif
 }
 
+std::string ToUpper(const std::string& s)
+{
+    std::string result;
+    int n = s.size();
+    result.reserve(n);
+    for (int i = 0; i < n; ++i)
+    {
+        result.append(1, std::toupper(s[i]));
+    }
+    return result;
+}
+
+std::string ToLower(const std::string& s)
+{
+    std::string result;
+    int n = s.size();
+    result.reserve(n);
+    for (int i = 0; i < n; ++i)
+    {
+        result.append(1, std::tolower(s[i]));
+    }
+    return result;
+}
+
 } } // namespace Cm::Util

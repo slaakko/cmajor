@@ -1,5 +1,5 @@
-#ifndef Result_hpp_4380
-#define Result_hpp_4380
+#ifndef Result_hpp_32161
+#define Result_hpp_32161
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -19,6 +19,7 @@ private:
     virtual void GetReferencedGrammars();
     class ResultRule;
     class ValueRule;
+    class PrimitiveValueRule;
     class StringValueRule;
     class AddressValueRule;
     class OctalDigitRule;
@@ -27,10 +28,13 @@ private:
     class BoolValueRule;
     class FloatingValueRule;
     class IntegerValueRule;
+    class ArrayValueRule;
+    class ArrayItemRule;
+    class RepeatedValueRule;
     class FieldRule;
     class StructureValueRule;
 };
 
 } } // namespace Cm.Debugger
 
-#endif // Result_hpp_4380
+#endif // Result_hpp_32161

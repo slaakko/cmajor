@@ -25,6 +25,8 @@ source <ptr.cm>;
 source <queue.cm>;
 source <set.cm>;
 source <sha1.cm>;
+source <sha256.cm>;
+source <sha512.cm>;
 source <stack.cm>;
 source <string.cm>;
 source <stringstream.cm>;
