@@ -1,0 +1,11 @@
+using System;
+
+//  Writes:
+//  A bord on the hand os worth two on the bush.
+
+void main()
+{
+    string proverb("A bird in the hand is worth two in the bush.");
+    proverb.Replace('i', 'o');
+    Console.Out() << proverb << endl();
+}

@@ -194,6 +194,8 @@ public:
     virtual std::string DocId() const { return name; }
     virtual std::string FullDocId() const;
     virtual void Collect(SymbolCollector& collector);
+    virtual std::string Syntax() const;
+    virtual std::string ParsingName() const { return Name(); }
 private:
     Span span;
     std::string name;

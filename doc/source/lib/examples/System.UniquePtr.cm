@@ -1,0 +1,18 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  foo
+//  bar
+
+void main()
+{
+    List<UniquePtr<string>> list;
+    UniquePtr<string> foo(new string("foo"));
+    list.Add(Rvalue(foo));
+    list.Add(UniquePtr<string>(new string("bar")));
+    for (const UniquePtr<string>& s : list)
+    {
+        Console.Out() << *s << endl();
+    }
+}

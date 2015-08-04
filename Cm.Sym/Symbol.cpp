@@ -312,4 +312,9 @@ void Symbol::Collect(SymbolCollector& collector)
     collector.Add(this);
 }
 
+std::string Symbol::Syntax() const
+{
+    return Name();
+}
+
 } } // namespace Cm::Sym

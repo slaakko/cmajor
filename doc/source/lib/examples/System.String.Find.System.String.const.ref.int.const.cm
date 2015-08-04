@@ -1,0 +1,12 @@
+using System;
+
+//  Writes:
+//  32
+//  -1
+
+void main()
+{
+    string proverb("A bird in the hand is worth two in the bush.");
+    Console.Out() << proverb.Find("in", 8) << endl();
+    Console.Out() << proverb.Find("foo", 8) << endl();
+}

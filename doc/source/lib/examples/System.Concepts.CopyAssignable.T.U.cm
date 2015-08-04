@@ -1,0 +1,39 @@
+using System;
+using System.Concepts;
+
+//  Writes:
+//  Error T138 in file C:/Programming/cmajor++/doc/lib/examples/System.Concepts.CopyAssignable.T.U.cm at line 38:
+//  types (C, A) do not satisfy the requirements of concept 'System.Concepts.CopyAssignable' because
+//  there is no member function with signature 'void C.operator=(const A&)':
+//  Tester<C, A> tca;   // error
+//  ^
+
+class A
+{
+}
+
+//  CopyAssignable<B, A> is true...
+
+class B
+{
+    public void operator=(const A& a) {}
+}
+
+//  But CopyAssignable<C, A> is false...
+
+class C
+{
+}
+
+class Tester<T, U> where CopyAssignable<T, U>
+{
+}
+
+void main()
+{
+    A a;
+    B b;
+    b = a;              // calls copy assignment operation of B
+    Tester<B, A> tba;   // ok
+    Tester<C, A> tca;   // error
+}

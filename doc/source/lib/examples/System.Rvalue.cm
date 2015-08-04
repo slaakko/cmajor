@@ -1,0 +1,48 @@
+//  Writes:
+//  10
+
+using System;
+using System.Collections;
+using System.IO;
+
+public class A
+{
+    public A(): ptr(null) {}
+    public A(int x): ptr(new int(x)) {}
+    public ~A()
+    {
+        delete ptr;
+    }
+    suppress A(const A&);
+    suppress void operator=(const A&);
+    public A(A&& that): ptr(that.ptr)
+    {
+        that.ptr = null;
+    }
+    public void operator=(A&& that)
+    {
+        Swap(ptr, that.ptr);
+    }
+    public int Value() const
+    {
+        #assert(ptr != null);
+        return *ptr;
+    }
+    private int* ptr;
+}
+
+OutputStream& operator<<(OutputStream& s, const A& a)
+{
+    return s << a.Value() << endl();
+}
+
+void main()
+{
+    List<A> alist;
+    A a(10);
+    alist.Add(Rvalue(a));
+    for (const A& a : alist)
+    {
+        Console.Out() << a << endl();
+    }
+}

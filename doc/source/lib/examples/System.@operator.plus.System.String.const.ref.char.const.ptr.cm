@@ -1,0 +1,12 @@
+using System;
+
+//  Writes:
+//  A bird in the hand is worth two in the bush.
+
+void main()
+{
+    string start("A bird in the hand is worth ");
+    const char* end = "two in the bush.";
+    string proverb = start + end;
+    Console.Out() << proverb << endl();
+}

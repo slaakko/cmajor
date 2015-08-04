@@ -1,0 +1,16 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  48
+
+void main()
+{
+    List<int> ints;
+    ints.Add(2);
+    ints.Add(4);
+    ints.Add(6);
+    int init = 1;
+    int product = Accumulate(ints.CBegin(), ints.CEnd(), init, Multiplies<int>());
+    Console.WriteLine(product);
+}

@@ -1,0 +1,22 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  1, 2, 3
+
+void main()
+{
+    Set<int> s;
+    s.Insert(2);
+    s.Insert(3);
+    s.Insert(1);
+//  Set is a sorted container, so it contains now 1, 2, 3...
+
+    List<int> list; // list is a model of a back insertion sequence
+
+//  Copy ints from s to the end of list using BackInsertIterator...
+    Copy(s.CBegin(), s.CEnd(), BackInserter(list));
+
+//  ForwardContainers containing ints can be put to OutputStream...
+    Console.Out() << list << endl();
+}

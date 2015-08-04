@@ -1,0 +1,25 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  A
+//  bird
+//  in
+//  the
+//  hand
+//  is
+//  worth
+//  two
+//  in
+//  the
+//  bush.
+
+void main()
+{
+    string proverb("A bird in the hand is worth two in the bush.");
+    List<string> words = proverb.Split(' ');
+    for (const string& word : words)
+    {
+        Console.Out() << word << endl();
+    }
+}

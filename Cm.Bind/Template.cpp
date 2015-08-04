@@ -128,6 +128,7 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Core::FunctionTemplateRepository& funct
     declarationVisitor.MarkFunctionSymbolAsTemplateSpecialization();
     globalNs->Accept(declarationVisitor);
     functionTemplateInstance = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
+    functionTemplateInstance->SetFunctionTemplate(functionTemplate);
     functionTemplateRepository.AddFunctionTemplateInstance(key, functionTemplateInstance);
     functionTemplateInstance->SetReplicated();
     functionTemplateInstance->SetFunctionTemplateSpecialization();

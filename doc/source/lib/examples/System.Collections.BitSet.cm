@@ -1,0 +1,48 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  11111111
+//  all bits are 1
+//  10101010
+//  s[0] == 1
+//  01010101
+//  now s[0] == 0
+
+void main()
+{
+    int n = 8;
+    BitSet s(n);
+    s.Set();
+    Console.Out() << s.ToString() << endl();
+    if (s.All())
+    {
+        Console.Out() << "all bits are 1" << endl();
+    }
+    for (int i = 0; i < n; ++i)
+    {
+        if (i % 2 == 1)
+        {
+            s.Reset(i);
+        }
+    }
+    Console.Out() << s.ToString() << endl();
+    if (s[0])
+    {
+        Console.Out() << "s[0] == 1" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+    s.Flip();
+    Console.Out() << s.ToString() << endl();
+    if (!s[0])
+    {
+        Console.Out() << "now s[0] == 0" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+}

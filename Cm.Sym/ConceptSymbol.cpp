@@ -82,6 +82,22 @@ std::string ConceptSymbol::DocId() const
     return docId;
 }
 
+std::string ConceptSymbol::Syntax() const
+{
+    std::string syntax = SymbolFlagStr(Flags(), DeclaredAccess(), true);
+    if (!syntax.empty())
+    {
+        syntax.append(1, ' ');
+    }
+    syntax.append("concept");
+    if (!syntax.empty())
+    {
+        syntax.append(1, ' ');
+    }
+    syntax.append(Name()).append(";");
+    return syntax;
+}
+
 std::string MakeInstantiatedConceptSymbolName(ConceptSymbol* conceptSymbol, const std::vector<TypeSymbol*>& typeArguments)
 {
     std::string s = conceptSymbol->GroupName();

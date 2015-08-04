@@ -1,0 +1,62 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  !(s1 < s2) && !(s2 < s1) => s1 == s2
+//  s1 < s3
+//  s4 < s1
+
+void main()
+{
+    Set<string> s1;
+    s1.Insert("foo");
+    s1.Insert("bar");
+    s1.Insert("baz");
+    Set<string> s2;
+    s2.Insert("foo");
+    s2.Insert("bar");
+    s2.Insert("baz");
+    if (s1 < s2)
+    {
+        Console.Error() << "bug" << endl();
+    }
+    else if (s2 < s1)
+    {
+        Console.Error() << "bug" << endl();
+    }
+    else if (s1 != s2)
+    {
+        Console.Error() << "bug" << endl();
+    }
+    else
+    {
+        Console.Out() << "!(s1 < s2) && !(s2 < s1) => s1 == s2" << endl();
+    }
+    Set<string> s3;
+    s3.Insert("foo");
+    s3.Insert("bar");
+    s3.Insert("fluffy");
+    if (s1 < s3) //    third element of s1 is less than third element of s3
+    {
+        Console.Out() << "s1 < s3" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+    Set<string> s4;
+    s4.Insert("bar");
+    s4.Insert("baz");
+    if (s1 < s4)
+    {
+        Console.Error() << "bug" << endl();
+    }
+    else if (s4 < s1)   // s4[0] == s1[0] && s4[1] == s1[1], but s4 has fewer elements
+    {
+        Console.Out() << "s4 < s1" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+}

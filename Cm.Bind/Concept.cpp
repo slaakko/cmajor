@@ -10,6 +10,7 @@
 #include <Cm.Bind/Concept.hpp>
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/ConceptGroupSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
@@ -991,6 +992,7 @@ public:
     void Visit(Cm::Ast::MemberFunctionConstraintNode& memberFunctionConstraintNode) override;
     void Visit(Cm::Ast::FunctionConstraintNode& functionConstraintNode) override;
     void Visit(Cm::Ast::IdentifierNode& identifierNode) override;
+    void EndVisit(Cm::Ast::DotNode& dotNode) override;
     void Visit(Cm::Ast::BoolNode& boolNode) override;
     void Visit(Cm::Ast::SByteNode& sbyteNode) override;
     void Visit(Cm::Ast::ByteNode& byteNode) override;
@@ -1104,7 +1106,11 @@ void ConstraintBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     if (symbol)
     {
-        if (symbol->IsBoundTypeParameterSymbol())
+        if (symbol->IsTypeSymbol())
+        {
+            type = static_cast<Cm::Sym::TypeSymbol*>(symbol);
+        }
+        else if (symbol->IsBoundTypeParameterSymbol())
         {
             Cm::Sym::BoundTypeParameterSymbol* boundTypeParameterSymbol = static_cast<Cm::Sym::BoundTypeParameterSymbol*>(symbol);
             type = boundTypeParameterSymbol->GetType();
@@ -1120,7 +1126,73 @@ void ConstraintBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     else
     {
-        throw Cm::Core::ConceptCheckException("type or concept symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        bool generateDocs = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs);
+        if (generateDocs && identifierNode.Str() == "CommonType")
+        {
+            for (const std::unique_ptr<Cm::Sym::Symbol>& symbol : boundCompileUnit->SymbolTable().GlobalNs().Symbols())
+            {
+                if (symbol->Name() == "CommonType" && symbol->IsTypeSymbol())
+                {
+                    type = static_cast<Cm::Sym::TypeSymbol*>(symbol.get());
+                    return;
+                }
+            }
+            type = new Cm::Sym::TypeParameterSymbol(Cm::Parsing::Span(), "CommonType");
+            boundCompileUnit->SymbolTable().GlobalNs().AddSymbol(type);
+        }
+        else
+        {
+            throw Cm::Core::ConceptCheckException("type or concept symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        }
+    }
+}
+
+void ConstraintBinder::EndVisit(Cm::Ast::DotNode& dotNode)
+{
+    Cm::Sym::Symbol* symbol = type->GetContainerScope()->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_and_base, Cm::Sym::SymbolTypeSetId::lookupTypeAndConceptSymbols);
+    if (symbol)
+    {
+        if (symbol->IsBoundTypeParameterSymbol())
+        {
+            Cm::Sym::BoundTypeParameterSymbol* boundTemplateParam = static_cast<Cm::Sym::BoundTypeParameterSymbol*>(symbol);
+            symbol = boundTemplateParam->GetType();
+        }
+        if (symbol->IsTypeSymbol())
+        {
+            type = static_cast<Cm::Sym::TypeSymbol*>(symbol);
+        }
+    }
+    else 
+    {
+        bool generateDocs = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs);
+        if (generateDocs && type->IsTypeParameterSymbol())
+        {
+            for (const std::unique_ptr<Cm::Sym::Symbol>& s : type->Symbols())
+            {
+                if (s->Name() == type->Name() + "." + dotNode.MemberId()->Str())
+                {
+                    symbol = s.get();
+                    break;
+                }
+            }
+            if (!symbol)
+            {
+                symbol = new Cm::Sym::TypeParameterSymbol(dotNode.GetSpan(), type->Name() + "." + dotNode.MemberId()->Str());
+                type->AddSymbol(symbol);
+            }
+            if (symbol->IsTypeSymbol())
+            {
+                type = static_cast<Cm::Sym::TypeSymbol*>(symbol);
+            }
+            else
+            {
+                throw std::runtime_error("not type symbol");
+            }
+        }
+        else
+        {
+            throw Cm::Core::ConceptCheckException("type or concept symbol '" + dotNode.MemberId()->Str() + "' not found", dotNode.GetSpan());
+        }
     }
 }
 

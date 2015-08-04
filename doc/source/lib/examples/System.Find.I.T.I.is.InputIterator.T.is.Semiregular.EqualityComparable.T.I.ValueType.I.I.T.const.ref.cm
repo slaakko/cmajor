@@ -1,0 +1,46 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  A(2) found in index 3
+
+public class A
+{
+    public A(): id(0)
+    {
+    }
+    public A(int id_): id(id_)
+    {
+    }
+    public nothrow inline int Id() const
+    {
+        return id;
+    }
+    private int id;
+}
+
+public nothrow inline bool operator==(const A& left, const A& right)
+{
+    return left.Id() == right.Id();
+}
+
+void main()
+{
+    List<A> list;
+    list.Add(A(3));
+    list.Add(A(1));
+    list.Add(A(4));
+    list.Add(A(2));
+    list.Add(A(3));
+    list.Add(A(5));
+    list.Add(A(2));
+    List<A>.ConstIterator i = Find(list.CBegin(), list.CEnd(), A(2));
+    if (i != list.CEnd())
+    {
+        Console.Out() << "A(2) found in index " << Distance(list.CBegin(), i) << endl();
+    }
+    else
+    {
+        Console.Out() << "A(2) not found" << endl();
+    }
+}

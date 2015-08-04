@@ -1,0 +1,33 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  index of first odd int is 3
+
+public class Odd<I>: UnaryPred<I> where I is SignedInteger
+{
+    public nothrow inline bool operator()(I n)
+    {
+        return n % I(2) == I(1);
+    }
+}
+
+void main()
+{
+    List<int> list;
+    list.Add(2);
+    list.Add(4);
+    list.Add(6);
+    list.Add(3);
+    list.Add(8);
+    list.Add(9);
+    List<int>.ConstIterator p = Find(list.CBegin(), list.CEnd(), Odd<int>());
+    if (p != list.CEnd())
+    {
+        Console.Out() << "index of first odd int is " << Distance(list.CBegin(), p) << endl();
+    }
+    else
+    {
+        Console.Out() << "no odd int found" << endl();
+    }
+}

@@ -18,7 +18,6 @@ class IntrinsicConstraintNode : public ConstraintNode
 public:
     IntrinsicConstraintNode();
     NodeType GetNodeType() const override { return NodeType::intrinsicConstraintNode; }
-    Node* Clone(CloneContext& cloneContext) const override;
 };
 
 class SameConstraintNode : public IntrinsicConstraintNode
@@ -26,6 +25,7 @@ class SameConstraintNode : public IntrinsicConstraintNode
 public:
     SameConstraintNode();
     void Accept(Visitor& visitor) override;
+    Node* Clone(CloneContext& cloneContext) const override;
 };
 
 class DerivedConstraintNode : public IntrinsicConstraintNode
@@ -33,6 +33,7 @@ class DerivedConstraintNode : public IntrinsicConstraintNode
 public:
     DerivedConstraintNode();
     void Accept(Visitor& visitor) override;
+    Node* Clone(CloneContext& cloneContext) const override;
 };
 
 class ConvertibleConstraintNode : public IntrinsicConstraintNode
@@ -40,6 +41,7 @@ class ConvertibleConstraintNode : public IntrinsicConstraintNode
 public:
     ConvertibleConstraintNode();
     void Accept(Visitor& visitor) override;
+    Node* Clone(CloneContext& cloneContext) const override;
 };
 
 class ExplicitlyConvertibleConstraintNode : public IntrinsicConstraintNode
@@ -47,6 +49,7 @@ class ExplicitlyConvertibleConstraintNode : public IntrinsicConstraintNode
 public:
     ExplicitlyConvertibleConstraintNode();
     void Accept(Visitor& visitor) override;
+    Node* Clone(CloneContext& cloneContext) const override;
 };
 
 class CommonConstraintNode : public IntrinsicConstraintNode
@@ -54,30 +57,35 @@ class CommonConstraintNode : public IntrinsicConstraintNode
 public:
     CommonConstraintNode();
     void Accept(Visitor& visitor) override;
+    Node* Clone(CloneContext& cloneContext) const override;
 };
 
 class SameConceptNode : public ConceptNode
 {
 public:
     SameConceptNode();
+    bool IsIntrinsicConceptNode() const { return true; }
 };
 
 class DerivedConceptNode : public ConceptNode
 {
 public:
     DerivedConceptNode();
+    bool IsIntrinsicConceptNode() const { return true; }
 };
 
 class ConvertibleConceptNode : public ConceptNode
 {
 public:
     ConvertibleConceptNode();
+    bool IsIntrinsicConceptNode() const { return true; }
 };
 
 class ExplicitlyConvertibleConceptNode : public ConceptNode
 {
 public:
     ExplicitlyConvertibleConceptNode();
+    bool IsIntrinsicConceptNode() const { return true; }
 };
 
 class CommonConceptNode : public ConceptNode
@@ -85,6 +93,7 @@ class CommonConceptNode : public ConceptNode
 public:
     CommonConceptNode();
     bool IsCommonConceptNode() const override { return true; }
+    bool IsIntrinsicConceptNode() const { return true; }
 };
 
 } } // namespace Cm::Ast

@@ -1,0 +1,18 @@
+using System;
+
+public class Base
+{
+    public virtual ~Base()
+    {
+    }
+}
+
+public class Derived: Base
+{
+}
+
+void main()
+{
+    SharedPtr<Base> ptr(new Derived());
+    SharedPtr<Derived> derived = PtrCast<Derived>(ptr);
+}

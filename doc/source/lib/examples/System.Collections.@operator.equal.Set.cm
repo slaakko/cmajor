@@ -1,0 +1,50 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  s1 == s2
+//  s1 != s3
+//  s1 != s4
+
+void main()
+{
+    Set<string> s1;
+    s1.Insert("foo");
+    s1.Insert("bar");
+    s1.Insert("baz");
+    Set<string> s2;
+    s2.Insert("bar");
+    s2.Insert("foo");
+    s2.Insert("baz");
+    if (s1 == s2)   // same number of pairwise equal elements
+    {
+        Console.Out() << "s1 == s2" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+    Set<string> s3;
+    s3.Insert("foo");
+    s3.Insert("bar");
+    s3.Insert("fluffy");
+    if (s1 != s3) //    third element differ
+    {
+        Console.Out() << "s1 != s3" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+    Set<string> s4;
+    s4.Insert("foo");
+    s4.Insert("bar");
+    if (s1 != s4)   // different number of elements
+    {
+        Console.Out() << "s1 != s4" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+}

@@ -1,0 +1,62 @@
+using System;
+using System.Collections;
+using Animals;
+
+//  Writes:
+//  Rose says meow
+//  Rudolf says woof
+
+namespace Animals
+{
+    public abstract class Animal
+    {
+        public Animal(const string& name_): name(name_)
+        {
+        }
+        public virtual ~Animal()
+        {
+        }
+        public const string& Name() const
+        {
+            return name;
+        }
+        public abstract void Talk();
+        private string name;
+    }
+
+    public typedef SharedPtr<Animal> AnimalPtr;
+
+    public class Dog: Animal
+    {
+        public Dog(const string& name_): base(name_)
+        {
+        }
+        public override void Talk()
+        {
+            Console.Out() << Name() << " says woof" << endl();
+        }
+    }
+
+    public class Cat: Animal
+    {
+        public Cat(const string& name_): base(name_)
+        {
+        }
+        public override void Talk()
+        {
+            Console.Out() << Name() << " says meow" << endl();
+        }
+    }
+}
+
+void main()
+{
+    List<AnimalPtr> animals;
+    animals.Add(AnimalPtr(new Cat("Rose")));
+    animals.Add(AnimalPtr(new Dog("Rudolf")));
+//  ...
+    for (AnimalPtr animal : animals)
+    {
+        animal->Talk();
+    }
+}

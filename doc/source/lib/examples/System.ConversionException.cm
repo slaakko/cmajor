@@ -1,0 +1,16 @@
+using System;
+
+//  Writes:
+//  integer value cannot be parsed from input string '123.456'
+
+void main()
+{
+    try
+    {
+        int x = ParseInt("123.456");
+    }
+    catch (const ConversionException& ex)
+    {
+        Console.WriteLine(ex.Message());
+    }
+}

@@ -181,6 +181,7 @@ class ConstructorConstraintNode : public SignatureConstraintNode
 {
 public:
     ConstructorConstraintNode(const Span& span_);
+    ConstructorConstraintNode(const Span& span_, IdentifierNode* typeParamId_);
     void AddParameter(ParameterNode* parameter) override;
     NodeType GetNodeType() const override { return NodeType::constructorConstraintNode; }
     Node* Clone(CloneContext& cloneContext) const override;
@@ -190,6 +191,7 @@ public:
     void Accept(Visitor& visitor) override;
     const ParameterNodeList& Parameters() const { return parameters; }
 private:
+    std::unique_ptr<IdentifierNode> typeParamId;
     ParameterNodeList parameters;
 };
 
@@ -197,10 +199,15 @@ class DestructorConstraintNode : public SignatureConstraintNode
 {
 public:
     DestructorConstraintNode(const Span& span_);
+    DestructorConstraintNode(const Span& span_, IdentifierNode* typeParamId_);
     NodeType GetNodeType() const override { return NodeType::destructorConstraintNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
     std::string ToString() const override;
     void Accept(Visitor& visitor) override;
+private:
+    std::unique_ptr<IdentifierNode> typeParamId;
 };
 
 class MemberFunctionConstraintNode : public SignatureConstraintNode
@@ -251,7 +258,7 @@ class AxiomStatementNode : public Node
 {
 public:
     AxiomStatementNode(const Span& span_);
-    AxiomStatementNode(const Span& span_, Node* expression_);
+    AxiomStatementNode(const Span& span_, Node* expression_, const std::string& text_);
     NodeType GetNodeType() const override { return NodeType::axiomStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
@@ -261,6 +268,7 @@ public:
     Node* Expression() const { return expression.get(); }
 private:
     std::unique_ptr<Node> expression;
+    std::string text;
 };
 
 class AxiomNode : public Node
@@ -269,6 +277,9 @@ public:
     AxiomNode(const Span& span_);
     AxiomNode(const Span& span_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::axiomNode; }
+    std::string Name() const override;
+    const ParameterNodeList& Parameters() const { return parameters; }
+    const AxiomStatementNodeList& Statements() const { return axiomStatements; }
     void AddParameter(ParameterNode* parameter) override;
     void AddStatement(AxiomStatementNode* statement);
     Node* Clone(CloneContext& cloneContext) const override;
@@ -276,6 +287,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter);
     void Accept(Visitor& visitor) override;
+    bool IsAxiomNode() const override { return true; }
 private:
     std::unique_ptr<IdentifierNode> id;
     ParameterNodeList parameters;

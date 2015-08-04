@@ -1,0 +1,11 @@
+using System;
+
+//  Writes:
+//  120
+
+void main()
+{
+    uint x = 5u;
+    uint f = Factorial(x);
+    Console.Out() << f << endl();
+}

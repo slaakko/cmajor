@@ -1,0 +1,73 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  Triangle.Draw()
+//  Circle.Draw()
+//  Rectangle.Draw()
+//  ~Triangle()
+//  ~Circle()
+//  ~Rectangle()
+
+public abstract class Figure
+{
+    public virtual ~Figure()
+    {
+    }
+    public abstract void Draw();
+}
+
+public typedef SharedPtr<Figure> FigurePtr;
+
+public class Circle: Figure
+{
+    public override ~Circle()
+    {
+        Console.WriteLine("~Circle()");
+    }
+    public override void Draw()
+    {
+        Console.Out() << "Circle.Draw()" << endl();
+    }
+}
+
+public class Rectangle: Figure
+{
+    public override ~Rectangle()
+    {
+        Console.WriteLine("~Rectangle()");
+    }
+    public override void Draw()
+    {
+        Console.Out() << "Rectangle.Draw()" << endl();
+    }
+}
+
+public class Triangle: Figure
+{
+    public override ~Triangle()
+    {
+        Console.WriteLine("~Triangle()");
+    }
+    public override void Draw()
+    {
+        Console.Out() << "Triangle.Draw()" << endl();
+    }
+}
+
+public class Draw: UnaryFun<FigurePtr, void>
+{
+    public void operator()(FigurePtr figure) const
+    {
+        figure->Draw();
+    }
+}
+
+public void main()
+{
+    List<FigurePtr> figures;
+    figures.Add(FigurePtr(new Triangle()));
+    figures.Add(FigurePtr(new Circle()));
+    figures.Add(FigurePtr(new Rectangle()));
+    ForEach(figures.CBegin(), figures.CEnd(), Draw());
+}

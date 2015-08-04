@@ -172,6 +172,36 @@ void DelegateTypeSymbol::Dump(CodeFormatter& formatter)
     formatter.WriteLine(s);
 }
 
+std::string DelegateTypeSymbol::Syntax() const
+{
+    std::string syntax = SymbolFlagStr(Flags(), DeclaredAccess(), true);
+    if (!syntax.empty())
+    {
+        syntax.append(1, ' ');
+    }
+    syntax.append("delegate ");
+    syntax.append(returnType->FullName()).append(" ");
+    syntax.append(Name());
+    syntax.append("(");
+    bool first = true;
+    for (ParameterSymbol* param : parameters)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            syntax.append(", ");
+        }
+        syntax.append(param->GetType()->FullName() + " ");
+        syntax.append(param->Name());
+    }
+    syntax.append(")");
+    syntax.append(";");
+    return syntax;
+}
+
 ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : ClassTypeSymbol(span_, name_), flags(ClassDelegateTypeSymbolFlags::none), returnType(nullptr)
 {
 }
@@ -302,6 +332,36 @@ void ClassDelegateTypeSymbol::Dump(CodeFormatter& formatter)
     p.append(")");
     s.append(p);
     formatter.WriteLine(s);
+}
+
+std::string ClassDelegateTypeSymbol::Syntax() const
+{
+    std::string syntax = SymbolFlagStr(Flags(), DeclaredAccess(), true);
+    if (!syntax.empty())
+    {
+        syntax.append(1, ' ');
+    }
+    syntax.append("class delegate ");
+    syntax.append(returnType->FullName()).append(" ");
+    syntax.append(Name());
+    syntax.append("(");
+    bool first = true;
+    for (ParameterSymbol* param : parameters)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            syntax.append(", ");
+        }
+        syntax.append(param->GetType()->FullName() + " ");
+        syntax.append(param->Name());
+    }
+    syntax.append(")");
+    syntax.append(";");
+    return syntax;
 }
 
 } } // namespace Cm::Sym

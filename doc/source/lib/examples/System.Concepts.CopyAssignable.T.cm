@@ -1,0 +1,54 @@
+using System;
+using System.Concepts;
+
+//  Writes:
+//  Error T138 in file C:/Programming/cmajor++/doc/lib/examples/System.Concepts.CopyAssignable.T.cm at line 53:
+//  type 'D' does not satisfy the requirements of concept 'System.Concepts.CopyAssignable' because
+//  there is no member function with signature 'void D.operator=(const D&)':
+//  Tester<D> td;   // error
+//  ^
+
+// A has compiler generated copy assignment operation:
+
+class A
+{
+}
+
+// B has compiler generated copy assignment operation:
+
+class B
+{
+    public default void operator=(const B&);
+}
+
+// C has user defined copy assignment operation:
+
+class C
+{
+    public void operator=(const C& that) {}
+}
+
+//  But D is not copy assignable
+//  because user defined destructor
+//  suppresses the compiler from generating
+//  a copy assignment operation:
+
+class D
+{
+    public ~D() {}
+}
+
+class Tester<T> where T is CopyAssignable
+{
+}
+
+void main()
+{
+    A a;
+    A a2;
+    a = a2;         // calls copy assignment operation
+    Tester<A> ta;   // ok
+    Tester<B> tb;   // ok
+    Tester<C> tc;   // ok
+    Tester<D> td;   // error
+}

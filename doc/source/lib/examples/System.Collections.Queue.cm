@@ -1,0 +1,73 @@
+using System;
+using System.Collections;
+using Simulation;
+
+//  Writes:
+//  clock: 2: customer 1 arrives
+//  clock: 7: customer 1 leaves
+//  clock: 15: customer 2 arrives
+//  clock: 20: customer 2 leaves
+//  clock: 25: customer 3 arrives
+//  clock: 30: customer 3 leaves
+//  clock: 31: customer 4 arrives
+//  clock: 36: customer 4 leaves
+//  clock: 46: customer 5 arrives
+//  clock: 51: customer 5 leaves
+//  clock: 56: customer 6 arrives
+//  clock: 61: customer 6 leaves
+//  clock: 70: customer 7 arrives
+//  clock: 75: customer 7 leaves
+//  clock: 84: customer 8 arrives
+//  clock: 89: customer 8 leaves
+//  clock: 92: customer 9 arrives
+//  clock: 97: customer 9 leaves
+//  clock: 102: customer 10 arrives
+//  clock: 107: customer 10 leaves
+//  clock: 107: end of simulation.
+
+namespace Simulation
+{
+    public class CustomerEvent
+    {
+        public CustomerEvent(): elapsed(0), customerNumber(0)
+        {
+        }
+        public CustomerEvent(int elapsed_, int customerNumber_): elapsed(elapsed_), customerNumber(customerNumber_)
+        {
+        }
+        public int Elapsed() const
+        {
+            return elapsed;
+        }
+        public int CustomerNumber() const
+        {
+            return customerNumber;
+        }
+        private int elapsed;
+        private int customerNumber;
+    }
+    public typedef Queue<CustomerEvent> CustomerEventQueue;
+}
+
+public const int serviceTime = 5;
+
+void main()
+{
+    CustomerEventQueue queue;
+    int customerNumber = 1;
+    int n = 10;
+    for (int i = 0; i < n; ++i)
+    {
+        queue.Put(CustomerEvent(rand() % 10 + 1, customerNumber++));
+    }
+    int clock = 0;
+    while (!queue.IsEmpty())
+    {
+        CustomerEvent event = queue.Get();
+        clock = clock + event.Elapsed();
+        Console.Out() << "clock: " << clock << ": customer " << event.CustomerNumber() << " arrives" << endl();
+        clock  = clock + serviceTime;
+        Console.Out() << "clock: " << clock << ": customer " << event.CustomerNumber() << " leaves" << endl();
+    }
+    Console.Out() << "clock: " << clock << ": end of simulation." << endl();
+}

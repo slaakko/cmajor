@@ -1,0 +1,22 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  3
+
+void main()
+{
+    List<string> animals;
+    animals.Add("cat");
+    animals.Add("cat");
+    animals.Add("lion");
+    animals.Add("dog");
+    animals.Add("mouse");
+    animals.Add("lion");
+    animals.Add("moose");
+    animals.Add("lion");
+    animals.Add("bear");
+    animals.Add("dog");
+    string lion("lion");
+    Console.Out() << Count(animals.CBegin(), animals.CEnd(), lion) << endl();
+}

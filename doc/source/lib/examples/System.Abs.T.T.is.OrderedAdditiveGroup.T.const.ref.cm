@@ -1,0 +1,17 @@
+using System;
+
+//  Writes:
+//  0
+//  5
+//  10
+
+void main()
+{
+    int zero = 0;
+    int minusFive = -5;
+    int ten = 10;
+//  ...
+    Console.Out() << Abs(zero) << endl();
+    Console.Out() << Abs(minusFive) << endl();
+    Console.Out() << Abs(ten) << endl();
+}

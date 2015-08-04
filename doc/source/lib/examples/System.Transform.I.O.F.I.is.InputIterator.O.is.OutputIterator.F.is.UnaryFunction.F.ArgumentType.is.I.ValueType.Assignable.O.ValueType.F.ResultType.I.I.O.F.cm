@@ -1,0 +1,24 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  2, 4, 6
+
+public class Double<A>: UnaryFun<A, A> where A is AdditiveSemigroup
+{
+    public A operator()(const A& x) const
+    {
+        return x + x;
+    }
+}
+
+void main()
+{
+    List<int> list;
+    list.Add(1);
+    list.Add(2);
+    list.Add(3);
+    List<int> doubledList;
+    Transform(list.CBegin(), list.CEnd(), BackInserter(doubledList), Double<int>());
+    Console.Out() << doubledList << endl();
+}

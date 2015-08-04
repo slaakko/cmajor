@@ -1,0 +1,106 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  a.next == b
+//  b.next == c
+//  c.next == a
+//  a destroyed
+//  b destroyed
+//  c destroyed
+
+public typedef SharedPtr<Base> BasePtr;
+public typedef WeakPtr<Base> WeakBasePtr;
+
+public abstract class Base
+{
+    public Base(const string& name_): name(name_)
+    {
+    }
+    public virtual ~Base()
+    {
+        Console.WriteLine(name + " destroyed");
+    }
+    public const string& Name() const
+    {
+        return name;
+    }
+    public abstract BasePtr GetNext() const;
+    public abstract void SetNext(BasePtr next_);
+    public void PrintNext()
+    {
+        BasePtr next = GetNext();
+        if (!next.IsNull())
+        {
+            Console.WriteLine(name + ".next == " + next->Name());
+        }
+    }
+    private string name;
+}
+
+public class A: Base
+{
+    public A(const string& name_): base(name_)
+    {
+    }
+    public override BasePtr GetNext() const
+    {
+        return next;
+    }
+    public override void SetNext(BasePtr next_)
+    {
+        next = next_;
+    }
+    private BasePtr next;
+}
+
+public class B: Base
+{
+    public B(const string& name_): base(name_)
+    {
+    }
+    public override BasePtr GetNext() const
+    {
+        return next;
+    }
+    public override void SetNext(BasePtr next_)
+    {
+        next = next_;
+    }
+    private BasePtr next;
+}
+
+public class C: Base
+{
+    public C(const string& name_): base(name_)
+    {
+    }
+    public override BasePtr GetNext() const
+    {
+        return next.Lock();
+    }
+    public override void SetNext(BasePtr next_)
+    {
+        next = next_;
+    }
+    private WeakBasePtr next;
+}
+
+
+void main()
+{
+    List<BasePtr> objects;
+    BasePtr a(new A("a"));
+    BasePtr b(new B("b"));
+    BasePtr c(new C("c"));
+    a->SetNext(b);
+    b->SetNext(c);
+    c->SetNext(a);
+    objects.Add(a);
+    objects.Add(b);
+    objects.Add(c);
+    for (BasePtr o : objects)
+    {
+        o->PrintNext();
+    }
+}
