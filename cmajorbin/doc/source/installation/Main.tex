@@ -7,7 +7,7 @@
 
 \begin{document}
 
-\title{Getting Started Guide for Cmajor 1.0.0}
+\title{Getting Started Guide for Cmajor 1.1.0}
 \author{Seppo Laakko}
 \maketitle
 
@@ -17,12 +17,11 @@
 
 Note:
 You must uninstall any previous Cmajor version before installing
-this version (1.0.0).
+this version (1.1.0).
 
 It is also recommended that you delete the
 \verb|%APPDATA%\Cmajor| directory before installing
-this version because configuration files and system library files
-have been changed.
+this version.
 
 \begin{itemize}
 
@@ -65,11 +64,9 @@ In my system this is\\
 \verb|C:\Program Files\mingw-w64\x86_64-5.1.0-posix-sjlj-rt_v4-rev0\mingw64\bin| directory.
 
 \item
-Download and install Visual C++ Redistributable for Visual Studio 2015 RC:
-
-\url{http://www.microsoft.com/en-us/download/details.aspx?id=46881},
-or 64-bit: \url{http://sourceforge.net/projects/cmajor/files/1.0.0/vcredist_x64.exe/download}
-or 32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.0.0/vcredist_x86.exe/download}
+Download and install Visual C++ Redistributable for Visual Studio 2015:\\
+64-bit: \url{http://sourceforge.net/projects/cmajor/files/1.1.0/vcredist_x64.exe/download}\\
+32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.1.0/vcredist_x86.exe/download}
 \end{itemize}
 
 \subsection{Cmajor Installation}
@@ -77,8 +74,8 @@ or 32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.0.0/vcredist_x86.
 \begin{itemize}
 
 \item
-Download and run \textbf{cmajor-1.0.0-win-x86-setup.exe} (for 32-bit Windows) or
-\textbf{cmajor-1.0.0-win-x64-setup.exe} (for 64-bit Windows).
+Download and run \textbf{cmajor-1.1.0-win-x86-setup.exe} (for 32-bit Windows) or
+\textbf{cmajor-1.1.0-win-x64-setup.exe} (for 64-bit Windows).
 
 \item
 Cmajor is installed by default to \verb|C:\Program Files\Cmajor| directory (under 32-bit Windows) or
@@ -185,13 +182,6 @@ Note: If you are updating from previous Cmajor version, it is important to issue
 You have to build the System Library for the used configuration (debug/release) and backend (LLVM/C) first.
 
 \item
-\textbf{Cannot start program because api-ms-win-crt-runtime l1-1-0.dll is missing.}
-
-You must install Visual C++ Redistributable for Visual Studio 2015 RC.
-
-\url{http://www.smartftp.com/support/kb/the-program-cant-start-because-api-ms-win-crt-runtime-l1-1-0dll-is-missing-f2702.html}
-
-\item
 
 \textbf{gcc is not recognized as an internal or external command, operable program or batch file.}
 
@@ -253,7 +243,7 @@ Installation instructions can be found in \url{http://llvm.org/docs/GettingStart
 \begin{itemize}
 
 \item
-Download and extract \textbf{cmajor-1.0.0-src.tar.gz} to some directory here called \verb|<cmajor>|.
+Download and extract \textbf{cmajor-1.1.0-src.tar.gz} to some directory here called \verb|<cmajor>|.
 
 \item
 Change to \verb|<cmajor>| directory and run \verb|make| and then \verb|[sudo] make install|.
