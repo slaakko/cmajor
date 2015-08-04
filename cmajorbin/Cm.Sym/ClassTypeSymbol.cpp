@@ -503,4 +503,34 @@ void ClassTypeSymbol::Dump(CodeFormatter& formatter)
     formatter.WriteLine("end of " + TypeString() + " " + Name());
 }
 
+std::string ClassTypeSymbol::Syntax() const
+{
+    std::string syntax = SymbolFlagStr(Flags(), DeclaredAccess(), true);
+    if (!syntax.empty())
+    {
+        syntax.append(1, ' ');
+    }
+    if (IsAbstract())
+    {
+        syntax.append("abstract ");
+    }
+    syntax.append("class");
+    if (!syntax.empty())
+    {
+        syntax.append(1, ' ');
+    }
+    syntax.append(Name()).append(";");
+    return syntax;
+}
+
+std::string ClassTypeSymbol::FullClassTemplateId() const
+{
+    std::string fullClassTemplateId = FullDocId();
+    for (TypeParameterSymbol* typeParam : typeParameters)
+    {
+        fullClassTemplateId.append(".").append(typeParam->Name());
+    }
+    return fullClassTemplateId;
+}
+
 } } // namespace Cm::Sym

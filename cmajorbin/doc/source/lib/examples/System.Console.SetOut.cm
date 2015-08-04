@@ -1,0 +1,15 @@
+using System;
+using System.IO;
+
+void main()
+{
+    try
+    {
+        Console.SetOut(UniquePtr<OutputStream>(new OutputFileStream("trace.log")));
+        Console.WriteLine("this goes to trace.log");
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+    }
+}

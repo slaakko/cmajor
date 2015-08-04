@@ -1,0 +1,18 @@
+using System;
+
+//  Writes:
+//  A bird in the hand is worth two in the bush.
+//  Parempi pyy pivossa kuin kymmenen oksalla.
+//  Parempi pyy pivossa kuin kymmenen oksalla.
+//  A bird in the hand is worth two in the bush.
+
+void main()
+{
+    string proverb1("A bird in the hand is worth two in the bush.");
+    string proverb2("Parempi pyy pivossa kuin kymmenen oksalla.");
+    Console.Out() << proverb1 << endl();
+    Console.Out() << proverb2 << endl();
+    proverb1.Swap(proverb2);
+    Console.Out() << proverb1 << endl();
+    Console.Out() << proverb2 << endl();
+}

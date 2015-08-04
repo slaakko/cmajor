@@ -74,7 +74,7 @@ namespace Cm.Parser
             ;
 
         AxiomStatement(ParsingContext* ctx): Cm::Ast::AxiomStatementNode* synchronize(";}")
-            ::= (Expression(ctx) ';'!){ value = new AxiomStatementNode(span, Expression); }
+            ::= (Expression(ctx) ';'!){ value = new AxiomStatementNode(span, Expression, std::string(matchBegin, matchEnd)); }
             ;
 
         TypenameConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*
@@ -89,7 +89,8 @@ namespace Cm.Parser
             ;
 
         ConstructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstraintNode> ctorConstraint): Cm::Ast::ConstraintNode*
-            ::= (keyword("explicit")? Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; if (pass) ctorConstraint.reset(new ConstructorConstraintNode(span)); } 
+            ::= (keyword("explicit")? 
+                Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; if (pass) ctorConstraint.reset(new ConstructorConstraintNode(span, id.release())); } 
                 ParameterList(ctx, ctorConstraint.get()) ';'!)
                 { 
                     value = ctorConstraint.release();
@@ -100,7 +101,7 @@ namespace Cm.Parser
         DestructorConstraint(ParsingContext* ctx, std::string firstTypeParameter, var std::unique_ptr<IdentifierNode> id): Cm::Ast::ConstraintNode*
             ::= ('~' Identifier{ id.reset(Identifier); pass = Identifier->Str() == firstTypeParameter; } '('! ')'! ';'!)
                 {
-                    value = new DestructorConstraintNode(span);
+                    value = new DestructorConstraintNode(span, id.release());
                 }
             ;
 

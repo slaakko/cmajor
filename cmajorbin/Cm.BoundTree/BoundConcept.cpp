@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.BoundTree/BoundConcept.hpp>
+#include <Cm.BoundTree/Visitor.hpp>
 #include <stdexcept>
 
 namespace Cm { namespace BoundTree {
@@ -16,13 +17,13 @@ BoundConstraint::BoundConstraint(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxN
 {
 }
 
-void BoundConstraint::Accept(Visitor& visitor)
-{
-    throw std::runtime_error("member function not applicable");
-}
-
 BoundAtomicConstraint::BoundAtomicConstraint(Cm::Ast::Node* syntaxNode_) : BoundConstraint(syntaxNode_)
 {
+}
+
+void BoundAtomicConstraint::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 BoundBinaryConstraint::BoundBinaryConstraint(Cm::Ast::Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_) : BoundConstraint(syntaxNode_), left(left_), right(right_)
@@ -69,6 +70,13 @@ bool BoundDisjunctiveConstraint::Imply(BoundConstraint* that) const
     }
 }
 
+void BoundDisjunctiveConstraint::Accept(Visitor& visitor)
+{
+    Left()->Accept(visitor);
+    Right()->Accept(visitor);
+    visitor.Visit(*this);
+}
+
 BoundConjunctiveConstraint::BoundConjunctiveConstraint(Cm::Ast::Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_) : BoundBinaryConstraint(syntaxNode_, left_, right_)
 {
 }
@@ -107,6 +115,13 @@ bool BoundConjunctiveConstraint::Imply(BoundConstraint* that) const
         bool righImplyThat = right->Imply(that);
         return leftImplyThat || righImplyThat;
     }
+}
+
+void BoundConjunctiveConstraint::Accept(Visitor& visitor)
+{
+    Left()->Accept(visitor);
+    Right()->Accept(visitor);
+    visitor.Visit(*this);
 }
 
 BoundTypeSatisfyConceptConstraint::BoundTypeSatisfyConceptConstraint(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* type_, BoundConcept* concept_) :
@@ -149,6 +164,16 @@ bool BoundTypeSatisfyConceptConstraint::Imply(BoundConstraint* that) const
         }
         return concept->Imply(thatTypeSatisfyConceptConstraint->concept.get());
     }
+}
+
+Cm::Sym::ConceptSymbol* BoundTypeSatisfyConceptConstraint::Concept() const 
+{ 
+    return concept->Symbol(); 
+}
+
+void BoundTypeSatisfyConceptConstraint::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 BoundTypeIsTypeConstraint::BoundTypeIsTypeConstraint(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* left_, Cm::Sym::TypeSymbol* right_) : BoundConstraint(syntaxNode_), left(left_), right(right_)
@@ -194,6 +219,11 @@ bool BoundTypeIsTypeConstraint::Imply(BoundConstraint* that) const
         }
         return true;
     }
+}
+
+void BoundTypeIsTypeConstraint::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 BoundMultiParamConstraint::BoundMultiParamConstraint(Cm::Ast::Node* syntaxNode_, const std::vector<Cm::Sym::TypeSymbol*>& types_, Cm::BoundTree::BoundConcept* concept_) :
@@ -242,6 +272,16 @@ bool BoundMultiParamConstraint::Imply(BoundConstraint* that) const
     }
 }
 
+Cm::Sym::ConceptSymbol* BoundMultiParamConstraint::Concept() const
+{ 
+    return concept->Symbol(); 
+}
+
+void BoundMultiParamConstraint::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundConcept::BoundConcept(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConceptSymbol* concept_) :
     BoundConstraint(syntaxNode_), conceptSymbol(concept_)
 {
@@ -262,6 +302,11 @@ bool BoundConcept::Imply(BoundConstraint* that) const
         refined = refined->RefinedConcept();
     }
     return false;
+}
+
+void BoundConcept::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::BoundTree

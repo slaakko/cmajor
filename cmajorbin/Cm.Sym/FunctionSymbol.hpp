@@ -237,10 +237,15 @@ public:
     void SetMutexId(int mutexId_) { mutexId = mutexId_; }
     void SetOverriddenFunction(FunctionSymbol* overriddenFunction_) { overriddenFunction = overriddenFunction_; }
     FunctionSymbol* OverriddenFunction() const { return overriddenFunction; }
+    void SetFunctionTemplate(FunctionSymbol* functionTemplate_) { functionTemplate = functionTemplate_; }
+    FunctionSymbol* FunctionTemplate() const { return functionTemplate; }
     std::unordered_set<FunctionSymbol*> OverrideSet() const { return overrideSet; }
     void AddToOverrideSet(FunctionSymbol* overrideFun);
     void SetConstraintDocId(const std::string& constraintDocId_);
+    bool IsConst() const;
     std::string FullDocId() const override;
+    std::string Syntax() const override;
+    std::string ParsingName() const override;
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
@@ -255,6 +260,7 @@ private:
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs;
     int mutexId;
     FunctionSymbol* overriddenFunction;
+    FunctionSymbol* functionTemplate;
     std::unordered_set<FunctionSymbol*> overrideSet;
     std::string constraintDocId;
     bool GetFlag(FunctionSymbolFlags flag) const

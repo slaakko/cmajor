@@ -1,0 +1,22 @@
+using System;
+using System.Collections;
+using System.IO;
+
+//  Writes:
+//  0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+//  5, 6, 7, 8, 9, 0, 1, 2, 3, 4
+
+void main()
+{
+    List<int> source;
+    int n = 10;
+    for (int i = 0; i < n; ++i)
+    {
+        source.Add(i);
+    }
+    Console.Out() << source << endl();
+    List<int> target;
+    Copy(source.CBegin() + n / 2, source.CEnd(), BackInserter(target));
+    Copy(source.CBegin(), source.CBegin() + n / 2, BackInserter(target));
+    Console.Out() << target << endl();
+}

@@ -1,0 +1,41 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  the phone number of Stepanov, Alexander is 765432
+//  Knuth already inserted
+//  Dijkstra, Edsger W. : 111222
+//  Knuth, Donald E. : 999888
+//  Stepanov, Alexander : 765432
+//  Stroustrup, Bjarne : 123456
+//  Turing, Alan : 555444
+
+void main()
+{
+    Map<string, int> phoneBook;
+    phoneBook["Stroustrup, Bjarne"] = 123456;
+    phoneBook["Stepanov, Alexander"] = 765432;
+    phoneBook["Knuth, Donald E."] = 999888;
+    phoneBook["Dijkstra, Edsger W."] = 111222;
+    phoneBook.Insert(MakePair(string("Turing, Alan"), 555444));
+
+    Map<string, int>.Iterator s = phoneBook.Find("Stepanov, Alexander");
+    if (s != phoneBook.End())
+    {
+        Console.Out() << "the phone number of " << s->first << " is " << s->second << endl();
+    }
+    else
+    {
+        Console.Error() << "phone number not found" << endl();
+    }
+
+    if (!phoneBook.Insert(MakePair(string("Knuth, Donald E."), 999888)).second)
+    {
+        Console.Out() << "Knuth already inserted" << endl();
+    }
+
+    for (const Pair<string, int>& p : phoneBook)
+    {
+        Console.Out() << p.first << " : " << p.second << endl();
+    }
+}

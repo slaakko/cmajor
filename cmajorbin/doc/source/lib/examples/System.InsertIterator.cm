@@ -1,0 +1,24 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  0, 1, 2, 3, 4
+
+void main()
+{
+    Set<int> s;
+    s.Insert(3);
+    s.Insert(2);
+    s.Insert(1);
+//  Set is a sorted container, so it contains now 1, 2, 3...
+
+    List<int> list;
+    list.Add(0);
+    list.Add(4);
+
+//  Copy the set in the middle of the list using InsertIterator...
+    Copy(s.CBegin(), s.CEnd(), Inserter(list, list.Begin() + 1));
+
+//  ForwardContainers containing ints can be put to OutputStream...
+    Console.Out() << list << endl();
+}

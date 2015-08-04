@@ -1,0 +1,59 @@
+using System;
+using System.Collections;
+using System.IO;
+
+//  Writes:
+//  foo, baz, bar
+
+class A
+{
+    public A(): id()
+    {
+    }
+    public A(const string& id_): id(id_)
+    {
+    }
+    public nothrow inline const string& Id() const
+    {
+        return id;
+    }
+    private string id;
+}
+
+//  Note: need only to provide less than operator for A -- compiler implements >, <= and >=.
+
+public nothrow inline bool operator<(const A& left, const A& right)
+{
+    return left.Id() < right.Id();
+}
+
+public OutputStream& operator<<(OutputStream& s, const List<A>& list)
+{
+    bool first = true;
+    for (const A& a : list)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            s.Write(", ");
+        }
+        s.Write(a.Id());
+    }
+    return s;
+}
+
+void main()
+{
+    List<A> list;
+    A foo("foo");
+    list.Add(foo);
+    A bar("bar");
+    list.Add(bar);
+    A baz("baz");
+    list.Add(baz);
+    Sort(list, Greater<A>());
+    Console.Out() << list << endl();
+}

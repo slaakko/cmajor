@@ -1,0 +1,15 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  2
+
+void main()
+{
+    List<double> divisors;
+    divisors.Add(2.0);
+    divisors.Add(3.0);
+    divisors.Add(4.0);
+    double two = Accumulate(divisors.CBegin(), divisors.CEnd(), 48.0, Divides<double>());
+    Console.WriteLine(two);
+}

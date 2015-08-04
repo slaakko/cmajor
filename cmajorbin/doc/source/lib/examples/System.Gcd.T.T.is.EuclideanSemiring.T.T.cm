@@ -1,0 +1,9 @@
+using System;
+
+//  Writes:
+//  4
+
+void main()
+{
+    Console.WriteLine(Gcd(12, 8));
+}

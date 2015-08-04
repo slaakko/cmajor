@@ -72,6 +72,14 @@ class BoundForStatement;
 class BoundFunction;
 class BoundClass;
 
+class BoundAtomicConstraint;
+class BoundDisjunctiveConstraint;
+class BoundConjunctiveConstraint;
+class BoundTypeSatisfyConceptConstraint;
+class BoundTypeIsTypeConstraint;
+class BoundMultiParamConstraint;
+class BoundConcept;
+
 class Visitor
 {
 public:
@@ -147,6 +155,14 @@ public:
 
     virtual void BeginVisit(BoundClass& boundClass) {}
     virtual void EndVisit(BoundClass& boundClass) {}
+
+    virtual void Visit(BoundAtomicConstraint& atomicConstraint) {}
+    virtual void Visit(BoundDisjunctiveConstraint& disjunctiveConstraint) {}
+    virtual void Visit(BoundConjunctiveConstraint& conjunctiveConstraint) {}
+    virtual void Visit(BoundTypeSatisfyConceptConstraint& typeSatisfyingConcept) {}
+    virtual void Visit(BoundTypeIsTypeConstraint& typeIsTypeConstraint) {}
+    virtual void Visit(BoundMultiParamConstraint& multiparamConstraint) {}
+    virtual void Visit(BoundConcept& concept) {}
 
     bool VisitFunctionBody() const { return visitFunctionBody; }
     void PushSkipContent();

@@ -1,0 +1,28 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  number 1 occurs 0 times
+//  number 2 occurs 1 times
+//  number 3 occurs 2 times
+//  number 4 occurs 3 times
+
+void main()
+{
+    List<int> list;
+    list.Add(4);
+    list.Add(2);
+    list.Add(3);
+    list.Add(4);
+    list.Add(3);
+    list.Add(4);
+    Sort(list); // EqualRange needs a sorted sequence
+    Pair<List<int>.ConstIterator, List<int>.ConstIterator> p1 = EqualRange(list.CBegin(), list.CEnd(), 1);
+    Console.Out() << "number " << 1 << " occurs " << Distance(p1.first, p1.second) << " times" << endl();
+    Pair<List<int>.ConstIterator, List<int>.ConstIterator> p2 = EqualRange(list.CBegin(), list.CEnd(), 2);
+    Console.Out() << "number " << 2 << " occurs " << Distance(p2.first, p2.second) << " times" << endl();
+    Pair<List<int>.ConstIterator, List<int>.ConstIterator> p3 = EqualRange(list.CBegin(), list.CEnd(), 3);
+    Console.Out() << "number " << 3 << " occurs " << Distance(p3.first, p3.second) << " times" << endl();
+    Pair<List<int>.ConstIterator, List<int>.ConstIterator> p4 = EqualRange(list.CBegin(), list.CEnd(), 4);
+    Console.Out() << "number " << 4 << " occurs " << Distance(p4.first, p4.second) << " times" << endl();
+}

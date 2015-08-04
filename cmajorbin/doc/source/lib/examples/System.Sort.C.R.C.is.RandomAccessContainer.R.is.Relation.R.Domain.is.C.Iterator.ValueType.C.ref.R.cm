@@ -1,0 +1,16 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  29358, 26962, 26500, 24464, 19169, 18467, 15724, 11478, 6334, 41
+
+void main()
+{
+    List<int> list;
+    for (int i = 0; i < 10; ++i)
+    {
+        list.Add(rand());
+    }
+    Sort(list, Greater<int>());
+    Console.Out() << list << endl();
+}

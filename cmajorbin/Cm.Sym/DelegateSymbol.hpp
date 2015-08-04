@@ -71,6 +71,7 @@ public:
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     bool IsValueTypeSymbol() const override { return true; }
     void Dump(CodeFormatter& formatter) override;
+    std::string Syntax() const override;
 private:
     DelegateTypeSymbolFlags flags;
     TypeSymbol* returnType;
@@ -137,6 +138,7 @@ public:
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     void Dump(CodeFormatter& formatter) override;
+    std::string Syntax() const override;
 private:
     ClassDelegateTypeSymbolFlags flags;
     TypeSymbol* returnType;

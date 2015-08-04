@@ -1,0 +1,25 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  position of "Stroustrup" is 3
+
+void main()
+{
+    List<string> persons;
+    persons.Add("Stroustrup, Bjarne");
+    persons.Add("Stepanov, Alexander");
+    persons.Add("Knuth, Donald E.");
+    persons.Add("Dijkstra, Edsger W.");
+    persons.Add("Turing, Alan");
+    Sort(persons);
+    List<string>.ConstIterator s = LowerBound(persons.CBegin(), persons.CEnd(), string("Stroustrup"));
+    if (s != persons.CEnd())
+    {
+        Console.Out() << "position of \"Stroustrup\" is " << Distance(persons.CBegin(), s) << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+}

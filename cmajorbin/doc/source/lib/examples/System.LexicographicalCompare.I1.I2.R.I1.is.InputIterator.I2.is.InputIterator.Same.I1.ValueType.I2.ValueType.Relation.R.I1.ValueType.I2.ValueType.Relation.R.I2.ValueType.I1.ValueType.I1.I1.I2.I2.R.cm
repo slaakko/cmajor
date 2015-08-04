@@ -1,0 +1,50 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  list comes lexicographically before set
+
+public class A
+{
+    public A(): id(0)
+    {
+    }
+    public A(int id_): id(id_)
+    {
+    }
+    public nothrow inline int Id() const
+    {
+        return id;
+    }
+    private int id;
+}
+
+public class ALess: Rel<A>
+{
+    public nothrow inline bool operator()(const A& left, const A& right) const
+    {
+        return left.Id() < right.Id();
+    }
+}
+
+void main()
+{
+    List<A> list;
+    list.Add(A(3));
+    list.Add(A(4));
+    list.Add(A(5));
+
+    Set<A, ALess> set;
+    set.Insert(A(3));
+    set.Insert(A(4));
+    set.Insert(A(6));
+
+    if (LexicographicalCompare(list.CBegin(), list.CEnd(), set.CBegin(), set.CEnd(), ALess()))
+    {
+        Console.Out() << "list comes lexicographically before set" << endl();
+    }
+    else
+    {
+        Console.Out() << "bug" << endl();
+    }
+}

@@ -1,0 +1,17 @@
+using System;
+
+void main()
+{
+    Console.WriteLine("Hello, World!");
+
+    Console.WriteLine(10);
+
+    int lineNumber = 1234;
+    Console.Error() << "Error in line " << lineNumber << endl();
+
+    Console.WriteLine("What's your name?");
+    Console.Write("> ");
+    string name = Console.ReadLine();
+
+    Console.Out() << "Hello " << name << '!' << endl();
+}

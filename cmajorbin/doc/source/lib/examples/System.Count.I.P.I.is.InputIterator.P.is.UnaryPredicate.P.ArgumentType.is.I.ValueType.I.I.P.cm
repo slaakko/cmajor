@@ -1,0 +1,25 @@
+using System;
+using System.Concepts;
+using System.Collections;
+
+//  Writes:
+//  3
+
+public class Even<I>: UnaryPred<I> where I is SignedInteger
+{
+    public inline nothrow bool operator()(I n) const
+    {
+        return n % I(2) == I(0);
+    }
+}
+
+void main()
+{
+    List<int> list;
+    list.Add(0);
+    list.Add(2);
+    list.Add(3);
+    list.Add(4);
+    list.Add(5);
+    Console.Out() << Count(list.CBegin(), list.CEnd(), Even<int>()) << endl();
+}

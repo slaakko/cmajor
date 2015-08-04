@@ -348,6 +348,7 @@ std::string MultiParamConstraintNode::DocId() const
     }
     return docId;
 }
+
 void MultiParamConstraintNode::Accept(Visitor& visitor)
 {
     return visitor.Visit(*this);
@@ -396,6 +397,10 @@ ConstructorConstraintNode::ConstructorConstraintNode(const Span& span_) : Signat
 {
 }
 
+ConstructorConstraintNode::ConstructorConstraintNode(const Span& span_, IdentifierNode* typeParamId_) : SignatureConstraintNode(span_), typeParamId(typeParamId_)
+{
+}
+
 void ConstructorConstraintNode::AddParameter(ParameterNode* parameter)
 {
     parameter->SetParent(this);
@@ -404,7 +409,7 @@ void ConstructorConstraintNode::AddParameter(ParameterNode* parameter)
 
 Node* ConstructorConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    ConstructorConstraintNode* clone = new ConstructorConstraintNode(GetSpan());
+    ConstructorConstraintNode* clone = new ConstructorConstraintNode(GetSpan(), static_cast<IdentifierNode*>(typeParamId->Clone(cloneContext)));
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {
         clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
@@ -414,18 +419,23 @@ Node* ConstructorConstraintNode::Clone(CloneContext& cloneContext) const
 
 void ConstructorConstraintNode::Read(Reader& reader)
 {
+    typeParamId.reset(reader.ReadIdentifierNode());
+    typeParamId->SetParent(this);
     parameters.Read(reader);
     parameters.SetParent(this);
 }
 
 void ConstructorConstraintNode::Write(Writer& writer)
 {
+    writer.Write(typeParamId.get());
     parameters.Write(writer);
 }
 
 std::string ConstructorConstraintNode::ToString() const
 {
-    return "@constructor" + parameters.ToString() + ";";
+    std::string text(typeParamId->ToString());
+    text.append(parameters.ToString()).append(";");
+    return text;
 }
 
 void ConstructorConstraintNode::Accept(Visitor& visitor)
@@ -437,19 +447,35 @@ DestructorConstraintNode::DestructorConstraintNode(const Span& span_) : Signatur
 {
 }
 
+DestructorConstraintNode::DestructorConstraintNode(const Span& span_, IdentifierNode* typeParamId_) : SignatureConstraintNode(span_), typeParamId(typeParamId_)
+{
+}
+
 Node* DestructorConstraintNode::Clone(CloneContext& cloneContext) const
 {
-    return new DestructorConstraintNode(GetSpan());
+    return new DestructorConstraintNode(GetSpan(), static_cast<IdentifierNode*>(typeParamId->Clone(cloneContext)));
 }
 
 std::string DestructorConstraintNode::ToString() const 
 {
-    return "@destructor();";
-    
+    std::string text("~" + typeParamId->ToString());
+    text.append("();");
+    return text;
 }
 void DestructorConstraintNode::Accept(Visitor& visitor)
 {
     return visitor.Visit(*this);
+}
+
+void DestructorConstraintNode::Read(Reader& reader)
+{
+    typeParamId.reset(reader.ReadIdentifierNode());
+    typeParamId->SetParent(this);
+}
+
+void DestructorConstraintNode::Write(Writer& writer)
+{
+    writer.Write(typeParamId.get());
 }
 
 MemberFunctionConstraintNode::MemberFunctionConstraintNode(const Span& span_) : SignatureConstraintNode(span_)
@@ -573,29 +599,31 @@ AxiomStatementNode::AxiomStatementNode(const Span& span_) : Node(span_)
 {
 }
 
-AxiomStatementNode::AxiomStatementNode(const Span& span_, Node* expression_) : Node(span_), expression(expression_)
+AxiomStatementNode::AxiomStatementNode(const Span& span_, Node* expression_, const std::string& text_) : Node(span_), expression(expression_), text(text_)
 {
     expression->SetParent(this);
 }
 
 Node* AxiomStatementNode::Clone(CloneContext& cloneContext) const
 {
-    return new AxiomStatementNode(GetSpan(), expression->Clone(cloneContext));
+    return new AxiomStatementNode(GetSpan(), expression->Clone(cloneContext), text);
 }
 
 void AxiomStatementNode::Read(Reader& reader)
 {
     expression.reset(reader.ReadNode());
+    text = reader.ReadString();
 }
 
 void AxiomStatementNode::Write(Writer& writer)
 {
     writer.Write(expression.get());
+    writer.Write(text);
 }
 
 std::string AxiomStatementNode::ToString() const
 {
-    return expression->ToString() + ";";
+    return text;
 }
 
 void AxiomStatementNode::Accept(Visitor& visitor)
@@ -613,6 +641,15 @@ AxiomNode::AxiomNode(const Span& span_, IdentifierNode* id_) : Node(span_), id(i
     {
         id->SetParent(this);
     }
+}
+
+std::string AxiomNode::Name() const
+{
+    if (id)
+    {
+        return id->Str();
+    }
+    return "axiom";
 }
 
 void AxiomNode::AddParameter(ParameterNode* parameter)

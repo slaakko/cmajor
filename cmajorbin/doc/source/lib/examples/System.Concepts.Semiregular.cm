@@ -1,0 +1,72 @@
+using System;
+using System.Concepts;
+
+//  Writes:
+//  Error T138 in file C:/Programming/cmajor++/doc/lib/examples/System.Concepts.Semiregular.cm at line 65:
+//  type 'D' does not satisfy the requirements of concept 'System.Concepts.Semiregular' because
+//  type 'D' does not satisfy the requirements of concept 'System.Concepts.CopyConstructible' because
+//  there is no constructor with signature 'D.D(const D&)':
+//  Tester<D> td;   // error
+//  ^
+
+// A has compiler generated default constructor, copy constructor and copy assignment,
+// move constructor and move assignment and it is trivially destructible, so it is semiregular:
+
+class A
+{
+}
+
+// B has compiler generated default constructor, copy constructor, copy assignment,
+// move constructor, move assignment and destructor, so it is semiregular:
+
+class B
+{
+    public default B();
+    public default B(const B&);
+    public default void operator=(const B&);
+    public default B(B&&);
+    public default void operator=(B&&);
+    public default ~B();
+}
+
+// C has user defined default constructor, copy constructor, copy assignment,
+// move constructor, move assignment and destructor, so it is semiregular:
+
+class C
+{
+    public C() {}
+    public C(const C& that) {}
+    public void operator=(const C& that) {}
+    public C(C&& that) {}
+    public void operator=(C&& that) {}
+    public ~C() {}
+}
+
+//  But D is not semiregular,
+//  because the copy constructor and the 
+//  copy assignment operator are suppressed.
+
+class D
+{
+    public D() {}
+    suppress D(const D&);
+    suppress void operator=(const D&);
+}
+
+class Tester<T> where T is Semiregular
+{
+}
+
+void main()
+{
+    A a;
+    A a2(a);        // a2 is copy constructed
+    A a3;
+    a3 = a2;        // a3 is copy assigned
+    A a4;
+    a4 = Rvalue(a3);// a4 is move assigned
+    Tester<A> ta;   // ok
+    Tester<B> tb;   // ok
+    Tester<C> tc;   // ok
+    Tester<D> td;   // error
+}

@@ -1,0 +1,30 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  I thought so
+
+void main()
+{
+    List<string> fruits1;
+    fruits1.Add("apple");
+    fruits1.Add("banana");
+    fruits1.Add("grape");
+
+    List<string> fruits2;
+    fruits2.Add("apple");
+    fruits2.Add("banana");
+    fruits2.Add("grape");
+    fruits2.Add("orange");
+
+//  fruits1 comes lexicographically before fruits2, so...
+
+    if (LexicographicalCompare(fruits1.CBegin(), fruits1.CEnd(), fruits2.CBegin(), fruits2.CEnd()))
+    {
+        Console.Out() << "I thought so" << endl();
+    }
+    if (LexicographicalCompare(fruits2.CBegin(), fruits2.CEnd(), fruits1.CBegin(), fruits1.CEnd()))
+    {
+        Console.Error() << "bug" << endl();
+    }
+}

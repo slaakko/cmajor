@@ -1,0 +1,51 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  A(1) occurs 0 times
+//  A(2) occurs 1 times
+//  A(3) occurs 2 times
+//  A(4) occurs 3 times
+
+public class A
+{
+    public A(): id(0)
+    {
+    }
+    public A(int id_): id(id_)
+    {
+    }
+    public inline nothrow int Id() const
+    {
+        return id;
+    }
+    private int id;
+}
+
+public class ALess: Rel<A>
+{
+    public inline nothrow bool operator()(const A& left, const A& right)
+    {
+        return left.Id() < right.Id();
+    }
+}
+
+void main()
+{
+    List<A> list;
+    list.Add(A(4));
+    list.Add(A(2));
+    list.Add(A(3));
+    list.Add(A(4));
+    list.Add(A(3));
+    list.Add(A(4));
+    Sort(list, ALess()); // EqualRange needs a sorted sequence
+    Pair<List<A>.ConstIterator, List<A>.ConstIterator> p1 = EqualRange(list.CBegin(), list.CEnd(), A(1), ALess());
+    Console.Out() << "A(" << 1 << ") occurs " << Distance(p1.first, p1.second) << " times" << endl();
+    Pair<List<A>.ConstIterator, List<A>.ConstIterator> p2 = EqualRange(list.CBegin(), list.CEnd(), A(2), ALess());
+    Console.Out() << "A(" << 2 << ") occurs " << Distance(p2.first, p2.second) << " times" << endl();
+    Pair<List<A>.ConstIterator, List<A>.ConstIterator> p3 = EqualRange(list.CBegin(), list.CEnd(), A(3), ALess());
+    Console.Out() << "A(" << 3 << ") occurs " << Distance(p3.first, p3.second) << " times" << endl();
+    Pair<List<A>.ConstIterator, List<A>.ConstIterator> p4 = EqualRange(list.CBegin(), list.CEnd(), A(4), ALess());
+    Console.Out() << "A(" << 4 << ") occurs " << Distance(p4.first, p4.second) << " times" << endl();
+}

@@ -91,6 +91,7 @@ public:
     virtual bool IsCondCompSymbolNode() const { return false; }
     virtual bool IsCondCompPartNode() const { return false; }
     virtual bool IsConceptNode() const { return false; }
+    virtual bool IsIntrinsicConceptNode() const { return false; }
     virtual bool IsConstraintNode() const { return false; }
     virtual bool IsInitializerNode() const { return false; }
     virtual bool IsConstantNode() const { return false; }
@@ -103,6 +104,7 @@ public:
     virtual bool IsUnsignedTypeNode() const { return false; }
     virtual bool IsIdentifierNode() const { return false; }
     virtual bool IsDerivedTypeExprNode() const { return false; }
+    virtual bool IsAxiomNode() const { return false; }
     virtual Rank GetRank() const { return Rank::primary; }
     virtual std::string ToString() const { return std::string(); }
     virtual std::string GetOpStr() const { return std::string(); }

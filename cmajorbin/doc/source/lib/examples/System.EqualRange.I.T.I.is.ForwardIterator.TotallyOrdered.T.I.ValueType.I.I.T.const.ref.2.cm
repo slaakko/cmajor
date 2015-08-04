@@ -1,0 +1,13 @@
+using System;
+
+//  Writes:
+//  sentence 'A bird in the hand is worth two in the bush.' contains 2 'a' letters
+
+void main()
+{
+    string proverb("A bird in the hand is worth two in the bush.");
+    string letters = ToLower(proverb);
+    Sort(letters.Begin(), letters.End());
+    Pair<string.ConstIterator, string.ConstIterator> a = EqualRange(letters.CBegin(), letters.CEnd(), 'a');
+    Console.Out() << "sentence '" << proverb << "' contains " << Distance(a.first, a.second) << " 'a' letters" << endl();
+}

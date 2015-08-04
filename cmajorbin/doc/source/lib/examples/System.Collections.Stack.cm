@@ -1,0 +1,26 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  foo at the top
+//  bar at the top
+//  baz at the top
+//  baz popped, 2 items in the stack
+//  bar popped, 1 items in the stack
+//  foo popped, 0 items in the stack
+
+void main()
+{
+    Stack<string> stack;
+    stack.Push("foo");
+    Console.Out() << stack.Top() << " at the top" << endl();
+    stack.Push("bar");
+    Console.Out() << stack.Top() << " at the top" << endl();
+    stack.Push("baz");
+    Console.Out() << stack.Top() << " at the top" << endl();
+    while (!stack.IsEmpty())
+    {
+        string popped = stack.Pop();
+        Console.Out() << popped << " popped, " << stack.Count() << " items in the stack" << endl();
+    }
+}

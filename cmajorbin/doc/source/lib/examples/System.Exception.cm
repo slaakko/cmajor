@@ -1,0 +1,19 @@
+using System;
+using System.IO;
+
+//  if file 'nonexistent.file' does not exist, writes a message like
+//  "System.IO.OpenFileException at 'C:/Programming/cmajor++/system/filestream.cm' line 105:
+//  could not open file 'nonexistent.file' for reading: No such file or directory"
+//  to the standard error stream.
+
+void main()
+{
+    try
+    {
+        InputFileStream foo("nonexistent.file");
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+    }
+}

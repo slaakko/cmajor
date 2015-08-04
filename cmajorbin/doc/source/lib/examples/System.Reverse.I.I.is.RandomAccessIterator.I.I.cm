@@ -1,0 +1,15 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  3, 2, 1
+
+void main()
+{
+    List<int> list;
+    list.Add(1);
+    list.Add(2);
+    list.Add(3);
+    Reverse(list.Begin(), list.End());
+    Console.Out() << list << endl();
+}

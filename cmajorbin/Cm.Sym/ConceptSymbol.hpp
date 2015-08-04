@@ -36,6 +36,7 @@ public:
     void SetIntrinsicConcept() { isIntrinsicConcept = true; }
     void Dump(CodeFormatter& formatter) override;
     std::string DocId() const override;
+    std::string Syntax() const override;
 private:
     bool isIntrinsicConcept;
     TypeId id;

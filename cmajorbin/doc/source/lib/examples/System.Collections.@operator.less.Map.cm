@@ -1,0 +1,62 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  !(m1 < m2) && !(m2 < m1) => m1 == m2
+//  m1 < m3
+//  m4 < m1
+
+void main()
+{
+    Map<int, string> m1;
+    m1[0] = "foo";
+    m1[1] = "bar";
+    m1[2] = "baz";
+    Map<int, string> m2;
+    m2[0] = "foo";
+    m2[1] = "bar";
+    m2[2] = "baz";
+    if (m1 < m2)
+    {
+        Console.Error() << "bug" << endl();
+    }
+    else if (m2 < m1)
+    {
+        Console.Error() << "bug" << endl();
+    }
+    else if (m1 != m2)
+    {
+        Console.Error() << "bug" << endl();
+    }
+    else
+    {
+        Console.Out() << "!(m1 < m2) && !(m2 < m1) => m1 == m2" << endl();
+    }
+    Map<int, string> m3;
+    m3[0] = "foo";
+    m3[1] = "bar";
+    m3[2] = "fluffy";
+    if (m1 < m3) //    third element of m1 is less than third element of m3
+    {
+        Console.Out() << "m1 < m3" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+    Map<int, string> m4;
+    m4[0] = "foo";
+    m4[1] = "bar";
+    if (m1 < m4)
+    {
+        Console.Error() << "bug" << endl();
+    }
+    else if (m4 < m1)   // m4[0] == m1[0] && m4[1] == m1[1], but m4 has fewer elements
+    {
+        Console.Out() << "m4 < m1" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+}

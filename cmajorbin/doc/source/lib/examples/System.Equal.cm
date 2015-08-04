@@ -1,0 +1,33 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  set: 41, 6334, 11478, 15724, 18467, 19169, 24464, 26500, 26962, 29358
+//  list: 41, 18467, 6334, 26500, 19169, 15724, 11478, 29358, 26962, 24464
+//  sorted list: 41, 6334, 11478, 15724, 18467, 19169, 24464, 26500, 26962, 29358
+//  this was expected
+
+void main()
+{
+    Set<int> set;
+    List<int> list;
+    int n = 10;
+    for (int i = 0; i < n; ++i)
+    {
+        int r = rand();
+        set.Insert(r);
+        list.Add(r);
+    }
+    Console.Out() << "set: " << set << endl();
+    Console.Out() << "list: " << list << endl();
+    Sort(list);
+    Console.Out() << "sorted list: " << list << endl();
+    if (Equal(list.CBegin(), list.CEnd(), set.CBegin(), set.CEnd()))
+    {
+        Console.Out() << "this was expected" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+}

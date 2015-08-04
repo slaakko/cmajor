@@ -18,11 +18,6 @@ IntrinsicConstraintNode::IntrinsicConstraintNode() : ConstraintNode(Cm::Parsing:
 {
 }
 
-Node* IntrinsicConstraintNode::Clone(CloneContext& cloneContext) const
-{
-    throw std::runtime_error("member function not applicable");
-}
-
 SameConstraintNode::SameConstraintNode() : IntrinsicConstraintNode()
 {
 }
@@ -30,6 +25,11 @@ SameConstraintNode::SameConstraintNode() : IntrinsicConstraintNode()
 void SameConstraintNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+Node* SameConstraintNode::Clone(CloneContext& cloneContext) const
+{
+    return new SameConstraintNode();
 }
 
 DerivedConstraintNode::DerivedConstraintNode() : IntrinsicConstraintNode()
@@ -41,6 +41,11 @@ void DerivedConstraintNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+Node* DerivedConstraintNode::Clone(CloneContext& cloneContext) const
+{
+    return new DerivedConstraintNode();
+}
+
 ConvertibleConstraintNode::ConvertibleConstraintNode() : IntrinsicConstraintNode()
 {
 }
@@ -48,6 +53,11 @@ ConvertibleConstraintNode::ConvertibleConstraintNode() : IntrinsicConstraintNode
 void ConvertibleConstraintNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+Node* ConvertibleConstraintNode::Clone(CloneContext& cloneContext) const
+{
+    return new ConvertibleConstraintNode();
 }
 
 ExplicitlyConvertibleConstraintNode::ExplicitlyConvertibleConstraintNode() : IntrinsicConstraintNode()
@@ -59,6 +69,11 @@ void ExplicitlyConvertibleConstraintNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+Node* ExplicitlyConvertibleConstraintNode::Clone(CloneContext& cloneContext) const
+{
+    return new ExplicitlyConvertibleConstraintNode();
+}
+
 CommonConstraintNode::CommonConstraintNode() : IntrinsicConstraintNode()
 {
 }
@@ -66,6 +81,11 @@ CommonConstraintNode::CommonConstraintNode() : IntrinsicConstraintNode()
 void CommonConstraintNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+Node* CommonConstraintNode::Clone(CloneContext& cloneContext) const
+{
+    return new CommonConstraintNode();
 }
 
 SameConceptNode::SameConceptNode() : ConceptNode(Cm::Parsing::Span(), Specifiers::public_, new IdentifierNode(Cm::Parsing::Span(), "Same"))

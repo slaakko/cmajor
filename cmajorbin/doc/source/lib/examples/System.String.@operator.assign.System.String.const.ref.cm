@@ -1,0 +1,11 @@
+using System;
+
+//  Writes:
+//  Parempi pyy pivossa kuin kymmenen oksalla.
+
+void main()
+{
+    string proverb("A bird in the hand is worth two in the bush.");
+    proverb = "Parempi pyy pivossa kuin kymmenen oksalla.";
+    Console.Out() << proverb << endl();
+}

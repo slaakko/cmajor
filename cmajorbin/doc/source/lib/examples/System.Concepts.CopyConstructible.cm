@@ -1,0 +1,54 @@
+using System;
+using System.Concepts;
+
+//  Writes:
+//  Error T138 in file C:/Programming/cmajor++/doc/lib/examples/System.Concepts.CopyConstructible.cm at line 53:
+//  type 'D' does not satisfy the requirements of concept 'System.Concepts.CopyConstructible' because
+//  there is no constructor with signature 'D.D(const D&)':
+//  Tester<D> td;   // error
+//  ^
+
+// A has compiler generated copy constructor:
+
+class A
+{
+}
+
+// B has compiler generated copy constructor:
+
+class B
+{
+    public default B(const B&);
+}
+
+// C has user defined copy constructor:
+
+class C
+{
+    public C(const C& that) {}
+}
+
+//  But D is not copy constructible
+//  because user defined destructor
+//  suppresses the compiler from generating
+//  a copy constructor:
+
+class D
+{
+    public ~D() {}
+}
+
+class Tester<T> where T is CopyConstructible
+{
+}
+
+void main()
+{
+    A a;
+    A a2(a);        // a2 is copy constructed
+    A a3 = a;       // a3 is copy constructed
+    Tester<A> ta;   // ok
+    Tester<B> tb;   // ok
+    Tester<C> tc;   // ok
+    Tester<D> td;   // error
+}

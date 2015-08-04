@@ -1,0 +1,52 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  10, 43, 112
+//  112 already exists
+//  i1 points to item number 0
+//  15 not found
+//  43 removed
+//  112
+
+void main()
+{
+    Set<int> set;
+    set.Insert(43);
+    set.Insert(10);
+    set.Insert(112);
+    Console.Out() << set << endl();
+    if (!set.Insert(112).second)
+    {
+        Console.Out() << 112 << " already exists" << endl();
+    }
+    Set<int>.Iterator i1 = set.Find(10);
+    if (i1 != set.End())
+    {
+        Console.Out() << "i1 points to item number " << Distance(set.Begin(), i1) << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+    Set<int>.Iterator i2 = set.Find(15);
+    if (i2 == set.End())
+    {
+        Console.Out() << 15 << " not found" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+    bool removed = set.Remove(43);
+    if (removed)
+    {
+        Console.Out() << 43 << " removed" << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+    set.Remove(i1);
+    Console.Out() << set << endl();
+}

@@ -1,0 +1,57 @@
+using System;
+using System.Concepts;
+
+//  Writes:
+//  Error T138 in file C:/Programming/cmajor++/doc/lib/examples/System.Concepts.DefaultConstructible.cm at line 55:
+//  type 'D' does not satisfy the requirements of concept 'System.Concepts.DefaultConstructible' because
+//  there is no constructor with signature 'D.D()':
+//  Tester<D> td;   // error
+//  ^
+
+// A has compiler generated default constructor:
+
+class A
+{
+}
+
+// B has compiler generated default constructor:
+
+class B
+{
+    public default B();
+}
+
+// C has user defined default constructor:
+
+class C
+{
+    public C() {}
+}
+
+//  But D is not default constructible
+//  because user defined constructor
+//  suppresses the compiler from generating
+//  a default constructor:
+
+class D
+{
+    public D(int x) {}
+}
+
+class Tester<T> where T is DefaultConstructible
+{
+}
+
+void main()
+{
+    int x;          // x is default constructed
+    Tester<int> ti; // ok
+    A a;            // a is default constructed
+    Tester<A> ta;   // ok
+    B b;            // b is default constructed
+    Tester<B> tb;   // ok
+    C c;            // c is default constructed
+    Tester<C> tc;   // ok
+    Tester<D> td;   // error
+    //D d;          // would generate error: "overload resolution failed: '@constructor(D*)' not found..."
+}

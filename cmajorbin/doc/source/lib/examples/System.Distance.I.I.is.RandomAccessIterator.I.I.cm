@@ -1,0 +1,17 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  4
+
+void main()
+{
+    List<int> list;
+    for (int i = 0; i < 10; ++i)
+    {
+        list.Add(i + 3);
+    }
+    List<int>.ConstIterator it = Find(list.CBegin(), list.CEnd(), 7);
+    int indexOfSeven = Distance(list.CBegin(), it);
+    Console.Out() << indexOfSeven << endl();
+}

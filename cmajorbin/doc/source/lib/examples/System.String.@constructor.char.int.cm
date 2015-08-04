@@ -1,0 +1,10 @@
+using System;
+
+//  Writes:
+//  aaaaaa
+
+void main()
+{
+    string s('a', 6);
+    Console.Out() << s << endl();
+}

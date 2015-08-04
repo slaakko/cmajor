@@ -296,6 +296,8 @@ public:
     Cm::Ast::CompileUnitNode* CompileUnit() const { return compileUnit; }
     void SetCompileUnit(Cm::Ast::CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     void Dump(CodeFormatter& formatter) override;
+    std::string Syntax() const override;
+    std::string FullClassTemplateId() const;
 private:
     uint32_t classNumber;
     ClassTypeSymbolFlags flags;

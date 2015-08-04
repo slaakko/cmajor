@@ -1,0 +1,25 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  maximum element is 2 at position 3
+
+void main()
+{
+    List<int> list;
+    list.Add(1);
+    list.Add(0);
+    list.Add(1);
+    list.Add(2);
+    list.Add(0);
+    list.Add(2);
+    List<int>.ConstIterator maxPos = MaxElement(list.CBegin(), list.CEnd());
+    if (maxPos != list.CEnd())
+    {
+        Console.Out() << "maximum element is " << *maxPos << " at position " << Distance(list.CBegin(), maxPos) << endl();
+    }
+    else
+    {
+        Console.Error() << "bug" << endl();
+    }
+}

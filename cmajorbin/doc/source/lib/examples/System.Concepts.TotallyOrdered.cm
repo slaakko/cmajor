@@ -1,0 +1,134 @@
+using System;
+using System.Concepts;
+
+//  Writes:
+//  Error T138 in file C:/Programming/cmajor++/doc/lib/examples/System.Concepts.TotallyOrdered.cm at line 127:
+//  type 'D' does not satisfy the requirements of concept 'System.Concepts.TotallyOrdered' because
+//  type 'D' does not satisfy the requirements of concept 'System.Concepts.LessThanComparable' because
+//  there is no member function with signature 'bool D.operator<(D)' and no function with signature 'bool operator<(D, D)':
+//  Tester<D> td;   // error
+//  ^
+
+// A has user-defined default constructor, compiler generated copy constructor and copy assignment,
+// it is trivially destructible and its objects can be compare for equality and less than relationship,
+// so it is totally ordered:
+
+class A
+{
+    public A(): id(0)
+    {
+    }
+    public A(int id_): id(id_)
+    {
+    }
+    public int Id() const
+    {
+        return id;
+    }
+    private int id;
+}
+
+public bool operator==(const A& left, const A& right)
+{
+    return left.Id() == right.Id();
+}
+
+public bool operator<(const A& left, const A& right)
+{
+    return left.Id() < right.Id();
+}
+
+// B has user-defined default constructor, compiler generated copy constructor, copy assignment and destructor, and
+// its objects can be compared for equality and less than relationship, so it is totally ordered:
+
+class B
+{
+    public B(): id(0)
+    {
+    }
+    public B(int id_): id(id_)
+    {
+    }
+    public default B(const B&);
+    public default void operator=(const B&);
+    public default ~B();
+    public int Id() const
+    {
+        return id;
+    }
+    private int id;
+}
+
+public bool operator==(const B& left, const B& right)
+{
+    return left.Id() == right.Id();
+}
+
+public bool operator<(const B& left, const B& right)
+{
+    return left.Id() < right.Id();
+}
+
+// C has user defined default constructor, copy constructor, copy assignment
+// and destructor, its objects can be compared for equality and less than relationship,
+// so it is totally ordered:
+
+class C
+{
+    public C(): id(0) {}
+    public C(const C& that): id(that.id) {}
+    public void operator=(const C& that) { id = that.id; }
+    public ~C() {}
+    public int Id() const
+    {
+        return id;
+    }
+    private int id;
+}
+
+public bool operator==(const C& left, const C& right)
+{
+    return left.Id() == right.Id();
+}
+
+public bool operator<(const C& left, const C& right)
+{
+    return left.Id() < right.Id();
+}
+
+//  But D is not totally ordered,
+//  because its objects cannot be compared for less than relationship:
+
+class D
+{
+    public D(): id(0) {}
+    public D(const D& that): id(that.id) {}
+    public void operator=(const D& that) { id = that.id; }
+    public ~D() {}
+    public int Id() const
+    {
+        return id;
+    }
+    private int id;
+}
+
+public bool operator==(const D& left, const D& right)
+{
+    return left.Id() == right.Id();
+}
+
+class Tester<T> where T is TotallyOrdered
+{
+}
+
+void main()
+{
+    A a;
+    A a2(a);        // a2 is copy constructed
+    A a3;
+    a3 = a2;        // a3 is copy assigned
+    Tester<A> ta;   // ok
+    Tester<B> tb;   // ok
+    Tester<C> tc;   // ok
+    Tester<D> td;   // error
+}

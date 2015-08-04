@@ -1,0 +1,49 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  true
+
+public class A
+{
+    public A(): id()
+    {
+    }
+    public A(const string& id_): id(id_)
+    {
+    }
+    public nothrow const string& Id() const
+    {
+        return id;
+    }
+    private string id;
+}
+
+public class ALess: Rel<A>
+{
+    public nothrow inline bool operator()(const A& left, const A& right) const
+    {
+        return left.Id() < right.Id();
+    }
+}
+
+public class AEq: Rel<A>
+{
+    public nothrow inline bool operator()(const A& left, const A& right) const
+    {
+        return left.Id() == right.Id();
+    }
+}
+
+void main()
+{
+    List<A> list;
+    list.Add(A("bar"));
+    list.Add(A("baz"));
+    list.Add(A("foo"));
+    Set<A, ALess> set;
+    set.Insert(A("foo"));
+    set.Insert(A("bar"));
+    set.Insert(A("baz"));
+    Console.Out() << Equal(list.CBegin(), list.CEnd(), set.CBegin(), set.CEnd(), AEq()) << endl();
+}

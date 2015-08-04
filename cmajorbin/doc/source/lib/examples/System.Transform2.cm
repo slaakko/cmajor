@@ -1,0 +1,20 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  4, 6, 8
+
+void main()
+{
+    List<int> list1;
+    list1.Add(1);
+    list1.Add(2);
+    list1.Add(3);
+    List<int> list2;
+    list2.Add(3);
+    list2.Add(4);
+    list2.Add(5);
+    List<int> sum;
+    Transform(list1.CBegin(), list1.CEnd(), list2.CBegin(), BackInserter(sum), Plus<int>());
+    Console.Out() << sum << endl();
+}

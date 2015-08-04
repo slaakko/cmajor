@@ -1,0 +1,38 @@
+using System;
+using System.Concepts;
+
+// A has trivial destructor:
+
+class A
+{
+}
+
+// B has compiler generated destructor:
+
+class B
+{
+    public default ~B();
+}
+
+// C has user defined destructor:
+
+class C
+{
+    public ~C() {}
+}
+
+class Tester<T> where T is Destructible
+{
+}
+
+void main()
+{
+    {
+        A a;
+//      ...
+//      <-- a is destroyed here
+    }
+    Tester<A> ta;   // ok
+    Tester<B> tb;   // ok
+    Tester<C> tc;   // ok
+}

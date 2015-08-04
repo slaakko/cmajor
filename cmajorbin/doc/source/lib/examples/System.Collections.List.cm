@@ -1,0 +1,34 @@
+using System;
+using System.Collections;
+
+//  Writes:
+//  0, 1, 2
+//  1
+//  0, 2
+//  0, 3
+
+void main()
+{
+    List<int> intList;
+    intList.Add(0);
+    intList.Add(2);
+    intList.Insert(intList.Begin() + 1, 1);
+    Console.Out() << intList << endl();
+    int first = intList.RemoveFirst();
+    #assert(first == 0);
+    int last = intList.RemoveLast();
+    #assert(last == 2);
+    #assert(intList.Count() == 1);
+    Console.Out() << intList << endl();
+    intList.InsertFront(0);
+    intList.Add(2);
+    int one = intList.Remove(intList.Begin() + 1);
+    #assert(one == 1);
+    Console.Out() << intList << endl();
+    int zero = intList[0];
+    #assert(zero == 0);
+    intList[1] = 3;
+    Console.Out() << intList << endl();
+    intList.Clear();
+    #assert(intList.IsEmpty());
+}

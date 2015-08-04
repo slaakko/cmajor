@@ -1,0 +1,10 @@
+using System;
+
+//  Writes:
+//  worth two in the bush.
+
+void main()
+{
+    string proverb("A bird in the hand is worth two in the bush.");
+    Console.Out() << proverb.Substring(22) << endl();
+}
