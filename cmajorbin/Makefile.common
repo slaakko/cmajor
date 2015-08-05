@@ -1,6 +1,6 @@
 ifeq ($(config),debug)
-    CXXFLAGS += -std=c++11 -I.. -L../lib -DLINUX -g -O0
+    CXXFLAGS += -pthread -std=c++11 -I.. -L../lib -DLINUX -g -O0
 else
-    CXXFLAGS += -std=c++11 -I.. -L../lib -DLINUX -DNDEBUG -O3
+    CXXFLAGS += -pthread -std=c++11 -I.. -L../lib -DLINUX -DNDEBUG -O3
 endif
 

@@ -16,8 +16,8 @@ else
 endif
 
 ../bin/$(exename): $(OBJECTS) $(LIBRARIES)
-	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) $(OBJECTS) \
--lcmbuild -lcmemit -lcmbind -lcmboundtree -lcmcore -lcmsym -lcmirintf -lcmparser -lcmast -lcir -lllvmir -ldwarf -lirintf -lcmser -lcmparsing -lcmparsingcppobjectmodel -lcmutil -lboost_filesystem -lboost_iostreams -lboost_system
+	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) -pthread $(OBJECTS) \
+-lcmbuild -lcmemit -lcmbind -lcmboundtree -lcmsym -lcmcore -lcmirintf -lcmparser -lcmast -lcir -lllvmir -ldwarf -lirintf -lcmser -lcmparsing -lcmparsingcppobjectmodel -lcmutil -lboost_filesystem -lboost_iostreams -lboost_system
 
 install:
 	mkdir -p $(prefix)/bin

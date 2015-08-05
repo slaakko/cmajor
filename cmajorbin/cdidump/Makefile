@@ -15,7 +15,7 @@ else
 endif
 
 ../bin/$(exename): $(OBJECTS) $(LIBRARIES)
-	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) $(OBJECTS) \
+	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) -pthread $(OBJECTS) \
 -lcmsym -lcmcore -lcmirintf -lcmparser -lcmast -lllvmir -ldwarf -lirintf -lcmser -lcmparsing -lcmparsingcppobjectmodel -lcmutil \
 -lboost_filesystem -lboost_iostreams -lboost_system
 

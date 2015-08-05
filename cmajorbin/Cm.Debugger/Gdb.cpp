@@ -366,7 +366,7 @@ void Gdb::Write(const std::string& message)
     }
 }
 
-void Gdb::ExecuteCommand(std::shared_ptr<GdbCommand>& command)
+void Gdb::ExecuteCommand(std::shared_ptr<GdbCommand> command)
 {
     hasReply = false;
     hasCommand = false;

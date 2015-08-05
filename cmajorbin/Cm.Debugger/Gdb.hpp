@@ -147,7 +147,7 @@ public:
     std::string Read();
     ContinueReplyData ReadContinueReply();
     void Write(const std::string& message);
-    void ExecuteCommand(std::shared_ptr<GdbCommand>& command);
+    void ExecuteCommand(std::shared_ptr<GdbCommand> command);
 private:
     std::string program;
     std::vector<std::string> args;
