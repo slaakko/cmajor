@@ -22,6 +22,7 @@ build:
 	$(MAKE) -C Cm.Emit
 	$(MAKE) -C Cm.Build
 	$(MAKE) -C Cm.Compiler
+	$(MAKE) -C Cm.Debugger
 	$(MAKE) -C Cm.Unit
 	$(MAKE) -C cdidump
 	$(MAKE) -C cmldump
@@ -61,6 +62,7 @@ clean:
 	$(MAKE) -C Cm.Emit clean
 	$(MAKE) -C Cm.Build clean
 	$(MAKE) -C Cm.Compiler clean
+	$(MAKE) -C Cm.Debugger clean
 	$(MAKE) -C Cm.Unit clean
 	$(MAKE) -C cdidump clean
 	$(MAKE) -C cmldump clean
