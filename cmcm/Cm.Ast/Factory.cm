@@ -1,0 +1,85 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public abstract class NodeCreator
+    {
+        public virtual ~NodeCreator()
+        {
+        }
+        public abstract nothrow Node* CreateNode(const Span& span);
+    }
+    
+    public class Creator<T> : NodeCreator where T is AstNode
+    {
+        public override nothrow Node* CreateNode(const Span& span)
+        {
+            return new T(span);
+        }
+    }
+    
+    public class Factory
+    {
+        static Factory(): instance(new Factory())
+        {
+        }
+        private Factory()
+        {
+            creators.Resize(int(NodeType.maxNode));
+            Register(NodeType.boolNode, new Creator<BoolNode>());
+            Register(NodeType.sbyteNode, new Creator<SByteNode>());
+            Register(NodeType.byteNode, new Creator<ByteNode>());
+            Register(NodeType.shortNode, new Creator<ShortNode>());
+            Register(NodeType.ushortNode, new Creator<UShortNode>());
+            Register(NodeType.intNode, new Creator<IntNode>());
+            Register(NodeType.uintNode, new Creator<UIntNode>());
+            Register(NodeType.longNode, new Creator<LongNode>());
+            Register(NodeType.ulongNode, new Creator<ULongNode>());
+            Register(NodeType.floatNode, new Creator<FloatNode>());
+            Register(NodeType.doubleNode, new Creator<DoubleNode>());
+            Register(NodeType.charNode, new Creator<CharNode>());
+            Register(NodeType.voidNode, new Creator<VoidNode>());
+            Register(NodeType.identifierNode, new Creator<IdentifierNode>());
+            Register(NodeType.booleanLiteralNode, new Creator<BooleanLiteralNode>());
+            Register(NodeType.sbyteLiteralNode, new Creator<SByteLiteralNode>());
+            Register(NodeType.byteLiteralNode, new Creator<ByteLiteralNode>());
+            Register(NodeType.shortLiteralNode, new Creator<ShortLiteralNode>());
+            Register(NodeType.ushortLiteralNode, new Creator<UShortLiteralNode>());
+            Register(NodeType.intLiteralNode, new Creator<IntLiteralNode>());
+            Register(NodeType.uintLiteralNode, new Creator<UIntLiteralNode>());
+            Register(NodeType.longLiteralNode, new Creator<LongLiteralNode>());
+            Register(NodeType.ulongLiteralNode, new Creator<ULongLiteralNode>());
+            Register(NodeType.floatLiteralNode, new Creator<FloatLiteralNode>());
+            Register(NodeType.doubleLiteralNode, new Creator<DoubleLiteralNode>());
+            Register(NodeType.charLiteralNode, new Creator<CharLiteralNode>());
+            Register(NodeType.stringLiteralNode, new Creator<StringLiteralNode>());
+            Register(NodeType.nullLiteralNode, new Creator<NullLiteralNode>());
+            // todo
+        }    
+        public static nothrow Factory& Instance()
+        {
+            return *instance;
+        }
+        public nothrow Node* CreateNode(NodeType nodeType, const Span& span)
+        {
+            return creators[int(nodeType)]->CreateNode(span);
+        }
+        private void Register(NodeType nodeType, NodeCreator* creator)
+        {
+            creators[int(nodeType)] = UniquePtr<NodeCreator>(creator);
+        }
+        private static UniquePtr<Factory> instance;
+        private List<UniquePtr<NodeCreator>> creators;
+    }
+}

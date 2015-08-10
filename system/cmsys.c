@@ -197,6 +197,47 @@ int path_exists(const char* path)
 #endif
 }
 
+// last_write_time_less() returns:
+//      1 if last write time of filePath1 is less than last write time of filePath2,
+//      0 if last write time of filePath1 is not less than last write time of filePath2 and
+//      -1 first stat failed
+//      -2 second stat failed
+
+int last_write_time_less(const char* filePath1, const char* filePath2)
+{
+#if defined(_WIN32)
+    struct _stat statBuf1;
+    struct _stat statBuf2;
+    int result1 = _stat(filePath1, &statBuf1);
+    if (result1 != 0)
+    {
+        return -1;
+    }
+    int result2 = _stat(filePath2, &statBuf2);
+    if (result2 != 0)
+    {
+        return -2;
+    }
+    return statBuf1.st_mtime < statBuf2.st_mtime;
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+    struct stat statBuf1;
+    struct stat statBuf2;
+    int result1 = stat(filePath1, &statBuf1);
+    if (result1 != 0)
+    {
+        return -1;
+    }
+    int result2 = stat(filePath2, &statBuf2);
+    if (result2 != 0)
+    {
+        return -2;
+    }
+    return statBuf1.st_mtime < statBuf2.st_mtime;
+#else
+    #error unknown platform
+#endif
+}
+
 char* get_current_working_directory(char* buf, int bufSize)
 {
 #if defined(_WIN32)

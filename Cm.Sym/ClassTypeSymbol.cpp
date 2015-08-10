@@ -358,6 +358,16 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
             vtblToInit.push_back(f);
         }
     }
+    for (FunctionSymbol* virtualFunction : vtbl)
+    {
+        if (virtualFunction && virtualFunction->IsAbstract())
+        {
+            if (!IsAbstract())
+            {
+                throw Cm::Sym::Exception("class containing abstract member functions must be declared abstract", GetSpan(), virtualFunction->GetSpan());
+            }
+        }
+    }
 }
 
 void ClassTypeSymbol::AddSymbol(Symbol* symbol)

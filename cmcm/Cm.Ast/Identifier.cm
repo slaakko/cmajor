@@ -1,0 +1,57 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class IdentifierNode : Node
+    {
+        public nothrow IdentifierNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow IdentifierNode(const Span& span_, const string& identifier_) : base(span_), identifier(identifier_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const 
+        {
+            return NodeType.identifierNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new IdentifierNode(GetSpan(), identifier);
+        }
+        public nothrow override bool IsIdentifierNode() const
+        {
+            return true;
+        }
+        public override void Read(Reader& reader)
+        {
+            identifier = reader.GetBinaryReader().ReadString();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(identifier);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow override string ToString() const
+        {
+            return identifier;
+        }
+        public nothrow const string& Str() const
+        {
+            return identifier;
+        }
+        private string identifier;
+    }
+}

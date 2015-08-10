@@ -63,118 +63,123 @@ bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& right)
     }
 }
 
-struct BetterFunctionMatch
+bool BetterFunctionMatch::operator()(const FunctionMatch& left, const FunctionMatch& right)
 {
-    bool operator()(const FunctionMatch& left, const FunctionMatch& right)
+    int leftBetterArgumentMatches = 0;
+    int rightBetterArgumentMatches = 0;
+    int n = std::max(int(left.argumentMatches.size()), int(right.argumentMatches.size()));
+    for (int i = 0; i < n; ++i)
     {
-        int leftBetterArgumentMatches = 0;
-        int rightBetterArgumentMatches = 0;
-        int n = int(left.argumentMatches.size());
-        for (int i = 0; i < n; ++i)
+        ArgumentMatch leftMatch;
+        if (i < int(left.argumentMatches.size()))
         {
-            const ArgumentMatch& leftMatch = left.argumentMatches[i];
-            const ArgumentMatch& rightMatch = right.argumentMatches[i];
-            if (BetterArgumentMatch(leftMatch, rightMatch))
+            leftMatch = left.argumentMatches[i];
+        }
+        ArgumentMatch rightMatch;
+        if (i < int(right.argumentMatches.size()))
+        {
+            rightMatch = right.argumentMatches[i];
+        }
+        if (BetterArgumentMatch(leftMatch, rightMatch))
+        {
+            ++leftBetterArgumentMatches;
+        }
+        else if (BetterArgumentMatch(rightMatch, leftMatch))
+        {
+            ++rightBetterArgumentMatches;
+        }
+    }
+    if (leftBetterArgumentMatches > rightBetterArgumentMatches)
+    {
+        return true;
+    }
+    else if (rightBetterArgumentMatches > leftBetterArgumentMatches)
+    {
+        return false;
+    }
+    else if (left.numConversions < right.numConversions)
+    {
+        return true;
+    }
+    else if (right.numConversions < left.numConversions)
+    {
+        return false;
+    }
+    else if (!left.function->IsFunctionTemplate() && right.function->IsFunctionTemplate())
+    {
+        return true;
+    }
+    else if (!right.function->IsFunctionTemplate() && left.function->IsFunctionTemplate())
+    {
+        return false;
+    }
+    else if (!left.function->IsFunctionTemplateSpecialization() && right.function->IsFunctionTemplateSpecialization())
+    {
+        return true;
+    }
+    else if (!right.function->IsFunctionTemplateSpecialization() && left.function->IsFunctionTemplateSpecialization())
+    {
+        return  false;
+    }
+    else if (left.function->IsArrayConstructor() && !right.function->IsArrayConstructor())
+    {
+        return true;
+    }
+    else if (right.function->IsArrayConstructor() && !left.function->IsArrayConstructor())
+    {
+        return false;
+    }
+    else if (left.function->IsArrayAssignment() && !right.function->IsArrayAssignment())
+    {
+        return true;
+    }
+    else if (right.function->IsArrayAssignment() && !left.function->IsArrayAssignment())
+    {
+        return false;
+    }
+    else if (left.constraint && !right.constraint)
+    {
+        return true;
+    }
+    else if (right.constraint && !left.constraint)
+    {
+        return false;
+    }
+    else
+    {
+        if (left.constraint && right.constraint)
+        {
+            if (!left.boundConstraint)
             {
-                ++leftBetterArgumentMatches;
+                left.boundConstraint.reset(BindConstraint(left.function->TypeParameters(), left.templateArguments, left.containerScope, *left.compileUnit,
+                    left.function->GetFileScope(left.containerScope), left.constraint));
             }
-            else if (BetterArgumentMatch(rightMatch, leftMatch))
+            if (!right.boundConstraint)
             {
-                ++rightBetterArgumentMatches;
+                right.boundConstraint.reset(BindConstraint(right.function->TypeParameters(), right.templateArguments, right.containerScope, *right.compileUnit,
+                    right.function->GetFileScope(right.containerScope), right.constraint));
             }
-        }
-        if (leftBetterArgumentMatches > rightBetterArgumentMatches)
-        {
-            return true;
-        }
-        else if (rightBetterArgumentMatches > leftBetterArgumentMatches)
-        {
-            return false;
-        }
-        else if (left.numConversions < right.numConversions)
-        {
-            return true;
-        }
-        else if (right.numConversions < left.numConversions)
-        { 
-            return false;
-        }
-        else if (!left.function->IsFunctionTemplate() && right.function->IsFunctionTemplate())
-        {
-            return true;
-        }
-        else if (!right.function->IsFunctionTemplate() && left.function->IsFunctionTemplate())
-        {
-            return false;
-        }
-        else if (!left.function->IsFunctionTemplateSpecialization() && right.function->IsFunctionTemplateSpecialization())
-        {
-            return true;
-        }
-        else if (!right.function->IsFunctionTemplateSpecialization() && left.function->IsFunctionTemplateSpecialization())
-        {
-            return  false;
-        }
-        else if (left.function->IsArrayConstructor() && !right.function->IsArrayConstructor())
-        {
-            return true;
-        }
-        else if (right.function->IsArrayConstructor() && !left.function->IsArrayConstructor())
-        {
-            return false;
-        }
-        else if (left.function->IsArrayAssignment() && !right.function->IsArrayAssignment())
-        {
-            return true;
-        }
-        else if (right.function->IsArrayAssignment() && !left.function->IsArrayAssignment())
-        {
-            return false;
-        }
-        else if (left.constraint && !right.constraint)
-        {
-            return true;
-        }
-        else if (right.constraint && !left.constraint)
-        {
-            return false;
-        }
-        else
-        {
-            if (left.constraint && right.constraint)
+            bool leftImplyRight = left.boundConstraint->Imply(right.boundConstraint.get());
+            bool rightImplyLeft = right.boundConstraint->Imply(left.boundConstraint.get());
+            if (leftImplyRight && !rightImplyLeft)
             {
-                if (!left.boundConstraint)
-                {
-                    left.boundConstraint.reset(BindConstraint(left.function->TypeParameters(), left.templateArguments, left.containerScope, *left.compileUnit, 
-                        left.function->GetFileScope(left.containerScope), left.constraint));
-                }
-                if (!right.boundConstraint)
-                {
-                    right.boundConstraint.reset(BindConstraint(right.function->TypeParameters(), right.templateArguments, right.containerScope, *right.compileUnit, 
-                        right.function->GetFileScope(right.containerScope), right.constraint));
-                }
-                bool leftImplyRight = left.boundConstraint->Imply(right.boundConstraint.get());
-                bool rightImplyLeft = right.boundConstraint->Imply(left.boundConstraint.get());
-                if (leftImplyRight && !rightImplyLeft)
-                {
-                    return true;
-                }
-                else if (rightImplyLeft && !leftImplyRight)
-                {
-                    return false;
-                }
-                else
-                {
-                    return false;
-                }
+                return true;
+            }
+            else if (rightImplyLeft && !leftImplyRight)
+            {
+                return false;
             }
             else
             {
                 return false;
             }
         }
+        else
+        {
+            return false;
+        }
     }
-};
+}
 
 bool CheckArgVsParam(const Cm::Core::Argument& argument, Cm::Sym::TypeSymbol* parameterType)
 {
@@ -619,6 +624,14 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, OverloadResolutionFlags::none);
 }
 
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
+    OverloadResolutionFlags flags, FunctionMatch& bestMatch, std::unique_ptr<Cm::Core::Exception>& exception)
+{
+    std::vector<Cm::Sym::TypeSymbol*> boundTemplateArguments;
+    return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm::Sym::ConversionType::implicit, boundTemplateArguments, flags, bestMatch, exception);
+}
+
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
     std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
     OverloadResolutionFlags flags)
@@ -637,6 +650,16 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,
     std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
     Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags)
+{
+    std::unique_ptr<Cm::Core::Exception> exception;
+    FunctionMatch bestMatch;
+    return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, conversionType, boundTemplateArguments, flags, bestMatch, exception);
+}
+
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
+    Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags, FunctionMatch& bestMatch,
+    std::unique_ptr<Cm::Core::Exception>& exception)
 {
     for (const Cm::Core::Argument& argument : arguments)
     {
@@ -660,9 +683,9 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
         boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
     }
-    std::unique_ptr<Cm::Core::Exception> exception = nullptr;
+    std::unique_ptr<Cm::Core::Exception> innerException = nullptr;
     boundCompileUnit.ClassTemplateRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions);
-    boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions, exception);
+    boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions, innerException);
     boundCompileUnit.ClassDelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
     if (viableFunctions.empty())
     {
@@ -707,7 +730,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                     boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
                 }
                 boundCompileUnit.ClassTemplateRepository().CollectViableFunctions(groupName, arity, args, span, containerScope, viableFunctions);
-                boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, args, span, containerScope, viableFunctions, exception);
+                boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, args, span, containerScope, viableFunctions, innerException);
                 boundCompileUnit.ClassDelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
             }
         }
@@ -717,11 +740,19 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         std::string overloadName = MakeOverloadName(groupName, arguments);
         if (GetFlag(OverloadResolutionFlags::nothrow, flags))
         {
+            if (innerException)
+            {
+                exception.reset(innerException.release());
+            }
+            else
+            {
+                exception.reset(new Cm::Core::Exception("overload resolution failed: '" + overloadName + "' not found. No viable functions taking " + std::to_string(arity) + " arguments found in function group '" + groupName + "'.", span));
+            }
             return nullptr;
         }
-        else if (exception)
+        else if (innerException)
         {
-            Cm::Core::Exception copyOfEx = *exception;
+            Cm::Core::Exception copyOfEx = *innerException;
             throw copyOfEx;
         }
         else
@@ -809,6 +840,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         {
             if (GetFlag(OverloadResolutionFlags::nothrow, flags))
             {
+                exception.reset(new Cm::Core::Exception("overload resolution failed: cannot convert '" + arguments[1].Type()->FullName() + "' to '" + convertingCtor->GetTargetType()->FullName() + "' without a cast", span));
                 return nullptr;
             }
             else
@@ -819,25 +851,26 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         else
         {
             std::string overloadName = MakeOverloadName(groupName, arguments);
+            std::string errorMessage = "overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                std::to_string(viableFunctions.size()) + " viable functions examined";
+            Cm::Parsing::Span conceptCheckSpan;
+            if (!conceptCheckExceptions.empty())
+            {
+                Cm::Core::ConceptCheckException& firstEx = conceptCheckExceptions.front();
+                conceptCheckSpan = firstEx.Defined();
+                errorMessage.append(":\n").append(firstEx.Message());
+            }
+            else
+            {
+                errorMessage.append(".");
+            }
             if (GetFlag(OverloadResolutionFlags::nothrow, flags))
             {
+                exception.reset(new Cm::Core::Exception(errorMessage, span, conceptCheckSpan));
                 return nullptr;
             }
             else
             {
-                std::string errorMessage = "overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
-                    std::to_string(viableFunctions.size()) + " viable functions examined";
-                Cm::Parsing::Span conceptCheckSpan;
-                if (!conceptCheckExceptions.empty())
-                {
-                    Cm::Core::ConceptCheckException& firstEx = conceptCheckExceptions.front();
-                    conceptCheckSpan = firstEx.Defined();
-                    errorMessage.append(":\n").append(firstEx.Message());
-                }
-                else
-                {
-                    errorMessage.append(".");
-                }
                 throw Cm::Core::Exception(errorMessage, span, conceptCheckSpan);
             }
         }
@@ -845,7 +878,8 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     else
     {
         Cm::Sym::FunctionSymbol* function = nullptr;
-        FunctionMatch bestMatch(function, containerScope, &boundCompileUnit);
+        FunctionMatch bm(function, containerScope, &boundCompileUnit);
+        bestMatch = std::move(bm);
         if (functionMatches.size() > 1)
         {
             BetterFunctionMatch betterFunctionMatch;
@@ -887,6 +921,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 }
                 if (GetFlag(OverloadResolutionFlags::nothrow, flags))
                 {
+                    exception.reset(new Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span));
                     return nullptr;
                 }
                 else
@@ -905,6 +940,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
         {
             if (GetFlag(OverloadResolutionFlags::nothrow, flags))
             {
+                exception.reset(new Cm::Core::Exception("cannot call suppressed member function", span, function->GetSpan()));
                 return nullptr;
             }
             else

@@ -44,6 +44,13 @@ void BoundExpressionList::InsertFront(BoundExpression* expr)
     expressions.insert(expressions.begin(), std::unique_ptr<BoundExpression>(expr));
 }
 
+BoundExpression* BoundExpressionList::RemoveFirst()
+{
+    std::unique_ptr<BoundExpression> first = std::move(expressions.front());
+    expressions.erase(expressions.begin());
+    return first.release();
+}
+
 BoundExpression* BoundExpressionList::GetLast()
 {
     std::unique_ptr<BoundExpression> last = std::move(expressions.back());

@@ -46,7 +46,7 @@ namespace System.Xml.Serialization
         return quotedText;
     }
     
-    public class Field: Serializable
+    public abstract class Field: Serializable
     {
         public nothrow Field(): base()
         {
@@ -68,7 +68,7 @@ namespace System.Xml.Serialization
         }
     }
     
-    public class ValueField<Value>: Field
+    public abstract class ValueField<Value>: Field
     {
         public nothrow ValueField(): base(), value()
         {

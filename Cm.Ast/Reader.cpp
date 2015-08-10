@@ -342,7 +342,7 @@ DerivationList Reader::ReadDerivationList()
 
 Specifiers Reader::ReadSpecifiers()
 {
-    uint16_t s = ReadUShort();
+    uint32_t s = ReadUInt();
     return *reinterpret_cast<Specifiers*>(&s);
 }
 

@@ -118,7 +118,7 @@ void Writer::Write(const DerivationList& derivationList)
 
 void Writer::Write(Specifiers x)
 {
-    uint16_t s = *reinterpret_cast<uint16_t*>(&x);
+    uint32_t s = *reinterpret_cast<uint32_t*>(&x);
     binaryWriter.Write(s);
 }
 

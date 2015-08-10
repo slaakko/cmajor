@@ -54,6 +54,22 @@ namespace System.IO
     {
         return path_exists(path.Chars()) != 0;
     }
+    
+    public bool LastWriteTimeLess(const string& filePath1, const string& filePath2)
+    {
+        int result = last_write_time_less(filePath1.Chars(), filePath2.Chars());
+        if (result == -1)
+        {
+            string reason = strerror(get_errno());
+            throw IOException("could not get last write time for file '" + filePath1 + "': " + reason);
+        }
+        else if (result == -2)
+        {
+            string reason = strerror(get_errno());
+            throw IOException("could not get last write time for file '" + filePath2 + "': " + reason);
+        }
+        return result != 0;
+    }
 
     public void CreateDirectories(const string& directoryPath)
     {

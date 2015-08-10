@@ -1,5 +1,5 @@
 /*========================================================================
-    Copyright (c) 2012-2014 Seppo Laakko
+    Copyright (c) 2012-2015 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
  
     Distributed under the GNU General Public License, version 3 (GPLv3).
@@ -20,6 +20,22 @@ using System.Text.Parsing;
 
 namespace Syntax
 {
+    public static class Flags
+    {
+        static nothrow Flags(): forceCodeGen(false)
+        {
+        }
+        public static nothrow bool ForceCodeGen()
+        {
+            return forceCodeGen;
+        }
+        public static nothrow void SetForceCodeGen()
+        {
+            forceCodeGen = true;
+        }
+        private static bool forceCodeGen;
+    }
+    
     internal string ResolveReferenceFilePath(const string& relativeReferenceFilePath, const string& projectBasePath, const List<string>& libraryDirectories)
     {
         string referenceFilePath = GetFullPath(Path.Combine(projectBasePath, relativeReferenceFilePath));

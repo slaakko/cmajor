@@ -1,0 +1,5 @@
+project Cm.Ser;
+target=library;
+assembly <Cm.Ser.cma>;
+source <BinaryReader.cm>;
+source <BinaryWriter.cm>;

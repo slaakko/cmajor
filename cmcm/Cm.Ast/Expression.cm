@@ -1,0 +1,1507 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class EquivalenceNode : BinaryNode
+    {
+        public nothrow EquivalenceNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow EquivalenceNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.equivalenceNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new EquivalenceNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.equivalence;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "<=>";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class ImplicationNode : BinaryNode
+    {
+        public nothrow ImplicationNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ImplicationNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.implicationNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ImplicationNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.implication;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "=>";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class DisjunctionNode : BinaryNode
+    {
+        public nothrow DisjunctionNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DisjunctionNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.disjunctionNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new DisjunctionNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.disjunction;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "||";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class ConjunctionNode : BinaryNode
+    {
+        public nothrow ConjunctionNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ConjunctionNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.conjunctionNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ConjunctionNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.conjunction;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "&&";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class BitOrNode : BinaryNode
+    {
+        public nothrow BitOrNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow BitOrNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.bitOrNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new BitOrNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.bitOr;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "|";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class BitXorNode : BinaryNode
+    {
+        public nothrow BitXorNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow BitXorNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.bitXorNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new BitXorNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.bitXor;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "^";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class BitAndNode : BinaryNode
+    {
+        public nothrow BitAndNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow BitAndNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.bitAndNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new BitAndNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.bitAnd;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "&";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class EqualNode : BinaryNode
+    {
+        public nothrow EqualNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow EqualNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.equalNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new EqualNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.equality;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "==";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class NotEqualNode : BinaryNode
+    {
+        public nothrow NotEqualNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow NotEqualNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.notEqualNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new NotEqualNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.equality;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "!=";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class LessNode : BinaryNode
+    {
+        public nothrow LessNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow LessNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.lessNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new LessNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.relational;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "<";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class GreaterNode : BinaryNode
+    {
+        public nothrow GreaterNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow GreaterNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.greaterNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new GreaterNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.relational;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return ">";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class LessOrEqualNode : BinaryNode
+    {
+        public nothrow LessOrEqualNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow LessOrEqualNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.lessOrEqualNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new LessOrEqualNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.relational;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "<=";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class GreaterOrEqualNode : BinaryNode
+    {
+        public nothrow GreaterOrEqualNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow GreaterOrEqualNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.greaterOrEqualNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new GreaterOrEqualNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.relational;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return ">=";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class ShiftLeftNode : BinaryNode
+    {
+        public nothrow ShiftLeftNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ShiftLeftNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.shiftLeftNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ShiftLeftNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.shift;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "<<";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class ShiftRightNode : BinaryNode
+    {
+        public nothrow ShiftRightNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ShiftRightNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.shiftRightNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ShiftRightNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.shift;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return ">>";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class AddNode : BinaryNode
+    {
+        public nothrow AddNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow AddNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.addNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new AddNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.additive;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "+";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class SubNode : BinaryNode
+    {
+        public nothrow SubNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow SubNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.subNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new SubNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.additive;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "-";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class MulNode : BinaryNode
+    {
+        public nothrow MulNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow MulNode(const Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.mulNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new MulNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.multiplicative;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "*";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class DivNode : BinaryNode
+    {
+        public nothrow DivNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DivNode(Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.divNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new DivNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.multiplicative;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "/";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class RemNode : BinaryNode
+    {
+        public nothrow RemNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow RemNode(Span& span_, Node* left_, Node* right_) : base(span_, left_, right_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.remNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new RemNode(GetSpan(), Left()->Clone(cloneContext), Right()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.multiplicative;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "%";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class InvokeNode : UnaryNode
+    {
+        public nothrow InvokeNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow InvokeNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.invokeNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            InvokeNode* clone = new InvokeNode(GetSpan(), Child()->Clone(cloneContext));
+            for (const UniquePtr<Node>& argument : arguments)
+            {
+                clone->AddArgument(argument->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public override void AddArgument(Node* argument)
+        {
+            arguments.Add(argument);
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            arguments.Read(reader);
+            arguments.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            arguments.Write(writer);
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.postfix;
+        }
+        public nothrow override string ToString() const
+        {
+            string s = Child()->ToString();
+            s.Append('(').Append(arguments.ToString()).Append(')');
+            return s;
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            arguments.Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        private NodeList<Node> arguments;
+    }
+
+    public class IndexNode : UnaryNode
+    {
+        public nothrow IndexNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow IndexNode(const Span& span_, Node* subject_, Node* index_) : base(span_, subject_), index(index_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.indexNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new IndexNode(GetSpan(), Child()->Clone(cloneContext), index->Clone(cloneContext));
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            index.Reset(reader.ReadNode());
+            index->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.Write(index.GetPtr());
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.postfix;
+        }
+        public nothrow override string ToString() const
+        {
+            string s = Child()->ToString();
+            bool parenthesize = Child()->GetRank() > GetRank();
+            if (parenthesize)
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (parenthesize)
+            {
+                s.Append(')');
+            }
+            s.Append('[').Append(index->ToString()).Append(']');
+            return s;
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<Node> index;
+    }
+
+    public class DotNode : UnaryNode
+    {
+        public nothrow DotNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DotNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : base(span_, subject_), memberId(memberId_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.dotNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new DotNode(GetSpan(), Child()->Clone(cloneContext), cast<IdentifierNode*>(memberId->Clone(cloneContext)));
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            memberId.Reset(reader.ReadIdentifierNode());
+            memberId->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.Write(memberId.GetPtr());
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.postfix;
+        }
+        public nothrow override string ToString() const
+        {
+            string s = Child()->ToString();
+            bool parenthesize = Child()->GetRank() > GetRank();
+            if (parenthesize)
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (parenthesize)
+            {
+                s.Append(')');
+            }
+            s.Append('.').Append(memberId->ToString());
+            return s;
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Subject()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        private UniquePtr<IdentifierNode> memberId;
+    }
+
+    public class ArrowNode : UnaryNode
+    {
+        public nothrow ArrowNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ArrowNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : base(span_, subject_), memberId(memberId_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.arrowNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ArrowNode(GetSpan(), Child()->Clone(cloneContext), cast<IdentifierNode*>(memberId->Clone(cloneContext)));
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            memberId.Reset(reader.ReadIdentifierNode());
+            memberId->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.Write(memberId.GetPtr());
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.postfix;
+        }
+        public nothrow override string ToString() const
+        {
+            string s = Child()->ToString();
+            bool parenthesize = Child()->GetRank() > GetRank();
+            if (parenthesize)
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (parenthesize)
+            {
+                s.Append(')');
+            }
+            s.Append("->").Append(memberId->ToString());
+            return s;
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Subject()->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        private UniquePtr<IdentifierNode> memberId;
+    }
+    
+    public class PostfixIncNode : UnaryNode
+    {
+        public nothrow PostfixIncNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow PostfixIncNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.postfixIncNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new PostfixIncNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.postfix;
+        }
+        public nothrow override string ToString() const
+        {
+            string s = Child()->ToString();
+            bool parenthesize = Child()->GetRank() > GetRank();
+            if (parenthesize)
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (parenthesize)
+            {
+                s.Append(')');
+            }
+            s.Append("++");
+            return s;
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class PostfixDecNode : UnaryNode
+    {
+        public nothrow PostfixDecNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow PostfixDecNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.postfixDecNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new PostfixDecNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.postfix;
+        }
+        public nothrow override string ToString() const
+        {
+            string s = Child()->ToString();
+            bool parenthesize = Child()->GetRank() > GetRank();
+            if (parenthesize)
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (parenthesize)
+            {
+                s.Append(')');
+            }
+            s.Append("--");
+            return s;
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class DerefNode : UnaryNode
+    {
+        public nothrow DerefNode (const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DerefNode (const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.derefNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new DerefNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.prefix;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "*";
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class AddrOfNode: UnaryNode
+    {
+        public nothrow AddrOfNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow AddrOfNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.addrOfNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new AddrOfNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.prefix;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "&";
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class NotNode : UnaryNode
+    {
+        public nothrow NotNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow NotNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.notNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new NotNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.prefix;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "!";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class UnaryPlusNode : UnaryNode
+    {
+        public nothrow UnaryPlusNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow UnaryPlusNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.unaryPlusNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new UnaryPlusNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.prefix;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "+";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class UnaryMinusNode : UnaryNode
+    {
+        public nothrow UnaryMinusNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow UnaryMinusNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.unaryMinusNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new UnaryMinusNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.prefix;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "-";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class ComplementNode : UnaryNode
+    {
+        public nothrow ComplementNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ComplementNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.complementNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ComplementNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.prefix;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "~";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class PrefixIncNode : UnaryNode
+    {
+        public nothrow PrefixIncNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow PrefixIncNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.prefixIncNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new PrefixIncNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.prefix;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "++";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class PrefixDecNode : UnaryNode
+    {
+        public nothrow PrefixDecNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow PrefixDecNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.prefixDecNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new PrefixDecNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override Rank GetRank() const
+        {
+            return Rank.prefix;
+        }
+        public nothrow override string GetOpStr() const
+        {
+            return "--";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            base->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+    }
+
+    public class SizeOfNode : UnaryNode
+    {
+        public nothrow SizeOfNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow SizeOfNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.sizeOfNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new SizeOfNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override string ToString() const
+        {
+            return "sizeof(" + Child()->ToString() + ")";
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class TypeNameNode : UnaryNode
+    {
+        public nothrow TypeNameNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow TypeNameNode(const Span& span_, Node* subject_) : base(span_, subject_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.typeNameNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new TypeNameNode(GetSpan(), Child()->Clone(cloneContext));
+        }
+        public nothrow override string ToString() const
+        {
+            return "typename(" + Child()->ToString() + ")";
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return Child();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class CastNode : Node
+    {
+        public nothrow CastNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow CastNode(const Span& span_, Node* targetTypeExpr_, Node* sourceExpr_) : base(span_), targetTypeExpr(targetTypeExpr_), sourceExpr(sourceExpr_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.castNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new CastNode(GetSpan(), targetTypeExpr->Clone(cloneContext), sourceExpr->Clone(cloneContext));
+        }
+        public override void Read(Reader& reader)
+        {
+            targetTypeExpr.Reset(reader.ReadNode());
+            targetTypeExpr->SetParent(this);
+            sourceExpr.Reset(reader.ReadNode());
+            sourceExpr->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(targetTypeExpr.GetPtr());
+            writer.Write(sourceExpr.GetPtr());
+        }
+        public nothrow override string ToString() const
+        {
+            string s = "cast<";
+            s.Append(targetTypeExpr->ToString()).Append(">(").Append(sourceExpr->ToString()).Append(')');
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<Node> targetTypeExpr;
+        private UniquePtr<Node> sourceExpr;
+    }
+
+    public class NewNode : Node
+    {
+        public nothrow NewNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow NewNode(const Span& span_, Node* typeExpr_) : base(span_), typeExpr(typeExpr_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.newNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            NewNode* clone = new NewNode(GetSpan(), typeExpr->Clone(cloneContext));
+            for (const UniquePtr<Node>& argument : arguments)
+            {
+                clone->AddArgument(argument->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public override void AddArgument(Node* argument)
+        {
+            argument->SetParent(this);
+            arguments.Add(argument);
+        }
+        public override void Read(Reader& reader)
+        {
+            typeExpr.Reset(reader.ReadNode());
+            typeExpr->SetParent(this);
+            arguments.Read(reader);
+            arguments.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(typeExpr.GetPtr());
+            arguments.Write(writer);
+        }
+        public nothrow override string ToString() const
+        {
+            string s = "new ";
+            s.Append(typeExpr->ToString()).Append('(').Append(arguments.ToString()).Append(')');
+            return s;
+        }
+        public nothrow inline Node* TypeExpr() const
+        {
+            return typeExpr.GetPtr();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<Node> typeExpr;
+        private NodeList<Node> arguments;
+    }
+
+    public class ConstructNode : Node
+    {
+        public nothrow ConstructNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ConstructNode(const Span& span_, Node* typeExpr_) : base(span_), typeExpr(typeExpr_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.constructNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            ConstructNode* clone = new ConstructNode(GetSpan(), typeExpr->Clone(cloneContext));
+            for (const UniquePtr<Node>& argument : arguments)
+            {
+                clone->AddArgument(argument->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public override void AddArgument(Node* argument)
+        {
+            argument->SetParent(this);
+            arguments.Add(argument);
+        }
+        public override void Read(Reader& reader)
+        {
+            typeExpr.Reset(reader.ReadNode());
+            typeExpr->SetParent(this);
+            arguments.Read(reader);
+            arguments.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(typeExpr.GetPtr());
+            arguments.Write(writer);
+        }
+        public nothrow override string ToString() const
+        {
+            string s = "construct<";
+            s.Append(typeExpr->ToString()).Append(">(").Append(arguments.ToString()).Append(')');
+            return s;
+        }
+        public nothrow inline Node* TypeExpr() const
+        {
+            return typeExpr.GetPtr();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<Node> typeExpr;
+        private NodeList<Node> arguments;
+    }
+    
+    public class ThisNode : Node
+    {
+        public nothrow ThisNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.thisNode;
+        }
+        public nothrow override bool IsThisNode() const
+        {
+            return true;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ThisNode(GetSpan());
+        }
+        public nothrow override string ToString() const
+        {
+            return "this";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class BaseNode : Node
+    {
+        public nothrow BaseNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.baseNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new BaseNode(GetSpan());
+        }
+        public nothrow override string ToString() const
+        {
+            return "base";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+}

@@ -1,0 +1,276 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class FunctionGroupIdNode : Node
+    {
+        public nothrow FunctionGroupIdNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow FunctionGroupIdNode(const Span& span_, const string& functionGroupId_) : base(span_), functionGroupId(functionGroupId_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.functionGroupIdNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new FunctionGroupIdNode(GetSpan(), functionGroupId);
+        }
+        public override void Read(Reader& reader)
+        {
+            functionGroupId = reader.GetBinaryReader().ReadString();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(functionGroupId);
+        }
+        public override string Name() const
+        {
+            return functionGroupId;
+        }
+        public nothrow inline const string& Str() const
+        {
+            return functionGroupId;
+        }
+        public override nothrow string ToString() const
+        {
+            return functionGroupId;
+        }
+        private string functionGroupId;
+    }
+    
+    public class FunctionNode : Node
+    {
+        public nothrow FunctionNode(const Span& span_) : base(span_), specifiers(Specifiers.none), compileUnit(null)
+        {
+        }
+        public nothrow FunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_) : 
+            base(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_), compileUnit(null)
+        {
+            if (!returnTypeExpr.IsNull())
+            {
+                returnTypeExpr->SetParent(this);
+            }
+            groupId->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.functionNode;
+        }
+        public nothrow override bool IsFunctionNode() const
+        {
+            return true;
+        }
+        public override void AddTemplateParameter(TemplateParameterNode* templateParameter)
+        {
+            templateParameter->SetParent(this);
+            templateParameters.Add(templateParameter);
+        }
+        public override void AddParameter(ParameterNode* parameter)
+        {
+            parameter->SetParent(this);
+            parameters.Add(parameter);
+        }
+        public void SetConstraint(WhereConstraintNode* constraint_)
+        {
+            constraint.Reset(constraint_);
+            if (!constraint.IsNull())
+            {
+                constraint->SetParent(this);
+            }        
+        }
+        public void SetBody(CompoundStatementNode* body_)
+        {
+            body.Reset(body_);
+            if (!body.IsNull())
+            {
+                body->SetParent(this);
+            }
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            FunctionNode* clone = new FunctionNode(GetSpan(), specifiers, returnTypeExpr->Clone(cloneContext), cast<FunctionGroupIdNode*>(groupId->Clone(cloneContext)));
+            for (const UniquePtr<TemplateParameterNode>& templateParameter : templateParameters)
+            {
+                clone->AddTemplateParameter(cast<TemplateParameterNode*>(templateParameter->Clone(cloneContext)));
+            }
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            if (!constraint.IsNull())
+            {
+                clone->SetConstraint(cast<WhereConstraintNode*>(constraint->Clone(cloneContext)));
+            }
+            if (!body.IsNull())
+            {
+                clone->SetBody(cast<CompoundStatementNode*>(body->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            bool hasReturnTypeExpr = reader.GetBinaryReader().ReadBool();
+            if (hasReturnTypeExpr)
+            {
+                returnTypeExpr.Reset(reader.ReadNode());
+                returnTypeExpr->SetParent(this);
+            }
+            groupId.Reset(reader.ReadFunctionGroupIdNode());
+            groupId->SetParent(this);
+            templateParameters.Read(reader);
+            templateParameters.SetParent(this);
+            parameters.Read(reader);
+            parameters.SetParent(this);
+            bool hasConstraint = reader.GetBinaryReader().ReadBool();
+            if (hasConstraint)
+            {
+                constraint.Reset(reader.ReadWhereConstraintNode());
+                constraint->SetParent(this);
+            }
+            bool hasBody = reader.GetBinaryReader().ReadBool();
+            if (hasBody)
+            {
+                body.Reset(reader.ReadCompoundStatementNode());
+                body->SetParent(this);
+            }
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            bool hasReturnTypeExpr = !returnTypeExpr.IsNull();
+            writer.GetBinaryWriter().Write(hasReturnTypeExpr);
+            if (hasReturnTypeExpr)
+            {
+                writer.Write(returnTypeExpr.GetPtr());
+            }
+            writer.Write(groupId.GetPtr());
+            templateParameters.Write(writer);
+            parameters.Write(writer);
+            bool hasConstraint = !constraint.IsNull();
+            writer.GetBinaryWriter().Write(hasConstraint);
+            if (hasConstraint)
+            {
+                writer.Write(constraint.GetPtr());
+            }
+            bool hasBody = !body.IsNull();
+            writer.GetBinaryWriter().Write(hasBody);
+            if (hasBody)
+            {
+                writer.Write(body.GetPtr());
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (!visitor.SkipContent())
+            {
+                templateParameters.Accept(visitor);
+                parameters.Accept(visitor);
+                if (visitor.VisitBodies())
+                {
+                    if (!body.IsNull())
+                    {
+                        body->Accept(visitor);
+                    }
+                }
+            }
+            visitor.EndVisit(*this);
+        }
+        public override string Name() const
+        {
+            string name = groupId->Str();
+            name.Append(parameters.ToString());
+            return name;
+        }
+        public string FullGroupName() const
+        {
+            if (Parent()->IsNamespaceNode())
+            {
+                return cast<NamespaceNode*>(Parent())->FullName() + "." + groupId->Str();
+            }
+            else
+            {
+                return groupId->Str();
+            }
+        }
+        public nothrow inline Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public nothrow inline Node* ReturnTypeExpr() const
+        {
+            return returnTypeExpr.GetPtr();
+        }
+        public nothrow inline FunctionGroupIdNode* GroupId() const
+        {
+            return groupId.GetPtr();
+        }
+        public nothrow inline const NodeList<TemplateParameterNode>& TemplateParameters() const
+        {
+            return templateParameters;
+        }
+        public nothrow inline NodeList<TemplateParameterNode>& TemplateParameters() 
+        {
+            return templateParameters;
+        }
+        public nothrow inline const NodeList<ParameterNode>& Parameters() const
+        {
+            return parameters;
+        }
+        public nothrow inline NodeList<ParameterNode>& Parameters() 
+        {
+            return parameters;
+        }
+        public nothrow inline WhereConstraintNode* Constraint() const
+        {
+            return constraint.GetPtr();
+        }
+        public nothrow inline CompoundStatementNode* Body() const
+        {
+            return body.GetPtr();
+        }
+        public nothrow inline bool HasBody() const
+        {
+            return !body.IsNull();
+        }    
+        public nothrow inline CompoundStatementNode* BodySource() const
+        {
+            return bodySource.GetPtr();
+        }
+        public nothrow void SetBodySource(CompoundStatementNode* bodySource_)
+        {
+            bodySource.Reset(bodySource_);
+        }
+        public nothrow inline CompileUnitNode* CompileUnit() const
+        {
+            return compileUnit;
+        }
+        public nothrow void SetCompileUnit(CompileUnitNode* compileUnit_)
+        {
+            compileUnit = compileUnit_;
+        }
+        private Specifiers specifiers;
+        private UniquePtr<Node> returnTypeExpr;
+        private UniquePtr<FunctionGroupIdNode> groupId;
+        private NodeList<TemplateParameterNode> templateParameters;
+        private NodeList<ParameterNode> parameters;
+        private UniquePtr<WhereConstraintNode> constraint;
+        private UniquePtr<CompoundStatementNode> body;
+        private UniquePtr<CompoundStatementNode> bodySource;
+        private CompileUnitNode* compileUnit;
+    }
+}

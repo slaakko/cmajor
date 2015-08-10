@@ -101,6 +101,9 @@ namespace System.Text.Parsing
         {
             return currentNamespace->GetScope();
         }
+        public override void Accept(Visitor& visitor)
+        {
+        }
         private typedef Map<string, Grammar*> GrammarMap;
         private typedef GrammarMap.Iterator GrammarMapIt;
         private GrammarMap grammarMap;

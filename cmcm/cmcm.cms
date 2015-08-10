@@ -1,0 +1,6 @@
+solution cmcm;
+project <Cm.Ast/Cm.Ast.cmp>;
+project <Cm.Ser/Cm.Ser.cmp>;
+activeProject Cm.Ast;
+dependency Cm.Ser();
+dependency Cm.Ast(Cm.Ser);

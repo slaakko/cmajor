@@ -47,7 +47,7 @@ namespace System.Text.Parsing
     public class Scanner
     {
         public nothrow Scanner(const string& content_, int fileIndex_, const string& fileName_, Parser* skipper_): 
-            content(content_), position(fileIndex_), fileName(fileName_), skipper(skipper_), skipping(false), tokenCounter(0), log(), 
+            content(content_), position(fileIndex_), span(fileIndex_), fileName(fileName_), skipper(skipper_), skipping(false), tokenCounter(0), log(), 
             countSourceLines(Stats.CountSourceLines()), topLevelRule(null), atBeginningOfLine(true)
         {
             if (countSourceLines)
@@ -62,6 +62,10 @@ namespace System.Text.Parsing
         public nothrow inline const Position& GetPosition() const
         {
             return position;
+        }
+        public inline nothrow const Span& GetSpan() const
+        {
+            return span;
         }
         public nothrow inline void SetPosition(const Position& position_)
         {
@@ -107,11 +111,13 @@ namespace System.Text.Parsing
                 }
             }
             position.SetIndex(position.Index() + 1);
+            ++span;
             if (c == '\n')
             {
                 atBeginningOfLine = true;
                 position.SetLine(position.Line() + 1);
                 position.SetColumn(1);
+                span.IncLineNumber();
             }
             else
             {
@@ -130,7 +136,8 @@ namespace System.Text.Parsing
         {
             if (tokenCounter == 0 && skipper != null)
             {
-                Position save = position;
+                Position savedPosition = position;
+                Span savedSpan = span;
                 BeginToken();
                 skipping = true;
                 Stack<UniquePtr<Object>> stack;
@@ -139,7 +146,8 @@ namespace System.Text.Parsing
                 EndToken();
                 if (!match.Hit())
                 {
-                    position = save;
+                    position = savedPosition;
+                    span = savedSpan;
                 }
             }
         }
@@ -167,6 +175,7 @@ namespace System.Text.Parsing
         }
         private string content;
         private Position position;
+        private Span span;
         private string fileName;
         private Parser* skipper;
         private bool skipping;

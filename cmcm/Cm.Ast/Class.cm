@@ -1,0 +1,304 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class ClassNode : Node
+    {
+        public nothrow ClassNode(const Span& span_) : base(span_), specifiers(Specifiers.none), id(), compileUnit(null)
+        {
+        }
+        public nothrow ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), id(id_), compileUnit(null)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.classNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            ClassNode* clone = new ClassNode(GetSpan(), specifiers, cast<IdentifierNode*>(id->Clone(cloneContext)));
+            if (!cloneContext.InstantiateClassNode())
+            {
+                for (const UniquePtr<TemplateParameterNode>& templateParam : templateParameters)
+                {
+                    clone->AddTemplateParameter(cast<TemplateParameterNode*>(templateParam->Clone(cloneContext)));
+                }
+            }
+            return clone;
+        }
+        public override nothrow bool IsClassNode() const
+        {
+            return true;
+        }
+        public override void AddTemplateParameter(TemplateParameterNode* templateParam)
+        {
+            templateParam->SetParent(this);
+            templateParameters.Add(templateParam);
+        }
+        public nothrow inline const NodeList<TemplateParameterNode>& TemplateParameters() const
+        {
+            return templateParameters;
+        }
+        public nothrow void SetBaseClassTypeExpr(Node* baseClassTypeExpr_)
+        {
+            baseClassTypeExpr.Reset(baseClassTypeExpr_);
+            if (!baseClassTypeExpr.IsNull())
+            {
+                baseClassTypeExpr->SetParent(this);
+            }
+        }
+        public nothrow inline Node* BaseClassTypeExpr() const
+        {
+            return baseClassTypeExpr.GetPtr();
+        }
+        public nothrow void SetConstraint(WhereConstraintNode* constraint_)
+        {
+            constraint.Reset(constraint_);
+            if (!constraint.IsNull())
+            {
+                constraint->SetParent(this);
+            }
+        }
+        public nothrow inline WhereConstraintNode* Constraint() const
+        {
+            return constraint.GetPtr();
+        }
+        public void AddMember(Node* member)
+        {
+            member->SetParent(this);
+            members.Add(member);
+        }
+        public override string Name() const
+        {
+            return id->Str();
+        }
+        public nothrow inline Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public nothrow void SetId(IdentifierNode* id_)
+        {
+            id.Reset(id_);
+            id->SetParent(this);
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public nothrow inline CompileUnitNode* GetCompileUnit() const 
+        {
+            return compileUnit;
+        }
+        public nothrow void SetCompileUnit(CompileUnitNode* compileUnit_)
+        {
+            compileUnit = compileUnit_;
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            templateParameters.Read(reader);
+            templateParameters.SetParent(this);
+            bool hasBaseClass = reader.GetBinaryReader().ReadBool();
+            if (hasBaseClass)
+            {
+                baseClassTypeExpr.Reset(reader.ReadNode());
+                baseClassTypeExpr->SetParent(this);
+            }
+            bool hasConstraint = reader.GetBinaryReader().ReadBool();
+            if (hasConstraint)
+            {
+                constraint.Reset(reader.ReadWhereConstraintNode());
+                constraint->SetParent(this);
+            }
+            members.Read(reader);
+            members.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            writer.Write(id.GetPtr());
+            templateParameters.Write(writer);
+            bool hasBaseClass = !baseClassTypeExpr.IsNull();
+            writer.GetBinaryWriter().Write(hasBaseClass);
+            if (hasBaseClass)
+            {
+                writer.Write(baseClassTypeExpr.GetPtr());
+            }
+            bool hasConstraint = !constraint.IsNull();
+            writer.GetBinaryWriter().Write(hasConstraint);
+            if (hasConstraint)
+            {
+                writer.Write(constraint.GetPtr());
+            }
+            members.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (!visitor.SkipContent())
+            {
+                templateParameters.Accept(visitor);
+                members.Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        private Specifiers specifiers;
+        private UniquePtr<IdentifierNode> id;
+        private NodeList<TemplateParameterNode> templateParameters;
+        private UniquePtr<Node> baseClassTypeExpr;
+        private UniquePtr<WhereConstraintNode> constraint;
+        private NodeList<Node> members;
+        private CompileUnitNode* compileUnit;
+    }
+    
+    public abstract class InitializerNode : Node
+    {
+        public nothrow InitializerNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow override bool IsInitializerNode() const
+        {
+            return true;
+        }
+        public override void AddArgument(Node* argument)
+        {
+            argument->SetParent(this);
+            arguments.Add(argument);
+        }
+        public override void Read(Reader& reader)
+        {
+            arguments.Read(reader);
+            arguments.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            arguments.Write(writer);
+        }
+        public nothrow inline const NodeList<Node>& Arguments() const
+        {
+            return arguments;
+        }
+        public nothrow inline NodeList<Node>& Arguments()
+        {
+            return arguments;
+        }
+        private NodeList<Node> arguments;
+    }
+    
+    public class MemberInitializerNode : InitializerNode
+    {
+        public nothrow MemberInitializerNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow MemberInitializerNode(const Span& span_, IdentifierNode* memberId_) : base(span_), memberId(memberId_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.memberInitializerNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            MemberInitializerNode* clone = new MemberInitializerNode(GetSpan(), cast<IdentifierNode*>(memberId->Clone(cloneContext)));
+            for (const UniquePtr<Node>& argument : Arguments())
+            {
+                clone->AddArgument(argument->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            memberId.Reset(reader.ReadIdentifierNode());
+            memberId->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.Write(memberId.GetPtr());
+        }
+        public nothrow override string ToString() const
+        {
+            return memberId->ToString() + "(" + Arguments().ToString() + ")";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline const string& MemberVariableName() const
+        {
+            return memberId->Str();
+        }
+        private UniquePtr<IdentifierNode> memberId;
+    }
+    
+    public class BaseInitializerNode : InitializerNode
+    {
+        public BaseInitializerNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.baseInitializerNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            BaseInitializerNode* clone = new BaseInitializerNode(GetSpan());
+            for (const UniquePtr<Node>& argument : Arguments())
+            {
+                clone->AddArgument(argument->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public nothrow override string ToString() const
+        {
+            return "base(" + Arguments().ToString() + ")";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class ThisInitializerNode : InitializerNode
+    {
+        public ThisInitializerNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.thisInitializerNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            ThisInitializerNode* clone = new ThisInitializerNode(GetSpan());
+            for (const UniquePtr<Node>& argument : Arguments())
+            {
+                clone->AddArgument(argument->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public nothrow override string ToString() const
+        {
+            return "this(" + Arguments().ToString() + ")";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    // todo
+}

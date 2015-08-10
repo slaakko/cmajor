@@ -20,6 +20,8 @@ namespace Cm { namespace Bind {
 
 using Cm::Parsing::Span;
 
+std::string MakeOverloadName(const std::string& groupName, const std::vector<Cm::Core::Argument>& arguments);
+
 struct ArgumentMatch
 {
     ArgumentMatch() : conversionRank(Cm::Sym::ConversionRank::exactMatch), conversionDistance(0)
@@ -44,6 +46,7 @@ struct ArgumentMatch
 
 struct FunctionMatch
 {
+    FunctionMatch() : function(nullptr), numConversions(0), containerScope(nullptr), compileUnit(nullptr), constraint(nullptr), boundConstraint(nullptr) {}
     FunctionMatch(Cm::Sym::FunctionSymbol* function_, Cm::Sym::ContainerScope* containerScope_, Cm::BoundTree::BoundCompileUnit* compileUnit_) :
         function(function_), numConversions(0), containerScope(containerScope_), compileUnit(compileUnit_), constraint(nullptr), boundConstraint(nullptr) {}
     Cm::Sym::FunctionSymbol* function;
@@ -55,6 +58,11 @@ struct FunctionMatch
     Cm::Sym::ContainerScope* containerScope;
     Cm::BoundTree::BoundCompileUnit* compileUnit;
     mutable std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
+};
+
+struct BetterFunctionMatch
+{
+    bool operator()(const FunctionMatch& left, const FunctionMatch& right);
 };
 
 bool FindConversions(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, const std::vector<Cm::Core::Argument>& arguments,
@@ -88,6 +96,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
     std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions, 
+    OverloadResolutionFlags flags, FunctionMatch& bestMatch, std::unique_ptr<Cm::Core::Exception>& exception);
+
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
     OverloadResolutionFlags flags);
 
 Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName, 
@@ -98,6 +110,10 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
     Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags);
 
+Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, const std::string& groupName,
+    std::vector<Cm::Core::Argument>& arguments, const Cm::Sym::FunctionLookupSet& functionLookups, const Span& span, std::vector<Cm::Sym::FunctionSymbol*>& conversions,
+    Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags, FunctionMatch& bestMatch, 
+    std::unique_ptr<Cm::Core::Exception>& exception);
 
 } } // namespace Cm::Bind
 

@@ -1,0 +1,199 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class NamespaceNode : Node
+    {
+        public nothrow NamespaceNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow NamespaceNode(const Span& span_, IdentifierNode* id_) : base(span_), id(id_)
+        {
+        }
+        public override nothrow NodeType GetNodeType() const 
+        {
+            return NodeType.namespaceNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            NamespaceNode* clone = new NamespaceNode(GetSpan(), cast<IdentifierNode*>(id->Clone(cloneContext)));
+            for (const UniquePtr<Node>& member : members)
+            {
+                // unit test todo
+                clone->AddMember(member->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public void AddMember(Node* member)
+        {
+            members.Add(member);
+        }
+        public override string Name() const
+        {
+            return id->Str();
+        }
+        public override void Read(Reader& reader)
+        {
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            members.Read(reader);
+            members.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(id.GetPtr());
+            members.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            members.Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        public override nothrow bool IsNamespaceNode() const
+        {
+            return true;
+        }
+        public nothrow bool IsGlobalNamespaceNode() const
+        {
+            return Parent() == null;
+        }
+        public NamespaceNode* GetNamespace(const string& fullNamespaceName) const
+        {
+            if (fullNamespaceName.IsEmpty()) return this;
+            List<string> components = fullNamespaceName.Split('.');
+            for (const UniquePtr<Node>& member : members)
+            {
+                if (member->IsNamespaceNode())
+                {
+                    List<string> memberComponents = member->Name().Split('.');
+                    int n = Min(components.Count(), memberComponents.Count());
+                    int k = 0;
+                    for (int i = 0; i < n; ++i)
+                    {
+                        if (components[i] == memberComponents[i])
+                        {
+                            k = i;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    if (k + 1 == memberComponents.Count())
+                    {
+                        bool first = true;
+                        string right;
+                        for (int i = k + 1; i < components.Count(); ++i)
+                        {
+                            if (first)
+                            {
+                                first = false;
+                            }
+                            else
+                            {
+                                right.Append('.');
+                            }
+                            right.Append(components[i]);
+                        }
+                        return cast<NamespaceNode*>(member.GetPtr())->GetNamespace(right);
+                    }
+                }
+            }
+            throw Exception("namespace '" + fullNamespaceName + "' not found");
+        }
+        private UniquePtr<IdentifierNode> id;
+        private NodeList<Node> members;
+    }
+    
+    public class AliasNode : Node
+    {
+        public nothrow AliasNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow AliasNode(const Span& span_, const IdentifierNode* id_, const IdentifierNode* qid_) : base(span_), id(id_), qid(qid_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.aliasNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new AliasNode(GetSpan(), cast<IdentifierNode*>(id->Clone(cloneContext)), cast<IdentifierNode*>(qid->Clone(cloneContext)));
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public nothrow inline IdentifierNode* Qid() const
+        {
+            return qid.GetPtr();
+        }
+        public override void Read(Reader& reader)
+        {
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            qid.Reset(reader.ReadIdentifierNode());
+            qid->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(id.GetPtr());
+            writer.Write(qid.GetPtr());
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<IdentifierNode> id;
+        private UniquePtr<IdentifierNode> qid;
+    }
+    
+    public class NamespaceImportNode : Node
+    {
+        public nothrow NamespaceImportNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow NamespaceImportNode(const Span& span_, IdentifierNode* ns_) : base(span_), ns(ns_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const 
+        {
+            return NodeType.namespaceImportNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new NamespaceImportNode(GetSpan(), cast<IdentifierNode*>(ns->Clone(cloneContext)));
+        }
+        public nothrow inline IdentifierNode* Ns() const
+        {
+            return ns.GetPtr();
+        }
+        public override void Read(Reader& reader)
+        {
+            ns.Reset(reader.ReadIdentifierNode());
+            ns->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(ns.GetPtr());
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<IdentifierNode> ns;
+    }
+}
