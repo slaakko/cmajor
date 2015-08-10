@@ -1041,7 +1041,7 @@ Node* ThisNode::Clone(CloneContext& cloneContext) const
 
 void ThisNode::Accept(Visitor& visitor)
 {
-    return visitor.Visit(*this);
+    visitor.Visit(*this);
 }
 
 BaseNode::BaseNode(const Span& span_) : Node(span_)

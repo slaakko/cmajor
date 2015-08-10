@@ -841,6 +841,7 @@ void ForStatementNode::Read(Reader& reader)
 {
     StatementNode::Read(reader);
     init.reset(reader.ReadStatementNode());
+    init->SetParent(this);
     bool hasCond = reader.ReadBool();
     if (hasCond)
     {
@@ -1581,7 +1582,9 @@ Node* CatchNode::Clone(CloneContext& cloneContext) const
     {
         clonedId = static_cast<IdentifierNode*>(exceptionId->Clone(cloneContext));
     }
-    return new CatchNode(GetSpan(), exceptionTypeExpr->Clone(cloneContext), clonedId, static_cast<CompoundStatementNode*>(catchBlock->Clone(cloneContext)));
+    CatchNode* clone = new CatchNode(GetSpan(), exceptionTypeExpr->Clone(cloneContext), clonedId, static_cast<CompoundStatementNode*>(catchBlock->Clone(cloneContext)));
+    clone->SetCatchId(CatchId());
+    return clone;
 }
 
 void CatchNode::Read(Reader& reader)
@@ -1596,6 +1599,7 @@ void CatchNode::Read(Reader& reader)
     }
     catchBlock.reset(reader.ReadCompoundStatementNode());
     catchBlock->SetParent(this);
+    catchId = reader.ReadInt();
 }
 
 void CatchNode::Write(Writer& writer) 
@@ -1608,6 +1612,7 @@ void CatchNode::Write(Writer& writer)
         writer.Write(exceptionId.get());
     }
     writer.Write(catchBlock.get());
+    writer.Write(catchId);
 }
 
 void CatchNode::Print(CodeFormatter& formatter)
@@ -1621,7 +1626,7 @@ void CatchNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-ExitTryStatementNode::ExitTryStatementNode(const Span& span_) : StatementNode(span_)
+ExitTryStatementNode::ExitTryStatementNode(const Span& span_) : StatementNode(span_), tryNode(nullptr)
 {
 }
 

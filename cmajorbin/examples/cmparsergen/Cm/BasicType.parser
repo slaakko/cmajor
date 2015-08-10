@@ -1,5 +1,5 @@
 /*========================================================================
-    Copyright (c) 2012-2014 Seppo Laakko
+    Copyright (c) 2012-2015 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
  
     Distributed under the GNU General Public License, version 3 (GPLv3).

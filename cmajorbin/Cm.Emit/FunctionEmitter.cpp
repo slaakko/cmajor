@@ -1769,6 +1769,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement)
 {
+    if (currentFunction->GetFunctionSymbol()->FullName() == "Cm.Ser.BinaryWriter.Write(Cm.Ser.BinaryWriter*, const void*, ulong)")
+    {
+        int x = 0;
+    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     if (generateDebugInfo)
     {

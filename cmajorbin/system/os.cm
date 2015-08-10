@@ -56,6 +56,7 @@ extern public cdecl int create_directory(const char* directoryName);
 extern public cdecl int file_exists(const char* filePath);
 extern public cdecl int directory_exists(const char* directoryPath);
 extern public cdecl int path_exists(const char* path);
+extern public cdecl int last_write_time_less(const char* filePath1, const char* filePath2);
 extern public cdecl char* get_current_working_directory(char* buf, int bufSize);
 extern public cdecl char* get_environment_variable(const char* varName);
 extern public cdecl void begin_capture_call_stack();

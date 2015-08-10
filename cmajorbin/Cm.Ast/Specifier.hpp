@@ -29,7 +29,8 @@ enum class Specifiers: uint32_t
     cdecl_ = 8192,
     nothrow_ = 16384,
     throw_ = 32768,
-    unit_test = 65536,
+    new_ = 65536,
+    unit_test = 131072,
     non_access_specifiers = static_ | virtuality | explicit_ | external | suppress | default_ | inline_ | cdecl_ | nothrow_ | throw_ | unit_test
 };
 

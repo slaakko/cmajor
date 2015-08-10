@@ -72,7 +72,7 @@ namespace System.Collections
                 Grow(minRes);
             }
         }
-        public void Resize(int newCount)    where T is Copyable
+        public void Resize(int newCount) where T is Movable
         {
             #assert(newCount >= 0);
             if (newCount != count)
@@ -87,10 +87,9 @@ namespace System.Collections
                 else if (newCount > count)
                 {
                     Reserve(newCount);
-                    ValueType item;
                     for (int i = count; i < newCount; ++i)
                     {
-                        construct<ValueType>(items + i, item);
+                        construct<ValueType>(items + i, ValueType());
                     }
                 }
                 count = newCount;

@@ -236,7 +236,11 @@ void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
     }
     if (symbol)
     {
-        if (symbol->IsBoundTypeParameterSymbol())
+        if (symbol->IsTypeSymbol())
+        {
+            type = static_cast<Cm::Sym::TypeSymbol*>(symbol);
+        }
+        else if (symbol->IsBoundTypeParameterSymbol())
         {
             Cm::Sym::BoundTypeParameterSymbol* boundTypeParameterSymbol = static_cast<Cm::Sym::BoundTypeParameterSymbol*>(symbol);
             type = boundTypeParameterSymbol->GetType();

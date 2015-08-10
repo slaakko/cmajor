@@ -170,7 +170,7 @@ void InitFactory()
     Factory::Instance().Register(NodeType::forStatementNode, new Creator<ForStatementNode>());
     Factory::Instance().Register(NodeType::compoundStatementNode, new Creator<CompoundStatementNode>());
     Factory::Instance().Register(NodeType::breakStatementNode, new Creator<BreakStatementNode>());
-    Factory::Instance().Register(NodeType::continueStatemetNode, new Creator<ContinueStatementNode>());
+    Factory::Instance().Register(NodeType::continueStatementNode, new Creator<ContinueStatementNode>());
     Factory::Instance().Register(NodeType::gotoStatementNode, new Creator<GotoStatementNode>());
     Factory::Instance().Register(NodeType::typedefStatementNode, new Creator<TypedefStatementNode>());
     Factory::Instance().Register(NodeType::assignmentStatementNode, new Creator<AssignmentStatementNode>());

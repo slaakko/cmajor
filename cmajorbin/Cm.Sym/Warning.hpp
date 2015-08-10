@@ -9,11 +9,14 @@
 
 #ifndef CM_SYM_WARNING_INCLUDED
 #define CM_SYM_WARNING_INCLUDED
+#include <Cm.Parsing/Scanner.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace Cm { namespace Sym {
+
+using Cm::Parsing::Span;
 
 class Warning
 {
@@ -21,9 +24,15 @@ public:
     Warning(const std::string& project_, const std::string& message_);
     const std::string& Project() const { return project; }
     const std::string& Message() const { return message; }
+    const Span& Defined() const { return defined; }
+    const Span& Referenced() const { return referenced; }
+    void SetDefined(const Span& defined_) { defined = defined_; }
+    void SetReferenced(const Span& referenced_) { referenced = referenced_; }
 private:
     std::string project;
     std::string message;
+    Span defined;
+    Span referenced;
 };
 
 class CompileWarningCollection

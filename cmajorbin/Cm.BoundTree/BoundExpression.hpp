@@ -86,6 +86,7 @@ public:
     int Count() const { return int(expressions.size()); }
     std::unique_ptr<BoundExpression>& operator[](int index) { return expressions[index]; }
     void InsertFront(BoundExpression* expr);
+    BoundExpression* RemoveFirst();
     BoundExpression* GetLast();
     void Reverse();
     void Accept(Visitor& visitor);

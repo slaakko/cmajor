@@ -1,0 +1,498 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public concept AstNode<T>
+    {
+        where Derived<T, Node> or Same<T, Node>;
+        T(const Span&);
+    }
+    
+    public enum NodeType : byte
+    {
+        boolNode, sbyteNode, byteNode, shortNode, ushortNode, intNode, uintNode, longNode, ulongNode, floatNode, doubleNode, charNode, voidNode,
+        booleanLiteralNode, sbyteLiteralNode, byteLiteralNode, shortLiteralNode, ushortLiteralNode, intLiteralNode, uintLiteralNode, longLiteralNode, ulongLiteralNode,
+        floatLiteralNode, doubleLiteralNode, charLiteralNode, stringLiteralNode, nullLiteralNode,
+        derivedTypeExprNode,
+        equivalenceNode, implicationNode, disjunctionNode, conjunctionNode, bitOrNode, bitXorNode, bitAndNode, equalNode, notEqualNode, lessNode, greaterNode, lessOrEqualNode, greaterOrEqualNode,
+        shiftLeftNode, shiftRightNode, addNode, subNode, mulNode, divNode, remNode, invokeNode, indexNode, dotNode, arrowNode, postfixIncNode, postfixDecNode, derefNode, addrOfNode,
+        notNode, unaryPlusNode, unaryMinusNode, complementNode, prefixIncNode, prefixDecNode, sizeOfNode, typeNameNode,
+        castNode, newNode, constructNode, thisNode, baseNode,
+        identifierNode, templateIdNode,
+        enumTypeNode, enumConstantNode, constantNode, parameterNode, delegateNode, classDelegateNode, typedefNode,
+        labelNode,
+        simpleStatementNode, returnStatementNode, conditionalStatementNode, switchStatementNode, caseStatementNode, defaultStatementNode, gotoCaseStatementNode, gotoDefaultStatementNode,
+        whileStatementNode, doStatementNode, rangeForStatementNode, forStatementNode, compoundStatementNode, breakStatementNode, continueStatementNode, gotoStatementNode, typedefStatementNode,
+        assignmentStatementNode, constructionStatementNode, deleteStatementNode, destroyStatementNode, throwStatementNode, tryStatementNode, catchNode, assertStatementNode,
+        condCompDisjunctionNode, condCompConjunctionNode, condCompNotNode, condCompPrimaryNode, condCompSymbolNode, condCompPartNode, condCompStatementNode,
+        disjunctiveConstraintNode, conjunctiveConstraintNode, whereConstraintNode, isConstraintNode, multiParamConstraintNode, typenameConstraintNode,
+        constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
+        functionGroupIdNode, templateParameterNode, functionNode, 
+        classNode, memberInitializerNode, baseInitializerNode, thisInitializerNode, staticConstructorNode, constructorNode, destructorNode, memberFunctionNode, conversionFunctionNode, memberVariableNode,
+        aliasNode, namespaceImportNode, namespaceNode, compileUnitNode, intrinsicConstraintNode, exitTryNode, beginCatchStatementNode,
+        maxNode
+    }
+    
+    public abstract class Node
+    {
+        public nothrow Node(): span(), parent(null)
+        {
+        }
+        public nothrow Node(const Span& span_): span(span_), parent(null)
+        {
+        }
+        public nothrow virtual ~Node()
+        {
+        }
+        public abstract nothrow NodeType GetNodeType() const;
+        public abstract Node* Clone(CloneContext& cloneContext) const;
+        public nothrow inline const Span& GetSpan() const
+        {
+            return span;
+        }
+        public nothrow inline Span& GetSpan()
+        {
+            return span;
+        }
+        public inline nothrow Node* Parent() const
+        {
+            return parent;
+        }
+        public inline nothrow void SetParent(Node* parent_)
+        {
+            parent = parent_;
+        }
+        public virtual void Accept(Visitor& visitor)
+        {
+            ThrowMemFunNotApplicable();
+        }
+        public virtual string Name() const
+        {
+            ThrowMemFunNotApplicable();
+            return string();
+        }
+        public string FullName() const
+        {
+            string parentFullName;
+            if (parent != null)
+            {
+                parentFullName = parent->FullName();
+            }
+            if (parentFullName.IsEmpty())
+            {
+                return Name();
+            }
+            return parentFullName + "." + Name();
+        }
+        public virtual void Read(Reader& reader)
+        {
+        }
+        public virtual void Write(Writer& writer)
+        {
+        }
+        public virtual Node* GetValue() const
+        {
+            ThrowMemFunNotApplicable();
+            return null;
+        }
+        public virtual void AddArgument(Node* argument)
+        {
+            ThrowMemFunNotApplicable();
+        }
+        public virtual void AddParameter(ParameterNode* parameter)
+        {
+            ThrowMemFunNotApplicable();
+        }
+        public virtual void AddTemplateParameter(TemplateParameterNode* templateParameter)
+        {
+            ThrowMemFunNotApplicable();
+        }
+        public virtual void AddInitializer(InitializerNode* initializer)
+        {
+            ThrowMemFunNotApplicable();
+        }
+        public virtual nothrow bool IsNamespaceNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsClassNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsCompoundStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsCaseStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsDefaultStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsConstructionStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsBreakEnclosingStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsContinueEnclosingStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsGotoStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsTryStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsTypedefStatementNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsCatchNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsFunctionNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsCondCompExprNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsCondCompSymbolNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsCondCompPartNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsConceptNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsIntrinsicConceptNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsConstraintNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsAxiomNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsInitializerNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsConstantNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsMemberVariableNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsEnumTypeNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsEnumConstantNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsTypedefNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsThisNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsUnsignedTypeNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsIdentifierNode() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsDerivedTypeExprNode() const
+        {
+            return false;
+        }
+        public virtual nothrow Rank GetRank() const
+        {
+            return Rank.primary;
+        }
+        public virtual nothrow string ToString() const
+        {
+            return string();
+        }
+        public virtual nothrow string GetOpStr() const
+        {
+            return string();
+        }
+        public virtual FunctionNode* GetFunction() const
+        {
+            if (IsFunctionNode())
+            {
+                return cast<FunctionNode*>(this);
+            }
+            Node* p = parent;
+            if (p != null)
+            {
+                return p->GetFunction();
+            }
+            throw Exception("function node not found");
+        }
+        private Span span;
+        private Node* parent;
+    }
+    
+    public abstract class UnaryNode : Node
+    {
+        public nothrow UnaryNode(const Span& span_) : base(span_), child()
+        {
+        }
+        public nothrow UnaryNode(const Span& span_, Node* child_) : base(span_), child(child_)
+        {
+            child->SetParent(this);
+        }
+        public nothrow inline Node* Child() const
+        {
+            return child.GetPtr();
+        }
+        public override void Read(Reader& reader)
+        {
+            child.Reset(reader.ReadNode());
+            child->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(child.GetPtr());
+        }
+        public override nothrow string ToString() const
+        {
+            string s = GetOpStr();
+            bool parenthesize = child->GetRank() > GetRank();
+            if (parenthesize)
+            {
+                s.Append('(');
+            }
+            s.Append(child->ToString());
+            if (parenthesize)
+            {
+                s.Append(')');
+            }
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            child->Accept(visitor);
+        }
+        private UniquePtr<Node> child;
+    }
+    
+    public abstract class BinaryNode : Node
+    {
+        public nothrow BinaryNode(const Span& span_) : base(span_), left(), right()
+        {
+        }
+        public nothrow BinaryNode(const Span& span_, Node* left_, Node* right_) : base(span_), left(left_), right(right_)
+        {
+            left->SetParent(this);
+            right->SetParent(this);
+        }
+        public nothrow inline Node* Left() const
+        {
+            return left.GetPtr();
+        }
+        public nothrow inline Node* Right() const
+        {
+            return right.GetPtr();
+        }
+        public override void Read(Reader& reader)
+        {
+            left.Reset(reader.ReadNode());
+            left->SetParent(this);
+            right.Reset(reader.ReadNode());
+            right->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(left.GetPtr());
+            writer.Write(right.GetPtr());
+        }
+        public override nothrow string ToString() const 
+        {
+            string s;
+            bool parenthesizeLeft = left->GetRank() > GetRank();
+            if (parenthesizeLeft)
+            {
+                s.Append('(');
+            }
+            s.Append(left->ToString());
+            if (parenthesizeLeft)
+            {
+                s.Append(')');
+            }
+            s.Append(' ').Append(GetOpStr()).Append(' ');
+            bool parenthesizeRight = right->GetRank() > GetRank();
+            if (parenthesizeRight)
+            {
+                s.Append('(');
+            }
+            s.Append(right->ToString());
+            if (parenthesizeRight)
+            {
+                s.Append(')');
+            }
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            left->Accept(visitor);
+            right->Accept(visitor);
+        }
+        private UniquePtr<Node> left;
+        private UniquePtr<Node> right;
+    }
+    
+    public abstract class NodeListBase
+    {
+        public virtual nothrow ~NodeListBase()
+        {
+        }
+    }
+    
+    public class NodeList<T> : NodeListBase where T is AstNode 
+    {
+        public typedef List<UniquePtr<T>>.Iterator Iterator;
+        public typedef List<UniquePtr<T>>.ConstIterator ConstIterator;
+        
+        public inline nothrow Iterator Begin() 
+        {
+            return nodes.Begin();
+        }
+        public inline nothrow ConstIterator Begin() const
+        {
+            return nodes.CBegin();
+        }
+        public inline nothrow ConstIterator CBegin() const
+        {
+            return nodes.CBegin();
+        }
+        public inline nothrow Iterator End() 
+        {
+            return nodes.End();
+        }
+        public inline nothrow ConstIterator End() const
+        {
+            return nodes.CEnd();
+        }
+        public inline nothrow ConstIterator CEnd() const
+        {
+            return nodes.CEnd();
+        }
+        public inline nothrow int Count() const 
+        {
+            return nodes.Count();
+        }
+        public inline nothrow T* operator[](int index) const
+        {
+            return nodes[index].GetPtr();
+        }
+        public inline nothrow T* Back() const
+        {
+            return nodes.Back().GetPtr();
+        }
+        public inline void Add(T* node)
+        {
+            nodes.Add(UniquePtr<T>(node));
+        }
+        public void SetParent(Node* parent)
+        {
+            for (const UniquePtr<T>& node : nodes)
+            {
+                node->SetParent(parent);
+            }
+        }
+        public void Read(Reader& reader)
+        {
+            uint n = reader.GetBinaryReader().ReadUInt();
+            while (n > 0)
+            {
+                T* node = null;
+                reader.Read(node);
+                Add(node);
+                --n;
+            }
+        }
+        public void Write(Writer& writer)
+        {
+            uint n = cast<uint>(nodes.Count());
+            writer.GetBinaryWriter().Write(n);
+            for (const UniquePtr<T>& node : nodes)
+            {
+                writer.Write(node.GetPtr());
+            }
+        }
+        public nothrow string ToString() const
+        {
+            string s;
+            bool first = true;
+            for (const UniquePtr<T>& node : nodes)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    s.Append(", ");
+                }
+                s.Append(node->ToString());
+            }
+            return s;
+        }
+        public void Accept(Visitor& visitor)
+        {
+            for (const UniquePtr<T>& node : nodes)
+            {
+                node->Accept(visitor);
+            }
+        }
+        private List<UniquePtr<T>> nodes;
+    }
+    
+    public void ThrowMemFunNotApplicable()
+    {
+        throw Exception("member function not applicable");
+    }
+}

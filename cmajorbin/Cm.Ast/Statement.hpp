@@ -355,7 +355,7 @@ class ContinueStatementNode : public StatementNode
 {
 public:
     ContinueStatementNode(const Span& span_);
-    NodeType GetNodeType() const override { return NodeType::continueStatemetNode; }
+    NodeType GetNodeType() const override { return NodeType::continueStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;

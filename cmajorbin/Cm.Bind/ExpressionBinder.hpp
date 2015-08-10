@@ -25,6 +25,8 @@
 
 namespace Cm { namespace Bind {
 
+struct FunctionMatch;
+
 void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, 
     Cm::Sym::TypeSymbol* returnType, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, 
     Cm::Core::IrClassTypeRepository& irClassTypeRepository, bool isBasicTypeOp);
@@ -168,10 +170,12 @@ private:
     void BindInvoke(Cm::Ast::Node* node, int numArgs);
     Cm::Sym::FunctionSymbol* BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
         Cm::Sym::TypeSymbol* typeSymbol, Cm::Sym::LocalVariableSymbol*& temporary, int& numArgs);
-    Cm::Sym::FunctionSymbol* BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, 
-        bool& firstArgByRef, bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs);
+    Cm::Sym::FunctionSymbol* BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
+        bool& firstArgByRef, bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs, FunctionMatch& bestMatch, std::vector<Cm::Core::Argument>& resolutionArguments,
+        std::unique_ptr<Cm::Core::Exception>& exception);
     Cm::Sym::FunctionSymbol* BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
-        bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments);
+        bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, FunctionMatch& bestMatch,
+        std::vector<Cm::Core::Argument>& resolutionArguments, std::unique_ptr<Cm::Core::Exception>& exception);
     Cm::Sym::FunctionSymbol* BindInvokeOpApply(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
         Cm::Sym::TypeSymbol* plainSubjectType, Cm::BoundTree::BoundExpression* subject);
     void BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::DelegateTypeSymbol* delegateType, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpressionList& arguments);

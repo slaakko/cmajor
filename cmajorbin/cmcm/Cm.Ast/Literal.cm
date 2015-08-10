@@ -1,0 +1,580 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+using MakeStringLiteral = System.Text.MakeStringLiteral;
+using MakeCharLiteral = System.Text.MakeCharLiteral;
+
+namespace Cm.Ast
+{
+    public class BooleanLiteralNode : Node
+    {
+        public nothrow BooleanLiteralNode(const Span& span_) : base(span_), value(false)
+        {
+        }
+        public nothrow BooleanLiteralNode(const Span& span_, bool value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.booleanLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new BooleanLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadBool();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline bool Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private bool value;
+    }
+
+    public class SByteLiteralNode : Node
+    {
+        public nothrow SByteLiteralNode(const Span& span_) : base(span_), value(0)
+        {
+        }
+        public nothrow SByteLiteralNode(const Span& span_, sbyte value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.sbyteLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new SByteLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadSByte();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline sbyte Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private sbyte value;
+    }
+
+    public class ByteLiteralNode : Node
+    {
+        public nothrow ByteLiteralNode(const Span& span_) : base(span_), value(0u)
+        {
+        }
+        public nothrow ByteLiteralNode(const Span& span_, byte value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.byteLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ByteLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadByte();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline byte Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private byte value;
+    }
+
+    public class ShortLiteralNode : Node
+    {
+        public nothrow ShortLiteralNode(const Span& span_) : base(span_), value(0)
+        {
+        }
+        public nothrow ShortLiteralNode(const Span& span_, short value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.shortLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ShortLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadShort();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline short Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private short value;
+    }
+
+    public class UShortLiteralNode : Node
+    {
+        public nothrow UShortLiteralNode(const Span& span_) : base(span_), value(0u)
+        {
+        }
+        public nothrow UShortLiteralNode(const Span& span_, ushort value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.ushortLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new UShortLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadUShort();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline ushort Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private ushort value;
+    }
+
+    public class IntLiteralNode : Node
+    {
+        public nothrow IntLiteralNode(const Span& span_) : base(span_), value(0)
+        {
+        }
+        public nothrow IntLiteralNode(const Span& span_, int value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.intLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new IntLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadInt();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline int Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private int value;
+    }
+
+    public class UIntLiteralNode : Node
+    {
+        public nothrow UIntLiteralNode(const Span& span_) : base(span_), value(0u)
+        {
+        }
+        public nothrow UIntLiteralNode(const Span& span_, uint value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.uintLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new UIntLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadUInt();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline uint Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private uint value;
+    }
+
+    public class LongLiteralNode : Node
+    {
+        public nothrow LongLiteralNode(const Span& span_) : base(span_), value(0)
+        {
+        }
+        public nothrow LongLiteralNode(const Span& span_, long value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.longLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new LongLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadLong();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline long Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private long value;
+    }
+
+    public class ULongLiteralNode : Node
+    {
+        public nothrow ULongLiteralNode(const Span& span_) : base(span_), value(0u)
+        {
+        }
+        public nothrow ULongLiteralNode(const Span& span_, ulong value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.ulongLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ULongLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadULong();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline ulong Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private ulong value;
+    }
+    
+    public Node* CreateIntegerLiteralNode(const Span& span, ulong value, bool unsignedSuffix)
+    {
+        if (unsignedSuffix)
+        {
+            if (value <= MaxValue<byte>()) return new ByteLiteralNode(span, cast<byte>(value));
+            if (value <= MaxValue<ushort>()) return new UShortLiteralNode(span, cast<ushort>(value));
+            if (value <= MaxValue<uint>()) return new UIntLiteralNode(span, cast<uint>(value));
+            return new ULongLiteralNode(span, value);
+        }
+        else
+        {
+            if (value <= MaxValue<sbyte>()) return new SByteLiteralNode(span, cast<sbyte>(value));
+            if (value <= MaxValue<byte>()) return new ByteLiteralNode(span, cast<byte>(value));
+            if (value <= MaxValue<short>()) return new ShortLiteralNode(span, cast<short>(value));
+            if (value <= MaxValue<ushort>()) return new UShortLiteralNode(span, cast<ushort>(value));
+            if (value <= MaxValue<int>()) return new IntLiteralNode(span, cast<int>(value));
+            if (value <= MaxValue<uint>()) return new UIntLiteralNode(span, cast<uint>(value));
+            if (value <= MaxValue<long>()) return new LongLiteralNode(span, cast<long>(value));
+            return new ULongLiteralNode(span, value);
+        }
+    }
+    
+    public class FloatLiteralNode : Node
+    {
+        public nothrow FloatLiteralNode(const Span& span_) : base(span_), value(0.0f)
+        {
+        }
+        public nothrow FloatLiteralNode(const Span& span_, float value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.floatLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new FloatLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadFloat();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline float Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private float value;
+    }
+
+    public class DoubleLiteralNode : Node
+    {
+        public nothrow DoubleLiteralNode(const Span& span_) : base(span_), value(0.0)
+        {
+        }
+        public nothrow DoubleLiteralNode(const Span& span_, double value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.doubleLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new DoubleLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadDouble();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline double Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private double value;
+    }
+    
+    public Node* CreateFloatingLiteralNode(const Span& span, double value, bool floatSuffix)
+    {
+        if (floatSuffix)
+        {
+            return new FloatLiteralNode(span, cast<float>(value));
+        }
+        else
+        {
+            return new DoubleLiteralNode(span, value);
+        }
+    }
+    
+    public class CharLiteralNode : Node
+    {
+        public nothrow CharLiteralNode(const Span& span_) : base(span_), value('\0')
+        {
+        }
+        public nothrow CharLiteralNode(const Span& span_, char value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.charLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new CharLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadChar();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline char Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return MakeCharLiteral(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private char value;
+    }
+
+    public class StringLiteralNode : Node
+    {
+        public nothrow StringLiteralNode(const Span& span_) : base(span_), value("")
+        {
+        }
+        public nothrow StringLiteralNode(const Span& span_, const string& value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.stringLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new StringLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadString();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline const string& Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return MakeStringLiteral(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private string value;
+    }
+
+    public class NullLiteralNode : Node
+    {
+        public nothrow NullLiteralNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.nullLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new NullLiteralNode(GetSpan());
+        }
+        public nothrow override string ToString() const
+        {
+            return "null";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+}

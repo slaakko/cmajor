@@ -60,6 +60,8 @@ inline ClassTypeSymbolFlags operator~(ClassTypeSymbolFlags flag)
     return ClassTypeSymbolFlags(~uint32_t(flag));
 }
 
+bool Overrides(Cm::Sym::FunctionSymbol* f, Cm::Sym::FunctionSymbol* g);
+
 struct PersistentClassData
 {
     PersistentClassData();

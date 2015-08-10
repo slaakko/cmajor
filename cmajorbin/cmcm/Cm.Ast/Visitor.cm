@@ -1,0 +1,547 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Ast
+{
+    public class Visitor
+    {
+        public nothrow Visitor(bool visitBodies_, bool visitExpressions_): visitBodies(visitBodies_), visitExpressions(visitExpressions_), skipContent(false)
+        {
+        }
+        public nothrow virtual ~Visitor()
+        {
+        }
+        public void PushSkipContent(bool skipContent_)
+        {
+            skipContentStack.Push(skipContent);
+            skipContent = skipContent_;
+        }
+        public void PopSkipContent()
+        {
+            skipContent = skipContentStack.Pop();
+        }
+        public nothrow inline bool SkipContent() const
+        {
+            return skipContent;
+        }
+        public nothrow inline bool VisitBodies() const
+        {
+            return visitBodies;
+        }
+        public nothrow inline bool VisitExpressions() const
+        {
+            return visitExpressions;
+        }
+        public virtual void Visit(BoolNode& boolNode)
+        {
+        }
+        public virtual void Visit(SByteNode& sbyteNode)
+        {
+        }
+        public virtual void Visit(ByteNode& byteNode)
+        {
+        }
+        public virtual void Visit(ShortNode& shortNode)
+        {
+        }
+        public virtual void Visit(UShortNode& ushortNode)
+        {
+        }
+        public virtual void Visit(IntNode& intNode)
+        {
+        }
+        public virtual void Visit(UIntNode& uintNode)
+        {
+        }
+        public virtual void Visit(LongNode& longNode)
+        {
+        }
+        public virtual void Visit(ULongNode& ulongNode)
+        {
+        }
+        public virtual void Visit(FloatNode& floatNode)
+        {
+        }
+        public virtual void Visit(DoubleNode& doubleNode)
+        {
+        }
+        public virtual void Visit(CharNode& charNode)
+        {
+        }
+        public virtual void Visit(VoidNode& voidNode)
+        {
+        }
+        public virtual void Visit(IdentifierNode& identifierNode)
+        {
+        }
+        public virtual void BeginVisit(CompileUnitNode& compileUnitNode)
+        {
+        }
+        public virtual void EndVisit(CompileUnitNode& compileUnitNode)
+        {
+        }
+        public virtual void BeginVisit(NamespaceNode& namespaceNode)
+        {
+        }
+        public virtual void EndVisit(NamespaceNode& namespaceNode)
+        {
+        }
+        public virtual void BeginVisit(ClassNode& classNode)
+        {
+        }
+        public virtual void EndVisit(ClassNode& classNode)
+        {
+        }
+        public virtual void Visit(BooleanLiteralNode& booleanLiteralNode)
+        {
+        }
+        public virtual void Visit(SByteLiteralNode& sbyteLiteralNode)
+        {
+        }
+        public virtual void Visit(ByteLiteralNode& byteLiteralNode)
+        {
+        }
+        public virtual void Visit(ShortLiteralNode& shortLiteralNode)
+        {
+        }
+        public virtual void Visit(UShortLiteralNode& ushortLiteralNode)
+        {
+        }
+        public virtual void Visit(IntLiteralNode& intLiteralNode)
+        {
+        }
+        public virtual void Visit(UIntLiteralNode& uintLiteralNode)
+        {
+        }
+        public virtual void Visit(LongLiteralNode& longLiteralNode)
+        {
+        }
+        public virtual void Visit(ULongLiteralNode& ulongLiteralNode)
+        {
+        }
+        public virtual void Visit(FloatLiteralNode& floatLiteralNode)
+        {
+        }
+        public virtual void Visit(DoubleLiteralNode& doubleLiteralNode)
+        {
+        }
+        public virtual void Visit(CharLiteralNode& charLiteralNode)
+        {
+        }
+        public virtual void Visit(StringLiteralNode& stringLiteralNode)
+        {
+        }
+        public virtual void Visit(NullLiteralNode& nullLiteralNode)
+        {
+        }
+        public virtual void Visit(ParameterNode& parameterNode)
+        {
+        }
+        public virtual void Visit(AliasNode& aliasNode)
+        {
+        }
+        public virtual void Visit(NamespaceImportNode& namespaceImportNode)
+        {
+        }
+        public virtual void Visit(MemberInitializerNode& memberInitializerNode)
+        {
+        }
+        public virtual void Visit(BaseInitializerNode& baseInitializerNode)
+        {
+        }
+        public virtual void Visit(ThisInitializerNode& thisInitializerNode)
+        {
+        }
+        public virtual void BeginVisit(EquivalenceNode& equivalenceNode)
+        {
+        }
+        public virtual void EndVisit(EquivalenceNode& equivalenceNode)
+        {
+        }
+        public virtual void BeginVisit(ImplicationNode& implicationNode)
+        {
+        }
+        public virtual void EndVisit(ImplicationNode& implicationNode)
+        {
+        }
+        public virtual void BeginVisit(DisjunctionNode& disjunctionNode)
+        {
+        }
+        public virtual void EndVisit(DisjunctionNode& disjunctionNode)
+        {
+        }
+        public virtual void BeginVisit(ConjunctionNode& conjunctionNode)
+        {
+        }
+        public virtual void EndVisit(ConjunctionNode& conjunctionNode)
+        {
+        }
+        public virtual void BeginVisit(BitOrNode& bitOrNode)
+        {
+        }
+        public virtual void EndVisit(BitOrNode& bitOrNode)
+        {
+        }
+        public virtual void BeginVisit(BitXorNode& bitXorNode)
+        {
+        }
+        public virtual void EndVisit(BitXorNode& bitXorNode)
+        {
+        }
+        public virtual void BeginVisit(BitAndNode& bitAndNode)
+        {
+        }
+        public virtual void EndVisit(BitAndNode& bitAndNode)
+        {
+        }
+        public virtual void BeginVisit(EqualNode& equalNode)
+        {
+        }
+        public virtual void EndVisit(EqualNode& equalNode)
+        {
+        }
+        public virtual void BeginVisit(NotEqualNode& notEqualNode)
+        {
+        }
+        public virtual void EndVisit(NotEqualNode& notEqualNode)
+        {
+        }
+        public virtual void BeginVisit(LessNode& lessNode)
+        {
+        }
+        public virtual void EndVisit(LessNode& lessNode)
+        {
+        }
+        public virtual void BeginVisit(GreaterNode& greaterNode)
+        {
+        }
+        public virtual void EndVisit(GreaterNode& greaterNode)
+        {
+        }
+        public virtual void BeginVisit(LessOrEqualNode& lessOrEqualNode)
+        {
+        }
+        public virtual void EndVisit(LessOrEqualNode& lessOrEqualNode)
+        {
+        }
+        public virtual void BeginVisit(GreaterOrEqualNode& greaterOrEqualNode)
+        {
+        }
+        public virtual void EndVisit(GreaterOrEqualNode& greaterOrEqualNode)
+        {
+        }
+        public virtual void BeginVisit(ShiftLeftNode& shiftLeftNode)
+        {
+        }
+        public virtual void EndVisit(ShiftLeftNode& shiftLeftNode)
+        {
+        }
+        public virtual void BeginVisit(ShiftRightNode& shiftRightNode)
+        {
+        }
+        public virtual void EndVisit(ShiftRightNode& shiftRightNode)
+        {
+        }
+        public virtual void BeginVisit(AddNode& addNode)
+        {
+        }
+        public virtual void EndVisit(AddNode& addNode)
+        {
+        }
+        public virtual void BeginVisit(SubNode& subNode)
+        {
+        }
+        public virtual void EndVisit(SubNode& subNode)
+        {
+        }
+        public virtual void BeginVisit(MulNode& mulNode)
+        {
+        }
+        public virtual void EndVisit(MulNode& mulNode)
+        {
+        }
+        public virtual void BeginVisit(DivNode& divNode)
+        {
+        }
+        public virtual void EndVisit(DivNode& divNode)
+        {
+        }
+        public virtual void BeginVisit(RemNode& remNode)
+        {
+        }
+        public virtual void EndVisit(RemNode& remNode)
+        {
+        }
+        public virtual void BeginVisit(InvokeNode& invokeNode)
+        {
+        }
+        public virtual void EndVisit(InvokeNode& invokeNode)
+        {
+        }
+        public virtual void Visit(IndexNode& indexNode)
+        {
+        }
+        public virtual void BeginVisit(DotNode& dotNode)
+        {
+        }
+        public virtual void EndVisit(DotNode& dotNode)
+        {
+        }
+        public virtual void BeginVisit(ArrowNode& arrowNode)
+        {
+        }
+        public virtual void EndVisit(ArrowNode& arrowNode)
+        {
+        }
+        public virtual void Visit(PostfixIncNode& postfixIncNode)
+        {
+        }
+        public virtual void Visit(PostfixDecNode& postfixDecNode)
+        {
+        }
+        public virtual void Visit(DerefNode& derefNode)
+        {
+        }
+        public virtual void Visit(AddrOfNode& addrOfNode)
+        {
+        }
+        public virtual void BeginVisit(NotNode& notNode)
+        {
+        }
+        public virtual void EndVisit(NotNode& notNode)
+        {
+        }
+        public virtual void BeginVisit(UnaryPlusNode& unaryPlusNode)
+        {
+        }
+        public virtual void EndVisit(UnaryPlusNode& unaryPlusNode)
+        {
+        }
+        public virtual void BeginVisit(UnaryMinusNode& unaryMinusNode)
+        {
+        }
+        public virtual void EndVisit(UnaryMinusNode& unaryMinusNode)
+        {
+        }
+        public virtual void BeginVisit(ComplementNode& complementNode)
+        {
+        }
+        public virtual void EndVisit(ComplementNode& complementNode)
+        {
+        }
+        public virtual void BeginVisit(PrefixIncNode& prefixIncNode)
+        {
+        }
+        public virtual void EndVisit(PrefixIncNode& prefixIncNode)
+        {
+        }
+        public virtual void BeginVisit(PrefixDecNode& prefixDecNode)
+        {
+        }
+        public virtual void EndVisit(PrefixDecNode& prefixDecNode)
+        {
+        }
+        public virtual void Visit(SizeOfNode& sizeOfNode)
+        {
+        }
+        public virtual void Visit(TypeNameNode& typeNameNode)
+        {
+        }
+        public virtual void Visit(CastNode& castNode)
+        {
+        }
+        public virtual void Visit(NewNode& newNode)
+        {
+        }
+        public virtual void Visit(ConstructNode& constructNode)
+        {
+        }
+        public virtual void Visit(ThisNode& thisNode)
+        {
+        }
+        public virtual void Visit(BaseNode& baseNode)
+        {
+        }
+        public virtual void BeginVisit(SimpleStatementNode& simpleStatementNode)
+        {
+        }
+        public virtual void EndVisit(SimpleStatementNode& simpleStatementNode)
+        {
+        }
+        public virtual void BeginVisit(ReturnStatementNode& returnStatementNode)
+        {
+        }
+        public virtual void EndVisit(ReturnStatementNode& returnStatementNode)
+        {
+        }
+        public virtual void BeginVisit(ConditionalStatementNode& conditionalStatementNode)
+        {
+        }
+        public virtual void EndVisit(ConditionalStatementNode& conditionalStatementNode)
+        {
+        }
+        public virtual void BeginVisit(SwitchStatementNode& switchStatementNode)
+        {
+        }
+        public virtual void EndVisit(SwitchStatementNode& switchStatementNode)
+        {
+        }
+        public virtual void BeginVisit(CaseStatementNode& caseStatementNode)
+        {
+        }
+        public virtual void EndVisit(CaseStatementNode& caseStatementNode)
+        {
+        }
+        public virtual void BeginVisit(DefaultStatementNode& defaultStatementNode)
+        {
+        }
+        public virtual void EndVisit(DefaultStatementNode& defaultStatementNode)
+        {
+        }
+        public virtual void BeginVisit(GotoCaseStatementNode& gotoCaseStatementNode)
+        {
+        }    
+        public virtual void EndVisit(GotoCaseStatementNode& gotoCaseStatementNode)
+        {
+        }
+        public virtual void Visit(GotoDefaultStatementNode& gotoDefaultStatementNode)
+        {
+        } 
+        public virtual void BeginVisit(CompoundStatementNode& compoundStatementNode)
+        {
+        }    
+        public virtual void EndVisit(CompoundStatementNode& compoundStatementNode)
+        {
+        }
+        public virtual void BeginVisit(WhileStatementNode& whileStatementNode)
+        {
+        }    
+        public virtual void EndVisit(WhileStatementNode& whileStatementNode)
+        {
+        }
+        public virtual void BeginVisit(DoStatementNode& doStatementNode)
+        {
+        }    
+        public virtual void EndVisit(DoStatementNode& doStatementNode)
+        {
+        }
+        public virtual void BeginVisit(ForStatementNode& forStatementNode)
+        {
+        }    
+        public virtual void EndVisit(ForStatementNode& forStatementNode)
+        {
+        }
+        public virtual void BeginVisit(RangeForStatementNode& rangeForStatementNode)
+        {
+        }    
+        public virtual void EndVisit(RangeForStatementNode& rangeForStatementNode)
+        {
+        }
+        public virtual void Visit(BreakStatementNode& breakStatementNode)
+        {
+        }
+        public virtual void Visit(ContinueStatementNode& continueStatementNode)
+        {
+        }
+        public virtual void Visit(GotoStatementNode& gotoStatementNode)
+        {
+        }
+        public virtual void Visit(TypedefStatementNode& typedefStatementNode)
+        {
+        }
+        public virtual void BeginVisit(AssignmentStatementNode& assignmentStatementNode)
+        {
+        }
+        public virtual void EndVisit(AssignmentStatementNode& assignmentStatementNode)
+        {
+        }
+        public virtual void BeginVisit(ConstructionStatementNode& constructionStatementNode)
+        {
+        }
+        public virtual void EndVisit(ConstructionStatementNode& constructionStatementNode)
+        {
+        }
+        public virtual void BeginVisit(DeleteStatementNode& deleteStatementNode)
+        {
+        }
+        public virtual void EndVisit(DeleteStatementNode& deleteStatementNode)
+        {
+        }
+        public virtual void BeginVisit(DestroyStatementNode& destroyStatementNode)
+        {
+        }
+        public virtual void EndVisit(DestroyStatementNode& destroyStatementNode)
+        {
+        }
+        public virtual void BeginVisit(ThrowStatementNode& throwStatementNode)
+        {
+        }
+        public virtual void EndVisit(ThrowStatementNode& throwStatementNode)
+        {
+        }
+        public virtual void Visit(TryStatementNode& tryStatementNode)
+        {
+        }
+        public virtual void Visit(CatchNode& catchNode)
+        {
+        }
+        public virtual void Visit(ExitTryStatementNode& exitTryStatementNode)
+        {
+        }
+        public virtual void Visit(BeginCatchStatementNode& beginCatchStatementNode)
+        {
+        }
+        public virtual void Visit(AssertStatementNode& assertStatementNode)
+        {
+        }
+        public virtual void BeginVisit(CondCompDisjunctionNode& condCompDisjunctionNode)
+        {
+        }
+        public virtual void EndVisit(CondCompDisjunctionNode& condCompDisjunctionNode)
+        {
+        }
+        public virtual void BeginVisit(CondCompConjunctionNode& condCompConjunctionNode)
+        {
+        }
+        public virtual void EndVisit(CondCompConjunctionNode& condCompConjunctionNode)
+        {
+        }
+        public virtual void BeginVisit(CondCompNotNode& condCompNotNode)
+        {
+        }
+        public virtual void EndVisit(CondCompNotNode& condCompNotNode)
+        {
+        }
+        public virtual void Visit(CondCompPrimaryNode& condCompPrimaryNode)
+        {
+        }
+        public virtual void BeginVisit(CondCompPartNode& condCompPartNode)
+        {
+        }
+        public virtual void EndVisit(CondCompPartNode& condCompPartNode)
+        {
+        }
+        public virtual void Visit(CondCompStatementNode& condCompStatementNode)
+        {
+        }
+        public virtual void BeginVisit(FunctionNode& functionNode)
+        {
+        }
+        public virtual void EndVisit(FunctionNode& functionNode)
+        {
+        }
+        private bool visitBodies;
+        private bool visitExpressions;
+        private bool skipContent;
+        private Stack<bool> skipContentStack;
+    }
+}

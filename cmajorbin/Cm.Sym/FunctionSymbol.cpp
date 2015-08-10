@@ -97,6 +97,14 @@ std::string FunctionSymbolFlagString(FunctionSymbolFlags flags)
         }
         s.append("explicit");
     }
+    if ((flags & FunctionSymbolFlags::new_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("new");
+    }
     return s;
 }
 

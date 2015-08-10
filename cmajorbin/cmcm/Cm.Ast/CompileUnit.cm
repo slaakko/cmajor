@@ -1,0 +1,64 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class CompileUnitNode : Node
+    {
+        public nothrow CompileUnitNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow CompileUnitNode(const Span& span_, const string& filePath_) : base(span_), filePath(filePath_)
+        {
+        }
+        public override nothrow NodeType GetNodeType() const
+        {
+            return NodeType.compileUnitNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            CompileUnitNode* clone = new CompileUnitNode(GetSpan(), filePath);
+            clone->globalNs.Reset(cast<NamespaceNode*>(globalNs->Clone(cloneContext)));
+            return clone;
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow inline NamespaceNode* GlobalNs() const
+        {
+            return globalNs.GetPtr();
+        }
+        public override void Read(Reader& reader)
+        {
+            filePath = reader.GetBinaryReader().ReadString();
+            globalNs.Reset(reader.ReadNamespaceNode());
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(filePath);
+            writer.Write(globalNs.GetPtr());
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            globalNs->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        public NamespaceNode* GetNamespace(const string& fullNamespaceName) const
+        {
+            return globalNs->GetNamespace(fullNamespaceName);
+        }
+        private string filePath;
+        private UniquePtr<NamespaceNode> globalNs;
+    }
+}

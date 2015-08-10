@@ -16,6 +16,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Sym/Warning.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -208,6 +209,10 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
             throw Cm::Core::Exception("abstract functions cannot have body", functionSymbol->GetSpan());
         }
         functionSymbol->SetAbstract();
+        if (!currentClass->IsAbstract())
+        {
+            throw Cm::Core::Exception("class containing abstract member functions must be declared abstract", currentClass->GetSpan(), functionSymbol->GetSpan());
+        }
         currentClass->SetVirtual();
     }
     if ((specifiers & Cm::Ast::Specifiers::virtual_) != Cm::Ast::Specifiers::none)
@@ -251,6 +256,30 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
         }
         functionSymbol->SetOverride();
         currentClass->SetVirtual();
+    }
+    if ((specifiers & Cm::Ast::Specifiers::new_) != Cm::Ast::Specifiers::none)
+    {
+        if (!functionSymbol->IsMemberFunctionSymbol())
+        {
+            throw Cm::Core::Exception("free functions cannot be new", functionSymbol->GetSpan());
+        }
+        if (functionSymbol->IsConstructor())
+        {
+            throw Cm::Core::Exception("constructor cannot be new", functionSymbol->GetSpan());
+        }
+        if (functionSymbol->IsDestructor())
+        {
+            throw Cm::Core::Exception("destructor cannot be new", functionSymbol->GetSpan());
+        }
+        if (functionSymbol->IsStaticConstructor())
+        {
+            throw Cm::Core::Exception("static constructor cannot be new", functionSymbol->GetSpan());
+        }
+        if (staticClass)
+        {
+            throw Cm::Core::Exception("static class cannot have new members", functionSymbol->GetSpan());
+        }
+        functionSymbol->SetNew();
     }
     if (functionNode->ReturnTypeExpr())
     {
@@ -378,6 +407,22 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
             functionSymbol->SetConversionFunction();
             currentClass->AddConversion(functionSymbol);
             functionSymbol->ComputeName();
+        }
+        if (functionSymbol->IsAbstract() && functionSymbol->IsVirtual())
+        {
+            throw Cm::Core::Exception("function cannot be at the same time abstract and virtual", functionSymbol->GetSpan());
+        }
+        if (functionSymbol->IsAbstract() && functionSymbol->IsOverride())
+        {
+            throw Cm::Core::Exception("function cannot be at the same time abstract and override", functionSymbol->GetSpan());
+        }
+        if (functionSymbol->IsVirtual() && functionSymbol->IsOverride())
+        {
+            throw Cm::Core::Exception("function cannot be at the same time virtual and override", functionSymbol->GetSpan());
+        }
+        if (functionSymbol->IsNew() && functionSymbol->IsVirtualAbstractOrOverride())
+        {
+            throw Cm::Core::Exception("function cannot be at the same time abstract, virtual or override, and new", functionSymbol->GetSpan());
         }
     }
 }

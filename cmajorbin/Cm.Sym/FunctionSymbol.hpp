@@ -84,7 +84,8 @@ enum class FunctionSymbolFlags: uint32_t
     memberOfTemplateType = 1 << 14,
     memberOfClassTemplate = 1 << 15,
     arrayConstructor = 1 << 16,
-    arrayAssignment = 1 << 17
+    arrayAssignment = 1 << 17,
+    new_ = 1 << 18
 };
 
 std::string FunctionSymbolFlagString(FunctionSymbolFlags flags);
@@ -188,6 +189,8 @@ public:
     void SetArrayConstructor() { SetFlag(FunctionSymbolFlags::arrayConstructor); }
     bool IsArrayAssignment() const { return GetFlag(FunctionSymbolFlags::arrayAssignment); }
     void SetArrayAssignment() { SetFlag(FunctionSymbolFlags::arrayAssignment); }
+    bool IsNew() const { return GetFlag(FunctionSymbolFlags::new_); }
+    void SetNew() { SetFlag(FunctionSymbolFlags::new_); }
     bool IsConstructor() const;
     bool IsDefaultConstructor() const;
     bool IsCopyConstructor() const;

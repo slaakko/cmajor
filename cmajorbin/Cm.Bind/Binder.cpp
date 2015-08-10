@@ -25,6 +25,8 @@
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/Conditional.hpp>
+#include <Cm.Sym/Warning.hpp>
+#include <iostream>
 
 namespace Cm { namespace Bind {
 
@@ -263,6 +265,30 @@ void Binder::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
         Cm::Sym::FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
         BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&memberFunctionNode));
         boundFunction.reset(new Cm::BoundTree::BoundFunction(&memberFunctionNode, functionSymbol));
+        if (!functionSymbol->IsVirtualAbstractOrOverride() && !functionSymbol->IsNew())
+        {
+            Cm::Sym::ClassTypeSymbol* ownerClass = boundClass->Symbol();
+            if (ownerClass && ownerClass->BaseClass())
+            {
+                Cm::Sym::ClassTypeSymbol* baseClass = ownerClass->BaseClass();
+                for (Cm::Sym::FunctionSymbol* f : baseClass->Vtbl())
+                {
+                    if (f && f->IsVirtualAbstractOrOverride())
+                    {
+                        if (Cm::Sym::Overrides(functionSymbol, f))
+                        {
+                            std::string warningMessage = "function '" + functionSymbol->FullName() + "' hides base class virtual function '" + f->FullName() + "'. " +
+                                "To get rid of this warning declare the function either 'override' or 'new'.";
+                            std::cout << "warning: " << warningMessage << std::endl;
+                            Cm::Sym::Warning warning(Cm::Sym::CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage);
+                            warning.SetDefined(functionSymbol->GetSpan());
+                            warning.SetReferenced(f->GetSpan());
+                            Cm::Sym::CompileWarningCollection::Instance().AddWarning(warning);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

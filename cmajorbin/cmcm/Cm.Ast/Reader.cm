@@ -1,0 +1,257 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Cm.Ser;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class Reader
+    {
+        public nothrow Reader(BinaryReader& binaryReader_): binaryReader(binaryReader_), replaceFileIndex(-1), spanFileIndexOffset(0)
+        {
+        }
+        public nothrow inline BinaryReader& GetBinaryReader()
+        {
+            return binaryReader;
+        }
+        public Node* ReadNode() 
+        {
+            NodeType nodeType = ReadNodeType();
+            Span span = ReadSpan();
+            Node* node = Factory.Instance().CreateNode(nodeType, span);
+            node->Read(*this);
+            return node;
+        }
+        public NamespaceNode* ReadNamespaceNode()
+        {
+            Node* node = ReadNode();
+            if (node->GetNodeType() != NodeType.namespaceNode)
+            {
+                throw Exception("namespace node expected");
+            }
+            return cast<NamespaceNode*>(node);
+        }
+        public ConstraintNode* ReadConstraintNode() 
+        {
+            Node* node = ReadNode();
+            if (node->IsConstraintNode())
+            {
+                return cast<ConstraintNode*>(node);
+            }
+            else
+            {
+                throw Exception("constraint node expected");
+            }
+        }
+        public IdentifierNode* ReadIdentifierNode()
+        {
+            Node* node = ReadNode();
+            if (node->GetNodeType() != NodeType.identifierNode)
+            {
+                throw Exception("identifier node expected");
+            }
+            return cast<IdentifierNode*>(node);
+        }
+        public WhereConstraintNode* ReadWhereConstraintNode()
+        {
+            Node* node = ReadNode();
+            if (node->GetNodeType() == NodeType.whereConstraintNode)
+            {
+                return cast<WhereConstraintNode*>(node);
+            }
+            else
+            {
+                throw Exception("where constraint node expected");
+            }
+        }
+        public StatementNode* ReadStatementNode()
+        {
+            Node* node = ReadNode();
+            if (node->IsStatementNode())
+            {
+                return cast<StatementNode*>(node);
+            }
+            else
+            {
+                throw Exception("statement node expected");
+            }
+        }
+        public DefaultStatementNode* ReadDefaultStatementNode()
+        {
+            Node* node = ReadNode();
+            if (node->GetNodeType() == NodeType.defaultStatementNode)
+            {
+                return cast<DefaultStatementNode*>(node);
+            }
+            else
+            {
+                throw Exception("default statement node expected");
+            }
+        }
+        public CondCompExprNode* ReadCondCompExprNode() 
+        {
+            Node* node = ReadNode();
+            if (node->IsCondCompExprNode())
+            {
+                return cast<CondCompExprNode*>(node);
+            }
+            else
+            {
+                throw Exception("conditional compilation expression node expected");
+            }
+        }
+        public CondCompPartNode* ReadCondCompPartNode() 
+        {
+            Node* n = ReadNode();
+            if (n->IsCondCompPartNode())
+            {
+                return cast<CondCompPartNode*>(n);
+            }
+            else
+            {
+                throw Exception("conditional compilation part node expected");
+            }
+        }
+        public LabelNode* ReadLabelNode()
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.labelNode)
+            {
+                return cast<LabelNode*>(n);
+            }
+            else
+            {
+                throw Exception("label node expected");
+            }
+        }
+        public FunctionGroupIdNode* ReadFunctionGroupIdNode()
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.functionGroupIdNode)
+            {
+                return cast<FunctionGroupIdNode*>(n);
+            }
+            else
+            {
+                throw Exception("function group id node expected");
+            }
+        }
+        public CompoundStatementNode* ReadCompoundStatementNode()
+        {
+            Node* n = ReadNode();
+            if (n->IsCompoundStatementNode())
+            {
+                return cast<CompoundStatementNode*>(n);
+            }
+            else
+            {
+                throw Exception("compound statement node expected");
+            }
+        }
+        public CondCompSymbolNode* ReadCondCompSymbolNode()
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.condCompSymbolNode)
+            {
+                return cast<CondCompSymbolNode*>(n);
+            }
+            else
+            {
+                throw Exception("conditional compilation symbol expected");
+            }
+        }
+        public void Read(Node*& node)
+        {
+            node = ReadNode();
+        }
+        public void Read(ParameterNode*& node)
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.parameterNode)
+            {
+                node = cast<ParameterNode*>(n);
+            }
+            else
+            {
+                throw Exception("parameter node expected");
+            }
+        }
+        public void Read(TemplateParameterNode*& node)
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.templateParameterNode)
+            {
+                node = cast<TemplateParameterNode*>(n);
+            }
+            else
+            {
+                throw Exception("template parameter node expected");
+            }
+        }
+        public void Read(CaseStatementNode*& node)
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.caseStatementNode)
+            {
+                node = cast<CaseStatementNode*>(n);
+            }
+            else
+            {
+                throw Exception("case statement node expected");
+            }
+        }
+        public void Read(StatementNode*& node)
+        {
+            node = ReadStatementNode();
+        }
+        public void Read(CatchNode*& node)
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.catchNode)
+            {
+                node = cast<CatchNode*>(n);
+            }
+            else
+            {
+                throw Exception("catch node expected");
+            }
+        }
+        public void Read(CondCompPartNode*& node)
+        {
+            node = ReadCondCompPartNode();
+        }
+        public Specifiers ReadSpecifiers() 
+        {
+            return cast<Specifiers>(binaryReader.ReadUInt());
+        }
+        public Span ReadSpan()
+        {
+            Span span;
+            binaryReader.Read(&span, sizeof(span));
+            if (replaceFileIndex != -1)
+            {
+                span.SetFileIndex(replaceFileIndex);
+            }
+            else if (spanFileIndexOffset > 0)
+            {
+                span.SetFileIndex(span.FileIndex() + spanFileIndexOffset);
+            }
+            return span;
+        }
+        private NodeType ReadNodeType()
+        {
+            return cast<NodeType>(binaryReader.ReadByte());
+        }
+        private BinaryReader& binaryReader;
+        private int replaceFileIndex;
+        private int spanFileIndexOffset;
+    }
+}

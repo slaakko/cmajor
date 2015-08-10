@@ -1,0 +1,185 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.IO;
+
+namespace Cm.Ser
+{
+    public class BinaryReader
+    {
+        public BinaryReader(const string& fileName_): fileName(fileName_), file(fileName, OpenMode.readOnly), pos(0u), end(cast<ulong>(file.GetFileSize()))
+        {
+        }
+        public nothrow const string& FileName() const
+        {
+            return fileName;
+        }
+        public inline nothrow ulong Pos() const
+        {
+            return pos;
+        }
+        public void SetPos(ulong pos_)
+        {
+            pos = cast<ulong>(file.Seek(cast<long>(pos_), SEEK_SET));
+        }
+        public void Skip(ulong size)
+        {
+            pos = cast<ulong>(file.Seek(cast<long>(pos + size), SEEK_SET));
+        }
+        public bool ReadBool()
+        {
+            if (pos >= end)
+            {
+                ThrowUnexpectedEnd("bool");
+            }
+            bool value = file.ReadBool();
+            pos = pos + sizeof(bool);
+            return value;
+        }
+        public sbyte ReadSByte()
+        {
+            if (pos >= end)
+            {
+                ThrowUnexpectedEnd("sbyte");
+            }
+            sbyte value = file.ReadSByte();
+            pos = pos + sizeof(sbyte);
+            return value;
+        }
+        public byte ReadByte()
+        {
+            if (pos >= end)
+            {
+                ThrowUnexpectedEnd("byte");
+            }
+            byte value = file.ReadByte();
+            pos = pos + sizeof(byte);
+            return value;
+        }
+        public short ReadShort()
+        {
+            if (pos + sizeof(short) > end)
+            {
+                ThrowUnexpectedEnd("short");
+            }
+            short value = file.ReadShort();
+            pos = pos + sizeof(short);
+            return value;
+        }
+        public ushort ReadUShort()
+        {
+            if (pos + sizeof(ushort) > end)
+            {
+                ThrowUnexpectedEnd("ushort");
+            }
+            ushort value = file.ReadUShort();
+            pos = pos + sizeof(ushort);
+            return value;
+        }
+        public int ReadInt()
+        {
+            if (pos + sizeof(int) > end)
+            {
+                ThrowUnexpectedEnd("int");
+            }
+            int value = file.ReadInt();
+            pos = pos + sizeof(int);
+            return value;
+        }
+        public uint ReadUInt()
+        {
+            if (pos + sizeof(uint) > end)
+            {
+                ThrowUnexpectedEnd("uint");
+            }
+            uint value = file.ReadUInt();
+            pos = pos + sizeof(uint);
+            return value;
+        }
+        public long ReadLong()
+        {
+            if (pos + sizeof(long) > end)
+            {
+                ThrowUnexpectedEnd("long");
+            }
+            long value = file.ReadLong();
+            pos = pos + sizeof(long);
+            return value;
+        }
+        public ulong ReadULong()
+        {
+            if (pos + sizeof(ulong) > end)
+            {
+                ThrowUnexpectedEnd("ulong");
+            }
+            ulong value = file.ReadULong();
+            pos = pos + sizeof(ulong);
+            return value;
+        }
+        public float ReadFloat()
+        {
+            if (pos + sizeof(float) > end)
+            {
+                ThrowUnexpectedEnd("float");
+            }
+            float value = file.ReadFloat();
+            pos = pos + sizeof(float);
+            return value;
+        }
+        public double ReadDouble()
+        {
+            if (pos + sizeof(double) > end)
+            {
+                ThrowUnexpectedEnd("double");
+            }
+            double value = file.ReadDouble();
+            pos = pos + sizeof(double);
+            return value;
+        }
+        public char ReadChar()
+        {
+            if (pos >= end)
+            {
+                ThrowUnexpectedEnd("char");
+            }
+            char value = file.ReadChar();
+            pos = pos + sizeof(char);
+            return value;
+        }
+        public string ReadString()
+        {
+            string value;
+            char c = ReadChar();
+            while (c != '\0')
+            {
+                value.Append(c);
+                c = ReadChar();
+            }
+            return value;
+        }
+        public void Read(void* buf, ulong size)
+        {
+            byte* p = cast<byte*>(buf);
+            while (size > 0u)
+            {
+                *p++ = ReadByte();
+                --size;
+            }
+        }
+        private void ThrowUnexpectedEnd(const string& type)
+        {
+            throw Exception("unexpected end of file '" + fileName + "' while reading " + type);
+        }
+        private string fileName;
+        private BinaryFileStream file;
+        private ulong pos;
+        private ulong end;
+    }
+}

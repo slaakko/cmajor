@@ -20,6 +20,7 @@ source <Primitive.cm>;
 source <Rule.cm>;
 source <Scanner.cm>;
 source <Scope.cm>;
+source <Span.cm>;
 source <StdLib.cm>;
 text <StdLib.parser>;
 text <StdLib.pl>;

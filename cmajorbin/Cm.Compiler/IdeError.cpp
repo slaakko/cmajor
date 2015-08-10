@@ -69,7 +69,7 @@ IdeError::IdeError(const Cm::Parsing::Span& reference) :
 }
 
 IdeError::IdeError(const Cm::Sym::Warning& warning) : 
-    tool("cmc"), category("warning"), project(warning.Project()), description(warning.Message()), file(), sourceSpan()
+    tool("cmc"), category("warning"), project(warning.Project()), description(warning.Message()), file(GetFilePath(warning.Defined().FileIndex())), sourceSpan(GetSourceSpan(warning.Defined()))
 {
 }
 
@@ -132,6 +132,10 @@ void IdeErrorCollection::AddWarnings(const std::vector<Cm::Sym::Warning>& warnin
     {
         IdeError error(warning);
         errors.push_back(error);
+        if (warning.Referenced().Valid())
+        {
+            errors.push_back(IdeError(warning.Referenced()));
+        }
     }
 }
 
