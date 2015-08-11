@@ -1,0 +1,182 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class DelegateNode : Node
+    {
+        public nothrow DelegateNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_)
+        {
+            returnTypeExpr->SetParent(this);
+            id->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.delegateNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            DelegateNode* clone = new DelegateNode(GetSpan(), specifiers, returnTypeExpr->Clone(cloneContext), cast<IdentifierNode*>(id->Clone(cloneContext)));
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public override void AddParameter(ParameterNode* parameter)
+        {
+            parameter->SetParent(this);
+            parameters.Add(parameter);
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            returnTypeExpr.Reset(reader.ReadNode());
+            returnTypeExpr->SetParent(this);
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            parameters.Read(reader);
+            parameters.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            writer.Write(returnTypeExpr.GetPtr());
+            writer.Write(id.GetPtr());
+            parameters.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                parameter->Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        public nothrow inline Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public nothrow inline Node* ReturnTypeExpr() const
+        {
+            return returnTypeExpr.GetPtr();
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public nothrow inline const NodeList<ParameterNode>& Parameters() const
+        {
+            return parameters;
+        }
+        public nothrow inline NodeList<ParameterNode>& Parameters() 
+        {
+            return parameters;
+        }
+        public override string Name() const
+        {
+            return id->Str();
+        }
+        private Specifiers specifiers;
+        private UniquePtr<Node> returnTypeExpr;
+        private UniquePtr<IdentifierNode> id;
+        private NodeList<ParameterNode> parameters;
+    }
+
+    public class ClassDelegateNode : Node
+    {
+        public nothrow ClassDelegateNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ClassDelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), id(id_)
+        {
+            returnTypeExpr->SetParent(this);
+            id->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.classDelegateNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            ClassDelegateNode* clone = new ClassDelegateNode(GetSpan(), specifiers, returnTypeExpr->Clone(cloneContext), cast<IdentifierNode*>(id->Clone(cloneContext)));
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public override void AddParameter(ParameterNode* parameter)
+        {
+            parameter->SetParent(this);
+            parameters.Add(parameter);
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            returnTypeExpr.Reset(reader.ReadNode());
+            returnTypeExpr->SetParent(this);
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            parameters.Read(reader);
+            parameters.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            writer.Write(returnTypeExpr.GetPtr());
+            writer.Write(id.GetPtr());
+            parameters.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                parameter->Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        public nothrow inline Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public nothrow inline Node* ReturnTypeExpr() const
+        {
+            return returnTypeExpr.GetPtr();
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public nothrow inline const NodeList<ParameterNode>& Parameters() const
+        {
+            return parameters;
+        }
+        public nothrow inline NodeList<ParameterNode>& Parameters() 
+        {
+            return parameters;
+        }
+        public override string Name() const
+        {
+            return id->Str();
+        }
+        private Specifiers specifiers;
+        private UniquePtr<Node> returnTypeExpr;
+        private UniquePtr<IdentifierNode> id;
+        private NodeList<ParameterNode> parameters;
+    }
+}

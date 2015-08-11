@@ -1,0 +1,75 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class TypedefNode : Node
+    {
+        public nothrow TypedefNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow TypedefNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_)
+        {
+            typeExpr->SetParent(this);
+            id->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.typedefNode;
+        }
+        public nothrow override bool IsTypedefNode() const
+        {
+            return true;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new TypedefNode(GetSpan(), specifiers, typeExpr->Clone(cloneContext), cast<IdentifierNode*>(id->Clone(cloneContext)));
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            typeExpr.Reset(reader.ReadNode());
+            typeExpr->SetParent(this);
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            writer.Write(typeExpr.GetPtr());
+            writer.Write(id.GetPtr());
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override string Name() const
+        {
+            return id->Str();
+        }
+        public inline nothrow Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public inline nothrow Node* TypeExpr() const
+        {
+            return typeExpr.GetPtr();
+        }
+        public inline nothrow IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        private Specifiers specifiers;
+        private UniquePtr<Node> typeExpr;
+        private UniquePtr<IdentifierNode> id;
+    }
+}

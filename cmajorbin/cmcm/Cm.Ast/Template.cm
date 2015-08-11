@@ -12,8 +12,76 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Ast
 {
-    public abstract class TemplateParameterNode : Node
+    public class TemplateParameterNode : Node
     {
+        public nothrow TemplateParameterNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow TemplateParameterNode(const Span& span_, IdentifierNode* id_, Node* defaultTemplateArgument_) : base(span_), id(id_), defaultTemplateArgument(defaultTemplateArgument_)
+        {
+            id->SetParent(this);
+            if (!defaultTemplateArgument.IsNull())
+            {
+                defaultTemplateArgument->SetParent(this);
+            }
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.templateParameterNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            Node* clonedDefaultTemplateArgument = null;
+            if (!defaultTemplateArgument.IsNull())
+            {
+                clonedDefaultTemplateArgument = defaultTemplateArgument->Clone(cloneContext);
+            }
+            return new TemplateParameterNode(GetSpan(), cast<IdentifierNode*>(id->Clone(cloneContext)), clonedDefaultTemplateArgument);
+        }
+        public override void Read(Reader& reader)
+        {
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            bool hasDefaultTemplateArgument = reader.GetBinaryReader().ReadBool();
+            if (hasDefaultTemplateArgument)
+            {
+                defaultTemplateArgument.Reset(reader.ReadNode());
+                defaultTemplateArgument->SetParent(this);
+            }
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(id.GetPtr());
+            bool hasDefaultTemplateArgument = !defaultTemplateArgument.IsNull();
+            writer.GetBinaryWriter().Write(hasDefaultTemplateArgument);
+            if (hasDefaultTemplateArgument)
+            {
+                writer.Write(defaultTemplateArgument.GetPtr());
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override nothrow string ToString() const
+        {
+            string s = id->Str();
+            if (!defaultTemplateArgument.IsNull())
+            {
+                s.Append(" = ").Append(defaultTemplateArgument->ToString());
+            }
+            return s;
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public nothrow inline Node* DefaultTemplateArgument() const
+        {
+            return defaultTemplateArgument.GetPtr();
+        }
+        private UniquePtr<IdentifierNode> id;
+        private UniquePtr<Node> defaultTemplateArgument;
     }
     
     public class TemplateIdNode : Node

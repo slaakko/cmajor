@@ -151,7 +151,8 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
         }
         else 
         {
-            if (paramType->IsClassTypeSymbol() || paramType->IsArrayType() || argument->GetType()->IsArrayType())
+            if (paramType->IsClassTypeSymbol() || paramType->IsArrayType() || argument->GetType()->IsArrayType() || 
+                (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::indexArray) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef)))
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
             }
@@ -1283,6 +1284,9 @@ void ExpressionBinder::BindIndexArray(Cm::Ast::Node* indexNode, Cm::BoundTree::B
     boundExpressionStack.Push(subject);
     boundExpressionStack.Push(index);
     BindBinaryOp(indexNode, "operator[]");
+    Cm::BoundTree::BoundExpression* indexArray = Pop();
+    indexArray->SetFlag(Cm::BoundTree::BoundNodeFlags::indexArray);
+    boundExpressionStack.Push(indexArray);
 }
 
 void ExpressionBinder::BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpression* index)

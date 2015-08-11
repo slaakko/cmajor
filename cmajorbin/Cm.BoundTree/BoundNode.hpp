@@ -27,7 +27,8 @@ enum class BoundNodeFlags : uint16_t
     genVirtualCall = 1 << 6,
     argIsThisOrBase = 1 << 7,
     argIsTemporary = 1 << 8,
-    addrArg = 1 << 9
+    addrArg = 1 << 9,
+    indexArray = 1 << 10,
 };
 
 inline BoundNodeFlags operator|(BoundNodeFlags left, BoundNodeFlags right)
