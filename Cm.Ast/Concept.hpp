@@ -320,7 +320,7 @@ public:
     ConceptNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::conceptNode; }
     bool IsConceptNode() const override { return true; }
-    const std::string& FirstTypeParameter() const;
+    std::string FirstTypeParameter() const;
     void AddTypeParameter(Node* typeParameter);
     void SetRefinement(ConceptIdNode* refinement_);
     void AddConstraint(ConstraintNode* constraint);

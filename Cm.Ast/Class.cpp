@@ -435,7 +435,7 @@ ConstructorNode::ConstructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
 
-ConstructorNode::ConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(GetSpan(), "@constructor"))
+ConstructorNode::ConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, "@constructor"))
 {
 }
 
@@ -539,7 +539,7 @@ DestructorNode::DestructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
 
-DestructorNode::DestructorNode(const Span& span_, Specifiers specifiers_, CompoundStatementNode* body_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(GetSpan(), "@destructor"))
+DestructorNode::DestructorNode(const Span& span_, Specifiers specifiers_, CompoundStatementNode* body_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, "@destructor"))
 {
     SetBody(body_);
 }

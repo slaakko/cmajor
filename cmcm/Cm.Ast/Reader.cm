@@ -168,6 +168,18 @@ namespace Cm.Ast
                 throw Exception("conditional compilation symbol expected");
             }
         }
+        public ConceptIdNode* ReadConceptIdNode()
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.conceptIdNode)
+            {
+                return cast<ConceptIdNode*>(n);
+            }
+            else
+            {
+                throw Exception("concept id node expected");
+            }
+        }
         public void Read(Node*& node)
         {
             node = ReadNode();
@@ -227,6 +239,18 @@ namespace Cm.Ast
         public void Read(CondCompPartNode*& node)
         {
             node = ReadCondCompPartNode();
+        }
+        public void Read(InitializerNode*& node)
+        {
+            Node* n = ReadNode();
+            if (n->IsInitializerNode())
+            {
+                node = cast<InitializerNode*>(n);
+            }
+            else
+            {
+                throw Exception("initializer node expected");
+            }
         }
         public Specifiers ReadSpecifiers() 
         {

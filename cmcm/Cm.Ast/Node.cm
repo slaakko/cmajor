@@ -36,7 +36,7 @@ namespace Cm.Ast
         whileStatementNode, doStatementNode, rangeForStatementNode, forStatementNode, compoundStatementNode, breakStatementNode, continueStatementNode, gotoStatementNode, typedefStatementNode,
         assignmentStatementNode, constructionStatementNode, deleteStatementNode, destroyStatementNode, throwStatementNode, tryStatementNode, catchNode, assertStatementNode,
         condCompDisjunctionNode, condCompConjunctionNode, condCompNotNode, condCompPrimaryNode, condCompSymbolNode, condCompPartNode, condCompStatementNode,
-        disjunctiveConstraintNode, conjunctiveConstraintNode, whereConstraintNode, isConstraintNode, multiParamConstraintNode, typenameConstraintNode,
+        disjunctiveConstraintNode, conjunctiveConstraintNode, whereConstraintNode, isConstraintNode, multiParamConstraintNode, typeNameConstraintNode,
         constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
         functionGroupIdNode, templateParameterNode, functionNode, 
         classNode, memberInitializerNode, baseInitializerNode, thisInitializerNode, staticConstructorNode, constructorNode, destructorNode, memberFunctionNode, conversionFunctionNode, memberVariableNode,

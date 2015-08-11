@@ -300,5 +300,403 @@ namespace Cm.Ast
         }
     }
     
-    // todo
+    public class StaticConstructorNode : FunctionNode
+    {
+        public nothrow StaticConstructorNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow StaticConstructorNode(const Span& span_, Specifiers specifiers_) : base(span_, specifiers_, null, new FunctionGroupIdNode(span_, "@static_constructor"))
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.staticConstructorNode;
+        }
+        public override void AddInitializer(InitializerNode* initializer)
+        {
+            initializer->SetParent(this);
+            initializers.Add(initializer);
+        }
+        public nothrow inline const NodeList<InitializerNode>& Initializers() const
+        {
+            return initializers;
+        }
+        public nothrow inline NodeList<InitializerNode>& Initializers()
+        {
+            return initializers;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            StaticConstructorNode* clone = new StaticConstructorNode(GetSpan(), GetSpecifiers());
+            for (const UniquePtr<InitializerNode>& initializer : initializers)
+            {
+                clone->AddInitializer(cast<InitializerNode*>(initializer->Clone(cloneContext)));
+            }
+            if (Constraint() != null)
+            {
+                clone->SetConstraint(cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext)));
+            }
+            if (Body() != null)
+            {
+                if (cloneContext.InstantiateClassNode())
+                {
+                    CloneContext bodyCloneContext;
+                    clone->SetBodySource(cast<CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
+                }
+                else
+                {
+                    clone->SetBody(cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+                }
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            initializers.Read(reader);
+            initializers.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            initializers.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (visitor.VisitBodies())
+            {
+                if (Body() != null)
+                {
+                    Body()->Accept(visitor);
+                }
+            }
+            visitor.EndVisit(*this);
+        }
+        private NodeList<InitializerNode> initializers;
+    }
+    
+    public class ConstructorNode : FunctionNode
+    {
+        public nothrow ConstructorNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ConstructorNode(const Span& span_, Specifiers specifiers_) : base(span_, specifiers_, null, new FunctionGroupIdNode(span_, "@constructor"))
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.constructorNode;
+        }
+        public override void AddInitializer(InitializerNode* initializer)
+        {
+            initializer->SetParent(this);
+            initializers.Add(initializer);
+        }
+        public nothrow inline const NodeList<InitializerNode>& Initializers() const
+        {
+            return initializers;
+        }
+        public nothrow inline NodeList<InitializerNode>& Initializers()
+        {
+            return initializers;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            ConstructorNode* clone = new ConstructorNode(GetSpan(), GetSpecifiers());
+            for (const UniquePtr<ParameterNode>& parameter : Parameters())
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            for (const UniquePtr<InitializerNode>& initializer : initializers)
+            {
+                clone->AddInitializer(cast<InitializerNode*>(initializer->Clone(cloneContext)));
+            }
+            if (Constraint() != null)
+            {
+                clone->SetConstraint(cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext)));
+            }
+            if (Body() != null)
+            {
+                if (cloneContext.InstantiateClassNode())
+                {
+                    CloneContext bodyCloneContext;
+                    clone->SetBodySource(cast<CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
+                }
+                else
+                {
+                    clone->SetBody(cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+                }
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            initializers.Read(reader);
+            initializers.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            initializers.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Parameters().Accept(visitor);
+            if (visitor.VisitBodies())
+            {
+                if (Body() != null)
+                {
+                    Body()->Accept(visitor);
+                }
+            }
+            visitor.EndVisit(*this);
+        }
+        private NodeList<InitializerNode> initializers;
+    }
+    
+    public class DestructorNode : FunctionNode
+    {
+        public nothrow DestructorNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DestructorNode(const Span& span_, Specifiers specifiers_, CompoundStatementNode* body_) : base(span_, specifiers_, null, new FunctionGroupIdNode(span_, "@destructor"))
+        {
+            SetBody(body_);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.destructorNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            CompoundStatementNode* clonedBody = null;
+            if (Body() != null)
+            {
+                if (!cloneContext.InstantiateClassNode())
+                {
+                    clonedBody = cast<CompoundStatementNode*>(Body()->Clone(cloneContext));
+                }                
+            }
+            DestructorNode* clone = new DestructorNode(GetSpan(), GetSpecifiers(), clonedBody);
+            if (Constraint() != null)
+            {
+                clone->SetConstraint(cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext)));
+            }
+            if (cloneContext.InstantiateClassNode())
+            {
+                if (Body() != null)
+                {
+                    CloneContext bodyCloneContext;
+                    clone->SetBodySource(cast<CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
+                }
+            }
+            return clone;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (visitor.VisitBodies())
+            {
+                if (Body() != null)
+                {
+                    Body()->Accept(visitor);
+                }
+            }
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class MemberFunctionNode : FunctionNode
+    {
+        public nothrow MemberFunctionNode(const Span& span_) : base(span_), isConst(false)
+        {
+        }
+        public nothrow MemberFunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_) : base(span_, specifiers_, returnTypeExpr_, groupId_), isConst(false)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.memberFunctionNode;
+        }
+        public nothrow void SetConst()
+        {
+            isConst = true;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            MemberFunctionNode* clone = new MemberFunctionNode(GetSpan(), GetSpecifiers(), ReturnTypeExpr()->Clone(cloneContext), cast<FunctionGroupIdNode*>(GroupId()->Clone(cloneContext)));
+            for (const UniquePtr<ParameterNode>& parameter : Parameters())
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            if (Constraint() != null)
+            {
+                clone->SetConstraint(cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext)));
+            }
+            if (Body() != null)
+            {
+                if (cloneContext.InstantiateClassNode())
+                {
+                    CloneContext bodyCloneContext;
+                    clone->SetBodySource(cast<CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
+                }
+                else
+                {
+                    clone->SetBody(cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+                }
+            }
+            if (isConst)
+            {
+                clone->SetConst();
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            isConst = reader.GetBinaryReader().ReadBool();
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.GetBinaryWriter().Write(isConst);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            Parameters().Accept(visitor);
+            if (visitor.VisitBodies())
+            {
+                if (Body() != null)
+                {
+                    Body()->Accept(visitor);
+                }
+            }
+            visitor.EndVisit(*this);
+        }
+        public nothrow inline bool IsConst() const
+        {
+            return isConst;
+        }
+        private bool isConst;
+    }
+
+    public class ConversionFunctionNode : MemberFunctionNode
+    {
+        public nothrow ConversionFunctionNode (const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ConversionFunctionNode (const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, bool setConst_, WhereConstraintNode* constraint_, CompoundStatementNode* body_) : 
+            base(span_, specifiers_, returnTypeExpr_, new FunctionGroupIdNode(span_, "@operator_conv"))
+        {
+            SetConstraint(constraint_);
+            SetBody(body_);
+            if (setConst_)
+            {
+                SetConst();
+            }
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.conversionFunctionNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            WhereConstraintNode* clonedConstraint = null;
+            if (Constraint() != null)
+            {
+                clonedConstraint = cast<WhereConstraintNode*>(Constraint()->Clone(cloneContext));
+            }
+            CompoundStatementNode* clonedBody = null;
+            if (Body() != null)
+            {
+                if (!cloneContext.InstantiateClassNode())
+                {
+                    clonedBody = cast<CompoundStatementNode*>(Body()->Clone(cloneContext));
+                }
+            }
+            ConversionFunctionNode * clone = new ConversionFunctionNode (GetSpan(), GetSpecifiers(), ReturnTypeExpr()->Clone(cloneContext), IsConst(), clonedConstraint, clonedBody);
+            if (cloneContext.InstantiateClassNode())
+            {
+                if (Body() != null)
+                {
+                    CloneContext bodyCloneContext;
+                    clone->SetBodySource(cast<CompoundStatementNode*>(Body()->Clone(bodyCloneContext)));
+                }                
+            }
+            return clone;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (visitor.VisitBodies())
+            {
+                if (Body() != null)
+                {
+                    Body()->Accept(visitor);
+                }
+            }
+            visitor.EndVisit(*this);
+        }
+    }
+    
+    public class MemberVariableNode : Node
+    {
+        public nothrow MemberVariableNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow MemberVariableNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_)
+        {
+            typeExpr->SetParent(this);
+            id->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.memberVariableNode;
+        }
+        public nothrow override bool IsMemberVariableNode() const
+        {
+            return true;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new MemberVariableNode(GetSpan(), specifiers, typeExpr->Clone(cloneContext), cast<IdentifierNode*>(id->Clone(cloneContext)));
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            typeExpr.Reset(reader.ReadNode());
+            typeExpr->SetParent(this);
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            writer.Write(typeExpr.GetPtr());
+            writer.Write(id.GetPtr());
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public nothrow inline Node* TypeExpr() const
+        {
+            return typeExpr.GetPtr();
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        private Specifiers specifiers;
+        private UniquePtr<Node> typeExpr;
+        private UniquePtr<IdentifierNode> id;
+    }
 }

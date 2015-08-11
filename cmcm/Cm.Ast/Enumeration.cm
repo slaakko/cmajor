@@ -1,0 +1,156 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class EnumTypeNode : Node
+    {
+        public nothrow EnumTypeNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow EnumTypeNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), id(id_)
+        {
+            id->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.enumTypeNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            EnumTypeNode* clone = new EnumTypeNode(GetSpan(), specifiers, cast<IdentifierNode*>(id->Clone(cloneContext)));
+            if (!underlyingType.IsNull())
+            {
+                clone->SetUnderlyingType(underlyingType->Clone(cloneContext));
+            }
+            for (const UniquePtr<EnumConstantNode>& enumConstant : enumConstants)
+            {
+                clone->AddConstant(cast<EnumConstantNode*>(enumConstant->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public nothrow void SetUnderlyingType(Node* underlyingType_)
+        {
+            underlyingType.Reset(underlyingType_);
+            underlyingType->SetParent(this);
+        }
+        public nothrow inline Node* UnderlyingType() const
+        {
+            return underlyingType.GetPtr();
+        }
+        public void AddConstant(EnumConstantNode* enumConstant)
+        {
+            enumConstant->SetParent(this);
+            enumConstants.Add(enumConstant);
+        }
+        public nothrow Node* GetLastEnumConstant() const
+        {
+            if (enumConstants.Count() == 0)
+            {
+                return null;
+            }
+            return enumConstants.Back();
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            enumConstants.Read(reader);
+            enumConstants.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            writer.Write(id.GetPtr());
+            enumConstants.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            enumConstants.Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        public override string Name() const
+        {
+            return id->Str();
+        }
+        public nothrow inline Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        private Specifiers specifiers;
+        private UniquePtr<IdentifierNode> id;
+        private UniquePtr<Node> underlyingType;
+        private NodeList<EnumConstantNode> enumConstants;
+    }
+    
+    public class EnumConstantNode : Node
+    {
+        public nothrow EnumConstantNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow EnumConstantNode(const Span& span_, IdentifierNode* id_, Node* value_) : base(span_), id(id_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.enumConstantNode;
+        }
+        public nothrow override bool IsEnumConstantNode() const
+        {
+            return true;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new EnumConstantNode(GetSpan(), cast<IdentifierNode*>(id->Clone(cloneContext)), value->Clone(cloneContext));
+        }
+        public override Node* GetValue() const
+        {
+            return value.GetPtr();
+        }
+        public override void Read(Reader& reader)
+        {
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            value.Reset(reader.ReadNode());
+            value->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(id.GetPtr());
+            writer.Write(value.GetPtr());
+        }
+        public override nothrow string ToString() const
+        {
+            return id->ToString() + " = " + value->ToString();
+        }
+        public override string Name() const
+        {
+            return id->Str();
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public nothrow inline Node* Value() const
+        {
+            return value.GetPtr();
+        }
+        private UniquePtr<IdentifierNode> id;
+        private UniquePtr<Node> value;
+    }
+}
