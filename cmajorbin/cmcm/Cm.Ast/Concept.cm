@@ -23,6 +23,92 @@ namespace Cm.Ast
         }
     }
     
+    public abstract class BinaryConstraintNode : ConstraintNode
+    {
+        public nothrow BinaryConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow BinaryConstraintNode(const Span& span_, ConstraintNode* left_, ConstraintNode* right_) : base(span_), left(left_), right(right_)
+        {
+            left->SetParent(this);
+            right->SetParent(this);
+        }
+        public override void Read(Reader& reader)
+        {
+            left.Reset(reader.ReadConstraintNode());
+            left->SetParent(this);
+            right.Reset(reader.ReadConstraintNode());
+            right->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(left.GetPtr());
+            writer.Write(right.GetPtr());
+        }
+        public nothrow inline ConstraintNode* Left() const
+        {
+            return left.GetPtr();
+        }
+        public nothrow inline ConstraintNode* Right() const
+        {
+            return right.GetPtr();
+        }
+        private UniquePtr<ConstraintNode> left;
+        private UniquePtr<ConstraintNode> right;
+    }
+    
+    public class DisjunctiveConstraintNode : BinaryConstraintNode
+    {
+        public nothrow DisjunctiveConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DisjunctiveConstraintNode(const Span& span_, ConstraintNode* left_, ConstraintNode* right_) : base(span_, left_, right_)
+        {
+        }
+        public override nothrow NodeType GetNodeType() const
+        {
+            return NodeType.disjunctiveConstraintNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new DisjunctiveConstraintNode(GetSpan(), cast<ConstraintNode*>(Left()->Clone(cloneContext)), cast<ConstraintNode*>(Right()->Clone(cloneContext)));
+        }
+        public override nothrow string ToString() const
+        {
+            return Left()->ToString() + " or " + Right()->ToString();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+
+    public class ConjunctiveConstraintNode : BinaryConstraintNode
+    {
+        public nothrow ConjunctiveConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ConjunctiveConstraintNode(const Span& span_, ConstraintNode* left_, ConstraintNode* right_) : base(span_, left_, right_)
+        {
+        }
+        public override nothrow NodeType GetNodeType() const
+        {
+            return NodeType.conjunctiveConstraintNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ConjunctiveConstraintNode(GetSpan(), cast<ConstraintNode*>(Left()->Clone(cloneContext)), cast<ConstraintNode*>(Right()->Clone(cloneContext)));
+        }
+        public override nothrow string ToString() const
+        {
+            return Left()->ToString() + " and " + Right()->ToString();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+        
     public class WhereConstraintNode : ConstraintNode
     {
         public nothrow WhereConstraintNode(const Span& span_) : base(span_)
@@ -49,5 +135,761 @@ namespace Cm.Ast
             writer.Write(constraint.GetPtr());
         }
         private UniquePtr<ConstraintNode> constraint;
+    }
+    
+    public class IsConstraintNode : ConstraintNode
+    {
+        public nothrow IsConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow IsConstraintNode(const Span& span_, Node* typeExpr_, Node* conceptOrTypeName_) : base(span_), typeExpr(typeExpr_), conceptOrTypeName(conceptOrTypeName_)
+        {
+            typeExpr->SetParent(this);
+            conceptOrTypeName->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.isConstraintNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new IsConstraintNode(GetSpan(), typeExpr->Clone(cloneContext), conceptOrTypeName->Clone(cloneContext));
+        }
+        public override void Read(Reader& reader)
+        {
+            typeExpr.Reset(reader.ReadNode());
+            typeExpr->SetParent(this);
+            conceptOrTypeName.Reset(reader.ReadNode());
+            conceptOrTypeName->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(typeExpr.GetPtr());
+            writer.Write(conceptOrTypeName.GetPtr());
+        }
+        public override nothrow string ToString() const
+        {
+            return typeExpr->ToString() + " is " + conceptOrTypeName->ToString();
+        }
+        public nothrow inline Node* TypeExpr() const
+        {
+            return typeExpr.GetPtr();
+        }
+        public nothrow inline Node* ConceptOrTypeName() const
+        {
+            return conceptOrTypeName.GetPtr();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<Node> typeExpr;
+        private UniquePtr<Node> conceptOrTypeName;
+    }
+    
+    public class MultiParamConstraintNode : ConstraintNode
+    {
+        public nothrow MultiParamConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow MultiParamConstraintNode(const Span& span_, IdentifierNode* conceptId_) : base(span_), conceptId(conceptId_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.multiParamConstraintNode;
+        }
+        public void AddTypeExpr(Node* typeExpr)
+        {
+            typeExpr->SetParent(this);
+            typeExprNodes.Add(typeExpr);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            MultiParamConstraintNode* clone = new MultiParamConstraintNode(GetSpan(), cast<IdentifierNode*>(conceptId->Clone(cloneContext)));
+            for (const UniquePtr<Node>& typeExpr : typeExprNodes)
+            {
+                clone->AddTypeExpr(typeExpr->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            conceptId.Reset(reader.ReadIdentifierNode());
+            conceptId->SetParent(this);
+            typeExprNodes.Read(reader);
+            typeExprNodes.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(conceptId.GetPtr());
+            typeExprNodes.Write(writer);
+        }
+        public nothrow override string ToString() const
+        {
+            string s = conceptId->ToString();
+            s.Append('<');
+            bool first = true;
+            for (const UniquePtr<Node>& typeExpr : typeExprNodes)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    s.Append(", ");
+                }
+                s.Append(typeExpr->ToString());
+            }
+            s.Append('>');
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<IdentifierNode> conceptId;
+        private NodeList<Node> typeExprNodes;
+    }
+    
+    public class TypeNameConstraintNode : ConstraintNode
+    {
+        public nothrow TypeNameConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow TypeNameConstraintNode(const Span& span_, Node* typeId_) : base(span_), typeId(typeId_)
+        {
+            typeId->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.typeNameConstraintNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new TypeNameConstraintNode(GetSpan(), typeId->Clone(cloneContext));
+        }
+        public override void Read(Reader& reader)
+        {
+            typeId.Reset(reader.ReadNode());
+            typeId->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(typeId.GetPtr());
+        }
+        public nothrow override string ToString() const
+        {
+            return "typename " + typeId->ToString() + ";";
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Node* TypeId() const
+        {
+            return typeId.GetPtr();
+        }
+        private UniquePtr<Node> typeId;
+    }
+    
+    public abstract class SignatureConstraintNode : ConstraintNode
+    {
+        public nothrow SignatureConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+    }
+    
+    public class ConstructorConstraintNode : SignatureConstraintNode
+    {
+        public nothrow ConstructorConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ConstructorConstraintNode(const Span& span_, IdentifierNode* typeParamId_) : base(span_), typeParamId(typeParamId_)
+        {
+            typeParamId->SetParent(this);
+        }
+        public override void AddParameter(ParameterNode* parameter)
+        {
+            parameter->SetParent(this);
+            parameters.Add(parameter);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.constructorConstraintNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            ConstructorConstraintNode* clone = new ConstructorConstraintNode(GetSpan(), cast<IdentifierNode*>(typeParamId->Clone(cloneContext)));
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            typeParamId.Reset(reader.ReadIdentifierNode());
+            typeParamId->SetParent(this);
+            parameters.Read(reader);
+            parameters.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(typeParamId.GetPtr());
+            parameters.Write(writer);
+        }
+        public override nothrow string ToString() const
+        {
+            string text(typeParamId->ToString());
+            text.Append('(').Append(parameters.ToString()).Append(");");
+            return text;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public inline nothrow const NodeList<ParameterNode>& Parameters() const
+        {
+            return parameters;
+        }
+        public inline nothrow NodeList<ParameterNode>& Parameters()
+        {
+            return parameters;
+        }
+        private UniquePtr<IdentifierNode> typeParamId;
+        private NodeList<ParameterNode> parameters;
+    }
+    
+    public class DestructorConstraintNode : SignatureConstraintNode
+    {
+        public nothrow DestructorConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DestructorConstraintNode(const Span& span_, IdentifierNode* typeParamId_) : base(span_), typeParamId(typeParamId_)
+        {
+            typeParamId->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.destructorConstraintNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new DestructorConstraintNode(GetSpan(), cast<IdentifierNode*>(typeParamId->Clone(cloneContext)));
+        }
+        public override void Read(Reader& reader)
+        {
+            typeParamId.Reset(reader.ReadIdentifierNode());
+            typeParamId->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(typeParamId.GetPtr());
+        }
+        public nothrow override string ToString() const
+        {
+            string text("~" + typeParamId->ToString());
+            text.Append("();");
+            return text;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<IdentifierNode> typeParamId;
+    }
+    
+    public class MemberFunctionConstraintNode : SignatureConstraintNode
+    {
+        public nothrow MemberFunctionConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow MemberFunctionConstraintNode(const Span& span_, Node* returnTypeExpr_, IdentifierNode* typeParamId_, FunctionGroupIdNode* functionGroupId_) : 
+            base(span_), returnTypeExpr(returnTypeExpr_), typeParamId(typeParamId_), functionGroupId(functionGroupId_)
+        {
+            returnTypeExpr->SetParent(this);
+            typeParamId->SetParent(this);
+            functionGroupId->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.memberFunctionConstraintNode;
+        }
+        public override void AddParameter(ParameterNode* parameter)
+        {
+            parameter->SetParent(this);
+            parameters.Add(parameter);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            MemberFunctionConstraintNode* clone = new MemberFunctionConstraintNode(GetSpan(), returnTypeExpr->Clone(cloneContext), cast<IdentifierNode*>(typeParamId->Clone(cloneContext)), 
+                cast<FunctionGroupIdNode*>(functionGroupId->Clone(cloneContext)));
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            returnTypeExpr.Reset(reader.ReadNode());
+            returnTypeExpr->SetParent(this);
+            typeParamId.Reset(reader.ReadIdentifierNode());
+            typeParamId->SetParent(this);
+            functionGroupId.Reset(reader.ReadFunctionGroupIdNode());
+            functionGroupId->SetParent(this);
+            parameters.Read(reader);
+            parameters.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(returnTypeExpr.GetPtr());
+            writer.Write(typeParamId.GetPtr());
+            writer.Write(functionGroupId.GetPtr());
+            parameters.Write(writer);
+        }
+        public override nothrow string ToString() const
+        {
+            string s = returnTypeExpr->ToString();
+            s.Append(' ').Append(typeParamId->ToString()).Append('.').Append(functionGroupId->ToString()).Append('(').Append(parameters.ToString()).Append(");");
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Node* ReturnTypeExpr() const
+        {
+            return returnTypeExpr.GetPtr();
+        }
+        public nothrow inline IdentifierNode* TypeParamId() const
+        {
+            return typeParamId.GetPtr();
+        }
+        public nothrow inline FunctionGroupIdNode* GroupId() const
+        {
+            return functionGroupId.GetPtr();
+        }
+        public nothrow inline const NodeList<ParameterNode>& Parameters() const
+        {
+            return parameters;
+        }
+        public nothrow inline NodeList<ParameterNode>& Parameters()
+        {
+            return parameters;
+        }
+        private UniquePtr<Node> returnTypeExpr;
+        private UniquePtr<IdentifierNode> typeParamId;
+        private UniquePtr<FunctionGroupIdNode> functionGroupId;
+        private NodeList<ParameterNode> parameters;
+    }
+    
+    public class FunctionConstraintNode : SignatureConstraintNode
+    {
+        public nothrow FunctionConstraintNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow FunctionConstraintNode(const Span& span_, Node* returnTypeExpr_, FunctionGroupIdNode* functionGroupId_) : base(span_), returnTypeExpr(returnTypeExpr_), functionGroupId(functionGroupId_)
+        {
+            returnTypeExpr->SetParent(this);
+            functionGroupId->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.functionConstraintNode;
+        }
+        public override void AddParameter(ParameterNode* parameter)
+        {
+            parameter->SetParent(this);
+            parameters.Add(parameter);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            FunctionConstraintNode* clone = new FunctionConstraintNode(GetSpan(), returnTypeExpr->Clone(cloneContext), cast<FunctionGroupIdNode*>(functionGroupId->Clone(cloneContext)));
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            returnTypeExpr.Reset(reader.ReadNode());
+            returnTypeExpr->SetParent(this);
+            functionGroupId.Reset(reader.ReadFunctionGroupIdNode());
+            functionGroupId->SetParent(this);
+            parameters.Read(reader);
+            parameters.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(returnTypeExpr.GetPtr());
+            writer.Write(functionGroupId.GetPtr());
+            parameters.Write(writer);
+        }
+        public nothrow override string ToString() const
+        {
+            string s = returnTypeExpr->ToString();
+            s.Append(' ').Append(functionGroupId->ToString()).Append('(').Append(parameters.ToString()).Append(");");
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private UniquePtr<Node> returnTypeExpr;
+        private UniquePtr<FunctionGroupIdNode> functionGroupId;
+        private NodeList<ParameterNode> parameters;
+    }
+    
+    public class AxiomStatementNode : Node
+    {
+        public nothrow AxiomStatementNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow AxiomStatementNode(const Span& span_, Node* expression_, const string& text_) : base(span_), expression(expression_), text(text_)
+        {
+            expression->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.axiomStatementNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new AxiomStatementNode(GetSpan(), expression->Clone(cloneContext), text);
+        }
+        public override void Read(Reader& reader)
+        {
+            expression.Reset(reader.ReadNode());
+            expression->SetParent(this);
+            text = reader.GetBinaryReader().ReadString();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(expression.GetPtr());
+            writer.GetBinaryWriter().Write(text);
+        }
+        public override nothrow string ToString() const
+        {
+            return text;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Node* Expression() const
+        {
+            return expression.GetPtr();
+        }
+        private UniquePtr<Node> expression;
+        private string text;
+    }
+    
+    public class AxiomNode : Node
+    {
+        public nothrow AxiomNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow AxiomNode(const Span& span_, IdentifierNode* id_) : base(span_), id(id_)
+        {
+            if (!id.IsNull())
+            {
+                id->SetParent(this);
+            }
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.axiomNode;
+        }
+        public override string Name() const
+        {
+            if (!id.IsNull())
+            {
+                return id->Str();
+            }
+            return "axiom";
+        }
+        public override void AddParameter(ParameterNode* parameter)
+        {
+            parameter->SetParent(this);
+            parameters.Add(parameter);
+        }
+        public void AddStatement(AxiomStatementNode* axiomStatement)
+        {
+            axiomStatement->SetParent(this);
+            axiomStatements.Add(axiomStatement);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            IdentifierNode* clonedId = null;
+            if (!id.IsNull())
+            {
+                clonedId = cast<IdentifierNode*>(id->Clone(cloneContext));
+            }
+            AxiomNode* clone = new AxiomNode(GetSpan(), clonedId);
+            for (const UniquePtr<ParameterNode>& parameter : parameters)
+            {
+                clone->AddParameter(cast<ParameterNode*>(parameter->Clone(cloneContext)));
+            }
+            for (const UniquePtr<AxiomStatementNode>& axiomStatement : axiomStatements)
+            {
+                clone->AddStatement(cast<AxiomStatementNode*>(axiomStatement->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            bool hasId = reader.GetBinaryReader().ReadBool();
+            if (hasId)
+            {
+                id.Reset(reader.ReadIdentifierNode());
+                id->SetParent(this);
+            }
+            parameters.Read(reader);
+            parameters.SetParent(this);
+            axiomStatements.Read(reader);
+            axiomStatements.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            bool hasId = !id.IsNull();
+            writer.GetBinaryWriter().Write(hasId);
+            if (hasId)
+            {
+                writer.Write(id.GetPtr());
+            }
+            parameters.Write(writer);
+            axiomStatements.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            axiomStatements.Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        private UniquePtr<IdentifierNode> id;
+        private NodeList<ParameterNode> parameters;
+        private NodeList<AxiomStatementNode> axiomStatements;
+    }
+    
+    public class ConceptIdNode : Node
+    {
+        public nothrow ConceptIdNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ConceptIdNode(const Span& span_, IdentifierNode* id_) : base(span_), id(id_)
+        {
+            id->SetParent(this);
+        }
+        public override nothrow NodeType GetNodeType() const
+        {
+            return NodeType.conceptIdNode;
+        }
+        public void AddTypeParameter(Node* typeParameter)
+        {
+            typeParameter->SetParent(this);
+            typeParameters.Add(typeParameter);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            ConceptIdNode* clone = new ConceptIdNode(GetSpan(), cast<IdentifierNode*>(id->Clone(cloneContext)));
+            for (const UniquePtr<Node>& typeParameter : typeParameters)
+            {
+                clone->AddTypeParameter(typeParameter->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            typeParameters.Read(reader);
+            typeParameters.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(id.GetPtr());
+            typeParameters.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow override string ToString() const
+        {
+            string s = id->ToString();
+            s.Append('<').Append(typeParameters.ToString()).Append('>');
+            return s;
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public nothrow inline const NodeList<Node>& TypeParameters() const
+        {
+            return typeParameters;
+        }
+        public nothrow inline NodeList<Node>& TypeParameters()
+        {
+            return typeParameters;
+        }
+        private UniquePtr<IdentifierNode> id;
+        private NodeList<Node> typeParameters;
+    }
+    
+    public class ConceptNode : Node
+    {
+        public nothrow ConceptNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow ConceptNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), id(id_)
+        {
+            id->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.conceptNode;
+        }
+        public nothrow override bool IsConceptNode() const
+        {
+            return true;
+        }
+        public nothrow inline string FirstTypeParameter() const
+        {
+            return typeParameters[0]->ToString();
+        }
+        public void AddTypeParameter(Node* typeParameter)
+        {
+            typeParameter->SetParent(this);
+            typeParameters.Add(typeParameter);
+        }
+        public nothrow void SetRefinement(ConceptIdNode* refinement_)
+        {
+            refinement.Reset(refinement_);
+            if (!refinement.IsNull())
+            {
+                refinement->SetParent(this);
+            }
+        }
+        public void AddConstraint(ConstraintNode* constraint)
+        {
+            constraint->SetParent(this);
+            constraints.Add(constraint);
+        }
+        public void AddAxiom(AxiomNode* axiom_)
+        {
+            axiom_->SetParent(this);
+            axioms.Add(axiom_);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            ConceptNode* clone = new ConceptNode(GetSpan(), specifiers, cast<IdentifierNode*>(id->Clone(cloneContext)));
+            for (const UniquePtr<Node>& typeParameter : typeParameters)
+            {
+                clone->AddTypeParameter(typeParameter->Clone(cloneContext));
+            }
+            if (!refinement.IsNull())
+            {
+                clone->SetRefinement(cast<ConceptIdNode*>(refinement->Clone(cloneContext)));
+            }
+            for (const UniquePtr<ConstraintNode>& constraint : constraints)
+            {
+                clone->AddConstraint(cast<ConstraintNode*>(constraint->Clone(cloneContext)));
+            }
+            for (const UniquePtr<AxiomNode>& axiom_ : axioms)
+            {
+                clone->AddAxiom(cast<AxiomNode*>(axiom_->Clone(cloneContext)));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            typeParameters.Read(reader);
+            typeParameters.SetParent(this);
+            bool hasRefinement = reader.GetBinaryReader().ReadBool();
+            if (hasRefinement)
+            {
+                refinement.Reset(reader.ReadConceptIdNode());
+                refinement->SetParent(this);
+            }
+            constraints.Read(reader);
+            constraints.SetParent(this);
+            axioms.Read(reader);
+            axioms.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            writer.Write(id.GetPtr());
+            typeParameters.Write(writer);
+            bool hasRefinement = !refinement.IsNull();
+            writer.GetBinaryWriter().Write(hasRefinement);
+            if (hasRefinement)
+            {
+                writer.Write(refinement.GetPtr());
+            }
+            constraints.Write(writer);
+            axioms.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override string Name() const
+        {
+            return id->Str();
+        }
+        public nothrow inline Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public inline const NodeList<Node>& TypeParameters() const
+        {
+            return typeParameters;
+        }
+        public inline NodeList<Node>& TypeParameters()
+        {
+            return typeParameters;
+        }
+        public inline ConceptIdNode* Refinement() const
+        {
+            return refinement.GetPtr();
+        }
+        public inline const NodeList<ConstraintNode>& Constraints() const
+        {
+            return constraints;
+        }
+        public inline NodeList<ConstraintNode>& Constraints()
+        {
+            return constraints;
+        }
+        public inline const NodeList<AxiomNode>& Axioms() const
+        {
+            return axioms;
+        }
+        public inline NodeList<AxiomNode>& Axioms()
+        {
+            return axioms;
+        }
+        public virtual bool IsCommonConceptNode() const
+        {
+            return false;
+        }
+        private Specifiers specifiers;
+        private UniquePtr<IdentifierNode> id;
+        private NodeList<Node> typeParameters;
+        private UniquePtr<ConceptIdNode> refinement;
+        private NodeList<ConstraintNode> constraints;
+        private NodeList<AxiomNode> axioms;
     }
 }

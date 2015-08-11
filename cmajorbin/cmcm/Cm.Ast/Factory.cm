@@ -65,6 +65,52 @@ namespace Cm.Ast
             Register(NodeType.charLiteralNode, new Creator<CharLiteralNode>());
             Register(NodeType.stringLiteralNode, new Creator<StringLiteralNode>());
             Register(NodeType.nullLiteralNode, new Creator<NullLiteralNode>());
+            // todo derivedTypeExprNode
+            Register(NodeType.equivalenceNode, new Creator<EquivalenceNode>());
+            Register(NodeType.implicationNode, new Creator<ImplicationNode>());
+            Register(NodeType.disjunctionNode, new Creator<DisjunctionNode>());
+            Register(NodeType.conjunctionNode, new Creator<ConjunctionNode>());
+            Register(NodeType.bitOrNode, new Creator<BitOrNode>());
+            Register(NodeType.bitXorNode, new Creator<BitXorNode>());
+            Register(NodeType.bitAndNode, new Creator<BitAndNode>());
+            Register(NodeType.equalNode, new Creator<EqualNode>());
+            Register(NodeType.notEqualNode, new Creator<NotEqualNode>());
+            Register(NodeType.lessNode, new Creator<LessNode>());
+            Register(NodeType.greaterNode, new Creator<GreaterNode>());
+            Register(NodeType.lessOrEqualNode, new Creator<LessOrEqualNode>());
+            Register(NodeType.greaterOrEqualNode, new Creator<GreaterOrEqualNode>());
+            Register(NodeType.shiftLeftNode, new Creator<ShiftLeftNode>());
+            Register(NodeType.shiftRightNode, new Creator<ShiftRightNode>());
+            Register(NodeType.addNode, new Creator<AddNode>());
+            Register(NodeType.subNode, new Creator<SubNode>());
+            Register(NodeType.mulNode, new Creator<MulNode>());
+            Register(NodeType.divNode, new Creator<DivNode>());
+            Register(NodeType.remNode, new Creator<RemNode>());
+            Register(NodeType.invokeNode, new Creator<InvokeNode>());
+            Register(NodeType.indexNode, new Creator<IndexNode>());
+            Register(NodeType.dotNode, new Creator<DotNode>());
+            Register(NodeType.arrowNode, new Creator<ArrowNode>());
+            Register(NodeType.postfixIncNode, new Creator<PostfixIncNode>());
+            Register(NodeType.postfixDecNode, new Creator<PostfixDecNode>());
+            Register(NodeType.derefNode, new Creator<DerefNode>());
+            Register(NodeType.addrOfNode, new Creator<AddrOfNode>());
+            Register(NodeType.notNode, new Creator<NotNode>());
+            Register(NodeType.unaryPlusNode, new Creator<UnaryPlusNode>());
+            Register(NodeType.unaryMinusNode, new Creator<UnaryMinusNode>());
+            Register(NodeType.complementNode, new Creator<ComplementNode>());
+            Register(NodeType.prefixIncNode, new Creator<PrefixIncNode>());
+            Register(NodeType.prefixDecNode, new Creator<PrefixDecNode>());
+            Register(NodeType.sizeOfNode, new Creator<SizeOfNode>());
+            Register(NodeType.typeNameNode, new Creator<TypeNameNode>());
+            Register(NodeType.castNode, new Creator<CastNode>());
+            Register(NodeType.newNode, new Creator<NewNode>());
+            Register(NodeType.constructNode, new Creator<ConstructNode>());
+            Register(NodeType.thisNode, new Creator<ThisNode>());
+            Register(NodeType.baseNode, new Creator<BaseNode>());
+            Register(NodeType.identifierNode, new Creator<IdentifierNode>());
+            Register(NodeType.templateIdNode, new Creator<TemplateIdNode>());
+            Register(NodeType.enumTypeNode, new Creator<EnumTypeNode>());
+            Register(NodeType.enumConstantNode, new Creator<EnumConstantNode>());
             // todo
         }    
         public static nothrow Factory& Instance()

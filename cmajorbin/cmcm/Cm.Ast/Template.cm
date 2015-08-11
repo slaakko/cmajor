@@ -8,11 +8,77 @@
 ========================================================================*/
 
 using System;
+using Span = System.Text.Parsing.Span;
 
 namespace Cm.Ast
 {
     public abstract class TemplateParameterNode : Node
     {
+    }
+    
+    public class TemplateIdNode : Node
+    {
+        public nothrow TemplateIdNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow TemplateIdNode(const Span& span_, Node* subject_) : base(span_), subject(subject_)
+        {
+            subject->SetParent(this);
+        }
+        public override nothrow NodeType GetNodeType() const
+        {
+            return NodeType.templateIdNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            TemplateIdNode* clone = new TemplateIdNode(GetSpan(), subject->Clone(cloneContext));
+            for (const UniquePtr<Node>& templateArgument : templateArguments)
+            {
+                clone->AddTemplateArgument(templateArgument->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public void AddTemplateArgument(Node* templateArgument)
+        {
+            templateArgument->SetParent(this);
+            templateArguments.Add(templateArgument);
+        }
+        public override void Read(Reader& reader)
+        {
+            subject.Reset(reader.ReadNode());
+            subject->SetParent(this);
+            templateArguments.Read(reader);
+            templateArguments.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(subject.GetPtr());
+            templateArguments.Write(writer);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override nothrow string ToString() const
+        {
+            string s = subject->ToString();
+            s.Append('<').Append(templateArguments.ToString()).Append('>');
+            return s;
+        }
+        public nothrow inline Node* Subject() const
+        {
+            return subject.GetPtr();
+        }
+        public nothrow inline const NodeList<Node>& TempateArguments() const
+        {
+            return templateArguments;
+        }
+        public nothrow inline NodeList<Node>& TempateArguments() 
+        {
+            return templateArguments;
+        }
+        private UniquePtr<Node> subject;
+        private NodeList<Node> templateArguments;
     }
     // todo
 }

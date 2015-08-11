@@ -33,6 +33,10 @@ EnumTypeNode::EnumTypeNode(const Span& span_, Specifiers specifiers_, Identifier
 Node* EnumTypeNode::Clone(CloneContext& cloneContext) const
 {
     EnumTypeNode* clone = new EnumTypeNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone(cloneContext)));
+    if (underlyingType)
+    {
+        clone->SetUnderlyingType(underlyingType->Clone(cloneContext));
+    }
     for (const std::unique_ptr<Node>& constant : constants)
     {
         clone->AddConstant(constant->Clone(cloneContext));

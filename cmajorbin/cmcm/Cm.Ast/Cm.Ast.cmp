@@ -8,6 +8,8 @@ source <Class.cm>;
 source <Clone.cm>;
 source <CompileUnit.cm>;
 source <Concept.cm>;
+source <Constant.cm>;
+source <Enumeration.cm>;
 source <Expression.cm>;
 source <Factory.cm>;
 source <Function.cm>;

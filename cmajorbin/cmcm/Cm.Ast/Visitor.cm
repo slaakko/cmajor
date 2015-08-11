@@ -539,6 +539,96 @@ namespace Cm.Ast
         public virtual void EndVisit(FunctionNode& functionNode)
         {
         }
+        public virtual void BeginVisit(StaticConstructorNode& staticConstructorNode)
+        {
+        }
+        public virtual void EndVisit(StaticConstructorNode& staticConstructorNode)
+        {
+        }
+        public virtual void BeginVisit(ConstructorNode& constructorNode)
+        {
+        }
+        public virtual void EndVisit(ConstructorNode& constructorNode)
+        {
+        }
+        public virtual void BeginVisit(DestructorNode& destructorNode)
+        {
+        }
+        public virtual void EndVisit(DestructorNode& destructorNode)
+        {
+        }
+        public virtual void BeginVisit(MemberFunctionNode& memberFunctionNode)
+        {
+        }
+        public virtual void EndVisit(MemberFunctionNode& memberFunctionNode)
+        {
+        }
+        public virtual void BeginVisit(ConversionFunctionNode& conversionFunctionNode)
+        {
+        }
+        public virtual void EndVisit(ConversionFunctionNode& conversionFunctionNode)
+        {
+        }
+        public virtual void Visit(MemberVariableNode& memberVariableNode)
+        {
+        }
+        public virtual void Visit(DisjunctiveConstraintNode& disjunctiveConstraintNode)
+        {
+        }
+        public virtual void Visit(ConjunctiveConstraintNode& conjunctiveConstraintNode)
+        {
+        }
+        public virtual void Visit(IsConstraintNode& isConstraintNode)
+        {
+        }
+        public virtual void Visit(MultiParamConstraintNode& multiParamConstraintNode)
+        {
+        }
+        public virtual void Visit(TypeNameConstraintNode& typeNameConstraintNode)
+        {
+        }
+        public virtual void Visit(ConstructorConstraintNode& constructorConstraintNode)
+        {
+        }
+        public virtual void Visit(DestructorConstraintNode& destructorConstraintNode)
+        {
+        }
+        public virtual void Visit(MemberFunctionConstraintNode& memberFunctionConstraintNode)
+        {
+        }
+        public virtual void Visit(FunctionConstraintNode& functionConstraintNode)
+        {
+        }
+        public virtual void Visit(AxiomStatementNode& axiomStatementNode)
+        {
+        }
+        public virtual void BeginVisit(AxiomNode& axiomNode)
+        {
+        }
+        public virtual void EndVisit(AxiomNode& axiomNode)
+        {
+        }
+        public virtual void Visit(ConceptIdNode& conceptIdNode)
+        {
+        }
+        public virtual void Visit(ConceptNode& conceptNode)
+        {
+        }
+        public virtual void Visit(TemplateIdNode& templateIdNode)
+        {
+        }
+        public virtual void BeginVisit(EnumTypeNode& enumTypeNode)
+        {
+        }
+        public virtual void EndVisit(EnumTypeNode& enumTypeNode)
+        {
+        }
+        public virtual void Visit(EnumConstantNode& enumConstantNode)
+        {
+        }
+        public virtual void Visit(ConstantNode& constantNode)
+        {
+        }
         private bool visitBodies;
         private bool visitExpressions;
         private bool skipContent;

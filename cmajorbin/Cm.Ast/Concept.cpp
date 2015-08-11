@@ -386,7 +386,7 @@ std::string TypenameConstraintNode::ToString() const
 
 void TypenameConstraintNode::Accept(Visitor& visitor)
 {
-    return visitor.Visit(*this);
+    visitor.Visit(*this);
 }
 
 SignatureConstraintNode::SignatureConstraintNode(const Span& span_) : ConstraintNode(span_)
@@ -399,6 +399,7 @@ ConstructorConstraintNode::ConstructorConstraintNode(const Span& span_) : Signat
 
 ConstructorConstraintNode::ConstructorConstraintNode(const Span& span_, IdentifierNode* typeParamId_) : SignatureConstraintNode(span_), typeParamId(typeParamId_)
 {
+    typeParamId->SetParent(this);
 }
 
 void ConstructorConstraintNode::AddParameter(ParameterNode* parameter)
@@ -449,6 +450,7 @@ DestructorConstraintNode::DestructorConstraintNode(const Span& span_) : Signatur
 
 DestructorConstraintNode::DestructorConstraintNode(const Span& span_, IdentifierNode* typeParamId_) : SignatureConstraintNode(span_), typeParamId(typeParamId_)
 {
+    typeParamId->SetParent(this);
 }
 
 Node* DestructorConstraintNode::Clone(CloneContext& cloneContext) const
@@ -592,7 +594,7 @@ std::string FunctionConstraintNode::ToString() const
 
 void FunctionConstraintNode::Accept(Visitor& visitor)
 {
-    return visitor.Visit(*this);
+    visitor.Visit(*this);
 }
 
 AxiomStatementNode::AxiomStatementNode(const Span& span_) : Node(span_)
@@ -612,6 +614,7 @@ Node* AxiomStatementNode::Clone(CloneContext& cloneContext) const
 void AxiomStatementNode::Read(Reader& reader)
 {
     expression.reset(reader.ReadNode());
+    expression->SetParent(this);
     text = reader.ReadString();
 }
 
@@ -628,7 +631,7 @@ std::string AxiomStatementNode::ToString() const
 
 void AxiomStatementNode::Accept(Visitor& visitor)
 {
-    return visitor.Visit(*this);
+    visitor.Visit(*this);
 }
 
 AxiomNode::AxiomNode(const Span& span_) : Node(span_)
@@ -790,9 +793,9 @@ ConceptNode::ConceptNode(const Span& span_, Specifiers specifiers_, IdentifierNo
     id->SetParent(this);
 }
 
-const std::string& ConceptNode::FirstTypeParameter() const
+std::string ConceptNode::FirstTypeParameter() const
 {
-    return static_cast<const IdentifierNode*>(typeParameters[0])->Str();
+    return typeParameters[0]->ToString();
 }
 
 void ConceptNode::AddTypeParameter(Node* typeParameter)

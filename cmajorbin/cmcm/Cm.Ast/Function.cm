@@ -83,7 +83,7 @@ namespace Cm.Ast
             parameter->SetParent(this);
             parameters.Add(parameter);
         }
-        public void SetConstraint(WhereConstraintNode* constraint_)
+        public nothrow void SetConstraint(WhereConstraintNode* constraint_)
         {
             constraint.Reset(constraint_);
             if (!constraint.IsNull())
@@ -91,7 +91,7 @@ namespace Cm.Ast
                 constraint->SetParent(this);
             }        
         }
-        public void SetBody(CompoundStatementNode* body_)
+        public nothrow void SetBody(CompoundStatementNode* body_)
         {
             body.Reset(body_);
             if (!body.IsNull())
