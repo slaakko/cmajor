@@ -1,0 +1,101 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public enum Derivation : byte
+    {
+        none = 0u,
+        const_ = 1u,
+        reference = 2u,
+        rvalueRef = 3u,
+        pointer = 4u,
+        leftParen = 5u,
+        rightParen = 6u,
+        array = 7u
+    }
+    
+    public nothrow string DerivationStr(Derivation d)
+    {
+        switch (d)
+        {
+            case Derivation.const_: return "const";
+            case Derivation.reference: return "&";
+            case Derivation.rvalueRef: return "&&";
+            case Derivation.pointer: return "*";
+            case Derivation.leftParen: return "(";
+            case Derivation.rightParen: return ")";
+        }
+        return "";
+    }
+    
+    public const int maxDerivations = 7;
+    
+    public class DerivationList
+    {
+        public typedef RandomAccessIter<Derivation, Derivation&, Derivation*> Iterator;
+        public typedef RandomAccessIter<Derivation, const Derivation&, const Derivation*> ConstIterator;
+        
+        public nothrow inline Iterator Begin()
+        {
+            return Iterator(&derivations[0]);
+        }
+        public nothrow inline Iterator End()
+        {
+            return Iterator(&derivations[numDerivations]);
+        }
+        public nothrow inline ConstIterator Begin() const
+        {
+            return ConstIterator(&derivations[0]);
+        }
+        public nothrow inline ConstIterator End() const
+        {
+            return ConstIterator(&derivations[numDerivations]);
+        }
+        public nothrow inline ConstIterator CBegin() const
+        {
+            return ConstIterator(&derivations[0]);
+        }
+        public nothrow inline ConstIterator CEnd() const
+        {
+            return ConstIterator(&derivations[numDerivations]);
+        }
+        public nothrow inline int Count() const
+        {
+            return numDerivations;
+        }
+        public nothrow inline Derivation operator[](int index) const
+        {
+            #assert(index >= 0 && index < numDerivations);
+            return derivations[index];
+        }
+        public nothrow inline Derivation& operator[](int index)
+        {
+            #assert(index >= 0 && index < numDerivations);
+            return derivations[index];
+        }
+        public nothrow inline void Add(Derivation derivation)
+        {
+            #assert(numDerivations < maxDerivations);
+            derivations[numDerivations++] = derivation;
+        }
+        public void InsertFront(Derivation derivation)
+        {
+            #assert(numDerivations < maxDerivations);
+            CopyBackward(Begin(), End(), End() + 1);
+            derivations[0] = derivation;
+            ++numDerivations;
+        }
+        private byte numDerivations;
+        private Derivation[maxDerivations] derivations;
+    }
+}

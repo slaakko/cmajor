@@ -629,6 +629,24 @@ namespace Cm.Ast
         public virtual void Visit(ConstantNode& constantNode)
         {
         }
+        public virtual void BeginVisit(DelegateNode& delegateNode)
+        {
+        }
+        public virtual void EndVisit(DelegateNode& delegateNode)
+        {
+        }
+        public virtual void BeginVisit(ClassDelegateNode& classDelegateNode)
+        {
+        }
+        public virtual void EndVisit(ClassDelegateNode& classDelegateNode)
+        {
+        }
+        public virtual void Visit(TypedefNode& typedefNode)
+        {
+        }
+        public virtual void Visit(TemplateParameterNode& templateParameterNode)
+        {
+        }
         private bool visitBodies;
         private bool visitExpressions;
         private bool skipContent;
