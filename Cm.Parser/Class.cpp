@@ -1983,52 +1983,52 @@ private:
 void ClassGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.TypedefGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::TypedefGrammar::Create(pd);
+        grammar0 = Cm::Parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar1 = Cm::Parser::ConceptGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.StatementGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::ConceptGrammar::Create(pd);
+        grammar2 = Cm::Parser::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar3 = Cm::Parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::ParameterGrammar::Create(pd);
+        grammar4 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.StatementGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::StatementGrammar::Create(pd);
+        grammar5 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
-    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar6)
     {
-        grammar6 = Cm::Parser::TemplateGrammar::Create(pd);
+        grammar6 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
-    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parser.DelegateGrammar");
     if (!grammar7)
     {
-        grammar7 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar7 = Cm::Parser::DelegateGrammar::Create(pd);
     }
     AddGrammarReference(grammar7);
     Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
@@ -2037,56 +2037,56 @@ void ClassGrammar::GetReferencedGrammars()
         grammar8 = Cm::Parser::EnumerationGrammar::Create(pd);
     }
     AddGrammarReference(grammar8);
-    Cm::Parsing::Grammar* grammar9 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar9 = pd->GetGrammar("Cm.Parser.ConstantGrammar");
     if (!grammar9)
     {
-        grammar9 = Cm::Parser::FunctionGrammar::Create(pd);
+        grammar9 = Cm::Parser::ConstantGrammar::Create(pd);
     }
     AddGrammarReference(grammar9);
-    Cm::Parsing::Grammar* grammar10 = pd->GetGrammar("Cm.Parser.ConstantGrammar");
+    Cm::Parsing::Grammar* grammar10 = pd->GetGrammar("Cm.Parser.TypedefGrammar");
     if (!grammar10)
     {
-        grammar10 = Cm::Parser::ConstantGrammar::Create(pd);
+        grammar10 = Cm::Parser::TypedefGrammar::Create(pd);
     }
     AddGrammarReference(grammar10);
-    Cm::Parsing::Grammar* grammar11 = pd->GetGrammar("Cm.Parser.DelegateGrammar");
+    Cm::Parsing::Grammar* grammar11 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
     if (!grammar11)
     {
-        grammar11 = Cm::Parser::DelegateGrammar::Create(pd);
+        grammar11 = Cm::Parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar11);
-    Cm::Parsing::Grammar* grammar12 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar12 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar12)
     {
-        grammar12 = Cm::Parser::ExpressionGrammar::Create(pd);
+        grammar12 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar12);
-    Cm::Parsing::Grammar* grammar13 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar13 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
     if (!grammar13)
     {
-        grammar13 = Cm::Parsing::stdlib::Create(pd);
+        grammar13 = Cm::Parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar13);
 }
 
 void ClassGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
+    AddRuleLink(new Cm::Parsing::RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
     AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
-    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
     AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
     AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
     AddRuleLink(new Cm::Parsing::RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
     AddRuleLink(new Cm::Parsing::RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
     AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new ClassRule("Class", GetScope(),
         new Cm::Parsing::SequenceParser(

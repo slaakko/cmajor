@@ -62,17 +62,33 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
     }
     std::string assemblyName = MakeUniqueAssemblyName(localVariableOrParameter->Name());
     Ir::Intf::Object* localVariableObject = nullptr;
+    Ir::Intf::Type* baseTypeIrType = type->GetBaseType()->GetIrType();
+    if (type->GetBaseType()->IsVoidTypeSymbol())
+    {
+        if (backend == Cm::IrIntf::BackEnd::llvm)
+        {
+            baseTypeIrType = Ir::Intf::GetFactory()->GetI8();
+        }
+        else if (backend == Cm::IrIntf::BackEnd::c)
+        {
+            baseTypeIrType = Ir::Intf::GetFactory()->GetVoid();
+        }
+    }
+    if (type->IsArrayType())
+    {
+        baseTypeIrType = Cm::IrIntf::Array(baseTypeIrType, type->GetLastArrayDimension());
+    }
     if (type->IsReferenceType() || type->IsRvalueRefType())
     {
         if (type->GetBaseType()->IsClassTypeSymbol())
         {
             if (backend == Cm::IrIntf::BackEnd::llvm)
             {
-                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 2));
+                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount() + 2));
             }
             else if (backend == Cm::IrIntf::BackEnd::c)
             {
-                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 1));
+                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount() + 1));
             }
         }
         else
@@ -81,22 +97,22 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
             {
                 if (backend == Cm::IrIntf::BackEnd::llvm)
                 {
-                    localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), type->GetPointerCount() + 2));
+                    localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount() + 2));
                 }
                 else if (backend == Cm::IrIntf::BackEnd::c)
                 {
-                    localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetVoid(), type->GetPointerCount() + 1));
+                    localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount() + 1));
                 }
             }
             else
             {
                 if (backend == Cm::IrIntf::BackEnd::llvm)
                 {
-                    localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 2));
+                    localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount() + 2));
                 }
                 else if (backend == Cm::IrIntf::BackEnd::c)
                 {
-                    localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 1));
+                    localVariableObject = Cm::IrIntf::CreateRefVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount() + 1));
                 }
             }
         }
@@ -107,11 +123,11 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
         {
             if (backend == Cm::IrIntf::BackEnd::llvm)
             {
-                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), type->GetPointerCount() + 1));
+                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount() + 1));
             }
             else if (backend == Cm::IrIntf::BackEnd::c)
             {
-                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetVoid(), type->GetPointerCount()));
+                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount()));
             }
         }
         else if (type->IsDelegateTypeSymbol())
@@ -124,11 +140,11 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
         {
             if (backend == Cm::IrIntf::BackEnd::llvm)
             {
-                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(type->GetBaseType()->GetIrType(), type->GetPointerCount() + 1));
+                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, Cm::IrIntf::Pointer(baseTypeIrType, type->GetPointerCount() + 1));
             }
             else if (backend == Cm::IrIntf::BackEnd::c)
             {
-                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, type->GetIrType());
+                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, baseTypeIrType);
             }
         }
     }
@@ -211,6 +227,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     emitter->SetIrFunction(irFunction);
 
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
+
     Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
     Ir::Intf::Object* exceptionCodeVariable = nullptr;
     if (backend == Cm::IrIntf::BackEnd::llvm)
@@ -232,7 +249,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
         Ir::Intf::Object* localVariableIrObject = localVariableIrObjectRepository.CreateLocalVariableIrObjectFor(parameter);
         Cm::Sym::TypeSymbol* parameterType = parameter->GetType();
         Ir::Intf::Type* parameterIrType = parameterType->GetIrType();
-        if (parameterType->IsArrayType())
+        if (parameterType->IsPureArrayType())
         {
             parameterIrType = parameterType->GetBaseType()->GetIrType();
             emitter->Emit(Cm::IrIntf::Alloca(parameterIrType, localVariableIrObject, Ir::Intf::GetFactory()->GetI32(), parameterType->GetLastArrayDimension()));
@@ -253,10 +270,11 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
         Ir::Intf::Object* localVariableIrObject = localVariableIrObjectRepository.CreateLocalVariableIrObjectFor(localVariable);
         Cm::Sym::TypeSymbol* localVariableType = localVariable->GetType();
         Ir::Intf::Type* localVariableIrType = localVariableType->GetIrType();
-        if (localVariableType->IsArrayType())
+        if (localVariableType->IsPureArrayType())
         {
             localVariableIrType = localVariableType->GetBaseType()->GetIrType();
             emitter->Emit(Cm::IrIntf::Alloca(localVariableIrType, localVariableIrObject, Ir::Intf::GetFactory()->GetI32(), localVariableType->GetLastArrayDimension()));
+            localVariableIrObject->SetType(Cm::IrIntf::Pointer(localVariableIrType, 1));
         }
         else
         {
@@ -1769,10 +1787,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "Cm.Ser.BinaryWriter.Write(Cm.Ser.BinaryWriter*, const void*, ulong)")
-    {
-        int x = 0;
-    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     if (generateDebugInfo)
     {
@@ -2498,6 +2512,20 @@ void FunctionEmitter::ExecutePostfixIncDecStatements(Cm::Core::GenResult& result
     }
 }
 
+inline void CheckRvalueArrayCall(Cm::Core::Emitter& emitter, Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& result)
+{
+    if (fun->GroupName() != "Rvalue") return;
+    if (fun->Parameters().size() != 1) return;
+    Cm::Sym::ParameterSymbol* param = fun->Parameters()[0];
+    if (!param->GetType()->IsArrayType()) return;
+    if (result.Objects().size() < 2) return;
+    if (Cm::IrIntf::TypesEqual(result.Arg1()->GetType(), param->GetType()->GetIrType())) return;
+    Ir::Intf::Object* temp = Cm::IrIntf::CreateTemporaryRegVar(param->GetType()->GetIrType());
+    emitter.Own(temp);
+    emitter.Emit(Cm::IrIntf::Bitcast(result.Arg1()->GetType(), temp, result.Arg1(), temp->GetType()));
+    result.Objects()[1] = temp;
+}
+
 void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result, 
     bool constructorOrDestructorCall)
 {
@@ -2526,6 +2554,10 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::
     }
     else
     {
+        if (functionSymbol)
+        {
+            CheckRvalueArrayCall(*emitter, functionSymbol, result);
+        }
         if (functionSymbol && functionSymbol->CanThrow())
         {
             Cm::Core::GenResult functionResult(emitter.get(), result.Flags());

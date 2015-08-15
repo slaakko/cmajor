@@ -119,7 +119,7 @@ void PrimitiveArrayTypeCopyConstructor::Generate(Cm::Core::Emitter& emitter, Cm:
         arrayObjectType = ptrArrayType;
         arg1->SetType(ptrArrayType);
     }
-    if (arrayObjectType->Name() == "i8*")
+    if (arrayObjectType->Name() == "i8*" && arg1->GetType()->Name() == "i8*")
     {
         emitter.Emit(Cm::IrIntf::MemCopy(arrayObject, arg1, len, 1, false));
     }
@@ -127,12 +127,20 @@ void PrimitiveArrayTypeCopyConstructor::Generate(Cm::Core::Emitter& emitter, Cm:
     {
         Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1);
         emitter.Own(i8Ptr);
-        Ir::Intf::Object* dest = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
-        emitter.Own(dest);
-        Ir::Intf::Object* source = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
-        emitter.Own(source);
-        emitter.Emit(Cm::IrIntf::Bitcast(arrayObjectType, dest, arrayObject, i8Ptr));
-        emitter.Emit(Cm::IrIntf::Bitcast(arrayObjectType, source, arg1, i8Ptr));
+        Ir::Intf::Object* dest = arrayObject;
+        if (arrayObjectType->Name() != "i8*")
+        {
+            dest = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+            emitter.Own(dest);
+            emitter.Emit(Cm::IrIntf::Bitcast(arrayObjectType, dest, arrayObject, i8Ptr));
+        }
+        Ir::Intf::Object* source = arg1;
+        if (arg1->GetType()->Name() != "i8*")
+        {
+            source = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+            emitter.Own(source);
+            emitter.Emit(Cm::IrIntf::Bitcast(arg1->GetType(), source, arg1, i8Ptr));
+        }
         emitter.Emit(Cm::IrIntf::MemCopy(dest, source, len, 1, false));
     }
 }
@@ -179,7 +187,7 @@ void PrimitiveArrayTypeCopyAssignment::Generate(Cm::Core::Emitter& emitter, Cm::
         arrayObjectType = ptrArrayType;
         arg1->SetType(ptrArrayType);
     }
-    if (arrayObjectType->Name() == "i8*")
+    if (arrayObjectType->Name() == "i8*" && arg1->GetType()->Name() == "i8*")
     {
         emitter.Emit(Cm::IrIntf::MemCopy(arrayObject, arg1, len, 1, false));
     }
@@ -187,12 +195,20 @@ void PrimitiveArrayTypeCopyAssignment::Generate(Cm::Core::Emitter& emitter, Cm::
     {
         Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1);
         emitter.Own(i8Ptr);
-        Ir::Intf::Object* dest = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
-        emitter.Own(dest);
-        Ir::Intf::Object* source = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
-        emitter.Own(source);
-        emitter.Emit(Cm::IrIntf::Bitcast(arrayObjectType, dest, arrayObject, i8Ptr));
-        emitter.Emit(Cm::IrIntf::Bitcast(arrayObjectType, source, arg1, i8Ptr));
+        Ir::Intf::Object* dest = arrayObject;
+        if (arrayObjectType->Name() != "i8*")
+        {
+            dest = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+            emitter.Own(dest);
+            emitter.Emit(Cm::IrIntf::Bitcast(arrayObjectType, dest, arrayObject, i8Ptr));
+        }
+        Ir::Intf::Object* source = arg1;
+        if (arg1->GetType()->Name() != "i8*")
+        {
+            source = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+            emitter.Own(source);
+            emitter.Emit(Cm::IrIntf::Bitcast(arg1->GetType(), source, arg1, i8Ptr));
+        }
         emitter.Emit(Cm::IrIntf::MemCopy(dest, source, len, 1, false));
     }
 }

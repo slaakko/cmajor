@@ -220,16 +220,18 @@ std::string CBackEnd::MakeAssemblyName(const std::string& name)
         char c = name[i];
         switch (c)
         {
-        case '&': assemblyName.append("_R"); break;
-        case '*': assemblyName.append("_P"); break;
-        case '<': assemblyName.append("_B"); break;
-        case '>': assemblyName.append("_E"); break;
-        case ',': assemblyName.append("_"); break;
-        case '.': assemblyName.append("_N_"); break;
-        case '(': assemblyName.append("_O_"); break;
-        case ')': assemblyName.append("_C_"); break;
-        case ' ': break;
-        default: assemblyName.append(1, c); break;
+            case '&': assemblyName.append("_R"); break;
+            case '*': assemblyName.append("_P"); break;
+            case '<': assemblyName.append("_B"); break;
+            case '>': assemblyName.append("_E"); break;
+            case ',': assemblyName.append("_"); break;
+            case '.': assemblyName.append("_N_"); break;
+            case '(': assemblyName.append("_O_"); break;
+            case ')': assemblyName.append("_C_"); break;
+            case '[': assemblyName.append("_A"); break;
+            case ']': assemblyName.append("_A"); break;
+            case ' ': break;
+            default: assemblyName.append(1, c); break;
         }
     }
     return assemblyName;

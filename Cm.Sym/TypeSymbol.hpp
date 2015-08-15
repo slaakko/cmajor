@@ -67,6 +67,7 @@ public:
     virtual bool IsValueTypeSymbol() const { return false; }
     virtual bool IsUlongType() const { return false; }
     virtual bool IsArrayType() const { return false; }
+    virtual bool IsPureArrayType() const { return false; }
     virtual bool IsPrimitiveSingleDimensionArrayType() const { return false; }
     virtual DerivationCounts GetDerivationCounts() const { return DerivationCounts(); }
     virtual const Cm::Ast::DerivationList& Derivations() const { return emptyDerivationList; }

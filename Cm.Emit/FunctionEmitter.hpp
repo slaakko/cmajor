@@ -31,6 +31,7 @@ public:
     Ir::Intf::Object* GetLocalVariableIrObject(Cm::Sym::Symbol* localVariableOrParameter);
     void SetExceptionCodeVariable(Ir::Intf::Object* exceptionCodeVariable_) { exceptionCodeVariable = exceptionCodeVariable_; }
     Ir::Intf::Object* GetExceptionCodeVariable() const { return exceptionCodeVariable; }
+    std::string MakeUniqueAssemblyName(const std::string& name);
 private:
     Cm::Core::IrFunctionRepository* irFunctionRepository;
     typedef std::unordered_map<Cm::Sym::Symbol*, Ir::Intf::Object*>  LocalVariableObjectMap;
@@ -38,7 +39,6 @@ private:
     LocalVariableObjectMap localVariableObjectMap;
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;
     std::unordered_set<std::string> assemblyNames;
-    std::string MakeUniqueAssemblyName(const std::string& name);
     Ir::Intf::Object* exceptionCodeVariable;
 };
 

@@ -57,7 +57,7 @@ void DerivationList::InsertFront(Derivation derivation)
 
 void DerivationList::RemoveLastPointer()
 {
-    for (uint8_t i = numDerivations - 1; i >= 0; --i)
+    for (int i = int(numDerivations) - 1; i >= 0; --i)
     {
         if (derivations[i] == Derivation::pointer)
         {

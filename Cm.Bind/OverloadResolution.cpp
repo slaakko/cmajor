@@ -494,7 +494,13 @@ bool Bind(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol
             Cm::Sym::TypeSymbol* plainArgumentType = argumentType->GetBaseType();
             if (argumentTypeDerivations.NumDerivations() > 0)
             { 
-                plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), std::vector<int>(), Cm::Parsing::Span());
+                std::vector<int> arrayDimensions;
+                if (argumentType->IsDerivedTypeSymbol())
+                {
+                    Cm::Sym::DerivedTypeSymbol* derivedArgumentType = static_cast<Cm::Sym::DerivedTypeSymbol*>(argumentType);
+                    arrayDimensions = derivedArgumentType->GetArrayDimensions();
+                }
+                plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), arrayDimensions, Cm::Parsing::Span());
             }
             if (Bind(boundCompileUnit, parameterType->GetBaseType(), plainArgumentType, templateArguments, boundType))
             {

@@ -85,7 +85,7 @@ void CountDerivations(const Cm::Ast::DerivationList& derivations, int& numPointe
     }
 }
 
-Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations, const Span& span)
+Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& derivations, const Span& span, int lastArrayDimension)
 {
     Ir::Intf::Type* baseIrType = nullptr;
     if (baseType->IsEnumTypeSymbol())
@@ -108,6 +108,10 @@ Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& 
     else
     {
         baseIrType = baseType->GetIrType();
+    }
+    if (lastArrayDimension != 0)
+    {
+        baseIrType = Cm::IrIntf::Array(baseIrType, lastArrayDimension);
     }
     int numPointers = 0;
     bool ref = false;
@@ -138,8 +142,9 @@ Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& 
     }
 }
 
-void MergeDerivations(Cm::Ast::DerivationList& targetDerivations, const Cm::Ast::DerivationList& sourceDerivations)
+void MergeDerivations(Cm::Ast::DerivationList& targetDerivations, const Cm::Ast::DerivationList& sourceDerivations, std::vector<int>& targetArrayDimensions, const std::vector<int>& sourceArrayDimensions)
 {
+    int sourceArrayDimensionIndex = 0;
     int n = sourceDerivations.NumDerivations();
     for (int i = 0; i < n; ++i)
     {
@@ -163,6 +168,11 @@ void MergeDerivations(Cm::Ast::DerivationList& targetDerivations, const Cm::Ast:
             if (derivation == Cm::Ast::Derivation::const_)
             {
                 targetDerivations.InsertFront(derivation);
+            }
+            else if (derivation == Cm::Ast::Derivation::array_)
+            {
+                targetArrayDimensions.push_back(sourceArrayDimensions[sourceArrayDimensionIndex++]);
+                targetDerivations.Add(derivation);
             }
             else
             {
@@ -210,41 +220,43 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
 {
     Cm::Ast::DerivationList finalDerivations = derivations;
     TypeSymbol* finalBaseType = baseType;
+    std::vector<int> finalArrayDimensions = arrayDimensions;
     if (baseType->IsDerivedTypeSymbol())
     {
         DerivedTypeSymbol* baseDerivedType = static_cast<DerivedTypeSymbol*>(baseType);
         finalDerivations = baseDerivedType->Derivations();
-        MergeDerivations(finalDerivations, derivations);
+        finalArrayDimensions = baseDerivedType->GetArrayDimensions();
+        MergeDerivations(finalDerivations, derivations, finalArrayDimensions, arrayDimensions);
         finalBaseType = baseDerivedType->GetBaseType();
     }
     if (HasRvalueRefDerivation(finalDerivations) && HasReferenceDerivation(finalDerivations))
     {
         finalDerivations.RemoveReference();
-        return MakeDerivedType(finalDerivations, finalBaseType, std::vector<int>(), span); // hack to remove rvalue references to reference types
+        return MakeDerivedType(finalDerivations, finalBaseType, finalArrayDimensions, span); // hack to remove rvalue references to reference types
     }
-    TypeId typeId = ComputeDerivedTypeId(finalBaseType, finalDerivations, arrayDimensions);
+    TypeId typeId = ComputeDerivedTypeId(finalBaseType, finalDerivations, finalArrayDimensions);
     TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
     if (typeSymbol)
     {
         return typeSymbol;
     }
-    std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType, arrayDimensions), finalBaseType, finalDerivations,
-        arrayDimensions, typeId));
+    std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType, finalArrayDimensions), finalBaseType, finalDerivations,
+        finalArrayDimensions, typeId));
     derivedTypeSymbol->SetAccess(SymbolAccess::public_);
     if (!baseType->IsTypeParameterSymbol() && !baseType->IsFunctionGroupTypeSymbol())
     {
-        uint8_t n = uint8_t(arrayDimensions.size());
+        uint8_t n = uint8_t(finalArrayDimensions.size());
         if (n > 0)
         {
             if (n != 1)
             {
                 throw Cm::Sym::Exception("arrays of arrays not supported", span);
             }
-            derivedTypeSymbol->SetIrType(Cm::IrIntf::Array(finalBaseType->GetIrType(), derivedTypeSymbol->GetLastArrayDimension()));
+            derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span, derivedTypeSymbol->GetLastArrayDimension()));
         }
         else
         {
-            derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span));
+            derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span, 0));
             derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->GetIrType()->CreateDefaultValue());
         }
     }
