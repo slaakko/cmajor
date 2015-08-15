@@ -11,6 +11,7 @@
 #define CM_BIND_ARRAY_TYPE_OP_REPOSITORY_INCLUDED
 #include <Cm.Core/ArrayTypeOpRepository.hpp>
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
 
 namespace Cm { namespace Bind {
 

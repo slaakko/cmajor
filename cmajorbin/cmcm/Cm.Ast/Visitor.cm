@@ -647,6 +647,9 @@ namespace Cm.Ast
         public virtual void Visit(TemplateParameterNode& templateParameterNode)
         {
         }
+        public virtual void Visit(DerivedTypeExprNode& derivedTypeExprNode)
+        {
+        }
         private bool visitBodies;
         private bool visitExpressions;
         private bool skipContent;

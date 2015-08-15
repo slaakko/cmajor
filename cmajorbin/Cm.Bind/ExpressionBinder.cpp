@@ -1215,10 +1215,6 @@ void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "Cm.Ser.BinaryWriter.Write(Cm.Ser.BinaryWriter*, byte)")
-    {
-        int x = 0;
-    }
     lookupIdStack.Push(lookupId);
     lookupId = Cm::Sym::SymbolTypeSetId::lookupInvokeSubject;
     invokeNode.Subject()->Accept(*this);

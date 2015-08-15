@@ -270,6 +270,21 @@ namespace Cm.Ast
             }
             return span;
         }
+        public Derivation ReadDerivation()
+        {
+            byte d = binaryReader.ReadByte();
+            return cast<Derivation>(d);
+        }
+        public DerivationList ReadDerivationList()
+        {
+            DerivationList derivationList;
+            int n = binaryReader.ReadByte();
+            for (int i = 0; i < n; ++i)
+            {
+                derivationList.Add(ReadDerivation());
+            }
+            return derivationList;
+        }
         private NodeType ReadNodeType()
         {
             return cast<NodeType>(binaryReader.ReadByte());

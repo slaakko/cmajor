@@ -18,6 +18,7 @@
 #include <Cm.Bind/LocalVariable.hpp>
 #include <Cm.Bind/StatementBinder.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
+#include <Cm.Bind/ArrayTypeOpRepository.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Bind/ClassObjectLayout.hpp>
@@ -31,7 +32,7 @@
 namespace Cm { namespace Bind {
 
 Binder::Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : Cm::Ast::Visitor(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentParent(nullptr),
-    switchStatement(nullptr)
+    switchStatement(nullptr), isRvalueArrayFun(false)
 {
 }
 
@@ -372,6 +373,10 @@ void Binder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
 {
     if (functionNode.TemplateParameters().Count() > 0)
+    {
+        PopSkipContent();
+    }
+    else if (isRvalueArrayFun)
     {
         PopSkipContent();
     }

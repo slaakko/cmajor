@@ -173,6 +173,13 @@ bool HasPointerToArrayDerivation(const Cm::Ast::DerivationList& derivations)
     return false;
 }
 
+bool HasRvalueRefOfArrayDerivation(const Cm::Ast::DerivationList& derivations)
+{
+    uint8_t n = derivations.NumDerivations();
+    if (n != 2) return false;
+    return derivations[0] == Cm::Ast::Derivation::array_ && derivations[1] == Cm::Ast::Derivation::rvalueRef;
+}
+
 DerivationCounts CountDerivations(const Cm::Ast::DerivationList& derivations)
 {
     DerivationCounts counts;
@@ -315,12 +322,11 @@ void DerivedTypeSymbol::MakeIrType()
         {
             throw Cm::Sym::Exception("arrays of arrays not supported", GetSpan());
         }
-        Ir::Intf::Type* arrayType = Cm::IrIntf::Array(baseType->GetIrType(), GetLastArrayDimension());
-        SetIrType(arrayType);
+        SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span(), GetLastArrayDimension()));
     }
     else
     {
-        SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span()));
+        SetIrType(Cm::Sym::MakeIrType(baseType, derivations, Cm::Parsing::Span(), 0));
     }
     if (IsPointerType())
     {

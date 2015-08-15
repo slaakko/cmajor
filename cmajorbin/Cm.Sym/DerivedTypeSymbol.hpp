@@ -28,6 +28,7 @@ bool HasRvalueRefDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasConstPointerDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasConstPointerPointerDerivation(const Cm::Ast::DerivationList& derivations);
 bool HasPointerToArrayDerivation(const Cm::Ast::DerivationList& derivations);
+bool HasRvalueRefOfArrayDerivation(const Cm::Ast::DerivationList& derivations);
 DerivationCounts CountDerivations(const Cm::Ast::DerivationList& derivations);
 
 class DerivedTypeSymbol : public TypeSymbol
@@ -64,6 +65,7 @@ public:
     bool IsConstPointerType() const { return HasConstPointerDerivation(derivations); }
     bool IsConstPointerPointerType() const { return HasConstPointerPointerDerivation(derivations); }
     bool IsArrayType() const override { return !arrayDimensions.empty(); }
+    bool IsPureArrayType() const override { return IsArrayType() && derivations.NumDerivations() == 1 && derivations[0] == Cm::Ast::Derivation::array_; }
     bool IsPrimitiveSingleDimensionArrayType() const override { return arrayDimensions.size() == 1 && (!baseType->IsClassTypeSymbol() || baseType->IsClassTypeSymbol() && IsPointerType()); }
     const std::vector<int>& GetArrayDimensions() const { return arrayDimensions; }
     int GetLastArrayDimension() const override { return arrayDimensions.back(); }

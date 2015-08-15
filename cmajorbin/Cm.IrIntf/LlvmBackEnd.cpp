@@ -228,6 +228,8 @@ std::string LlvmBackEnd::MakeAssemblyName(const std::string& name)
             case ',': assemblyName.append("."); break;
             case '(': assemblyName.append("_O"); break;
             case ')': assemblyName.append("_C"); break;
+            case '[': assemblyName.append("_A"); break;
+            case ']': assemblyName.append("_A"); break;
             case ' ': break;
             default: assemblyName.append(1, c); break;
         }

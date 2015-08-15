@@ -90,7 +90,7 @@ void LlvmIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classTyp
                 ++index;
             }
             Cm::Sym::TypeSymbol* memberVarType = memberVariable->GetType();
-            if (memberVarType->IsArrayType())
+            if (memberVarType->IsPureArrayType())
             {
                 Ir::Intf::Type* memberVarArrayType = Cm::IrIntf::Array(memberVarType->GetBaseType()->GetIrType(), memberVarType->GetLastArrayDimension());
                 memberTypes.push_back(memberVarArrayType);
@@ -315,7 +315,7 @@ void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, 
                 memberNames.push_back("__vptr");
                 ++index;
             }
-            if (memberVarType->IsArrayType())
+            if (memberVarType->IsPureArrayType())
             {
                 Ir::Intf::Type* memberVarArrayType = Cm::IrIntf::Array(memberVarType->GetBaseType()->GetIrType(), memberVarType->GetLastArrayDimension());
                 memberTypes.push_back(memberVarArrayType);

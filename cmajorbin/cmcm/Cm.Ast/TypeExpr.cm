@@ -8,6 +8,7 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 using Span = System.Text.Parsing.Span;
 
 namespace Cm.Ast
@@ -39,6 +40,14 @@ namespace Cm.Ast
     }
     
     public const int maxDerivations = 7;
+    
+    public class IsReferenceOrRvalueRefDerivation : UnaryPred<Derivation>
+    {
+        public inline nothrow bool operator()(Derivation d) const
+        {
+            return d == Derivation.reference || d == Derivation.rvalueRef;
+        }
+    }
     
     public class DerivationList
     {
@@ -95,7 +104,280 @@ namespace Cm.Ast
             derivations[0] = derivation;
             ++numDerivations;
         }
+        public nothrow void RemoveLastPointer()
+        {
+            for (int i = int(numDerivations) - 1; i >= 0; --i)
+            {
+                if (derivations[i] == Derivation.pointer)
+                {
+                    derivations[i] = Derivation.none;
+                    --numDerivations;
+                    return;
+                }
+            }
+        }
+        public nothrow void RemoveReferences()
+        {
+            Iterator b = Begin();
+            Iterator e = End();
+            Iterator n = Remove(b, e, Derivation.reference);
+            Fill(n, e, Derivation.none);
+            numDerivations = cast<byte>(Distance(b, n));
+        }
+        public nothrow void RemoveRefsAndRvalueRefs()
+        {
+            Iterator b = Begin();
+            Iterator e = End();
+            Iterator n = Remove(b, e, IsReferenceOrRvalueRefDerivation());
+            Fill(n, e, Derivation.none);
+            numDerivations = cast<byte>(Distance(b, n));
+        }
         private byte numDerivations;
         private Derivation[maxDerivations] derivations;
+    }
+    
+    public nothrow bool operator==(const DerivationList& left, const DerivationList& right)
+    {
+        if (left.Count() != right.Count()) return false;
+        return Equal(left.CBegin(), left.CEnd(), right.CBegin(), right.CEnd());
+    }
+    
+    public nothrow bool operator<(const DerivationList& left, const DerivationList& right)
+    {
+        return LexicographicalCompare(left.CBegin(), left.CEnd(), right.CBegin(), right.CEnd());
+    }
+    
+    public nothrow string MakeDerivedTypeName(const DerivationList& derivations, const string& baseTypeFullName, const List<UniquePtr<Node>>& arrayDimensions)
+    {
+        string s;
+        int derivationIndex = 0;
+        int n = derivations.Count();
+        if (derivationIndex < n)
+        {
+            Derivation d = derivations[derivationIndex];
+            if (d == Derivation.const_)
+            {
+                s.Append(DerivationStr(d));
+            }
+        }
+        if (derivationIndex < n)
+        {
+            Derivation d = derivations[derivationIndex];
+            if (d == Derivation.leftParen)
+            {
+                if (!s.IsEmpty())
+                {
+                    s.Append(' ');
+                }
+                s.Append(DerivationStr(d));
+                ++derivationIndex;
+                if (derivationIndex < n)
+                {
+                    Derivation d = derivations[derivationIndex];
+                    if (d == Derivation.const_)
+                    {
+                        s.Append(DerivationStr(d));
+                        ++derivationIndex;
+                    }
+                }
+            }
+        }
+        if (!s.IsEmpty())
+        {
+            s.Append(' ');
+        }
+        s.Append(baseTypeFullName);
+        int arrayDimIndex = 0;
+        for (int i = derivationIndex; i < n; ++i)
+        {
+            if (derivations[i] == Derivation.array)
+            {
+                s.Append("[" + arrayDimensions[arrayDimIndex++]->ToString() + "]");
+            }
+            else
+            {
+                s.Append(DerivationStr(derivations[i]));
+            }
+        }
+        return s;
+    }
+
+    public nothrow string MakeDerivedTypeName(const DerivationList& derivations, const string& baseTypeFullName, const List<int>& arrayDimensions)
+    {
+        string s;
+        int derivationIndex = 0;
+        int n = derivations.Count();
+        if (derivationIndex < n)
+        {
+            Derivation d = derivations[derivationIndex];
+            if (d == Derivation.const_)
+            {
+                s.Append(DerivationStr(d));
+            }
+        }
+        if (derivationIndex < n)
+        {
+            Derivation d = derivations[derivationIndex];
+            if (d == Derivation.leftParen)
+            {
+                if (!s.IsEmpty())
+                {
+                    s.Append(' ');
+                }
+                s.Append(DerivationStr(d));
+                ++derivationIndex;
+                if (derivationIndex < n)
+                {
+                    Derivation d = derivations[derivationIndex];
+                    if (d == Derivation.const_)
+                    {
+                        s.Append(DerivationStr(d));
+                        ++derivationIndex;
+                    }
+                }
+            }
+        }
+        if (!s.IsEmpty())
+        {
+            s.Append(' ');
+        }
+        s.Append(baseTypeFullName);
+        int arrayDimIndex = 0;
+        for (int i = derivationIndex; i < n; ++i)
+        {
+            if (derivations[i] == Derivation.array)
+            {
+                s.Append("[" + ToString(arrayDimensions[arrayDimIndex++]) + "]");
+            }
+            else
+            {
+                s.Append(DerivationStr(derivations[i]));
+            }
+        }
+        return s;
+    }
+    
+    public class DerivedTypeExprNode : Node
+    {
+        public nothrow DerivedTypeExprNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow DerivedTypeExprNode(const Span& span_, const DerivationList& derivations_, Node* baseTypeExprNode_) : base(span_), derivations(derivations_), baseTypeExprNode(baseTypeExprNode_)
+        {
+            baseTypeExprNode->SetParent(this);
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.derivedTypeExprNode;
+        }
+        public void AddArrayDimensionNode(Node* arrayDimensionNode)
+        {
+            arrayDimensionNode->SetParent(this);
+            arrayDimensionNodes.Add(UniquePtr<Node>(arrayDimensionNode));
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            DerivedTypeExprNode* clone = new DerivedTypeExprNode(GetSpan(), derivations, baseTypeExprNode->Clone(cloneContext));
+            for (const UniquePtr<Node>& arrayDimensionNode : arrayDimensionNodes)
+            {
+                clone->AddArrayDimensionNode(arrayDimensionNode->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public nothrow override bool IsDerivedTypeExprNode() const
+        {
+            return true;
+        }
+        public nothrow inline const DerivationList& Derivations() const
+        {
+            return derivations;
+        }
+        public nothrow inline Node* BaseTypeExprNode() const
+        {
+            return baseTypeExprNode.GetPtr();
+        }
+        public nothrow inline Node* ReleaseBaseTypeExprNode()
+        {
+            return baseTypeExprNode.Release();
+        }
+        public nothrow inline Node* ArrayDimensionNode(int index) const
+        {
+            return arrayDimensionNodes[index].GetPtr();
+        }
+        public nothrow inline int NumArrayDimensions() const
+        {
+            return arrayDimensionNodes.Count();
+        }
+        public override void Read(Reader& reader)
+        {
+            derivations = reader.ReadDerivationList();
+            baseTypeExprNode.Reset(reader.ReadNode());
+            baseTypeExprNode->SetParent(this);
+            byte n = reader.GetBinaryReader().ReadByte();
+            for (byte i = 0u; i < n; ++i)
+            {
+                Node* arrayDimensionNode = reader.ReadNode();
+                AddArrayDimensionNode(arrayDimensionNode);
+            }
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(derivations);
+            writer.Write(baseTypeExprNode.GetPtr());
+            byte n = cast<byte>(arrayDimensionNodes.Count());
+            writer.GetBinaryWriter().Write(n);
+            for (const UniquePtr<Node>& arrayDimensionNode : arrayDimensionNodes)
+            {
+                writer.Write(arrayDimensionNode.GetPtr());
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override nothrow string ToString() const
+        {
+            return MakeDerivedTypeName(derivations, baseTypeExprNode->ToString(), arrayDimensionNodes);
+        }
+        public void Add(Derivation derivation)
+        {
+            derivations.Add(derivation);
+        }
+        public inline void AddConst()
+        {
+            Add(Derivation.const_);
+        }
+        public inline void AddRvalueRef()
+        {
+            Add(Derivation.rvalueRef);
+        }
+        public inline void AddReference()
+        {
+            Add(Derivation.reference);
+        }
+        public inline void AddPointer()
+        {
+            Add(Derivation.pointer);
+        }
+        public inline void AddLeftParen()
+        {
+            Add(Derivation.leftParen);
+        }
+        public inline void AddRightParen()
+        {
+            Add(Derivation.rightParen);
+        }
+        public inline void AddArray()
+        {
+            Add(Derivation.array);
+        }
+        public nothrow void SetBaseTypeExpr(Node* baseTypeExprNode_)
+        {
+            baseTypeExprNode.Reset(baseTypeExprNode_);
+            baseTypeExprNode->SetParent(this);
+        }
+        private DerivationList derivations;
+        private UniquePtr<Node> baseTypeExprNode;
+        private List<UniquePtr<Node>> arrayDimensionNodes;
     }
 }

@@ -209,22 +209,22 @@ void ConstantGrammar::GetReferencedGrammars()
         grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar2 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar3 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parsing::stdlib::Create(pd);
+        grammar4 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
 }
@@ -234,8 +234,8 @@ void ConstantGrammar::CreateRules()
     AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRule(new ConstantRule("Constant", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(

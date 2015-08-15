@@ -36,6 +36,19 @@ namespace Cm.Ast
         {
             binaryWriter.Write(&span, sizeof(span));
         }
+        public void Write(Derivation derivation)
+        {
+            binaryWriter.Write(cast<byte>(derivation));
+        }    
+        public void Write(const DerivationList& derivationList)
+        {
+            byte n = cast<byte>(derivationList.Count());
+            binaryWriter.Write(n);
+            for (Derivation derivation : derivationList)
+            {
+                Write(derivation);
+            }
+        }
         private void Write(NodeType nodeType)
         {
             binaryWriter.Write(byte(nodeType));

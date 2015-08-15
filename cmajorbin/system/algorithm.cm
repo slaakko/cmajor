@@ -13,7 +13,7 @@
 // Silicon Graphics Computer Systems, Inc.
 // Copyright (c) 2009 Alexander Stepanov and Paul McJones
 
-//using System.Collections;
+using System.Collections;
 using System.Concepts;
  
 namespace System
@@ -356,6 +356,74 @@ namespace System
             ++begin;
         }
         return count;
+    }
+    
+    public nothrow O RemoveCopy<I, O, P>(I begin, I end, O result, P p) where I is InputIterator and O is OutputIterator and O.ValueType is I.ValueType and P is UnaryPredicate and P.ArgumentType is I.ValueType
+    {
+        while (begin != end)
+        {
+            if (!p(*begin))
+            {
+                *result = *begin;
+                ++result;
+            }
+            ++begin;
+        }
+        return result;
+    }
+    
+    public nothrow I Remove<I, P>(I begin, I end, P p) where I is ForwardIterator and P is UnaryPredicate and P.ArgumentType is I.ValueType
+    {
+        begin = Find(begin, end, p);
+        if (begin == end)
+        {
+            return begin;
+        }
+        else
+        {
+            I i = begin;
+            ++i;
+            return RemoveCopy(i, end, begin, p);
+        }
+    }
+    
+    public nothrow O RemoveCopy<I, O, T>(I begin, I end, O result, const T& value) 
+        where T is Semiregular and I is InputIterator and O is OutputIterator and O.ValueType is I.ValueType and EqualityComparable<T, I.ValueType>
+    {
+        while (begin != end)
+        {
+            if (*begin != value)
+            {
+                *result = *begin;
+                ++result;
+            }
+            ++begin;
+        }
+        return result;
+    }
+    
+    public nothrow I Remove<I, T>(I begin, I end, const T& value) where I is ForwardIterator and T is Semiregular and EqualityComparable<T, I.ValueType>
+    {
+        begin = Find(begin, end, value);
+        if (begin == end)
+        {
+            return begin;
+        }
+        else
+        {
+            I i = begin;
+            ++i;
+            return RemoveCopy(i, end, begin, value);
+        }
+    }
+    
+    public nothrow void Fill<I, T>(I begin, I end, const T& value) where T is Semiregular and I is ForwardIterator and I.ValueType is T
+    {
+        while (begin != end)
+        {
+            *begin = value;
+            ++begin;
+        }        
     }
 
     public nothrow T Accumulate<I, T, Op>(I begin, I end, T init, Op op) where I is InputIterator and T is Semiregular and Op is BinaryOperation and Op.FirstArgumentType is T and Op.SecondArgumentType is I.ValueType
