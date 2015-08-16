@@ -881,7 +881,7 @@ namespace Cm.Ast
         {
             return axioms;
         }
-        public virtual bool IsCommonConceptNode() const
+        public virtual nothrow bool IsCommonConceptNode() const
         {
             return false;
         }

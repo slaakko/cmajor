@@ -1,0 +1,210 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class SolutionDeclaration
+    {
+        public nothrow virtual ~SolutionDeclaration()
+        {
+        }
+        public nothrow virtual bool IsProjectFileDeclaration() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsProjectDependencyDeclaration() const
+        {
+            return false;
+        }
+    }
+    
+    public class ProjectFileDeclaration : SolutionDeclaration
+    {
+        public ProjectFileDeclaration(const Span& span_, const string& filePath_, const string& basePath_) : span(span_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
+        {
+        }
+        public nothrow override bool IsProjectFileDeclaration() const
+        {
+            return true;
+        }
+        public nothrow inline const Span& GetSpan() const
+        {
+            return span;
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        private Span span;
+        private string filePath;
+    }
+    
+    public class ActiveProjectDeclaration : SolutionDeclaration
+    {
+        public nothrow ActiveProjectDeclaration(const string& activeProjectName_) : activeProjectName(activeProjectName_)
+        {
+        }
+        private string activeProjectName;
+    }
+    
+    public class ProjectDependencyDeclaration : SolutionDeclaration
+    {
+        public nothrow ProjectDependencyDeclaration(const string& projectName_) : projectName(projectName_)
+        {
+        }
+        public nothrow override bool IsProjectDependencyDeclaration() const
+        {
+            return true;
+        }
+        public void AddDependency(const string& dependsOn)
+        {
+            dependsOnProjects.Add(dependsOn);
+        }
+        public nothrow inline const string& ProjectName() const
+        {
+            return projectName;
+        }
+        public nothrow inline const List<string>& DependsOnProjects() const
+        {
+            return dependsOnProjects;
+        }
+        private string projectName;
+        private List<string> dependsOnProjects;
+    }
+    
+    public class Solution
+    {
+        public Solution(const string& name_, const string& filePath_) : name(name_), filePath(filePath_), basePath(Path.GetParent(filePath))
+        {
+        }
+        public nothrow inline const string& Name() const
+        {
+            return name;
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow inline const string& BasePath() const
+        {
+            return basePath;
+        }
+        public void AddDeclaration(SolutionDeclaration* declaration)
+        {
+            declarations.Add(UniquePtr<SolutionDeclaration>(declaration));
+        }
+        public nothrow const List<string>& ProjectFilePaths() const
+        {
+            return projectFilePaths;
+        }
+        public void AddProject(UniquePtr<Project>&& project)
+        {
+            projects.Add(project);
+        }
+        public void ResolveDeclarations()
+        {
+            for (const UniquePtr<SolutionDeclaration>& declaration : declarations)
+            {
+                if (declaration->IsProjectFileDeclaration())
+                {
+                    ProjectFileDeclaration* pfd = cast<ProjectFileDeclaration*>(declaration.GetPtr());
+                    for (const string& prev : projectFilePaths)
+                    {
+                        if (prev == pfd->FilePath())
+                        {
+                            throw Exception("project file path '" + prev + "' already specified ('" + GetFullPath(filePath) + "' line " + ToString(pfd->GetSpan().LineNumber()) + ")");
+                        }
+                    }
+                    projectFilePaths.Add(pfd->FilePath());
+                }
+                else if (declaration->IsProjectDependencyDeclaration())
+                {
+                    ProjectDependencyDeclaration* dependencyDeclaration = cast<ProjectDependencyDeclaration*>(declaration.GetPtr());
+                    dependencyMap[dependencyDeclaration->ProjectName()] = dependencyDeclaration;
+                }
+            }
+        }
+        public List<Project*> CreateBuildOrder()
+        {
+            List<Project*> buildOrder;
+            HashMap<string, Project*> projectMap;
+            for (const UniquePtr<Project>& project : projects)
+            {
+                projectMap[project->Name()] = project.GetPtr();
+            }
+            List<string> order;
+            HashSet<string> visited;
+            HashSet<string> tempVisit;
+            for (const UniquePtr<Project>& project : projects)
+            {
+                if (visited.CFind(project->Name()) == visited.CEnd())
+                {
+                    Visit(order, project->Name(), visited, tempVisit, dependencyMap, this);
+                }
+            }
+            for (const string& projectName : order)
+            {
+                HashMap<string, Project*>.ConstIterator i = projectMap.CFind(projectName);
+                if (i != projectMap.CEnd())
+                {
+                    buildOrder.Add(i->second);
+                }
+                else
+                {
+                    throw Exception("project name '" + projectName + "' not found in solution '" + Name() + "' (" + GetFullPath(filePath) + ")");
+                }
+            }
+            return buildOrder;
+        }
+        private string name;
+        private string filePath;
+        private string basePath;
+        private List<UniquePtr<SolutionDeclaration>> declarations;
+        private List<string> projectFilePaths;
+        private List<UniquePtr<Project>> projects;
+        private HashMap<string, ProjectDependencyDeclaration*> dependencyMap;
+    }
+    
+    internal void Visit(List<string>& order, const string& projectName, HashSet<string>& visited, HashSet<string>& tempVisit, 
+        const HashMap<string, ProjectDependencyDeclaration*>& dependencyMap, Solution* solution)
+    {
+        if (tempVisit.CFind(projectName) == tempVisit.CEnd())
+        {
+            if (visited.CFind(projectName) == visited.CEnd())
+            {
+                tempVisit.Insert(projectName);
+                HashMap<string, ProjectDependencyDeclaration*>.ConstIterator i = dependencyMap.CFind(projectName);
+                if (i != dependencyMap.CEnd())
+                {
+                    ProjectDependencyDeclaration* dependencyDeclaration = i->second;
+                    for (const string& dependentProject : dependencyDeclaration->DependsOnProjects())
+                    {
+                        Visit(order, dependentProject, visited, tempVisit, dependencyMap, solution);
+                    }
+                    tempVisit.Remove(projectName);
+                    visited.Insert(projectName);
+                    order.Add(projectName);
+                }
+                else
+                {
+                    throw Exception("project '" + projectName + "' not found in dependencies of solution '" + solution->Name() + "' (" + GetFullPath(solution->FilePath()) + ")");
+                }
+            }
+        }
+        else
+        {
+            throw Exception("circular project dependency '" + projectName + "' detected in dependencies of solution '" + solution->Name() + "' (" + GetFullPath(solution->FilePath()) + ")");
+        }
+    }
+}

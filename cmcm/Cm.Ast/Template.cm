@@ -148,6 +148,5 @@ namespace Cm.Ast
         private UniquePtr<Node> subject;
         private NodeList<Node> templateArguments;
     }
-    // todo
 }
 

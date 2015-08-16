@@ -650,6 +650,21 @@ namespace Cm.Ast
         public virtual void Visit(DerivedTypeExprNode& derivedTypeExprNode)
         {
         }
+        public virtual void Visit(SameConstraintNode& sameConstraintNode)
+        {
+        }
+        public virtual void Visit(DerivedConstraintNode& derivedConstraintNode)
+        {
+        }
+        public virtual void Visit(ConvertibleConstraintNode& convertibleConstraintNode)
+        {
+        }
+        public virtual void Visit(ExplicitlyConvertibleConstraintNode& explicitylyConvertibleConstraintNode)
+        {
+        }
+        public virtual void Visit(CommonConstraintNode& commonConstraintNode)
+        {
+        }
         private bool visitBodies;
         private bool visitExpressions;
         private bool skipContent;

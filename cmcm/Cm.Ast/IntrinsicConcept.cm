@@ -1,0 +1,156 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public abstract class IntrinsicConstraintNode : ConstraintNode
+    {
+        public override nothrow NodeType GetNodeType() const 
+        { 
+            return NodeType.intrinsicConstraintNode;
+        }
+    }
+    
+    public class SameConstraintNode : IntrinsicConstraintNode
+    {
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new SameConstraintNode();
+        }
+    }
+
+    public class DerivedConstraintNode : IntrinsicConstraintNode
+    {
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new DerivedConstraintNode();
+        }
+    }
+
+    public class ConvertibleConstraintNode : IntrinsicConstraintNode
+    {
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ConvertibleConstraintNode();
+        }
+    }
+
+    public class ExplicitlyConvertibleConstraintNode : IntrinsicConstraintNode
+    {
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new ExplicitlyConvertibleConstraintNode();
+        }
+    }
+
+    public class CommonConstraintNode : IntrinsicConstraintNode
+    {
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new CommonConstraintNode();
+        }
+    }
+    
+    public class SameConceptNode : ConceptNode
+    {
+        public SameConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "Same"))
+        {
+            AddTypeParameter(new IdentifierNode(Span(), "T"));
+            AddTypeParameter(new IdentifierNode(Span(), "U"));
+            AddConstraint(new SameConstraintNode());
+        }
+        public nothrow override bool IsIntrinsicConceptNode() const
+        {
+            return true;
+        }
+    }
+
+    public class DerivedConceptNode : ConceptNode
+    {
+        public DerivedConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "Derived"))
+        {
+            AddTypeParameter(new IdentifierNode(Span(), "T"));
+            AddTypeParameter(new IdentifierNode(Span(), "U"));
+            AddConstraint(new DerivedConstraintNode());
+        }
+        public nothrow override bool IsIntrinsicConceptNode() const
+        {
+            return true;
+        }
+    }
+
+    public class ConvertibleConceptNode : ConceptNode
+    {
+        public ConvertibleConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "Convertible"))
+        {
+            AddTypeParameter(new IdentifierNode(Span(), "T"));
+            AddTypeParameter(new IdentifierNode(Span(), "U"));
+            AddConstraint(new ConvertibleConstraintNode());
+        }
+        public nothrow override bool IsIntrinsicConceptNode() const
+        {
+            return true;
+        }
+    }
+
+    public class ExplicitlyConvertibleConceptNode: ConceptNode
+    {
+        public ExplicitlyConvertibleConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "ExplicitlyConvertible"))
+        {
+            AddTypeParameter(new IdentifierNode(Span(), "T"));
+            AddTypeParameter(new IdentifierNode(Span(), "U"));
+            AddConstraint(new ExplicitlyConvertibleConstraintNode());
+        }
+        public nothrow override bool IsIntrinsicConceptNode() const
+        {
+            return true;
+        }
+    }
+
+    public class CommonConceptNode: ConceptNode
+    {
+        public CommonConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "Common"))
+        {
+            AddTypeParameter(new IdentifierNode(Span(), "T"));
+            AddTypeParameter(new IdentifierNode(Span(), "U"));
+            AddConstraint(new CommonConstraintNode());
+        }
+        public nothrow override bool IsIntrinsicConceptNode() const
+        {
+            return true;
+        }
+        public nothrow override bool IsCommonConceptNode() const
+        {
+            return true;
+        }
+    }
+}
