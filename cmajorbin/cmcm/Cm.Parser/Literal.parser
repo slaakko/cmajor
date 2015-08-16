@@ -1,0 +1,73 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    grammar LiteralGrammar
+    {
+        using stdlib.bool;
+        using stdlib.ureal;
+        using stdlib.ulong;
+        using stdlib.hex_literal;
+        using stdlib.char;
+        using stdlib.string;
+        
+        Literal : Node*
+            ::= BooleanLiteral{ value = BooleanLiteral; }
+            |   FloatingLiteral{ value = FloatingLiteral; }
+            |   IntegerLiteral{ value = IntegerLiteral; }
+            |   CharLiteral{ value = CharLiteral; }
+            |   StringLiteral{ value = StringLiteral; }
+            |   NullLiteral{ value = NullLiteral; }
+            ;
+            
+        BooleanLiteral : Node*
+            ::= bool:b{ value = new BooleanLiteralNode(span, b); }
+            ;
+            
+        IntegerLiteral(var int start) : Node*
+            ::= token(
+                    hex_literal{ start = span.Start(); }
+                    (   ('u' | 'U'){ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), hex_literal, true); }
+                    |   empty{ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), hex_literal, false); }
+                    )
+                )
+            |   token(
+                    ulong:u{ start = span.Start(); }
+                    (   ('u' | 'U'){ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), u, true); }
+                    |   empty{ value = CreateIntegerLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), u, false); }
+                    )
+                )
+            ;
+            
+        FloatingLiteral(var int start) : Node*
+            ::= token(
+                    ureal{ start = span.Start(); }
+                    (   ('f' | 'F'){ value = CreateFloatingLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), ureal, true); }
+                    |   empty{ value = CreateFloatingLiteralNode(Span(span.FileIndex(), span.LineNumber(), start, span.End()), ureal, false); }
+                    )
+                )
+            ;
+            
+        CharLiteral : Node*
+            ::= char:c{ value = new CharLiteralNode(span, c); }
+            ;
+            
+        StringLiteral(var string r) : Node*
+            ::= string:s{ value = new StringLiteralNode(span, s); }
+            |   ('@' token('"' ([^"]*){ r = match; } '"')){ value = new StringLiteralNode(span, r); }
+            ;
+            
+        NullLiteral : Node*
+            ::= keyword("null"){ value = new NullLiteralNode(span); }
+            ;
+    }
+}

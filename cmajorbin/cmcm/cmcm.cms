@@ -1,6 +1,8 @@
 solution cmcm;
 project <Cm.Ast/Cm.Ast.cmp>;
+project <Cm.Parser/Cm.Parser.cmp>;
 project <Cm.Ser/Cm.Ser.cmp>;
-activeProject Cm.Ast;
+activeProject Cm.Parser;
 dependency Cm.Ser();
 dependency Cm.Ast(Cm.Ser);
+dependency Cm.Parser(Cm.Ast, Cm.Ser);

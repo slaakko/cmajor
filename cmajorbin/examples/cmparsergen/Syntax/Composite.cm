@@ -99,11 +99,11 @@ namespace Syntax
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new AlternativeParser(context.value, context.fromright);
             }
@@ -183,11 +183,11 @@ namespace Syntax
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new SequenceParser(context.value, context.fromright);
             }
@@ -267,11 +267,11 @@ namespace Syntax
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DifferenceParser(context.value, context.fromright);
             }
@@ -351,11 +351,11 @@ namespace Syntax
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ExclusiveOrParser(context.value, context.fromright);
             }
@@ -435,11 +435,11 @@ namespace Syntax
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new IntersectionParser(context.value, context.fromright);
             }
@@ -519,11 +519,11 @@ namespace Syntax
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ListParser(context.value, context.fromright);
             }
@@ -604,19 +604,19 @@ namespace Syntax
                 primaryNonterminalParser->SetPreCall(PreCall(PrePrimary));
                 primaryNonterminalParser->SetPostCall(PostCall(PostPrimary));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromPrimary;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new KleeneStarParser(context.value);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new PositiveParser(context.value);
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new OptionalParser(context.value);
             }

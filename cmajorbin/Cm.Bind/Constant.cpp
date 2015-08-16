@@ -13,6 +13,7 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/Enumeration.hpp>
 #include <Cm.Bind/Access.hpp>
+#include <Cm.Bind/Type.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
@@ -127,6 +128,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
             }
             type = enumTypeSymbol->GetUnderlyingType();
         }
+        BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, type);
         if (type->Access() < constantSymbol->Access())
         {
             throw Cm::Core::Exception("type of a constant must be at least as accessible as the constant itself", type->GetSpan(), constantSymbol->GetSpan());

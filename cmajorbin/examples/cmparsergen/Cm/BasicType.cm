@@ -120,55 +120,55 @@ namespace Cm
                 ActionParser* a12ActionParser = GetAction("A12");
                 a12ActionParser->SetAction(ParsingAction(A12Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BoolType();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new SByteType();
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ByteType();
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new UShortType();
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ShortType();
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new UIntType();
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new IntType();
             }
-            public throw void A7Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A7Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ULongType();
             }
-            public throw void A8Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A8Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new LongType();
             }
-            public throw void A9Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A9Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new FloatType();
             }
-            public throw void A10Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A10Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DoubleType();
             }
-            public throw void A11Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A11Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new CharType();
             }
-            public throw void A12Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A12Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new VoidType();
             }

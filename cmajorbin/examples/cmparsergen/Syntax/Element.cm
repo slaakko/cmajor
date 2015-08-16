@@ -103,13 +103,13 @@ namespace Syntax
                 NonterminalParser* qualified_idNonterminalParser = GetNonterminal("qualified_id");
                 qualified_idNonterminalParser->SetPostCall(PostCall(Postqualified_id));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 RuleLink* link = new RuleLink(context.fromaliasName, context.grammar, context.fromruleName);
                 link->SetPosition(position);
                 context.grammar->AddRuleLink(link);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 RuleLink* link = new RuleLink(context.grammar, context.fromqualified_id);
                 link->SetPosition(position);
@@ -272,7 +272,7 @@ namespace Syntax
                 NonterminalParser* declaratorNonterminalParser = GetNonterminal("Declarator");
                 declaratorNonterminalParser->SetPostCall(PostCall(PostDeclarator));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.rule->AddLocalVariable(AttrOrVariable(context.fromTypeExpr->ToString(), context.fromDeclarator));
                 delete context.fromTypeExpr;
@@ -338,7 +338,7 @@ namespace Syntax
                 NonterminalParser* declaratorNonterminalParser = GetNonterminal("Declarator");
                 declaratorNonterminalParser->SetPostCall(PostCall(PostDeclarator));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.rule->AddInheritedAttribute(AttrOrVariable(context.fromTypeExpr->ToString(), context.fromDeclarator));
                 delete context.fromTypeExpr;
@@ -402,7 +402,7 @@ namespace Syntax
                 typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
                 typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.rule->SetValueTypeName(context.fromTypeExpr->ToString());
                 delete context.fromTypeExpr;
@@ -455,7 +455,7 @@ namespace Syntax
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -504,7 +504,7 @@ namespace Syntax
                 NonterminalParser* restNonterminalParser = GetNonterminal("rest");
                 restNonterminalParser->SetPostCall(PostCall(Postrest));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -558,7 +558,7 @@ namespace Syntax
                 NonterminalParser* strNonterminalParser = GetNonterminal("str");
                 strNonterminalParser->SetPostCall(PostCall(Poststr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.array->Add(context.fromstr);
             }
@@ -603,10 +603,10 @@ namespace Syntax
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
-            AddRuleLink(new RuleLink("Declarator", this, "Cm.IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("TypeExpr", this, "Cm.ExpressionGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
+            AddRuleLink(new RuleLink("Declarator", this, "Cm.IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
             AddRule(new RuleLinkRule("RuleLink", GetScope(),
                 new AlternativeParser(
                     new ActionParser("A0",

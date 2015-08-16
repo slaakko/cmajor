@@ -440,6 +440,7 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
     bool rebuild, const std::vector<std::string>& compileFileNames, std::vector<std::string>& debugInfoFilePaths)
 {
     bool changed = false;
+    if (syntaxTree.CompileUnits().empty()) return changed;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     boost::filesystem::path outputBase(outputBasePath);
     std::string ext;

@@ -91,11 +91,11 @@ namespace System.Net.Http
                 NonterminalParser* contentNonterminalParser = GetNonterminal("Content");
                 contentNonterminalParser->SetPostCall(PostCall(PostContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = HttpResponse(context.fromStatusLine, context.headerLines, context.fromContent);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.headerLines.Add(context.fromHeaderLine);
             }
@@ -166,11 +166,11 @@ namespace System.Net.Http
                 NonterminalParser* statusCodeNonterminalParser = GetNonterminal("statusCode");
                 statusCodeNonterminalParser->SetPostCall(PostCall(PoststatusCode));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = HttpStatus(context.fromversion, context.fromstatusCode, context.statusText);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.statusText = match;
             }
@@ -229,7 +229,7 @@ namespace System.Net.Http
                 NonterminalParser* minorNonterminalParser = GetNonterminal("minor");
                 minorNonterminalParser->SetPostCall(PostCall(Postminor));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -289,15 +289,15 @@ namespace System.Net.Http
                 ActionParser* a2ActionParser = GetAction("A2");
                 a2ActionParser->SetAction(ParsingAction(A2Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = HeaderLine(context.name, context.val);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.name = match;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.val = match;
             }
@@ -335,7 +335,7 @@ namespace System.Net.Http
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }

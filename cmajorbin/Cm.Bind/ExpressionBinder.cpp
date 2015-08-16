@@ -1037,7 +1037,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
             }
             else
             {
-                throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->Name() + "' must denote a namespace, class type, enumerated type, or a class type object", dotNode.Subject()->GetSpan());
+                throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, enumerated type, or a class type object", dotNode.Subject()->GetSpan());
             }
         }
         Cm::Sym::ContainerScope* containerScope = containerSymbol->GetContainerScope();
@@ -1101,7 +1101,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
                 }
                 else
                 { 
-                    throw Cm::Core::Exception("symbol '" + symbolExpr->SyntaxNode()->Name() + "' does not denote a member variable or a function group", dotNode.GetSpan(), symbolExpr->SyntaxNode()->GetSpan());
+                    throw Cm::Core::Exception("symbol '" + symbolExpr->SyntaxNode()->ToString() + "' does not denote a member variable or a function group", dotNode.GetSpan(), symbolExpr->SyntaxNode()->GetSpan());
                 }
             }
             else
@@ -1111,7 +1111,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         }
         else
         {
-            throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->Name() + "' must denote a namespace, class type, enumerated type, or a class type object", dotNode.Subject()->GetSpan());
+            throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, enumerated type, or a class type object", dotNode.Subject()->GetSpan());
         }
     }
 }

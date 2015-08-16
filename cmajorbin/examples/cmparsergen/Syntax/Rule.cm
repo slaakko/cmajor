@@ -96,7 +96,7 @@ namespace Syntax
                 NonterminalParser* ruleBodyNonterminalParser = GetNonterminal("RuleBody");
                 ruleBodyNonterminalParser->SetPreCall(PreCall(PreRuleBody));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromRuleHeader;
             }
@@ -163,7 +163,7 @@ namespace Syntax
                 NonterminalParser* signatureNonterminalParser = GetNonterminal("Signature");
                 signatureNonterminalParser->SetPreCall(PreCall(PreSignature));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Rule(context.fromname, context.enclosingScope);
                 context.value->SetPosition(position);
@@ -220,7 +220,7 @@ namespace Syntax
                 definitionNonterminalParser->SetPreCall(PreCall(Predefinition));
                 definitionNonterminalParser->SetPostCall(PostCall(Postdefinition));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.rule->SetDefinition(context.fromdefinition);
             }
@@ -249,23 +249,23 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.CompositeGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Syntax.CompositeGrammar.Create(parsingDomain);
+                grammar0 = Syntax.ElementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.CompositeGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Syntax.ElementGrammar.Create(parsingDomain);
+                grammar1 = Syntax.CompositeGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
+            AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
             AddRuleLink(new RuleLink("Signature", this, "ElementGrammar.Signature"));
             AddRule(new RuleRule("Rule", GetScope(),
                 new SequenceParser(

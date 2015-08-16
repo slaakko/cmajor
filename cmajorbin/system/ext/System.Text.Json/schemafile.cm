@@ -89,7 +89,7 @@ namespace System.Text.Json.Schema
                 NonterminalParser* jsonContainerNonterminalParser = GetNonterminal("JsonContainer");
                 jsonContainerNonterminalParser->SetPreCall(PreCall(PreJsonContainer));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new SchemaFileContent();
             }
@@ -175,13 +175,13 @@ namespace System.Text.Json.Schema
                 fieldNonterminalParser->SetPreCall(PreCall(PreField));
                 fieldNonterminalParser->SetPostCall(PostCall(PostField));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.sequence = new Sequence(context.fromseqName);
                 context.sequence->SetTypeName(context.fromseqName);
                 context.content->AddContainer(context.sequence);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.sequence->AddField(context.fromField);
                 context.content->AddField(context.fromField);
@@ -247,13 +247,13 @@ namespace System.Text.Json.Schema
                 fieldNonterminalParser->SetPreCall(PreCall(PreField));
                 fieldNonterminalParser->SetPostCall(PostCall(PostField));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.structure = new Struct(context.fromstructName);
                 context.structure->SetTypeName(context.fromstructName);
                 context.content->AddContainer(context.structure);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.structure->AddField(context.fromField);
                 context.content->AddField(context.fromField);
@@ -335,23 +335,23 @@ namespace System.Text.Json.Schema
                 NonterminalParser* arrayFieldNonterminalParser = GetNonterminal("ArrayField");
                 arrayFieldNonterminalParser->SetPostCall(PostCall(PostArrayField));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromStringField;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromNumberField;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromBooleanField;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromContainerField;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromArrayField;
             }
@@ -439,7 +439,7 @@ namespace System.Text.Json.Schema
                 NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
                 fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new StringField(context.fromfieldName);
             }
@@ -486,7 +486,7 @@ namespace System.Text.Json.Schema
                 NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
                 fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new NumberField(context.fromfieldName);
             }
@@ -533,7 +533,7 @@ namespace System.Text.Json.Schema
                 NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
                 fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BooleanField(context.fromfieldName);
             }
@@ -585,7 +585,7 @@ namespace System.Text.Json.Schema
                 NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
                 fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.content->NewContainerField(context.fromcontainerName, context.fromfieldName);
             }
@@ -644,7 +644,7 @@ namespace System.Text.Json.Schema
                 NonterminalParser* fieldNameNonterminalParser = GetNonterminal("fieldName");
                 fieldNameNonterminalParser->SetPostCall(PostCall(PostfieldName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ArrayFieldBase(context.fromitemType, context.fromfieldName);
             }
@@ -706,19 +706,19 @@ namespace System.Text.Json.Schema
                 NonterminalParser* containerTypeNonterminalParser = GetNonterminal("containerType");
                 containerTypeNonterminalParser->SetPostCall(PostCall(PostcontainerType));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = "System.Text.Json.Schema.StringField";
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = "System.Text.Json.Schema.NumberField";
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = "System.Text.Json.Schema.BooleanField";
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromcontainerType;
             }
@@ -765,7 +765,7 @@ namespace System.Text.Json.Schema
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -797,8 +797,8 @@ namespace System.Text.Json.Schema
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
             AddRule(new SchemaFileRule("SchemaFile", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

@@ -48,7 +48,7 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = ParseInt(match);
             }
@@ -84,13 +84,49 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = ParseUInt(match);
             }
             private class Context
             {
                 public uint value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ulongRule: System.Text.Parsing.Rule
+        {
+            public ulongRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("ulong");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ulong>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = ParseULong(match);
+            }
+            private class Context
+            {
+                public ulong value;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -120,7 +156,7 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = ParseHex(match);
             }
@@ -158,7 +194,7 @@ namespace System.Text.Parsing
                 NonterminalParser* hexNonterminalParser = GetNonterminal("hex");
                 hexNonterminalParser->SetPostCall(PostCall(Posthex));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromhex;
             }
@@ -203,7 +239,7 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = cast<int>(match[0]) - cast<int>('0');
             }
@@ -239,7 +275,7 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = ParseDouble(match);
             }
@@ -275,7 +311,7 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = ParseDouble(match);
             }
@@ -317,11 +353,11 @@ namespace System.Text.Parsing
                 NonterminalParser* iNonterminalParser = GetNonterminal("i");
                 iNonterminalParser->SetPostCall(PostCall(Posti));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromr;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromi;
             }
@@ -377,11 +413,11 @@ namespace System.Text.Parsing
                 ActionParser* a1ActionParser = GetAction("A1");
                 a1ActionParser->SetAction(ParsingAction(A1Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = true;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = false;
             }
@@ -417,7 +453,7 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -457,7 +493,7 @@ namespace System.Text.Parsing
                 NonterminalParser* restNonterminalParser = GetNonterminal("rest");
                 restNonterminalParser->SetPostCall(PostCall(Postrest));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -527,19 +563,19 @@ namespace System.Text.Parsing
                 NonterminalParser* decimalEscapeNonterminalParser = GetNonterminal("decimalEscape");
                 decimalEscapeNonterminalParser->SetPostCall(PostCall(PostdecimalEscape));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = cast<char>(context.fromx);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = cast<char>(64 * context.fromo1 + 8 * context.fromo2 + context.fromo3);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = cast<char>(context.fromdecimalEscape);
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 char c = match[0];
                 switch (c)
@@ -672,11 +708,11 @@ namespace System.Text.Parsing
                 NonterminalParser* escapeNonterminalParser = GetNonterminal("escape");
                 escapeNonterminalParser->SetPostCall(PostCall(Postescape));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match[0];
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromescape;
             }
@@ -725,11 +761,11 @@ namespace System.Text.Parsing
                 NonterminalParser* escapeNonterminalParser = GetNonterminal("escape");
                 escapeNonterminalParser->SetPostCall(PostCall(Postescape));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value.Append(match);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value.Append(context.fromescape);
             }
@@ -809,6 +845,9 @@ namespace System.Text.Parsing
                                 new NonterminalParser("sign", "sign", 0)),
                             new NonterminalParser("digit_sequence", "digit_sequence", 0))))));
             AddRule(new uintRule("uint", GetScope(),
+                new ActionParser("A0",
+                    new NonterminalParser("digit_sequence", "digit_sequence", 0))));
+            AddRule(new ulongRule("ulong", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("digit_sequence", "digit_sequence", 0))));
             AddRule(new hexRule("hex", GetScope(),

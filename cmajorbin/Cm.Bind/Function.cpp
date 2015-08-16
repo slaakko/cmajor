@@ -13,6 +13,7 @@
 #include <Cm.Bind/Parameter.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Evaluator.hpp>
+#include <Cm.Bind/Type.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
@@ -533,12 +534,14 @@ void CheckFunctionReturnPaths(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::Contai
     throw Cm::Core::Exception("not all control paths terminate in return statement or throw statement", functionNode->GetSpan());
 }
 
-void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol)
+void CheckFunctionAccessLevels(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::FunctionSymbol* functionSymbol)
 {
     if (functionSymbol->IsMemberOfTemplateType() || functionSymbol->IsFunctionTemplateSpecialization()) return;
     Cm::Sym::TypeSymbol* returnType = functionSymbol->GetReturnType();
     if (returnType)
     {
+        BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, returnType);
         if (returnType->Access() < functionSymbol->EffectiveAccess())
         {
             throw Cm::Core::Exception("return type of a function must be at least as accessible as the function itself", returnType->GetSpan(), functionSymbol->GetSpan());
@@ -554,6 +557,7 @@ void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol)
     {
         Cm::Sym::ParameterSymbol* param = functionSymbol->Parameters()[i];
         Cm::Sym::TypeSymbol* parameterType = param->GetType();
+        BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, parameterType);
         if (parameterType->Access() < functionSymbol->EffectiveAccess())
         {
             std::string accessStr = Cm::Sym::AccessStr(parameterType->Access());

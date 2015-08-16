@@ -82,7 +82,7 @@ namespace Syntax
                 NonterminalParser* namespaceContentNonterminalParser = GetNonterminal("NamespaceContent");
                 namespaceContentNonterminalParser->SetPreCall(PreCall(PreNamespaceContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx = new ParsingContext();
             }
@@ -130,7 +130,7 @@ namespace Syntax
                 NonterminalParser* namespaceNonterminalParser = GetNonterminal("Namespace");
                 namespaceNonterminalParser->SetPreCall(PreCall(PreNamespace));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.parsingDomain->AddGrammar(context.fromGrammar);
             }
@@ -193,11 +193,11 @@ namespace Syntax
                 NonterminalParser* namespaceContentNonterminalParser = GetNonterminal("NamespaceContent");
                 namespaceContentNonterminalParser->SetPreCall(PreCall(PreNamespaceContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.parsingDomain->BeginNamespace(context.fromns);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.parsingDomain->EndNamespace();
             }
@@ -258,7 +258,7 @@ namespace Syntax
                 NonterminalParser* grammarContentNonterminalParser = GetNonterminal("GrammarContent");
                 grammarContentNonterminalParser->SetPreCall(PreCall(PreGrammarContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Grammar(context.fromgrammarName, context.enclosingScope);
                 context.value->SetNs(context.enclosingScope->Ns());
@@ -315,7 +315,7 @@ namespace Syntax
                 ruleNonterminalParser->SetPreCall(PreCall(PreRule));
                 ruleNonterminalParser->SetPostCall(PostCall(PostRule));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.grammar->AddRule(context.fromRule);
             }
@@ -376,7 +376,7 @@ namespace Syntax
                 NonterminalParser* signatureNonterminalParser = GetNonterminal("Signature");
                 signatureNonterminalParser->SetPreCall(PreCall(PreSignature));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Rule(context.fromruleName, context.enclosingScope);
             }
@@ -421,11 +421,11 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
-            AddRuleLink(new RuleLink("Signature", this, "ElementGrammar.Signature"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Signature", this, "ElementGrammar.Signature"));
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRule(new LibraryFileRule("LibraryFile", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

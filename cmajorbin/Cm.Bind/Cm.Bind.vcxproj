@@ -43,6 +43,7 @@
     <ClInclude Include="StatementBinder.hpp" />
     <ClInclude Include="SynthesizedClassFun.hpp" />
     <ClInclude Include="Template.hpp" />
+    <ClInclude Include="Type.hpp" />
     <ClInclude Include="Typedef.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
     <ClInclude Include="Access.hpp" />
@@ -73,6 +74,7 @@
     <ClCompile Include="StatementBinder.cpp" />
     <ClCompile Include="SynthesizedClassFun.cpp" />
     <ClCompile Include="Template.cpp" />
+    <ClCompile Include="Type.cpp" />
     <ClCompile Include="Typedef.cpp" />
     <ClCompile Include="TypeResolver.cpp" />
     <ClCompile Include="Access.cpp" />

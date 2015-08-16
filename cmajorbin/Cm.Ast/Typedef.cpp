@@ -62,6 +62,11 @@ std::string TypedefNode::Name() const
     return id->Str();
 }
 
+std::string TypedefNode::ToString() const
+{
+    return id->Str();
+}
+
 void TypedefNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);

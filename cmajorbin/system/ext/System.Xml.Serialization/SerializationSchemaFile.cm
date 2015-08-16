@@ -95,11 +95,11 @@ namespace System.Xml.Serialization
                 NonterminalParser* plainNonterminalParser = GetNonterminal("plain");
                 plainNonterminalParser->SetPreCall(PreCall(Preplain));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new SerializationSchemaFile();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->SetNamespace(context.fromQualifiedId);
             }
@@ -152,7 +152,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* structNonterminalParser = GetNonterminal("Struct");
                 structNonterminalParser->SetPostCall(PostCall(PostStruct));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.file->AddStruct(context.fromStruct);
             }
@@ -201,7 +201,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* fieldsNonterminalParser = GetNonterminal("Fields");
                 fieldsNonterminalParser->SetPreCall(PreCall(PreFields));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Struct(context.fromIdentifier, context.fromIdentifier);
             }
@@ -250,7 +250,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* fieldNonterminalParser = GetNonterminal("Field");
                 fieldNonterminalParser->SetPostCall(PostCall(PostField));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.structure->AddField(context.fromField);
             }
@@ -317,27 +317,27 @@ namespace System.Xml.Serialization
                 NonterminalParser* structFieldNonterminalParser = GetNonterminal("StructField");
                 structFieldNonterminalParser->SetPostCall(PostCall(PostStructField));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromArrayField;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromIntField;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDoubleField;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromBoolField;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromStringField;
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromStructField;
             }
@@ -431,7 +431,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Array(context.fromItemType, context.fromIdentifier);
             }
@@ -495,23 +495,23 @@ namespace System.Xml.Serialization
                 NonterminalParser* structTypeNameNonterminalParser = GetNonterminal("structTypeName");
                 structTypeNameNonterminalParser->SetPostCall(PostCall(PoststructTypeName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new IntField("item");
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DoubleField("item");
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BoolField("item");
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new StringField("item");
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Struct(context.fromstructTypeName, "item");
             }
@@ -558,7 +558,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new IntField(context.fromIdentifier);
             }
@@ -605,7 +605,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DoubleField(context.fromIdentifier);
             }
@@ -652,7 +652,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BoolField(context.fromIdentifier);
             }
@@ -699,7 +699,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new StringField(context.fromIdentifier);
             }
@@ -748,7 +748,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* nameNonterminalParser = GetNonterminal("name");
                 nameNonterminalParser->SetPostCall(PostCall(Postname));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Struct(context.fromtypeName, context.fromname);
             }
@@ -804,7 +804,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -853,7 +853,7 @@ namespace System.Xml.Serialization
                 NonterminalParser* nextNonterminalParser = GetNonterminal("next");
                 nextNonterminalParser->SetPostCall(PostCall(Postnext));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -894,8 +894,8 @@ namespace System.Xml.Serialization
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRule(new SchemaFileRule("SchemaFile", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

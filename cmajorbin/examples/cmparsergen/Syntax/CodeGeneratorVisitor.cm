@@ -264,7 +264,7 @@ namespace Syntax
                     for (ActionParser* action : rule->Actions())
                     {
                         formatter.WriteLine("public throw void " + action->MethodName() + 
-                            "(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)");
+                            "(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)");
                         action->SuccessCode()->Print(formatter);
                         CompoundStatement* failureCode = action->FailureCode();
                         if (failureCode != null)

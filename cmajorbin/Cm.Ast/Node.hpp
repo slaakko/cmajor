@@ -98,6 +98,8 @@ public:
     virtual bool IsMemberVariableNode() const { return false; }
     virtual bool IsEnumTypeNode() const { return false; }
     virtual bool IsEnumConstantNode() const { return false; }
+    virtual bool IsDelegateTypeNode() const { return false; }
+    virtual bool IsClassDelegateTypeNode() const { return false; }
     virtual bool IsTypedefNode() const { return false; }
     virtual bool IsTypedefStatementNode() const { return false; }
     virtual bool IsThisNode() const { return false; }

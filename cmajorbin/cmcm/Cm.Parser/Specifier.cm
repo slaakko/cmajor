@@ -1,0 +1,311 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    public class SpecifierGrammar: System.Text.Parsing.Grammar
+    {
+        public static SpecifierGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static SpecifierGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            SpecifierGrammar* grammar = new SpecifierGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private SpecifierGrammar(ParsingDomain* parsingDomain): base("SpecifierGrammar", parsingDomain->GetNamespaceScope("Cm.Parser"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public Specifiers Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            Specifiers result = *cast<ValueObject<Specifiers>*>(value.GetPtr());
+            return result;
+        }
+        private class SpecifiersRule: System.Text.Parsing.Rule
+        {
+            public SpecifiersRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Specifiers");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Specifiers>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* specifierNonterminalParser = GetNonterminal("Specifier");
+                specifierNonterminalParser->SetPostCall(PostCall(PostSpecifier));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = cast<Specifiers>(context.value | context.fromSpecifier);
+            }
+            public throw void PostSpecifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromSpecifier_value = stack.Pop();
+                    context.fromSpecifier = *cast<ValueObject<Specifiers>*>(fromSpecifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Specifiers value;
+                public Specifiers fromSpecifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class SpecifierRule: System.Text.Parsing.Rule
+        {
+            public SpecifierRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Specifiers");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Specifiers>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+                ActionParser* a5ActionParser = GetAction("A5");
+                a5ActionParser->SetAction(ParsingAction(A5Action));
+                ActionParser* a6ActionParser = GetAction("A6");
+                a6ActionParser->SetAction(ParsingAction(A6Action));
+                ActionParser* a7ActionParser = GetAction("A7");
+                a7ActionParser->SetAction(ParsingAction(A7Action));
+                ActionParser* a8ActionParser = GetAction("A8");
+                a8ActionParser->SetAction(ParsingAction(A8Action));
+                ActionParser* a9ActionParser = GetAction("A9");
+                a9ActionParser->SetAction(ParsingAction(A9Action));
+                ActionParser* a10ActionParser = GetAction("A10");
+                a10ActionParser->SetAction(ParsingAction(A10Action));
+                ActionParser* a11ActionParser = GetAction("A11");
+                a11ActionParser->SetAction(ParsingAction(A11Action));
+                ActionParser* a12ActionParser = GetAction("A12");
+                a12ActionParser->SetAction(ParsingAction(A12Action));
+                ActionParser* a13ActionParser = GetAction("A13");
+                a13ActionParser->SetAction(ParsingAction(A13Action));
+                ActionParser* a14ActionParser = GetAction("A14");
+                a14ActionParser->SetAction(ParsingAction(A14Action));
+                ActionParser* a15ActionParser = GetAction("A15");
+                a15ActionParser->SetAction(ParsingAction(A15Action));
+                ActionParser* a16ActionParser = GetAction("A16");
+                a16ActionParser->SetAction(ParsingAction(A16Action));
+                ActionParser* a17ActionParser = GetAction("A17");
+                a17ActionParser->SetAction(ParsingAction(A17Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.public_;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.protected_;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.private_;
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.internal_;
+            }
+            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.static_;
+            }
+            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.virtual_;
+            }
+            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.override_;
+            }
+            public throw void A7Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.abstract_;
+            }
+            public throw void A8Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.suppress_;
+            }
+            public throw void A9Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.default_;
+            }
+            public throw void A10Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.explicit_;
+            }
+            public throw void A11Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.external;
+            }
+            public throw void A12Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.inline_;
+            }
+            public throw void A13Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.cdecl_;
+            }
+            public throw void A14Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.nothrow_;
+            }
+            public throw void A15Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.throw_;
+            }
+            public throw void A16Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.new_;
+            }
+            public throw void A17Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.unit_test;
+            }
+            private class Context
+            {
+                public Specifiers value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+        }
+        public override void CreateRules()
+        {
+            AddRule(new SpecifiersRule("Specifiers", GetScope(),
+                new KleeneStarParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("Specifier", "Specifier", 0)))));
+            AddRule(new SpecifierRule("Specifier", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new AlternativeParser(
+                                            new AlternativeParser(
+                                                new AlternativeParser(
+                                                    new AlternativeParser(
+                                                        new AlternativeParser(
+                                                            new AlternativeParser(
+                                                                new AlternativeParser(
+                                                                    new AlternativeParser(
+                                                                        new AlternativeParser(
+                                                                            new AlternativeParser(
+                                                                                new AlternativeParser(
+                                                                                    new ActionParser("A0",
+                                                                                        new KeywordParser("public")),
+                                                                                    new ActionParser("A1",
+                                                                                        new KeywordParser("protected"))),
+                                                                                new ActionParser("A2",
+                                                                                    new KeywordParser("private"))),
+                                                                            new ActionParser("A3",
+                                                                                new KeywordParser("internal"))),
+                                                                        new ActionParser("A4",
+                                                                            new KeywordParser("static"))),
+                                                                    new ActionParser("A5",
+                                                                        new KeywordParser("virtual"))),
+                                                                new ActionParser("A6",
+                                                                    new KeywordParser("override"))),
+                                                            new ActionParser("A7",
+                                                                new KeywordParser("abstract"))),
+                                                        new ActionParser("A8",
+                                                            new KeywordParser("suppress"))),
+                                                    new ActionParser("A9",
+                                                        new KeywordParser("default"))),
+                                                new ActionParser("A10",
+                                                    new KeywordParser("explicit"))),
+                                            new ActionParser("A11",
+                                                new KeywordParser("extern"))),
+                                        new ActionParser("A12",
+                                            new KeywordParser("inline"))),
+                                    new ActionParser("A13",
+                                        new KeywordParser("cdecl"))),
+                                new ActionParser("A14",
+                                    new KeywordParser("nothrow"))),
+                            new ActionParser("A15",
+                                new KeywordParser("throw"))),
+                        new ActionParser("A16",
+                            new KeywordParser("new"))),
+                    new ActionParser("A17",
+                        new KeywordParser("unit_test")))));
+        }
+    }
+}

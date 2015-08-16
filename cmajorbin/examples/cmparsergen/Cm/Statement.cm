@@ -135,43 +135,43 @@ namespace Cm
                 assertStatementNonterminalParser->SetPreCall(PreCall(PreAssertStatement));
                 assertStatementNonterminalParser->SetPostCall(PostCall(PostAssertStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromControlStatement;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromTypedefStatement;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromSimpleStatement;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromAssignmentStatement;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConstructionStatement;
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDeleteStatement;
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDestroyStatement;
             }
-            public throw void A7Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A7Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromThrowStatement;
             }
-            public throw void A8Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A8Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromTryStatement;
             }
-            public throw void A9Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A9Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromAssertStatement;
             }
@@ -394,47 +394,47 @@ namespace Cm
                 gotoStatementNonterminalParser->SetPreCall(PreCall(PreGotoStatement));
                 gotoStatementNonterminalParser->SetPostCall(PostCall(PostGotoStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromReturnStatement;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConditionalStatement;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromSwitchStatement;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromWhileStatement;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDoStatement;
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromRangeForStatement;
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromForStatement;
             }
-            public throw void A7Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A7Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromCompoundStatement;
             }
-            public throw void A8Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A8Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromBreakStatement;
             }
-            public throw void A9Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A9Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromContinueStatement;
             }
-            public throw void A10Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A10Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromGotoStatement;
             }
@@ -620,7 +620,7 @@ namespace Cm
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ReturnStatement(context.fromExpression);
             }
@@ -682,7 +682,7 @@ namespace Cm
                 elsestatNonterminalParser->SetPreCall(PreCall(Preelsestat));
                 elsestatNonterminalParser->SetPostCall(PostCall(Postelsestat));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ConditionalStatement(context.fromExpression, context.fromthenstat, context.fromelsestat);
             }
@@ -774,15 +774,15 @@ namespace Cm
                 defaultStatementNonterminalParser->SetPreCall(PreCall(PreDefaultStatement));
                 defaultStatementNonterminalParser->SetPostCall(PostCall(PostDefaultStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new SwitchStatement(context.fromExpression);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddCase(context.fromCaseStatement);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->SetDefault(context.fromDefaultStatement);
             }
@@ -879,19 +879,19 @@ namespace Cm
                 statementNonterminalParser->SetPreCall(PreCall(PreStatement));
                 statementNonterminalParser->SetPostCall(PostCall(PostStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new CaseStatement(context.fromCaseExprList);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddStatement(context.fromGotoCaseStatement);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddStatement(context.fromGotoDefaultStatement);
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddStatement(context.fromStatement);
             }
@@ -986,7 +986,7 @@ namespace Cm
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value.Add(context.fromExpression);
             }
@@ -1049,15 +1049,15 @@ namespace Cm
                 statementNonterminalParser->SetPreCall(PreCall(PreStatement));
                 statementNonterminalParser->SetPostCall(PostCall(PostStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DefaultStatement();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddStatement(context.fromGotoCaseStatement);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddStatement(context.fromStatement);
             }
@@ -1126,7 +1126,7 @@ namespace Cm
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new GotoCaseStatement(context.fromExpression);
             }
@@ -1179,7 +1179,7 @@ namespace Cm
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new GotoDefaultStatement();
             }
@@ -1225,7 +1225,7 @@ namespace Cm
                 statementNonterminalParser->SetPreCall(PreCall(PreStatement));
                 statementNonterminalParser->SetPostCall(PostCall(PostStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new WhileStatement(context.fromExpression, context.fromStatement);
             }
@@ -1297,7 +1297,7 @@ namespace Cm
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DoStatement(context.fromStatement, context.fromExpression);
             }
@@ -1380,16 +1380,16 @@ namespace Cm
                 actionNonterminalParser->SetPreCall(PreCall(Preaction));
                 actionNonterminalParser->SetPostCall(PostCall(Postaction));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.holder.Release();
                 context.value->SetContent(context.varTypeHolder.Release(), context.fromvarName, context.fromcontainer, context.fromaction);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.holder.Reset(new RangeForStatement());
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.varTypeHolder.Reset(context.fromvarType);
             }
@@ -1493,11 +1493,11 @@ namespace Cm
                 actionNonterminalParser->SetPreCall(PreCall(Preaction));
                 actionNonterminalParser->SetPostCall(PostCall(Postaction));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->SetContent(context.frominit, context.fromcondition, context.fromincrement, context.fromaction);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ForStatement();
             }
@@ -1599,15 +1599,15 @@ namespace Cm
                 constructionStatementNonterminalParser->SetPreCall(PreCall(PreConstructionStatement));
                 constructionStatementNonterminalParser->SetPostCall(PostCall(PostConstructionStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromAssignmentStatement;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConstructionStatement;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new EmptyStatement();
             }
@@ -1678,11 +1678,11 @@ namespace Cm
                 statementNonterminalParser->SetPreCall(PreCall(PreStatement));
                 statementNonterminalParser->SetPostCall(PostCall(PostStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new CompoundStatement();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddStatement(context.fromStatement);
             }
@@ -1735,7 +1735,7 @@ namespace Cm
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BreakStatement();
             }
@@ -1775,7 +1775,7 @@ namespace Cm
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ContinueStatement();
             }
@@ -1817,7 +1817,7 @@ namespace Cm
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new GotoStatement(context.fromIdentifier);
             }
@@ -1871,7 +1871,7 @@ namespace Cm
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new TypedefStatement(context.fromTypeExpr, context.fromIdentifier);
             }
@@ -1944,15 +1944,15 @@ namespace Cm
                 eNonterminalParser->SetPreCall(PreCall(Pree));
                 eNonterminalParser->SetPostCall(PostCall(Poste));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->BeginParsingSimpleStatement();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new SimpleStatement(context.expr.Release());
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->EndParsingSimpleStatement();
                 context.expr.Reset(context.frome);
@@ -1961,7 +1961,7 @@ namespace Cm
             {
                 context.ctx->EndParsingSimpleStatement();
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new EmptyStatement();
             }
@@ -2027,15 +2027,15 @@ namespace Cm
                 sourceNonterminalParser->SetPreCall(PreCall(Presource));
                 sourceNonterminalParser->SetPostCall(PostCall(Postsource));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new AssignmentStatement(context.targetHolder.Release(), context.fromsource);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->BeginParsingLValue();
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->EndParsingLValue();
                 context.targetHolder.Reset(context.fromtarget);
@@ -2115,7 +2115,7 @@ namespace Cm
                 initializationNonterminalParser->SetPreCall(PreCall(PreInitialization));
                 initializationNonterminalParser->SetPostCall(PostCall(PostInitialization));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ConstructionStatement(context.fromTypeExpr, context.fromIdentifier, context.fromInitialization);
             }
@@ -2198,11 +2198,11 @@ namespace Cm
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromExpressionList;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value.Add(context.fromExpression);
             }
@@ -2271,7 +2271,7 @@ namespace Cm
                 ptrNonterminalParser->SetPreCall(PreCall(Preptr));
                 ptrNonterminalParser->SetPostCall(PostCall(Postptr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DeleteStatement(context.fromptr);
             }
@@ -2327,7 +2327,7 @@ namespace Cm
                 ptrNonterminalParser->SetPreCall(PreCall(Preptr));
                 ptrNonterminalParser->SetPostCall(PostCall(Postptr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DestroyStatement(context.fromptr);
             }
@@ -2383,7 +2383,7 @@ namespace Cm
                 exceptionNonterminalParser->SetPreCall(PreCall(Preexception));
                 exceptionNonterminalParser->SetPostCall(PostCall(Postexception));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ThrowStatement(context.fromexception);
             }
@@ -2442,7 +2442,7 @@ namespace Cm
                 handlersNonterminalParser->SetPreCall(PreCall(Prehandlers));
                 handlersNonterminalParser->SetPostCall(PostCall(Posthandlers));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new TryStatement(context.fromtryBlock, context.fromhandlers);
             }
@@ -2555,7 +2555,7 @@ namespace Cm
                 catchBlockNonterminalParser->SetPreCall(PreCall(PrecatchBlock));
                 catchBlockNonterminalParser->SetPostCall(PostCall(PostcatchBlock));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.handlers->Add(new System.Text.Parsing.CmObjectModel.ExceptionHandler(context.fromexceptionType, context.fromexception, context.fromcatchBlock));
             }
@@ -2633,7 +2633,7 @@ namespace Cm
                 exprNonterminalParser->SetPreCall(PreCall(Preexpr));
                 exprNonterminalParser->SetPostCall(PostCall(Postexpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new AssertStatement(context.fromexpr);
             }
@@ -2677,8 +2677,8 @@ namespace Cm
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
             AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+            AddRuleLink(new RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
             AddRuleLink(new RuleLink("TypeExpr", this, "ExpressionGrammar.TypeExpr"));
             AddRule(new StatementRule("Statement", GetScope(),
                 new AlternativeParser(

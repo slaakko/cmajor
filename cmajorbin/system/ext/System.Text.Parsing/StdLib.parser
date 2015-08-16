@@ -52,6 +52,12 @@ namespace System.Text.Parsing
                                                 value = ParseUInt(match);
                                             }
                                             ;
+                                            
+        ulong: ulong                        ::= digit_sequence
+                                            {
+                                                value = ParseULong(match);
+                                            }
+                                            ;
 
         hex: ulong                          ::= token(hexdigit+)
                                             {

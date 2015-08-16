@@ -44,7 +44,7 @@
             |   "&&"{ node->AddRvalueRef(); }
             |    '&'{ node->AddReference(); }
             |    '*'{ node->AddPointer(); }
-            |   '['{ node->AddArray(); } Expression(ctx):dim{node->AddArrayDimensionNode(dim); } ']'
+            |   '['{ node->AddArray(); } Expression(ctx):dim{ node->AddArrayDimensionNode(dim); } ']'
             )*
             ;
 

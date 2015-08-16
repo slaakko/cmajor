@@ -86,7 +86,7 @@ namespace Cm
                 NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
                 qualifiedIdNonterminalParser->SetPostCall(PostCall(PostQualifiedId));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new NamespaceImport(context.fromQualifiedId);
             }
@@ -135,7 +135,7 @@ namespace Cm
                 NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
                 qualifiedIdNonterminalParser->SetPostCall(PostCall(PostQualifiedId));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Alias(context.fromIdentifier, context.fromQualifiedId);
             }
