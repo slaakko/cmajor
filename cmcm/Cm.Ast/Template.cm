@@ -63,6 +63,10 @@ namespace Cm.Ast
         {
             visitor.Visit(*this);
         }
+        public override nothrow string Name() const
+        {
+            return id->Str();
+        }
         public override nothrow string ToString() const
         {
             string s = id->Str();
@@ -126,6 +130,12 @@ namespace Cm.Ast
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+        }
+        public override nothrow string Name()
+        {
+            string s = subject->ToString();
+            s.Append('<').Append(templateArguments.ToString()).Append('>');
+            return s;
         }
         public override nothrow string ToString() const
         {

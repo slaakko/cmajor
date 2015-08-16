@@ -1,0 +1,333 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    public class TemplateGrammar: System.Text.Parsing.Grammar
+    {
+        public static TemplateGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static TemplateGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            TemplateGrammar* grammar = new TemplateGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private TemplateGrammar(ParsingDomain* parsingDomain): base("TemplateGrammar", parsingDomain->GetNamespaceScope("Cm.Parser"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public Node* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            Node* result = *cast<ValueObject<Node*>*>(value.GetPtr());
+            return result;
+        }
+        private class TemplateIdRule: System.Text.Parsing.Rule
+        {
+            public TemplateIdRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Node*");
+                AddLocalVariable(AttrOrVariable("UniquePtr<TemplateIdNode>", "templateId"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Node*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                a1ActionParser->SetFailureAction(FailureAction(A1ActionFail));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                NonterminalParser* subjectNonterminalParser = GetNonterminal("subject");
+                subjectNonterminalParser->SetPostCall(PostCall(Postsubject));
+                NonterminalParser* templateArgNonterminalParser = GetNonterminal("templateArg");
+                templateArgNonterminalParser->SetPreCall(PreCall(PretemplateArg));
+                templateArgNonterminalParser->SetPostCall(PostCall(PosttemplateArg));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.ctx->BeginParsingTemplateId();
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.ctx->EndParsingTemplateId();
+                context.value = context.templateId.Release();
+                context.value->GetSpan().SetEnd(span.End());
+            }
+            public throw void A1ActionFail()
+            {
+                context.ctx->EndParsingTemplateId();
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.templateId.Reset(new TemplateIdNode(span, context.fromsubject));
+            }
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.templateId->AddTemplateArgument(context.fromtemplateArg);
+            }
+            public throw void Postsubject(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromsubject_value = stack.Pop();
+                    context.fromsubject = *cast<ValueObject<IdentifierNode*>*>(fromsubject_value.GetPtr());
+                }
+            }
+            public throw void PretemplateArg(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PosttemplateArg(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromtemplateArg_value = stack.Pop();
+                    context.fromtemplateArg = *cast<ValueObject<Node*>*>(fromtemplateArg_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Node* value;
+                public UniquePtr<TemplateIdNode> templateId;
+                public IdentifierNode* fromsubject;
+                public Node* fromtemplateArg;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class TemplateParameterRule: System.Text.Parsing.Rule
+        {
+            public TemplateParameterRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("TemplateParameterNode*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<TemplateParameterNode*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+                NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
+                typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new TemplateParameterNode(span, context.fromIdentifier, context.fromTypeExpr);
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<IdentifierNode*>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            public throw void PreTypeExpr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTypeExpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTypeExpr_value = stack.Pop();
+                    context.fromTypeExpr = *cast<ValueObject<Node*>*>(fromTypeExpr_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public TemplateParameterNode* value;
+                public IdentifierNode* fromIdentifier;
+                public Node* fromTypeExpr;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class TemplateParameterListRule: System.Text.Parsing.Rule
+        {
+            public TemplateParameterListRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                AddInheritedAttribute(AttrOrVariable("Node*", "owner"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> owner_value = stack.Pop();
+                context.owner = *cast<ValueObject<Node*>*>(owner_value.GetPtr());
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* templateParameterNonterminalParser = GetNonterminal("TemplateParameter");
+                templateParameterNonterminalParser->SetPreCall(PreCall(PreTemplateParameter));
+                templateParameterNonterminalParser->SetPostCall(PostCall(PostTemplateParameter));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.owner->AddTemplateParameter(context.fromTemplateParameter);
+            }
+            public throw void PreTemplateParameter(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTemplateParameter(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTemplateParameter_value = stack.Pop();
+                    context.fromTemplateParameter = *cast<ValueObject<TemplateParameterNode*>*>(fromTemplateParameter_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Node* owner;
+                public TemplateParameterNode* fromTemplateParameter;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar1);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRule(new TemplateIdRule("TemplateId", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new EmptyParser()),
+                    new ActionParser("A1",
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new ActionParser("A2",
+                                        new NonterminalParser("subject", "QualifiedId", 0)),
+                                    new CharParser('<')),
+                                new ListParser(
+                                    new ActionParser("A3",
+                                        new NonterminalParser("templateArg", "TypeExpr", 1)),
+                                    new CharParser(','))),
+                            new CharParser('>'))))));
+            AddRule(new TemplateParameterRule("TemplateParameter", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new NonterminalParser("Identifier", "Identifier", 0),
+                        new OptionalParser(
+                            new SequenceParser(
+                                new CharParser('='),
+                                new NonterminalParser("TypeExpr", "TypeExpr", 1)))))));
+            AddRule(new TemplateParameterListRule("TemplateParameterList", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('<'),
+                        new ListParser(
+                            new ActionParser("A0",
+                                new NonterminalParser("TemplateParameter", "TemplateParameter", 1)),
+                            new CharParser(','))),
+                    new CharParser('>'))));
+        }
+    }
+}

@@ -77,12 +77,11 @@ namespace Cm.Ast
         {
             ThrowMemFunNotApplicable();
         }
-        public virtual string Name() const
+        public virtual nothrow string Name() const
         {
-            ThrowMemFunNotApplicable();
-            return string();
+            return ToString();
         }
-        public string FullName() const
+        public nothrow string FullName() const
         {
             string parentFullName;
             if (parent != null)

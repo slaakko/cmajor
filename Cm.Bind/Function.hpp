@@ -25,7 +25,8 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
 void CheckFunctionReturnPaths(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Ast::FunctionNode* functionNode);
 
-void CheckFunctionAccessLevels(Cm::Sym::FunctionSymbol* functionSymbol);
+void CheckFunctionAccessLevels(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::FunctionSymbol* functionSymbol);
 
 } } // namespace Cm::Bind
 

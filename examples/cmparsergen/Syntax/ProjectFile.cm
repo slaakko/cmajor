@@ -8,7 +8,7 @@ namespace Syntax
     {
         public static ProjectFileGrammar* Create()
         {
-            return Create(new ParsingDomain()); 
+            return Create(new ParsingDomain());
         }
         public static ProjectFileGrammar* Create(ParsingDomain* parsingDomain)
         {
@@ -86,7 +86,7 @@ namespace Syntax
                 NonterminalParser* projectFileContentNonterminalParser = GetNonterminal("ProjectFileContent");
                 projectFileContentNonterminalParser->SetPreCall(PreCall(PreProjectFileContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Project(context.fromprojectName, fileName);
             }
@@ -139,11 +139,11 @@ namespace Syntax
                 NonterminalParser* referenceNonterminalParser = GetNonterminal("Reference");
                 referenceNonterminalParser->SetPostCall(PostCall(PostReference));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.project->AddSourceFile(context.fromSource);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.project->AddReferenceFile(context.fromReference);
             }
@@ -199,7 +199,7 @@ namespace Syntax
                 NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
                 filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromFilePath;
             }
@@ -246,7 +246,7 @@ namespace Syntax
                 NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
                 filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromFilePath;
             }
@@ -291,7 +291,7 @@ namespace Syntax
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -314,8 +314,8 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRule(new ProjectFileRule("ProjectFile", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

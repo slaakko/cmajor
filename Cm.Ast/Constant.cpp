@@ -67,6 +67,11 @@ std::string ConstantNode::Name() const
     return id->Str(); 
 }
 
+std::string ConstantNode::ToString() const
+{ 
+    return id->Str(); 
+}
+
 void ConstantNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);

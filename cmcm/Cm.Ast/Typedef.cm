@@ -52,7 +52,11 @@ namespace Cm.Ast
         {
             visitor.Visit(*this);
         }
-        public override string Name() const
+        public override nothrow string Name() const
+        {
+            return id->Str();
+        }
+        public override nothrow string ToString() const
         {
             return id->Str();
         }

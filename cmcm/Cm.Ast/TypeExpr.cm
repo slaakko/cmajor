@@ -335,6 +335,10 @@ namespace Cm.Ast
         {
             visitor.Visit(*this);
         }
+        public override nothrow string Name() const
+        {
+            return MakeDerivedTypeName(derivations, baseTypeExprNode->ToString(), arrayDimensionNodes);
+        }
         public override nothrow string ToString() const
         {
             return MakeDerivedTypeName(derivations, baseTypeExprNode->ToString(), arrayDimensionNodes);
@@ -379,5 +383,16 @@ namespace Cm.Ast
         private DerivationList derivations;
         private UniquePtr<Node> baseTypeExprNode;
         private List<UniquePtr<Node>> arrayDimensionNodes;
+    }
+    
+    public Node* MakeTypeExprNode(DerivedTypeExprNode* derivedTypeExprNode)
+    {
+        if (derivedTypeExprNode->Derivations().Count() == 0 && derivedTypeExprNode->NumArrayDimensions() == 0)
+        {
+            Node* baseTypeExprNode = derivedTypeExprNode->ReleaseBaseTypeExprNode();
+            delete derivedTypeExprNode;
+            return baseTypeExprNode;
+        }
+        return derivedTypeExprNode;
     }
 }

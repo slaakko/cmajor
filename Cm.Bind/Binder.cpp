@@ -208,7 +208,7 @@ void Binder::EndVisit(Cm::Ast::ConstructorNode& constructorNode)
     }
     else if ((constructorNode.GetSpecifiers() & Cm::Ast::Specifiers::suppress) == Cm::Ast::Specifiers::none)
     {
-        CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+        CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol());
         if (boundFunction->Body())
         {
             GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
@@ -243,7 +243,7 @@ void Binder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 {
     if ((destructorNode.GetSpecifiers() & Cm::Ast::Specifiers::default_) == Cm::Ast::Specifiers::none)
     {
-        CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+        CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol());
         if (boundFunction->Body())
         {
             GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
@@ -307,7 +307,7 @@ void Binder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
         {
             CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), 
                 boundFunction->GetFunctionSymbol(), &memberFunctionNode);
-            CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+            CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol());
             GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
             if (boundFunction->GetFunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor())
             {
@@ -330,7 +330,7 @@ void Binder::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
 {
     CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol(), 
         &conversionFunctionNode);
-    CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+    CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol());
     if (boundFunction->Body())
     {
         GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
@@ -384,7 +384,7 @@ void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
     {
         CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol(), 
             &functionNode);
-        CheckFunctionAccessLevels(boundFunction->GetFunctionSymbol());
+        CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol());
         GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
         boundCompileUnit.AddBoundNode(boundFunction.release());
         EndContainerScope();

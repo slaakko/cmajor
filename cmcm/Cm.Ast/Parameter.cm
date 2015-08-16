@@ -66,6 +66,10 @@ namespace Cm.Ast
         {
             visitor.Visit(*this);
         }
+        public override nothrow string Name() const
+        {
+            return id->Str();
+        }
         public override nothrow string ToString() const
         {
             string s = typeExpr->ToString();

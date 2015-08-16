@@ -19,11 +19,17 @@ namespace Cm { namespace Bind {
 Cm::Sym::DelegateTypeSymbol* BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::DelegateNode* delegateNode);
 
+void BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::DelegateNode* delegateNode, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol);
+
 void CompleteBindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol, Cm::Ast::DelegateNode* delegateNode);
 
 Cm::Sym::ClassDelegateTypeSymbol* BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, 
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ClassDelegateNode* classDelegateNode);
+
+void BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope,
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ClassDelegateNode* classDelegateNode, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol);
 
 void CompleBindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol, Cm::Ast::ClassDelegateNode* classDelegateNode);

@@ -82,11 +82,11 @@ namespace System.Xml
                 NonterminalParser* elementNonterminalParser = GetNonterminal("Element");
                 elementNonterminalParser->SetPreCall(PreCall(PreElement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.handler->StartDocument();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.handler->EndDocument();
             }
@@ -136,15 +136,15 @@ namespace System.Xml
                 NonterminalParser* eTagNonterminalParser = GetNonterminal("ETag");
                 eTagNonterminalParser->SetPostCall(PostCall(PostETag));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.handler->EmptyElement(context.fromEmptyElemTag);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.handler->StartTag(context.fromSTag);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.handler->EndTag(context.fromETag);
             }
@@ -213,7 +213,7 @@ namespace System.Xml
                 NonterminalParser* nameNonterminalParser = GetNonterminal("Name");
                 nameNonterminalParser->SetPostCall(PostCall(PostName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromName;
             }
@@ -260,7 +260,7 @@ namespace System.Xml
                 NonterminalParser* nameNonterminalParser = GetNonterminal("Name");
                 nameNonterminalParser->SetPostCall(PostCall(PostName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromName;
             }
@@ -307,7 +307,7 @@ namespace System.Xml
                 NonterminalParser* nameNonterminalParser = GetNonterminal("Name");
                 nameNonterminalParser->SetPostCall(PostCall(PostName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromName;
             }
@@ -352,7 +352,7 @@ namespace System.Xml
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }
@@ -438,7 +438,7 @@ namespace System.Xml
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 if (!match.IsEmpty()) context.handler->CharData(match);
             }
@@ -478,11 +478,11 @@ namespace System.Xml
                 NonterminalParser* charRefNonterminalParser = GetNonterminal("CharRef");
                 charRefNonterminalParser->SetPostCall(PostCall(PostCharRef));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.handler->EntityRef(context.fromEntityRef);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.handler->CharRef(context.fromCharRef);
             }
@@ -538,7 +538,7 @@ namespace System.Xml
                 NonterminalParser* nameNonterminalParser = GetNonterminal("Name");
                 nameNonterminalParser->SetPostCall(PostCall(PostName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromName;
             }
@@ -583,7 +583,7 @@ namespace System.Xml
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = match;
             }

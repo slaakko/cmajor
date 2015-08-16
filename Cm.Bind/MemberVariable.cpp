@@ -11,6 +11,7 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Access.hpp>
+#include <Cm.Bind/Type.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
@@ -102,6 +103,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, memberVariableNode->TypeExpr());
     if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs))
     {
+        BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, type);
         if (type->Access() < memberVariableSymbol->Access())
         {
             throw Cm::Core::Exception("type of a member variable must be at least as accessible as the member variable itself", type->GetSpan(), memberVariableSymbol->GetSpan());

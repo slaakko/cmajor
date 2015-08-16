@@ -276,7 +276,7 @@ void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
     lookupId = lookupIdStack.Pop();
     if (!type)
     {
-        throw Cm::Core::ConceptCheckException("symbol '" + dotNode.Subject()->Name() + "' does not denot a type", dotNode.Subject()->GetSpan());
+        throw Cm::Core::ConceptCheckException("symbol '" + dotNode.Subject()->ToString() + "' does not denot a type", dotNode.Subject()->GetSpan());
     }
     Cm::Sym::Scope* typeContainerScope = type->GetContainerScope();
     const std::string& memberName = dotNode.MemberId()->Str();
@@ -445,7 +445,7 @@ void ConstraintChecker::Visit(Cm::Ast::MultiParamConstraintNode& multiParamConst
             }
             else
             {
-                throw Cm::Core::ConceptCheckException("'" + typeExprNode->Name() + "' is not bound to a type", typeExprNode->GetSpan());
+                throw Cm::Core::ConceptCheckException("'" + typeExprNode->ToString() + "' is not bound to a type", typeExprNode->GetSpan());
             }
         }
         Cm::Sym::TypeId conceptId = Cm::Sym::ComputeInstantiatedConceptSymbolTypeId(conceptSymbol, typeArguments);
@@ -1329,7 +1329,7 @@ void ConstraintBinder::Visit(Cm::Ast::MultiParamConstraintNode& multiParamConstr
             }
             else
             {
-                throw Cm::Core::ConceptCheckException("'" + typeExprNode->Name() + "' is not bound to a type", typeExprNode->GetSpan());
+                throw Cm::Core::ConceptCheckException("'" + typeExprNode->ToString() + "' is not bound to a type", typeExprNode->GetSpan());
             }
         }
         constraintStack.Push(new Cm::BoundTree::BoundMultiParamConstraint(&multiParamConstraintNode, typeArguments, boundConcept));

@@ -119,27 +119,27 @@ namespace Syntax
                 actionNonterminalParser->SetPreCall(PreCall(PreAction));
                 actionNonterminalParser->SetPostCall(PostCall(PostAction));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromRuleCall;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromPrimitive;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromGrouping;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromToken;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromExpectation;
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromAction;
             }
@@ -266,7 +266,7 @@ namespace Syntax
                 NonterminalParser* aliasNonterminalParser = GetNonterminal("Alias");
                 aliasNonterminalParser->SetPostCall(PostCall(PostAlias));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 string ruleName;
                 if (!context.fromntWithArgs.IsEmpty())
@@ -360,7 +360,7 @@ namespace Syntax
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromIdentifier;
             }
@@ -407,7 +407,7 @@ namespace Syntax
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromIdentifier;
             }
@@ -461,7 +461,7 @@ namespace Syntax
                 alternativeNonterminalParser->SetPreCall(PreCall(PreAlternative));
                 alternativeNonterminalParser->SetPostCall(PostCall(PostAlternative));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromAlternative;
             }
@@ -522,7 +522,7 @@ namespace Syntax
                 alternativeNonterminalParser->SetPreCall(PreCall(PreAlternative));
                 alternativeNonterminalParser->SetPostCall(PostCall(PostAlternative));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new TokenParser(context.fromAlternative);
             }
@@ -577,7 +577,7 @@ namespace Syntax
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ExpectationParser(context.child);
             }
@@ -626,7 +626,7 @@ namespace Syntax
                 failureActionNonterminalParser->SetPreCall(PreCall(PrefailureAction));
                 failureActionNonterminalParser->SetPostCall(PostCall(PostfailureAction));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ActionParser("", context.fromaction, context.fromfailureAction, context.child);
             }
@@ -668,10 +668,10 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.CompositeGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.PrimitiveGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Syntax.CompositeGrammar.Create(parsingDomain);
+                grammar0 = Syntax.PrimitiveGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
             Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
@@ -680,16 +680,16 @@ namespace Syntax
                 grammar1 = Syntax.ElementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Syntax.PrimitiveGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.StatementGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Syntax.PrimitiveGrammar.Create(parsingDomain);
+                grammar2 = Cm.StatementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.StatementGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Syntax.CompositeGrammar");
             if (grammar3 == null)
             {
-                grammar3 = Cm.StatementGrammar.Create(parsingDomain);
+                grammar3 = Syntax.CompositeGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
             Grammar* grammar4 = parsingDomain->GetGrammar("Cm.ExpressionGrammar");
@@ -702,10 +702,10 @@ namespace Syntax
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("ExpressionList", this, "Cm.ExpressionGrammar.ExpressionList"));
-            AddRuleLink(new RuleLink("Primitive", this, "PrimitiveGrammar.Primitive"));
             AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
-            AddRuleLink(new RuleLink("CompoundStatement", this, "Cm.StatementGrammar.CompoundStatement"));
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
+            AddRuleLink(new RuleLink("CompoundStatement", this, "Cm.StatementGrammar.CompoundStatement"));
+            AddRuleLink(new RuleLink("Primitive", this, "PrimitiveGrammar.Primitive"));
             AddRule(new PrimaryRule("Primary", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

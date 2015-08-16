@@ -78,6 +78,11 @@ std::string DelegateNode::Name() const
     return id->Str(); 
 }
 
+std::string DelegateNode::ToString() const 
+{ 
+    return id->Str(); 
+}
+
 void DelegateNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);

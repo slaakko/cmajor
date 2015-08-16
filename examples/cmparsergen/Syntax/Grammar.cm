@@ -95,7 +95,7 @@ namespace Syntax
                 NonterminalParser* grammarContentNonterminalParser = GetNonterminal("GrammarContent");
                 grammarContentNonterminalParser->SetPreCall(PreCall(PreGrammarContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Grammar(context.fromname, context.enclosingScope);
                 context.value->SetPosition(position);
@@ -159,7 +159,7 @@ namespace Syntax
                 ruleNonterminalParser->SetPreCall(PreCall(PreRule));
                 ruleNonterminalParser->SetPostCall(PostCall(PostRule));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.grammar->AddRule(context.fromRule);
             }
@@ -222,7 +222,7 @@ namespace Syntax
                 NonterminalParser* strtNonterminalParser = GetNonterminal("strt");
                 strtNonterminalParser->SetPostCall(PostCall(Poststrt));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.grammar->SetStartRuleName(context.fromstrt);
             }
@@ -267,7 +267,7 @@ namespace Syntax
                 NonterminalParser* skpNonterminalParser = GetNonterminal("skp");
                 skpNonterminalParser->SetPostCall(PostCall(Postskp));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
                 context.grammar->SetSkipRuleName(context.fromskp);
             }
@@ -306,8 +306,8 @@ namespace Syntax
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
-            AddRuleLink(new RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
             AddRuleLink(new RuleLink("Rule", this, "RuleGrammar.Rule"));
+            AddRuleLink(new RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
             AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
             AddRule(new GrammarRule("Grammar", GetScope(),
                 new SequenceParser(

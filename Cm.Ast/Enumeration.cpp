@@ -100,6 +100,11 @@ std::string EnumTypeNode::Name() const
     return id->Str(); 
 }
 
+std::string EnumTypeNode::ToString() const
+{
+    return id->Str();
+}
+
 void EnumTypeNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);

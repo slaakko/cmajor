@@ -21,6 +21,7 @@ class DelegateNode : public Node
 public:
     DelegateNode(const Span& span_);
     DelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_);
+    bool IsDelegateTypeNode() const override { return true; }
     NodeType GetNodeType() const override { return NodeType::delegateNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void AddParameter(ParameterNode* parameter) override;
@@ -28,6 +29,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     std::string Name() const override;
+    std::string ToString() const override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }
@@ -45,6 +47,7 @@ class ClassDelegateNode : public Node
 public:
     ClassDelegateNode(const Span& span_);
     ClassDelegateNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, IdentifierNode* id_);
+    bool IsClassDelegateTypeNode() const override { return true; }
     NodeType GetNodeType() const override { return NodeType::classDelegateNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void AddParameter(ParameterNode* parameter) override;

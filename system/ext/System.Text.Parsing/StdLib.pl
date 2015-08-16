@@ -12,6 +12,7 @@ namespace System.Text.Parsing
         sign;
         int: int;
         uint: uint;
+        ulong: ulong;
         hex: ulong;
         hex_literal: ulong;
         octaldigit: int;

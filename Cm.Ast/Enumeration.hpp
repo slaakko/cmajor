@@ -32,6 +32,7 @@ public:
     void Write(Writer& writer) override;
     void Print(CodeFormatter& formatter) override;
     std::string Name() const override;
+    std::string ToString() const;
     Specifiers GetSpecifiers() const { return specifiers; }
     IdentifierNode* Id() const { return id.get(); }
     void Accept(Visitor& visitor) override;

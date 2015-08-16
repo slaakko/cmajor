@@ -816,6 +816,10 @@ namespace Cm.Ast
             s.Append('.').Append(memberId->ToString());
             return s;
         }
+        public override nothrow string Name() const
+        {
+            return ToString();
+        }
         public nothrow inline Node* Subject() const
         {
             return Child();
