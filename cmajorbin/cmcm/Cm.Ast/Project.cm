@@ -1,0 +1,435 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public enum SourceFileType
+    {
+        cm, asm, c, text
+    }
+    
+    public enum Target
+    {
+        none, program, library
+    }
+    
+    public nothrow string TargetStr(Target target)
+    {
+        switch (target)
+        {
+            case Target.program: return "program";
+            case Target.library: return "library";
+        }
+        return "none";
+    }
+    
+    public class Properties
+    {
+        public void AddProperty(const string& name, const string& value)
+        {
+            propertyMap[name] = value;
+        }
+        public nothrow string GetProperty(const string& name) const
+        {
+            Map<string, string>.ConstIterator i = propertyMap.CFind(name);
+            if (i != propertyMap.CEnd())
+            {
+                return i->second;
+            }
+            return string();
+        }
+        private Map<string, string> propertyMap;
+    }
+    
+    public abstract class ProjectDeclaration
+    {
+        public nothrow ProjectDeclaration(const Span& span_, const Properties& properties_) : span(span_), properties(properties_)
+        {
+        }
+        public virtual nothrow ~ProjectDeclaration()
+        {
+        }
+        public nothrow virtual bool IsSourceFileDeclaration() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsTargetDeclaration() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsAssemblyFileDeclaration() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsExecutableFileDeclaration() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsReferenceFileDeclaration() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsCLibraryDeclaration() const
+        {
+            return false;
+        }
+        public nothrow const Span& GetSpan() const
+        {
+            return span;
+        }
+        public nothrow const Properties& GetProperties() const
+        {
+            return properties;
+        }
+        private Span span;
+        private Properties properties;
+    }
+    
+    public class SourceFileDeclaration : ProjectDeclaration
+    {
+        public SourceFileDeclaration(const Span& span_, SourceFileType fileType_, const string& filePath_, const string& basePath_, const Properties& properties_) :
+            base(span_, properties_), fileType(fileType_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
+        {
+        }
+        public nothrow inline SourceFileType FileType() const
+        {
+            return fileType;
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow override bool IsSourceFileDeclaration() const
+        {
+            return true;
+        }
+        private SourceFileType fileType;
+        private string filePath;
+    }
+    
+    public class ReferenceFileDeclaration : ProjectDeclaration
+    {
+        public ReferenceFileDeclaration(const Span& span_, const string& filePath_, const string& basePath_, const Properties& properties_) :
+            base(span_, properties_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
+        {
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow override bool IsReferenceFileDeclaration() const
+        {
+            return true;
+        }
+        private string filePath;
+    }
+    
+    public class AssemblyFileDeclaration : ProjectDeclaration
+    {
+        public AssemblyFileDeclaration(const Span& span_, const string& filePath_, const string& basePath_, const Properties& properties_) :
+            base(span_, properties_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
+        {
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow override bool IsAssemblyFileDeclaration() const
+        {
+            return true;
+        }
+        private string filePath;
+    }
+
+    public class ExecutableFileDeclaration : ProjectDeclaration
+    {
+        public ExecutableFileDeclaration(const Span& span_, const string& filePath_, const string& basePath_, const Properties& properties_) :
+            base(span_, properties_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
+        {
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow override bool IsExecutableFileDeclaration() const
+        {
+            return true;
+        }
+        private string filePath;
+    }
+
+    public class CLibraryDeclaration : ProjectDeclaration
+    {
+        public CLibraryDeclaration(const Span& span_, const string& filePath_, const Properties& properties_) : base(span_, properties_), filePath(filePath_)
+        {
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow override bool IsCLibraryDeclaration() const
+        {
+            return true;
+        }
+        private string filePath;
+    }
+    
+    public class TargetDeclaration : ProjectDeclaration
+    {
+        public TargetDeclaration(const Span& span_, Target target_) : base(span_, Properties()), target(target_)
+        {
+        }
+        public nothrow inline Target GetTarget() const
+        {
+            return target;
+        }
+        private Target target;
+    }
+    
+    public class Project
+    {
+        public Project(const string& name_, const string& filePath_, const string& config_, const string& backend_, const string& os_) :
+            name(name_), filePath(filePath_), basePath(Path.GetParent(filePath)), config(config_), backend(backend_), os(os_), target(Target.none)
+        {
+            outputBasePath = Path.Combine(Path.Combine(basePath, config), backend);
+        }
+        public void AddDeclaration(ProjectDeclaration* declaration)
+        {
+            declarations.Add(UniquePtr<ProjectDeclaration>(declaration));
+        }
+        public nothrow inline const string& Name() const
+        {
+            return name;
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow inline const string& BasePath() const
+        {
+            return basePath;
+        }
+        public nothrow inline const string& OutputBasePath() const
+        {
+            return outputBasePath;
+        }
+        public nothrow inline Target GetTarget() const
+        {
+            return target;
+        }
+        public nothrow inline const List<string>& SourceFilePaths() const
+        {
+            return sourceFilePaths;
+        }
+        public nothrow inline const List<string>& AsmSourceFilePaths() const
+        {
+            return asmSourceFilePaths;
+        }        
+        public nothrow inline const List<string>& CSourceFilePaths() const
+        {
+            return cSourceFilePaths;
+        }        
+        public nothrow inline const List<string>& TextFilePaths() const
+        {
+            return textFilePaths;
+        }    
+        public nothrow inline const List<string>& ReferenceFielPaths() const
+        {
+            return referenceFilePaths;
+        }
+        public nothrow inline const List<string>& CLibraryFilePaths() const
+        {
+            return cLibraryFilePaths;
+        }        
+        public nothrow inline const string& AssemblyFilePath() const
+        {
+            return assemblyFilePath;
+        }        
+        public nothrow inline const string& LibraryFilePath() const
+        {
+            return libraryFilePath;
+        }
+        public nothrow inline const string& ExecutableFilePath() const
+        {
+            return executableFilePath;
+        }
+        public void ResolveDeclarations()
+        {
+            for (const UniquePtr<ProjectDeclaration>& declaration : declarations)
+            {
+                const Properties& properties = declaration->GetProperties();
+                string declBackend = properties.GetProperty("backend");
+                if (!declBackend.IsEmpty())
+                {
+                    if (declBackend != backend)
+                    {
+                        continue;
+                    }
+                }
+                string declOs = properties.GetProperty("os");
+                if (!declOs.IsEmpty())
+                {
+                    if (declOs != os)
+                    {
+                        continue;
+                    }
+                }
+                if (declaration->IsSourceFileDeclaration())
+                {
+                    SourceFileDeclaration* sfd = cast<SourceFileDeclaration*>(declaration.GetPtr());
+                    switch (sfd->FileType())
+                    {
+                        case SourceFileType.cm:
+                        {
+                            for (const string& prev : sourceFilePaths)
+                            {
+                                if (prev == sfd->FilePath())
+                                {
+                                    throw Exception("source file '" + prev + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(sfd->GetSpan().LineNumber()) + ")");
+                                }
+                            }
+                            sourceFilePaths.Add(sfd->FilePath());
+                            break;
+                        }
+                        case SourceFileType.asm:
+                        {
+                            for (const string& prev : asmSourceFilePaths)
+                            {
+                                if (prev == sfd->FilePath())
+                                {
+                                    throw Exception("assembly source file '" + prev + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(sfd->GetSpan().LineNumber()) + ")");
+                                }
+                            }
+                            asmSourceFilePaths.Add(sfd->FilePath());
+                            break;
+                        }
+                        case SourceFileType.c:
+                        {
+                            for (const string& prev : cSourceFilePaths)
+                            {
+                                if (prev == sfd->FilePath())
+                                {
+                                    throw Exception("C source file '" + prev + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(sfd->GetSpan().LineNumber()) + ")");
+                                }
+                            }
+                            cSourceFilePaths.Add(sfd->FilePath());
+                            break;
+                        }
+                        case SourceFileType.text:
+                        {
+                            for (const string& prev : textFilePaths)
+                            {
+                                if (prev == sfd->FilePath())
+                                {
+                                    throw Exception("text file '" + prev + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(sfd->GetSpan().LineNumber()) + ")");
+                                }
+                            }
+                            textFilePaths.Add(sfd->FilePath());
+                            break;
+                        }
+                    }
+                }
+                else if (declaration->IsReferenceFileDeclaration())
+                {
+                    ReferenceFileDeclaration* rfd = cast<ReferenceFileDeclaration*>(declaration.GetPtr());
+                    for (const string& prev : referenceFilePaths)
+                    {
+                        if (prev == rfd->FilePath())
+                        {
+                            throw Exception("reference file '" + prev + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(rfd->GetSpan().LineNumber()) + ")");
+                        }
+                    }
+                    referenceFilePaths.Add(rfd->FilePath());
+                }
+                else if (declaration->IsCLibraryDeclaration())
+                {
+                    CLibraryDeclaration* clib = cast<CLibraryDeclaration*>(declaration.GetPtr());
+                    for (const string& prev : cLibraryFilePaths)
+                    {
+                        if (prev == clib->FilePath())
+                        {
+                            throw Exception("reference file '" + prev + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(clib->GetSpan().LineNumber()) + ")");
+                        }
+                    }
+                    cLibraryFilePaths.Add(clib->FilePath());
+                }
+                else if (declaration->IsTargetDeclaration())
+                {
+                    TargetDeclaration* td = cast<TargetDeclaration*>(declaration.GetPtr());
+                    if (target == Target.none)
+                    {
+                        target = td->GetTarget();
+                    }
+                    else
+                    {
+                        throw Exception("target '" + TargetStr(td->GetTarget()) + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(declaration->GetSpan().LineNumber()) + ")");
+                    }
+                }
+                else if (declaration->IsAssemblyFileDeclaration())
+                {
+                    if (assemblyFilePath.IsEmpty())
+                    {
+                        assemblyFilePath = cast<AssemblyFileDeclaration*>(declaration.GetPtr())->FilePath();
+                    }
+                    else
+                    {
+                        throw Exception("assembly '" + assemblyFilePath + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(declaration->GetSpan().LineNumber()) + ")");
+                    }
+                }
+                else if (declaration->IsExecutableFileDeclaration())
+                {
+                    if (executableFilePath.IsEmpty())
+                    {
+                        executableFilePath = cast<ExecutableFileDeclaration*>(declaration.GetPtr())->FilePath();
+                    }
+                    else
+                    {
+                        throw Exception("executable '" + executableFilePath + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(declaration->GetSpan().LineNumber()) + ")");
+                    }
+                }
+            }
+            if (target == Target.none)
+            {
+                throw Exception("target ('program' | 'library') not specified in file '" + GetFullPath(FilePath()) + "'");
+            }
+            if (assemblyFilePath.IsEmpty())
+            {
+                throw Exception("assembly not specified in file '" + GetFullPath(FilePath()) + "'");
+            }
+            libraryFilePath = Path.ChangeExtension(assemblyFilePath, ".cml");
+            if (target == Target.program && executableFilePath.IsEmpty())
+            {
+                executableFilePath = Path.ChangeExtension(assemblyFilePath, "");
+            }
+        }       
+        private string name;
+        private string filePath;
+        private string basePath;
+        private string outputBasePath;
+        private string config;
+        private string backend;
+        private string os;
+        private Target target;
+        private List<UniquePtr<ProjectDeclaration>> declarations;
+        private List<string> sourceFilePaths;
+        private List<string> asmSourceFilePaths;
+        private List<string> cSourceFilePaths;
+        private List<string> textFilePaths;
+        private List<string> referenceFilePaths;
+        private List<string> cLibraryFilePaths;
+        private string assemblyFilePath;
+        private string libraryFilePath;
+        private string executableFilePath;
+    }
+}
