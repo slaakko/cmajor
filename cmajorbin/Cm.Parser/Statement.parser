@@ -206,7 +206,7 @@ namespace Cm.Parser
             ;
 
         TryStatement(ParsingContext* ctx): Cm::Ast::TryStatementNode*
-            ::= (keyword("try") CompoundStatement(ctx)!){ value = new  TryStatementNode(span, CompoundStatement); } Handlers(ctx, value)!{ value->GetSpan().SetEnd(span.End()); }
+            ::= (keyword("try") CompoundStatement(ctx)!){ value = new TryStatementNode(span, CompoundStatement); } Handlers(ctx, value)!{ value->GetSpan().SetEnd(span.End()); }
             ;
 
         Handlers(ParsingContext* ctx, Cm::Ast::TryStatementNode* tryS)
@@ -251,7 +251,7 @@ namespace Cm.Parser
 
         ConditionalCompilationPrimary: Cm::Ast::CondCompExprNode*
             ::= ConditionalCompilationSymbol:symbol{ value = new CondCompPrimaryNode(span, symbol); }
-            |   ConditionalCompilationExpr:expr{ value = expr; }
+            |   '(' ConditionalCompilationExpr:expr{ value = expr; } ')'
             ;
 
         ConditionalCompilationSymbol: Cm::Ast::CondCompSymbolNode*

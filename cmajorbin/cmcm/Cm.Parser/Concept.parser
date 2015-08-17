@@ -1,0 +1,158 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    grammar ConceptGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
+        using ParameterGrammar.ParameterList;
+        using ExpressionGrammar.Expression;
+        using TypeExprGrammar.TypeExpr;
+        using FunctionGrammar.FunctionGroupId;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        
+        Concept(ParsingContext* ctx) : ConceptNode*
+            ::= empty{ ctx->BeginParsingConcept(); }
+                ((Specifiers keyword("concept") Identifier:conceptName!){ value = new ConceptNode(span, Specifiers, conceptName); } '<'! (Identifier:typeParameter{ value->AddTypeParameter(typeParameter); } % ',') '>'!
+                ((Refinement{ value->SetRefinement(Refinement); })? (WhereConstraint(ctx){ value->AddConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); } '{'! ConceptBody(ctx, value)! '}'!)
+                {
+                    ctx->EndParsingConcept();
+                }
+                /
+                {
+                    ctx->EndParsingConcept();
+                }
+            ;
+            
+        Refinement : ConceptIdNode*
+            ::= (':' QualifiedId!{ value = new ConceptIdNode(span, QualifiedId); } '<'! (Identifier{ value->AddTypeParameter(Identifier); } % ',') '>'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+            
+        ConceptBody(ParsingContext* ctx, ConceptNode* con)
+            ::= (ConceptBodyConstraint(ctx, con) | Axiom(ctx, con))*
+            ;
+            
+        ConceptBodyConstraint(ParsingContext* ctx, ConceptNode* con)
+            ::= TypenameConstraint(ctx){ con->AddConstraint(TypenameConstraint); }
+            |   SignatureConstraint(ctx, con->FirstTypeParameter()){ con->AddConstraint(SignatureConstraint); }
+            |   EmbeddedConstraint(ctx){ con->AddConstraint(EmbeddedConstraint); }
+            ;
+            
+        Axiom(ParsingContext* ctx, ConceptNode* con, var UniquePtr<AxiomNode> ax)
+            ::= ((keyword("axiom") Identifier? empty{ax.Reset(new AxiomNode(span, Identifier)); } ParameterList(ctx, ax.GetPtr())?){ ax->GetSpan().SetEnd(span.End()); } 
+                '{'! AxiomBody(ctx, ax.GetPtr())! '}'!)
+                {
+                    con->AddAxiom(ax.Release());
+                }
+            ;
+        
+        AxiomBody(ParsingContext* ctx, AxiomNode* ax)
+            ::= (AxiomStatement(ctx){ ax->AddStatement(AxiomStatement); })*
+            ;
+            
+        AxiomStatement(ParsingContext* ctx) : AxiomStatementNode*
+            ::= (Expression(ctx) ';'!){ value = new AxiomStatementNode(span, Expression, match); }
+            ;
+            
+        TypenameConstraint(ParsingContext* ctx) : ConstraintNode*
+            ::= (keyword("typename") TypeExpr(ctx)! ';'!){ value = new TypeNameConstraintNode(span, TypeExpr); }
+            ;
+            
+        SignatureConstraint(ParsingContext* ctx, string firstTypeParameter) : ConstraintNode*
+            ::= ConstructorConstraint(ctx, firstTypeParameter){ value = ConstructorConstraint; }
+            |   DestructorConstraint(ctx, firstTypeParameter){ value = DestructorConstraint; }
+            |   MemberFunctionConstraint(ctx){ value = MemberFunctionConstraint; }
+            |   FunctionConstraint(ctx){ value = FunctionConstraint; }
+            ;
+            
+        ConstructorConstraint(ParsingContext* ctx, string firstTypeParameter, var UniquePtr<IdentifierNode> id, var UniquePtr<ConstraintNode> ctorConstraint) : ConstraintNode*
+            ::= (keyword("explicit")? Identifier{ id.Reset(Identifier); pass = id->Str() == firstTypeParameter; if (pass) ctorConstraint.Reset(new ConstructorConstraintNode(span, id.Release())); } 
+                ParameterList(ctx, ctorConstraint.GetPtr()) ';'!)
+                {
+                    value = ctorConstraint.Release();
+                    value->GetSpan().SetEnd(span.End());
+                }
+            ;
+            
+        DestructorConstraint(ParsingContext* ctx, string firstTypeParameter, var UniquePtr<IdentifierNode> id) : ConstraintNode*
+            ::= ('~' Identifier{ id.Reset(Identifier); pass = id->Str() == firstTypeParameter; } '('! ')'! ';'!)
+            {
+                value = new DestructorConstraintNode(span, id.Release()); 
+            }
+            ;
+            
+        MemberFunctionConstraint(ParsingContext* ctx, var UniquePtr<Node> returnType, var UniquePtr<IdentifierNode> typeParam) : ConstraintNode*
+            ::= (TypeExpr(ctx){ returnType.Reset(TypeExpr); } 
+                Identifier{ typeParam.Reset(Identifier); } '.' FunctionGroupId(ctx)!{ value = new MemberFunctionConstraintNode(span, returnType.Release(), typeParam.Release(), FunctionGroupId); }
+                ParameterList(ctx, value)! ';'!)
+            {
+                value->GetSpan().SetEnd(span.End());
+            }
+            ;
+            
+        FunctionConstraint(ParsingContext* ctx) : ConstraintNode*
+            ::= (TypeExpr(ctx) FunctionGroupId(ctx)!{ value = new FunctionConstraintNode(span, TypeExpr, FunctionGroupId); } ParameterList(ctx, value)! ';'!)
+            {
+                value->GetSpan().SetEnd(span.End());
+            }
+            ;
+            
+        EmbeddedConstraint(ParsingContext* ctx) : ConstraintNode*
+            ::= (WhereConstraint(ctx) ';'!){ value = WhereConstraint; }
+            ;
+            
+        WhereConstraint(ParsingContext* ctx) : WhereConstraintNode*
+            ::= (keyword("where") ConstraintExpr(ctx)!){ value = new WhereConstraintNode(span, ConstraintExpr); }
+            ;
+            
+        ConstraintExpr(ParsingContext* ctx) : ConstraintNode*
+            ::= DisjunctiveConstraintExpr(ctx){ value = DisjunctiveConstraintExpr; }
+            ;
+            
+        DisjunctiveConstraintExpr(ParsingContext* ctx, var Span s) : ConstraintNode*
+            ::= ConjunctiveConstraintExpr(ctx):left{ value = left; s = span; } (keyword("or") ConjunctiveConstraintExpr(ctx):right{ s.SetEnd(span.End()); value = new DisjunctiveConstraintNode(s, value, right); })*
+            ;
+            
+        ConjunctiveConstraintExpr(ParsingContext* ctx, var Span s) : ConstraintNode*
+            ::= PrimaryConstraintExpr(ctx):left{ value = left; s = span; } (keyword("and") PrimaryConstraintExpr(ctx):right{ s.SetEnd(span.End()); value = new ConjunctiveConstraintNode(s, value, right); })*
+            ;
+            
+        PrimaryConstraintExpr(ParsingContext* ctx) : ConstraintNode*
+            ::= ('(' ConstraintExpr(ctx) ')'!){ value = ConstraintExpr; }
+            |   AtomicConstraintExpr(ctx){ value = AtomicConstraintExpr; }
+            ;
+            
+        AtomicConstraintExpr(ParsingContext* ctx) : ConstraintNode*
+            ::= IsConstraint(ctx){ value = IsConstraint; }
+            |   MultiParamConstraint(ctx){ value = MultiParamConstraint; }
+            ;
+            
+        IsConstraint(ParsingContext* ctx, var UniquePtr<Node> typeExpr) : ConstraintNode*
+            ::= (TypeExpr(ctx){ typeExpr.Reset(TypeExpr); } keyword("is") ConceptOrTypeName(ctx)!){ value = new IsConstraintNode(span, typeExpr.Release(), ConceptOrTypeName); }
+            ;
+            
+        ConceptOrTypeName(ParsingContext* ctx): Node*
+            ::= TypeExpr(ctx){ value = TypeExpr; }
+            ;
+            
+        MultiParamConstraint(ParsingContext* ctx, var UniquePtr<MultiParamConstraintNode> constraint) : ConstraintNode*
+            ::= (QualifiedId{ constraint.Reset(new MultiParamConstraintNode(span, QualifiedId)); } '<' (TypeExpr(ctx){ constraint->AddTypeExpr(TypeExpr); } % ',') '>'!)
+            { 
+                value = constraint.Release(); 
+                value->GetSpan().SetEnd(span.End());
+            }            
+            ;
+    }
+}

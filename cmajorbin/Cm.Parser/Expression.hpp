@@ -1,5 +1,5 @@
-#ifndef Expression_hpp_24386
-#define Expression_hpp_24386
+#ifndef Expression_hpp_6309
+#define Expression_hpp_6309
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -44,4 +44,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Expression_hpp_24386
+#endif // Expression_hpp_6309

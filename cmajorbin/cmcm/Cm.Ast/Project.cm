@@ -154,8 +154,8 @@ namespace Cm.Ast
 
     public class ExecutableFileDeclaration : ProjectDeclaration
     {
-        public ExecutableFileDeclaration(const Span& span_, const string& filePath_, const string& basePath_, const Properties& properties_) :
-            base(span_, properties_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
+        public ExecutableFileDeclaration(const Span& span_, const string& filePath_, const string& basePath_) :
+            base(span_, Properties()), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
         {
         }
         public nothrow inline const string& FilePath() const
