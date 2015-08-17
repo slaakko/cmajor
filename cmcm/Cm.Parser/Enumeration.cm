@@ -1,0 +1,444 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    public class EnumerationGrammar: System.Text.Parsing.Grammar
+    {
+        public static EnumerationGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static EnumerationGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            EnumerationGrammar* grammar = new EnumerationGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private EnumerationGrammar(ParsingDomain* parsingDomain): base("EnumerationGrammar", parsingDomain->GetNamespaceScope("Cm.Parser"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public EnumTypeNode* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            EnumTypeNode* result = *cast<ValueObject<EnumTypeNode*>*>(value.GetPtr());
+            return result;
+        }
+        private class EnumTypeRule: System.Text.Parsing.Rule
+        {
+            public EnumTypeRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("EnumTypeNode*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<EnumTypeNode*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+                specifiersNonterminalParser->SetPostCall(PostCall(PostSpecifiers));
+                NonterminalParser* enumTypeIdNonterminalParser = GetNonterminal("enumTypeId");
+                enumTypeIdNonterminalParser->SetPostCall(PostCall(PostenumTypeId));
+                NonterminalParser* underlyingTypeNonterminalParser = GetNonterminal("UnderlyingType");
+                underlyingTypeNonterminalParser->SetPreCall(PreCall(PreUnderlyingType));
+                underlyingTypeNonterminalParser->SetPostCall(PostCall(PostUnderlyingType));
+                NonterminalParser* enumConstantsNonterminalParser = GetNonterminal("EnumConstants");
+                enumConstantsNonterminalParser->SetPreCall(PreCall(PreEnumConstants));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new EnumTypeNode(span, context.fromSpecifiers, context.fromenumTypeId);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value->SetUnderlyingType(context.fromUnderlyingType);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value->GetSpan().SetEnd(span.End());
+            }
+            public throw void PostSpecifiers(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromSpecifiers_value = stack.Pop();
+                    context.fromSpecifiers = *cast<ValueObject<Specifiers>*>(fromSpecifiers_value.GetPtr());
+                }
+            }
+            public throw void PostenumTypeId(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromenumTypeId_value = stack.Pop();
+                    context.fromenumTypeId = *cast<ValueObject<IdentifierNode*>*>(fromenumTypeId_value.GetPtr());
+                }
+            }
+            public throw void PreUnderlyingType(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostUnderlyingType(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromUnderlyingType_value = stack.Pop();
+                    context.fromUnderlyingType = *cast<ValueObject<Node*>*>(fromUnderlyingType_value.GetPtr());
+                }
+            }
+            public throw void PreEnumConstants(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+                stack.Push(UniquePtr<Object>(new ValueObject<EnumTypeNode*>(context.value)));
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public EnumTypeNode* value;
+                public Specifiers fromSpecifiers;
+                public IdentifierNode* fromenumTypeId;
+                public Node* fromUnderlyingType;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class UnderlyingTypeRule: System.Text.Parsing.Rule
+        {
+            public UnderlyingTypeRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Node*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Node*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
+                typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromTypeExpr;
+            }
+            public throw void PreTypeExpr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTypeExpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTypeExpr_value = stack.Pop();
+                    context.fromTypeExpr = *cast<ValueObject<Node*>*>(fromTypeExpr_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Node* value;
+                public Node* fromTypeExpr;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class EnumConstantsRule: System.Text.Parsing.Rule
+        {
+            public EnumConstantsRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                AddInheritedAttribute(AttrOrVariable("EnumTypeNode*", "enumType"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> enumType_value = stack.Pop();
+                context.enumType = *cast<ValueObject<EnumTypeNode*>*>(enumType_value.GetPtr());
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* enumConstantNonterminalParser = GetNonterminal("EnumConstant");
+                enumConstantNonterminalParser->SetPreCall(PreCall(PreEnumConstant));
+                enumConstantNonterminalParser->SetPostCall(PostCall(PostEnumConstant));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.enumType->AddConstant(context.fromEnumConstant);
+            }
+            public throw void PreEnumConstant(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+                stack.Push(UniquePtr<Object>(new ValueObject<EnumTypeNode*>(context.enumType)));
+            }
+            public throw void PostEnumConstant(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromEnumConstant_value = stack.Pop();
+                    context.fromEnumConstant = *cast<ValueObject<EnumConstantNode*>*>(fromEnumConstant_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public EnumTypeNode* enumType;
+                public EnumConstantNode* fromEnumConstant;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class EnumConstantRule: System.Text.Parsing.Rule
+        {
+            public EnumConstantRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                AddInheritedAttribute(AttrOrVariable("EnumTypeNode*", "enumType"));
+                SetValueTypeName("EnumConstantNode*");
+                AddLocalVariable(AttrOrVariable("Span", "s"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> enumType_value = stack.Pop();
+                context.enumType = *cast<ValueObject<EnumTypeNode*>*>(enumType_value.GetPtr());
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<EnumConstantNode*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* constantIdNonterminalParser = GetNonterminal("constantId");
+                constantIdNonterminalParser->SetPostCall(PostCall(PostconstantId));
+                NonterminalParser* constantValueNonterminalParser = GetNonterminal("constantValue");
+                constantValueNonterminalParser->SetPreCall(PreCall(PreconstantValue));
+                constantValueNonterminalParser->SetPostCall(PostCall(PostconstantValue));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.s = span;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.s.SetEnd(span.End());
+                context.value = new EnumConstantNode(context.s, context.fromconstantId, context.fromconstantValue);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.s.SetEnd(span.End());
+                context.value = new EnumConstantNode(context.s, context.fromconstantId, MakeNextEnumConstantValue(context.s, context.enumType));
+            }
+            public throw void PostconstantId(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromconstantId_value = stack.Pop();
+                    context.fromconstantId = *cast<ValueObject<IdentifierNode*>*>(fromconstantId_value.GetPtr());
+                }
+            }
+            public throw void PreconstantValue(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostconstantValue(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromconstantValue_value = stack.Pop();
+                    context.fromconstantValue = *cast<ValueObject<Node*>*>(fromconstantValue_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public EnumTypeNode* enumType;
+                public EnumConstantNode* value;
+                public Span s;
+                public IdentifierNode* fromconstantId;
+                public Node* fromconstantValue;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar1);
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
+            if (grammar2 == null)
+            {
+                grammar2 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar2);
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
+            if (grammar3 == null)
+            {
+                grammar3 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar3);
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            if (grammar4 == null)
+            {
+                grammar4 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar4);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRule(new EnumTypeRule("EnumType", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new ActionParser("A0",
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new NonterminalParser("Specifiers", "Specifiers", 0),
+                                            new KeywordParser("enum")),
+                                        new ExpectationParser(
+                                            new NonterminalParser("enumTypeId", "Identifier", 0)))),
+                                new OptionalParser(
+                                    new ActionParser("A1",
+                                        new NonterminalParser("UnderlyingType", "UnderlyingType", 1)))),
+                            new ExpectationParser(
+                                new CharParser('{'))),
+                        new NonterminalParser("EnumConstants", "EnumConstants", 2)),
+                    new ActionParser("A2",
+                        new ExpectationParser(
+                            new CharParser('}'))))));
+            AddRule(new UnderlyingTypeRule("UnderlyingType", GetScope(),
+                new SequenceParser(
+                    new CharParser(':'),
+                    new ActionParser("A0",
+                        new NonterminalParser("TypeExpr", "TypeExpr", 1)))));
+            AddRule(new EnumConstantsRule("EnumConstants", GetScope(),
+                new ListParser(
+                    new ActionParser("A0",
+                        new ExpectationParser(
+                            new NonterminalParser("EnumConstant", "EnumConstant", 2))),
+                    new CharParser(','))));
+            AddRule(new EnumConstantRule("EnumConstant", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("constantId", "Identifier", 0)),
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new CharParser('='),
+                            new ActionParser("A1",
+                                new NonterminalParser("constantValue", "Expression", 1))),
+                        new ActionParser("A2",
+                            new EmptyParser())))));
+            SetSkipRuleName("spaces_and_comments");
+        }
+    }
+}

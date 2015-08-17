@@ -1,0 +1,235 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    public class ConstantGrammar: System.Text.Parsing.Grammar
+    {
+        public static ConstantGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static ConstantGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            ConstantGrammar* grammar = new ConstantGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private ConstantGrammar(ParsingDomain* parsingDomain): base("ConstantGrammar", parsingDomain->GetNamespaceScope("Cm.Parser"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public Node* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            Node* result = *cast<ValueObject<Node*>*>(value.GetPtr());
+            return result;
+        }
+        private class ConstantRule: System.Text.Parsing.Rule
+        {
+            public ConstantRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("Node*");
+                AddLocalVariable(AttrOrVariable("UniquePtr<Node>", "typeExpr"));
+                AddLocalVariable(AttrOrVariable("UniquePtr<IdentifierNode>", "id"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Node*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+                specifiersNonterminalParser->SetPostCall(PostCall(PostSpecifiers));
+                NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
+                typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
+                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new ConstantNode(span, context.fromSpecifiers, context.typeExpr.Release(), context.id.Release(), context.fromExpression);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.typeExpr.Reset(context.fromTypeExpr);
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.id.Reset(context.fromIdentifier);
+            }
+            public throw void PostSpecifiers(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromSpecifiers_value = stack.Pop();
+                    context.fromSpecifiers = *cast<ValueObject<Specifiers>*>(fromSpecifiers_value.GetPtr());
+                }
+            }
+            public throw void PreTypeExpr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTypeExpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTypeExpr_value = stack.Pop();
+                    context.fromTypeExpr = *cast<ValueObject<Node*>*>(fromTypeExpr_value.GetPtr());
+                }
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<IdentifierNode*>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromExpression_value = stack.Pop();
+                    context.fromExpression = *cast<ValueObject<Node*>*>(fromExpression_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Node* value;
+                public UniquePtr<Node> typeExpr;
+                public UniquePtr<IdentifierNode> id;
+                public Specifiers fromSpecifiers;
+                public Node* fromTypeExpr;
+                public IdentifierNode* fromIdentifier;
+                public Node* fromExpression;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar1);
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            if (grammar2 == null)
+            {
+                grammar2 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar2);
+            Grammar* grammar3 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar3 == null)
+            {
+                grammar3 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar3);
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            if (grammar4 == null)
+            {
+                grammar4 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar4);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRule(new ConstantRule("Constant", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new NonterminalParser("Specifiers", "Specifiers", 0),
+                                            new KeywordParser("const")),
+                                        new ActionParser("A1",
+                                            new NonterminalParser("TypeExpr", "TypeExpr", 1))),
+                                    new ActionParser("A2",
+                                        new NonterminalParser("Identifier", "Identifier", 0))),
+                                new CharParser('=')),
+                            new ExpectationParser(
+                                new NonterminalParser("Expression", "Expression", 1))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            SetSkipRuleName("spaces_and_comments");
+        }
+    }
+}

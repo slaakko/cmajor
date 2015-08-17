@@ -1,0 +1,542 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    public class SolutionGrammar: System.Text.Parsing.Grammar
+    {
+        public static SolutionGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static SolutionGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            SolutionGrammar* grammar = new SolutionGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private SolutionGrammar(ParsingDomain* parsingDomain): base("SolutionGrammar", parsingDomain->GetNamespaceScope("Cm.Parser"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public Solution* Parse(const string& content, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(content, fileIndex, fileName, Skip());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Position stop = scanner.GetPosition();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Index() != content.Length())
+            {
+                Rule* start = Start();
+                if (start != null)
+                {
+                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            Solution* result = *cast<ValueObject<Solution*>*>(value.GetPtr());
+            return result;
+        }
+        private class SolutionRule: System.Text.Parsing.Rule
+        {
+            public SolutionRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Solution*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Solution*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* qualified_idNonterminalParser = GetNonterminal("qualified_id");
+                qualified_idNonterminalParser->SetPostCall(PostCall(Postqualified_id));
+                NonterminalParser* declarationsNonterminalParser = GetNonterminal("Declarations");
+                declarationsNonterminalParser->SetPreCall(PreCall(PreDeclarations));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new Solution(context.fromqualified_id, fileName);
+            }
+            public throw void Postqualified_id(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromqualified_id_value = stack.Pop();
+                    context.fromqualified_id = *cast<ValueObject<string>*>(fromqualified_id_value.GetPtr());
+                }
+            }
+            public throw void PreDeclarations(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<Solution*>(context.value)));
+            }
+            private class Context
+            {
+                public Solution* value;
+                public string fromqualified_id;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class DeclarationsRule: System.Text.Parsing.Rule
+        {
+            public DeclarationsRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("Solution*", "solution"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> solution_value = stack.Pop();
+                context.solution = *cast<ValueObject<Solution*>*>(solution_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* declarationNonterminalParser = GetNonterminal("Declaration");
+                declarationNonterminalParser->SetPreCall(PreCall(PreDeclaration));
+                declarationNonterminalParser->SetPostCall(PostCall(PostDeclaration));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.solution->AddDeclaration(context.fromDeclaration);
+            }
+            public throw void PreDeclaration(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<Solution*>(context.solution)));
+            }
+            public throw void PostDeclaration(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromDeclaration_value = stack.Pop();
+                    context.fromDeclaration = *cast<ValueObject<SolutionDeclaration*>*>(fromDeclaration_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Solution* solution;
+                public SolutionDeclaration* fromDeclaration;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class DeclarationRule: System.Text.Parsing.Rule
+        {
+            public DeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("Solution*", "solution"));
+                SetValueTypeName("SolutionDeclaration*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> solution_value = stack.Pop();
+                context.solution = *cast<ValueObject<Solution*>*>(solution_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<SolutionDeclaration*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* projectFileDeclarationNonterminalParser = GetNonterminal("ProjectFileDeclaration");
+                projectFileDeclarationNonterminalParser->SetPreCall(PreCall(PreProjectFileDeclaration));
+                projectFileDeclarationNonterminalParser->SetPostCall(PostCall(PostProjectFileDeclaration));
+                NonterminalParser* activeProjectDeclarationNonterminalParser = GetNonterminal("ActiveProjectDeclaration");
+                activeProjectDeclarationNonterminalParser->SetPostCall(PostCall(PostActiveProjectDeclaration));
+                NonterminalParser* projectDependencyDeclarationNonterminalParser = GetNonterminal("ProjectDependencyDeclaration");
+                projectDependencyDeclarationNonterminalParser->SetPostCall(PostCall(PostProjectDependencyDeclaration));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromProjectFileDeclaration;
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromActiveProjectDeclaration;
+            }
+            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromProjectDependencyDeclaration;
+            }
+            public throw void PreProjectFileDeclaration(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<Solution*>(context.solution)));
+            }
+            public throw void PostProjectFileDeclaration(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromProjectFileDeclaration_value = stack.Pop();
+                    context.fromProjectFileDeclaration = *cast<ValueObject<SolutionDeclaration*>*>(fromProjectFileDeclaration_value.GetPtr());
+                }
+            }
+            public throw void PostActiveProjectDeclaration(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromActiveProjectDeclaration_value = stack.Pop();
+                    context.fromActiveProjectDeclaration = *cast<ValueObject<SolutionDeclaration*>*>(fromActiveProjectDeclaration_value.GetPtr());
+                }
+            }
+            public throw void PostProjectDependencyDeclaration(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromProjectDependencyDeclaration_value = stack.Pop();
+                    context.fromProjectDependencyDeclaration = *cast<ValueObject<ProjectDependencyDeclaration*>*>(fromProjectDependencyDeclaration_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Solution* solution;
+                public SolutionDeclaration* value;
+                public SolutionDeclaration* fromProjectFileDeclaration;
+                public SolutionDeclaration* fromActiveProjectDeclaration;
+                public ProjectDependencyDeclaration* fromProjectDependencyDeclaration;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ProjectFileDeclarationRule: System.Text.Parsing.Rule
+        {
+            public ProjectFileDeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("Solution*", "solution"));
+                SetValueTypeName("SolutionDeclaration*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> solution_value = stack.Pop();
+                context.solution = *cast<ValueObject<Solution*>*>(solution_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<SolutionDeclaration*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
+                filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new ProjectFileDeclaration(span, context.fromFilePath, context.solution->BasePath());
+            }
+            public throw void PostFilePath(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromFilePath_value = stack.Pop();
+                    context.fromFilePath = *cast<ValueObject<string>*>(fromFilePath_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Solution* solution;
+                public SolutionDeclaration* value;
+                public string fromFilePath;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ActiveProjectDeclarationRule: System.Text.Parsing.Rule
+        {
+            public ActiveProjectDeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("SolutionDeclaration*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<SolutionDeclaration*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* qualified_idNonterminalParser = GetNonterminal("qualified_id");
+                qualified_idNonterminalParser->SetPostCall(PostCall(Postqualified_id));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new ActiveProjectDeclaration(context.fromqualified_id);
+            }
+            public throw void Postqualified_id(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromqualified_id_value = stack.Pop();
+                    context.fromqualified_id = *cast<ValueObject<string>*>(fromqualified_id_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public SolutionDeclaration* value;
+                public string fromqualified_id;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class ProjectDependencyDeclarationRule: System.Text.Parsing.Rule
+        {
+            public ProjectDependencyDeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("ProjectDependencyDeclaration*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ProjectDependencyDeclaration*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                NonterminalParser* projectNameNonterminalParser = GetNonterminal("projectName");
+                projectNameNonterminalParser->SetPostCall(PostCall(PostprojectName));
+                NonterminalParser* dependsOnNonterminalParser = GetNonterminal("dependsOn");
+                dependsOnNonterminalParser->SetPostCall(PostCall(PostdependsOn));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new ProjectDependencyDeclaration(context.fromprojectName);
+            }
+            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value->AddDependency(context.fromdependsOn);
+            }
+            public throw void PostprojectName(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromprojectName_value = stack.Pop();
+                    context.fromprojectName = *cast<ValueObject<string>*>(fromprojectName_value.GetPtr());
+                }
+            }
+            public throw void PostdependsOn(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromdependsOn_value = stack.Pop();
+                    context.fromdependsOn = *cast<ValueObject<string>*>(fromdependsOn_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ProjectDependencyDeclaration* value;
+                public string fromprojectName;
+                public string fromdependsOn;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class FilePathRule: System.Text.Parsing.Rule
+        {
+            public FilePathRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = match;
+            }
+            private class Context
+            {
+                public string value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRule(new SolutionRule("Solution", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("solution"),
+                                new ExpectationParser(
+                                    new NonterminalParser("qualified_id", "qualified_id", 0))),
+                            new ExpectationParser(
+                                new CharParser(';')))),
+                    new NonterminalParser("Declarations", "Declarations", 1))));
+            AddRule(new DeclarationsRule("Declarations", GetScope(),
+                new KleeneStarParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("Declaration", "Declaration", 1)))));
+            AddRule(new DeclarationRule("Declaration", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new ActionParser("A0",
+                            new NonterminalParser("ProjectFileDeclaration", "ProjectFileDeclaration", 1)),
+                        new ActionParser("A1",
+                            new NonterminalParser("ActiveProjectDeclaration", "ActiveProjectDeclaration", 0))),
+                    new ActionParser("A2",
+                        new NonterminalParser("ProjectDependencyDeclaration", "ProjectDependencyDeclaration", 0)))));
+            AddRule(new ProjectFileDeclarationRule("ProjectFileDeclaration", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("project"),
+                            new ExpectationParser(
+                                new NonterminalParser("FilePath", "FilePath", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new ActiveProjectDeclarationRule("ActiveProjectDeclaration", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("activeProject"),
+                            new ExpectationParser(
+                                new NonterminalParser("qualified_id", "qualified_id", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new ProjectDependencyDeclarationRule("ProjectDependencyDeclaration", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new KeywordParser("dependency"),
+                                    new ActionParser("A0",
+                                        new ExpectationParser(
+                                            new NonterminalParser("projectName", "qualified_id", 0)))),
+                                new ExpectationParser(
+                                    new CharParser('('))),
+                            new OptionalParser(
+                                new ListParser(
+                                    new ActionParser("A1",
+                                        new NonterminalParser("dependsOn", "qualified_id", 0)),
+                                    new CharParser(',')))),
+                        new ExpectationParser(
+                            new CharParser(')'))),
+                    new ExpectationParser(
+                        new CharParser(';')))));
+            AddRule(new FilePathRule("FilePath", GetScope(),
+                new TokenParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('<'),
+                            new ActionParser("A0",
+                                new PositiveParser(
+                                    new CharSetParser(">", true)))),
+                        new ExpectationParser(
+                            new CharParser('>'))))));
+            SetSkipRuleName("spaces_and_comments");
+        }
+    }
+}

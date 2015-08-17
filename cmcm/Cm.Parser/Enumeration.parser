@@ -1,0 +1,43 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    grammar EnumerationGrammar
+    {
+        using IdentifierGrammar.Identifier;
+        using ExpressionGrammar.Expression;
+        using TypeExprGrammar.TypeExpr;
+        using SpecifierGrammar.Specifiers;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        
+        EnumType(ParsingContext* ctx) : EnumTypeNode*
+            ::= (Specifiers keyword("enum") Identifier:enumTypeId!){ value = new EnumTypeNode(span, Specifiers, enumTypeId); } (UnderlyingType(ctx){ value->SetUnderlyingType(UnderlyingType); })?
+                '{'! EnumConstants(ctx, value) '}'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+            
+        UnderlyingType(ParsingContext* ctx) : Node*
+            ::= ':' TypeExpr(ctx){ value = TypeExpr; }
+            ;
+            
+        EnumConstants(ParsingContext* ctx, EnumTypeNode* enumType)
+            ::= EnumConstant(ctx, enumType)!{ enumType->AddConstant(EnumConstant); } % ','
+            ;
+            
+        EnumConstant(ParsingContext* ctx, EnumTypeNode* enumType, var Span s) : EnumConstantNode*
+            ::= Identifier:constantId{ s = span; }
+            (   '=' Expression(ctx):constantValue{ s.SetEnd(span.End()); value = new EnumConstantNode(s, constantId, constantValue); }
+            |   empty{ s.SetEnd(span.End()); value = new EnumConstantNode(s, constantId, MakeNextEnumConstantValue(s, enumType)); }
+            )
+            ;
+    }
+}

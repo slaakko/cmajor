@@ -96,6 +96,21 @@ namespace Cm.Ast
         {
             return id.GetPtr();
         }
+        public nothrow Node* GetLastConstant() const
+        {
+            if (enumConstants.Count() == 0)
+            {
+                return null;
+            }
+            else
+            {
+                return enumConstants.Back();
+            }
+        }
+        public nothrow Node* GetUnderlyingType() const
+        {
+            return underlyingType.GetPtr();
+        }
         private Specifiers specifiers;
         private UniquePtr<IdentifierNode> id;
         private UniquePtr<Node> underlyingType;
@@ -156,5 +171,42 @@ namespace Cm.Ast
         }
         private UniquePtr<IdentifierNode> id;
         private UniquePtr<Node> value;
+    }
+    
+    public Node* MakeNextEnumConstantValue(const Span& span, EnumTypeNode* enumType)
+    {
+        Node* lastConstant = enumType->GetLastConstant();
+        if (lastConstant != null)
+        {
+            Node* lastValue = lastConstant->GetValue();
+            if (lastValue != null)
+            {
+                CloneContext cloneContext;
+                Node* clonedValue = lastValue->Clone(cloneContext);
+                if (enumType->GetUnderlyingType() != null)
+                {
+                    if (enumType->GetUnderlyingType()->IsUnsignedTypeNode())
+                    {
+                        return new AddNode(span, clonedValue, new ByteLiteralNode(span, 1u));
+                    }
+                }
+                return new AddNode(span, clonedValue, new SByteLiteralNode(span, 1));
+            }
+            else
+            {
+                throw Exception("last constant returned null value");
+            }
+        }
+        else
+        {
+            if (enumType->GetUnderlyingType() != null)
+            {
+                if (enumType->GetUnderlyingType()->IsUnsignedTypeNode())
+                {
+                    return new ByteLiteralNode(span, 0u);
+                }
+            }
+            return new SByteLiteralNode(span, 0);
+        }
     }
 }

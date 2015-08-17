@@ -1,0 +1,50 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    grammar SolutionGrammar 
+    {
+        using stdlib.qualified_id;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        
+        Solution : Solution*
+            ::= (keyword("solution") qualified_id! ';'!){ value = new Solution(qualified_id, fileName); } Declarations(value)
+            ;
+            
+        Declarations(Solution* solution)
+            ::= (Declaration(solution){ solution->AddDeclaration(Declaration); })*
+            ;
+            
+        Declaration(Solution* solution) : SolutionDeclaration*
+            ::= ProjectFileDeclaration(solution){ value = ProjectFileDeclaration; }
+            |   ActiveProjectDeclaration{ value = ActiveProjectDeclaration; }
+            |   ProjectDependencyDeclaration{ value =  ProjectDependencyDeclaration; }
+            ;
+            
+        ProjectFileDeclaration(Solution* solution) : SolutionDeclaration*
+            ::= (keyword("project") FilePath! ';'!){ value = new ProjectFileDeclaration(span, FilePath, solution->BasePath()); }
+            ;
+            
+        ActiveProjectDeclaration : SolutionDeclaration*
+            ::= (keyword("activeProject") qualified_id! ';'!){ value = new ActiveProjectDeclaration(qualified_id); }
+            ;
+            
+        ProjectDependencyDeclaration : ProjectDependencyDeclaration*
+            ::= keyword("dependency") qualified_id:projectName!{ value = new ProjectDependencyDeclaration(projectName); } '('! (qualified_id:dependsOn{ value->AddDependency(dependsOn); } % ',')? ')'! ';'!
+            ;
+
+        FilePath: string
+            ::= token('<' ([^>]+){ value = match; } '>'!)
+            ;
+    }
+}

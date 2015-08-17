@@ -443,22 +443,22 @@ private:
 void TypeExprGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::TemplateGrammar::Create(pd);
+        grammar0 = Cm::Parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::BasicTypeGrammar::Create(pd);
+        grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar2 = Cm::Parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
     Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
@@ -471,10 +471,10 @@ void TypeExprGrammar::GetReferencedGrammars()
 
 void TypeExprGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRule(new TypeExprRule("TypeExpr", GetScope(),
         new Cm::Parsing::SequenceParser(

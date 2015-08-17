@@ -1,0 +1,259 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    grammar StatementGrammar
+    {
+        using stdlib.identifier;
+        using KeywordGrammar.Keyword;
+        using ExpressionGrammar.Expression;
+        using TypeExprGrammar.TypeExpr;
+        using IdentifierGrammar.Identifier;
+        using ExpressionGrammar.ArgumentList;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        
+        Statement(ParsingContext* ctx) : StatementNode*
+            ::= LabeledStatement(ctx){ value = LabeledStatement; }
+            |   ControlStatement(ctx){ value = ControlStatement; }
+            |   TypedefStatement(ctx){ value = TypedefStatement; }
+            |   SimpleStatement(ctx){ value = SimpleStatement; }
+            |   AssignmentStatement(ctx){ value = AssignmentStatement; }
+            |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            |   DeleteStatement(ctx){ value = DeleteStatement; }
+            |   DestroyStatement(ctx){ value = DestroyStatement; }
+            |   ThrowStatement(ctx){ value = ThrowStatement; }
+            |   TryStatement(ctx){ value = TryStatement; }
+            |   AssertStatement(ctx){ value = AssertStatement; }
+            |   ConditionalCompilationStatement(ctx){ value = ConditionalCompilationStatement; }
+            ;
+            
+        LabelId : string
+            ::= (identifier - Keyword){ value = match; }
+            ;
+            
+        Label : LabelNode*
+            ::= (LabelId ':'){ value = new LabelNode(span, LabelId); }
+            ;
+            
+        TargetLabel : LabelNode*
+            ::= LabelId{ value = new LabelNode(span, LabelId); }
+            ;
+            
+        LabeledStatement(ParsingContext* ctx) : StatementNode*
+            ::= Label Statement(ctx){ Statement->SetLabelNode(Label); value = Statement; }
+            ;
+            
+        SimpleStatement(ParsingContext* ctx, var UniquePtr<Node> expr) : StatementNode*
+            ::= (empty{ ctx->PushParsingSimpleStatement(true); } (Expression(ctx){ expr.Reset(Expression); })? ';')
+            {
+                ctx->PopParsingSimpleStatement(); value = new SimpleStatementNode(span, expr.Release()); 
+            }
+            /
+            {
+                ctx->PopParsingSimpleStatement();
+            }
+            ;
+            
+        ControlStatement(ParsingContext* ctx) : StatementNode*
+            ::= ReturnStatement(ctx){ value = ReturnStatement; }
+            |   ConditionalStatement(ctx){ value = ConditionalStatement; }
+            |   SwitchStatement(ctx){ value = SwitchStatement; }
+            |   WhileStatement(ctx){ value = WhileStatement; }
+            |   DoStatement(ctx){ value = DoStatement; }
+            |   RangeForStatement(ctx){ value = RangeForStatement; }
+            |   ForStatement(ctx){ value = ForStatement; }
+            |   CompoundStatement(ctx){ value = CompoundStatement; }
+            |   BreakStatement{ value = BreakStatement; }
+            |   ContinueStatement{ value = ContinueStatement; }
+            |   GotoCaseStatement(ctx){ value = GotoCaseStatement; }
+            |   GotoDefaultStatement{ value = GotoDefaultStatement; }
+            |   GotoStatement{ value = GotoStatement; }
+            ;
+            
+        ReturnStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("return") Expression(ctx)? ';'!){ value = new ReturnStatementNode(span, Expression); }
+            ;
+            
+        ConditionalStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("if") '('! Expression(ctx)! ')'! Statement(ctx):thenS! (keyword("else") Statement(ctx):elseS)?){ value = new ConditionalStatementNode(span, Expression, thenS, elseS); }
+            ;
+            
+        SwitchStatement(ParsingContext* ctx) : SwitchStatementNode*
+            ::= (keyword("switch") '('! Expression(ctx)!){ value = new SwitchStatementNode(span, Expression); } ')'!
+                '{'! (CaseStatement(ctx){ value->AddCase(CaseStatement); } | DefaultStatement(ctx){ value->SetDefault(DefaultStatement); })* '}'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+            
+        CaseStatement(ParsingContext* ctx, var UniquePtr<CaseStatementNode> caseS) : CaseStatementNode*
+            ::= (empty{ caseS.Reset(new CaseStatementNode(span)); } CaseList(ctx, caseS.GetPtr()){ caseS->GetSpan().SetEnd(span.End()); }
+                    (
+                        Statement(ctx){ caseS->AddStatement(Statement); }
+                    )*
+                )
+                {
+                    value = caseS.Release();
+                }
+            ;
+            
+        DefaultStatement(ParsingContext* ctx) : DefaultStatementNode*
+            ::= (keyword("default") ':'!){ value = new DefaultStatementNode(span); }
+                    (
+                        Statement(ctx){ value->AddStatement(Statement); }
+                    )*
+            ;
+            
+        CaseList(ParsingContext* ctx, CaseStatementNode* caseS)
+            ::= (keyword("case") Expression(ctx)! ':'!{ caseS->AddExpr(Expression); })+
+            ;
+            
+        GotoCaseStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("goto") keyword("case") Expression(ctx)! ';'!){ value = new GotoCaseStatementNode(span, Expression); }
+            ;
+            
+        GotoDefaultStatement : StatementNode*
+            ::= (keyword("goto") keyword("default") ';'){ value = new GotoDefaultStatementNode(span); }
+            ;
+            
+        WhileStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("while") '('! Expression(ctx)! ')'! Statement(ctx)!){ value = new WhileStatementNode(span, Expression, Statement); }
+            ;
+            
+        DoStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("do") Statement(ctx)! keyword("while")! '('! Expression(ctx)! ')'! ';'!){ value = new DoStatementNode(span, Statement, Expression); }
+            ;
+            
+        RangeForStatement(ParsingContext* ctx, var UniquePtr<Node> varType, var UniquePtr<IdentifierNode> varId ) : StatementNode*
+            ::= (keyword("for") '(' TypeExpr(ctx){ varType.Reset(TypeExpr); } Identifier{ varId.Reset(Identifier); } ':' Expression(ctx)! ')'! Statement(ctx)!)
+            {
+                value = new RangeForStatementNode(span, varType.Release(), varId.Release(), Expression, Statement);
+            }
+            ;
+            
+        ForStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("for") '('! ForInitStatement(ctx)! Expression(ctx):condition? ';'! Expression(ctx):increment? ')'! Statement(ctx)!)
+            {
+                value = new ForStatementNode(span, ForInitStatement, condition, increment, Statement);
+            }
+            ;
+            
+        ForInitStatement(ParsingContext* ctx) : StatementNode*
+            ::= AssignmentStatement(ctx){ value = AssignmentStatement; }
+            |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            |   ';'{ value = new SimpleStatementNode(span, null); }
+            ;
+            
+        CompoundStatement(ParsingContext* ctx) : CompoundStatementNode*
+            ::= ('{'{ value = new CompoundStatementNode(span); value->SetBeginBraceSpan(span); }
+                    (Statement(ctx){ value->AddStatement(Statement); })*
+                ('}'{ value->SetEndBraceSpan(span); })!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+            
+        BreakStatement : StatementNode*
+            ::= (keyword("break") ';'!){ value = new BreakStatementNode(span); }
+            ;
+            
+        ContinueStatement : StatementNode*
+            ::= (keyword("continue") ';'!){ value = new ContinueStatementNode(span); }
+            ;
+            
+        GotoStatement : StatementNode*
+            ::= (keyword("goto") TargetLabel! ';'!){ value = new GotoStatementNode(span, TargetLabel); }
+            ;
+            
+        TypedefStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("typedef") TypeExpr(ctx)! Identifier! ';'!){ value = new TypedefStatementNode(span, TypeExpr, Identifier); }
+            ;
+            
+        AssignmentStatement(ParsingContext* ctx, var UniquePtr<Node> targetExpr) : StatementNode*
+            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.Reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source! ';'!)
+            {
+                value = new AssignmentStatementNode(span, targetExpr.Release(), source);
+            }
+            ;
+        
+        ConstructionStatement(ParsingContext* ctx) : StatementNode*
+            ::= (TypeExpr(ctx) Identifier!){ value = new ConstructionStatementNode(span, TypeExpr, Identifier); } ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })? ';'!
+            {
+                value->GetSpan().SetEnd(span.End());
+            }
+            ;
+            
+        DeleteStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("delete") Expression(ctx)! ';'!){ value = new DeleteStatementNode(span, Expression); }
+            ;
+            
+        DestroyStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("destroy") Expression(ctx)! ';'!){ value = new DestroyStatementNode(span, Expression); }
+            ;
+            
+        ThrowStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("throw") Expression(ctx)! ';'!){ value = new ThrowStatementNode(span, Expression); }
+            ;
+            
+        TryStatement(ParsingContext* ctx) : TryStatementNode*
+            ::= (keyword("try") CompoundStatement(ctx)!){ value = new TryStatementNode(span, CompoundStatement); } Handlers(ctx, value)!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+            
+        Handlers(ParsingContext* ctx, TryStatementNode* tryS)
+            ::= (Handler(ctx){ tryS->AddHandler(Handler); })+
+            ;
+            
+        Handler(ParsingContext* ctx) : CatchNode*
+            ::= (keyword("catch") '('! TypeExpr(ctx)! Identifier? ')'! CompoundStatement(ctx)!){ value = new CatchNode(span, TypeExpr, Identifier, CompoundStatement); }
+            ;
+            
+        AssertStatement(ParsingContext* ctx) : StatementNode*
+            ::= ('#' keyword("assert") Expression(ctx)! ';'!){ value = new AssertStatementNode(span, Expression); }
+            ;
+            
+        ConditionalCompilationStatement(ParsingContext* ctx) : CondCompStatementNode*
+            ::= ('#' keyword("if") '('! ConditionalCompilationExpr:ifE){ value = new CondCompStatementNode(span, ifE); } ')'! (Statement(ctx):ifS{ value->AddIfStatement(ifS); })*
+                    (
+                        ('#' keyword("elif") '('! ConditionalCompilationExpr:elifE){ value->AddElifExpr(span, elifE); } ')'! (Statement(ctx):elifS{ value->AddElifStatement(elifS); })*
+                    )*
+                    (
+                        '#' keyword("else") (Statement(ctx):elseS{ value->AddElseStatement(span, elseS); })*
+                    )?
+                '#'! keyword("endif")!
+            ;
+
+        ConditionalCompilationExpr : CondCompExprNode*
+            ::= ConditionalCompilationDisjunction{ value = ConditionalCompilationDisjunction; }
+            ;
+            
+        ConditionalCompilationDisjunction(var Span s) : CondCompExprNode*
+            ::= ConditionalCompilationConjunction:left{ s = span; value = left; } ("||" ConditionalCompilationConjunction:right{ s.SetEnd(span.End()); value = new CondCompDisjunctionNode(s, value, right); })*
+            ;
+            
+        ConditionalCompilationConjunction(var Span s) : CondCompExprNode*
+            ::= ConditionalCompilationPrefix:left{ s = span; value = left; } ("&&" ConditionalCompilationPrefix:right{ s.SetEnd(span.End()); value = new CondCompConjunctionNode(s, value, right); })*
+            ;
+            
+        ConditionalCompilationPrefix : CondCompExprNode*
+            ::= ('!' ConditionalCompilationPrefix:left!){ value = new CondCompNotNode(span, left); }
+            |   ConditionalCompilationPrimary:right!{ value = right; }
+            ;
+            
+        ConditionalCompilationPrimary : CondCompExprNode*
+            ::= ConditionalCompilationSymbol:symbol{ value = new CondCompPrimaryNode(span, symbol); }
+            |   '(' ConditionalCompilationExpr:expr{ value = expr; } ')'
+            ;
+            
+        ConditionalCompilationSymbol : CondCompSymbolNode*
+            ::= Symbol{ value = new CondCompSymbolNode(span, Symbol); }
+            ;
+            
+        Symbol : string
+            ::= (identifier - Keyword){ value = match; }
+            ;
+    }
+}
