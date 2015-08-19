@@ -36,7 +36,7 @@ namespace System.Text.Parsing
         {
             ++sourceLines;
         }
-        public nothrow static int GetSourceLines() 
+        public nothrow static int GetSourceLines()
         {
             return sourceLines;
         }
@@ -67,9 +67,13 @@ namespace System.Text.Parsing
         {
             return span;
         }
-        public nothrow inline void SetPosition(const Position& position_)
+        public inline nothrow void SetPosition(const Position& position_)
         {
             position = position_;
+        }
+        public inline nothrow void SetSpan(const Span& span_)
+        {
+            span = span_;
         }
         public nothrow inline const string& FileName() const
         {

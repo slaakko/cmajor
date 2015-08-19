@@ -24,6 +24,7 @@ public:
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) = 0;
     virtual void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol) = 0;
     virtual void BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes) = 0;
+    virtual void InstantiateVirtualFunctionsFor(Cm::Sym::ContainerScope* containerScope, Cm::Sym::ClassTypeSymbol* templateTypeSymbol) = 0;
 };
 
 } } // namespace Cm::Core

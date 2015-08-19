@@ -22,7 +22,7 @@ typedef void* exception_addr_t;
 
 typedef struct { const char* fun; const char* file; int line; } stack_frame;
 
-#define CALL_STACK_SIZE 256
+#define CALL_STACK_SIZE 1024
 
 typedef struct ThreadTblRec_ { thread_t tid; void* table; stack_frame* call_stack; stack_frame* fp; struct ThreadTblRec_* next; } ThreadTblRec;
 

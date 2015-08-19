@@ -1,5 +1,5 @@
-#ifndef Rule_hpp_19440
-#define Rule_hpp_19440
+#ifndef Rule_hpp_26873
+#define Rule_hpp_26873
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -19,10 +19,9 @@ private:
     virtual void GetReferencedGrammars();
     class RuleRule;
     class RuleHeaderRule;
-    class SynchronizeSpecificationRule;
     class RuleBodyRule;
 };
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // Rule_hpp_19440
+#endif // Rule_hpp_26873

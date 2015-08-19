@@ -1,0 +1,114 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.IO;
+using Cm.Ast;
+using Cm.Parser;
+
+namespace Cm.SourceLines
+{
+    internal int ParseCompileUnit(CompileUnitGrammar* compileUnitGrammar, const string& sourceFilePath)
+    {
+        string content = ReadFile(sourceFilePath);
+        System.Text.Parsing.Stats.SetCountSourceLines(true);
+        ParsingContext ctx;
+        UniquePtr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(content, 0, sourceFilePath, &ctx));
+        System.Text.Parsing.Stats.SetCountSourceLines(false);
+        int numSourceLines = System.Text.Parsing.Stats.GetSourceLines();
+        Console.Out() << "> " << sourceFilePath << " : " << numSourceLines << endl();
+        return numSourceLines;
+    }
+    
+    internal int ParseProject(ProjectGrammar* projectGrammar, CompileUnitGrammar* compileUnitGrammar, const string& projectFilePath)
+    {
+        string content = ReadFile(projectFilePath);
+        UniquePtr<Project> project(projectGrammar->Parse(content, 0, projectFilePath, "debug", "llvm", "windows"));
+        project->ResolveDeclarations();
+        Console.Out() << projectFilePath << ": " << project->Name() << endl();
+        Console.Out() << "===============================================================" << endl();
+        int numLines = 0;
+        for (const string& sourceFilePath : project->SourceFilePaths())
+        {
+            int numSourceLines = ParseCompileUnit(compileUnitGrammar, sourceFilePath);
+            numLines = numLines + numSourceLines;
+        }
+        Console.Out() << "===============================================================" << endl();
+        Console.Out() << numLines << endl();
+        return numLines;
+    }
+    
+    internal void ParseSolution(SolutionGrammar* solutionGrammar, ProjectGrammar* projectGrammar, CompileUnitGrammar* compileUnitGrammar, const string& solutionFilePath)
+    {
+        string content = ReadFile(solutionFilePath);
+        UniquePtr<Solution> solution(solutionGrammar->Parse(content, 0, solutionFilePath));
+        solution->ResolveDeclarations();
+        Console.Out() << solutionFilePath << ": " << solution->Name() << endl();
+        Console.Out() << "===============================================================" << endl();
+        int numLines = 0;
+        for (const string& projectFilePath : solution->ProjectFilePaths())
+        {
+            int numProjectLines = ParseProject(projectGrammar, compileUnitGrammar, projectFilePath);
+            numLines = numLines + numProjectLines;
+        }
+        Console.Out() << "===============================================================" << endl();
+        Console.Out() << numLines << endl();
+    }
+}
+
+internal int main(int argc, const char** argv)
+{
+    if (argc < 2)
+    {
+        Console.Out() << "usage: cmslines [options] { file.cms | file.cmp | file.cm }" << endl();
+        Console.Out() << "options:" << endl();
+        Console.Out() << "-debug: debug parsing" << endl();
+        return 0;
+    }
+    try
+    {
+        SolutionGrammar* solutionGrammar = SolutionGrammar.Create();
+        ProjectGrammar* projectGrammar = ProjectGrammar.Create();
+        CompileUnitGrammar* compileUnitGrammar = CompileUnitGrammar.Create();
+        for (int i = 1; i < argc; ++i)
+        {
+            string arg = argv[i];
+            if (arg == "-debug")
+            {
+                compileUnitGrammar->SetLog(&Console.Out());
+            }
+            else
+            {
+                string ext = Path.GetExtension(arg);
+                if (ext == ".cms")
+                {
+                    Cm.SourceLines.ParseSolution(solutionGrammar, projectGrammar, compileUnitGrammar, arg);
+                }
+                else if (ext == ".cmp")
+                {
+                    Cm.SourceLines.ParseProject(projectGrammar, compileUnitGrammar, arg);
+                }
+                else if (ext == ".cm")
+                {
+                    Cm.SourceLines.ParseCompileUnit(compileUnitGrammar, arg);
+                }
+                else
+                {
+                    throw Exception("argument '" + arg + "' is not Cmajor solution, project or source file");
+                }
+            }
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.Message() << endl();
+        return 1;
+    }
+    return 0;
+}

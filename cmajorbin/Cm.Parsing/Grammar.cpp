@@ -20,14 +20,14 @@
 namespace Cm { namespace Parsing {
 
 Grammar::Grammar(const std::string& name_, Scope* enclosingScope_): ParsingObject(name_, enclosingScope_), parsingDomain(new ParsingDomain()), ns(nullptr),
-    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), log(0), maxLogLineLength(256), recover(false)
+    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), log(0), maxLogLineLength(256)
 {
     RegisterParsingDomain(parsingDomain);
     SetScope(new Scope(Name(), EnclosingScope()));
 }
 
 Grammar::Grammar(const std::string& name_, Scope* enclosingScope_, ParsingDomain* parsingDomain_): ParsingObject(name_, enclosingScope_), parsingDomain(parsingDomain_), ns(nullptr), 
-    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), log(0), maxLogLineLength(256), recover(false)
+    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), log(0), maxLogLineLength(256)
 {
     SetScope(new Scope(Name(), EnclosingScope()));
 }
@@ -101,10 +101,6 @@ void Grammar::Accept(Visitor& visitor)
 void Grammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
 {
     Scanner scanner(start, end, fileName, fileIndex, skipRule);
-    if (recover)
-    {
-        scanner.SetRecover();
-    }
     std::unique_ptr<XmlLog> xmlLog;
     if (log)
     {
@@ -148,17 +144,7 @@ Match Grammar::Parse(Scanner& scanner, ObjectStack& stack)
                 contentParser = startRule;
             }
         }
-        if (recover)
-        {
-            scanner.SetRecover();
-        }
-        Match match = contentParser->Parse(scanner, stack);
-        if (recover && scanner.HasErrors())
-        {
-            CombinedParsingError combinedError = scanner.GetCombinedError();
-            throw combinedError;
-        }
-        return match;
+        return contentParser->Parse(scanner, stack);
     }
     return Match::Nothing();
 }

@@ -222,10 +222,6 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
                 const AttrOrVariable& var = rule->LocalVariables()[i];
                 cppFormatter.WriteLine("AddLocalVariable(AttrOrVariable(\"" + var.TypeName() + "\", \"" + var.Name() + "\"));");
             }
-            if (rule->IsSynchronizingRule())
-            {
-                cppFormatter.WriteLine("Synchronize(\"" + StringStr(rule->GetSynchronizeCharacters()) + "\");");
-            }
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("}");
 
@@ -472,10 +468,6 @@ void CodeGeneratorVisitor::EndVisit(Grammar& grammar)
     if (!grammar.SkipRuleName().empty())
     {
         cppFormatter.WriteLine("SetSkipRuleName(\"" + grammar.SkipRuleName() + "\");");
-    }
-    if (grammar.Recover())
-    {
-        cppFormatter.WriteLine("SetRecover();");
     }
     cppFormatter.DecIndent();
     cppFormatter.WriteLine("}");

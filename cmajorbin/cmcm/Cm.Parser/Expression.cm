@@ -1215,7 +1215,6 @@ namespace Cm.Parser
                 a3ActionParser->SetAction(ParsingAction(A3Action));
                 ActionParser* a4ActionParser = GetAction("A4");
                 a4ActionParser->SetAction(ParsingAction(A4Action));
-                a4ActionParser->SetFailureAction(FailureAction(A4ActionFail));
                 NonterminalParser* leftNonterminalParser = GetNonterminal("left");
                 leftNonterminalParser->SetPreCall(PreCall(Preleft));
                 leftNonterminalParser->SetPostCall(PostCall(Postleft));
@@ -1258,11 +1257,6 @@ namespace Cm.Parser
                         break;
                     }
                 }
-                context.ctx->EndParsingArguments();
-            }
-            public throw void A4ActionFail()
-            {
-                context.ctx->EndParsingArguments();
             }
             public throw void Preleft(Stack<UniquePtr<Object>>& stack)
             {
@@ -1341,7 +1335,6 @@ namespace Cm.Parser
                 a4ActionParser->SetAction(ParsingAction(A4Action));
                 ActionParser* a5ActionParser = GetAction("A5");
                 a5ActionParser->SetAction(ParsingAction(A5Action));
-                a5ActionParser->SetFailureAction(FailureAction(A5ActionFail));
                 NonterminalParser* leftNonterminalParser = GetNonterminal("left");
                 leftNonterminalParser->SetPreCall(PreCall(Preleft));
                 leftNonterminalParser->SetPostCall(PostCall(Postleft));
@@ -1394,11 +1387,6 @@ namespace Cm.Parser
                         break;
                     }
                 }
-                context.ctx->EndParsingArguments();
-            }
-            public throw void A5ActionFail()
-            {
-                context.ctx->EndParsingArguments();
             }
             public throw void Preleft(Stack<UniquePtr<Object>>& stack)
             {
@@ -2422,51 +2410,51 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.BasicTypeGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.BasicTypeGrammar.Create(parsingDomain);
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.LiteralGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.TemplateGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.Parser.LiteralGrammar.Create(parsingDomain);
+                grammar1 = Cm.Parser.TemplateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.LiteralGrammar");
             if (grammar2 == null)
             {
-                grammar2 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar2 = Cm.Parser.LiteralGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.BasicTypeGrammar");
             if (grammar3 == null)
             {
-                grammar3 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+                grammar3 = Cm.Parser.BasicTypeGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+                grammar4 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
-            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.TemplateGrammar");
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
             if (grammar5 == null)
             {
-                grammar5 = Cm.Parser.TemplateGrammar.Create(parsingDomain);
+                grammar5 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
-            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
             AddRuleLink(new RuleLink("Literal", this, "LiteralGrammar.Literal"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
             AddRule(new ExpressionRule("Expression", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("Equivalence", "Equivalence", 1))));

@@ -63,9 +63,6 @@ public:
     virtual void Enter(ObjectStack& stack) {}
     virtual void Leave(ObjectStack& stack, bool matched) {}
     virtual void Accept(Visitor& visitor);
-    void Synchronize(const std::string& synchronizeCharacters_);
-    bool IsSynchronizingRule() const { return !synchronizeCharacters.empty(); }
-    const std::string& GetSynchronizeCharacters() const { return synchronizeCharacters; }
 private:
     Grammar* grammar;
     Parser* definition;
@@ -74,7 +71,6 @@ private:
     std::string valueTypeName;
     ActionVec actions;
     NonterminalVec nonterminals;
-    std::string synchronizeCharacters;
 };
 
 class RuleLink: public ParsingObject

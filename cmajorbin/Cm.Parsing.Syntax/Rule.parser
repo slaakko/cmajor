@@ -25,11 +25,7 @@ namespace Cm.Parsing.Syntax
                     ;
 
         RuleHeader(Cm::Parsing::Scope* enclosingScope): Cm::Parsing::Rule*
-                    ::= Identifier:name{value = new Rule(name, enclosingScope); value->SetSpan(span); } Signature(value) SynchronizeSpecification(value)?
-                    ;
-
-        SynchronizeSpecification(Cm::Parsing::Rule* rule)
-                    ::= keyword("synchronize") '('! string:synChars{ rule->Synchronize(synChars); } ')'!
+                    ::= Identifier:name{value = new Rule(name, enclosingScope); value->SetSpan(span); } Signature(value)
                     ;
 
         RuleBody(Cm::Parsing::Rule* rule)

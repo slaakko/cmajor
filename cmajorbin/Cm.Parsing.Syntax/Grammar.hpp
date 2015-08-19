@@ -1,5 +1,5 @@
-#ifndef Grammar_hpp_19440
-#define Grammar_hpp_19440
+#ifndef Grammar_hpp_26873
+#define Grammar_hpp_26873
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -21,9 +21,8 @@ private:
     class GrammarContentRule;
     class StartClauseRule;
     class SkipClauseRule;
-    class RecoverClauseRule;
 };
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // Grammar_hpp_19440
+#endif // Grammar_hpp_26873

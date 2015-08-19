@@ -1,6 +1,8 @@
 project Cm.Parser;
 reference <StdLib.pl>;
 source <BasicType.parser>;
+source <Class.parser>;
+source <CompileUnit.parser>;
 source <Concept.parser>;
 source <Constant.parser>;
 source <Delegate.parser>;
@@ -16,4 +18,5 @@ source <Solution.parser>;
 source <Specifier.parser>;
 source <Statement.parser>;
 source <Template.parser>;
+source <Typedef.parser>;
 source <TypeExpr.parser>;

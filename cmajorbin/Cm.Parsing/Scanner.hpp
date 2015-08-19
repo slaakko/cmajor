@@ -51,7 +51,6 @@ std::string NarrowString(const char* start, const char* end);
 
 class Parser;
 class XmlLog;
-class CombinedParsingError;
 class ExpectationFailure;
 
 class Scanner
@@ -74,16 +73,6 @@ public:
     void SetLog(XmlLog* log_) { log = log_; }
     int LineEndIndex();
     std::string RestOfLine();
-    void AddException(const ExpectationFailure& exception);
-    void AddInfo(const std::string& info);
-    bool Recover() const { return recover; }
-    void SetRecover() { recover = true; }
-    int ExpectationCounter() const { return expectationCounter; }
-    void IncExpectationCounter() { ++expectationCounter; } 
-    void Synchronize(const std::string& synchronizeCharacters);
-    const CombinedParsingError& GetCombinedError() const;
-    bool HasErrors() const;
-    bool Recovering() const { return recover && HasErrors(); }
 private:
     const char* start;
     const char* end;
@@ -93,9 +82,6 @@ private:
     std::string fileName;
     Span span;
     XmlLog* log;
-    int expectationCounter;
-    bool recover;
-    std::unique_ptr<CombinedParsingError> combinedError;
     bool atBeginningOfLine;
 };
 

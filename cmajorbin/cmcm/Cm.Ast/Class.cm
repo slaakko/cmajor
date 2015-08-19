@@ -250,7 +250,7 @@ namespace Cm.Ast
     
     public class BaseInitializerNode : InitializerNode
     {
-        public BaseInitializerNode(const Span& span_) : base(span_)
+        public nothrow BaseInitializerNode(const Span& span_) : base(span_)
         {
         }
         public nothrow override NodeType GetNodeType() const
@@ -278,7 +278,7 @@ namespace Cm.Ast
 
     public class ThisInitializerNode : InitializerNode
     {
-        public ThisInitializerNode(const Span& span_) : base(span_)
+        public nothrow ThisInitializerNode(const Span& span_) : base(span_)
         {
         }
         public nothrow override NodeType GetNodeType() const

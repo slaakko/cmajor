@@ -173,8 +173,6 @@ public:
         nameNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<RuleHeaderRule>(this, &RuleHeaderRule::Postname));
         Cm::Parsing::NonterminalParser* signatureNonterminalParser = GetNonterminal("Signature");
         signatureNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<RuleHeaderRule>(this, &RuleHeaderRule::PreSignature));
-        Cm::Parsing::NonterminalParser* synchronizeSpecificationNonterminalParser = GetNonterminal("SynchronizeSpecification");
-        synchronizeSpecificationNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<RuleHeaderRule>(this, &RuleHeaderRule::PreSynchronizeSpecification));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -194,10 +192,6 @@ public:
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Parsing::Rule*>(context.value)));
     }
-    void PreSynchronizeSpecification(Cm::Parsing::ObjectStack& stack)
-    {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Parsing::Rule*>(context.value)));
-    }
 private:
     struct Context
     {
@@ -205,58 +199,6 @@ private:
         Cm::Parsing::Scope* enclosingScope;
         Cm::Parsing::Rule* value;
         std::string fromname;
-    };
-    std::stack<Context> contextStack;
-    Context context;
-};
-
-class RuleGrammar::SynchronizeSpecificationRule : public Cm::Parsing::Rule
-{
-public:
-    SynchronizeSpecificationRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
-    {
-        AddInheritedAttribute(AttrOrVariable("Cm::Parsing::Rule*", "rule"));
-    }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
-    {
-        contextStack.push(std::move(context));
-        context = Context();
-        std::unique_ptr<Cm::Parsing::Object> rule_value = std::move(stack.top());
-        context.rule = *static_cast<Cm::Parsing::ValueObject<Cm::Parsing::Rule*>*>(rule_value.get());
-        stack.pop();
-    }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        context = std::move(contextStack.top());
-        contextStack.pop();
-    }
-    virtual void Link()
-    {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SynchronizeSpecificationRule>(this, &SynchronizeSpecificationRule::A0Action));
-        Cm::Parsing::NonterminalParser* synCharsNonterminalParser = GetNonterminal("synChars");
-        synCharsNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<SynchronizeSpecificationRule>(this, &SynchronizeSpecificationRule::PostsynChars));
-    }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
-    {
-        context.rule->Synchronize(context.fromsynChars);
-    }
-    void PostsynChars(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        if (matched)
-        {
-            std::unique_ptr<Cm::Parsing::Object> fromsynChars_value = std::move(stack.top());
-            context.fromsynChars = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromsynChars_value.get());
-            stack.pop();
-        }
-    }
-private:
-    struct Context
-    {
-        Context(): rule(), fromsynChars() {}
-        Cm::Parsing::Rule* rule;
-        std::string fromsynChars;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -322,16 +264,16 @@ private:
 void RuleGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Syntax.CompositeGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::Syntax::CompositeGrammar::Create(pd);
+        grammar0 = Cm::Parsing::Syntax::ElementGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Syntax.CompositeGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Syntax::ElementGrammar::Create(pd);
+        grammar1 = Cm::Parsing::Syntax::CompositeGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
     Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.stdlib");
@@ -346,8 +288,8 @@ void RuleGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRuleLink(new Cm::Parsing::RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
+    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRule(new RuleRule("Rule", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
@@ -357,23 +299,9 @@ void RuleGrammar::CreateRules()
             new Cm::Parsing::NonterminalParser("RuleBody", "RuleBody", 1))));
     AddRule(new RuleHeaderRule("RuleHeader", GetScope(),
         new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::NonterminalParser("name", "Identifier", 0)),
-                new Cm::Parsing::NonterminalParser("Signature", "Signature", 1)),
-            new Cm::Parsing::OptionalParser(
-                new Cm::Parsing::NonterminalParser("SynchronizeSpecification", "SynchronizeSpecification", 1)))));
-    AddRule(new SynchronizeSpecificationRule("SynchronizeSpecification", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::KeywordParser("synchronize"),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser('('))),
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::NonterminalParser("synChars", "string", 0))),
-            new Cm::Parsing::ExpectationParser(
-                new Cm::Parsing::CharParser(')')))));
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::NonterminalParser("name", "Identifier", 0)),
+            new Cm::Parsing::NonterminalParser("Signature", "Signature", 1))));
     AddRule(new RuleBodyRule("RuleBody", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(

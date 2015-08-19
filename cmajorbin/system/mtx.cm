@@ -15,7 +15,7 @@
 
 namespace System.Support
 {
-    public const int EXIT_MUTEX_OP_FAILED = 249;
+    public const int EXIT_MUTEX_OP_FAILED = 248;
     
     public class MtxGuard
     {

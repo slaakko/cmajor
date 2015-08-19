@@ -29,9 +29,8 @@ namespace Cm.Parser
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
         start CompoundStatement;
-        recover;
  
-        Statement(ParsingContext* ctx): Cm::Ast::StatementNode* synchronize(";}")
+        Statement(ParsingContext* ctx): Cm::Ast::StatementNode*
             ::= LabeledStatement(ctx){ value = LabeledStatement; }
             |   ControlStatement(ctx){ value = ControlStatement; }
             |   TypedefStatement(ctx){ value = TypedefStatement; }

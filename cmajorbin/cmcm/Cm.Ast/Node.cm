@@ -16,7 +16,7 @@ namespace Cm.Ast
     public concept AstNode<T>
     {
         where Derived<T, Node> or Same<T, Node>;
-        T(const Span&);
+        T(const System.Text.Parsing.Span&);
     }
     
     public enum NodeType : byte

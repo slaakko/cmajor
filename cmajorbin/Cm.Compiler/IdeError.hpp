@@ -53,7 +53,7 @@ class IdeErrorCollection
 {
 public:
     IdeErrorCollection();
-    IdeErrorCollection(const Cm::Parsing::CombinedParsingError& ex);
+    IdeErrorCollection(const Cm::Parsing::ExpectationFailure& ex);
     IdeErrorCollection(const Cm::Sym::Exception& ex);
     IdeErrorCollection(const Cm::Core::Exception& ex);
     IdeErrorCollection(const Cm::Core::ToolErrorExcecption& ex);

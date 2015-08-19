@@ -31,7 +31,6 @@ namespace Cm.Parser
         using FunctionGrammar.FunctionGroupId;
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
-        recover;
 
         Concept(ParsingContext* ctx): Cm::Ast::ConceptNode*
             ::= empty{ ctx->BeginParsingConcept(); }
@@ -55,7 +54,7 @@ namespace Cm.Parser
             ::= (ConceptBodyConstraint(ctx, concept) | Axiom(ctx, concept))*
             ;
 
-        ConceptBodyConstraint(ParsingContext* ctx, Cm::Ast::ConceptNode* concept) synchronize(";}")
+        ConceptBodyConstraint(ParsingContext* ctx, Cm::Ast::ConceptNode* concept)
             ::= TypenameConstraint(ctx){ concept->AddConstraint(TypenameConstraint); }
             |   SignatureConstraint(ctx, concept->FirstTypeParameter()){ concept->AddConstraint(SignatureConstraint); }
             |   EmbeddedConstraint(ctx){ concept->AddConstraint(EmbeddedConstraint); }
@@ -73,7 +72,7 @@ namespace Cm.Parser
             ::= (AxiomStatement(ctx){ axiom->AddStatement(AxiomStatement); })*
             ;
 
-        AxiomStatement(ParsingContext* ctx): Cm::Ast::AxiomStatementNode* synchronize(";}")
+        AxiomStatement(ParsingContext* ctx): Cm::Ast::AxiomStatementNode*
             ::= (Expression(ctx) ';'!){ value = new AxiomStatementNode(span, Expression, std::string(matchBegin, matchEnd)); }
             ;
 

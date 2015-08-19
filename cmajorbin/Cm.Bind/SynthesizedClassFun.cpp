@@ -1069,6 +1069,7 @@ SynthesizedConstructorGroup::SynthesizedConstructorGroup(Cm::BoundTree::BoundCom
 void SynthesizedConstructorGroup::CollectViableFunctions(SynthesizedClassTypeCacheMap& cacheMap, Cm::Sym::ClassTypeSymbol* classType, int arity, const std::vector<Cm::Core::Argument>& arguments,
     const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope, std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, std::unique_ptr<Cm::Core::Exception>& exception)
 {
+    bool generated = false;
     if (arity == 1)
     {
         if (classType->IsStatic())
@@ -1090,6 +1091,7 @@ void SynthesizedConstructorGroup::CollectViableFunctions(SynthesizedClassTypeCac
             if (defaultConstructor)
             {
                 viableFunctions.insert(defaultConstructor);
+                generated = true;
             }
         }
     }
@@ -1124,6 +1126,7 @@ void SynthesizedConstructorGroup::CollectViableFunctions(SynthesizedClassTypeCac
                     if (copyConstructor)
                     {
                         viableFunctions.insert(copyConstructor);
+                        generated = true;
                     }
                 }
             }
@@ -1154,10 +1157,15 @@ void SynthesizedConstructorGroup::CollectViableFunctions(SynthesizedClassTypeCac
                     if (moveConstructor)
                     {
                         viableFunctions.insert(moveConstructor);
+                        generated = true;
                     }
                 }
             }
         }
+    }
+    if (generated && classType->IsTemplateTypeSymbol())
+    {
+        CompileUnit().ClassTemplateRepository().InstantiateVirtualFunctionsFor(containerScope, classType);
     }
 }
 

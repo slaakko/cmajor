@@ -123,6 +123,7 @@ namespace System.Text.Parsing
             if (selectorRule != null)
             {
                 Position save = scanner.GetPosition();
+                Span savedSpan = scanner.GetSpan();
                 Match match = selectorRule->Parse(scanner, stack);
                 if (match.Hit())
                 {
@@ -132,6 +133,7 @@ namespace System.Text.Parsing
                         return match;
                     }
                     scanner.SetPosition(save);
+                    scanner.SetSpan(savedSpan);
                 }
             }
             return Match.Nothing();

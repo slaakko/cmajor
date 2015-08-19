@@ -51,7 +51,15 @@ std::string GetErrorLines(const char* start, const char* end, const Span& span)
     }
     const char* lineStart = LineStart(start, startPos);
     int cols = static_cast<int>(startPos - lineStart);
+    if (cols < 0)
+    {
+        cols = 0;
+    }
     const char* lineEnd = LineEnd(end, startPos);
+    if (lineEnd < lineStart)
+    {
+        lineEnd = lineStart;
+    }
     int lineLength = static_cast<int>(lineEnd - lineStart);
     std::string lines(NarrowString(lineStart, lineEnd));
     int spanCols = std::max(1, std::min(span.End() -  span.Start(), lineLength - cols));
@@ -83,10 +91,6 @@ ExpectationFailure::ExpectationFailure(const std::string& info_, const std::stri
 void ExpectationFailure::CombineInfo(const std::string& parentInfo)
 {
     info = parentInfo + info;
-}
-
-CombinedParsingError::CombinedParsingError(): std::runtime_error("parsing failed")
-{
 }
 
 } } // namespace Cm::Parsing

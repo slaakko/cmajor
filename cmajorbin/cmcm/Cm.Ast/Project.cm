@@ -190,6 +190,10 @@ namespace Cm.Ast
         public TargetDeclaration(const Span& span_, Target target_) : base(span_, Properties()), target(target_)
         {
         }
+        public nothrow override bool IsTargetDeclaration() const
+        {
+            return true;
+        }
         public nothrow inline Target GetTarget() const
         {
             return target;

@@ -123,19 +123,11 @@ ExpectationParser::ExpectationParser(Parser* child_): UnaryParser("expectation",
 
 Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
-    if (scanner.Recovering() && scanner.AtEnd())
-    {
-        return Match::Nothing();
-    }
     Span expectationSpan = scanner.GetSpan();
     Match match = Match::Nothing();
     try
     {
         match = Child()->Parse(scanner, stack);
-        if (scanner.Recover() && !match.Hit())
-        {
-            scanner.IncExpectationCounter();
-        }
     }
     catch (const ExpectationFailure& ex)
     {
@@ -147,22 +139,7 @@ Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack)
     }
     else
     {
-        if (scanner.Recover())
-        {
-            if (scanner.ExpectationCounter() == 1)
-            {
-                scanner.AddException(ExpectationFailure(Child()->Info(), scanner.FileName(), expectationSpan, scanner.Start(), scanner.End()));
-            }
-            else
-            {
-                scanner.AddInfo(Child()->Info());
-            }
-            return match;
-        }
-        else
-        {
-            throw ExpectationFailure(Child()->Info(), scanner.FileName(), expectationSpan, scanner.Start(), scanner.End());
-        }
+        throw ExpectationFailure(Child()->Info(), scanner.FileName(), expectationSpan, scanner.Start(), scanner.End());
     }
 }
 

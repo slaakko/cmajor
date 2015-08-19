@@ -118,12 +118,9 @@ int main(int argc, const char** argv)
             }
         }
     }
-    catch (const Cm::Parsing::CombinedParsingError& ex)
+    catch (const Cm::Parsing::ExpectationFailure& ex)
     {
-        for (const Cm::Parsing::ExpectationFailure& f : ex.Errors())
-        {
-            std::cerr << f.what() << std::endl;
-        }
+        std::cerr << ex.what() << std::endl;
         return 1;
     }
     catch (const std::exception& ex)
