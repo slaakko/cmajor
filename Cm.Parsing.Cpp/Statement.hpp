@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_19440
-#define Statement_hpp_19440
+#ifndef Statement_hpp_26870
+#define Statement_hpp_26870
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -47,4 +47,4 @@ private:
 
 } } } // namespace Cm.Parsing.Cpp
 
-#endif // Statement_hpp_19440
+#endif // Statement_hpp_26870

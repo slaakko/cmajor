@@ -18,7 +18,7 @@ int destroy_mutex(pthread_mutex_t* mtx);
 int lock_mutex(pthread_mutex_t* mtx);
 int unlock_mutex(pthread_mutex_t* mtx);
 
-#define EXIT_MUTEX_OP_FAILED 249
+#define EXIT_MUTEX_OP_FAILED 248
 
 void mutextbl_init(int numMutexes)
 {

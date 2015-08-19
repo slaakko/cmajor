@@ -202,11 +202,6 @@ namespace Cm.Parser
                             case Operator.plus: expr.Reset(new AddNode(s, expr.Release(), right)); break;
                             case Operator.minus: expr.Reset(new SubNode(s, expr.Release(), right)); break;
                         }
-                        ctx->EndParsingArguments();
-                    }
-                    /
-                    {
-                        ctx->EndParsingArguments();
                     }
                 )*
             )
@@ -232,11 +227,6 @@ namespace Cm.Parser
                             case Operator.div: expr.Reset(new DivNode(s, expr.Release(), right)); break;
                             case Operator.rem: expr.Reset(new RemNode(s, expr.Release(), right)); break;
                         }
-                        ctx->EndParsingArguments();
-                    }
-                    /
-                    {
-                        ctx->EndParsingArguments();
                     }
                 )*
             )

@@ -45,16 +45,6 @@ private:
     std::string info;
 };
 
-class CombinedParsingError : public std::runtime_error
-{
-public:
-    CombinedParsingError();
-    const std::vector<ExpectationFailure>& Errors() const { return errors; }
-    std::vector<ExpectationFailure>& Errors() { return errors; }
-private:
-    std::vector<ExpectationFailure> errors;
-};
-
 } } // namespace Cm::Parsing
 
 #endif // CM_PARSING_EXCEPTION_INCLUDED

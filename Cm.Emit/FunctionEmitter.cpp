@@ -144,7 +144,7 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
             }
             else if (backend == Cm::IrIntf::BackEnd::c)
             {
-                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, baseTypeIrType);
+                localVariableObject = Cm::IrIntf::CreateStackVar(assemblyName, type->GetIrType());
             }
         }
     }

@@ -33,7 +33,6 @@ namespace Cm.Parser
         using StatementGrammar.CompoundStatement;
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
-        recover;
 
         Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): Cm::Ast::FunctionNode*
             ::= (Specifiers TypeExpr(ctx) FunctionGroupId(ctx){ fun.reset(new FunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } 

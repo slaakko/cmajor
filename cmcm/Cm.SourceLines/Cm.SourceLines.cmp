@@ -1,0 +1,6 @@
+project Cm.SourceLines;
+target=program;
+assembly <Cm.SourceLines.cma>;
+executable <cmslines>;
+reference <../Cm.Parser/Cm.Parser.cml>;
+source <Main.cm>;

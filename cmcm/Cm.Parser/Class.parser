@@ -1,0 +1,129 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    grammar ClassGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
+        using TemplateGrammar.TemplateParameterList;
+        using TemplateGrammar.TemplateId;
+        using ConceptGrammar.WhereConstraint;
+        using StatementGrammar.CompoundStatement;
+        using ParameterGrammar.ParameterList;
+        using EnumerationGrammar.EnumType;
+        using ConstantGrammar.Constant;
+        using DelegateGrammar.Delegate;
+        using DelegateGrammar.ClassDelegate;
+        using TypedefGrammar.Typedef;
+        using ExpressionGrammar.ArgumentList;
+        using TypeExprGrammar.TypeExpr;
+        using FunctionGrammar.FunctionGroupId;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        
+        Class(ParsingContext* ctx, CompileUnitNode* compileUnit) : ClassNode*
+            ::= (Specifiers keyword("class") Identifier){ value = new ClassNode(span, Specifiers, Identifier); value->SetCompileUnit(compileUnit); } 
+                TemplateParameterList(ctx, value)? Inheritance(ctx, value)?
+                (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? '{'! ClassContent(ctx, value, compileUnit)! '}'!
+            ;
+            
+        Inheritance(ParsingContext* ctx, ClassNode* cls)
+            ::= ':'{ ctx->BeginParsingTypeExpr(); }
+                BaseClassTypeExpr(ctx)!{ cls->SetBaseClassTypeExpr(BaseClassTypeExpr); ctx->EndParsingTypeExpr(); } / { ctx->EndParsingTypeExpr(); }
+            ;
+            
+        BaseClassTypeExpr(ParsingContext* ctx) : Node*
+            ::= TemplateId(ctx){ value = TemplateId; }
+            |   QualifiedId{ value = QualifiedId; }
+            ;
+            
+        ClassContent(ParsingContext* ctx, ClassNode* cls, CompileUnitNode* compileUnit)
+            ::= (ClassMember(ctx, cls, compileUnit){ cls->AddMember(ClassMember); })*
+            ;
+            
+        ClassMember(ParsingContext* ctx, ClassNode* cls, CompileUnitNode* compileUnit) : Node*
+            ::= StaticConstructor(ctx, cls, compileUnit){ value = StaticConstructor; }
+            |   Constructor(ctx, cls, compileUnit){ value = Constructor; }
+            |   Destructor(ctx, cls, compileUnit){ value = Destructor; }
+            |   MemberFunction(ctx, compileUnit){ value = MemberFunction; }
+            |   ConversionFunction(ctx, compileUnit){ value = ConversionFunction; }
+            |   EnumType(ctx){ value = EnumType; }
+            |   Constant(ctx){ value = Constant; }
+            |   MemberVariable(ctx){ value = MemberVariable; }
+            |   Class(ctx, compileUnit){ value = Class; }
+            |   Delegate(ctx){ value = Delegate; }
+            |   ClassDelegate(ctx){ value = ClassDelegate; }
+            |   Typedef(ctx){ value = Typedef; }
+            ;
+            
+        InitializerList(ParsingContext* ctx, Node* owner)
+            ::= ':' (Initializer(ctx){ owner->AddInitializer(Initializer); } % ',')
+            ;
+            
+        Initializer(ParsingContext* ctx) : InitializerNode*
+            ::= BaseInitializer(ctx){ value = BaseInitializer; }
+            |   ThisInitializer(ctx){ value = ThisInitializer; }
+            |   MemberInitializer(ctx){ value = MemberInitializer; }
+            ;
+            
+        BaseInitializer(ParsingContext* ctx) : BaseInitializerNode*
+            ::= (keyword("base"){ value = new BaseInitializerNode(span); } '('! ArgumentList(ctx, value) ')'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+            
+        ThisInitializer(ParsingContext* ctx) : ThisInitializerNode*
+            ::= (keyword("this"){ value = new ThisInitializerNode(span); } '('! ArgumentList(ctx, value) ')'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+        
+        MemberInitializer(ParsingContext* ctx) : MemberInitializerNode*
+            ::= (Identifier!{ value = new MemberInitializerNode(span, Identifier); } '('! ArgumentList(ctx, value) ')'!){ value->GetSpan().SetEnd(span.End()); }
+            ;
+            
+        StaticConstructor(ParsingContext* ctx, ClassNode* cls, CompileUnitNode* compileUnit, var UniquePtr<IdentifierNode> id, var UniquePtr<IdentifierNode> refId) : StaticConstructorNode*
+            ::= ((Specifiers (Identifier{ id.Reset(Identifier); } - (Identifier:ref{ refId.Reset(ref); } '&'))
+                '(' ')'){ if (id->Str() != cls->Id()->Str()) pass = false; else if (!HasStaticSpecifier(Specifiers)) pass = false; if (pass) { value = new StaticConstructorNode(span, Specifiers); value->SetCompileUnit(compileUnit); } }
+                InitializerList(ctx, value)? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ value->GetSpan().SetEnd(span.End()); }
+                CompoundStatement(ctx){ value->SetBody(CompoundStatement); }
+            ;
+            
+        Constructor(ParsingContext* ctx, ClassNode* cls, CompileUnitNode* compileUnit, var UniquePtr<IdentifierNode> id, var UniquePtr<IdentifierNode> refId, var UniquePtr<ConstructorNode> ctor) : ConstructorNode*
+            ::= ((Specifiers (Identifier{ id.Reset(Identifier); } - (Identifier:ref{ refId.Reset(ref); } '&'))){ pass = id->Str() == cls->Id()->Str(); if (pass) { ctor.Reset(new ConstructorNode(span, Specifiers)); } }
+                ParameterList(ctx, ctor.GetPtr())
+                InitializerList(ctx, ctor.GetPtr())? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ ctor->GetSpan().SetEnd(span.End()); }
+                (CompoundStatement(ctx){ ctor->SetBody(CompoundStatement); } | ';'){ value = ctor.Release(); value->SetCompileUnit(compileUnit); }
+            ;
+            
+        Destructor(ParsingContext* ctx, ClassNode* cls, CompileUnitNode* compileUnit, var UniquePtr<IdentifierNode> id, var Span s) : DestructorNode*
+            ::= (Specifiers '~' Identifier{ id.Reset(Identifier); pass = id->Str() == cls->Id()->Str(); } '('! ')'!){ s = span; }
+                (CompoundStatement(ctx) | ';'){ value = new DestructorNode(s, Specifiers, CompoundStatement); value->SetCompileUnit(compileUnit); }
+            ;
+            
+        MemberFunction(ParsingContext* ctx, CompileUnitNode* compileUnit, var UniquePtr<MemberFunctionNode> memFun) : MemberFunctionNode*
+            ::= ((Specifiers TypeExpr(ctx) FunctionGroupId(ctx)){ memFun.Reset(new MemberFunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } ParameterList(ctx, memFun.GetPtr())
+                (keyword("const"){ memFun->SetConst(); })?
+                (WhereConstraint(ctx){ memFun->SetConstraint(WhereConstraint); })?){ memFun->GetSpan().SetEnd(span.End()); }
+                (CompoundStatement(ctx) | ';'){ memFun->SetBody(CompoundStatement); value = memFun.Release(); value->SetCompileUnit(compileUnit); }
+            ;
+            
+        ConversionFunction(ParsingContext* ctx, CompileUnitNode* compileUnit, var bool setConst, var Span s) : ConversionFunctionNode*
+            ::= (Specifiers keyword("operator") TypeExpr(ctx) '('! ')'! (keyword("const"){ setConst = true; })? WhereConstraint(ctx)?){ s = span; } CompoundStatement(ctx)
+            {
+                value = new ConversionFunctionNode(s, Specifiers, TypeExpr, setConst, WhereConstraint, CompoundStatement); value->SetCompileUnit(compileUnit);
+            }
+            ;
+            
+        MemberVariable(ParsingContext* ctx) : MemberVariableNode*
+            ::= (Specifiers TypeExpr(ctx) Identifier ';'){ value = new MemberVariableNode(span, Specifiers, TypeExpr, Identifier); }
+            ;
+    }
+}

@@ -85,12 +85,9 @@ IdeErrorCollection::IdeErrorCollection()
 {
 }
 
-IdeErrorCollection::IdeErrorCollection(const Cm::Parsing::CombinedParsingError& ex)
+IdeErrorCollection::IdeErrorCollection(const Cm::Parsing::ExpectationFailure& ex)
 {
-    for (const Cm::Parsing::ExpectationFailure& exp : ex.Errors())
-    {
-        errors.push_back(IdeError(exp));
-    }
+    errors.push_back(IdeError(ex));
 }
 
 IdeErrorCollection::IdeErrorCollection(const Cm::Sym::Exception& ex)

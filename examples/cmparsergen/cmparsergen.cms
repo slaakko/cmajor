@@ -2,7 +2,7 @@ solution cmparsergen;
 project <Cm/Cm.cmp>;
 project <Compiler/Compiler.cmp>;
 project <Syntax/Syntax.cmp>;
-activeProject Compiler;
+activeProject Cm;
 dependency Cm();
 dependency Syntax(Cm);
 dependency Compiler(Cm, Syntax);

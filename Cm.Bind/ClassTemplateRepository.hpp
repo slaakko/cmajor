@@ -23,11 +23,13 @@ public:
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions) override;
     void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol) override;
     void BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes) override;
+    void InstantiateVirtualFunctionsFor(Cm::Sym::ContainerScope* containerScope, Cm::Sym::ClassTypeSymbol* templateTypeSymbol) override;
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     typedef std::unordered_set<Cm::Sym::ClassTypeSymbol*> ClassTemplateSet;
     typedef ClassTemplateSet::const_iterator ClassTemplateSetIt;
     ClassTemplateSet classTemplates;
+    ClassTemplateSet virtualFunctionsInstantiated;
 };
 
 } } // namespace Cm::Bind

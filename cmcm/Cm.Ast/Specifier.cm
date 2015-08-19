@@ -36,4 +36,9 @@ namespace Cm.Ast
         unit_test = 1u << 17u,
         non_access_specifiers = static_ | virtuality | explicit_ | external | suppress_ | default_ | inline_ | cdecl_ | nothrow_ | throw_ | unit_test | new_
     }
+    
+    public bool HasStaticSpecifier(Specifiers s)
+    {
+        return (s & Specifiers.static_) != Specifiers.none;
+    }
 }

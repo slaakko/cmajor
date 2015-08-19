@@ -197,6 +197,12 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
 {
     if (boundCompileUnit.IsPrebindCompileUnit()) return;
     if (boundCompileUnit.Instantiated(memberFunctionSymbol)) return;
+    Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(memberFunctionSymbol, false);
+    if (!node)
+    {
+        if (memberFunctionSymbol->IsDestructor()) return;
+        throw std::runtime_error("node for symbol '" + memberFunctionSymbol->FullName() + "' not found in symbol table");
+    }
     boundCompileUnit.AddToInstantiated(memberFunctionSymbol);
     memberFunctionSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
     Cm::Sym::Symbol* parent = memberFunctionSymbol->Parent();
@@ -228,7 +234,6 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         throw std::runtime_error("not class node");
     }
     Cm::Ast::ClassNode* templateTypeNode = static_cast<Cm::Ast::ClassNode*>(ttNode);
-    Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(memberFunctionSymbol);
     if (!node->IsFunctionNode())
     {
         throw std::runtime_error("not function node");
@@ -279,22 +284,29 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         {
             Instantiate(containerScope, templateTypeSymbol->Destructor());
         }
-        for (Cm::Sym::FunctionSymbol* virtualFunction : templateTypeSymbol->Vtbl())
+        InstantiateVirtualFunctionsFor(containerScope, templateTypeSymbol);
+    }
+}
+
+void ClassTemplateRepository::InstantiateVirtualFunctionsFor(Cm::Sym::ContainerScope* containerScope, Cm::Sym::ClassTypeSymbol* templateTypeSymbol)
+{
+    if (virtualFunctionsInstantiated.find(templateTypeSymbol) != virtualFunctionsInstantiated.cend()) return;
+    virtualFunctionsInstantiated.insert(templateTypeSymbol);
+    for (Cm::Sym::FunctionSymbol* virtualFunction : templateTypeSymbol->Vtbl())
+    {
+        if (virtualFunction)
         {
-            if (virtualFunction)
+            Cm::Sym::Symbol* parent = virtualFunction->Parent();
+            if (!parent->IsTypeSymbol())
             {
-                Cm::Sym::Symbol* parent = virtualFunction->Parent();
-                if (!parent->IsTypeSymbol())
+                throw std::runtime_error("not type symbol");
+            }
+            Cm::Sym::TypeSymbol* parentType = static_cast<Cm::Sym::TypeSymbol*>(parent);
+            if (Cm::Sym::TypesEqual(parentType, templateTypeSymbol))
+            {
+                if (!virtualFunction->IsAbstract())
                 {
-                    throw std::runtime_error("not type symbol");
-                }
-                Cm::Sym::TypeSymbol* parentType = static_cast<Cm::Sym::TypeSymbol*>(parent);
-                if (Cm::Sym::TypesEqual(parentType, templateTypeSymbol))
-                {
-                    if (!virtualFunction->IsAbstract())
-                    {
-                        Instantiate(containerScope, virtualFunction);
-                    }
+                    Instantiate(containerScope, virtualFunction);
                 }
             }
         }

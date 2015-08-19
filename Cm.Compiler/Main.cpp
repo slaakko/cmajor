@@ -296,24 +296,18 @@ int main(int argc, const char** argv)
                 secs << " second" << ((secs != 1) ? "s" : "") << std::endl;
         }
     }
-    catch (const Cm::Parsing::CombinedParsingError& ex)
+    catch (const Cm::Parsing::ExpectationFailure& ex)
     {
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
         {
             Cm::Compiler::IdeErrorCollection errorCollection(ex);
             errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
             std::cerr << errorCollection << std::endl;
+            std::cout << ex.what() << std::endl;
         }
-        for (const Cm::Parsing::ExpectationFailure& exp : ex.Errors())
+        else
         {
-            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
-            {
-                std::cout << exp.what() << std::endl;
-            }
-            else
-            {
-                std::cerr << exp.what() << std::endl;
-            }
+            std::cerr << ex.what() << std::endl;
         }
         return 1;
     }

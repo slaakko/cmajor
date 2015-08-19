@@ -45,7 +45,7 @@ int GetParsedSourceLines()
 
 Scanner::Scanner(const char* start_, const char* end_, const std::string& fileName_, int fileIndex_, Parser* skipper_): 
     start(start_), end(end_), skipper(skipper_), skipping(false), tokenCounter(0), fileName(fileName_), span(fileIndex_), 
-    log(nullptr), expectationCounter(0), recover(false), atBeginningOfLine(true)
+    log(nullptr), atBeginningOfLine(true)
 {
     if (countSourceLines)
     {
@@ -105,58 +105,6 @@ std::string Scanner::RestOfLine()
 {
     std::string restOfLine(start + span.Start(), start + LineEndIndex());
     return restOfLine;
-}
-
-void Scanner::AddException(const ExpectationFailure& exception)
-{
-    if (!combinedError)
-    {
-        combinedError.reset(new CombinedParsingError());
-    }
-    combinedError->Errors().push_back(exception);
-}
-
-void Scanner::AddInfo(const std::string& info)
-{
-    if (!combinedError)
-    {
-        throw std::runtime_error("scanner exception not active");
-    }
-    ExpectationFailure& ex = combinedError->Errors().back();
-    combinedError->Errors().back() = ExpectationFailure(info + ex.Info(), ex.FileName(), ex.GetSpan(), start, end);
-}
-
-void Scanner::Synchronize(const std::string& synchronizeCharacters)
-{
-    if (AtEnd()) return;
-    char c = GetChar();
-    while (!AtEnd() && synchronizeCharacters.find(c) == std::string::npos)
-    {
-        ++*this;
-        c = GetChar();
-    }
-    if (!AtEnd())
-    {
-        ++*this;
-    }
-    expectationCounter = 0;
-}
-
-bool Scanner::HasErrors() const
-{
-    return combinedError && !combinedError->Errors().empty();
-}
-
-const CombinedParsingError& Scanner::GetCombinedError() const
-{
-    if (combinedError)
-    {
-        return *combinedError;
-    }
-    else
-    {
-        throw std::runtime_error("scanner exception not active");
-    }
 }
 
 } } // namespace Cm::Parsing

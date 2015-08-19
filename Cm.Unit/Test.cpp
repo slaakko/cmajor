@@ -431,13 +431,9 @@ void TestSourceFile(const std::string& sourceFilePath, Cm::Ast::Project* project
             TestUnit(testUnit.first.get(), project, testUnit.second, defines);
         }
     }
-    catch (const Cm::Parsing::CombinedParsingError& ex)
+    catch (const Cm::Parsing::ExpectationFailure& ex)
     {
         std::cerr << "  could not compile file '" << sourceFilePath << "': " << ex.what() << std::endl;
-        for (const Cm::Parsing::ExpectationFailure& ef : ex.Errors())
-        {
-            std::cerr << "    " << ef.what() << std::endl;
-        }
     }
     catch (const std::exception& ex)
     {

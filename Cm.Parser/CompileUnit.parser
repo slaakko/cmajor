@@ -45,7 +45,6 @@ namespace Cm.Parser
         using ConceptGrammar.Concept;
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
-        recover;
 
         CompileUnit(ParsingContext* ctx): Cm::Ast::CompileUnitNode*
             ::= empty{ value = new CompileUnitNode(span, fileName); }

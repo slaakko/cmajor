@@ -17,7 +17,7 @@ namespace Cm.Ast
         public nothrow CompileUnitNode(const Span& span_) : base(span_)
         {
         }
-        public nothrow CompileUnitNode(const Span& span_, const string& filePath_) : base(span_), filePath(filePath_)
+        public nothrow CompileUnitNode(const Span& span_, const string& filePath_) : base(span_), filePath(filePath_), globalNs(new NamespaceNode(span_, new IdentifierNode(span_, "")))
         {
         }
         public override nothrow NodeType GetNodeType() const
