@@ -2037,6 +2037,8 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundWhileStatement& boundWhileS
         }
         CreateDebugNode(boundWhileStatement, boundWhileStatement.Condition()->SyntaxNode()->GetSpan(), true);
     }
+    functionDestructionStack.Push(std::move(currentCompoundDestructionStack));
+    currentCompoundDestructionStack = CompoundDestructionStack();
 }
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileStatement)
@@ -2044,26 +2046,71 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundWhileStatement& boundWhileSta
     PopSkipContent();
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     std::shared_ptr<Cm::Core::GenResult> conditionResult = resultStack.Pop();
-    Cm::BoundTree::BoundStatement* statement = boundWhileStatement.Statement();
-    PushBreakTargetStatement(&boundWhileStatement);
-    PushContinueTargetStatement(&boundWhileStatement);
-    BeginVisitStatement(*statement);
-    statement->Accept(*this);
-    if (generateDebugInfo)
+    std::shared_ptr<Cm::Core::GenResult> statementResult;
+    if (currentCompoundDestructionStack.IsEmpty())
     {
-        PatchPrevDebugNodes(boundWhileStatement);
-        AddDebugNodeTransition(boundWhileStatement, *statement);
+        currentCompoundDestructionStack = functionDestructionStack.Pop();
+        Cm::BoundTree::BoundStatement* statement = boundWhileStatement.Statement();
+        PushBreakTargetStatement(&boundWhileStatement);
+        PushContinueTargetStatement(&boundWhileStatement);
+        BeginVisitStatement(*statement);
+        statement->Accept(*this);
+        if (generateDebugInfo)
+        {
+            PatchPrevDebugNodes(boundWhileStatement);
+            AddDebugNodeTransition(boundWhileStatement, *statement);
+        }
+        statementResult = resultStack.Pop();
+        emitter->Emit(Cm::IrIntf::Br(conditionResult->GetLabel()));
+        conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
+        statementResult->BackpatchNextTargets(conditionResult->GetLabel());
+        BackpatchNextTargets(statementResult->GetLabel());
+        result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
+        result->MergeTargets(result->NextTargets(), boundWhileStatement.BreakTargetLabels());
+        Ir::Intf::Backpatch(boundWhileStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+        PopContinueTargetStatement();
+        PopBreakTargetStatement();
     }
-    std::shared_ptr<Cm::Core::GenResult> statementResult = resultStack.Pop();
-    emitter->Emit(Cm::IrIntf::Br(conditionResult->GetLabel()));
-    conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
-    statementResult->BackpatchNextTargets(conditionResult->GetLabel());
-    BackpatchNextTargets(statementResult->GetLabel());
-    result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
-    result->MergeTargets(result->NextTargets(), boundWhileStatement.BreakTargetLabels());
-    Ir::Intf::Backpatch(boundWhileStatement.ContinueTargetLabels(), conditionResult->GetLabel());
-    PopContinueTargetStatement();
-    PopBreakTargetStatement();
+    else
+    {
+        bool trueFirst = true;
+        std::shared_ptr<Cm::Core::GenResult> trueResult(new Cm::Core::GenResult(emitter.get(), genFlags));
+        ExitCompound(*trueResult, currentCompoundDestructionStack, trueFirst);
+        CompoundDestructionStack tempCompoundDestructionStack = std::move(currentCompoundDestructionStack);
+        currentCompoundDestructionStack = functionDestructionStack.Pop();
+        conditionResult->BackpatchTrueTargets(trueResult->GetLabel());
+        Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
+        emitter->Own(trueLabel);
+        emitter->Emit(Cm::IrIntf::Br(trueLabel));
+        Cm::BoundTree::BoundStatement* statement = boundWhileStatement.Statement();
+        PushBreakTargetStatement(&boundWhileStatement);
+        PushContinueTargetStatement(&boundWhileStatement);
+        BeginVisitStatement(*statement);
+        statement->Accept(*this);
+        if (generateDebugInfo)
+        {
+            PatchPrevDebugNodes(boundWhileStatement);
+            AddDebugNodeTransition(boundWhileStatement, *statement);
+        }
+        statementResult = resultStack.Pop();
+        emitter->Emit(Cm::IrIntf::Br(conditionResult->GetLabel()));
+        trueLabel->Set(statementResult->GetLabel());
+        statementResult->BackpatchNextTargets(conditionResult->GetLabel());
+        BackpatchNextTargets(statementResult->GetLabel());
+
+        bool falseFirst = true;
+        std::shared_ptr<Cm::Core::GenResult> falseResult(new Cm::Core::GenResult(emitter.get(), genFlags));
+        ExitCompound(*falseResult, tempCompoundDestructionStack, falseFirst);
+        conditionResult->BackpatchFalseTargets(falseResult->GetLabel());
+        Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
+        emitter->Own(falseLabel);
+        emitter->Emit(Cm::IrIntf::Br(falseLabel));
+        result->AddNextTarget(falseLabel);
+        result->MergeTargets(result->NextTargets(), boundWhileStatement.BreakTargetLabels());
+        Ir::Intf::Backpatch(boundWhileStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+        PopContinueTargetStatement();
+        PopBreakTargetStatement();
+    }
     if (generateDebugInfo)
     {
         AddToPrevDebugNodes(boundWhileStatement);
@@ -2108,14 +2155,39 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundDoStatement& boundDoStatement
     {
         AddDebugNodeTransition(*condition, boundDoStatement);
     }
+    functionDestructionStack.Push(std::move(currentCompoundDestructionStack));
+    currentCompoundDestructionStack = CompoundDestructionStack();
     condition->Accept(*this);
     std::shared_ptr<Cm::Core::GenResult> conditionResult = resultStack.Pop();
     statementResult->BackpatchNextTargets(conditionResult->GetLabel());
-    conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
-    BackpatchNextTargets(statementResult->GetLabel());
-    result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
-    result->MergeTargets(result->NextTargets(), boundDoStatement.BreakTargetLabels());
-    Ir::Intf::Backpatch(boundDoStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+    if (currentCompoundDestructionStack.IsEmpty())
+    {
+        currentCompoundDestructionStack = functionDestructionStack.Pop();
+        conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
+        BackpatchNextTargets(statementResult->GetLabel());
+        result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
+        result->MergeTargets(result->NextTargets(), boundDoStatement.BreakTargetLabels());
+        Ir::Intf::Backpatch(boundDoStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+    }
+    else
+    {
+        bool trueFirst = true;
+        std::shared_ptr<Cm::Core::GenResult> trueResult(new Cm::Core::GenResult(emitter.get(), genFlags));
+        ExitCompound(*trueResult, currentCompoundDestructionStack, trueFirst);
+        CompoundDestructionStack tempCompoundDestructionStack = std::move(currentCompoundDestructionStack);
+        currentCompoundDestructionStack = functionDestructionStack.Pop();
+        conditionResult->BackpatchTrueTargets(trueResult->GetLabel());
+        Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
+        emitter->Own(trueLabel);
+        emitter->Emit(Cm::IrIntf::Br(statementResult->GetLabel()));
+
+        bool falseFirst = true;
+        std::shared_ptr<Cm::Core::GenResult> falseResult(new Cm::Core::GenResult(emitter.get(), genFlags));
+        ExitCompound(*falseResult, tempCompoundDestructionStack, falseFirst);
+        conditionResult->BackpatchFalseTargets(falseResult->GetLabel());
+        Ir::Intf::Backpatch(boundDoStatement.BreakTargetLabels(), falseResult->GetLabel());
+        Ir::Intf::Backpatch(boundDoStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+    }
     if (generateDebugInfo)
     {
         AddToPrevDebugNodes(*condition);
