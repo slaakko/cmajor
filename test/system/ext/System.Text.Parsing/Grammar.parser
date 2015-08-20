@@ -1,0 +1,10 @@
+grammar FilePathGrammar
+{
+    SourceFileDeclaration: string
+        ::= (keyword("source") FilePath! ';'!){ value = FilePath; }
+        ;
+
+    FilePath: string
+        ::= token('<' ([^>]+){ value = match; } '>'!)
+        ;
+}

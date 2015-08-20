@@ -1,185 +1,166 @@
 using System;
 using System.Collections;
-using System.IO;
 using System.Text.Parsing;
 
-namespace Test
+public class FilePathGrammar: System.Text.Parsing.Grammar
 {
-    public class FilePathGrammar: System.Text.Parsing.Grammar
+    public static FilePathGrammar* Create()
     {
-        public static FilePathGrammar* Create()
-        {
-            return Create(new ParsingDomain());
-        }
-        public static FilePathGrammar* Create(ParsingDomain* parsingDomain)
-        {
-            RegisterParsingDomain(parsingDomain);
-            FilePathGrammar* grammar = new FilePathGrammar(parsingDomain);
-            parsingDomain->AddGrammar(grammar);
-            grammar->CreateRules();
-            grammar->Link();
-            return grammar;
-        }
-        private FilePathGrammar(ParsingDomain* parsingDomain): base("FilePathGrammar", parsingDomain->GetNamespaceScope("Syntax"), parsingDomain)
-        {
-            SetOwner(0);
-        }
-        public string Parse(const string& content, int fileIndex, const string& fileName)
-        {
-            Scanner scanner(content, fileIndex, fileName, Skip());
-            System.IO.OutputStream* log = Log();
-            UniquePtr<XmlLog> xmlLog;
-            if (log != null)
-            {
-                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
-                scanner.SetLog(xmlLog.GetPtr());
-                xmlLog->WriteBeginRule("parse");
-            }
-            Stack<UniquePtr<Object>> stack;
-            Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
-            if (log != null)
-            {
-                xmlLog->WriteEndRule("parse");
-            }
-            if (!match.Hit() || stop.Index() != content.Length())
-            {
-                Rule* start = Start();
-                if (start != null)
-                {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
-                }
-                else
-                {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
-                }
-            }
-            UniquePtr<Object> value = stack.Pop();
-            string result = *cast<ValueObject<string>*>(value.GetPtr());
-            return result;
-        }
-        public override void GetReferencedGrammars()
-        {
-            ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
-            if (grammar0 == null)
-            {
-                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
-            }
-            AddGrammarReference(grammar0);
-        }
-        public override void CreateRules()
-        {
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
-            AddRule(new SourceRule("Source", GetScope(),
-                new ActionParser("A0",
-                    new SequenceParser(
-                        new SequenceParser(
-                            new KeywordParser("source"),
-                            new NonterminalParser("FilePath", "FilePath", 0)),
-                        new CharParser(';')))));
-            AddRule(new FilePathRule("FilePath", GetScope(),
-                new TokenParser(
-                    new SequenceParser(
-                        new SequenceParser(
-                            new CharParser('<'),
-                            new ActionParser("A0",
-                                new PositiveParser(
-                                    new CharSetParser(">\r\n", true)))),
-                        new CharParser('>')))));
-            SetSkipRuleName("spaces_and_comments");
-        }
-        private class SourceRule: System.Text.Parsing.Rule
-        {
-            public SourceRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
-                base(name_, enclosingScope_, definition_), contextStack(), context()
-            {
-                SetValueTypeName("string");
-            }
-            public override void Enter(Stack<UniquePtr<Object>>& stack)
-            {
-                contextStack.Push(Rvalue(context));
-                context = Context();
-            }
-            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
-            {
-                if (matched)
-                {
-                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
-                }
-                context = contextStack.Pop();
-            }
-            public override void Link()
-            {
-                ActionParser* a0ActionParser = GetAction("A0");
-                a0ActionParser->SetAction(ParsingAction(A0Action));
-                NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
-                filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
-            }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
-            {
-                context.value = context.fromFilePath;
-            }
-            public throw void PostFilePath(Stack<UniquePtr<Object>>& stack, bool matched)
-            {
-                if (matched)
-                {
-                    UniquePtr<Object> fromFilePath_value = stack.Pop();
-                    context.fromFilePath = *cast<ValueObject<string>*>(fromFilePath_value.GetPtr());
-                }
-            }
-            private class Context
-            {
-                public string value;
-                public string fromFilePath;
-            }
-            private Stack<Context> contextStack;
-            private Context context;
-        }
-        private class FilePathRule: System.Text.Parsing.Rule
-        {
-            public FilePathRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
-                base(name_, enclosingScope_, definition_), contextStack(), context()
-            {
-                SetValueTypeName("string");
-            }
-            public override void Enter(Stack<UniquePtr<Object>>& stack)
-            {
-                contextStack.Push(Rvalue(context));
-                context = Context();
-            }
-            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
-            {
-                if (matched)
-                {
-                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
-                }
-                context = contextStack.Pop();
-            }
-            public override void Link()
-            {
-                ActionParser* a0ActionParser = GetAction("A0");
-                a0ActionParser->SetAction(ParsingAction(A0Action));
-            }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
-            {
-                context.value = match;
-            }
-            private class Context
-            {
-                public string value;
-            }
-            private Stack<Context> contextStack;
-            private Context context;
-        }
+        return Create(new ParsingDomain());
     }
-
-    public unit_test void TestGrammar()
+    public static FilePathGrammar* Create(ParsingDomain* parsingDomain)
     {
-        FilePathGrammar* grammar = FilePathGrammar.Create();
-        string filePath = grammar->Parse("source <file>;\n", 0, "");
-        #assert(!filePath.IsEmpty());
-        #assert(filePath.Length() == 4);
+        RegisterParsingDomain(parsingDomain);
+        FilePathGrammar* grammar = new FilePathGrammar(parsingDomain);
+        parsingDomain->AddGrammar(grammar);
+        grammar->CreateRules();
+        grammar->Link();
+        return grammar;
+    }
+    private FilePathGrammar(ParsingDomain* parsingDomain): base("FilePathGrammar", parsingDomain->GetNamespaceScope(""), parsingDomain)
+    {
+        SetOwner(0);
+    }
+    public string Parse(const string& content, int fileIndex, const string& fileName)
+    {
+        Scanner scanner(content, fileIndex, fileName, Skip());
+        System.IO.OutputStream* log = Log();
+        UniquePtr<XmlLog> xmlLog;
+        if (log != null)
+        {
+            xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+            scanner.SetLog(xmlLog.GetPtr());
+            xmlLog->WriteBeginRule("parse");
+        }
+        Stack<UniquePtr<Object>> stack;
+        Match match = Parse(scanner, stack);
+        Position stop = scanner.GetPosition();
+        if (log != null)
+        {
+            xmlLog->WriteEndRule("parse");
+        }
+        if (!match.Hit() || stop.Index() != content.Length())
+        {
+            Rule* start = Start();
+            if (start != null)
+            {
+                throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+            }
+            else
+            {
+                throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+            }
+        }
+        UniquePtr<Object> value = stack.Pop();
+        string result = *cast<ValueObject<string>*>(value.GetPtr());
+        return result;
+    }
+    private class SourceFileDeclarationRule: System.Text.Parsing.Rule
+    {
+        public SourceFileDeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+            base(name_, enclosingScope_, definition_), contextStack(), context()
+        {
+            SetValueTypeName("string");
+        }
+        public override void Enter(Stack<UniquePtr<Object>>& stack)
+        {
+            contextStack.Push(Rvalue(context));
+            context = Context();
+        }
+        public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+        {
+            if (matched)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+            }
+            context = contextStack.Pop();
+        }
+        public override void Link()
+        {
+            ActionParser* a0ActionParser = GetAction("A0");
+            a0ActionParser->SetAction(ParsingAction(A0Action));
+            NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
+            filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
+        }
+        public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+        {
+            context.value = context.fromFilePath;
+        }
+        public throw void PostFilePath(Stack<UniquePtr<Object>>& stack, bool matched)
+        {
+            if (matched)
+            {
+                UniquePtr<Object> fromFilePath_value = stack.Pop();
+                context.fromFilePath = *cast<ValueObject<string>*>(fromFilePath_value.GetPtr());
+            }
+        }
+        private class Context
+        {
+            public string value;
+            public string fromFilePath;
+        }
+        private Stack<Context> contextStack;
+        private Context context;
+    }
+    private class FilePathRule: System.Text.Parsing.Rule
+    {
+        public FilePathRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+            base(name_, enclosingScope_, definition_), contextStack(), context()
+        {
+            SetValueTypeName("string");
+        }
+        public override void Enter(Stack<UniquePtr<Object>>& stack)
+        {
+            contextStack.Push(Rvalue(context));
+            context = Context();
+        }
+        public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+        {
+            if (matched)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+            }
+            context = contextStack.Pop();
+        }
+        public override void Link()
+        {
+            ActionParser* a0ActionParser = GetAction("A0");
+            a0ActionParser->SetAction(ParsingAction(A0Action));
+        }
+        public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+        {
+            context.value = match;
+        }
+        private class Context
+        {
+            public string value;
+        }
+        private Stack<Context> contextStack;
+        private Context context;
+    }
+    public override void GetReferencedGrammars()
+    {
+    }
+    public override void CreateRules()
+    {
+        AddRule(new SourceFileDeclarationRule("SourceFileDeclaration", GetScope(),
+            new ActionParser("A0",
+                new SequenceParser(
+                    new SequenceParser(
+                        new KeywordParser("source"),
+                        new ExpectationParser(
+                            new NonterminalParser("FilePath", "FilePath", 0))),
+                    new ExpectationParser(
+                        new CharParser(';'))))));
+        AddRule(new FilePathRule("FilePath", GetScope(),
+            new TokenParser(
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('<'),
+                        new ActionParser("A0",
+                            new PositiveParser(
+                                new CharSetParser(">", true)))),
+                    new ExpectationParser(
+                        new CharParser('>'))))));
     }
 }
