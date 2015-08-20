@@ -99,7 +99,7 @@ namespace Cm.Parser
         Constructor(ParsingContext* ctx, ClassNode* cls, CompileUnitNode* compileUnit, var UniquePtr<IdentifierNode> id, var UniquePtr<IdentifierNode> refId, var UniquePtr<ConstructorNode> ctor) : ConstructorNode*
             ::= ((Specifiers (Identifier{ id.Reset(Identifier); } - (Identifier:ref{ refId.Reset(ref); } '&'))){ pass = id->Str() == cls->Id()->Str(); if (pass) { ctor.Reset(new ConstructorNode(span, Specifiers)); } }
                 ParameterList(ctx, ctor.GetPtr())
-                InitializerList(ctx, ctor.GetPtr())? (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); })?){ ctor->GetSpan().SetEnd(span.End()); }
+                InitializerList(ctx, ctor.GetPtr())? (WhereConstraint(ctx){ ctor->SetConstraint(WhereConstraint); })?){ ctor->GetSpan().SetEnd(span.End()); }
                 (CompoundStatement(ctx){ ctor->SetBody(CompoundStatement); } | ';'){ value = ctor.Release(); value->SetCompileUnit(compileUnit); }
             ;
             

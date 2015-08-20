@@ -433,7 +433,7 @@ namespace Cm.Ast
         }
         public void SetDefault(DefaultStatementNode* defaultStatement_)
         {
-            defaultStatement->SetParent(this);
+            defaultStatement_->SetParent(this);
             defaultStatement.Reset(defaultStatement_);
         }
         public nothrow inline Node* Condition() const
