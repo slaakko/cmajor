@@ -2286,7 +2286,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     incrementResult->BackpatchNextTargets(conditionResult->GetLabel());
     emitter->Emit(Cm::IrIntf::Br(conditionResult->GetLabel()));
     result->MergeTargets(result->NextTargets(), boundForStatement.BreakTargetLabels());
-    Ir::Intf::Backpatch(boundForStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+    Ir::Intf::Backpatch(boundForStatement.ContinueTargetLabels(), incrementResult->GetLabel());
     PopContinueTargetStatement();
     PopBreakTargetStatement();
     if (generateDebugInfo)

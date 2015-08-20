@@ -1257,7 +1257,7 @@ namespace Cm.Parser
             }
             public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
-                context.value->SetConstraint(context.fromWhereConstraint);
+                context.ctor->SetConstraint(context.fromWhereConstraint);
             }
             public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
             {
@@ -1809,28 +1809,28 @@ namespace Cm.Parser
                 grammar0 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+                grammar1 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
+                grammar2 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
             if (grammar3 == null)
             {
-                grammar3 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
+                grammar3 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
+                grammar4 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
             Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.StatementGrammar");
@@ -1839,10 +1839,10 @@ namespace Cm.Parser
                 grammar5 = Cm.Parser.StatementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
-            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.ConstantGrammar");
+            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.TemplateGrammar");
             if (grammar6 == null)
             {
-                grammar6 = Cm.Parser.ConstantGrammar.Create(parsingDomain);
+                grammar6 = Cm.Parser.TemplateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar6);
             Grammar* grammar7 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
@@ -1851,16 +1851,16 @@ namespace Cm.Parser
                 grammar7 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar7);
-            Grammar* grammar8 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
+            Grammar* grammar8 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
             if (grammar8 == null)
             {
-                grammar8 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
+                grammar8 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar8);
-            Grammar* grammar9 = parsingDomain->GetGrammar("Cm.Parser.TemplateGrammar");
+            Grammar* grammar9 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
             if (grammar9 == null)
             {
-                grammar9 = Cm.Parser.TemplateGrammar.Create(parsingDomain);
+                grammar9 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar9);
             Grammar* grammar10 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
@@ -1869,10 +1869,10 @@ namespace Cm.Parser
                 grammar10 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar10);
-            Grammar* grammar11 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
+            Grammar* grammar11 = parsingDomain->GetGrammar("Cm.Parser.ConstantGrammar");
             if (grammar11 == null)
             {
-                grammar11 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
+                grammar11 = Cm.Parser.ConstantGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar11);
             Grammar* grammar12 = parsingDomain->GetGrammar("Cm.Parser.TypedefGrammar");
@@ -1890,23 +1890,23 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
-            AddRuleLink(new RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-            AddRuleLink(new RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
             AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-            AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
-            AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
-            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
-            AddRuleLink(new RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
-            AddRuleLink(new RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
-            AddRuleLink(new RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
-            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
             AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+            AddRuleLink(new RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
+            AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
+            AddRuleLink(new RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
+            AddRuleLink(new RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+            AddRuleLink(new RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
+            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+            AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
+            AddRuleLink(new RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
             AddRule(new ClassRule("Class", GetScope(),
                 new SequenceParser(
                     new SequenceParser(
