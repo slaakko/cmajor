@@ -808,4 +808,70 @@ namespace System.IO
         }
         return true;
     }
+    
+    public class FileMappingFailure : Exception
+    {
+        public FileMappingFailure(const string& message_) : base(message_)
+        {
+        }
+    }
+    
+    public void ThrowFileMappingFailure(const string& message)
+    {
+        throw FileMappingFailure(message);
+    }
+    
+    public class FileMapping
+    {
+        public FileMapping(const string& filePath_): filePath(filePath_), handle(-1), begin(null), end(null)
+        {
+            if (!FileExists(filePath))
+            {
+                ThrowFileMappingFailure("could not create file mapping for file '" + filePath + "': no such file");
+            }
+            handle = create_file_mapping(filePath.Chars(), &begin, &end);
+            if (handle < 0)
+            {
+                switch (handle)
+                {
+                    case -1: ThrowFileMappingFailure("could not create file mapping for file '" + filePath + "': too many file mappings"); break;
+                    case -2: ThrowFileMappingFailure("could not create file mapping for file '" + filePath + "': could not open file for reading"); break;
+                    case -3: ThrowFileMappingFailure("could not create file mapping for file '" + filePath + "': could not get size of file"); break;
+                    case -4: ThrowFileMappingFailure("could not create file mapping for file '" + filePath + "': failed creating mapping"); break;
+                    case -5: ThrowFileMappingFailure("could not create file mapping for file '" + filePath + "': failed mapping view"); break;
+                    default: ThrowFileMappingFailure("could not create file mapping for file '" + filePath + "': unknown error"); break;
+                }
+            }            
+        }
+        public nothrow ~FileMapping()
+        {
+            if (handle >= 0)
+            {
+                close_file_mapping(handle);
+            }
+        }
+        suppress FileMapping(const FileMapping&);
+        suppress void operator=(const FileMapping&);
+        public nothrow FileMapping(FileMapping&& that) : handle(that.handle), filePath(Rvalue(that.filePath)), begin(that.begin), end(that.end)
+        {
+            that.handle = -1;
+        }
+        public default nothrow void operator=(FileMapping&&);
+        public inline nothrow const string& FilePath() const
+        {
+            return filePath;
+        }
+        public inline nothrow const char* Begin() const 
+        {
+            return begin;
+        }
+        public inline nothrow const char* End() const 
+        {
+            return end;
+        }
+        private int handle;
+        private string filePath;
+        private const char* begin;
+        private const char* end;
+    }
 }
