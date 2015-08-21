@@ -3,6 +3,7 @@ target=library;
 assembly <os.cma>;
 csource <cmsys.c>;
 csource <dbgheap.c>;
+csource <mappedfile.c>;
 csource <mutextbl.c>;
 source <os.cm>;
 csource <threadtbl.c>;
