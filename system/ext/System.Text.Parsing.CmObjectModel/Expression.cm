@@ -262,83 +262,123 @@ namespace System.Text.Parsing.CmObjectModel
         private CmObject* child;
     }
 
-    public abstract class PostfixOp: CmObject
+    public abstract class UnaryExpression : Expression
     {
-        public PostfixOp(const string& name_): base(name_)
+        public UnaryExpression(const string& name_, CmObject* child_, int rank_) : base(name_, rank_), child(child_)
         {
+            Own(child);
         }
+        public CmObject* Child() const
+        {
+            return child;
+        }
+        private CmObject* child;
     }
 
-    public class PostfixInc: PostfixOp
+    public class DotExpr: UnaryExpression
     {
-        public PostfixInc(): base("++")
+        public DotExpr(CmObject* subject_, const string& memberName_): base("." + memberName_, subject_, 24)
         {
         }
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
         }
+        public override void Print(CodeFormatter& formatter)
+        {
+            if (Child()->Rank() > Rank())
+            {
+                formatter.Write("(");
+            }
+            Child()->Print(formatter);
+            if (Child()->Rank() > Rank())
+            {
+                formatter.Write(")");
+            }
+            formatter.Write(Name());
+        }
     }
 
-    public class PostfixDec: PostfixOp
+    public class ArrowExpr: UnaryExpression
     {
-        public PostfixDec(): base("--")
+        public ArrowExpr(CmObject* subject_, const string& memberName_): base("->" + memberName_, subject_, 24)
         {
         }
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
         }
+        public override void Print(CodeFormatter& formatter)
+        {
+            if (Child()->Rank() > Rank())
+            {
+                formatter.Write("(");
+            }
+            Child()->Print(formatter);
+            if (Child()->Rank() > Rank())
+            {
+                formatter.Write(")");
+            }
+            formatter.Write(Name());
+        }
     }
-
-    public class Pointer: PostfixOp
+    
+    public class PostfixInc : UnaryExpression
     {
-        public Pointer(): base("*")
+        public PostfixInc(CmObject* subject_) : base("++", subject_, 24)
         {
         }
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
         }
+        public override void Print(CodeFormatter& formatter)
+        {
+            if (Child()->Rank() > Rank())
+            {
+                formatter.Write("(");
+            }
+            Child()->Print(formatter);
+            if (Child()->Rank() > Rank())
+            {
+                formatter.Write(")");
+            }
+            formatter.Write(Name());
+        }
     }
 
-    public class Reference: PostfixOp
+    public class PostfixDec : UnaryExpression
     {
-        public Reference(): base("&")
+        public PostfixDec(CmObject* subject_) : base("--", subject_, 24)
         {
         }
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
         }
-    }
-
-    public class Member: PostfixOp
-    {
-        public Member(const string& memberName_): base("." + memberName_)
+        public override void Print(CodeFormatter& formatter)
         {
-        }
-        public override void Accept(Visitor& visitor)
-        {
-            visitor.Visit(*this);
-        }
-    }
-
-    public class PtrMember: PostfixOp
-    {
-        public PtrMember(const string& memberName_): base("->" + memberName_)
-        {
-        }
-        public override void Accept(Visitor& visitor)
-        {
-            visitor.Visit(*this);
+            if (Child()->Rank() > Rank())
+            {
+                formatter.Write("(");
+            }
+            Child()->Print(formatter);
+            if (Child()->Rank() > Rank())
+            {
+                formatter.Write(")");
+            }
+            formatter.Write(Name());
         }
     }
 
-    public class Invoke: PostfixOp
+    public class Invoke: UnaryExpression
     {
-        public Invoke(const List<CmObject*>& args_): base("()"), args(args_)
+        public Invoke(CmObject* subject_): base("()", subject_, 24)
         {
+        }
+        public void SetArguments(const List<CmObject*>& arguments)
+        {
+            args = arguments;
             for (CmObject* arg : args)
             {
                 Own(arg);
@@ -346,6 +386,7 @@ namespace System.Text.Parsing.CmObjectModel
         }
         public override void Print(CodeFormatter& formatter)
         {
+            Child()->Print(formatter);
             formatter.Write("(");
             bool first = true;
             for (CmObject* arg : args)
@@ -364,7 +405,7 @@ namespace System.Text.Parsing.CmObjectModel
         }
         public override string ToString() const
         {
-            string s = "(";
+            string s = Child()->ToString() + "(";
             bool first = true;
             for (CmObject* arg : args)
             {
@@ -392,21 +433,22 @@ namespace System.Text.Parsing.CmObjectModel
         private List<CmObject*> args;
     }
 
-    public class Indexing: PostfixOp
+    public class Indexing: UnaryExpression
     {
-        public Indexing(CmObject* index_): base("[]"), index(index_)
+        public Indexing(CmObject* subject_, CmObject* index_): base("[]", subject_, 24), index(index_)
         {
             Own(index);
         }
         public override void Print(CodeFormatter& formatter)
         {
+            Child()->Print(formatter);
             formatter.Write("[");
             index->Print(formatter);
             formatter.Write("]");
         }
         public override string ToString() const
         {
-            return "[" + index->ToString() + "]";
+            return Child()->ToString() + "[" + index->ToString() + "]";
         }
         public override void Accept(Visitor& visitor)
         {
@@ -415,63 +457,6 @@ namespace System.Text.Parsing.CmObjectModel
         }
         private CmObject* index;
     }
-
-    public class PostfixExpression: Expression
-    {
-        public PostfixExpression(CmObject* subject_): base("postfix", 24), subject(subject_), isConst(false)
-        {
-            Own(subject);
-        }
-        public void OwnSubject()
-        {
-            Own(subject);
-        }
-        public void AddOp(PostfixOp* op)
-        {
-            ops.Add(op);
-            Own(op);
-        }
-        public override void Print(CodeFormatter& formatter)
-        {
-            if (isConst)
-            {
-                formatter.Write("const ");
-            }
-            subject->Print(formatter);
-            for (PostfixOp* op : ops)
-            {
-                op->Print(formatter);
-            }
-        }
-        public override string ToString() const
-        {
-            string s = subject->ToString();
-            for (PostfixOp* op : ops)
-            {
-                s.Append(op->ToString());
-            }
-            return s;
-        }
-        public override void Accept(Visitor& visitor)
-        {
-            visitor.Visit(*this);
-            subject->Accept(visitor);
-            for (PostfixOp* op : ops)
-            {
-                op->Accept(visitor);
-            }
-        }
-        public override void AddConst()
-        {
-            isConst = true;
-        }
-        private CmObject* subject;
-        private List<PostfixOp*> ops;
-        private bool isConst;
-    }
-
-    public typedef PostfixExpression* PostfixExpressionPtr;
-    public typedef UniquePtr<PostfixExpression> UniquePostfixExpressionPtr;
 
     public class BinaryExpression: Expression
     {

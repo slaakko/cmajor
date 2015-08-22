@@ -25,7 +25,7 @@ namespace Syntax
         using RuleGrammar.Rule;
 
         Grammar(Scope* enclosingScope, ParsingContext* ctx): Grammar*
-                    ::= keyword("grammar") Identifier:name!{ value = new Grammar(name, enclosingScope); value->SetPosition(position); value->SetNs(enclosingScope->Ns()); }
+                    ::= keyword("grammar") Identifier:name!{ value = new Grammar(name, enclosingScope); value->SetSpan(span); value->SetNs(enclosingScope->Ns()); }
                         '{'! GrammarContent(value, ctx) '}'!
                     ;
 

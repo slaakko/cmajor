@@ -31,9 +31,9 @@ namespace Cm
         {
             SetOwner(0);
         }
-        public LiteralPtr Parse(const string& content, int fileIndex, const string& fileName)
+        public LiteralPtr Parse(const char* start, const char* end, int fileIndex, const string& fileName)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -44,21 +44,21 @@ namespace Cm
             }
             Stack<UniquePtr<Object>> stack;
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -114,31 +114,31 @@ namespace Cm
                 NonterminalParser* sNonterminalParser = GetNonterminal("s");
                 sNonterminalParser->SetPostCall(PostCall(Posts));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BooleanLiteral(context.fromb);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new FloatingLiteral(context.fromf.first, context.fromf.second);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new HexLiteral(context.fromh.first, context.fromh.second);
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new IntLiteral(context.fromi.first, context.fromi.second);
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new CharacterLiteral(context.fromc);
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new StringLiteral(context.froms);
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new NullLiteral();
             }
@@ -238,19 +238,19 @@ namespace Cm
                 NonterminalParser* uNonterminalParser = GetNonterminal("u");
                 uNonterminalParser->SetPostCall(PostCall(Postu));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = MakePair(context.val, context.floatSuffix);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.val = context.fromu;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.floatSuffix = match[0];
+                context.floatSuffix = *matchBegin;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.floatSuffix = ' ';
             }
@@ -303,23 +303,22 @@ namespace Cm
                 ActionParser* a2ActionParser = GetAction("A2");
                 a2ActionParser->SetAction(ParsingAction(A2Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = MakePair(context.val, context.unsignedSuffix);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                int n = match.Length();
                 context.val = 0u;
                 context.unsignedSuffix = ' ';
-                for (int i = 0; i < n; ++i)
+                for (char* p = matchBegin; p != matchEnd; ++p)
                 {
-                    context.val = 10u * context.val + cast<ulong>(match[i]) - cast<ulong>('0');
+                    context.val = 10u * context.val + cast<ulong>(*p) - cast<ulong>('0');
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.unsignedSuffix = match[0];
+                context.unsignedSuffix = *matchBegin;
             }
             private class Context
             {
@@ -361,18 +360,17 @@ namespace Cm
                 ActionParser* a2ActionParser = GetAction("A2");
                 a2ActionParser->SetAction(ParsingAction(A2Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = MakePair(context.val, context.unsignedSuffix);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.val = 0u;
                 context.unsignedSuffix = ' ';
-                int n = match.Length();
-                for (int i = 0; i < n; ++i)
+                for (char* p = matchBegin; p != matchEnd; ++p)
                 {
-                    char c = match[i];
+                    char c = *p;
                     ulong b = 0u;
                     if (c >= '0' && c <= '9')
                     {
@@ -389,9 +387,9 @@ namespace Cm
                     context.val = 16u * context.val + b;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.unsignedSuffix = match[0];
+                context.unsignedSuffix = *matchBegin;
             }
             private class Context
             {
@@ -414,10 +412,10 @@ namespace Cm
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
-            AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
             AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
+            AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
             AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
+            AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
             AddRule(new LiteralRule("Literal", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(

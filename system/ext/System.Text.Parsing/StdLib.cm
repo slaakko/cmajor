@@ -48,9 +48,9 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = ParseInt(match);
+                context.value = ParseInt(string(matchBegin, matchEnd));
             }
             private class Context
             {
@@ -84,9 +84,9 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = ParseUInt(match);
+                context.value = ParseUInt(string(matchBegin, matchEnd));
             }
             private class Context
             {
@@ -120,9 +120,9 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = ParseULong(match);
+                context.value = ParseULong(string(matchBegin, matchEnd));
             }
             private class Context
             {
@@ -156,9 +156,9 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = ParseHex(match);
+                context.value = ParseHex(string(matchBegin, matchEnd));
             }
             private class Context
             {
@@ -194,7 +194,7 @@ namespace System.Text.Parsing
                 NonterminalParser* hexNonterminalParser = GetNonterminal("hex");
                 hexNonterminalParser->SetPostCall(PostCall(Posthex));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromhex;
             }
@@ -239,9 +239,9 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = cast<int>(match[0]) - cast<int>('0');
+                context.value = cast<int>(*matchBegin) - cast<int>('0');
             }
             private class Context
             {
@@ -275,9 +275,9 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = ParseDouble(match);
+                context.value = ParseDouble(string(matchBegin, matchEnd));
             }
             private class Context
             {
@@ -311,9 +311,9 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = ParseDouble(match);
+                context.value = ParseDouble(string(matchBegin, matchEnd));
             }
             private class Context
             {
@@ -353,11 +353,11 @@ namespace System.Text.Parsing
                 NonterminalParser* iNonterminalParser = GetNonterminal("i");
                 iNonterminalParser->SetPostCall(PostCall(Posti));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromr;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromi;
             }
@@ -413,11 +413,11 @@ namespace System.Text.Parsing
                 ActionParser* a1ActionParser = GetAction("A1");
                 a1ActionParser->SetAction(ParsingAction(A1Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = true;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = false;
             }
@@ -453,9 +453,9 @@ namespace System.Text.Parsing
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = match;
+                context.value = string(matchBegin, matchEnd);
             }
             private class Context
             {
@@ -493,9 +493,9 @@ namespace System.Text.Parsing
                 NonterminalParser* restNonterminalParser = GetNonterminal("rest");
                 restNonterminalParser->SetPostCall(PostCall(Postrest));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = match;
+                context.value = string(matchBegin, matchEnd);
             }
             public throw void Postfirst(Stack<UniquePtr<Object>>& stack, bool matched)
             {
@@ -563,21 +563,21 @@ namespace System.Text.Parsing
                 NonterminalParser* decimalEscapeNonterminalParser = GetNonterminal("decimalEscape");
                 decimalEscapeNonterminalParser->SetPostCall(PostCall(PostdecimalEscape));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = cast<char>(context.fromx);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = cast<char>(64 * context.fromo1 + 8 * context.fromo2 + context.fromo3);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = cast<char>(context.fromdecimalEscape);
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                char c = match[0];
+                char c = *matchBegin;
                 switch (c)
                 {
                     case 'a':
@@ -708,11 +708,11 @@ namespace System.Text.Parsing
                 NonterminalParser* escapeNonterminalParser = GetNonterminal("escape");
                 escapeNonterminalParser->SetPostCall(PostCall(Postescape));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = match[0];
+                context.value = *matchBegin;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromescape;
             }
@@ -761,11 +761,11 @@ namespace System.Text.Parsing
                 NonterminalParser* escapeNonterminalParser = GetNonterminal("escape");
                 escapeNonterminalParser->SetPostCall(PostCall(Postescape));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value.Append(match);
+                context.value.Append(string(matchBegin, matchEnd));
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value.Append(context.fromescape);
             }

@@ -53,7 +53,7 @@ namespace Syntax
                         string name = alias;
                         if (alias.IsEmpty()) name = ruleName;
                         NonterminalParser* parser(new NonterminalParser(name, ruleName));
-                        parser->SetPosition(position);
+                        parser->SetSpan(span);
                         parser->SetArguments(ExpressionList);
                         value = parser;
                     }

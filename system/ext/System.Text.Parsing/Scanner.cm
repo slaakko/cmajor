@@ -46,8 +46,8 @@ namespace System.Text.Parsing
     
     public class Scanner
     {
-        public nothrow Scanner(const string& content_, int fileIndex_, const string& fileName_, Parser* skipper_): 
-            content(content_), position(fileIndex_), span(fileIndex_), fileName(fileName_), skipper(skipper_), skipping(false), tokenCounter(0), log(), 
+        public nothrow Scanner(const char* start_, const char* end_, int fileIndex_, const string& fileName_, Parser* skipper_): 
+            start(start_), end(end_), span(fileIndex_), fileName(fileName_), skipper(skipper_), skipping(false), tokenCounter(0), log(), 
             countSourceLines(Stats.CountSourceLines()), topLevelRule(null), atBeginningOfLine(true)
         {
             if (countSourceLines)
@@ -55,21 +55,17 @@ namespace System.Text.Parsing
                 Stats.ResetSourceLines();
             }
         }
-        public nothrow inline const string& Content() const
+        public inline nothrow const char* Start() const
         {
-            return content;
+            return start;
         }
-        public nothrow inline const Position& GetPosition() const
+        public inline nothrow const char* End() const
         {
-            return position;
+            return end;
         }
         public inline nothrow const Span& GetSpan() const
         {
             return span;
-        }
-        public inline nothrow void SetPosition(const Position& position_)
-        {
-            position = position_;
         }
         public inline nothrow void SetSpan(const Span& span_)
         {
@@ -93,15 +89,11 @@ namespace System.Text.Parsing
         }
         public nothrow inline char GetChar() const
         {
-            return content[position.Index()];
-        }
-        public nothrow string GetMatch(int startIndex) const
-        {
-            return content.Substring(startIndex, position.Index() - startIndex);
+            return start[span.Start()];
         }
         public nothrow inline bool AtEnd() const
         {
-            return position.Index() >= content.Length();
+            return start + span.Start() >= end;
         }
         public nothrow void operator++()
         {
@@ -114,18 +106,11 @@ namespace System.Text.Parsing
                     atBeginningOfLine = false;
                 }
             }
-            position.SetIndex(position.Index() + 1);
             ++span;
             if (c == '\n')
             {
                 atBeginningOfLine = true;
-                position.SetLine(position.Line() + 1);
-                position.SetColumn(1);
                 span.IncLineNumber();
-            }
-            else
-            {
-                position.SetColumn(position.Column() + 1);
             }
         }
         public nothrow inline void BeginToken()
@@ -140,8 +125,7 @@ namespace System.Text.Parsing
         {
             if (tokenCounter == 0 && skipper != null)
             {
-                Position savedPosition = position;
-                Span savedSpan = span;
+                Span save = span;
                 BeginToken();
                 skipping = true;
                 Stack<UniquePtr<Object>> stack;
@@ -150,8 +134,7 @@ namespace System.Text.Parsing
                 EndToken();
                 if (!match.Hit())
                 {
-                    position = savedPosition;
-                    span = savedSpan;
+                    span = save;
                 }
             }
         }
@@ -165,9 +148,9 @@ namespace System.Text.Parsing
         }
         public nothrow int LineEndIndex() const
         {
-            int lineEndIndex = position.Index();
-            int contentLength = content.Length();
-            while (lineEndIndex < contentLength && content[lineEndIndex] != '\n')
+            int lineEndIndex = span.Start();
+            int contentLength = end - start;
+            while (lineEndIndex < contentLength && start[lineEndIndex] != '\r' && start[lineEndIndex] != '\n')
             {
                 ++lineEndIndex;
             }
@@ -175,10 +158,10 @@ namespace System.Text.Parsing
         }
         public nothrow string RestOfLine() const
         {
-            return content.Substring(position.Index(), LineEndIndex() - position.Index());
+            return string(start + span.Start(), start + LineEndIndex());
         }
-        private string content;
-        private Position position;
+        private const char* start;
+        private const char* end;
         private Span span;
         private string fileName;
         private Parser* skipper;

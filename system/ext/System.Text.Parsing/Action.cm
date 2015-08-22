@@ -20,7 +20,7 @@ using UniqueCompoundStatementPtr = System.Text.Parsing.CmObjectModel.UniqueCompo
 
 namespace System.Text.Parsing
 {
-    public class delegate void ParsingAction(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass);
+    public class delegate void ParsingAction(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass);
     
     public class delegate void FailureAction();
     
@@ -101,7 +101,6 @@ namespace System.Text.Parsing
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
             Span actionSpan = scanner.GetSpan();
-            Position position = scanner.GetPosition();
             Match match = Child()->Parse(scanner, stack);
             if (match.Hit())
             {
@@ -109,8 +108,9 @@ namespace System.Text.Parsing
                 {
                     bool pass = true;
                     actionSpan.SetEnd(scanner.GetSpan().Start());
-                    string m = scanner.GetMatch(position.Index());
-                    action(m, scanner.Content(), position, actionSpan, scanner.FileName(), pass);
+                    const char* matchBegin = scanner.Start() + actionSpan.Start();
+                    const char* matchEnd = scanner.Start() + actionSpan.End();
+                    action(matchBegin, matchEnd, actionSpan, scanner.FileName(), pass);
                     if (!pass)
                     {
                         return Match.Nothing();

@@ -20,7 +20,7 @@ namespace Cm
 {
     public class ParsingContext
     {
-        public ParsingContext(): parsingTypeExpr(false), parsingLValue(false), parsingSimpleStatement(false), parsingArguments(false)
+        public ParsingContext(): parsingTypeExpr(false), parsingLvalue(false), parsingSimpleStatement(false), parsingArguments(false)
         {
         }
         public void BeginParsingTypeExpr()
@@ -32,33 +32,29 @@ namespace Cm
         {
             parsingTypeExpr = parsingTypeExprStack.Pop();
         }
-        public void BeginParsingLValue()
-        {
-            parsingLValueStack.Push(parsingLValue);
-            parsingLValue = true;
-        }
-        public void EndParsingLValue()
-        {
-            parsingLValue = parsingLValueStack.Pop();
-        }
         public inline bool ParsingTypeExpr() const
         {
             return parsingTypeExpr;
         }
-        public inline bool ParsingLValue() const
+        public void PushParsingLvalue(bool enable)
         {
-            return parsingLValue;
+            parsingLvalueStack.Push(parsingLvalue);
+            parsingLvalue = enable;
         }
-        public inline bool ParsingTypeExprOrLValue() const
+        public void PopParsingLvalue()
         {
-            return parsingTypeExpr || parsingLValue;
+            parsingLvalue = parsingLvalueStack.Pop();
         }
-        public void BeginParsingSimpleStatement()
+        public inline bool ParsingLvalue() const
+        {
+            return parsingLvalue;
+        }
+        public void PushParsingSimpleStatement(bool enable)
         {
             parsingSimpleStatementStack.Push(parsingSimpleStatement);
-            parsingSimpleStatement = true;
+            parsingSimpleStatement = enable;
         }
-        public void EndParsingSimpleStatement()
+        public void PopParsingSimpleStatement()
         {
             parsingSimpleStatement = parsingSimpleStatementStack.Pop();
         }
@@ -81,8 +77,8 @@ namespace Cm
         }
         private bool parsingTypeExpr;
         private Stack<bool> parsingTypeExprStack;
-        private bool parsingLValue;
-        private Stack<bool> parsingLValueStack;
+        private bool parsingLvalue;
+        private Stack<bool> parsingLvalueStack;
         private bool parsingSimpleStatement;
         private Stack<bool> parsingSimpleStatementStack;
         private bool parsingArguments;

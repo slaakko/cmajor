@@ -117,7 +117,7 @@ void Grammar::Parse(const char* start, const char* end, int fileIndex, const std
     }
     if (!match.Hit() || stop.Start() != int(end - start))
     {
-        if (start)
+        if (startRule)
         {
             throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
         }

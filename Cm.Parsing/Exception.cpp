@@ -75,6 +75,7 @@ void ThrowException(const std::string& message, const Span& span)
         Cm::Util::MappedInputFile file(filePath);
         throw ParsingException(message, filePath, span, file.Begin(), file.End());
     }
+    throw std::runtime_error(message);
 }
 
 ParsingException::ParsingException(const std::string& message_, const std::string& fileName_, const Span& span_, const char* start_, const char* end_):

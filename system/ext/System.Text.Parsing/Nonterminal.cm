@@ -98,13 +98,13 @@ namespace System.Text.Parsing
         {
             postCall = postCall_;
         }
-        public nothrow inline const Position& GetPosition() const
+        public nothrow inline const Span& GetSpan() const
         {
-            return position;
+            return span;
         }
-        public nothrow inline void SetPosition(const Position& position_)
+        public nothrow inline void SetSpan(const Span& span_)
         {
-            position = position_;
+            span = span_;
         }
         public nothrow string PreCallMethodName() const
         {
@@ -137,7 +137,7 @@ namespace System.Text.Parsing
         private ExpressionList arguments;
         private PreCall preCall;
         private PostCall postCall;
-        private Position position;
+        private Span span;
         private Rule* rule;
     }
 }

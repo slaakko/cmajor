@@ -57,15 +57,13 @@ namespace System.Text.Parsing
         }
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
-            Position save = scanner.GetPosition();
-            Span savedSpan = scanner.GetSpan();
+            Span save = scanner.GetSpan();
             Match match = Child()->Parse(scanner, stack);
             if (match.Hit())
             {
                 return match;
             }
-            scanner.SetPosition(save);
-            scanner.SetSpan(savedSpan);
+            scanner.SetSpan(save);
             return Match.Empty();
         }
         public override void Accept(Visitor& visitor)
@@ -88,8 +86,7 @@ namespace System.Text.Parsing
             {
                 for (;;)
                 {
-                    Position save = scanner.GetPosition();
-                    Span savedSpan = scanner.GetSpan();
+                    Span save = scanner.GetSpan();
                     scanner.Skip();
                     Match next = Child()->Parse(scanner, stack);
                     if (next.Hit())
@@ -98,8 +95,7 @@ namespace System.Text.Parsing
                     }
                     else
                     {
-                        scanner.SetPosition(save);
-                        scanner.SetSpan(savedSpan);
+                        scanner.SetSpan(save);
                         break;
                     }
                 }
@@ -125,8 +121,7 @@ namespace System.Text.Parsing
             bool first = true;
             for (;;)
             {
-                Position save = scanner.GetPosition();
-                Span savedSpan = scanner.GetSpan();
+                Span save = scanner.GetSpan();
                 if (first)
                 {
                     first = false;
@@ -142,8 +137,7 @@ namespace System.Text.Parsing
                 }
                 else
                 {
-                    scanner.SetPosition(save);
-                    scanner.SetSpan(savedSpan);
+                    scanner.SetSpan(save);
                     break;
                 }
             }
@@ -164,7 +158,7 @@ namespace System.Text.Parsing
         }
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
-            Position position = scanner.GetPosition();
+            Span expectationSpan = scanner.GetSpan();
             Match match = Match.Nothing();
             try
             {
@@ -172,7 +166,7 @@ namespace System.Text.Parsing
             }
             catch (const ExpectationFailure& ex)
             {
-                throw ExpectationFailure(Child()->Info() + ex.Info(), ex.Content(), ex.GetPosition(), ex.FileName());
+                throw ExpectationFailure(Child()->Info() + ex.Info(), ex.FileName(), ex.GetSpan(), ex.Start(), ex.End());
             }
             if (match.Hit())
             {
@@ -180,7 +174,7 @@ namespace System.Text.Parsing
             }
             else
             {
-                throw ExpectationFailure(Child()->Info(), scanner.Content(), position, scanner.FileName());
+                throw ExpectationFailure(Child()->Info(), scanner.FileName(), expectationSpan, scanner.Start(), scanner.End());
             }
         }
         public override void Accept(Visitor& visitor)
@@ -248,15 +242,13 @@ namespace System.Text.Parsing
         }
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {            
-            Position save = scanner.GetPosition();
-            Span savedSpan = scanner.GetSpan();
+            Span save = scanner.GetSpan();
             Match left = Left()->Parse(scanner, stack);
             if (left.Hit())
             {
                 return left;
             }
-            scanner.SetPosition(save);
-            scanner.SetSpan(savedSpan);
+            scanner.SetSpan(save);
             return Right()->Parse(scanner, stack);
         }
         public override void Accept(Visitor& visitor)
@@ -276,22 +268,17 @@ namespace System.Text.Parsing
         }
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
-            Position save = scanner.GetPosition();
-            Span savedSpan = scanner.GetSpan();
+            Span save = scanner.GetSpan();
             Match left = Left()->Parse(scanner, stack);
             if (left.Hit())
             {
-                Position tmp = scanner.GetPosition();
-                Span tmpSpan = scanner.GetSpan();
-                scanner.SetPosition(save);
-                scanner.SetSpan(savedSpan);
+                Span tmp = scanner.GetSpan();
+                scanner.SetSpan(save);
                 save = tmp;
-                savedSpan = tmpSpan;
                 Match right = Right()->Parse(scanner, stack);
                 if (!right.Hit() || right.Length() < left.Length())
                 {
-                    scanner.SetPosition(save);
-                    scanner.SetSpan(savedSpan);
+                    scanner.SetSpan(save);
                     return left;
                 }
             }
@@ -314,15 +301,11 @@ namespace System.Text.Parsing
         }
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
-            Position save = scanner.GetPosition();
-            Span savedSpan = scanner.GetSpan();
+            Span save = scanner.GetSpan();
             Match left = Left()->Parse(scanner, stack);
-            Position tmp = scanner.GetPosition();
-            Span tmpSpan = scanner.GetSpan();
-            scanner.SetPosition(save);
-            scanner.SetSpan(savedSpan);
+            Span tmp = scanner.GetSpan();
+            scanner.SetSpan(save);
             save = tmp;
-            savedSpan = tmpSpan;
             Match right = Right()->Parse(scanner, stack);
             bool hit = right.Hit();
             if (left.Hit())
@@ -333,8 +316,7 @@ namespace System.Text.Parsing
             {
                 if (left.Hit())
                 {
-                    scanner.SetPosition(save);
-                    scanner.SetSpan(savedSpan);
+                    scanner.SetSpan(save);
                     return left;
                 }
                 return right;
@@ -358,13 +340,11 @@ namespace System.Text.Parsing
         }
         public override Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
-            Position save = scanner.GetPosition();
-            Span savedSpan = scanner.GetSpan();
+            Span save = scanner.GetSpan();
             Match left = Left()->Parse(scanner, stack);
             if (left.Hit())
             {
-                scanner.SetPosition(save);
-                scanner.SetSpan(savedSpan);
+                scanner.SetSpan(save);
                 Match right = Right()->Parse(scanner, stack);
                 if (left.Length() == right.Length())
                 {

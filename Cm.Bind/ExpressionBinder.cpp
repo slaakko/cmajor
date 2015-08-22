@@ -1816,7 +1816,7 @@ void ExpressionBinder::BindInvokeClassDelegate(Cm::Ast::Node* node, Cm::Sym::Cla
                 arguments[i].reset(CreateBoundConversion(containerScope, boundCompileUnit, node, arguments[i].release(), conversion, currentFunction));
             }
         }
-        PrepareArguments(containerScope, boundCompileUnit, currentFunction, classDelegateType->GetReturnType(), classDelegateType->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), false);
+        PrepareArguments(containerScope, boundCompileUnit, currentFunction, classDelegateType->GetReturnType(), classDelegateType->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(), false);
         Cm::BoundTree::BoundClassDelegateCall* classDelegateCall = new Cm::BoundTree::BoundClassDelegateCall(classDelegateType, subject, node, std::move(arguments));
         classDelegateCall->SetType(classDelegateType->GetReturnType());
         boundExpressionStack.Push(classDelegateCall);

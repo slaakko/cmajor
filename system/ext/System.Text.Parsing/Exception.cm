@@ -21,39 +21,70 @@ namespace System.Text.Parsing
 {
     public class ParsingException: Exception
     {
-        public nothrow ParsingException(const string& message_, const string& content_, const Position& position_, const string& fileName_):
-            base(message_ + " in file '" + fileName_ + "' at line " + ToString(position_.Line()) + ":\n" + GetErrorLines(content_, position_))
+        public nothrow ParsingException(const string& message_, const string& fileName_, const Span& span_, const char* start_, const char* end_):
+            base(message_ + " in file '" + fileName_ + "' at line " + ToString(span_.LineNumber()) + ":\n" + GetErrorLines(start_, end_, span_)), 
+            msg(message_), fileName(fileName_), span(span_), start(start_), end(end_)
         {
         }
+        public const string& Msg() const
+        {
+            return msg;
+        }
+        public nothrow const string& FileName() const
+        {
+            return fileName;
+        }
+        public nothrow const Span& GetSpan() const
+        {
+            return span;
+        }
+        public nothrow const char* Start() const
+        {
+            return start;
+        }
+        public nothrow const char* End() const
+        {
+            return end;
+        }
+        private string msg;
+        private string fileName;
+        private Span span;
+        private const char* start;
+        private const char* end;
     }
     
     public class ExpectationFailure: Exception
     {
-        public nothrow ExpectationFailure(const string& info_, const string& content_, const Position& position_, const string& fileName_):
-            base("Parsing file '" + fileName_ + "' failed at line " + ToString(position_.Line()) + ":\n" + info_ + " expected:\n" + 
-            GetErrorLines(content_, position_)), info(info_), content(content_), position(position_), fileName(fileName_)
+        public nothrow ExpectationFailure(const string& info_, const string& fileName_, const Span& span_, const char* start_, const char* end_):
+            base("Parsing file '" + fileName_ + "' failed at line " + ToString(span_.LineNumber()) + ":\n" + info_ + " expected:\n" + 
+            GetErrorLines(start_, end_, span_)), info(info_), fileName(fileName_), span(span_), start(start_), end(end_)
         {
         }
         public nothrow const string& Info() const
         {
             return info;
         }
-        public nothrow const string& Content() const
-        {
-            return content;
-        }
-        public nothrow const Position& GetPosition() const
-        {
-            return position;
-        }
         public nothrow const string& FileName() const
         {
             return fileName;
         }
+        public nothrow const Span& GetSpan() const
+        {
+            return span;
+        }
+        public nothrow const char* Start() const
+        {
+            return start;
+        }
+        public nothrow const char* End() const
+        {
+            return end;
+        }
         private string info;
-        private string content;
-        private Position position;
         private string fileName;
+        private Span span;
+        private const char* start;
+        private const char* end;
     }
     
     public class FileInfo
@@ -84,49 +115,76 @@ namespace System.Text.Parsing
         private List<string> files;
     }
     
-    public void ThrowException(const string& message, const Position& position)
+    public nothrow string NarrowString(const char* start, const char* end)
     {
-        string filePath = FileInfo.Instance().GetFilePath(position.File());
+        string s;
+        s.Reserve(end - start);
+        while (start != end)
+        {
+            if (*start != '\r')
+            {
+                s.Append(*start);
+            }
+            ++start;
+        }
+        return s;
+    }
+    
+    public nothrow const char* LineStart(const char* start, const char* pos)
+    {
+        while (pos > start && *pos != '\n')
+        {
+            --pos;
+        }
+        if (*pos == '\n')
+        {
+            ++pos;
+        }
+        return pos;
+    }
+    
+    public nothrow const char* LineEnd(const char* end, const char* pos)
+    {
+        while (pos < end && *pos != '\r' && *pos != '\n')
+        {
+            ++pos;
+        }
+        return pos;
+    }
+    
+    public void ThrowException(const string& message, const Span& span)
+    {
+        string filePath = FileInfo.Instance().GetFilePath(span.FileIndex());
         if (!filePath.IsEmpty())
         {
-            string content = ReadFile(filePath);
-            throw ParsingException(message, content, position, filePath);
+            System.IO.FileMapping file(filePath);
+            throw ParsingException(message, filePath, span, file.Begin(), file.End());
         }
         throw Exception(message);
     }
 
-    public nothrow string GetErrorLines(const string& content, const Position& position)
+    public nothrow string GetErrorLines(const char* start, const char* end, const Span& span)
     {
-        int len = content.Length();
-        int pos = Min(position.Index(), len);
-        int lineStartIndex = pos;
-        while (lineStartIndex > 0 && (lineStartIndex == content.Length() || content[lineStartIndex] != '\n'))
+        const char* startPos = start + span.Start();
+        if (startPos < start || startPos >= end)
         {
-            --lineStartIndex;
+            return string();
         }
-        if (lineStartIndex < len && content[lineStartIndex] == '\n')
+        const char* lineStart = LineStart(start, startPos);
+        int cols = cast<int>(startPos - lineStart);
+        if (cols < 0)
         {
-            ++lineStartIndex;
+            cols = 0;
         }
-        int lineEndIndex = pos;
-        while (lineEndIndex < len && content[lineEndIndex] != '\n' && content[lineEndIndex] != '\r')
+        const char* lineEnd = LineEnd(end, startPos);
+        if (lineEnd < lineStart)
         {
-            ++lineEndIndex;
+            lineEnd = lineStart;
         }
-        string errorLine = content.Substring(lineStartIndex, lineEndIndex - lineStartIndex);
-        string spaceLine;
-        int end = pos;
-        for (int i = lineStartIndex; i < end; ++i)
-        {
-            if (content[i] == '\t')
-            {
-                spaceLine.Append('\t');
-            }
-            else
-            {
-                spaceLine.Append(' ');
-            }
-        }
-        return errorLine + "\n" + spaceLine + "^";
+        int lineLength = lineEnd - lineStart;
+        string lines = NarrowString(lineStart, lineEnd);
+        int spanCols = Max(int(1), Min(span.End() - span.Start(), lineLength - cols));
+        lines.Append('\n').Append(' ', cols).Append('^', spanCols);
+        return lines;
     }
 }

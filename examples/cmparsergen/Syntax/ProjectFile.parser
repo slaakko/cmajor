@@ -39,7 +39,7 @@ namespace Syntax
                     ;
 
         FilePath: string
-                    ::= token('<' ([^>\r\n]+){ value = match; } '>')
+                    ::= token('<' ([^>\r\n]+){ value = string(matchBegin, matchEnd); } '>')
                     ;
     }
 }

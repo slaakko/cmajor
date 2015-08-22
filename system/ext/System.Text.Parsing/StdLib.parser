@@ -43,43 +43,43 @@ namespace System.Text.Parsing
 
         int: int                            ::= token(sign? digit_sequence)
                                             {
-                                                value = ParseInt(match);
+                                                value = ParseInt(string(matchBegin, matchEnd));
                                             }
                                             ;
 
         uint: uint                          ::= digit_sequence
                                             {
-                                                value = ParseUInt(match);
+                                                value = ParseUInt(string(matchBegin, matchEnd));
                                             }
                                             ;
                                             
         ulong: ulong                        ::= digit_sequence
                                             {
-                                                value = ParseULong(match);
+                                                value = ParseULong(string(matchBegin, matchEnd));
                                             }
                                             ;
 
         hex: ulong                          ::= token(hexdigit+)
                                             {
-                                                value = ParseHex(match);
+                                                value = ParseHex(string(matchBegin, matchEnd));
                                             }
                                             ;
 
         hex_literal: ulong                  ::= token(("0x" | "0X") hex!){ value = hex; }
                                             ;
 
-        octaldigit: int                     ::= [0-7]{ value = cast<int>(match[0]) - cast<int>('0'); }
+        octaldigit: int                     ::= [0-7]{ value = cast<int>(*matchBegin) - cast<int>('0'); }
                                             ;
 
         real: double                        ::= token(sign? fractional_real exponent_part? | sign? digit_sequence exponent_part)
                                             {
-                                                value = ParseDouble(match);
+                                                value = ParseDouble(string(matchBegin, matchEnd));
                                             }
                                             ;
 
         ureal: double                       ::= token(fractional_real exponent_part? | digit_sequence exponent_part)
                                             {
-                                                value = ParseDouble(match);
+                                                value = ParseDouble(string(matchBegin, matchEnd));
                                             }
                                             ;
 
@@ -98,13 +98,13 @@ namespace System.Text.Parsing
 
         identifier: string                  ::= token((letter | '_') (letter | digit | '_')*)
                                             {
-                                                value = match;
+                                                value = string(matchBegin, matchEnd);
                                             }
                                             ;
 
         qualified_id: string                ::= token(identifier:first ('.' identifier:rest)*)
                                             {
-                                                value = match;
+                                                value = string(matchBegin, matchEnd);
                                             }
                                             ;
 
@@ -115,7 +115,7 @@ namespace System.Text.Parsing
                                             |   [dD] uint:decimalEscape{ value = cast<char>(decimalEscape); }
                                             |   [^dDxX]
                                             {
-                                                char c = match[0];
+                                                char c = *matchBegin;
                                                 switch (c)
                                                 {
                                                     case 'a': value = '\a'; break;
@@ -134,14 +134,14 @@ namespace System.Text.Parsing
                                             ;
 
         char: char                          ::= token('\''
-                                            (   [^\\\r\n]{ value = match[0]; }
+                                            (   [^\\\r\n]{ value = *matchBegin; }
                                             |   escape{ value = escape; }
                                             )   '\''!)
                                             ;
 
         string: string                      ::= token('"'
                                                 (
-                                                    ([^"\\\r\n]+){ value.Append(match); }
+                                                    ([^"\\\r\n]+){ value.Append(string(matchBegin, matchEnd)); }
                                                 |   escape{ value.Append(escape); }
                                                 )*
                                             '"'!)

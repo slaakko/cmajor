@@ -37,8 +37,8 @@ namespace System.Text.Parsing
         {
             if (currentGrammar != null)
             {
-                currentGrammar->ResolveStart();
-                currentGrammar->ResolveSkip();
+                currentGrammar->ResolveStartRule();
+                currentGrammar->ResolveSkipRule();
             }
         }
         public override void Visit(RuleLink& link)
@@ -57,12 +57,12 @@ namespace System.Text.Parsing
                     }
                     else
                     {
-                        ThrowException("'" + link.LinkedRuleName() + "' is not a rule", link.GetPosition());
+                        ThrowException("'" + link.LinkedRuleName() + "' is not a rule", link.GetSpan());
                     }
                 }
                 else
                 {
-                    ThrowException("rule '" + link.LinkedRuleName() + "' not found", link.GetPosition());
+                    ThrowException("rule '" + link.LinkedRuleName() + "' not found", link.GetSpan());
                 }
             }
         }
@@ -108,16 +108,16 @@ namespace System.Text.Parsing
                 }
                 catch (const ParsingException& ex)
                 {
-                    ThrowException(ex.Message(), parser.GetPosition());
+                    ThrowException(ex.Message(), parser.GetSpan());
                 }
                 catch (const Exception& ex)
                 {
-                    ThrowException(ex.Message(), parser.GetPosition());
+                    ThrowException(ex.Message(), parser.GetSpan());
                 }
                 if (parser.NumberOfArguments() != parser.GetRule()->NumberOfParameters())
                 {
                     ThrowException("rule '" + parser.RuleName() + "' takes " + ToString(parser.GetRule()->NumberOfParameters()) + " parameters (" + ToString(parser.NumberOfArguments()) + " arguments supplied)",
-                        parser.GetPosition());
+                        parser.GetSpan());
                 }
             }
         }
