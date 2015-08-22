@@ -52,7 +52,7 @@ namespace Cm
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -357,10 +357,10 @@ namespace Cm
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.BasicTypeGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.TemplateGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.BasicTypeGrammar.Create(parsingDomain);
+                grammar0 = Cm.TemplateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
             Grammar* grammar1 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
@@ -369,18 +369,18 @@ namespace Cm
                 grammar1 = Cm.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.TemplateGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.BasicTypeGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.TemplateGrammar.Create(parsingDomain);
+                grammar2 = Cm.BasicTypeGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
-            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
             AddRule(new TypeExprRule("TypeExpr", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

@@ -35,7 +35,7 @@ namespace Cm.Parser
             ;
         
         FunctionGroupId(ParsingContext* ctx) : FunctionGroupIdNode*
-            ::= token(identifier - Keyword){ value = new FunctionGroupIdNode(span, match); }
+            ::= token(identifier - Keyword){ value = new FunctionGroupIdNode(span, string(matchBegin, matchEnd)); }
             |   OperatorFunctionGroupId(ctx){ value = OperatorFunctionGroupId; }
             ;
             

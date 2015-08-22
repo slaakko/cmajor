@@ -58,7 +58,7 @@ namespace Cm
                     {
                         val = 0u;
                         unsignedSuffix = ' ';
-                        for (char* p = matchBegin; p != matchEnd; ++p)
+                        for (const char* p = matchBegin; p != matchEnd; ++p)
                         {
                             val = 10u * val + (cast<ulong>(*p) - cast<ulong>('0'));
                         }
@@ -76,7 +76,7 @@ namespace Cm
                     {
                         val = 0u;
                         unsignedSuffix = ' ';
-                        for (char* p = matchBegin; p != matchEnd; ++p)
+                        for (const char* p = matchBegin; p != matchEnd; ++p)
                         {
                             char c = *p;
                             ulong b = 0u;

@@ -24,9 +24,9 @@ namespace Cm.Parser
         {
             SetOwner(0);
         }
-        public IdentifierNode* Parse(const string& content, int fileIndex, const string& fileName)
+        public IdentifierNode* Parse(const char* start, const char* end, int fileIndex, const string& fileName)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -37,21 +37,21 @@ namespace Cm.Parser
             }
             Stack<UniquePtr<Object>> stack;
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -85,9 +85,9 @@ namespace Cm.Parser
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = new IdentifierNode(span, match);
+                context.value = new IdentifierNode(span, string(matchBegin, matchEnd));
             }
             public throw void Postidentifier(Stack<UniquePtr<Object>>& stack, bool matched)
             {
@@ -132,9 +132,9 @@ namespace Cm.Parser
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = new IdentifierNode(span, match);
+                context.value = new IdentifierNode(span, string(matchBegin, matchEnd));
             }
             public throw void Postidentifier(Stack<UniquePtr<Object>>& stack, bool matched)
             {

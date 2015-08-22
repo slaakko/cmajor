@@ -1,0 +1,137 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.Collections;
+
+namespace System.Text.Parsing.CmObjectModel
+{
+    public enum Derivation : byte
+    {
+        none = 0u,
+        const_ = 1u,
+        reference = 2u,
+        rvalueRef = 3u,
+        pointer = 4u,
+        leftParen = 5u,
+        rightParen = 6u,
+        array = 7u
+    }
+    
+    public string DerivationStr(Derivation d)
+    {
+        switch (d)
+        {
+            case Derivation.const_: return "const";
+            case Derivation.reference: return "&";
+            case Derivation.rvalueRef: return "&&";
+            case Derivation.pointer: return "*";
+            case Derivation.leftParen: return "(";
+            case Derivation.rightParen: return ")";
+        }
+        return "";
+    }
+    
+    public class DerivedTypeExpr : CmObject
+    {
+        public DerivedTypeExpr()
+        {
+        }
+        public void SetBaseTypeExpr(CmObject* expr)
+        {
+            baseType.Reset(expr);
+        }
+        public CmObject* ReleaseBaseTypeExpr()
+        {
+            return baseType.Release();
+        }
+        public void Add(Derivation derivation)
+        {
+            derivations.Add(derivation);
+        }
+        public override string ToString() const
+        {
+            string s;
+            int derivationIndex = 0;
+            int n = derivations.Count();
+            if (derivationIndex < n)
+            {
+                Derivation d = derivations[derivationIndex];
+                if (d == Derivation.const_)
+                {
+                    s.Append(DerivationStr(d));
+                    ++derivationIndex;
+                }
+            }
+            if (derivationIndex < n)
+            {
+                Derivation d = derivations[derivationIndex];
+                if (d == Derivation.leftParen)
+                {
+                    if (!s.IsEmpty())
+                    {
+                        s.Append(' ');
+                    }
+                    s.Append(DerivationStr(d));
+                    ++derivationIndex;
+                    if (derivationIndex < n)
+                    {
+                        Derivation d = derivations[derivationIndex];
+                        if (d == Derivation.const_)
+                        {
+                            s.Append(DerivationStr(d));
+                            ++derivationIndex;
+                        }
+                    }
+                }
+            }
+            if (!s.IsEmpty())
+            {
+                s.Append(' ');
+            }
+            s.Append(baseType->ToString());
+            for (int i = derivationIndex; i < n; ++i)
+            {
+                s.Append(DerivationStr(derivations[i]));
+            }
+            return s;
+        }
+        public override void Print(CodeFormatter& formatter)
+        {
+            formatter.Write(ToString());
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public const List<Derivation>& Derivations() const
+        {
+            return derivations;
+        }
+        private UniquePtr<CmObject> baseType;
+        private List<Derivation> derivations;
+    }
+    
+    public CmObject* MakeTypeExpr(DerivedTypeExpr* derivedTypeExpr)
+    {
+        if (derivedTypeExpr->Derivations().Count() == 0)
+        {
+            CmObject* baseTypeExpr = derivedTypeExpr->ReleaseBaseTypeExpr();
+            delete derivedTypeExpr;
+            return baseTypeExpr;
+        }        
+        return derivedTypeExpr;
+    }
+}

@@ -41,7 +41,7 @@ namespace System.Text.RegularExpressions
             ;
 
         Char: char
-            ::= (anychar - [()\\\[*+?|.]){ value = match[0]; }
+            ::= (anychar - [()\\\[*+?|.]){ value = *matchBegin; }
             ;
 
         CharClass(var bool inverse, var string s): System.Text.RegularExpressions.CharClass
@@ -85,7 +85,7 @@ namespace System.Text.RegularExpressions
                 ;
 
         CharClassChar: char
-            ::= [^\\\]]{ value = match[0]; }
+            ::= [^\\\]]{ value = *matchBegin; }
             |   escape{ value = escape; }
             ;
     }

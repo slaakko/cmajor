@@ -79,7 +79,7 @@ namespace Cm.Parser
             ;
             
         FilePath: string
-            ::= token('<' ([^>]+){ value = match; } '>'!)
+            ::= token('<' ([^>]+){ value = string(matchBegin, matchEnd); } '>'!)
             ;
     }
 }

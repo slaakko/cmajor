@@ -38,7 +38,7 @@ namespace Cm.Parser
             ;
             
         LabelId : string
-            ::= (identifier - Keyword){ value = match; }
+            ::= (identifier - Keyword){ value = string(matchBegin, matchEnd); }
             ;
             
         Label : LabelNode*
@@ -253,7 +253,7 @@ namespace Cm.Parser
             ;
             
         Symbol : string
-            ::= (identifier - Keyword){ value = match; }
+            ::= (identifier - Keyword){ value = string(matchBegin, matchEnd); }
             ;
     }
 }

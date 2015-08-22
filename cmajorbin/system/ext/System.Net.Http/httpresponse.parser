@@ -21,19 +21,19 @@ namespace System.Net.Http
             ;
             
         StatusLine(var string statusText): HttpStatus
-            ::= (HttpVersion:version int:statusCode ((anychar - newline)*){ statusText = match; } newline){ value = HttpStatus(version, statusCode, statusText); }
+            ::= (HttpVersion:version int:statusCode ((anychar - newline)*){ statusText = string(matchBegin, matchEnd); } newline){ value = HttpStatus(version, statusCode, statusText); }
             ; 
             
         HttpVersion: string
-            ::= keyword("HTTP") '/' (int:major '.' int:minor){ value = match; }
+            ::= keyword("HTTP") '/' (int:major '.' int:minor){ value = string(matchBegin, matchEnd); }
             ;
             
         HeaderLine(var string name, var string val): HeaderLine
-            ::= (((anychar - ':')+){ name = match; } ':' ((anychar - newline)*){ val = match; } newline){ value = HeaderLine(name, val); }
+            ::= (((anychar - ':')+){ name = string(matchBegin, matchEnd); } ':' ((anychar - newline)*){ val = string(matchBegin, matchEnd); } newline){ value = HeaderLine(name, val); }
             ;
             
         Content: string
-            ::= (anychar*){ value = match; }
+            ::= (anychar*){ value = string(matchBegin, matchEnd); }
             ;            
     }
 }

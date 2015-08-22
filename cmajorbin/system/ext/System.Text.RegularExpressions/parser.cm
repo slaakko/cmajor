@@ -134,7 +134,7 @@ namespace System.Text.RegularExpressions
         }
         public PtrNfa Parse(const string& regEx)
         {
-            PtrNfa ptrNfa = grammar->Parse(regEx, 0, "");
+            PtrNfa ptrNfa = grammar->Parse(regEx.Chars(), regEx.Chars() + regEx.Length(), 0, "");
             ptrNfa.NumberStates();
             return ptrNfa;
         }
