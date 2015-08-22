@@ -23,9 +23,9 @@ namespace Syntax
         {
             SetOwner(0);
         }
-        public Project* Parse(const string& content, int fileIndex, const string& fileName)
+        public Project* Parse(const char* start, const char* end, int fileIndex, const string& fileName)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -36,21 +36,21 @@ namespace Syntax
             }
             Stack<UniquePtr<Object>> stack;
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -86,7 +86,7 @@ namespace Syntax
                 NonterminalParser* projectFileContentNonterminalParser = GetNonterminal("ProjectFileContent");
                 projectFileContentNonterminalParser->SetPreCall(PreCall(PreProjectFileContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Project(context.fromprojectName, fileName);
             }
@@ -139,11 +139,11 @@ namespace Syntax
                 NonterminalParser* referenceNonterminalParser = GetNonterminal("Reference");
                 referenceNonterminalParser->SetPostCall(PostCall(PostReference));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.project->AddSourceFile(context.fromSource);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.project->AddReferenceFile(context.fromReference);
             }
@@ -199,7 +199,7 @@ namespace Syntax
                 NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
                 filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromFilePath;
             }
@@ -246,7 +246,7 @@ namespace Syntax
                 NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
                 filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromFilePath;
             }
@@ -291,9 +291,9 @@ namespace Syntax
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = match;
+                context.value = string(matchBegin, matchEnd);
             }
             private class Context
             {
@@ -314,8 +314,8 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRule(new ProjectFileRule("ProjectFile", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

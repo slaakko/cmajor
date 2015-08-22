@@ -83,7 +83,7 @@ namespace System.Text.Parsing
                 }
                 catch (const Exception& ex)
                 {
-                    ThrowException(ex.Message(), GetPosition());
+                    ThrowException(ex.Message(), GetSpan());
                 }
                 if (scope != null)
                 {
@@ -132,13 +132,13 @@ namespace System.Text.Parsing
         {
             return owner;
         }
-        public nothrow inline void SetPosition(const Position& position_)
+        public nothrow inline void SetSpan(const Span& span_)
         {
-            position = position_;
+            span = span_;
         }
-        public nothrow inline const Position& GetPosition() const
+        public nothrow inline const Span& GetSpan() const
         {
-            return position;
+            return span;
         }
         public nothrow inline bool Owned() const
         {
@@ -165,7 +165,7 @@ namespace System.Text.Parsing
         private Scope* enclosingScope;
         private Scope* scope;
         private int owner;
-        private Position position;
+        private Span span;
         private List<UniquePtr<ParsingObject>> ownedObjects;
     }
 }

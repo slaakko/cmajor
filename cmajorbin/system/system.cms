@@ -10,7 +10,7 @@ project <ext/System.Text.Parsing.CmObjectModel/System.Text.Parsing.CmObjectModel
 project <ext/System.Text.RegularExpressions/System.Text.RegularExpressions.cmp>;
 project <ext/System.Xml/System.Xml.cmp>;
 project <ext/System.Xml.Serialization/System.Xml.Serialization.cmp>;
-activeProject os;
+activeProject System.Text.Parsing.CmObjectModel;
 dependency os();
 dependency support(os);
 dependency system(support, os);

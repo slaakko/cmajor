@@ -24,19 +24,19 @@ namespace Syntax
         using stdlib.identifier;
         using stdlib.string;
         using Declarator = Cm.IdentifierGrammar.Identifier;
-        using Cm.ExpressionGrammar.TypeExpr;
+        using Cm.TypeExprGrammar.TypeExpr;
 
         RuleLink(Grammar* grammar)
                             ::= (keyword("using") identifier:aliasName '=' qualified_id:ruleName ';')
                                 {
                                     RuleLink* link(new RuleLink(aliasName, grammar, ruleName));
-                                    link->SetPosition(position);
+                                    link->SetSpan(span);
                                     grammar->AddRuleLink(link);
                                 }
                             |   (keyword("using") qualified_id ';')
                                 {
                                     RuleLink* link(new RuleLink(grammar, qualified_id));
-                                    link->SetPosition(position);
+                                    link->SetSpan(span);
                                     grammar->AddRuleLink(link);
                                 }
                             ;
@@ -66,11 +66,11 @@ namespace Syntax
                             ;
 
         Identifier: string
-                            ::= (identifier - Keyword){ value = match; }
+                            ::= (identifier - Keyword){ value = string(matchBegin, matchEnd); }
                             ;
 
         QualifiedId: string
-                            ::= token(Identifier:first('.' Identifier:rest)*){ value = match; }
+                            ::= token(Identifier:first('.' Identifier:rest)*){ value = string(matchBegin, matchEnd); }
                             ;
 
         StringArray(List<string>* array)

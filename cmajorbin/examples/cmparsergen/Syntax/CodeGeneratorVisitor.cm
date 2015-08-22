@@ -59,20 +59,20 @@ namespace Syntax
             formatter.IncIndent();
             string valueTypeName;
             string parameters;
-            Rule* start = grammar.Start();
-            if (start != null)
+            Rule* startRule = grammar.StartRule();
+            if (startRule != null)
             {
-                if (!start->ValueTypeName().IsEmpty())
+                if (!startRule->ValueTypeName().IsEmpty())
                 {
-                    valueTypeName = grammar.Start()->ValueTypeName();
+                    valueTypeName = grammar.StartRule()->ValueTypeName();
                 }
                 else
                 {
                     valueTypeName = "void";
                 }
-                if (start->TakesOrReturnsValuesOrHasLocals())
+                if (startRule->TakesOrReturnsValuesOrHasLocals())
                 {
-                    for (const AttrOrVariable& attr : grammar.Start()->InheritedAttributes())
+                    for (const AttrOrVariable& attr : grammar.StartRule()->InheritedAttributes())
                     {
                         parameters.Append(", " + attr.TypeName() + " " + attr.Name());
                     }
@@ -109,14 +109,14 @@ namespace Syntax
             keywordListNames = creator.KeywordListNames();
             formatter.DecIndent();
             formatter.WriteLine("}");
-            if (start != null)
+            if (startRule != null)
             {
-                if (start->TakesOrReturnsValuesOrHasLocals())
+                if (startRule->TakesOrReturnsValuesOrHasLocals())
                 {
-                    formatter.WriteLine("public " + valueTypeName + " Parse(const string& content, int fileIndex, const string& fileName" + parameters + ")");
+                    formatter.WriteLine("public " + valueTypeName + " Parse(const char* start, const char* end, int fileIndex, const string& fileName" + parameters + ")");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
-                    formatter.WriteLine("Scanner scanner(content, fileIndex, fileName, Skip());");
+                    formatter.WriteLine("Scanner scanner(start, end, fileIndex, fileName, SkipRule());");
                     formatter.WriteLine("System.IO.OutputStream* log = Log();");
                     formatter.WriteLine("UniquePtr<XmlLog> xmlLog;");
                     formatter.WriteLine("if (log != null)");
@@ -129,33 +129,33 @@ namespace Syntax
                     formatter.WriteLine("}");
                     formatter.WriteLine("Stack<UniquePtr<Object>> stack;");
                     
-                    for (const AttrOrVariable& attr : grammar.Start()->InheritedAttributes())
+                    for (const AttrOrVariable& attr : grammar.StartRule()->InheritedAttributes())
                     {
                         formatter.WriteLine("stack.Push(UniquePtr<Object>(new ValueObject<" + attr.TypeName() + ">(" + attr.Name() + ")));");
                     }
                     
                     formatter.WriteLine("Match match = Parse(scanner, stack);");
-                    formatter.WriteLine("Position stop = scanner.GetPosition();");
+                    formatter.WriteLine("Span stop = scanner.GetSpan();");
                     formatter.WriteLine("if (log != null)");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
                     formatter.WriteLine("xmlLog->WriteEndRule(\"parse\");");
                     formatter.DecIndent();
                     formatter.WriteLine("}");
-                    formatter.WriteLine("if (!match.Hit() || stop.Index() != content.Length())");
+                    formatter.WriteLine("if (!match.Hit() || stop.Start() != int(end - start))");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
-                    formatter.WriteLine("Rule* start = Start();");
-                    formatter.WriteLine("if (start != null)");
+                    formatter.WriteLine("Rule* startRule = StartRule();");
+                    formatter.WriteLine("if (startRule != null)");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
-                    formatter.WriteLine("throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);");
+                    formatter.WriteLine("throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);");
                     formatter.DecIndent();
                     formatter.WriteLine("}");
                     formatter.WriteLine("else");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
-                    formatter.WriteLine("throw ParsingException(\"grammar '\" + Name() + \"' has no start rule\", content, scanner.GetPosition(), fileName);");
+                    formatter.WriteLine("throw ParsingException(\"grammar '\" + Name() + \"' has no start rule\", fileName, stop, start, end);");
                     formatter.DecIndent();
                     formatter.WriteLine("}");
                     formatter.DecIndent();
@@ -264,7 +264,7 @@ namespace Syntax
                     for (ActionParser* action : rule->Actions())
                     {
                         formatter.WriteLine("public throw void " + action->MethodName() + 
-                            "(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)");
+                            "(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)");
                         action->SuccessCode()->Print(formatter);
                         CompoundStatement* failureCode = action->FailureCode();
                         if (failureCode != null)

@@ -1,7 +1,7 @@
 /*========================================================================
     Copyright (c) 2012-2015 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
- 
+
     Distributed under the GNU General Public License, version 3 (GPLv3).
     (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
 
@@ -30,7 +30,7 @@ namespace Cm
         using stdlib.ureal;
         using stdlib.char;
         using stdlib.string;
-        
+
         Literal: LiteralPtr
                 ::= bool:b{ value = new BooleanLiteral(b); }
                 |   FloatingLiteral:f{ value = new FloatingLiteral(f.first, f.second); }
@@ -40,47 +40,45 @@ namespace Cm
                 |   string:s{ value = new StringLiteral(s); }
                 |   Null:n{ value = new NullLiteral(); }
                 ;
-                
+
         FloatingLiteral(var double val, var char floatSuffix): Pair<double, char>
                 ::= token(ureal:u
                     {
                         val = u;
                     }
-                    (('f' | 'F'){ floatSuffix = match[0]; } | empty{ floatSuffix = ' '; })
+                    (('f' | 'F'){ floatSuffix = *matchBegin; } | empty{ floatSuffix = ' '; })
                 )
                 {
                     value = MakePair(val, floatSuffix);
                 }
                 ;
-                
+
         IntLiteral(var ulong val, var char unsignedSuffix): Pair<ulong, char>
                 ::= token((digit+)
                     {
-                        int n = match.Length();
                         val = 0u;
                         unsignedSuffix = ' ';
-                        for (int i = 0; i < n; ++i)
+                        for (char* p = matchBegin; p != matchEnd; ++p)
                         {
-                            val = 10u * val + (cast<ulong>(match[i]) - cast<ulong>('0'));
+                            val = 10u * val + (cast<ulong>(*p) - cast<ulong>('0'));
                         }
                     }
-                    (('u' | 'U'){ unsignedSuffix = match[0]; })?
+                    (('u' | 'U'){ unsignedSuffix = *matchBegin; })?
                 )
                 {
                     value = MakePair(val, unsignedSuffix);
                 }
                 ;
-                
+
         HexLiteral(var ulong val, var char unsignedSuffix): Pair<ulong, char>
                 ::= token((("0x" | "0X")
                     (hexdigit+)
                     {
                         val = 0u;
                         unsignedSuffix = ' ';
-                        int n = match.Length();
-                        for (int i = 0; i < n; ++i)
+                        for (char* p = matchBegin; p != matchEnd; ++p)
                         {
-                            char c = match[i];
+                            char c = *p;
                             ulong b = 0u;
                             if (c >= '0' && c <= '9')
                             {
@@ -90,20 +88,20 @@ namespace Cm
                             {
                                 b = 10u + cast<ulong>(c) - cast<ulong>('a');
                             }
-                            else 
+                            else
                             {
                                 b = 10u + cast<ulong>(c) - cast<ulong>('A');
                             }
                             val = 16u * val + b;
                         }
                     }
-                    (('u' | 'U'){ unsignedSuffix = match[0]; })?)
+                    (('u' | 'U'){ unsignedSuffix = *matchBegin; })?)
                 )
                 {
                     value = MakePair(val, unsignedSuffix);
                 }
                 ;
-                
+
         Null    ::= keyword("null")
                 ;
 

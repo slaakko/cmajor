@@ -9,4 +9,5 @@ source <Namespace.cm>;
 source <Object.cm>;
 source <Operator.cm>;
 source <Statement.cm>;
+source <TypeExpr.cm>;
 source <Visitor.cm>;

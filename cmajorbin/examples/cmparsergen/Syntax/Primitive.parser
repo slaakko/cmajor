@@ -71,7 +71,7 @@ namespace Syntax
                             )
                             ;
 
-        CharSetChar: char   ::= [^\\\]]{ value = match[0]; }
+        CharSetChar: char   ::= [^\\\]]{ value = *matchBegin; }
                             |   escape{ value = escape; }
                             ;
 

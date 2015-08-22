@@ -24,9 +24,9 @@ namespace Cm
         {
             SetOwner(0);
         }
-        public TemplateId* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        public TemplateId* Parse(const char* start, const char* end, int fileIndex, const string& fileName, ParsingContext* ctx)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -38,21 +38,21 @@ namespace Cm
             Stack<UniquePtr<Object>> stack;
             stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -97,15 +97,15 @@ namespace Cm
                 typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
                 typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.templateId.Release();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.templateId.Reset(new TemplateId(context.fromQualifiedId));
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.templateId->AddTemplateArg(context.fromTypeExpr);
             }
@@ -149,17 +149,17 @@ namespace Cm
                 grammar0 = Cm.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.ExpressionGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.TypeExprGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.ExpressionGrammar.Create(parsingDomain);
+                grammar1 = Cm.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "ExpressionGrammar.TypeExpr"));
             AddRule(new TemplateIdRule("TemplateId", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(

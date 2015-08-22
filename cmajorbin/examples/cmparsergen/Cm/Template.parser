@@ -20,7 +20,7 @@ namespace Cm
     grammar TemplateGrammar
     {
         using IdentifierGrammar.QualifiedId;
-        using ExpressionGrammar.TypeExpr;
+        using TypeExprGrammar.TypeExpr;
 
         TemplateId(ParsingContext* ctx, var UniquePtr<TemplateId> templateId): TemplateId*
                 ::= (   QualifiedId 

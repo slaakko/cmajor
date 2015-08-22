@@ -28,7 +28,7 @@ namespace Syntax
                     ;
 
         RuleHeader(Scope* enclosingScope, ParsingContext* ctx): Rule*
-                    ::= Identifier:name{value = new Rule(name, enclosingScope); value->SetPosition(position); } Signature(value, ctx)
+                    ::= Identifier:name{value = new Rule(name, enclosingScope); value->SetSpan(span); } Signature(value, ctx)
                     ;
 
         RuleBody(Rule* rule, ParsingContext* ctx)

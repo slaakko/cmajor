@@ -24,21 +24,10 @@ namespace Cm
         using LiteralGrammar.Literal;
         using BasicTypeGrammar.BasicType;
         using TemplateGrammar.TemplateId;
+        using TypeExprGrammar.TypeExpr;
 
         Expression(ParsingContext* ctx): CmObject*
                 ::= Disjunction(ctx){ value = Disjunction; }
-                ;
-
-        TypeExpr(ParsingContext* ctx): CmObject*
-                ::= empty{ ctx->BeginParsingTypeExpr(); }
-                    Expression(ctx)
-                    {
-                        value = Expression;
-                        ctx->EndParsingTypeExpr();
-                    }
-                /   {
-                        ctx->EndParsingTypeExpr();
-                    }
                 ;
 
         Disjunction(ParsingContext* ctx): CmObject*
@@ -46,7 +35,7 @@ namespace Cm
                 (
                     "||"
                     {
-                        if (ctx->ParsingTypeExprOrLValue())
+                        if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                         {
                             pass = false;
                         }
@@ -60,7 +49,7 @@ namespace Cm
                 (
                     "&&"
                     {
-                        if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                        if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                         {
                             pass = false;
                         }
@@ -74,7 +63,7 @@ namespace Cm
                 (
                     ('|' - "||")
                     {
-                        if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                        if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                         {
                             pass = false;
                         }
@@ -88,7 +77,7 @@ namespace Cm
                 (
                     '^'
                     {
-                        if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                        if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                         {
                             pass = false;
                         }
@@ -102,7 +91,7 @@ namespace Cm
                 (
                     ('&' - "&&")
                     {
-                        if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                        if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                         {
                             pass = false;
                         }
@@ -116,7 +105,7 @@ namespace Cm
                 (
                     (   "=="
                     {
-                        if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                        if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                         {
                             pass = false;
                         }
@@ -127,7 +116,7 @@ namespace Cm
                     }
                     |   "!="
                     {
-                        if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                        if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                         {
                             pass = false;
                         }
@@ -149,7 +138,7 @@ namespace Cm
                 (
                     (   ("<=" - "<=>")
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -160,7 +149,7 @@ namespace Cm
                         }
                     |   ">="
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -171,7 +160,7 @@ namespace Cm
                         }
                     |   ('<' - ("<<" | "<=>"))
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -182,7 +171,7 @@ namespace Cm
                         }
                     |   ('>' - ">>")
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -204,7 +193,7 @@ namespace Cm
                 (
                     (   "<<"
                         {
-                            if (ctx->ParsingTypeExprOrLValue())
+                            if (ctx->ParsingLvalue())
                             {
                                 pass = false;
                             }
@@ -216,7 +205,7 @@ namespace Cm
                         }
                     |   ">>"
                         {
-                            if (ctx->ParsingTypeExprOrLValue())
+                            if (ctx->ParsingLvalue())
                             {
                                 pass = false;
                             }
@@ -239,7 +228,7 @@ namespace Cm
                 (
                     (   '+'
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -251,7 +240,7 @@ namespace Cm
                         }
                     |   '-'
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -274,7 +263,7 @@ namespace Cm
                 (
                     (   '*'
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -285,7 +274,7 @@ namespace Cm
                         }
                     |   '/'
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -297,7 +286,7 @@ namespace Cm
                         }
                     |   '%'
                         {
-                            if (ctx->ParsingTypeExprOrLValue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
+                            if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments())
                             {
                                 pass = false;
                             }
@@ -345,53 +334,21 @@ namespace Cm
                 }
                 ;
 
-        Postfix(ParsingContext* ctx, var UniquePtr<PostfixExpression> postfixExpr): CmObject*
-                ::= Primary(ctx)
-                {
-                    value = Primary;
-                    bool wasOwned = value->Owned();
-                    value->SetOwned();
-                    postfixExpr.Reset(new PostfixExpression(value));
-                    if (!wasOwned)
-                    {
-                        value->SetNotOwned();
-                    }
-                }
-                (
-                    (
-                        (   "++"{ postfixExpr->AddOp(new PostfixInc()); }
-                        |   "--"{ postfixExpr->AddOp(new PostfixDec()); }
-                        |   '.' Identifier:memberName!{ postfixExpr->AddOp(new Member(memberName)); }
-                        |   "->" Identifier:ptrMemberName!{ postfixExpr->AddOp(new PtrMember(ptrMemberName)); }
-                        |   ('('{ if (ctx->ParsingTypeExpr()) pass = false; } ArgumentList(ctx)! ')'!)
-                            {
-                                postfixExpr->AddOp(new Invoke(ArgumentList));
-                            }
-                        |   '[' Expression(ctx)! ']'!{ postfixExpr->AddOp(new Indexing(Expression)); }
-                        |   '*'
-                            {
-                                pass = ctx->ParsingTypeExprOrLValue();
-                                if (pass)
-                                {
-                                    postfixExpr->AddOp(new Pointer());
-                                }
-                            }
-                        |   ('&' - "&&")
-                            {
-                                pass = ctx->ParsingTypeExprOrLValue();
-                                if (pass)
-                                {
-                                    postfixExpr->AddOp(new Reference());
-                                }
-                            }
-                        )+
-                    )
-                    {
-                        postfixExpr->OwnSubject();
-                        value = postfixExpr.Release();
-                    }
-                    |   empty
+        Postfix(ParsingContext* ctx, var UniquePtr<CmObject> expr): CmObject*
+                ::= 
+                (   Primary(ctx){ expr.Reset(Primary); }
+                    (   "++"{ expr.Reset(new PostfixInc(expr.Release())); }
+                    |   "--"{ expr.Reset(new PostfixDec(expr.Release())); }
+                    |   '.' Identifier:dotMemberId{ expr.Reset(new DotExpr(expr.Release(), dotMemberId)); }
+                    |   "->" Identifier:arrowMemberId{ expr.Reset(new ArrowExpr(expr.Release(), arrowMemberId)); }
+                    |   '('{ expr.Reset(new Invoke(expr.Release())); } ArgumentList(ctx){ cast<Invoke*>(expr.GetPtr())->SetArguments(ArgumentList); } ')'
+                    |   '['{ ctx->PushParsingLvalue(false); ctx->PushParsingSimpleStatement(false); } Expression(ctx):index ']'
+                        { ctx->PopParsingLvalue(); ctx->PopParsingSimpleStatement(); expr.Reset(new Indexing(expr.Release(), index)); }
+                    )*
                 )
+                {
+                    value = expr.Release();
+                }
                 ;
 
         Primary(ParsingContext* ctx): CmObject*

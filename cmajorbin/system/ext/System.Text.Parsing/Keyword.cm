@@ -122,18 +122,18 @@ namespace System.Text.Parsing
         {
             if (selectorRule != null)
             {
-                Position save = scanner.GetPosition();
-                Span savedSpan = scanner.GetSpan();
+                Span save = scanner.GetSpan();
                 Match match = selectorRule->Parse(scanner, stack);
                 if (match.Hit())
                 {
-                    string keyword = scanner.GetMatch(save.Index());
+                    const char* matchBegin = scanner.Start() + save.Start();
+                    const char* matchEnd = scanner.Start() + scanner.GetSpan().Start();
+                    string keyword(matchBegin, matchEnd);
                     if (keywords.Find(keyword) != keywords.End())
                     {
                         return match;
                     }
-                    scanner.SetPosition(save);
-                    scanner.SetSpan(savedSpan);
+                    scanner.SetSpan(save);
                 }
             }
             return Match.Nothing();

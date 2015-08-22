@@ -21,12 +21,12 @@ namespace Cm
         using KeywordGrammar.Keyword;
         
         Identifier: string
-                    ::= (identifier - Keyword){ value = match; }
+                    ::= (identifier - Keyword){ value = string(matchBegin, matchEnd); }
                     ;
                     
                             
         QualifiedId: string
-                    ::= token(Identifier % '.'){ value = match; }
+                    ::= token(Identifier % '.'){ value = string(matchBegin, matchEnd); }
                     ;
     }
 }

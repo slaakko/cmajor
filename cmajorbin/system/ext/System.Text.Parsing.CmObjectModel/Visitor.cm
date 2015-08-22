@@ -33,6 +33,7 @@ namespace System.Text.Parsing.CmObjectModel
         public virtual void Visit(DoubleType& object) {}
         public virtual void Visit(CharType& object) {}
         public virtual void Visit(VoidType& object) {}
+        public virtual void Visit(DerivedTypeExpr& object) {}
         public virtual void Visit(ThisAccess& object) {}
         public virtual void Visit(BaseAccess& object) {}
         public virtual void Visit(NewExpression& object) {}
@@ -41,15 +42,12 @@ namespace System.Text.Parsing.CmObjectModel
         public virtual void Visit(CastExpression& object) {}
         public virtual void Visit(TypenameExpression& object) {}
         public virtual void Visit(PrefixExpression& object) {}
+        public virtual void Visit(DotExpr& object) {}
+        public virtual void Visit(ArrowExpr& object) {}
         public virtual void Visit(PostfixInc& object) {}
         public virtual void Visit(PostfixDec& object) {}
-        public virtual void Visit(Pointer& object) {}
-        public virtual void Visit(Reference& object) {}
-        public virtual void Visit(Member& object) {}
-        public virtual void Visit(PtrMember& object) {}
         public virtual void Visit(Invoke& object) {}
         public virtual void Visit(Indexing& object) {}
-        public virtual void Visit(PostfixExpression& object) {}
         public virtual void Visit(BinaryExpression& object) {}
         public virtual void Visit(Identifier& object) {}
         public virtual void Visit(TemplateId& object) {}

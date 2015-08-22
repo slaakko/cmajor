@@ -21,3 +21,5 @@ source <Statement.cm>;
 text <Statement.parser>;
 source <Template.cm>;
 text <Template.parser>;
+source <TypeExpr.cm>;
+text <TypeExpr.parser>;

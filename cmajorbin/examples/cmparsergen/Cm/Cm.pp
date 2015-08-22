@@ -8,3 +8,4 @@ source <Literal.parser>;
 source <Namespace.parser>;
 source <Statement.parser>;
 source <Template.parser>;
+source <TypeExpr.parser>;

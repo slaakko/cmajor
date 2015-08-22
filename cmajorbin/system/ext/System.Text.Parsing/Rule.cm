@@ -84,7 +84,7 @@ namespace System.Text.Parsing
                 log->WriteTry(scanner.RestOfLine());
                 log->IncIndent();
             }
-            int startIndex = scanner.GetPosition().Index();
+            int startIndex = scanner.GetSpan().Start();
             Enter(stack);
             Match match = Match.Nothing();
             if (definition != null)
@@ -98,7 +98,8 @@ namespace System.Text.Parsing
                 log->DecIndent();
                 if (match.Hit())
                 {
-                    log->WriteSuccess(scanner.GetMatch(startIndex));
+                    string matched(scanner.Start() + startIndex, scanner.Start() + scanner.GetSpan().Start());
+                    log->WriteSuccess(matched);
                 }
                 else
                 {
@@ -179,7 +180,7 @@ namespace System.Text.Parsing
             ParsingObject* object = GetScope()->Get(actionName);
             if (object == null)
             {
-                ThrowException("action '" + actionName + "' not found in rule '" + FullName() + "'", GetPosition());
+                ThrowException("action '" + actionName + "' not found in rule '" + FullName() + "'", GetSpan());
             }
             else if (object->IsActionParser())
             {
@@ -187,7 +188,7 @@ namespace System.Text.Parsing
             }
             else
             {
-                ThrowException("'" + actionName + "' is not an action", GetPosition());
+                ThrowException("'" + actionName + "' is not an action", GetSpan());
             }
             return null;
         }
@@ -207,7 +208,7 @@ namespace System.Text.Parsing
             ParsingObject* object = GetScope()->Get(nonterminalName);
             if (object == null)
             {
-                ThrowException("nonterminal '" + nonterminalName + "' not found", GetPosition());
+                ThrowException("nonterminal '" + nonterminalName + "' not found", GetSpan());
             }
             else if (object->IsNonterminalParser())
             {
@@ -215,7 +216,7 @@ namespace System.Text.Parsing
             }
             else
             {
-                ThrowException("'" + nonterminalName + "' is not a nonterminal", GetPosition());
+                ThrowException("'" + nonterminalName + "' is not a nonterminal", GetSpan());
             }
             return null;
         }

@@ -7,7 +7,6 @@ namespace Cm
     grammar ExpressionGrammar
     {
         Expression(ParsingContext* ctx): CmObject*;
-        TypeExpr(ParsingContext* ctx): CmObject*;
         Disjunction(ParsingContext* ctx): CmObject*;
         Conjunction(ParsingContext* ctx): CmObject*;
         BitOr(ParsingContext* ctx): CmObject*;
@@ -19,7 +18,7 @@ namespace Cm
         Additive(ParsingContext* ctx, var Operator op): CmObject*;
         Multiplicative(ParsingContext* ctx, var Operator op): CmObject*;
         Prefix(ParsingContext* ctx, var Operator op): CmObject*;
-        Postfix(ParsingContext* ctx, var UniquePtr<PostfixExpression> postfixExpr): CmObject*;
+        Postfix(ParsingContext* ctx, var UniquePtr<CmObject> expr): CmObject*;
         Primary(ParsingContext* ctx): CmObject*;
         CastExpr(ParsingContext* ctx): CmObject*;
         SizeOfExpr(ParsingContext* ctx): CmObject*;
@@ -88,5 +87,12 @@ namespace Cm
     grammar TemplateGrammar
     {
         TemplateId(ParsingContext* ctx, var UniquePtr<TemplateId> templateId): TemplateId*;
+    }
+    grammar TypeExprGrammar
+    {
+        TypeExpr(ParsingContext* ctx, var UniquePtr<DerivedTypeExpr> expr): CmObject*;
+        PrefixTypeExpr(ParsingContext* ctx, DerivedTypeExpr* expr);
+        PostfixTypeExpr(ParsingContext* ctx, DerivedTypeExpr* expr);
+        PrimaryTypeExpr(ParsingContext* ctx, DerivedTypeExpr* expr);
     }
 }

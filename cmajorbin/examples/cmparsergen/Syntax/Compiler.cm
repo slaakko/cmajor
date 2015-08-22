@@ -67,8 +67,8 @@ namespace Syntax
         {
             parserFileGrammar->SetLog(&Console.Error());
         }
-        string projectFileContent = ReadFile(projectFilePath);
-        UniquePtr<Project> project = projectFileGrammar->Parse(projectFileContent, 0, projectFilePath);
+        FileMapping projectFile(projectFilePath);
+        UniquePtr<Project> project = projectFileGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath);
         Console.WriteLine("Compiling project '" + project->Name() + "'...");
         Console.WriteLine("Parsing library files...");
         int libraryFileIndex = 0;
@@ -78,8 +78,8 @@ namespace Syntax
         {
             string referenceFilePath = ResolveReferenceFilePath(relativeReferenceFilePath, project->BasePath(), libraryDirectories);
             Console.Out() << "> " << referenceFilePath << endl();
-            string libraryFileContent = ReadFile(referenceFilePath);
-            libraryFileGrammar->Parse(libraryFileContent, libraryFileIndex, referenceFilePath, parsingDomain.GetPtr());
+            FileMapping libraryFile(referenceFilePath);
+            libraryFileGrammar->Parse(libraryFile.Begin(), libraryFile.End(), libraryFileIndex, referenceFilePath, parsingDomain.GetPtr());
             ++libraryFileIndex;
         }
         Console.WriteLine("Parsing source files...");
@@ -90,8 +90,8 @@ namespace Syntax
         for (const string& sourceFilePath : sourceFiles)
         {
             Console.Out() << "> " << sourceFilePath << endl();
-            string sourceFileContent = ReadFile(sourceFilePath);
-            UniquePtr<ParserFileContent> parserFileContent = parserFileGrammar->Parse(sourceFileContent, sourceFileIndex, sourceFilePath, sourceFileIndex, parsingDomain.GetPtr());
+            FileMapping sourceFile(sourceFilePath);
+            UniquePtr<ParserFileContent> parserFileContent = parserFileGrammar->Parse(sourceFile.Begin(), sourceFile.End(), sourceFileIndex, sourceFilePath, sourceFileIndex, parsingDomain.GetPtr());
             parserFiles.Add(Rvalue(parserFileContent));
             ++sourceFileIndex;
         }

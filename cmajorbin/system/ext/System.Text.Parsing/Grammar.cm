@@ -76,9 +76,9 @@ namespace System.Text.Parsing
             }
             visitor.EndVisit(*this);
         }
-        public void Parse(const string& content, int fileIndex, const string& fileName)
+        public void Parse(const char* start, const char* end, int fileIndex, const string& fileName)
         {
-            Scanner scanner(content, fileIndex, fileName, skip);
+            Scanner scanner(start, end, fileIndex, fileName, skipRule);
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
             {
@@ -88,37 +88,37 @@ namespace System.Text.Parsing
             }
             Stack<UniquePtr<Object>> stack;
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                if (start == null)
+                if (startRule == null)
                 {
-                    throw ParsingException("grammar '" + FullName() + "' has no starting rule", content, stop, fileName);
+                    throw ParsingException("grammar '" + FullName() + "' has no starting rule", fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ExpectationFailure(start->Info(), content, stop, fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
             }
         }
         public Match Parse(Scanner& scanner, Stack<UniquePtr<Object>>& stack)
         {
-            if (start != null)
+            if (startRule != null)
             {
                 if (contentParser == null)
                 {
-                    if (skip != null)
+                    if (skipRule != null)
                     {
-                        contentParser = new SequenceParser(new SequenceParser(new OptionalParser(skip), start), new OptionalParser(skip));
+                        contentParser = new SequenceParser(new SequenceParser(new OptionalParser(skipRule), startRule), new OptionalParser(skipRule));
                         Own(contentParser);
                     }
                     else
                     {
-                        contentParser = start;
+                        contentParser = startRule;
                     }
                 }
                 return contentParser->Parse(scanner, stack);
@@ -154,7 +154,7 @@ namespace System.Text.Parsing
             }
             catch (const Exception& ex)
             {
-                ThrowException(ex.Message(), GetPosition());
+                ThrowException(ex.Message(), GetSpan());
             }
         }
         public Rule* GetRule(const string& ruleName)
@@ -162,7 +162,7 @@ namespace System.Text.Parsing
             ParsingObject* object = GetScope()->Get(ruleName);
             if (object == null)
             {
-                ThrowException("rule '" + ruleName + "' not found in grammar '" + FullName() + "'", GetPosition());
+                ThrowException("rule '" + ruleName + "' not found in grammar '" + FullName() + "'", GetSpan());
             }
             if (object->IsRule())
             {
@@ -174,13 +174,13 @@ namespace System.Text.Parsing
                 Rule* rule = ruleLink->GetRule();
                 if (rule == null)
                 {
-                    ThrowException("rule link '" + ruleName + "' not bound in grammar '" + FullName() + "'", GetPosition());
+                    ThrowException("rule link '" + ruleName + "' not bound in grammar '" + FullName() + "'", GetSpan());
                 }
                 return rule;
             }
             else
             {
-                ThrowException("object '" + ruleName + "' is not rule or rule link", GetPosition());
+                ThrowException("object '" + ruleName + "' is not rule or rule link", GetSpan());
             }
             return null;
         }
@@ -198,13 +198,13 @@ namespace System.Text.Parsing
         {
             return grammarReferences;
         }
-        public nothrow inline Rule* Start() const
+        public nothrow inline Rule* StartRule() const
         {
-            return start;
+            return startRule;
         }
-        public nothrow inline Rule* Skip() const
+        public nothrow inline Rule* SkipRule() const
         {
-            return skip;
+            return skipRule;
         }
         public nothrow inline OutputStream* Log() const
         {
@@ -238,37 +238,37 @@ namespace System.Text.Parsing
         {
             ns = ns_;
         }
-        public void ResolveStart()
+        public void ResolveStartRule()
         {
             if (startRuleName.IsEmpty())
             {
                 if (!rules.IsEmpty())
                 {
-                    start = rules.Front();
+                    startRule = rules.Front();
                 }
                 else
                 {
-                    ThrowException("cannot resolve start rule because grammar '" + FullName() + "' is empty", GetPosition());
+                    ThrowException("cannot resolve start rule because grammar '" + FullName() + "' is empty", GetSpan());
                 }
             }
             else
             {
-                start = GetRule(startRuleName);
+                startRule = GetRule(startRuleName);
             }
         }
-        public void ResolveSkip()
+        public void ResolveSkipRule()
         {
             if (!skipRuleName.IsEmpty())
             {
-                skip = GetRule(skipRuleName);
+                skipRule = GetRule(skipRuleName);
             }
         }
         private ParsingDomain* parsingDomain;
         private Namespace* ns;
         private List<Rule*> rules;
         private Set<RuleLink*> ruleLinks;
-        private Rule* start;
-        private Rule* skip;
+        private Rule* startRule;
+        private Rule* skipRule;
         private Parser* contentParser;
         private Set<Grammar*> grammarReferences;
         private bool linking;

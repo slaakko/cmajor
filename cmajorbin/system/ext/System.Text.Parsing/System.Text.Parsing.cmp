@@ -15,7 +15,6 @@ source <Object.cm>;
 source <Parser.cm>;
 source <ParsingDomain.cm>;
 source <ParsingObject.cm>;
-source <Position.cm>;
 source <Primitive.cm>;
 source <Rule.cm>;
 source <Scanner.cm>;

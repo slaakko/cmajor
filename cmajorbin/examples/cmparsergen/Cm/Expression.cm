@@ -24,9 +24,9 @@ namespace Cm
         {
             SetOwner(0);
         }
-        public CmObject* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        public CmObject* Parse(const char* start, const char* end, int fileIndex, const string& fileName, ParsingContext* ctx)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -38,21 +38,21 @@ namespace Cm
             Stack<UniquePtr<Object>> stack;
             stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -90,7 +90,7 @@ namespace Cm
                 disjunctionNonterminalParser->SetPreCall(PreCall(PreDisjunction));
                 disjunctionNonterminalParser->SetPostCall(PostCall(PostDisjunction));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDisjunction;
             }
@@ -111,74 +111,6 @@ namespace Cm
                 public ParsingContext* ctx;
                 public CmObject* value;
                 public CmObject* fromDisjunction;
-            }
-            private Stack<Context> contextStack;
-            private Context context;
-        }
-        private class TypeExprRule: System.Text.Parsing.Rule
-        {
-            public TypeExprRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
-                base(name_, enclosingScope_, definition_), contextStack(), context()
-            {
-                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-                SetValueTypeName("CmObject*");
-            }
-            public override void Enter(Stack<UniquePtr<Object>>& stack)
-            {
-                contextStack.Push(Rvalue(context));
-                context = Context();
-                UniquePtr<Object> ctx_value = stack.Pop();
-                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
-            }
-            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
-            {
-                if (matched)
-                {
-                    stack.Push(UniquePtr<Object>(new ValueObject<CmObject*>(context.value)));
-                }
-                context = contextStack.Pop();
-            }
-            public override void Link()
-            {
-                ActionParser* a0ActionParser = GetAction("A0");
-                a0ActionParser->SetAction(ParsingAction(A0Action));
-                ActionParser* a1ActionParser = GetAction("A1");
-                a1ActionParser->SetAction(ParsingAction(A1Action));
-                a1ActionParser->SetFailureAction(FailureAction(A1ActionFail));
-                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
-                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
-                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
-            }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
-            {
-                context.ctx->BeginParsingTypeExpr();
-            }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
-            {
-                context.value = context.fromExpression;
-                context.ctx->EndParsingTypeExpr();
-            }
-            public throw void A1ActionFail()
-            {
-                context.ctx->EndParsingTypeExpr();
-            }
-            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
-            {
-                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
-            }
-            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
-            {
-                if (matched)
-                {
-                    UniquePtr<Object> fromExpression_value = stack.Pop();
-                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
-                }
-            }
-            private class Context
-            {
-                public ParsingContext* ctx;
-                public CmObject* value;
-                public CmObject* fromExpression;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -221,18 +153,18 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(Operator.or_, context.value, context.fromright);
             }
@@ -308,18 +240,18 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(Operator.and_, context.value, context.fromright);
             }
@@ -395,18 +327,18 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(Operator.bitOr, context.value, context.fromright);
             }
@@ -482,18 +414,18 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(Operator.bitXor, context.value, context.fromright);
             }
@@ -569,18 +501,18 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(Operator.bitAnd, context.value, context.fromright);
             }
@@ -659,13 +591,13 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -674,9 +606,9 @@ namespace Cm
                     context.op = Operator.eq;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -685,7 +617,7 @@ namespace Cm
                     context.op = Operator.neq;
                 }
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(context.op, context.value, context.fromright);
             }
@@ -769,13 +701,13 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -784,9 +716,9 @@ namespace Cm
                     context.op = Operator.lessOrEq;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -795,9 +727,9 @@ namespace Cm
                     context.op = Operator.greaterOrEq;
                 }
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -806,9 +738,9 @@ namespace Cm
                     context.op = Operator.less;
                 }
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -817,7 +749,7 @@ namespace Cm
                     context.op = Operator.greater;
                 }
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(context.op, context.value, context.fromright);
             }
@@ -902,13 +834,13 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue())
+                if (context.ctx->ParsingLvalue())
                 {
                     pass = false;
                 }
@@ -917,9 +849,9 @@ namespace Cm
                     context.op = Operator.shiftLeft;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue())
+                if (context.ctx->ParsingLvalue())
                 {
                     pass = false;
                 }
@@ -928,15 +860,15 @@ namespace Cm
                     context.op = Operator.shiftRight;
                 }
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(context.op, context.value, context.fromright);
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->BeginParsingArguments();
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->EndParsingArguments();
             }
@@ -1020,13 +952,13 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -1035,9 +967,9 @@ namespace Cm
                     context.op = Operator.plus;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -1046,7 +978,7 @@ namespace Cm
                     context.op = Operator.minus;
                 }
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(context.op, context.value, context.fromright);
             }
@@ -1128,13 +1060,13 @@ namespace Cm
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -1143,9 +1075,9 @@ namespace Cm
                     context.op = Operator.mul;
                 }
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -1154,9 +1086,9 @@ namespace Cm
                     context.op = Operator.div;
                 }
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExprOrLValue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments())
                 {
                     pass = false;
                 }
@@ -1165,7 +1097,7 @@ namespace Cm
                     context.op = Operator.mod;
                 }
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BinaryExpression(context.op, context.value, context.fromright);
             }
@@ -1259,50 +1191,50 @@ namespace Cm
                 postfixNonterminalParser->SetPreCall(PreCall(PrePostfix));
                 postfixNonterminalParser->SetPostCall(PostCall(PostPostfix));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.op = Operator.preInc;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.op = Operator.preDec;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
                 else context.op = Operator.minus;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
                 else context.op = Operator.plus;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
                 else context.op = Operator.not_;
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
                 else context.op = Operator.const_;
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
                 else context.op = Operator.complement;
             }
-            public throw void A7Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
                 else context.op = Operator.addressOf;
             }
-            public throw void A8Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
                 else context.op = Operator.deref;
             }
-            public throw void A9Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.op == Operator.const_)
                 {
@@ -1313,7 +1245,7 @@ namespace Cm
                     context.value = new PrefixExpression(context.op, context.fromprefix);
                 }
             }
-            public throw void A10Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromPostfix;
             }
@@ -1359,7 +1291,7 @@ namespace Cm
             {
                 AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
                 SetValueTypeName("CmObject*");
-                AddLocalVariable(AttrOrVariable("UniquePtr<PostfixExpression>", "postfixExpr"));
+                AddLocalVariable(AttrOrVariable("UniquePtr<CmObject>", "expr"));
             }
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
@@ -1398,81 +1330,62 @@ namespace Cm
                 a8ActionParser->SetAction(ParsingAction(A8Action));
                 ActionParser* a9ActionParser = GetAction("A9");
                 a9ActionParser->SetAction(ParsingAction(A9Action));
-                ActionParser* a10ActionParser = GetAction("A10");
-                a10ActionParser->SetAction(ParsingAction(A10Action));
                 NonterminalParser* primaryNonterminalParser = GetNonterminal("Primary");
                 primaryNonterminalParser->SetPreCall(PreCall(PrePrimary));
                 primaryNonterminalParser->SetPostCall(PostCall(PostPrimary));
-                NonterminalParser* memberNameNonterminalParser = GetNonterminal("memberName");
-                memberNameNonterminalParser->SetPostCall(PostCall(PostmemberName));
-                NonterminalParser* ptrMemberNameNonterminalParser = GetNonterminal("ptrMemberName");
-                ptrMemberNameNonterminalParser->SetPostCall(PostCall(PostptrMemberName));
+                NonterminalParser* dotMemberIdNonterminalParser = GetNonterminal("dotMemberId");
+                dotMemberIdNonterminalParser->SetPostCall(PostCall(PostdotMemberId));
+                NonterminalParser* arrowMemberIdNonterminalParser = GetNonterminal("arrowMemberId");
+                arrowMemberIdNonterminalParser->SetPostCall(PostCall(PostarrowMemberId));
                 NonterminalParser* argumentListNonterminalParser = GetNonterminal("ArgumentList");
                 argumentListNonterminalParser->SetPreCall(PreCall(PreArgumentList));
                 argumentListNonterminalParser->SetPostCall(PostCall(PostArgumentList));
-                NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
-                expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
-                expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
+                NonterminalParser* indexNonterminalParser = GetNonterminal("index");
+                indexNonterminalParser->SetPreCall(PreCall(Preindex));
+                indexNonterminalParser->SetPostCall(PostCall(Postindex));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromPrimary;
-                bool wasOwned = context.value->Owned();
-                context.value->SetOwned();
-                context.postfixExpr.Reset(new PostfixExpression(context.value));
-                if (!wasOwned)
-                {
-                    context.value->SetNotOwned();
-                }
+                context.value = context.expr.Release();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.postfixExpr->OwnSubject();
-                context.value = context.postfixExpr.Release();
+                context.expr.Reset(context.fromPrimary);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.postfixExpr->AddOp(new PostfixInc());
+                context.expr.Reset(new PostfixInc(context.expr.Release()));
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.postfixExpr->AddOp(new PostfixDec());
+                context.expr.Reset(new PostfixDec(context.expr.Release()));
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.postfixExpr->AddOp(new Member(context.frommemberName));
+                context.expr.Reset(new DotExpr(context.expr.Release(), context.fromdotMemberId));
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.postfixExpr->AddOp(new PtrMember(context.fromptrMemberName));
+                context.expr.Reset(new ArrowExpr(context.expr.Release(), context.fromarrowMemberId));
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.postfixExpr->AddOp(new Invoke(context.fromArgumentList));
+                context.expr.Reset(new Invoke(context.expr.Release()));
             }
-            public throw void A7Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                if (context.ctx->ParsingTypeExpr()) pass = false;
+                cast<Invoke*>(context.expr.GetPtr())->SetArguments(context.fromArgumentList);
             }
-            public throw void A8Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.postfixExpr->AddOp(new Indexing(context.fromExpression));
+                context.ctx->PushParsingLvalue(false);
+                context.ctx->PushParsingSimpleStatement(false);
             }
-            public throw void A9Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                pass = context.ctx->ParsingTypeExprOrLValue();
-                if (pass)
-                {
-                    context.postfixExpr->AddOp(new Pointer());
-                }
-            }
-            public throw void A10Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
-            {
-                pass = context.ctx->ParsingTypeExprOrLValue();
-                if (pass)
-                {
-                    context.postfixExpr->AddOp(new Reference());
-                }
+                context.ctx->PopParsingLvalue();
+                context.ctx->PopParsingSimpleStatement();
+                context.expr.Reset(new Indexing(context.expr.Release(), context.fromindex));
             }
             public throw void PrePrimary(Stack<UniquePtr<Object>>& stack)
             {
@@ -1486,20 +1399,20 @@ namespace Cm
                     context.fromPrimary = *cast<ValueObject<CmObject*>*>(fromPrimary_value.GetPtr());
                 }
             }
-            public throw void PostmemberName(Stack<UniquePtr<Object>>& stack, bool matched)
+            public throw void PostdotMemberId(Stack<UniquePtr<Object>>& stack, bool matched)
             {
                 if (matched)
                 {
-                    UniquePtr<Object> frommemberName_value = stack.Pop();
-                    context.frommemberName = *cast<ValueObject<string>*>(frommemberName_value.GetPtr());
+                    UniquePtr<Object> fromdotMemberId_value = stack.Pop();
+                    context.fromdotMemberId = *cast<ValueObject<string>*>(fromdotMemberId_value.GetPtr());
                 }
             }
-            public throw void PostptrMemberName(Stack<UniquePtr<Object>>& stack, bool matched)
+            public throw void PostarrowMemberId(Stack<UniquePtr<Object>>& stack, bool matched)
             {
                 if (matched)
                 {
-                    UniquePtr<Object> fromptrMemberName_value = stack.Pop();
-                    context.fromptrMemberName = *cast<ValueObject<string>*>(fromptrMemberName_value.GetPtr());
+                    UniquePtr<Object> fromarrowMemberId_value = stack.Pop();
+                    context.fromarrowMemberId = *cast<ValueObject<string>*>(fromarrowMemberId_value.GetPtr());
                 }
             }
             public throw void PreArgumentList(Stack<UniquePtr<Object>>& stack)
@@ -1514,28 +1427,28 @@ namespace Cm
                     context.fromArgumentList = *cast<ValueObject<ExpressionList>*>(fromArgumentList_value.GetPtr());
                 }
             }
-            public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
+            public throw void Preindex(Stack<UniquePtr<Object>>& stack)
             {
                 stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
             }
-            public throw void PostExpression(Stack<UniquePtr<Object>>& stack, bool matched)
+            public throw void Postindex(Stack<UniquePtr<Object>>& stack, bool matched)
             {
                 if (matched)
                 {
-                    UniquePtr<Object> fromExpression_value = stack.Pop();
-                    context.fromExpression = *cast<ValueObject<CmObject*>*>(fromExpression_value.GetPtr());
+                    UniquePtr<Object> fromindex_value = stack.Pop();
+                    context.fromindex = *cast<ValueObject<CmObject*>*>(fromindex_value.GetPtr());
                 }
             }
             private class Context
             {
                 public ParsingContext* ctx;
                 public CmObject* value;
-                public UniquePtr<PostfixExpression> postfixExpr;
+                public UniquePtr<CmObject> expr;
                 public CmObject* fromPrimary;
-                public string frommemberName;
-                public string fromptrMemberName;
+                public string fromdotMemberId;
+                public string fromarrowMemberId;
                 public ExpressionList fromArgumentList;
-                public CmObject* fromExpression;
+                public CmObject* fromindex;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -1612,47 +1525,47 @@ namespace Cm
                 exprNonterminalParser->SetPreCall(PreCall(Preexpr));
                 exprNonterminalParser->SetPostCall(PostCall(Postexpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromExpression;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromLiteral;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromBasicType;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromSizeOfExpr;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromCastExpr;
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromObjectCreationExpr;
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromTemplateId;
             }
-            public throw void A7Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new Identifier(context.fromid);
             }
-            public throw void A8Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ThisAccess();
             }
-            public throw void A9Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new BaseAccess();
             }
-            public throw void A10Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new TypenameExpression(context.fromexpr);
             }
@@ -1803,7 +1716,7 @@ namespace Cm
                 sourceExprNonterminalParser->SetPreCall(PreCall(PresourceExpr));
                 sourceExprNonterminalParser->SetPostCall(PostCall(PostsourceExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new CastExpression(context.fromtypeExpr, context.fromsourceExpr);
             }
@@ -1872,7 +1785,7 @@ namespace Cm
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new SizeofExpression(context.fromExpression);
             }
@@ -1933,11 +1846,11 @@ namespace Cm
                 constructionExprNonterminalParser->SetPreCall(PreCall(PreConstructionExpr));
                 constructionExprNonterminalParser->SetPostCall(PostCall(PostConstructionExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromNewExpr;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConstructionExpr;
             }
@@ -2009,7 +1922,7 @@ namespace Cm
                 argsNonterminalParser->SetPreCall(PreCall(Preargs));
                 argsNonterminalParser->SetPostCall(PostCall(Postargs));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new NewExpression(context.fromtype, context.fromargs);
             }
@@ -2081,7 +1994,7 @@ namespace Cm
                 argsNonterminalParser->SetPreCall(PreCall(Preargs));
                 argsNonterminalParser->SetPostCall(PostCall(Postargs));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ObjectConstructionExpression(context.fromtype, context.fromargs);
             }
@@ -2150,7 +2063,7 @@ namespace Cm
                 expressionListNonterminalParser->SetPreCall(PreCall(PreExpressionList));
                 expressionListNonterminalParser->SetPostCall(PostCall(PostExpressionList));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromExpressionList;
             }
@@ -2212,11 +2125,11 @@ namespace Cm
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->BeginParsingArguments();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->EndParsingArguments();
                 context.value = context.exprListHolder.Release();
@@ -2225,7 +2138,7 @@ namespace Cm
             {
                 context.ctx->EndParsingArguments();
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.exprListHolder.Add(context.fromExpression);
             }
@@ -2260,41 +2173,42 @@ namespace Cm
                 grammar0 = Cm.BasicTypeGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.TemplateGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.LiteralGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.TemplateGrammar.Create(parsingDomain);
+                grammar1 = Cm.LiteralGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.TypeExprGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.IdentifierGrammar.Create(parsingDomain);
+                grammar2 = Cm.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.LiteralGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
             if (grammar3 == null)
             {
-                grammar3 = Cm.LiteralGrammar.Create(parsingDomain);
+                grammar3 = Cm.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.TemplateGrammar");
+            if (grammar4 == null)
+            {
+                grammar4 = Cm.TemplateGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar4);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
-            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("Literal", this, "LiteralGrammar.Literal"));
+            AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
             AddRule(new ExpressionRule("Expression", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("Disjunction", "Disjunction", 1))));
-            AddRule(new TypeExprRule("TypeExpr", GetScope(),
-                new SequenceParser(
-                    new ActionParser("A0",
-                        new EmptyParser()),
-                    new ActionParser("A1",
-                        new NonterminalParser("Expression", "Expression", 1)))));
             AddRule(new DisjunctionRule("Disjunction", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
@@ -2488,58 +2402,42 @@ namespace Cm
                     new ActionParser("A10",
                         new NonterminalParser("Postfix", "Postfix", 1)))));
             AddRule(new PostfixRule("Postfix", GetScope(),
-                new SequenceParser(
-                    new ActionParser("A0",
-                        new NonterminalParser("Primary", "Primary", 1)),
-                    new AlternativeParser(
+                new ActionParser("A0",
+                    new SequenceParser(
                         new ActionParser("A1",
-                            new PositiveParser(
+                            new NonterminalParser("Primary", "Primary", 1)),
+                        new KleeneStarParser(
+                            new AlternativeParser(
                                 new AlternativeParser(
                                     new AlternativeParser(
                                         new AlternativeParser(
                                             new AlternativeParser(
-                                                new AlternativeParser(
-                                                    new AlternativeParser(
-                                                        new AlternativeParser(
-                                                            new ActionParser("A2",
-                                                                new StringParser("++")),
-                                                            new ActionParser("A3",
-                                                                new StringParser("--"))),
-                                                        new SequenceParser(
-                                                            new CharParser('.'),
-                                                            new ActionParser("A4",
-                                                                new ExpectationParser(
-                                                                    new NonterminalParser("memberName", "Identifier", 0))))),
-                                                    new SequenceParser(
-                                                        new StringParser("->"),
-                                                        new ActionParser("A5",
-                                                            new ExpectationParser(
-                                                                new NonterminalParser("ptrMemberName", "Identifier", 0))))),
-                                                new ActionParser("A6",
-                                                    new SequenceParser(
-                                                        new SequenceParser(
-                                                            new ActionParser("A7",
-                                                                new CharParser('(')),
-                                                            new ExpectationParser(
-                                                                new NonterminalParser("ArgumentList", "ArgumentList", 1))),
-                                                        new ExpectationParser(
-                                                            new CharParser(')'))))),
+                                                new ActionParser("A2",
+                                                    new StringParser("++")),
+                                                new ActionParser("A3",
+                                                    new StringParser("--"))),
                                             new SequenceParser(
-                                                new SequenceParser(
-                                                    new CharParser('['),
-                                                    new ExpectationParser(
-                                                        new NonterminalParser("Expression", "Expression", 1))),
-                                                new ActionParser("A8",
-                                                    new ExpectationParser(
-                                                        new CharParser(']'))))),
-                                        new ActionParser("A9",
-                                            new CharParser('*'))),
-                                    new ActionParser("A10",
-                                        new DifferenceParser(
-                                            new CharParser('&'),
-                                            new StringParser("&&"))
-                                        )))),
-                        new EmptyParser()))));
+                                                new CharParser('.'),
+                                                new ActionParser("A4",
+                                                    new NonterminalParser("dotMemberId", "Identifier", 0)))),
+                                        new SequenceParser(
+                                            new StringParser("->"),
+                                            new ActionParser("A5",
+                                                new NonterminalParser("arrowMemberId", "Identifier", 0)))),
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new ActionParser("A6",
+                                                new CharParser('(')),
+                                            new ActionParser("A7",
+                                                new NonterminalParser("ArgumentList", "ArgumentList", 1))),
+                                        new CharParser(')'))),
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new ActionParser("A8",
+                                            new CharParser('[')),
+                                        new NonterminalParser("index", "Expression", 1)),
+                                    new ActionParser("A9",
+                                        new CharParser(']')))))))));
             AddRule(new PrimaryRule("Primary", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(

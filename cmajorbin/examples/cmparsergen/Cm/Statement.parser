@@ -21,7 +21,7 @@ namespace Cm
     {
         using IdentifierGrammar.Identifier;
         using ExpressionGrammar.Expression;
-        using ExpressionGrammar.TypeExpr;
+        using TypeExprGrammar.TypeExpr;
         using ExpressionGrammar.ExpressionList;
 
         Statement(ParsingContext* ctx): Statement*
@@ -244,8 +244,8 @@ namespace Cm
                 ;
 
         SimpleStatement(ParsingContext* ctx, var UniquePtr<CmObject> expr): Statement* 
-                ::= (   empty{ ctx->BeginParsingSimpleStatement(); }
-                        (Expression(ctx):e{ ctx->EndParsingSimpleStatement(); expr.Reset(e); } / {  ctx->EndParsingSimpleStatement(); } ';')
+                ::= (   empty{ ctx->PushParsingSimpleStatement(true); }
+                        (Expression(ctx):e{ ctx->PopParsingSimpleStatement(); expr.Reset(e); } / {  ctx->PopParsingSimpleStatement(); } ';')
                         { 
                             value = new SimpleStatement(expr.Release()); 
                         }
@@ -257,7 +257,7 @@ namespace Cm
                 ;
                                                     
         AssignmentStatement(ParsingContext* ctx, var UniquePtr<CmObject> targetHolder): Statement*
-                ::= (empty{ ctx->BeginParsingLValue(); } Expression(ctx):target{ ctx->EndParsingLValue(); targetHolder.Reset(target); } / {  ctx->EndParsingLValue(); }
+                ::= (empty{ ctx->PushParsingLvalue(true); } Expression(ctx):target{ ctx->PopParsingLvalue(); targetHolder.Reset(target); } / {  ctx->PopParsingLvalue(); }
                     '='
                     Expression(ctx):source
                     ';'!
