@@ -39,8 +39,8 @@ namespace System.Xml.Serialization
     public void GenerateSerializationCode(const string& schemaFileName)
     {
         SerializationSchemaFileGrammar* grammar = SerializationSchemaFileGrammar.Create();
-        string schemaFileContent = ReadFile(schemaFileName);
-        UniquePtr<SerializationSchemaFile> schemaFile = grammar->Parse(schemaFileContent, 0, schemaFileName);
+        FileMapping file(schemaFileName);
+        UniquePtr<SerializationSchemaFile> schemaFile = grammar->Parse(file.Begin(), file.End(), 0, schemaFileName);
         string cmajorFileName = Path.ChangeExtension(schemaFileName, ".cm");
         OutputFileStream cmajorFile(cmajorFileName);
         CodeFormatter formatter(cmajorFile);

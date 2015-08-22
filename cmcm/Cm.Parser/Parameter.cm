@@ -24,9 +24,9 @@ namespace Cm.Parser
         {
             SetOwner(0);
         }
-        public void Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx, Node* owner)
+        public void Parse(const char* start, const char* end, int fileIndex, const string& fileName, ParsingContext* ctx, Node* owner)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -39,21 +39,21 @@ namespace Cm.Parser
             stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
             stack.Push(UniquePtr<Object>(new ValueObject<Node*>(owner)));
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
         }
@@ -86,7 +86,7 @@ namespace Cm.Parser
                 parameterNonterminalParser->SetPreCall(PreCall(PreParameter));
                 parameterNonterminalParser->SetPostCall(PostCall(PostParameter));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.owner->AddParameter(context.fromParameter);
             }
@@ -144,7 +144,7 @@ namespace Cm.Parser
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ParameterNode(span, context.fromTypeExpr, context.fromIdentifier);
             }
@@ -196,8 +196,8 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRule(new ParameterListRule("ParameterList", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

@@ -272,6 +272,11 @@ namespace System.Text.Parsing.CmObjectModel
         {
             return child;
         }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+            child->Accept(visitor);
+        }
         private CmObject* child;
     }
 
@@ -283,15 +288,31 @@ namespace System.Text.Parsing.CmObjectModel
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+            base->Accept(visitor);
+        }
+        public override string ToString() const
+        {
+            string s;
+            if (Child()->Rank() < Rank())
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (Child()->Rank() < Rank())
+            {
+                s.Append(')');
+            }
+            s.Append(Name());
+            return s;
         }
         public override void Print(CodeFormatter& formatter)
         {
-            if (Child()->Rank() > Rank())
+            if (Child()->Rank() < Rank())
             {
                 formatter.Write("(");
             }
             Child()->Print(formatter);
-            if (Child()->Rank() > Rank())
+            if (Child()->Rank() < Rank())
             {
                 formatter.Write(")");
             }
@@ -307,15 +328,31 @@ namespace System.Text.Parsing.CmObjectModel
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+            base->Accept(visitor);
+        }
+        public override string ToString() const
+        {
+            string s;
+            if (Child()->Rank() < Rank())
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (Child()->Rank() < Rank())
+            {
+                s.Append(')');
+            }
+            s.Append(Name());
+            return s;
         }
         public override void Print(CodeFormatter& formatter)
         {
-            if (Child()->Rank() > Rank())
+            if (Child()->Rank() < Rank())
             {
                 formatter.Write("(");
             }
             Child()->Print(formatter);
-            if (Child()->Rank() > Rank())
+            if (Child()->Rank() < Rank())
             {
                 formatter.Write(")");
             }
@@ -331,15 +368,31 @@ namespace System.Text.Parsing.CmObjectModel
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+            base->Accept(visitor);
+        }
+        public override string ToString() const
+        {
+            string s;
+            if (Child()->Rank() < Rank())
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (Child()->Rank() < Rank())
+            {
+                s.Append(')');
+            }
+            s.Append(Name());
+            return s;
         }
         public override void Print(CodeFormatter& formatter)
         {
-            if (Child()->Rank() > Rank())
+            if (Child()->Rank() < Rank())
             {
                 formatter.Write("(");
             }
             Child()->Print(formatter);
-            if (Child()->Rank() > Rank())
+            if (Child()->Rank() < Rank())
             {
                 formatter.Write(")");
             }
@@ -355,15 +408,31 @@ namespace System.Text.Parsing.CmObjectModel
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+            base->Accept(visitor);
+        }
+        public override string ToString() const
+        {
+            string s;
+            if (Child()->Rank() < Rank())
+            {
+                s.Append('(');
+            }
+            s.Append(Child()->ToString());
+            if (Child()->Rank() < Rank())
+            {
+                s.Append(')');
+            }
+            s.Append(Name());
+            return s;
         }
         public override void Print(CodeFormatter& formatter)
         {
-            if (Child()->Rank() > Rank())
+            if (Child()->Rank() < Rank())
             {
                 formatter.Write("(");
             }
             Child()->Print(formatter);
-            if (Child()->Rank() > Rank())
+            if (Child()->Rank() < Rank())
             {
                 formatter.Write(")");
             }
@@ -425,6 +494,7 @@ namespace System.Text.Parsing.CmObjectModel
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+            base->Accept(visitor);
             for (CmObject* arg : args)
             {
                 arg->Accept(visitor);
@@ -453,6 +523,7 @@ namespace System.Text.Parsing.CmObjectModel
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+            base->Accept(visitor);
             index->Accept(visitor);
         }
         private CmObject* index;

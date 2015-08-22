@@ -50,7 +50,7 @@ namespace Cm
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -169,8 +169,8 @@ namespace Cm
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRuleLink(new RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRule(new IdentifierRule("Identifier", GetScope(),
                 new ActionParser("A0",
                     new DifferenceParser(

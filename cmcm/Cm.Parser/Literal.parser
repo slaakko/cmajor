@@ -63,7 +63,7 @@ namespace Cm.Parser
             
         StringLiteral(var string r) : Node*
             ::= string:s{ value = new StringLiteralNode(span, s); }
-            |   ('@' token('"' ([^"]*){ r = match; } '"')){ value = new StringLiteralNode(span, r); }
+            |   ('@' token('"' ([^"]*){ r = string(matchBegin, matchEnd); } '"')){ value = new StringLiteralNode(span, r); }
             ;
             
         NullLiteral : Node*

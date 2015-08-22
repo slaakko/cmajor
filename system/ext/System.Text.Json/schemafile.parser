@@ -69,7 +69,7 @@ namespace System.Text.Json.Schema
             ;
             
         Identifier: string
-            ::= (identifier - Keyword){ value = match; }
+            ::= (identifier - Keyword){ value = string(matchBegin, matchEnd); }
             ;
     
         Keyword

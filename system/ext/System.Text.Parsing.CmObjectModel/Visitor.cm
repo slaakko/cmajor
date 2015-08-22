@@ -42,6 +42,7 @@ namespace System.Text.Parsing.CmObjectModel
         public virtual void Visit(CastExpression& object) {}
         public virtual void Visit(TypenameExpression& object) {}
         public virtual void Visit(PrefixExpression& object) {}
+        public virtual void Visit(UnaryExpression& object) {}
         public virtual void Visit(DotExpr& object) {}
         public virtual void Visit(ArrowExpr& object) {}
         public virtual void Visit(PostfixInc& object) {}

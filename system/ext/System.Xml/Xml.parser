@@ -36,7 +36,7 @@ namespace System.Xml
             ;
             
         Name: string
-            ::= (NameStartChar NameChar*){ value = match; }
+            ::= (NameStartChar NameChar*){ value = string(matchBegin, matchEnd); }
             ;
             
         NameStartChar
@@ -53,7 +53,7 @@ namespace System.Xml
             ;
 
         CharData(ContentHandler* handler)
-            ::= ([^<&]*){ if (!match.IsEmpty()) handler->CharData(match); }
+            ::= ([^<&]*){ if (matchBegin != matchEnd) handler->CharData(string(matchBegin, matchEnd)); }
             ;
             
         Reference(ContentHandler* handler)
@@ -66,7 +66,7 @@ namespace System.Xml
             ;
             
         CharRef: string
-            ::= ("&#" [0-9]+ ';' | "&#x" [0-9A-Fa-f]+ ';'){ value = match; }
+            ::= ("&#" [0-9]+ ';' | "&#x" [0-9A-Fa-f]+ ';'){ value = string(matchBegin, matchEnd); }
             ;
     }
 }

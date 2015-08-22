@@ -8,14 +8,14 @@ namespace System.Xml.Serialization
 {
     public UniquePtr<Serializable> ReadSerializableFromXmlString(const string& xml)
     {
-        XmlReader reader(xml, "");
+        XmlReader reader(xml.Chars(), xml.Chars() + xml.Length(), "");
         return UniquePtr<Serializable>(reader.GetSerializable());
     }
     
     public UniquePtr<Serializable> ReadSerializableFromXmlFile(const string& xmlFileName)
     {
-        string xml = ReadFile(xmlFileName);
-        XmlReader reader(xml, "");
+        FileMapping xmlFile(xmlFileName);
+        XmlReader reader(xmlFile.Begin(), xmlFile.End(), xmlFileName);
         return UniquePtr<Serializable>(reader.GetSerializable());
     }
     
@@ -58,9 +58,9 @@ namespace System.Xml.Serialization
     
     internal class XmlReader: ContentHandler
     {
-        public XmlReader(const string& xmlContent, const string& xmlFileName): state(0)
+        public XmlReader(const char* xmlContentBegin, const char* xmlContentEnd, const string& xmlFileName): state(0)
         {
-            XmlGrammarProvider.Instance().GetXmlGrammar()->Parse(xmlContent, 0, xmlFileName, this);
+            XmlGrammarProvider.Instance().GetXmlGrammar()->Parse(xmlContentBegin, xmlContentEnd, 0, xmlFileName, this);
         }
         public Serializable* GetSerializable()
         {

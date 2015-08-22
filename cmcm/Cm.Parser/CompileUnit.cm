@@ -24,9 +24,9 @@ namespace Cm.Parser
         {
             SetOwner(0);
         }
-        public CompileUnitNode* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        public CompileUnitNode* Parse(const char* start, const char* end, int fileIndex, const string& fileName, ParsingContext* ctx)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -38,21 +38,21 @@ namespace Cm.Parser
             Stack<UniquePtr<Object>> stack;
             stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -89,7 +89,7 @@ namespace Cm.Parser
                 NonterminalParser* namespaceContentNonterminalParser = GetNonterminal("NamespaceContent");
                 namespaceContentNonterminalParser->SetPreCall(PreCall(PreNamespaceContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new CompileUnitNode(span, fileName);
             }
@@ -229,11 +229,11 @@ namespace Cm.Parser
                 NonterminalParser* usingNamespaceDirectiveNonterminalParser = GetNonterminal("UsingNamespaceDirective");
                 usingNamespaceDirectiveNonterminalParser->SetPostCall(PostCall(PostUsingNamespaceDirective));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ns->AddMember(context.fromUsingAliasDirective);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ns->AddMember(context.fromUsingNamespaceDirective);
             }
@@ -295,11 +295,11 @@ namespace Cm.Parser
                 NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
                 qualifiedIdNonterminalParser->SetPostCall(PostCall(PostQualifiedId));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new AliasNode(span, context.id.Release(), context.fromQualifiedId);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.id.Reset(context.fromIdentifier);
             }
@@ -356,7 +356,7 @@ namespace Cm.Parser
                 NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
                 qualifiedIdNonterminalParser->SetPostCall(PostCall(PostQualifiedId));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new NamespaceImportNode(span, context.fromQualifiedId);
             }
@@ -408,7 +408,7 @@ namespace Cm.Parser
                 definitionNonterminalParser->SetPreCall(PreCall(PreDefinition));
                 definitionNonterminalParser->SetPostCall(PostCall(PostDefinition));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ns->AddMember(context.fromDefinition);
             }
@@ -513,39 +513,39 @@ namespace Cm.Parser
                 conceptDefinitionNonterminalParser->SetPreCall(PreCall(PreConceptDefinition));
                 conceptDefinitionNonterminalParser->SetPostCall(PostCall(PostConceptDefinition));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromNamespaceDefinition;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromFunctionDefinition;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConstantDefinition;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromEnumerationDefinition;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromTypedefDefinition;
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromClassDefinition;
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDelegateDefinition;
             }
-            public throw void A7Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromClassDelegateDefinition;
             }
-            public throw void A8Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConceptDefinition;
             }
@@ -718,7 +718,7 @@ namespace Cm.Parser
                 NonterminalParser* namespaceContentNonterminalParser = GetNonterminal("NamespaceContent");
                 namespaceContentNonterminalParser->SetPreCall(PreCall(PreNamespaceContent));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new NamespaceNode(span, context.fromQualifiedId);
             }
@@ -781,7 +781,7 @@ namespace Cm.Parser
                 functionNonterminalParser->SetPreCall(PreCall(PreFunction));
                 functionNonterminalParser->SetPostCall(PostCall(PostFunction));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromFunction;
                 context.value->SetCompileUnit(context.compileUnit);
@@ -839,7 +839,7 @@ namespace Cm.Parser
                 constantNonterminalParser->SetPreCall(PreCall(PreConstant));
                 constantNonterminalParser->SetPostCall(PostCall(PostConstant));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConstant;
             }
@@ -895,7 +895,7 @@ namespace Cm.Parser
                 enumTypeNonterminalParser->SetPreCall(PreCall(PreEnumType));
                 enumTypeNonterminalParser->SetPostCall(PostCall(PostEnumType));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromEnumType;
             }
@@ -951,7 +951,7 @@ namespace Cm.Parser
                 typedefNonterminalParser->SetPreCall(PreCall(PreTypedef));
                 typedefNonterminalParser->SetPostCall(PostCall(PostTypedef));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromTypedef;
             }
@@ -1010,7 +1010,7 @@ namespace Cm.Parser
                 classNonterminalParser->SetPreCall(PreCall(PreClass));
                 classNonterminalParser->SetPostCall(PostCall(PostClass));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromClass;
             }
@@ -1068,7 +1068,7 @@ namespace Cm.Parser
                 delegateNonterminalParser->SetPreCall(PreCall(PreDelegate));
                 delegateNonterminalParser->SetPostCall(PostCall(PostDelegate));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDelegate;
             }
@@ -1124,7 +1124,7 @@ namespace Cm.Parser
                 classDelegateNonterminalParser->SetPreCall(PreCall(PreClassDelegate));
                 classDelegateNonterminalParser->SetPostCall(PostCall(PostClassDelegate));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromClassDelegate;
             }
@@ -1180,7 +1180,7 @@ namespace Cm.Parser
                 conceptNonterminalParser->SetPreCall(PreCall(PreConcept));
                 conceptNonterminalParser->SetPostCall(PostCall(PostConcept));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConcept;
             }
@@ -1208,40 +1208,40 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
+                grammar0 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
             if (grammar1 == null)
             {
-                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar1 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
+                grammar2 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar3 == null)
             {
-                grammar3 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
+                grammar3 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.ClassGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+                grammar4 = Cm.Parser.ClassGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
-            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.ClassGrammar");
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
             if (grammar5 == null)
             {
-                grammar5 = Cm.Parser.ClassGrammar.Create(parsingDomain);
+                grammar5 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
             Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.ConstantGrammar");
@@ -1250,10 +1250,10 @@ namespace Cm.Parser
                 grammar6 = Cm.Parser.ConstantGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar6);
-            Grammar* grammar7 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
+            Grammar* grammar7 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
             if (grammar7 == null)
             {
-                grammar7 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
+                grammar7 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar7);
             Grammar* grammar8 = parsingDomain->GetGrammar("Cm.Parser.TypedefGrammar");
@@ -1265,17 +1265,17 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
-            AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
-            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("Function", this, "FunctionGrammar.Function"));
-            AddRuleLink(new RuleLink("Class", this, "ClassGrammar.Class"));
             AddRuleLink(new RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
-            AddRuleLink(new RuleLink("Concept", this, "ConceptGrammar.Concept"));
-            AddRuleLink(new RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-            AddRuleLink(new RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("Function", this, "FunctionGrammar.Function"));
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
+            AddRuleLink(new RuleLink("Class", this, "ClassGrammar.Class"));
+            AddRuleLink(new RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
+            AddRuleLink(new RuleLink("Concept", this, "ConceptGrammar.Concept"));
+            AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
             AddRule(new CompileUnitRule("CompileUnit", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

@@ -24,9 +24,9 @@ namespace Cm.Parser
         {
             SetOwner(0);
         }
-        public Node* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        public Node* Parse(const char* start, const char* end, int fileIndex, const string& fileName, ParsingContext* ctx)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -38,21 +38,21 @@ namespace Cm.Parser
             Stack<UniquePtr<Object>> stack;
             stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -103,15 +103,15 @@ namespace Cm.Parser
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ConstantNode(span, context.fromSpecifiers, context.typeExpr.Release(), context.id.Release(), context.fromExpression);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.typeExpr.Reset(context.fromTypeExpr);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.id.Reset(context.fromIdentifier);
             }
@@ -172,16 +172,16 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
+                grammar1 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
             Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
@@ -190,10 +190,10 @@ namespace Cm.Parser
                 grammar2 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
             if (grammar3 == null)
             {
-                grammar3 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar3 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
             Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
@@ -206,10 +206,10 @@ namespace Cm.Parser
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
-            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
             AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
             AddRule(new ConstantRule("Constant", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(

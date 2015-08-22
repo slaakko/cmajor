@@ -29,7 +29,7 @@ namespace System.Text.Json
         suppress void operator=(JsonParser&&);
         public System.Text.Json.Data.JsonValue* Parse(const string& jsonText)
         {
-            return grammar->Parse(jsonText, 0, "");
+            return grammar->Parse(jsonText.Chars(), jsonText.Chars() + jsonText.Length(), 0, "");
         }
         private static UniquePtr<JsonParser> instance;
         private System.Text.Json.Data.JsonGrammar* grammar;

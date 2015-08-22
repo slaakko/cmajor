@@ -16,10 +16,10 @@ namespace Cm.SourceLines
 {
     internal int ParseCompileUnit(CompileUnitGrammar* compileUnitGrammar, const string& sourceFilePath)
     {
-        string content = ReadFile(sourceFilePath);
+        FileMapping sourceFile(sourceFilePath);
         System.Text.Parsing.Stats.SetCountSourceLines(true);
         ParsingContext ctx;
-        UniquePtr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(content, 0, sourceFilePath, &ctx));
+        UniquePtr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), 0, sourceFilePath, &ctx));
         System.Text.Parsing.Stats.SetCountSourceLines(false);
         int numSourceLines = System.Text.Parsing.Stats.GetSourceLines();
         Console.Out() << "> " << sourceFilePath << " : " << numSourceLines << endl();
@@ -28,8 +28,8 @@ namespace Cm.SourceLines
     
     internal int ParseProject(ProjectGrammar* projectGrammar, CompileUnitGrammar* compileUnitGrammar, const string& projectFilePath)
     {
-        string content = ReadFile(projectFilePath);
-        UniquePtr<Project> project(projectGrammar->Parse(content, 0, projectFilePath, "debug", "llvm", "windows"));
+        FileMapping projectFile(projectFilePath);
+        UniquePtr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, "debug", "llvm", "windows"));
         project->ResolveDeclarations();
         Console.Out() << projectFilePath << ": " << project->Name() << endl();
         Console.Out() << "===============================================================" << endl();
@@ -46,8 +46,8 @@ namespace Cm.SourceLines
     
     internal void ParseSolution(SolutionGrammar* solutionGrammar, ProjectGrammar* projectGrammar, CompileUnitGrammar* compileUnitGrammar, const string& solutionFilePath)
     {
-        string content = ReadFile(solutionFilePath);
-        UniquePtr<Solution> solution(solutionGrammar->Parse(content, 0, solutionFilePath));
+        FileMapping solutionFile(solutionFilePath);
+        UniquePtr<Solution> solution(solutionGrammar->Parse(solutionFile.Begin(), solutionFile.End(), 0, solutionFilePath));
         solution->ResolveDeclarations();
         Console.Out() << solutionFilePath << ": " << solution->Name() << endl();
         Console.Out() << "===============================================================" << endl();
@@ -62,10 +62,16 @@ namespace Cm.SourceLines
     }
 }
 
+const char* Version() 
+{
+    return "1.0";
+}
+
 internal int main(int argc, const char** argv)
 {
     if (argc < 2)
     {
+        Console.Out() << "Cmajor Source Line Counter version " << Version() << endl();
         Console.Out() << "usage: cmslines [options] { file.cms | file.cmp | file.cm }" << endl();
         Console.Out() << "options:" << endl();
         Console.Out() << "-debug: debug parsing" << endl();

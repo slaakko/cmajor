@@ -17,11 +17,11 @@ namespace Cm.Parser
         using KeywordGrammar.Keyword;
         
         Identifier : IdentifierNode*
-            ::= token(identifier - Keyword){ value = new IdentifierNode(span, match); }
+            ::= token(identifier - Keyword){ value = new IdentifierNode(span, string(matchBegin, matchEnd)); }
             ;
             
         QualifiedId : IdentifierNode*
-            ::= token((identifier - Keyword) % '.'){ value = new IdentifierNode(span, match); }
+            ::= token((identifier - Keyword) % '.'){ value = new IdentifierNode(span, string(matchBegin, matchEnd)); }
             ;
     }
 }

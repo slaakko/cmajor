@@ -63,7 +63,7 @@ namespace Cm.Parser
             ;
             
         AxiomStatement(ParsingContext* ctx) : AxiomStatementNode*
-            ::= (Expression(ctx) ';'!){ value = new AxiomStatementNode(span, Expression, match); }
+            ::= (Expression(ctx) ';'!){ value = new AxiomStatementNode(span, Expression, string(matchBegin, matchEnd)); }
             ;
             
         TypenameConstraint(ParsingContext* ctx) : ConstraintNode*

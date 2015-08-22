@@ -16,7 +16,7 @@ namespace System.Net.Http
         }
         public HttpResponse Parse(const string& responseText)
         {
-            return grammar->Parse(responseText, 0, "");
+            return grammar->Parse(responseText.Chars(), responseText.Chars() + responseText.Length(), 0, "");
         }
         private static UniquePtr<HttpResponseParser> instance;
         private HttpResponseGrammar* grammar;

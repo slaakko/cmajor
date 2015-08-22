@@ -73,11 +73,11 @@ namespace System.Xml.Serialization
             ;
             
         Identifier: string
-            ::= (identifier - Keyword){ value = match; }
+            ::= (identifier - Keyword){ value = string(matchBegin, matchEnd); }
             ;
             
         QualifiedId: string
-            ::= token(Identifier:first ('.' Identifier:next)*){ value = match; }
+            ::= token(Identifier:first ('.' Identifier:next)*){ value = string(matchBegin, matchEnd); }
             ;
     }
 }

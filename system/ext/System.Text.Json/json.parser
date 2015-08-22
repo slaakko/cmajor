@@ -30,10 +30,10 @@ namespace System.Text.Json.Data
             
         String: JsonString*
             ::= token('"'{ value = new JsonString(); } 
-            (   [^"\\]{ value->Append(match[0]); }
+            (   [^"\\]{ value->Append(*matchBegin); }
             |   "\\u" (hexdigit hexdigit hexdigit hexdigit)
                 { 
-                    ulong u = ParseHex(match);
+                    ulong u = ParseHex(string(matchBegin, matchEnd));
                     ushort c = cast<ushort>(u & 0xFFFF);
                     value->Append(ToUtf8(c)); 
                 }

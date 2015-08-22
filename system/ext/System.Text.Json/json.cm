@@ -23,9 +23,9 @@ namespace System.Text.Json.Data
         {
             SetOwner(0);
         }
-        public JsonValue* Parse(const string& content, int fileIndex, const string& fileName)
+        public JsonValue* Parse(const char* start, const char* end, int fileIndex, const string& fileName)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -36,21 +36,21 @@ namespace System.Text.Json.Data
             }
             Stack<UniquePtr<Object>> stack;
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -102,31 +102,31 @@ namespace System.Text.Json.Data
                 NonterminalParser* arrayNonterminalParser = GetNonterminal("Array");
                 arrayNonterminalParser->SetPostCall(PostCall(PostArray));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromString;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromNumber;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromObject;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromArray;
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new JsonBool(true);
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new JsonBool(false);
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new JsonNull();
             }
@@ -204,11 +204,11 @@ namespace System.Text.Json.Data
                 NonterminalParser* valNonterminalParser = GetNonterminal("val");
                 valNonterminalParser->SetPostCall(PostCall(Postval));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new JsonObject();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddField(Rvalue(*context.fromname), context.fromval);
                 delete context.fromname;
@@ -267,11 +267,11 @@ namespace System.Text.Json.Data
                 NonterminalParser* itemNonterminalParser = GetNonterminal("item");
                 itemNonterminalParser->SetPostCall(PostCall(Postitem));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new JsonArray();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddItem(context.fromitem);
             }
@@ -324,21 +324,21 @@ namespace System.Text.Json.Data
                 NonterminalParser* escapeNonterminalParser = GetNonterminal("escape");
                 escapeNonterminalParser->SetPostCall(PostCall(Postescape));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new JsonString();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value->Append(match[0]);
+                context.value->Append(*matchBegin);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                ulong u = ParseHex(match);
+                ulong u = ParseHex(string(matchBegin, matchEnd));
                 ushort c = cast<ushort>(u & 0x000000000000FFFF);
                 context.value->Append(ToUtf8(c));
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->Append(context.fromescape);
             }
@@ -385,7 +385,7 @@ namespace System.Text.Json.Data
                 NonterminalParser* numberNonterminalParser = GetNonterminal("number");
                 numberNonterminalParser->SetPostCall(PostCall(Postnumber));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new JsonNumber(context.fromnumber);
             }
@@ -417,9 +417,9 @@ namespace System.Text.Json.Data
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("number", this, "System.Text.Parsing.stdlib.number"));
-            AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
             AddRuleLink(new RuleLink("escape", this, "System.Text.Parsing.stdlib.escape"));
+            AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
+            AddRuleLink(new RuleLink("number", this, "System.Text.Parsing.stdlib.number"));
             AddRule(new ValueRule("Value", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(

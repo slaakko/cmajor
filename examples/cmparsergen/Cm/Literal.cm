@@ -58,7 +58,7 @@ namespace Cm
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -311,7 +311,7 @@ namespace Cm
             {
                 context.val = 0u;
                 context.unsignedSuffix = ' ';
-                for (char* p = matchBegin; p != matchEnd; ++p)
+                for (const char* p = matchBegin; p != matchEnd; ++p)
                 {
                     context.val = 10u * context.val + cast<ulong>(*p) - cast<ulong>('0');
                 }
@@ -368,7 +368,7 @@ namespace Cm
             {
                 context.val = 0u;
                 context.unsignedSuffix = ' ';
-                for (char* p = matchBegin; p != matchEnd; ++p)
+                for (const char* p = matchBegin; p != matchEnd; ++p)
                 {
                     char c = *p;
                     ulong b = 0u;
@@ -412,10 +412,10 @@ namespace Cm
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
             AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
-            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
+            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
             AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
+            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
             AddRule(new LiteralRule("Literal", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(

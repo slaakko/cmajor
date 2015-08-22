@@ -24,9 +24,9 @@ namespace Cm.Parser
         {
             SetOwner(0);
         }
-        public ConceptNode* Parse(const string& content, int fileIndex, const string& fileName, ParsingContext* ctx)
+        public ConceptNode* Parse(const char* start, const char* end, int fileIndex, const string& fileName, ParsingContext* ctx)
         {
-            Scanner scanner(content, fileIndex, fileName, Skip());
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
             UniquePtr<XmlLog> xmlLog;
             if (log != null)
@@ -38,21 +38,21 @@ namespace Cm.Parser
             Stack<UniquePtr<Object>> stack;
             stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
             Match match = Parse(scanner, stack);
-            Position stop = scanner.GetPosition();
+            Span stop = scanner.GetSpan();
             if (log != null)
             {
                 xmlLog->WriteEndRule("parse");
             }
-            if (!match.Hit() || stop.Index() != content.Length())
+            if (!match.Hit() || stop.Start() != int(end - start))
             {
-                Rule* start = Start();
-                if (start != null)
+                Rule* startRule = StartRule();
+                if (startRule != null)
                 {
-                    throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -113,11 +113,11 @@ namespace Cm.Parser
                 NonterminalParser* conceptBodyNonterminalParser = GetNonterminal("ConceptBody");
                 conceptBodyNonterminalParser->SetPreCall(PreCall(PreConceptBody));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->BeginParsingConcept();
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ctx->EndParsingConcept();
             }
@@ -125,23 +125,23 @@ namespace Cm.Parser
             {
                 context.ctx->EndParsingConcept();
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ConceptNode(span, context.fromSpecifiers, context.fromconceptName);
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddTypeParameter(context.fromtypeParameter);
             }
-            public throw void A4Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->GetSpan().SetEnd(span.End());
             }
-            public throw void A5Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->SetRefinement(context.fromRefinement);
             }
-            public throw void A6Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddConstraint(context.fromWhereConstraint);
             }
@@ -240,15 +240,15 @@ namespace Cm.Parser
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->GetSpan().SetEnd(span.End());
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new ConceptIdNode(span, context.fromQualifiedId);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->AddTypeParameter(context.fromIdentifier);
             }
@@ -362,15 +362,15 @@ namespace Cm.Parser
                 embeddedConstraintNonterminalParser->SetPreCall(PreCall(PreEmbeddedConstraint));
                 embeddedConstraintNonterminalParser->SetPostCall(PostCall(PostEmbeddedConstraint));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.con->AddConstraint(context.fromTypenameConstraint);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.con->AddConstraint(context.fromSignatureConstraint);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.con->AddConstraint(context.fromEmbeddedConstraint);
             }
@@ -459,15 +459,15 @@ namespace Cm.Parser
                 NonterminalParser* axiomBodyNonterminalParser = GetNonterminal("AxiomBody");
                 axiomBodyNonterminalParser->SetPreCall(PreCall(PreAxiomBody));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.con->AddAxiom(context.ax.Release());
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ax->GetSpan().SetEnd(span.End());
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ax.Reset(new AxiomNode(span, context.fromIdentifier));
             }
@@ -528,7 +528,7 @@ namespace Cm.Parser
                 axiomStatementNonterminalParser->SetPreCall(PreCall(PreAxiomStatement));
                 axiomStatementNonterminalParser->SetPostCall(PostCall(PostAxiomStatement));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.ax->AddStatement(context.fromAxiomStatement);
             }
@@ -584,9 +584,9 @@ namespace Cm.Parser
                 expressionNonterminalParser->SetPreCall(PreCall(PreExpression));
                 expressionNonterminalParser->SetPostCall(PostCall(PostExpression));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = new AxiomStatementNode(span, context.fromExpression, match);
+                context.value = new AxiomStatementNode(span, context.fromExpression, string(matchBegin, matchEnd));
             }
             public throw void PreExpression(Stack<UniquePtr<Object>>& stack)
             {
@@ -640,7 +640,7 @@ namespace Cm.Parser
                 typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
                 typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new TypeNameConstraintNode(span, context.fromTypeExpr);
             }
@@ -714,19 +714,19 @@ namespace Cm.Parser
                 functionConstraintNonterminalParser->SetPreCall(PreCall(PreFunctionConstraint));
                 functionConstraintNonterminalParser->SetPostCall(PostCall(PostFunctionConstraint));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConstructorConstraint;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDestructorConstraint;
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromMemberFunctionConstraint;
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromFunctionConstraint;
             }
@@ -832,12 +832,12 @@ namespace Cm.Parser
                 NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
                 parameterListNonterminalParser->SetPreCall(PreCall(PreParameterList));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.ctorConstraint.Release();
                 context.value->GetSpan().SetEnd(span.End());
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.id.Reset(context.fromIdentifier);
                 pass = context.id->Str() == context.firstTypeParameter;
@@ -904,11 +904,11 @@ namespace Cm.Parser
                 NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new DestructorConstraintNode(span, context.id.Release());
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.id.Reset(context.fromIdentifier);
                 pass = context.id->Str() == context.firstTypeParameter;
@@ -978,19 +978,19 @@ namespace Cm.Parser
                 NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
                 parameterListNonterminalParser->SetPreCall(PreCall(PreParameterList));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->GetSpan().SetEnd(span.End());
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.returnType.Reset(context.fromTypeExpr);
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.typeParam.Reset(context.fromIdentifier);
             }
-            public throw void A3Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new MemberFunctionConstraintNode(span, context.returnType.Release(), context.typeParam.Release(), context.fromFunctionGroupId);
             }
@@ -1082,11 +1082,11 @@ namespace Cm.Parser
                 NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
                 parameterListNonterminalParser->SetPreCall(PreCall(PreParameterList));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value->GetSpan().SetEnd(span.End());
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new FunctionConstraintNode(span, context.fromTypeExpr, context.fromFunctionGroupId);
             }
@@ -1160,7 +1160,7 @@ namespace Cm.Parser
                 whereConstraintNonterminalParser->SetPreCall(PreCall(PreWhereConstraint));
                 whereConstraintNonterminalParser->SetPostCall(PostCall(PostWhereConstraint));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromWhereConstraint;
             }
@@ -1216,7 +1216,7 @@ namespace Cm.Parser
                 constraintExprNonterminalParser->SetPreCall(PreCall(PreConstraintExpr));
                 constraintExprNonterminalParser->SetPostCall(PostCall(PostConstraintExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new WhereConstraintNode(span, context.fromConstraintExpr);
             }
@@ -1272,7 +1272,7 @@ namespace Cm.Parser
                 disjunctiveConstraintExprNonterminalParser->SetPreCall(PreCall(PreDisjunctiveConstraintExpr));
                 disjunctiveConstraintExprNonterminalParser->SetPostCall(PostCall(PostDisjunctiveConstraintExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromDisjunctiveConstraintExpr;
             }
@@ -1334,12 +1334,12 @@ namespace Cm.Parser
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
                 context.s = span;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.s.SetEnd(span.End());
                 context.value = new DisjunctiveConstraintNode(context.s, context.value, context.fromright);
@@ -1416,12 +1416,12 @@ namespace Cm.Parser
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromleft;
                 context.s = span;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.s.SetEnd(span.End());
                 context.value = new ConjunctiveConstraintNode(context.s, context.value, context.fromright);
@@ -1497,11 +1497,11 @@ namespace Cm.Parser
                 atomicConstraintExprNonterminalParser->SetPreCall(PreCall(PreAtomicConstraintExpr));
                 atomicConstraintExprNonterminalParser->SetPostCall(PostCall(PostAtomicConstraintExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConstraintExpr;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromAtomicConstraintExpr;
             }
@@ -1575,11 +1575,11 @@ namespace Cm.Parser
                 multiParamConstraintNonterminalParser->SetPreCall(PreCall(PreMultiParamConstraint));
                 multiParamConstraintNonterminalParser->SetPostCall(PostCall(PostMultiParamConstraint));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromIsConstraint;
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromMultiParamConstraint;
             }
@@ -1654,11 +1654,11 @@ namespace Cm.Parser
                 conceptOrTypeNameNonterminalParser->SetPreCall(PreCall(PreConceptOrTypeName));
                 conceptOrTypeNameNonterminalParser->SetPostCall(PostCall(PostConceptOrTypeName));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new IsConstraintNode(span, context.typeExpr.Release(), context.fromConceptOrTypeName);
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.typeExpr.Reset(context.fromTypeExpr);
             }
@@ -1728,7 +1728,7 @@ namespace Cm.Parser
                 typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
                 typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromTypeExpr;
             }
@@ -1791,16 +1791,16 @@ namespace Cm.Parser
                 typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
                 typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
             }
-            public throw void A0Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.constraint.Release();
                 context.value->GetSpan().SetEnd(span.End());
             }
-            public throw void A1Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.constraint.Reset(new MultiParamConstraintNode(span, context.fromQualifiedId));
             }
-            public throw void A2Action(const string& match, const string& content, const Position& position, const Span& span, const string& fileName, bool& pass)
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.constraint->AddTypeExpr(context.fromTypeExpr);
             }
@@ -1838,59 +1838,59 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
+                grammar0 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar1 == null)
             {
-                grammar1 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
             if (grammar2 == null)
             {
-                grammar2 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar2 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
             if (grammar3 == null)
             {
-                grammar3 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
+                grammar3 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+                grammar4 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
-            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
             if (grammar5 == null)
             {
-                grammar5 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
+                grammar5 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
-            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
+            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
             if (grammar6 == null)
             {
-                grammar6 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
+                grammar6 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar6);
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
             AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
-            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
-            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
             AddRule(new ConceptRule("Concept", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
