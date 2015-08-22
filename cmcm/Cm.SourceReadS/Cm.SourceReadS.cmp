@@ -1,0 +1,6 @@
+project Cm.SourceReadS;
+target=program;
+assembly <Cm.SourceReadS.cma>;
+executable <cmsreads>;
+reference <../Cm.Parser/Cm.Parser.cml>;
+source <Main.cm>;

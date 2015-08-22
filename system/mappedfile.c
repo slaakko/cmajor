@@ -30,7 +30,7 @@ int create_file_mapping(const char* filePath, const char** begin, const char** e
     {
         return -1;
     }
-    HANDLE handle = CreateFile(filePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    HANDLE handle = CreateFile(filePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
     if (handle == INVALID_HANDLE_VALUE)
     {
         return -2;
