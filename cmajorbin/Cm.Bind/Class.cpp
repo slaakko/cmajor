@@ -14,6 +14,7 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -109,12 +110,20 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     Cm::Ast::Node* baseClassTypeExpr = classNode->BaseClassTypeExpr();
     if (baseClassTypeExpr)
     {
+        if (baseClassTypeExpr->IsIdentifierNode())
+        {
+            Cm::Ast::IdentifierNode* baseClassId = static_cast<Cm::Ast::IdentifierNode*>(baseClassTypeExpr);
+        }
         Cm::Sym::TypeSymbol* baseTypeSymbol = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassTypeExpr);
         if (baseTypeSymbol)
         {
             if (baseTypeSymbol->IsClassTypeSymbol())
             {
                 Cm::Sym::ClassTypeSymbol* baseClassTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(baseTypeSymbol);
+                if (Cm::Sym::TypesEqual(classTypeSymbol, baseClassTypeSymbol))
+                {
+                    Cm::Core::Exception("class cannot derive from itself", classTypeSymbol->GetSpan());
+                }
                 Cm::Ast::Node* node = symbolTable.GetNode(baseClassTypeSymbol, false);
                 if (node)
                 {

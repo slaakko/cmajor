@@ -29,12 +29,13 @@ ModuleFileFormatError::ModuleFileFormatError(const std::string& filePath_) : std
 {
 }
 
-ModuleFileVersionMismatch::ModuleFileVersionMismatch(const std::string& readVersion_, const std::string& expectedVersion_) : 
-    std::runtime_error("library file version mismatch: " + readVersion_ + " read, " + expectedVersion_ + " expected, please rebuild."), readVersion(readVersion_), expectedVersion(expectedVersion_)
+ModuleFileVersionMismatch::ModuleFileVersionMismatch(const std::string& libaryFilePath, const std::string& readVersion_, const std::string& expectedVersion_) :
+    std::runtime_error("library file (" + libaryFilePath + ") version mismatch: " + readVersion_ + " read, " + expectedVersion_ + " expected, please rebuild."),
+    readVersion(readVersion_), expectedVersion(expectedVersion_)
 {
 }
 
-const char moduleFileId[4] = { 'M', 'C', '1', '1' };
+const char moduleFileId[4] = { 'M', 'C', '1', '2' };
 
 Module::Module(const std::string& filePath_) : filePath(filePath_)
 {
@@ -157,7 +158,7 @@ void Module::CheckModuleFileId(Reader& reader)
         readVersion.append(".").append(1, readModuleFileId[3]);
         std::string expectedVersion(1, moduleFileId[2]);
         expectedVersion.append(".").append(1, moduleFileId[3]);
-        throw ModuleFileVersionMismatch(readVersion, expectedVersion);
+        throw ModuleFileVersionMismatch(filePath, readVersion, expectedVersion);
     }
 }
 
@@ -367,6 +368,13 @@ void Module::Dump()
         }
     }
     symbolTable.GlobalNs().Dump(formatter);
+}
+
+void Module::CheckFileVersion()
+{
+    SymbolTable symbolTable;
+    Reader reader(filePath, symbolTable);
+    CheckModuleFileId(reader);
 }
 
 void Module::CheckUpToDate()

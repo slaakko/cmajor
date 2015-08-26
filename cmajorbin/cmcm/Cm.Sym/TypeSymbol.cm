@@ -1,0 +1,123 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public abstract class TypeSymbol : ContainerSymbol
+    {
+        public nothrow TypeSymbol(const Span& span_, const string& name_) : base(span_, name_)
+        {
+        }
+        public nothrow TypeSymbol(const Span& span_, const string& name_, const TypeId& id_) : base(span_, name_), id(id_)
+        {
+        }
+        public nothrow inline const TypeId& Id() const
+        {
+            return id;
+        }
+        public nothrow virtual bool IsValueTypeSymbol() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsSignedType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsAbstract() const
+        {
+            return false;
+        }
+        public nothrow virtual TypeSymbol* GetBaseType() const
+        {
+            return this;
+        }
+        public nothrow virtual bool IsPointerType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsFunctionType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsPointerTypeClassType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsPointerToTemplateType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsReferenceType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsNonConstReferenceType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsConstType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsRvalueRefType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsConstReferenceType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsNonClassReferenceType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsNonReferencePointerType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsVoidPtrType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsNullPtrType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsConstPointerType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsConstPointerPointerType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsULongType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsPureArrayType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsPrimitiveSingleDimensionArrayType() const
+        {
+            return false;
+        }
+        abstract nothrow string GetMangleId() const;
+        private TypeId id;
+    }
+    
+    public nothrow inline bool TypesEqual(TypeSymbol* left, TypeSymbol* right)
+    {
+        return left->Id() == right->Id();
+    }
+}

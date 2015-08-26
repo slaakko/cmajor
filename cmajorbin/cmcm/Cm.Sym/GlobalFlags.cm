@@ -1,0 +1,55 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Cm.Sym
+{
+    public enum GlobalFlags : ushort
+    {
+        none = 0u,
+        optimize = 1u << 0u,
+        quiet = 1u << 1u,
+        emitOpt = 1u << 2u,
+        ide = 1u << 3u,
+        trace = 1u << 4u,
+        debug_heap = 1u << 5u,
+        clean = 1u << 6u,
+        unit_test = 1u << 7u,
+        generate_debug_info = 1u << 8u,
+        generate_docs = 1u << 9u
+    }
+    
+    public class GlobalFlagsHolder
+    {
+        static nothrow GlobalFlagsHolder() : globalFlags(GlobalFlags.none)
+        {
+        }
+        public static nothrow bool GetFlag(GlobalFlags flag) 
+        {
+            return (globalFlags & flag) != GlobalFlags.none;
+        }
+        public static nothrow void SetFlag(GlobalFlags flag)
+        {
+            globalFlags = cast<GlobalFlags>(globalFlags | flag);
+        }
+        private static GlobalFlags globalFlags;
+    }
+    
+    public nothrow bool GetGlobalFlag(GlobalFlags flag)
+    {
+        return GlobalFlagsHolder.GetFlag(flag);
+    }
+    
+    public nothrow void SetGlobalFlag(GlobalFlags flag)
+    {
+        GlobalFlagsHolder.SetFlag(flag);
+    }
+    
+}

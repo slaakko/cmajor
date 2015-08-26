@@ -28,7 +28,6 @@ PersistentClassData::PersistentClassData() : classNodePos(0), classNodeSize(0)
 
 TypeId GetNextClassTypeId(uint32_t nextClassNumber)
 {
-    
     TypeId id;
     uint8_t n = uint8_t(id.Rep().Tag().size());
     for (uint8_t i = 0; i < sizeof(nextClassNumber); ++i)
@@ -267,6 +266,16 @@ void ClassTypeSymbol::InitVtbl()
             }
         }
         InitVtbl(vtbl);
+        for (FunctionSymbol* virtualFunction : vtbl)
+        {
+            if (virtualFunction && virtualFunction->IsAbstract())
+            {
+                if (!IsAbstract())
+                {
+                    throw Cm::Sym::Exception("class containing abstract member functions must be declared abstract", GetSpan(), virtualFunction->GetSpan());
+                }
+            }
+        }
     }
 }
 
@@ -356,16 +365,6 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
             }
             f->SetVtblIndex(m);
             vtblToInit.push_back(f);
-        }
-    }
-    for (FunctionSymbol* virtualFunction : vtbl)
-    {
-        if (virtualFunction && virtualFunction->IsAbstract())
-        {
-            if (!IsAbstract())
-            {
-                throw Cm::Sym::Exception("class containing abstract member functions must be declared abstract", GetSpan(), virtualFunction->GetSpan());
-            }
         }
     }
 }

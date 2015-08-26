@@ -44,6 +44,10 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
         throw std::runtime_error("subject type not class type");
     }
     Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectTypeSymbol);
+    Cm::Sym::FileScope* subjectFileScope = new Cm::Sym::FileScope();
+    subjectFileScope->InstallNamespaceImport(containerScope, new Cm::Ast::NamespaceImportNode(subjectClassTypeSymbol->GetSpan(), new Cm::Ast::IdentifierNode(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName())));
+    boundCompileUnit.AddFileScope(subjectFileScope);
+    ++numAddedFileScopes;
     classTemplates.insert(subjectClassTypeSymbol);
     Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol, false);
     if (!node)
@@ -104,10 +108,6 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     Cm::Ast::IdentifierNode* classInstanceId = new Cm::Ast::IdentifierNode(classInstanceNode->GetSpan(), templateTypeSymbol->FullName());
     classInstanceNode->SetId(classInstanceId);
     currentNs->AddMember(classInstanceNode);
-    for (int i = 0; i < numAddedFileScopes; ++i)
-    {
-        boundCompileUnit.RemoveLastFileScope();
-    }
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     declarationVisitor.SetTemplateType(classInstanceNode, templateTypeSymbol);
     globalNs->Accept(declarationVisitor);
@@ -143,6 +143,10 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
         globalNs->Accept(binder);
     }
     templateTypeSymbol->SetGlobalNs(globalNs.release());
+    for (int i = 0; i < numAddedFileScopes; ++i)
+    {
+        boundCompileUnit.RemoveLastFileScope();
+    }
 }
 
 ClassTemplateRepository::ClassTemplateRepository(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)

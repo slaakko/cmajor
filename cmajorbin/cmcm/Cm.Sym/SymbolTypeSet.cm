@@ -1,0 +1,369 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Sym
+{
+    public enum SymbolTypeSetId : byte
+    {
+        lookupAllSymbols,
+        lookupTypeSymbols,
+        lookupTypeAndFunctionGroupSymbols,
+        lookupDotSubjectSymbols,
+        lookupContainerSymbols,
+        lookupClassAndNamespaceSymbols,
+        lookupClassSymbols,
+        lookupFunctionGroupAndMemberVariable,
+        lookupLocalVariable,
+        lookupMemberVariable,
+        lookupParameter,
+        lookupTypedef,
+        lookupVariableAndParameter,
+        lookupInvokeSubject,
+        lookupSizeOfSubject,
+        lookupCastSource,
+        lookupArgumentSymbol,
+        lookupTypenameSubject,
+        lookupFunctionGroup,
+        lookupNamespace,
+        lookupTypeAndConceptSymbols,
+        lookupConceptGroup,
+        lookupConstant,
+        lookupDelegate,
+        lookupClassDelegate,
+        lookupEnumType,
+        lookupEnumConstant,
+        lookupConstantAndEnumConstantSymbols,
+        max 
+    }
+    
+    public class SymbolTypeHash : UnaryFun<SymbolType, ulong>
+    {
+        public nothrow inline ulong operator()(SymbolType symbolType) const
+        {
+            return cast<ulong>(symbolType);
+        }
+    }
+    
+    public class SymbolTypeSetCollection
+    {
+        static SymbolTypeSetCollection() : instance(new SymbolTypeSetCollection())
+        {
+        }
+        public static SymbolTypeSetCollection& Instance()
+        {
+            return *instance;
+        }
+        private SymbolTypeSetCollection()
+        {
+            symbolTypeSets.Reserve(cast<int>(SymbolTypeSetId.max));
+            //  lookupAllSymbols:
+            HashSet<SymbolType, SymbolTypeHash> allSymbols;
+            for (byte i = 0u; i < SymbolType.maxSymbol; ++i)
+            {
+                allSymbols.Insert(cast<SymbolType>(i));   
+            }
+            symbolTypeSets.Add(Rvalue(allSymbols));
+            //  lookupTypeSymbols:
+            HashSet<SymbolType, SymbolTypeHash> typeSymbols;
+            typeSymbols.Insert(SymbolType.boolSymbol);
+            typeSymbols.Insert(SymbolType.charSymbol);
+            typeSymbols.Insert(SymbolType.voidSymbol);
+            typeSymbols.Insert(SymbolType.sbyteSymbol);
+            typeSymbols.Insert(SymbolType.byteSymbol);
+            typeSymbols.Insert(SymbolType.shortSymbol);
+            typeSymbols.Insert(SymbolType.ushortSymbol);
+            typeSymbols.Insert(SymbolType.intSymbol);
+            typeSymbols.Insert(SymbolType.uintSymbol);
+            typeSymbols.Insert(SymbolType.longSymbol);
+            typeSymbols.Insert(SymbolType.ulongSymbol);
+            typeSymbols.Insert(SymbolType.floatSymbol);
+            typeSymbols.Insert(SymbolType.doubleSymbol);
+            typeSymbols.Insert(SymbolType.classSymbol);
+            typeSymbols.Insert(SymbolType.delegateSymbol);
+            typeSymbols.Insert(SymbolType.classDelegateSymbol);
+            typeSymbols.Insert(SymbolType.enumTypeSymbol);
+            typeSymbols.Insert(SymbolType.templateTypeSymbol);
+            typeSymbols.Insert(SymbolType.derivedTypeSymbol);
+            typeSymbols.Insert(SymbolType.typedefSymbol);
+            typeSymbols.Insert(SymbolType.boundTypeParameterSymbol);
+            typeSymbols.Insert(SymbolType.typeParameterSymbol);
+            symbolTypeSets.Add(Rvalue(typeSymbols));
+            //  lookupTypeAndFunctionGroupSymbols:
+            HashSet<SymbolType, SymbolTypeHash> typeAndFunctionGroupSymbols;
+            typeAndFunctionGroupSymbols.Insert(SymbolType.boolSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.charSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.voidSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.sbyteSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.byteSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.shortSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.ushortSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.intSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.uintSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.longSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.ulongSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.floatSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.doubleSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.classSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.delegateSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.classDelegateSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.enumTypeSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.templateTypeSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.derivedTypeSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.typedefSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.boundTypeParameterSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.typeParameterSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.functionGroupSymbol);
+            symbolTypeSets.Add(Rvalue(typeAndFunctionGroupSymbols));
+            //  lookupDotSubjectSymbols:
+            HashSet<SymbolType, SymbolTypeHash> dotSubjectSymbols;
+            dotSubjectSymbols.Insert(SymbolType.classSymbol);
+            dotSubjectSymbols.Insert(SymbolType.typedefSymbol);
+            dotSubjectSymbols.Insert(SymbolType.enumTypeSymbol);
+            dotSubjectSymbols.Insert(SymbolType.namespaceSymbol);
+            dotSubjectSymbols.Insert(SymbolType.templateTypeSymbol);
+            dotSubjectSymbols.Insert(SymbolType.typeParameterSymbol);
+            dotSubjectSymbols.Insert(SymbolType.boundTypeParameterSymbol);
+            dotSubjectSymbols.Insert(SymbolType.localVariableSymbol);
+            dotSubjectSymbols.Insert(SymbolType.memberVariableSymbol);
+            dotSubjectSymbols.Insert(SymbolType.parameterSymbol);
+            symbolTypeSets.Add(Rvalue(dotSubjectSymbols));
+            //  lookupContainerSymbols:
+            HashSet<SymbolType, SymbolTypeHash> containerSymbols;
+            containerSymbols.Insert(SymbolType.classSymbol);
+            containerSymbols.Insert(SymbolType.typedefSymbol);
+            containerSymbols.Insert(SymbolType.enumTypeSymbol);
+            containerSymbols.Insert(SymbolType.namespaceSymbol);
+            containerSymbols.Insert(SymbolType.templateTypeSymbol);
+            containerSymbols.Insert(SymbolType.typeParameterSymbol);
+            containerSymbols.Insert(SymbolType.boundTypeParameterSymbol);
+            symbolTypeSets.Add(Rvalue(containerSymbols));
+            //  lookupClassAndNamespaceSymbols:
+            HashSet<SymbolType, SymbolTypeHash> classAndNamespaceSymbols;
+            classAndNamespaceSymbols.Insert(SymbolType.classSymbol);
+            classAndNamespaceSymbols.Insert(SymbolType.typedefSymbol);
+            classAndNamespaceSymbols.Insert(SymbolType.namespaceSymbol);
+            classAndNamespaceSymbols.Insert(SymbolType.templateTypeSymbol);
+            classAndNamespaceSymbols.Insert(SymbolType.typeParameterSymbol);
+            classAndNamespaceSymbols.Insert(SymbolType.boundTypeParameterSymbol);            
+            symbolTypeSets.Add(Rvalue(classAndNamespaceSymbols));
+            //  lookupClassSymbols:
+            HashSet<SymbolType, SymbolTypeHash> classSymbols;
+            classSymbols.Insert(SymbolType.classSymbol);
+            classSymbols.Insert(SymbolType.typedefSymbol);
+            classSymbols.Insert(SymbolType.templateTypeSymbol);
+            classSymbols.Insert(SymbolType.typeParameterSymbol);
+            classSymbols.Insert(SymbolType.boundTypeParameterSymbol);
+            symbolTypeSets.Add(Rvalue(classSymbols));
+            //  lookupFunctionGroupAndMemberVariable:
+            HashSet<SymbolType, SymbolTypeHash> functionGroupAndMemberVariable;
+            functionGroupAndMemberVariable.Insert(SymbolType.functionGroupSymbol);
+            functionGroupAndMemberVariable.Insert(SymbolType.memberVariableSymbol);
+            symbolTypeSets.Add(Rvalue(functionGroupAndMemberVariable));
+            //  lookupLocalVariable:
+            HashSet<SymbolType, SymbolTypeHash> localVariable;
+            localVariable.Insert(SymbolType.localVariableSymbol);
+            symbolTypeSets.Add(Rvalue(localVariable));
+            //  lookupMemberVariable:
+            HashSet<SymbolType, SymbolTypeHash> memberVariable;
+            memberVariable.Insert(SymbolType.memberVariableSymbol);
+            symbolTypeSets.Add(Rvalue(memberVariable));
+            //  lookupParameter:
+            HashSet<SymbolType, SymbolTypeHash> parameter;
+            parameter.Insert(SymbolType.parameterSymbol);
+            symbolTypeSets.Add(Rvalue(parameter));
+            //  lookupTypedef:
+            HashSet<SymbolType, SymbolTypeHash> typedef_;
+            typedef_.Insert(SymbolType.typedefSymbol);
+            symbolTypeSets.Add(Rvalue(typedef_));
+            //  lookupVariableAndParameter:
+            HashSet<SymbolType, SymbolTypeHash> variableAndParameter;
+            variableAndParameter.Insert(SymbolType.localVariableSymbol);
+            variableAndParameter.Insert(SymbolType.memberVariableSymbol);
+            variableAndParameter.Insert(SymbolType.parameterSymbol);
+            symbolTypeSets.Add(Rvalue(variableAndParameter));
+            //  lookupInvokeSubject:
+            HashSet<SymbolType, SymbolTypeHash> invokeSubject;
+            invokeSubject.Insert(SymbolType.boolSymbol);
+            invokeSubject.Insert(SymbolType.charSymbol);
+            invokeSubject.Insert(SymbolType.voidSymbol);
+            invokeSubject.Insert(SymbolType.sbyteSymbol);
+            invokeSubject.Insert(SymbolType.byteSymbol);
+            invokeSubject.Insert(SymbolType.shortSymbol);
+            invokeSubject.Insert(SymbolType.ushortSymbol);
+            invokeSubject.Insert(SymbolType.intSymbol);
+            invokeSubject.Insert(SymbolType.uintSymbol);
+            invokeSubject.Insert(SymbolType.longSymbol);
+            invokeSubject.Insert(SymbolType.ulongSymbol);
+            invokeSubject.Insert(SymbolType.floatSymbol);
+            invokeSubject.Insert(SymbolType.doubleSymbol);
+            invokeSubject.Insert(SymbolType.classSymbol);
+            invokeSubject.Insert(SymbolType.delegateSymbol);
+            invokeSubject.Insert(SymbolType.classDelegateSymbol);
+            invokeSubject.Insert(SymbolType.enumTypeSymbol);
+            invokeSubject.Insert(SymbolType.templateTypeSymbol);
+            invokeSubject.Insert(SymbolType.derivedTypeSymbol);
+            invokeSubject.Insert(SymbolType.typedefSymbol);
+            invokeSubject.Insert(SymbolType.boundTypeParameterSymbol);
+            invokeSubject.Insert(SymbolType.typeParameterSymbol);
+            invokeSubject.Insert(SymbolType.functionGroupSymbol);
+            invokeSubject.Insert(SymbolType.localVariableSymbol);
+            invokeSubject.Insert(SymbolType.memberVariableSymbol);
+            invokeSubject.Insert(SymbolType.parameterSymbol);
+            symbolTypeSets.Add(Rvalue(invokeSubject));
+            //  lookupSizeOfSubject:
+            HashSet<SymbolType, SymbolTypeHash> sizeOfSubject;
+            sizeOfSubject.Insert(SymbolType.localVariableSymbol);
+            sizeOfSubject.Insert(SymbolType.memberVariableSymbol);
+            sizeOfSubject.Insert(SymbolType.parameterSymbol);
+            sizeOfSubject.Insert(SymbolType.boolSymbol);
+            sizeOfSubject.Insert(SymbolType.charSymbol);
+            sizeOfSubject.Insert(SymbolType.voidSymbol);
+            sizeOfSubject.Insert(SymbolType.sbyteSymbol);
+            sizeOfSubject.Insert(SymbolType.byteSymbol);
+            sizeOfSubject.Insert(SymbolType.shortSymbol);
+            sizeOfSubject.Insert(SymbolType.ushortSymbol);
+            sizeOfSubject.Insert(SymbolType.intSymbol);
+            sizeOfSubject.Insert(SymbolType.uintSymbol);
+            sizeOfSubject.Insert(SymbolType.longSymbol);
+            sizeOfSubject.Insert(SymbolType.ulongSymbol);
+            sizeOfSubject.Insert(SymbolType.floatSymbol);
+            sizeOfSubject.Insert(SymbolType.doubleSymbol);
+            sizeOfSubject.Insert(SymbolType.classSymbol);
+            sizeOfSubject.Insert(SymbolType.delegateSymbol);
+            sizeOfSubject.Insert(SymbolType.classDelegateSymbol);
+            sizeOfSubject.Insert(SymbolType.enumTypeSymbol);
+            sizeOfSubject.Insert(SymbolType.templateTypeSymbol);
+            sizeOfSubject.Insert(SymbolType.derivedTypeSymbol);
+            sizeOfSubject.Insert(SymbolType.typedefSymbol);
+            sizeOfSubject.Insert(SymbolType.boundTypeParameterSymbol);
+            sizeOfSubject.Insert(SymbolType.typeParameterSymbol);
+            symbolTypeSets.Add(Rvalue(sizeOfSubject));
+            //  lookupCastSource:
+            HashSet<SymbolType, SymbolTypeHash> castSource;
+            castSource.Insert(SymbolType.localVariableSymbol);
+            castSource.Insert(SymbolType.memberVariableSymbol);
+            castSource.Insert(SymbolType.parameterSymbol);
+            castSource.Insert(SymbolType.constantSymbol);
+            castSource.Insert(SymbolType.enumConstantSymbol);
+            symbolTypeSets.Add(Rvalue(castSource));
+            //  lookupArgumentSymbol:
+            HashSet<SymbolType, SymbolTypeHash> argument;
+            argument.Insert(SymbolType.localVariableSymbol);
+            argument.Insert(SymbolType.memberVariableSymbol);
+            argument.Insert(SymbolType.parameterSymbol);
+            argument.Insert(SymbolType.constantSymbol);
+            argument.Insert(SymbolType.enumConstantSymbol);
+            symbolTypeSets.Add(Rvalue(argument));
+            //  lookupTypenameSubject:
+            HashSet<SymbolType, SymbolTypeHash> typenameSubject;
+            typenameSubject.Insert(SymbolType.localVariableSymbol);
+            typenameSubject.Insert(SymbolType.memberVariableSymbol);
+            typenameSubject.Insert(SymbolType.parameterSymbol);
+            typenameSubject.Insert(SymbolType.constantSymbol);
+            typenameSubject.Insert(SymbolType.enumConstantSymbol);
+            typenameSubject.Insert(SymbolType.boolSymbol);
+            typenameSubject.Insert(SymbolType.charSymbol);
+            typenameSubject.Insert(SymbolType.voidSymbol);
+            typenameSubject.Insert(SymbolType.sbyteSymbol);
+            typenameSubject.Insert(SymbolType.byteSymbol);
+            typenameSubject.Insert(SymbolType.shortSymbol);
+            typenameSubject.Insert(SymbolType.ushortSymbol);
+            typenameSubject.Insert(SymbolType.intSymbol);
+            typenameSubject.Insert(SymbolType.uintSymbol);
+            typenameSubject.Insert(SymbolType.longSymbol);
+            typenameSubject.Insert(SymbolType.ulongSymbol);
+            typenameSubject.Insert(SymbolType.floatSymbol);
+            typenameSubject.Insert(SymbolType.doubleSymbol);
+            typenameSubject.Insert(SymbolType.classSymbol);
+            typenameSubject.Insert(SymbolType.delegateSymbol);
+            typenameSubject.Insert(SymbolType.classDelegateSymbol);
+            typenameSubject.Insert(SymbolType.enumTypeSymbol);
+            typenameSubject.Insert(SymbolType.templateTypeSymbol);
+            typenameSubject.Insert(SymbolType.derivedTypeSymbol);
+            typenameSubject.Insert(SymbolType.typedefSymbol);
+            typenameSubject.Insert(SymbolType.boundTypeParameterSymbol);
+            typenameSubject.Insert(SymbolType.typeParameterSymbol);
+            symbolTypeSets.Add(Rvalue(typenameSubject));
+            //  lookupFunctionGroup:
+            HashSet<SymbolType, SymbolTypeHash> functionGroup;
+            functionGroup.Insert(SymbolType.functionGroupSymbol);
+            symbolTypeSets.Add(Rvalue(functionGroup));
+            //  lookupNamespace:
+            HashSet<SymbolType, SymbolTypeHash> namespace_;
+            namespace_.Insert(SymbolType.namespaceSymbol);
+            symbolTypeSets.Add(Rvalue(namespace_));
+            //  lookupTypeAndConceptSymbols:
+            HashSet<SymbolType, SymbolTypeHash> typeAndConceptSymbols;
+            typeAndConceptSymbols.Insert(SymbolType.boolSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.charSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.voidSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.sbyteSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.byteSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.shortSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.ushortSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.intSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.uintSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.longSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.ulongSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.floatSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.doubleSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.classSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.delegateSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.classDelegateSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.enumTypeSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.templateTypeSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.derivedTypeSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.typedefSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.boundTypeParameterSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.typeParameterSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.conceptGroupSymbol);
+            symbolTypeSets.Add(Rvalue(typeAndConceptSymbols));
+            //  lookupConceptGroup:
+            HashSet<SymbolType, SymbolTypeHash> conceptGroup;
+            conceptGroup.Insert(SymbolType.conceptGroupSymbol);
+            symbolTypeSets.Add(Rvalue(conceptGroup));
+            //  lookupConstant:
+            HashSet<SymbolType, SymbolTypeHash> constant;
+            constant.Insert(SymbolType.constantSymbol);
+            symbolTypeSets.Add(Rvalue(constant));
+            //  lookupDelegate:
+            HashSet<SymbolType, SymbolTypeHash> delegate_;
+            delegate_.Insert(SymbolType.delegateSymbol);
+            symbolTypeSets.Add(Rvalue(delegate_));
+            //  lookupClassDelegate:
+            HashSet<SymbolType, SymbolTypeHash> classDelegate;
+            classDelegate.Insert(SymbolType.classDelegateSymbol);
+            symbolTypeSets.Add(Rvalue(classDelegate));
+            //  lookupEnumType:
+            HashSet<SymbolType, SymbolTypeHash> enumType;
+            enumType.Insert(SymbolType.enumTypeSymbol);
+            symbolTypeSets.Add(Rvalue(enumType));
+            //  lookupEnumConstant:
+            HashSet<SymbolType, SymbolTypeHash> enumConstant;
+            enumConstant.Insert(SymbolType.enumConstantSymbol);
+            symbolTypeSets.Add(Rvalue(enumConstant));
+            //  lookupConstantAndEnumConstantSymbols:
+            HashSet<SymbolType, SymbolTypeHash> constantAndEnumConstantSymbols;
+            constantAndEnumConstantSymbols.Insert(SymbolType.constantSymbol);
+            constantAndEnumConstantSymbols.Insert(SymbolType.enumConstantSymbol);
+            symbolTypeSets.Add(Rvalue(constantAndEnumConstantSymbols));
+        }
+        public nothrow inline const HashSet<SymbolType, SymbolTypeHash>& GetSymbolTypeSet(SymbolTypeSetId symbolTypeSetId) const
+        {
+            int index = cast<int>(symbolTypeSetId);
+            #assert(index >= 0 && index < symbolTypeSets.Count());
+            return symbolTypeSets[index];
+        }
+        private static UniquePtr<SymbolTypeSetCollection> instance;
+        private List<HashSet<SymbolType, SymbolTypeHash>> symbolTypeSets;
+    }
+}

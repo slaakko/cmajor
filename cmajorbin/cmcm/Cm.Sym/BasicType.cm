@@ -1,0 +1,324 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public enum ShortBasicTypeId : byte
+    {
+        boolId = 1u, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
+    }
+    
+    public abstract class BasicTypeSymbol : TypeSymbol
+    {
+        public nothrow BasicTypeSymbol(const string& name_, ShortBasicTypeId id_) : base(Span(), name_, TypeId(id_))
+        {
+        }
+        public nothrow override bool IsBasicTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "basic type";
+        }
+        public nothrow override SymbolAccess DeclaredAccess() const
+        {
+            return SymbolAccess.public_;
+        }
+        public nothrow override bool IsValueTypeSymbol() const
+        {
+            return true;
+        }
+    }
+    
+    public class BoolTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow BoolTypeSymbol() : base("bool", ShortBasicTypeId.boolId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.boolSymbol;
+        }
+        public nothrow override bool IsBoolTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "bo";
+        }
+    }
+    
+    public class CharTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow CharTypeSymbol() : base("char", ShortBasicTypeId.charId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.charSymbol;
+        }
+        public nothrow override bool IsCharTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "ch";
+        }
+    }
+
+    public class VoidTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow VoidTypeSymbol() : base("void", ShortBasicTypeId.voidId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.voidSymbol;
+        }
+        public nothrow override bool IsVoidTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "vo";
+        }
+    }
+
+    public class SByteTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow SByteTypeSymbol() : base("sbyte", ShortBasicTypeId.sbyteId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.sbyteSymbol;
+        }
+        public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override bool IsSignedType() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "sb";
+        }
+    }
+
+    public class ByteTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow ByteTypeSymbol() : base("byte", ShortBasicTypeId.byteId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.byteSymbol;
+        }
+        public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "by";
+        }
+    }
+
+    public class ShortTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow ShortTypeSymbol() : base("short", ShortBasicTypeId.shortId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.shortSymbol;
+        }
+        public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override bool IsSignedType() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "sh";
+        }
+    }
+
+    public class UShortTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow UShortTypeSymbol() : base("ushort", ShortBasicTypeId.ushortId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.ushortSymbol;
+        }
+        public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "us";
+        }
+    }
+
+    public class IntTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow IntTypeSymbol() : base("int", ShortBasicTypeId.intId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.intSymbol;
+        }
+        public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override bool IsSignedType() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "in";
+        }
+    }
+
+    public class UIntTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow UIntTypeSymbol() : base("uint", ShortBasicTypeId.uintId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.uintSymbol;
+        }
+        public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "ui";
+        }
+    }
+    
+    public class LongTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow LongTypeSymbol() : base("long", ShortBasicTypeId.longId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.longSymbol;
+        }
+        public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override bool IsSignedType() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "lo";
+        }
+    }
+
+    public class ULongTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow ULongTypeSymbol() : base("ulong", ShortBasicTypeId.ulongId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.ulongSymbol;
+        }
+        public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "ul";
+        }
+    }
+
+    public class FloatTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow FloatTypeSymbol() : base("float", ShortBasicTypeId.floatId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.floatSymbol;
+        }
+        public nothrow override bool IsFloatingPointTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "fl";
+        }
+    }
+
+    public class DoubleTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow DoubleTypeSymbol() : base("double", ShortBasicTypeId.doubleId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.doubleSymbol;
+        }
+        public nothrow override bool IsFloatingPointTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "do";
+        }
+    }
+
+    public class NullPtrTypeSymbol : BasicTypeSymbol
+    {
+        public nothrow NullPtrTypeSymbol() : base("@nullptrtype", ShortBasicTypeId.nullPtrId)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.nullptrSymbol;
+        }
+        public nothrow override bool IsNullPtrType() const
+        {
+            return true;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return "np";
+        }
+    }
+}

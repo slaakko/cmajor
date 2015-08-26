@@ -940,6 +940,13 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
     std::vector<std::string> allDebugInfoFilePaths;
+    boost::filesystem::path outputBasePath = project->OutputBasePath();
+    std::string cmlFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".cml")).generic_string());
+    if (!rebuild && boost::filesystem::exists(cmlFilePath))
+    {
+        Cm::Sym::Module module(cmlFilePath);
+        module.CheckFileVersion();
+    }
     BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
     boost::filesystem::create_directories(project->OutputBasePath());
     std::vector<std::string> objectFilePaths;
@@ -986,8 +993,6 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     }
     if (changed)
     {
-        boost::filesystem::path outputBasePath = project->OutputBasePath();
-        std::string cmlFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".cml")).generic_string());
         if (!quiet)
         {
             std::cout << "Generating library file..." << std::endl;

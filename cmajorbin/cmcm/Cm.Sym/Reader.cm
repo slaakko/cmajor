@@ -1,0 +1,144 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using BinaryReader = Cm.Ser.BinaryReader;
+using AstReader = Cm.Ast.Reader;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class Reader
+    {
+        public Reader(const string& fileName_, SymbolTable& symbolTable_) : 
+            binaryReader(fileName_), astReader(binaryReader), symbolTable(symbolTable_), markSymbolsBound(false), markSymbolsProject(false), spanFileIndexOffset(0)
+        {
+        }
+        public nothrow inline BinaryReader& GetBinaryReader()
+        {
+            return binaryReader;
+        }
+        public nothrow inline AstReader& GetAstReader()
+        {
+            return astReader;
+        }
+        public nothrow inline SymbolTable& GetSymbolTable() 
+        {
+            return symbolTable;
+        }
+        public TypeId ReadTypeId()
+        {
+            TypeId typeId;
+            binaryReader.Read(typeId.Rep(), cast<ulong>(TypeId.count));
+            return typeId;
+        }
+        public Symbol* ReadSymbol()
+        {
+            SymbolType symbolType = ReadSymbolType();
+            Span span = astReader.ReadSpan();
+            string name = binaryReader.ReadString();
+            Symbol* symbol = SymbolFactory.Instance().CreateSymbol(symbolType, span, name);
+            if (markSymbolsBound)
+            {
+                symbol->SetBound();
+            }
+            symbol->Read(*this);
+            if (markSymbolsProject)
+            {
+                symbol->SetSource(SymbolSource.project);
+            }
+            if (symbol->IsTemplateTypeSymbol())
+            {
+                symbol->ResetFlag(SymbolFlags.bound);
+            }
+            return symbol;
+        }
+        private SymbolType ReadSymbolType() 
+        {
+            byte st = binaryReader.ReadByte();
+            return cast<SymbolType>(st);
+        }
+        public void FetchTypeFor(Symbol* symbol, int index)
+        {
+            TypeId typeId = ReadTypeId();
+            TypeSymbol* type = symbolTable.GetTypeRepository().GetTypeNothrow(typeId);
+            if (type != null)
+            {
+                symbol->SetType(type, index);
+            }
+            else
+            {
+                fetchTypeMap[typeId].InsertFront(MakePair(symbol, index));
+            }
+        }
+        public void BackpatchType(TypeSymbol* type)
+        {
+            symbolTable.GetTypeRepository().AddType(type);
+            HashMap<TypeId, ForwardList<Pair<Symbol*, int>>>.Iterator i = fetchTypeMap.Find(type->Id());
+            if (i != fetchTypeMap.End())
+            {
+                ForwardList<Pair<Symbol*, int>>& fetchTypeList = i->second;
+                while (!fetchTypeList.IsEmpty())
+                {
+                    Pair<Symbol*, int> p = fetchTypeList.Front();
+                    fetchTypeList.RemoveFront();
+                    Symbol* symbol = p.first;
+                    int index = p.second;
+                    symbol->SetType(type, index);
+                }
+                fetchTypeList.Clear();
+            }
+        }
+        public nothrow void MarkSymbolsBound()
+        {
+            markSymbolsBound = true;
+        }
+        public nothrow void MarkSymbolsProject()
+        {
+            markSymbolsProject = true;
+        }
+        public nothrow void SetSpanFileIndexOffset(int spanFileIndexOffset_)
+        {
+            spanFileIndexOffset = spanFileIndexOffset_;
+        }
+        public void EnqueueMakeIrTypeFor(Symbol* symbol)
+        {
+            makeIrTypeSet.Insert(symbol);
+        }
+        public void MakeIrTypes()
+        {
+            for (Symbol* symbol : makeIrTypeSet)
+            {
+                symbol->MakeIrType();
+            }
+        }
+        public bool AllTypesFetched()
+        {
+            HashMap<TypeId, ForwardList<Pair<Symbol*, int>>>.ConstIterator e = fetchTypeMap.CEnd();
+            for (HashMap<TypeId, ForwardList<Pair<Symbol*, int>>>.ConstIterator i = fetchTypeMap.CBegin(); i != e; ++i)
+            {
+                const ForwardList<Pair<Symbol*, int>>& fetchTypeList = i->second;
+                if (!fetchTypeList.IsEmpty())
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        private BinaryReader binaryReader;
+        private AstReader astReader;
+        private SymbolTable& symbolTable;
+        private bool markSymbolsBound;
+        private bool markSymbolsProject;
+        private int spanFileIndexOffset;
+        private HashMap<TypeId, ForwardList<Pair<Symbol*, int>>> fetchTypeMap;
+        private HashSet<Symbol*> makeIrTypeSet;
+    }
+}

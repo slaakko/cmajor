@@ -9,7 +9,7 @@
 
 namespace Cm.Ast
 {
-    public enum Rank
+    public enum Rank : byte
     {
         primary, postfix, prefix, multiplicative, additive, shift, relational, equality, bitAnd, bitXor, bitOr, conjunction, disjunction, implication, equivalence
     }

@@ -59,6 +59,7 @@ Symbol* ContainerScope::LookupQualified(const std::vector<std::string>& componen
     const ContainerScope* scope = this;
     Symbol* s = nullptr;
     int n = int(components.size());
+    bool allComponentsMatched = true;
     for (int i = 0; i < n; ++i)
     {
         const std::string& component = components[i];
@@ -70,9 +71,13 @@ Symbol* ContainerScope::LookupQualified(const std::vector<std::string>& componen
             {
                 scope = s->GetContainerScope();
             }
+            else
+            {
+                allComponentsMatched = false;
+            }
         }
     }
-    if (!s)
+    if (!s || !allComponentsMatched)
     {
         if ((lookup & ScopeLookup::parent) != ScopeLookup::none)
         {

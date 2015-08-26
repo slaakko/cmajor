@@ -1,0 +1,494 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public enum ClassTypeSymbolFlags : uint
+    {
+        none = 0u,
+        virtual_ = 1u << 0u,
+        abstract_ = 1u << 1u,
+        vtblInitialized = 1u << 2u,
+        hasUserDefinedConstructor = 1u << 3u,
+        hasUserDefinedDefaultConstructor = 1u << 4u,
+        hasUserDefinedCopyConstructor = 1u << 5u,
+        hasUserDefinedMoveConstructor = 1u << 6u,
+        hasUserDefinedStaticConstructor = 1u << 7u,
+        hasUserDefinedCopyAssignment = 1u << 8u,
+        hasUserDefinedMoveAssignment = 1u << 9u,
+        hasUserDefinedDestructor = 1u << 10u,
+        hasSuppressedDefaultConstructor = 1u << 11u,
+        hasSuppressedCopyConstructor = 1u << 12u,
+        hasSuppressedMoveConstructor = 1u << 13u,
+        hasSuppressedCopyAssignment = 1u << 14u,
+        hasSuppressedMoveAssignment = 1u << 15u,
+        generateDefaultConstructor = 1u << 16u,
+        generateCopyConstructor = 1u << 17u,
+        generateMoveConstructor = 1u << 18u,
+        generateCopyAssignment = 1u << 19u,
+        generateMoveAssignment = 1u << 20u,
+        generateDestructor = 1u << 21u,
+        debugInfoGenerated = 1u << 22u
+    }
+    
+    public class PersistentClassData
+    {
+        public ulong classNodePos;
+        public ulong classNodeSize;
+        public string cmlFilePath;
+        public Cm.Ast.NodeList<Cm.Ast.Node> usingNodes;
+        public UniquePtr<Cm.Ast.ClassNode> classNode;
+    }
+    
+    public nothrow TypeId GetClassTypeId(bool getNextId, uint classNumber)
+    {
+        if (getNextId)
+        {
+            return TypeId(classNumber);
+        }
+        return TypeId();
+    }
+    
+    public class ClassTypeSymbol : TypeSymbol
+    {
+        public nothrow ClassTypeSymbol(const Span& span_, const string& name_) : 
+            base(span_, name_, TypeId()), classNumber(cast<uint>(-1)), flags(ClassTypeSymbolFlags.none), baseClass(null)
+        {
+        }
+        public nothrow ClassTypeSymbol(const Span& span_, const string& name_, bool getNextId_, uint classNumber_) : 
+            base(span_, name_, GetClassTypeId(getNextId_, classNumber_)), classNumber(classNumber_), flags(ClassTypeSymbolFlags.none), baseClass(null)
+        {
+        }
+        public nothrow ClassTypeSymbol(const Span& span_, const string& name_, const TypeId& id_) :
+            base(span_, name_, id_), classNumber(cast<uint>(-1)), flags(ClassTypeSymbolFlags.none), baseClass(null)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.classSymbol;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "class";
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return FullName();
+            //return MakeAssemblyName(FullName());
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            if (Parent()->IsClassTemplateSymbol()) return false;
+            if (Parent()->IsTemplateTypeSymbol()) return false;
+            return base->IsExportSymbol();
+        }
+        public nothrow bool IsVirtual() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.virtual_) || baseClass != null && baseClass->IsVirtual();
+        }
+        public nothrow void SetVirtual()
+        {
+            SetFlag(ClassTypeSymbolFlags.virtual_);
+        }
+        public nothrow override bool IsAbstract() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.abstract_);
+        }
+        public nothrow void SetAbstract()
+        {
+            SetFlag(ClassTypeSymbolFlags.abstract_);
+        }
+        public nothrow inline bool HasUserDefinedConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedConstructor);
+        }
+        public nothrow inline void SetHasUserDefinedConstructor() 
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedConstructor);
+        }
+        public nothrow inline bool HasUserDefinedDefaultConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedDefaultConstructor);
+        }
+        public nothrow inline void SetHasUserDefinedDefaultConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedDefaultConstructor);
+        }
+        public nothrow inline bool HasUserDefinedCopyConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedCopyConstructor);
+        }
+        public nothrow inline void SetHasUserDefinedCopyConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedCopyConstructor);
+        }
+        public nothrow inline bool HasUserDefinedMoveConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedMoveConstructor);
+        }
+        public nothrow inline void SetHasUserDefinedMoveConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedMoveConstructor);
+        }
+        public nothrow inline bool HasUserDefinedStaticConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedStaticConstructor);
+        }
+        public nothrow inline void SetHasUserDefinedStaticConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedStaticConstructor);
+        }
+        public nothrow inline bool HasUserDefinedCopyAssignment() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedCopyAssignment);
+        }
+        public nothrow inline void SetHasUserDefinedCopyAssignment()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedCopyAssignment);
+        }
+        public nothrow inline bool HasUserDefinedMoveAssignment() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedMoveAssignment);
+        }
+        public nothrow inline void SetHasUserDefinedMoveAssignment()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedMoveAssignment);
+        }
+        public nothrow inline bool HasUserDefinedDestructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedDestructor);
+        }
+        public nothrow inline void SetHasUserDefinedDestructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedDestructor);
+        }
+        public nothrow inline bool HasSuppressedDefaultConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasSuppressedDefaultConstructor);
+        }
+        public nothrow inline void SetHasSuppressedDefaultConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasSuppressedDefaultConstructor);
+        }
+        public nothrow inline bool HasSuppressedCopyConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasSuppressedCopyConstructor);
+        }
+        public nothrow inline void SetHasSuppressedCopyConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasSuppressedCopyConstructor);
+        }
+        public nothrow inline bool HasSuppressedMoveConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasSuppressedMoveConstructor);
+        }
+        public nothrow inline void SetHasSuppressedMoveConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasSuppressedMoveConstructor);
+        }
+        public nothrow inline bool HasSuppressedCopyAssignment() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasSuppressedCopyAssignment);
+        }
+        public nothrow inline void SetHasSuppressedCopyAssignment()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasSuppressedCopyAssignment);
+        }
+        public nothrow inline bool HasSuppressedMoveAssignment() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasSuppressedMoveAssignment);
+        }
+        public nothrow inline void SetHasSuppressedMoveAssignment()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasSuppressedMoveAssignment);
+        }
+        public nothrow inline bool GenerateDefaultConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.generateDefaultConstructor);
+        }
+        public nothrow inline void SetGenerateDefaultConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.generateDefaultConstructor);
+        }
+        public nothrow inline bool GenerateCopyConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.generateCopyConstructor);
+        }
+        public nothrow inline void SetGenerateCopyConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.generateCopyConstructor);
+        }
+        public nothrow inline bool GenerateMoveConstructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.generateMoveConstructor);
+        }
+        public nothrow inline void SetGenerateMoveConstructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.generateMoveConstructor);
+        }
+        public nothrow inline bool GenerateCopyAssignment() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.generateCopyAssignment);
+        }
+        public nothrow inline void SetGenerateCopyAssignment()
+        {
+            SetFlag(ClassTypeSymbolFlags.generateCopyAssignment);
+        }
+        public nothrow inline bool GenerateMoveAssignment() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.generateMoveAssignment);
+        }
+        public nothrow inline void SetGenerateMoveAssignment()
+        {
+            SetFlag(ClassTypeSymbolFlags.generateMoveAssignment);
+        }
+        public nothrow inline bool GenerateDestructor() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.generateDestructor);
+        }
+        public nothrow inline void SetGenerateDestructor()
+        {
+            SetFlag(ClassTypeSymbolFlags.generateDestructor);
+        }
+        public nothrow inline bool DebugInfoGenerated() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.debugInfoGenerated);
+        }
+        public nothrow inline void SetDebugInfoGenerated()
+        {
+            SetFlag(ClassTypeSymbolFlags.debugInfoGenerated);
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            flags = cast<ClassTypeSymbolFlags>(reader.GetBinaryReader().ReadUInt());
+            bool hasBaseClass = reader.GetBinaryReader().ReadBool();
+            if (hasBaseClass)
+            {
+                reader.FetchTypeFor(this, -2);
+            }
+            if (IsClassTemplateSymbol())
+            {
+                if (persistentClassData.IsNull())
+                {
+                    persistentClassData.Reset(new PersistentClassData());
+                }
+                persistentClassData->usingNodes.Read(reader.GetAstReader());
+                persistentClassData->classNodeSize = reader.GetBinaryReader().ReadULong();
+                persistentClassData->classNodePos = reader.GetBinaryReader().Pos();
+                persistentClassData->cmlFilePath = reader.GetBinaryReader().FileName();
+                reader.GetBinaryReader().Skip(persistentClassData->classNodeSize);
+            }
+            reader.EnqueueMakeIrTypeFor(this);
+            sourceFilePath = reader.GetBinaryReader().ReadString();
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            uint outputFlags = flags & ~ClassTypeSymbolFlags.vtblInitialized;
+            writer.GetBinaryWriter().Write(outputFlags);
+            bool hasBaseClass = baseClass != null;
+            writer.GetBinaryWriter().Write(hasBaseClass);
+            if (hasBaseClass)
+            {
+                writer.Write(baseClass->Id());
+            }
+            if (IsClassTemplateSymbol())
+            {
+                if (persistentClassData.IsNull())
+                {
+                    throw Exception("no persistent class data");
+                }
+                persistentClassData->usingNodes.Write(writer.GetAstWriter());
+                Cm.Ast.Node* node = writer.GetSymbolTable().GetNode(this);
+                if (node->IsClassNode())
+                {
+                    ulong sizePos = writer.GetBinaryWriter().Pos();
+                    writer.GetBinaryWriter().Write(ulong(0u));
+                    ulong classNodePos = writer.GetBinaryWriter().Pos();
+                    writer.GetAstWriter().Write(node);
+                    ulong classNodeEndPos = writer.GetBinaryWriter().Pos();
+                    ulong classNodeSize = classNodeEndPos - classNodePos;
+                    writer.GetBinaryWriter().Seek(sizePos);
+                    writer.GetBinaryWriter().Write(classNodeSize);
+                    writer.GetBinaryWriter().Seek(classNodeEndPos);
+                }
+                else
+                {
+                    throw Exception("not class node");
+                }
+            }
+            if (!IsTemplateTypeSymbol() && !IsClassDelegateTypeSymbol() && sourceFilePath.IsEmpty())
+            {
+                throw Exception("source file path not set");
+            }
+            writer.GetBinaryWriter().Write(sourceFilePath);
+        }
+        public nothrow inline short VPtrIndex() const
+        {
+            return vptrIndex;
+        }
+        public nothrow inline void SetVPtrIndex(short vptrIndex_)
+        {
+            vptrIndex = vptrIndex_;
+        }
+        public void InitVtbl()
+        {
+            if (GetFlag(ClassTypeSymbolFlags.vtblInitialized)) return;
+            SetFlag(ClassTypeSymbolFlags.vtblInitialized);
+            if (baseClass != null)
+            {
+                baseClass->InitVtbl();
+                if (baseClass->IsVirtual())
+                {
+                    SetVirtual();
+                }
+            }
+            if (IsVirtual())
+            {
+                if (baseClass == null || !baseClass->IsVirtual())
+                {
+                    if (baseClass != null)
+                    {
+                        SetVPtrIndex(1);
+                    }
+                    else
+                    {
+                        SetVPtrIndex(0);
+                    }
+                }
+                InitVtbl(vtbl);
+                for (FunctionSymbol* virtualFunction : vtbl)
+                {
+                    if (virtualFunction != null && virtualFunction->IsAbstract())
+                    {
+                        if (!IsAbstract())
+                        {
+                            throw Error("class containing abstract member functions must be declared abstract", GetSpan(), virtualFunction->GetSpan());
+                        }
+                    }
+                }
+            }
+        }
+        private nothrow inline bool GetFlag(ClassTypeSymbolFlags flag) const
+        {
+            return (flags & flag) != ClassTypeSymbolFlags.none;
+        }
+        private nothrow inline void SetFlag(ClassTypeSymbolFlags flag)
+        {
+            flags = cast<ClassTypeSymbolFlags>(flags | flag);
+        }
+        private void InitVtbl(List<FunctionSymbol*>& vtblToInit)
+        {
+            if (!IsVirtual()) return;
+            if (baseClass != null)
+            {
+                baseClass->InitVtbl(vtblToInit);
+            }
+            if (vtblToInit.IsEmpty())
+            {
+                vtblToInit.Add(null); // first entry is reserved for class name
+            }
+            List<FunctionSymbol*> virtualFunctions;
+            if (destructor != null)
+            {
+                if (destructor->IsVirtual() || destructor->IsOverride())
+                {
+                    virtualFunctions.Add(destructor);
+                }
+            }
+            for (const UniquePtr<Symbol>& symbol : Symbols())
+            {
+                if (symbol->IsFunctionSymbol())
+                {
+                    FunctionSymbol* functionSymbol = cast<FunctionSymbol*>(symbol.GetPtr());
+                    if (functionSymbol->IsDestructor()) continue;
+                    if (functionSymbol->IsVirtualAbstractOrOverride())
+                    {
+                        virtualFunctions.Add(functionSymbol);
+                    }
+                }
+            }
+            short n = cast<short>(virtualFunctions.Count()) + 1;    // number of virtual functions + class name entry
+            for (short i = 1; i < n; ++i)
+            {
+                FunctionSymbol* f = virtualFunctions[i - 1];
+                bool found = false;
+                short m = cast<short>(vtblToInit.Count());
+                for (short j = 1; j < m; ++j)
+                {
+                    FunctionSymbol* v = vtblToInit[j];
+                    if (Overrides(f, v))
+                    {
+                        if (!f->IsOverride())
+                        {
+                            throw Error("overriding function should be declared with override specifier", f->GetSpan());
+                        }
+                        if (!f->CanThrow() && v->CanThrow() || f->CanThrow() && !v->CanThrow())
+                        {
+                            throw Error("overriding function has conflicting nothrow specification compared to base class virtual function", f->GetSpan(), v->GetSpan());
+                        }
+                        f->SetVtblIndex(j);
+                        vtblToInit[j] = f;
+                        found = true;
+                        f->SetOverriddenFunction(v);
+                        v->AddToOverrideSet(f);
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    if (f->IsOverride())
+                    {
+                        throw Error("no suitable function to override ('" + f->FullName() + "')", f->GetSpan());
+                    }
+                    f->SetVtblIndex(m);
+                    vtblToInit.Add(f);
+                }
+            }
+        }
+        private uint classNumber;
+        private ClassTypeSymbolFlags flags;
+        private ClassTypeSymbol* baseClass;
+        private UniquePtr<PersistentClassData> persistentClassData;
+        private string sourceFilePath;
+        private List<MemberVariableSymbol*> memberVariables;
+        private List<MemberVariableSymbol*> staticMemberVariables;
+        private List<TypeParameterSymbol*> typeParameters;
+        private FunctionSymbol* destructor;
+        private FunctionSymbol* staticConstructor;
+        private UniquePtr<MemberVariableSymbol> initializedVar;
+        private short vptrIndex;
+        private List<FunctionSymbol*> vtbl;
+        private HashSet<FunctionSymbol*> conversions;
+        private Cm.Ast.CompileUnitNode* compileUnit;
+    }
+    
+    public nothrow bool Overrides(FunctionSymbol* f, FunctionSymbol* g)
+    {
+        if (!f->IsMemberFunctionSymbol() || !g->IsMemberFunctionSymbol()) return false;
+        if (f->GroupName() != g->GroupName()) return false;
+        int n = f->Parameters().Count();
+        if (n != g->Parameters().Count()) return false;
+        for (int i = 1; i < n; ++i)
+        {
+            ParameterSymbol* p = f->Parameters()[i];
+            ParameterSymbol* q = g->Parameters()[i];
+            if (!TypesEqual(p->GetType(), q->GetType()))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+}

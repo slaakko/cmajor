@@ -517,6 +517,16 @@ Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetVoidPtrToUlongConversion(Cm::Sym
     return voidPtrToULongConversion.get();
 }
 
+Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetExplicitPointerConversion(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType, Cm::Sym::TypeSymbol* sourceType, Cm::Sym::ConversionTable& conversionTable)
+{
+    if (!explicitPointerConversion)
+    {
+        explicitPointerConversion.reset(new ConvertingCtor(typeRepository, targetType, sourceType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+        conversionTable.AddConversion(explicitPointerConversion.get());
+    }
+    return explicitPointerConversion.get();
+}
+
 Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type)
 {
     if (!copyAssignment)
@@ -776,6 +786,12 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
                     {
                         DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
                         viableFunctions.insert(cache.GetMoveCtor(typeRepository, pointerType));
+                    }
+                    else if (rightPlainType->IsPointerType())
+                    {
+                        DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
+                        viableFunctions.insert(cache.GetExplicitPointerConversion(typeRepository, pointerType, rightPlainType, conversionTable));
+                        return;
                     }
                 }
             }

@@ -180,6 +180,18 @@ namespace Cm.Ast
                 throw Exception("concept id node expected");
             }
         }
+        public ConceptNode* ReadConceptNode()
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.conceptNode)
+            {
+                return cast<ConceptNode*>(n);
+            }
+            else
+            {
+                throw Exception("concept node expected");
+            }        
+        }
         public void Read(Node*& node)
         {
             node = ReadNode();
