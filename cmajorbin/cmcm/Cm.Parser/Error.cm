@@ -1,0 +1,60 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+using System.Text.Parsing;
+
+namespace Cm.Parser
+{
+    public string Expand(const string& errorMessage, const Span& span)
+    {
+        List<Span> references;
+        return Expand(errorMessage, span, references);
+    }
+    
+    public string Expand(const string& errorMessage, const Span& primarySpan, const Span& referenceSpan)
+    {
+        List<Span> references;
+        references.Add(referenceSpan);
+        return Expand(errorMessage, primarySpan, references);
+    }
+    
+    public string Expand(const string& errorMessage, const Span& span, const List<Span>& references)
+    {
+        string expandedMessage = "Error: ";
+        expandedMessage.Append(errorMessage);
+        if (span.Valid())
+        {
+            FileRegistry* currentFileRegistry = FileRegistry.Instance();
+            if (currentFileRegistry != null)
+            {
+                string fileName = currentFileRegistry->GetParsedFileName(span.FileIndex());
+                if (!fileName.IsEmpty())
+                {
+                    expandedMessage.Append(" (file '").Append(fileName).Append("', line ").Append(ToString(span.LineNumber())).Append(")");
+                    FileMapping file(fileName);
+                    expandedMessage.Append(":\n").Append(GetErrorLines(file.Begin(), file.End(), span));
+                }
+                for (const Span& referenceSpan : references)
+                {
+                    string fileName = currentFileRegistry->GetParsedFileName(referenceSpan.FileIndex());
+                    if (!fileName.IsEmpty())
+                    {
+                        expandedMessage.Append("\nsee reference to file '").Append(fileName).Append("', line ").Append(ToString(referenceSpan.LineNumber()));
+                        FileMapping file(fileName);
+                        expandedMessage.Append(":\n").Append(GetErrorLines(file.Begin(), file.End(), referenceSpan));
+                    }
+                }                
+            }
+        }
+        return expandedMessage;
+    }
+}
