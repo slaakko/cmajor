@@ -1,0 +1,49 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Cm.Sym
+{
+    public class ClassCounter
+    {
+        public nothrow static void SetInstance(ClassCounter* instance_)
+        {
+            instance = instance_;
+        }
+        public nothrow static ClassCounter* Instance() const
+        {
+            return instance;
+        }
+        public nothrow ClassCounter() : numClasses(0u), numClassesInThisProject(0u)
+        {
+        }
+        public nothrow inline uint GetNextClassNumber()
+        {
+            ++numClassesInThisProject;
+            ++numClasses;
+            return numClasses;
+        }
+        public nothrow inline uint GetNumberOfClasses() const
+        {
+            return numClasses;
+        }
+        public nothrow inline uint GetNumberOfClassesInThisProject() const
+        {
+            return numClassesInThisProject;
+        }
+        public nothrow inline void AddLibraryClasses(uint numLibraryClasses)
+        {
+            numClasses = numClasses + numLibraryClasses;
+        }
+        private static ClassCounter* instance;
+        private uint numClasses;
+        private uint numClassesInThisProject;
+    }
+}

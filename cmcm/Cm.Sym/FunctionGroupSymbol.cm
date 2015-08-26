@@ -1,0 +1,108 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class FunctionGroupSymbol : Symbol
+    {
+        public nothrow FunctionGroupSymbol(const Span& span_, const string& name_, ContainerScope* containerScope_) : base(span_, name_), containerScope(containerScope_)
+        {
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            return false;
+        }
+        public nothrow override bool IsFunctionGroupSymbol() const
+        {
+            return true;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "function group";
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.functionGroupSymbol;
+        }
+        public void AddFunction(FunctionSymbol* function)
+        {
+            if (function->IsReplica()) return;
+            if (function->GroupName() != Name())
+            {
+                throw Exception("attempt to insert a function with group name '" + function->GroupName() + "' to wrong function group '" + Name() + "'");
+            }
+            int arity = function->Arity();
+            List<FunctionSymbol*>& functionList = arityFunctionListMap[arity];
+            functionList.Add(function);
+        }
+        public nothrow override ContainerScope* GetContainerScope() const
+        {
+            return containerScope;
+        }
+        public nothrow FunctionSymbol* GetOverload() const
+        {
+            if (arityFunctionListMap.Count() == 1)
+            {
+                const List<FunctionSymbol*>& overloads = arityFunctionListMap.CBegin()->second;
+                if (overloads.Count() == 1)
+                {
+                    return overloads.Front();
+                }
+            }
+            return null;
+        }
+        public nothrow override SymbolAccess DeclaredAccess() const
+        {
+            return SymbolAccess.public_;
+        }
+        public void CollectViableFunctions(int arity, HashSet<FunctionSymbol*>& viableFunctions)
+        {
+            HashMap<int, List<FunctionSymbol*>>.ConstIterator i = arityFunctionListMap.CFind(arity);
+            if (i != arityFunctionListMap.CEnd())
+            {
+                const List<FunctionSymbol*>& functionList = i->second;
+                for (FunctionSymbol* function : functionList)
+                {
+                    if (function->IsReplica()) continue;
+                    viableFunctions.Insert(function);
+                }
+            }
+        }
+        private HashMap<int, List<FunctionSymbol*>> arityFunctionListMap;
+        private ContainerScope* containerScope;
+    }
+    
+    public class FunctionGroupTypeSymbol : TypeSymbol
+    {
+        public nothrow FunctionGroupTypeSymbol(FunctionGroupSymbol* functionGroupSymbol_) : base(functionGroupSymbol_->GetSpan(), functionGroupSymbol_->Name()), functionGroupSymbol(functionGroupSymbol_)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.functionGroupTypeSymbol;
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return Name();
+        }
+        public nothrow inline FunctionGroupSymbol* GetFunctionGroupSymbol() const
+        {
+            return functionGroupSymbol;
+        }
+        public nothrow override bool IsFunctionGroupTypeSymbol() const
+        {
+            return true;
+        }
+        private FunctionGroupSymbol* functionGroupSymbol;
+    }
+}

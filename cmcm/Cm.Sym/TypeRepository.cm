@@ -1,0 +1,46 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class TypeRepository
+    {
+        public void AddType(TypeSymbol* type)
+        {
+            typeSymbolMap[type->Id()] = type;
+        }
+        public nothrow TypeSymbol* GetTypeNothrow(const TypeId& typeId) const
+        {
+            HashMap<TypeId, TypeSymbol*>.ConstIterator i = typeSymbolMap.CFind(typeId);
+            if (i != typeSymbolMap.CEnd())
+            {
+                return i->second;
+            }
+            return null;
+        }
+        public TypeSymbol* GetType(const TypeId& typeId) const
+        {
+            TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
+            if (typeSymbol != null)
+            {
+                return typeSymbol;
+            }
+            else
+            {
+                throw Exception("type symbol not found");
+            }
+        }
+        private HashMap<TypeId, TypeSymbol*> typeSymbolMap;
+        private List<UniquePtr<TypeSymbol>> types;
+    }
+}

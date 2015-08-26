@@ -1,0 +1,495 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public enum FunctionSymbolFlags : uint
+    {
+        none = 0u,
+        constructorOrDestructorSymbol = 1u << 0u,
+        memberFunctionSymbol = 1u << 1u,
+        cdecl_ = 1u << 2u,
+        virtual_ = 1u << 3u,
+        abstract_ = 1u << 4u,
+        override_ = 1u << 5u,
+        virtuality = virtual_ | abstract_ | override_,
+        nothrow_ = 1u << 6u,
+        inline_ = 1u << 7u,
+        replicated = 1u << 8u,
+        suppressed = 1u << 9u,
+        default_ = 1u << 10u,
+        explicit_ = 1u << 11u,
+        conversion = 1u << 12u,
+        templateSpecialization = 1u << 13u,
+        memberOfTemplateType = 1u << 14u,
+        memberOfClassTemplate = 1u << 15u,
+        arrayConstructor = 1u << 16u,
+        arrayAssignment = 1u << 17u,
+        new_ = 1u << 18u
+    }
+    
+    public class FunctionSymbol : ContainerSymbol
+    {
+        public nothrow FunctionSymbol(const Span& span_, const string& name_) : 
+            base(span_, name_), returnType(null), compileUnit(null), flags(FunctionSymbolFlags.none), vtblIndex(-1), mutexId(-1), overriddenFunction(null), functionTemplate(null)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const 
+        {
+            return SymbolType.functionSymbol;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "function";
+        }
+        public nothrow override bool IsFunctionSymbol() const
+        {
+            return true;
+        }
+        public nothrow virtual bool IsBasicTypeOp() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsBasicTypeCopyCtor() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsDelegateFromFunCtor() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsClassDelegateFromFunCtor() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsDelegateFromFunAssignment() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsClassDelegateFromFunAssignment() const
+        {
+            return false;
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            if (IsFunctionTemplateSpecialization()) return false;
+            if (Parent()->IsClassTemplateSymbol()) return false;
+            if (Parent()->IsTemplateTypeSymbol()) return false;
+            if (IsReplica()) return false;
+            return base->IsExportSymbol(); 
+        }
+        public nothrow void SetFlags(FunctionSymbolFlags flags_)
+        {
+            flags = flags_;
+        }
+        public inline nothrow const string& GroupName() const
+        {
+            return groupName;
+        }
+        public nothrow void SetGroupName(const string& groupName_)
+        {
+            groupName = groupName_;
+        }
+        public nothrow inline bool IsFunctionTemplateSpecialization() const 
+        { 
+            return GetFlag(FunctionSymbolFlags.templateSpecialization); 
+        }
+        public nothrow inline void SetFunctionTemplateSpecialization() 
+        { 
+            SetFlag(FunctionSymbolFlags.templateSpecialization); 
+        }
+        public nothrow inline bool IsConstructorOrDestructorSymbol() const
+        {
+            return GetFlag(FunctionSymbolFlags.constructorOrDestructorSymbol);
+        }
+        public nothrow inline void SetConstructorOrDestructorSymbol()
+        {
+            SetFlag(FunctionSymbolFlags.constructorOrDestructorSymbol);
+        }
+        public nothrow inline bool IsMemberFunctionSymbol() const
+        {
+            return GetFlag(FunctionSymbolFlags.memberFunctionSymbol);
+        }
+        public nothrow inline void SetMemberFunctionSymbol()
+        {
+            SetFlag(FunctionSymbolFlags.memberFunctionSymbol);
+        }
+        public nothrow inline bool IsCDecl() const
+        {
+            return GetFlag(FunctionSymbolFlags.cdecl_);
+        }
+        public nothrow inline void SetCDecl()
+        {
+            SetFlag(FunctionSymbolFlags.cdecl_);
+        }
+        public nothrow inline bool IsVirtual() const
+        {
+            return GetFlag(FunctionSymbolFlags.virtual_);
+        }
+        public nothrow inline void SetVirtual()
+        {
+            SetFlag(FunctionSymbolFlags.virtual_);
+        }
+        public nothrow inline bool IsAbstract() const
+        {
+            return GetFlag(FunctionSymbolFlags.abstract_);
+        }
+        public nothrow inline void SetAbstract()
+        {
+            SetFlag(FunctionSymbolFlags.abstract_);
+        }
+        public nothrow inline bool IsOverride() const
+        {
+            return GetFlag(FunctionSymbolFlags.override_);
+        }
+        public nothrow inline void SetOverride()
+        {
+            SetFlag(FunctionSymbolFlags.override_);
+        }
+        public nothrow inline bool IsVirtualAbstractOrOverride() const 
+        { 
+            return GetFlag(FunctionSymbolFlags.virtuality); 
+        }
+        public nothrow inline bool IsNothrow() const
+        {
+            return GetFlag(FunctionSymbolFlags.nothrow_);
+        }
+        public nothrow inline void SetNothrow()
+        {
+            SetFlag(FunctionSymbolFlags.nothrow_);
+        }    
+        public nothrow inline void ResetNothrow()
+        {
+            ResetFlag(FunctionSymbolFlags.nothrow_);
+        }
+        public nothrow inline bool CanThrow() const
+        {
+            return !IsCDecl() && !IsNothrow() && !IsDestructor();
+        }
+        public nothrow inline bool IsInline() const
+        {
+            return GetFlag(FunctionSymbolFlags.inline_);
+        }
+        public nothrow inline void SetInline()
+        {
+            SetFlag(FunctionSymbolFlags.inline_);
+        }
+        public nothrow inline bool IsReplicated() const
+        {
+            return GetFlag(FunctionSymbolFlags.replicated);
+        }
+        public nothrow inline void SetReplicated()
+        {
+            SetFlag(FunctionSymbolFlags.replicated);
+        }
+        public nothrow inline bool IsSuppressed() const
+        {
+            return GetFlag(FunctionSymbolFlags.suppressed);
+        }
+        public nothrow inline void SetSuppressed()
+        {
+            SetFlag(FunctionSymbolFlags.suppressed);
+        }
+        public nothrow inline bool IsDefault() const
+        {
+            return GetFlag(FunctionSymbolFlags.default_);
+        }
+        public nothrow inline void SetDefault()
+        {
+            SetFlag(FunctionSymbolFlags.default_);
+        }
+        public nothrow inline bool IsExplicit() const
+        {
+            return GetFlag(FunctionSymbolFlags.explicit_);
+        }
+        public nothrow inline void SetExplicit()
+        {
+            SetFlag(FunctionSymbolFlags.explicit_);
+        }
+        public nothrow inline bool IsMemberOfTemplateType() const
+        {
+            return GetFlag(FunctionSymbolFlags.memberOfTemplateType);
+        }
+        public nothrow inline void SetMemberOfTemplateType()
+        {
+            SetFlag(FunctionSymbolFlags.memberOfTemplateType);
+        }
+        public nothrow inline bool IsMemberOfClassTemplate() const
+        {
+            return GetFlag(FunctionSymbolFlags.memberOfClassTemplate);
+        }
+        public nothrow inline void SetMemberOfClassTemplate()
+        {
+            SetFlag(FunctionSymbolFlags.memberOfClassTemplate);
+        }
+        public nothrow inline bool IsArrayConstructor() const
+        {
+            return GetFlag(FunctionSymbolFlags.arrayConstructor);
+        }
+        public nothrow inline void SetArrayConstructor()
+        {
+            SetFlag(FunctionSymbolFlags.arrayConstructor);
+        }
+        public nothrow inline bool IsArrayAssignment() const
+        {
+            return GetFlag(FunctionSymbolFlags.arrayAssignment);
+        }
+        public nothrow inline void SetArrayAssignment()
+        {
+            SetFlag(FunctionSymbolFlags.arrayAssignment);
+        }
+        public nothrow inline bool IsNew() const
+        {
+            return GetFlag(FunctionSymbolFlags.new_);
+        }
+        public nothrow inline void SetNew()
+        {
+            SetFlag(FunctionSymbolFlags.new_);
+        }
+        public nothrow inline bool IsConstructor() const
+        {
+            return groupName == "@constructor" && !IsStatic();
+        }
+        public nothrow inline bool IsDefaultConstructor() const
+        {
+            return groupName == "@constructor" && !IsStatic() && parameters.Count() == 1;
+        }
+        public nothrow bool IsCopyConstructor() const
+        {
+            if (groupName == "@constructor" && !IsStatic() && parameters.Count() == 2)
+            {
+                TypeSymbol* firstParamType = parameters[0]->GetType();
+                TypeSymbol* classType = firstParamType->GetBaseType();
+                TypeSymbol* secondParamType = parameters[1]->GetType();
+                if (secondParamType->IsConstReferenceType() && TypesEqual(secondParamType->GetBaseType(), classType))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public nothrow bool IsMoveConstructor() const
+        {
+            if (groupName == "@constructor" && !IsStatic() && parameters.Count() == 2)
+            {
+                TypeSymbol* firstParamType = parameters[0]->GetType();
+                TypeSymbol* classType = firstParamType->GetBaseType();
+                TypeSymbol* secondParamType = parameters[1]->GetType();
+                if (secondParamType->IsRvalueRefType() && TypesEqual(secondParamType->GetBaseType(), classType))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public nothrow inline bool IsStaticConstructor() const
+        {
+            return groupName == "@static_constructor" && IsStatic() && parameters.IsEmpty();
+        }
+        public nothrow bool IsCopyAssignment() const
+        {
+            if (groupName == "operator=" && parameters.Count() == 2)
+            {
+                TypeSymbol* firstParamType = parameters[0]->GetType();
+                TypeSymbol* classType = firstParamType->GetBaseType();
+                TypeSymbol* secondParamType = parameters[1]->GetType();
+                if (secondParamType->IsConstReferenceType() && TypesEqual(secondParamType->GetBaseType(), classType))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public nothrow bool IsMoveAssignment() const
+        {
+            if (groupName == "operator=" && parameters.Count() == 2)
+            {
+                TypeSymbol* firstParamType = parameters[0]->GetType();
+                TypeSymbol* classType = firstParamType->GetBaseType();
+                TypeSymbol* secondParamType = parameters[1]->GetType();
+                if (secondParamType->IsRvalueRefType() && TypesEqual(secondParamType->GetBaseType(), classType))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public nothrow inline bool IsDestructor() const
+        {
+            return groupName == "@destructor" && parameters.Count() == 1;
+        }
+        public nothrow inline bool IsConvertingConstructor() const
+        {
+            return IsConstructor() && GetFlag(FunctionSymbolFlags.conversion);
+        }
+        public nothrow inline void SetConvertingConstructor()
+        {
+            SetFlag(FunctionSymbolFlags.conversion);
+        }
+        public nothrow inline bool IsConversionFunction() const
+        {
+            return !IsConstructor() && GetFlag(FunctionSymbolFlags.conversion);
+        }
+        public nothrow inline void SetConversionFunction()
+        {
+            SetFlag(FunctionSymbolFlags.conversion);
+        }
+        public bool CheckIfConvertingConstructor() const
+        {
+            return IsConstructor() && parameters.Count() == 2 && !IsExplicit() && !IsStatic() && !IsCopyConstructor() && !IsMoveConstructor();
+        }
+        public nothrow inline bool IsFunctionTemplate() const 
+        { 
+            return !typeParameters.IsEmpty(); 
+        }
+        public nothrow inline int Arity() const
+        {
+            return parameters.Count();
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            flags = cast<FunctionSymbolFlags>(reader.GetBinaryReader().ReadUInt());
+            groupName = reader.GetBinaryReader().ReadString();
+            vtblIndex = reader.GetBinaryReader().ReadShort();
+            if (IsFunctionTemplate())
+            {
+                // todo
+            }
+            else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate())
+            {
+                // todo
+                
+                bool hasReturnType = reader.GetBinaryReader().ReadBool();
+                if (hasReturnType)
+                {
+                    reader.FetchTypeFor(this, 0);
+                }
+            }
+            else
+            {
+                bool hasReturnType = reader.GetBinaryReader().ReadBool();
+                if (hasReturnType)
+                {
+                    reader.FetchTypeFor(this, 0);
+                }
+            }
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.GetBinaryWriter().Write(uint(flags));
+            writer.GetBinaryWriter().Write(groupName);
+            writer.GetBinaryWriter().Write(vtblIndex);
+            if (IsFunctionTemplate())
+            {
+                // todo
+            }
+            else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate())
+            {
+                // todo
+                
+                bool hasReturnType = returnType != null;
+                writer.GetBinaryWriter().Write(hasReturnType);
+                if (hasReturnType)
+                {
+                    writer.Write(returnType->Id());
+                }
+            }
+            else
+            {
+                bool hasReturnType = returnType != null;
+                writer.GetBinaryWriter().Write(hasReturnType);
+                if (hasReturnType)
+                {
+                    writer.Write(returnType->Id());
+                }
+            }
+        }
+        public override void AddSymbol(Symbol* symbol)
+        {
+            base->AddSymbol(symbol);
+            if (symbol->IsParameterSymbol())
+            {
+                ParameterSymbol* parameterSymbol = cast<ParameterSymbol*>(symbol);
+                parameters.Add(parameterSymbol);
+            }
+            else if (symbol->IsTypeParameterSymbol())
+            {
+                TypeParameterSymbol* typeParameterSymbol = cast<TypeParameterSymbol*>(symbol);
+                typeParameterSymbol->SetIndex(typeParameters.Count());
+                typeParameters.Add(typeParameterSymbol);
+            }
+        }
+        public nothrow inline void SetReturnType(TypeSymbol* returnType_)
+        {
+            returnType = returnType_;
+        }
+        public nothrow inline TypeSymbol* GetReturnType() const
+        {
+            return returnType;
+        }
+        public override void SetType(TypeSymbol* type, int index) 
+        {
+            SetReturnType(type);
+        }
+        public nothrow inline short VtblIndex() const
+        {
+            return vtblIndex;
+        }
+        public nothrow inline void SetVtblIndex(short vtblIndex_)
+        {
+            vtblIndex = vtblIndex_;
+        }
+        public nothrow inline void SetOverriddenFunction(FunctionSymbol* overriddenFunction_)
+        {
+            overriddenFunction = overriddenFunction_;
+        }
+        public void AddToOverrideSet(FunctionSymbol* overrideFun)
+        {
+            overrideSet.Insert(overrideFun);
+            if (overriddenFunction != null)
+            {
+                overriddenFunction->AddToOverrideSet(overrideFun);
+            }
+        }
+        public nothrow inline const List<ParameterSymbol*>& Parameters() const
+        {
+            return parameters;
+        }
+        private nothrow inline bool GetFlag(FunctionSymbolFlags flag)
+        {
+            return (flags & flag) != FunctionSymbolFlags.none;
+        }
+        private nothrow inline void SetFlag(FunctionSymbolFlags flag)
+        {
+            flags = cast<FunctionSymbolFlags>(flags | flag);
+        }
+        public nothrow inline void ResetFlag(FunctionSymbolFlags flag)
+        {
+            flags = cast<FunctionSymbolFlags>(flags & ~flag);
+        }
+        private FunctionSymbolFlags flags;
+        private string groupName;
+        private TypeSymbol* returnType;
+        private List<ParameterSymbol*> parameters;
+        private List<TypeParameterSymbol*> typeParameters;
+        private List<TypeSymbol*> typeArguments;
+        private short vtblIndex;
+        private Cm.Ast.CompileUnitNode* compileUnit;
+        private int mutexId;
+        private FunctionSymbol* overriddenFunction;
+        private FunctionSymbol* functionTemplate;
+        private HashSet<FunctionSymbol*> overrideSet;
+    }
+}

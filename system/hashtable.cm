@@ -126,6 +126,10 @@ namespace System.Collections
         {
             return value;
         }
+        public nothrow inline ValueType& Value()
+        {
+            return value;
+        }
         public nothrow inline Bucket<ValueType>* Next() const
         {
             return next;
@@ -168,7 +172,7 @@ namespace System.Collections
         public nothrow HashtableIterator(HashtableBase<ValueType>* table_, Bucket<ValueType>* bucket_): table(table_), bucket(bucket_)
         {
         }
-        public nothrow ReferenceType operator*() const
+        public nothrow ReferenceType operator*()
         {
             #assert(bucket != null);
             return bucket->Value();
@@ -450,8 +454,7 @@ namespace System.Collections
                 Bucket<ValueType>* bucket = b[i];
                 while (bucket != null)
                 {
-                    const ValueType& value = bucket->Value();
-                    const KeyType& key = KeyOf(value);
+                    const KeyType& key = KeyOf(bucket->Value());
                     int index = Hash(key);
                     Bucket<ValueType>* next = bucket->Next();
                     bucket->SetNext(buckets[index]);

@@ -14,12 +14,12 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Ast
 {
-    public enum SourceFileType
+    public enum SourceFileType : byte
     {
         cm, asm, c, text
     }
     
-    public enum Target
+    public enum Target : byte
     {
         none, program, library
     }

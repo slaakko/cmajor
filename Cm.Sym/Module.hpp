@@ -29,7 +29,7 @@ public:
 class ModuleFileVersionMismatch : public std::runtime_error
 {
 public:
-    ModuleFileVersionMismatch(const std::string& readVersion_, const std::string& expectedVersion_);
+    ModuleFileVersionMismatch(const std::string& libaryFilePath, const std::string& readVersion_, const std::string& expectedVersion_);
 private:
     std::string readVersion;
     std::string expectedVersion;
@@ -50,6 +50,7 @@ public:
     void Dump();
     void CheckUpToDate();
     void BuildSymbolTable(SymbolTable& symbolTable);
+    void CheckFileVersion();
 private:
     std::string name;
     std::string filePath;

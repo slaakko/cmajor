@@ -14,7 +14,7 @@ namespace Cm.Ser
 {
     public class BinaryReader
     {
-        public BinaryReader(const string& fileName_): fileName(fileName_), file(fileName, OpenMode.readOnly), pos(0u), end(cast<ulong>(file.GetFileSize()))
+        public BinaryReader(const string& fileName_): fileName(fileName_), file(fileName), begin(file.Begin()), end(file.End()), pos(begin)
         {
         }
         public nothrow const string& FileName() const
@@ -23,15 +23,19 @@ namespace Cm.Ser
         }
         public inline nothrow ulong Pos() const
         {
-            return pos;
+            return cast<ulong>(pos - begin);
         }
         public void SetPos(ulong pos_)
         {
-            pos = cast<ulong>(file.Seek(cast<long>(pos_), SEEK_SET));
+            pos = begin + cast<int>(pos_);
         }
         public void Skip(ulong size)
         {
-            pos = cast<ulong>(file.Seek(cast<long>(pos + size), SEEK_SET));
+            pos = pos + cast<int>(size);
+            if (pos > end)
+            {
+                throw Exception("unexpected end of file '" + fileName + "' while skipping size " + ToString(size));
+            }
         }
         public bool ReadBool()
         {
@@ -39,9 +43,7 @@ namespace Cm.Ser
             {
                 ThrowUnexpectedEnd("bool");
             }
-            bool value = file.ReadBool();
-            pos = pos + sizeof(bool);
-            return value;
+            return *cast<const bool*>(pos++);
         }
         public sbyte ReadSByte()
         {
@@ -49,9 +51,7 @@ namespace Cm.Ser
             {
                 ThrowUnexpectedEnd("sbyte");
             }
-            sbyte value = file.ReadSByte();
-            pos = pos + sizeof(sbyte);
-            return value;
+            return *cast<const sbyte*>(pos++);
         }
         public byte ReadByte()
         {
@@ -59,88 +59,86 @@ namespace Cm.Ser
             {
                 ThrowUnexpectedEnd("byte");
             }
-            byte value = file.ReadByte();
-            pos = pos + sizeof(byte);
-            return value;
+            return *cast<const byte*>(pos++);
         }
         public short ReadShort()
         {
-            if (pos + sizeof(short) > end)
+            if (pos + cast<int>(sizeof(short)) > end)
             {
                 ThrowUnexpectedEnd("short");
             }
-            short value = file.ReadShort();
-            pos = pos + sizeof(short);
+            short value = *cast<const short*>(pos);
+            pos = pos + cast<int>(sizeof(short));
             return value;
         }
         public ushort ReadUShort()
         {
-            if (pos + sizeof(ushort) > end)
+            if (pos + cast<int>(sizeof(ushort)) > end)
             {
                 ThrowUnexpectedEnd("ushort");
             }
-            ushort value = file.ReadUShort();
-            pos = pos + sizeof(ushort);
+            ushort value = *cast<const ushort*>(pos);
+            pos = pos + cast<int>(sizeof(ushort));
             return value;
         }
         public int ReadInt()
         {
-            if (pos + sizeof(int) > end)
+            if (pos + cast<int>(sizeof(int)) > end)
             {
                 ThrowUnexpectedEnd("int");
             }
-            int value = file.ReadInt();
-            pos = pos + sizeof(int);
+            int value = *cast<const int*>(pos);
+            pos = pos + cast<int>(sizeof(int));
             return value;
         }
         public uint ReadUInt()
         {
-            if (pos + sizeof(uint) > end)
+            if (pos + cast<int>(sizeof(uint)) > end)
             {
                 ThrowUnexpectedEnd("uint");
             }
-            uint value = file.ReadUInt();
-            pos = pos + sizeof(uint);
+            uint value = *cast<const uint*>(pos);
+            pos = pos + cast<int>(sizeof(uint));
             return value;
         }
         public long ReadLong()
         {
-            if (pos + sizeof(long) > end)
+            if (pos + cast<int>(sizeof(long)) > end)
             {
                 ThrowUnexpectedEnd("long");
             }
-            long value = file.ReadLong();
-            pos = pos + sizeof(long);
+            long value = *cast<const long*>(pos);
+            pos = pos + cast<int>(sizeof(long));
             return value;
         }
         public ulong ReadULong()
         {
-            if (pos + sizeof(ulong) > end)
+            if (pos + cast<int>(sizeof(ulong)) > end)
             {
                 ThrowUnexpectedEnd("ulong");
             }
-            ulong value = file.ReadULong();
-            pos = pos + sizeof(ulong);
+            ulong value = *cast<const ulong*>(pos);
+            pos = pos + cast<int>(sizeof(ulong));
             return value;
         }
         public float ReadFloat()
         {
-            if (pos + sizeof(float) > end)
+            if (pos + cast<int>(sizeof(float)) > end)
             {
                 ThrowUnexpectedEnd("float");
             }
-            float value = file.ReadFloat();
-            pos = pos + sizeof(float);
+            float value = *cast<const float*>(pos);
+            pos = pos + cast<int>(sizeof(float));
             return value;
         }
         public double ReadDouble()
         {
-            if (pos + sizeof(double) > end)
+            if (pos + cast<int>(sizeof(double)) > end)
             {
                 ThrowUnexpectedEnd("double");
             }
-            double value = file.ReadDouble();
-            pos = pos + sizeof(double);
+            double value = *cast<const double*>(pos);
+            pos = pos + cast<int>(sizeof(double));
             return value;
         }
         public char ReadChar()
@@ -149,9 +147,7 @@ namespace Cm.Ser
             {
                 ThrowUnexpectedEnd("char");
             }
-            char value = file.ReadChar();
-            pos = pos + sizeof(char);
-            return value;
+            return *pos++;
         }
         public string ReadString()
         {
@@ -166,20 +162,21 @@ namespace Cm.Ser
         }
         public void Read(void* buf, ulong size)
         {
-            byte* p = cast<byte*>(buf);
-            while (size > 0u)
+            if (pos + cast<int>(size) >= end)
             {
-                *p++ = ReadByte();
-                --size;
+                ThrowUnexpectedEnd("void*");
             }
+            cmemcpy(buf, pos, size, 0, false);
+            pos = pos + cast<int>(size);
         }
         private void ThrowUnexpectedEnd(const string& type)
         {
             throw Exception("unexpected end of file '" + fileName + "' while reading " + type);
         }
         private string fileName;
-        private BinaryFileStream file;
-        private ulong pos;
-        private ulong end;
+        private FileMapping file;
+        private const char* begin;
+        private const char* end;
+        private const char* pos;
     }
 }

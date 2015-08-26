@@ -1,0 +1,441 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public enum ScopeLookup : byte
+    {
+        none = 0u,
+        this_ = 1u << 0u,
+        base_ = 1u << 1u,
+        parent = 1u << 2u,
+        this_and_base = this_ | base_,
+        this_and_parent = this_ | parent,
+        this_and_base_and_parent = this_ | base_ | parent,
+        fileScopes = 1u << 3u
+    }
+    
+    public abstract class Scope
+    {
+        public nothrow virtual ~Scope()
+        {
+        }
+        public abstract Symbol* Lookup(const string& name) const;
+        public abstract Symbol* Lookup(const string& name, SymbolTypeSetId symbolTypeSetId) const;
+        public abstract Symbol* Lookup(const string& name, ScopeLookup lookup) const;
+        public abstract Symbol* Lookup(const string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const;
+    }
+    
+    public abstract class ContainerScope : Scope
+    {
+        public nothrow ContainerScope() : baseScope(null), parentScope(null), container(null)
+        {
+        }
+        public nothrow inline ContainerScope* Base() const
+        {
+            return baseScope;
+        }
+        public nothrow inline void SetBase(ContainerScope* baseScope_)
+        {
+            baseScope = baseScope_;
+        }
+        public nothrow inline ContainerScope* Parent() const
+        {
+            return parentScope;
+        }
+        public nothrow inline void SetParent(ContainerScope* parentScope_)
+        {
+            parentScope = parentScope_;
+        }
+        public nothrow inline ContainerSymbol* Container() const
+        {
+            return container;
+        }
+        public nothrow inline void SetContainer(ContainerSymbol* container_)
+        {
+            container = container_;
+        }
+        public inline NamespaceSymbol* Ns() const
+        {
+            return container->Ns();
+        }
+        public nothrow inline ClassTypeSymbol* Class() const
+        {
+            return container->Class();
+        }
+        public nothrow ContainerScope* ClassOrNsScope() const
+        {
+            ContainerSymbol* classOrNsSymbol = container->ClassOrNs();
+            if (classOrNsSymbol != null)
+            {
+                return classOrNsSymbol->GetContainerScope();
+            }
+            return null;
+        }
+        public void Install(Symbol* symbol)
+        {
+            HashMap<string, Symbol*>.ConstIterator i = symbolMap.CFind(symbol->Name());
+            if (i != symbolMap.CEnd() && !symbol->IsTemplateTypeSymbol())
+            {
+                Symbol* prev = i->second;
+                throw Error("symbol '" + symbol->Name() + "' already defined", symbol->GetSpan(), prev->GetSpan());
+            }
+            else
+            {
+                symbolMap[symbol->Name()] = symbol;
+                if (symbol->IsContainerSymbol())
+                {
+                    ContainerSymbol* containerSymbol = cast<ContainerSymbol*>(symbol);
+                    containerSymbol->GetContainerScope()->SetParent(this);
+                }
+            }
+        }
+        public override Symbol* Lookup(const string& name) const
+        {
+            return Lookup(name, ScopeLookup.this_);
+        }
+        public override Symbol* Lookup(const string& name, SymbolTypeSetId symbolTypeSetId) const
+        {
+            return Lookup(name, ScopeLookup.this_, symbolTypeSetId);
+        }
+        public override Symbol* Lookup(const string& name, ScopeLookup lookup) const
+        {
+            return Lookup(name, lookup, SymbolTypeSetId.lookupAllSymbols);
+        }
+        public override Symbol* Lookup(const string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const
+        {
+            List<string> components = ParseQualifiedName(name);
+            if (components.Count() > 1)
+            {
+                return LookupQualified(components, lookup, symbolTypeSetId);
+            }
+            else
+            {
+                HashMap<string, Symbol*>.ConstIterator i = symbolMap.CFind(name);
+                if (i != symbolMap.CEnd())
+                {
+                    Symbol* s = i->second;
+                    const HashSet<SymbolType, SymbolTypeHash>& symbolTypeSet = SymbolTypeSetCollection.Instance().GetSymbolTypeSet(symbolTypeSetId);
+                    if (symbolTypeSet.CFind(s->GetSymbolType()) != symbolTypeSet.CEnd())
+                    {
+                        return s;
+                    }
+                }
+                if ((lookup & ScopeLookup.base_) != ScopeLookup.none)
+                {
+                    if (baseScope != null)
+                    {
+                        Symbol* s = baseScope->Lookup(name, lookup, symbolTypeSetId);
+                        if (s != null)
+                        {
+                            return s;
+                        }
+                    }
+                }
+                if ((lookup & ScopeLookup.parent) != ScopeLookup.none)
+                {
+                    if (parentScope != null)
+                    {
+                        Symbol* s = parentScope->Lookup(name, lookup, symbolTypeSetId);
+                        if (s != null)
+                        {
+                            return s;
+                        }
+                    }
+                }
+                return null;
+            }
+        }
+        public void CollectViableFunctions(ScopeLookup lookup, const string& groupName, int arity, HashSet<FunctionSymbol*>& viableFunctions)
+        {
+            if ((lookup & ScopeLookup.this_) != ScopeLookup.none)
+            {
+                Symbol* symbol = Lookup(groupName, SymbolTypeSetId.lookupFunctionGroup);
+                if (symbol != null && symbol->IsFunctionGroupSymbol())
+                {
+                    FunctionGroupSymbol* functionGroupSymbol = cast<FunctionGroupSymbol*>(symbol);
+                    functionGroupSymbol->CollectViableFunctions(arity, viableFunctions);
+                }
+            }
+            if ((lookup & ScopeLookup.base_) != ScopeLookup.none)
+            {
+                if (baseScope != null)
+                {
+                    baseScope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+                }
+            }
+            if ((lookup & ScopeLookup.parent) != ScopeLookup.none)
+            {
+                if (parentScope != null)
+                {
+                    parentScope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+                }
+            }
+        }
+        public NamespaceSymbol* CreateNamespace(const string& qualifiedNsName, const Span& span)
+        {
+            ContainerScope* scope = this;
+            NamespaceSymbol* parentNs = scope->Ns();
+            List<string> components = qualifiedNsName.Split('.');
+            for (const string& component : components)
+            {
+                Symbol* s = scope->Lookup(component, SymbolTypeSetId.lookupNamespace);
+                if (s != null)
+                {
+                    if (s->IsNamespaceSymbol())
+                    {
+                        scope = s->GetContainerScope();
+                        parentNs = scope->Ns();
+                    }
+                    else
+                    {
+                        throw Error("symbol '" + s->Name() + "' does not denote a namespace", s->GetSpan());
+                    }
+                }
+                else
+                {
+                    NamespaceSymbol* newNs = new NamespaceSymbol(span, component);
+                    scope = newNs->GetContainerScope();
+                    scope->SetParent(parentNs->GetContainerScope());
+                    parentNs->AddSymbol(newNs);
+                    parentNs = newNs;
+                }
+            }
+            return parentNs;
+        }
+        private Symbol* LookupQualified(const List<string>& components, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const
+        {
+            const ContainerScope* scope = this;
+            Symbol* s = null;
+            int n = components.Count();
+            bool allComponentsMatched = true;
+            for (int i = 0; i < n; ++i)
+            {
+                const string& component = components[i];
+                if (scope != null)
+                {
+                    SymbolTypeSetId lookupId = SymbolTypeSetId.lookupDotSubjectSymbols;
+                    if (i == n - 1)
+                    {
+                        lookupId = symbolTypeSetId;
+                    }
+                    s = scope->Lookup(component, ScopeLookup.this_, lookupId);
+                    if (s != null)
+                    {
+                        scope = s->GetContainerScope();
+                    }
+                    else
+                    {
+                        allComponentsMatched = false;
+                    }
+                }
+            }
+            if (s == null || !allComponentsMatched)
+            {
+                if ((lookup & ScopeLookup.parent) != ScopeLookup.none)
+                {
+                    if (parentScope != null)
+                    {
+                        return parentScope->LookupQualified(components, lookup, symbolTypeSetId);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+            return s;
+        }
+        private HashMap<string, Symbol*> symbolMap;
+        private ContainerScope* baseScope;
+        private ContainerScope* parentScope;
+        private ContainerSymbol* container;
+    }
+    
+    public class FileScope : Scope
+    {
+        public void InstallAlias(ContainerScope* currentContainerScope, Cm.Ast.AliasNode* aliasNode)
+        {
+            if (currentContainerScope != null)
+            {
+                Symbol* symbol = currentContainerScope->Lookup(aliasNode->Qid()->Str(), ScopeLookup.this_and_parent);
+                if (symbol != null)
+                {
+                    aliasSymbolMap[aliasNode->Id()->Str()] = symbol;
+                }
+                else
+                {
+                    throw Error("referred symbol '" + aliasNode->Qid()->Str() + "' not found", aliasNode->Qid()->GetSpan());
+                }
+            }
+            else
+            {
+                throw Exception("current container scope is null");
+            }
+        }
+        public void InstallNamespaceImport(ContainerScope* currentContainerScope, Cm.Ast.NamespaceImportNode* namespaceImportNode)
+        {
+            if (currentContainerScope != null)
+            {
+                Symbol* symbol = currentContainerScope->Lookup(namespaceImportNode->Ns()->Str(), ScopeLookup.this_and_parent, SymbolTypeSetId.lookupNamespace);
+                if (symbol != null)
+                {
+                    if (symbol->IsNamespaceSymbol())
+                    {
+                        ContainerScope* containerScope = symbol->GetContainerScope();
+                        if (Find(containerScopes.CBegin(), containerScopes.CEnd(), containerScope) == containerScopes.CEnd())
+                        {
+                            containerScopes.Add(containerScope);
+                        }
+                    }
+                    else
+                    {
+                        throw Error("'" + namespaceImportNode->Ns()->Str() + "' does not denote a namespace", namespaceImportNode->Ns()->GetSpan());
+                    }
+                }
+                else
+                {
+                    throw Error("referred namespace symbol '" + namespaceImportNode->Ns()->Str() + "' not found", namespaceImportNode->Ns()->GetSpan());
+                }            
+            }
+            else
+            {
+                throw Exception("current container scope is null");
+            }
+        }
+        public override Symbol* Lookup(const string& name) const
+        {
+            return Lookup(name, ScopeLookup.this_);
+        }
+        public override Symbol* Lookup(const string& name, SymbolTypeSetId symbolTypeSetId) const
+        {
+            return Lookup(name, ScopeLookup.this_, symbolTypeSetId);
+        }
+        public override Symbol* Lookup(const string& name, ScopeLookup lookup) const
+        {
+            return Lookup(name, lookup, SymbolTypeSetId.lookupAllSymbols);
+        }
+        public override Symbol* Lookup(const string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const
+        {
+            if (lookup != ScopeLookup.this_)
+            {
+                throw Exception("file scope supports only this scope lookup");
+            }
+            HashSet<Symbol*> foundSymbols;
+            HashMap<string, Symbol*>.ConstIterator i = aliasSymbolMap.CFind(name);
+            if (i != aliasSymbolMap.CEnd())
+            {
+                Symbol* symbol = null;//i->second;
+                const HashSet<SymbolType, SymbolTypeHash>& symbolTypeSet = SymbolTypeSetCollection.Instance().GetSymbolTypeSet(symbolTypeSetId);
+                if (symbolTypeSet.CFind(symbol->GetSymbolType()) != symbolTypeSet.CEnd())
+                {
+                    foundSymbols.Insert(symbol);
+                }
+            }
+            else
+            {
+                for (ContainerScope* containerScope : containerScopes)
+                {
+                    Symbol* symbol = containerScope->Lookup(name, ScopeLookup.this_, symbolTypeSetId);
+                    if (symbol != null)
+                    {
+                        foundSymbols.Insert(symbol);
+                    }
+                }
+            }
+            if (foundSymbols.IsEmpty())
+            {
+                return null;
+            }
+            else if (foundSymbols.Count() > 1)
+            {
+                string message = "reference to object '" + name + "' is ambiguous: ";
+                bool first = true;
+                for (Symbol* symbol : foundSymbols)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        message.Append(" or ");
+                    }
+                    message.Append(symbol->FullName());
+                }
+                throw Error(message, Span());
+            }
+            else
+            {
+                return *foundSymbols.CBegin();
+            }
+        }
+        private List<ContainerScope*> containerScopes;
+        private HashMap<string, Symbol*> aliasSymbolMap;
+    }
+    
+    internal List<string> ParseQualifiedName(const string& qualifiedName)
+    {
+        List<string> components;
+        int state = 0;
+        string component;
+        int angleBracketCount = 0;
+        for (char c : qualifiedName)
+        {
+            switch (state)
+            {
+                case 0:
+                {
+                    if (c == '.')
+                    {
+                        components.Add(component);
+                        component.Clear();
+                    }
+                    else if (c == '<')
+                    {
+                        component.Append(c);
+                        angleBracketCount = 1;
+                        state = 1;
+                    }
+                    else
+                    {
+                        component.Append(c);
+                    }
+                    break;
+                }
+                case 1:
+                {
+                    component.Append(c);
+                    if (c == '<')
+                    {
+                        ++angleBracketCount;
+                    }
+                    else if (c == '>')
+                    {
+                        --angleBracketCount;
+                        if (angleBracketCount == 0)
+                        {
+                            state = 0;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        if (!components.IsEmpty())
+        {
+            components.Add(component);
+        }
+        return components;
+    }
+}

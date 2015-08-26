@@ -1,0 +1,117 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class ConceptSymbol : ContainerSymbol
+    {
+        public nothrow ConceptSymbol(const Span& span_, const string& name_) : base(span_, name_), isIntrinsicConcept(false), refinedConcept(null)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.conceptSymbol;
+        }
+        public nothrow override bool IsConceptSymbol() const
+        {
+            return true;
+        }
+        public nothrow inline const string& GroupName() const
+        {
+            return groupName;
+        }
+        public nothrow void SetGroupName(const string& groupName_)
+        {
+            groupName = groupName_;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "concept";
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            if (base->IsExportSymbol())
+            {
+                return !isIntrinsicConcept;
+            }
+            return false;
+        }
+        public nothrow const List<TypeParameterSymbol*>& TypeParameters() const
+        {
+            return typeParameters;
+        }
+        public nothrow inline int Arity() const
+        {
+            return typeParameters.Count();
+        }
+        public nothrow inline const TypeId& Id() const
+        {
+            return id;
+        }
+        public override void AddSymbol(Symbol* symbol)
+        {
+            base->AddSymbol(symbol);
+            if (symbol->IsTypeParameterSymbol())
+            {
+                TypeParameterSymbol* typeParameterSymbol = cast<TypeParameterSymbol*>(symbol);
+                typeParameterSymbol->SetIndex(typeParameters.Count());
+                typeParameters.Add(typeParameterSymbol);
+            }
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            id = reader.ReadTypeId();
+            groupName = reader.GetBinaryReader().ReadString();
+            conceptNode.Reset(reader.GetAstReader().ReadConceptNode());
+            reader.GetSymbolTable().SetNode(this, conceptNode.GetPtr());
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.Write(id);
+            writer.GetBinaryWriter().Write(groupName);
+            Cm.Ast.Node* node = writer.GetSymbolTable().GetNode(this);
+            if (node->IsConceptNode())
+            {
+                writer.GetAstWriter().Write(node);
+            }
+            else
+            {
+                throw Exception("write: concept node expected");
+            }
+        }
+        public nothrow inline ConceptSymbol* RefinedConcept() const
+        {
+            return refinedConcept;
+        }
+        public nothrow void SetRefinedConcept(ConceptSymbol* refinedConcept_)
+        {
+            refinedConcept = refinedConcept_;
+        }
+        public nothrow inline void SetIntrinsicConcept() 
+        {
+            isIntrinsicConcept = true;
+        }
+        public nothrow inline Cm.Ast.ConceptNode* GetConceptNode() const
+        {
+            return conceptNode.GetPtr();
+        }
+        private TypeId id;
+        private bool isIntrinsicConcept;
+        private string groupName;
+        private ConceptSymbol* refinedConcept;
+        private List<TypeParameterSymbol*> typeParameters;
+        private UniquePtr<Cm.Ast.ConceptNode> conceptNode;
+    }
+}

@@ -1,0 +1,59 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class TypeParameterSymbol : TypeSymbol
+    {
+        public nothrow TypeParameterSymbol(const Span& span_, const string& name_) : base(span_, name_, TypeId()), index(-1)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.typeParameterSymbol;
+        }
+        public nothrow override bool IsTypeParameterSymbol() const
+        {
+            return true;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "type parameter";
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return Name();
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            return true;
+        }
+        public nothrow inline int Index() const
+        {
+            return index;
+        }
+        public nothrow inline void SetIndex(int index_)
+        {
+            index = index_;
+        }
+        public nothrow override string FullName() const
+        {
+            return Name();
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            
+        }
+        private int index;
+    }
+}

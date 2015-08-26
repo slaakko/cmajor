@@ -18,7 +18,7 @@ FunctionGroupSymbol::FunctionGroupSymbol(const Span& span_, const std::string& n
 
 void FunctionGroupSymbol::AddFunction(FunctionSymbol* function)
 {
-    if (IsReplica()) return;
+    if (function->IsReplica()) return;
     if (function->GroupName() != Name())
     {
         throw std::runtime_error("attempt to insert a function with group name '" + function->GroupName() + "' to wrong function group '" + Name() + "'");

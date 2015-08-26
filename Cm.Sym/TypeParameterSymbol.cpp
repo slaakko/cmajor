@@ -9,6 +9,8 @@
 
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
+#include <Cm.Sym/Writer.hpp>
+#include <Cm.Sym/Reader.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -19,11 +21,13 @@ TypeParameterSymbol::TypeParameterSymbol(const Span& span_, const std::string& n
 void TypeParameterSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
+    writer.GetBinaryWriter().Write(index);
 }
 
 void TypeParameterSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
+    index = reader.GetBinaryReader().ReadInt();
 }
 
 void TypeParameterSymbol::Dump(CodeFormatter& formatter)

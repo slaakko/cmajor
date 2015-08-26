@@ -67,9 +67,7 @@ int main(int argc, const char** argv)
 {
     if (argc < 2)
     {
-        std::cout << "usage: slines [options] {file.cms | file.cmp | file.cm}" << std::endl;
-        std::cout << "options:" << std::endl;
-        std::cout << "-debug: debug parsing" << std::endl;
+        std::cout << "usage: sread {file.cms | file.cmp | file.cm}" << std::endl;
         return 0;
     }
     try
@@ -81,29 +79,22 @@ int main(int argc, const char** argv)
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
-            if (arg == "-debug")
+            boost::filesystem::path p(arg);
+            if (p.extension() == ".cms")
             {
-                compileUnitGrammar->SetLog(&std::cout);
+                ReadSolution(solutionGrammar, projectGrammar, compileUnitGrammar, arg);
+            }
+            else if (p.extension() == ".cmp")
+            {
+                ReadProject(projectGrammar, compileUnitGrammar, arg);
+            }
+            else if (p.extension() == ".cm")
+            {
+                ReadCompileUnit(compileUnitGrammar, arg);
             }
             else
             {
-                boost::filesystem::path p(arg);
-                if (p.extension() == ".cms")
-                {
-                    ReadSolution(solutionGrammar, projectGrammar, compileUnitGrammar, arg);
-                }
-                else if (p.extension() == ".cmp")
-                {
-                    ReadProject(projectGrammar, compileUnitGrammar, arg);
-                }
-                else if (p.extension() == ".cm")
-                {
-                    ReadCompileUnit(compileUnitGrammar, arg);
-                }
-                else
-                {
-                    throw std::runtime_error("argument '" + arg + " is not Cmajor solution, project or source file");
-                }
+                throw std::runtime_error("argument '" + arg + " is not Cmajor solution, project or source file");
             }
         }
     }

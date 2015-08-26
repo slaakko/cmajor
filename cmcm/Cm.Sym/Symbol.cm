@@ -1,0 +1,516 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public enum SymbolType : byte
+    {
+        boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
+        classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
+        memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
+        conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol,
+        maxSymbol
+    }
+    
+    public nothrow const char* SymbolTypeStr(SymbolType symbolType)
+    {
+        switch (symbolType)
+        {
+            case SymbolType.boolSymbol: return "boolSymbol";
+            case SymbolType.charSymbol: return "charSymbol";
+            case SymbolType.voidSymbol: return "voidSymbol";
+            case SymbolType.sbyteSymbol: return "sbyteSymbol";
+            case SymbolType.byteSymbol: return "byteSymbol";
+            case SymbolType.shortSymbol: return "shortSymbol";
+            case SymbolType.ushortSymbol: return "ushortSymbol";
+            case SymbolType.intSymbol: return "intSymbol";
+            case SymbolType.uintSymbol: return "uintSymbol";
+            case SymbolType.longSymbol: return "longSymbol";
+            case SymbolType.ulongSymbol: return "ulongSymbol";
+            case SymbolType.floatSymbol: return "floatSymbol";
+            case SymbolType.doubleSymbol: return "doubleSymbol";
+            case SymbolType.nullptrSymbol: return "nullptrSymbol";
+            case SymbolType.classSymbol: return "classSymbol";
+            case SymbolType.constantSymbol: return "constantSymbol";
+            case SymbolType.declarationBlock: return "declarationBlock";
+            case SymbolType.delegateSymbol: return "delegateSymbol";
+            case SymbolType.classDelegateSymbol: return "classDelegateSymbol";
+            case SymbolType.enumTypeSymbol: return "enumTypeSymbol";
+            case SymbolType.enumConstantSymbol: return "enumConstantSymbol";
+            case SymbolType.functionSymbol: return "functionSymbol";
+            case SymbolType.functionGroupSymbol: return "functionGroupSymbol";
+            case SymbolType.localVariableSymbol: return "localVariableSymbol";
+            case SymbolType.memberVariableSymbol: return "memberVariableSymbol";
+            case SymbolType.namespaceSymbol: return "namespaceSymbol";
+            case SymbolType.parameterSymbol: return "parameterSymbol";
+            case SymbolType.typeParameterSymbol: return "typeParameterSymbol";
+            case SymbolType.templateTypeSymbol: return "templateTypeSymbol";
+            case SymbolType.derivedTypeSymbol: return "derivedTypeSymbol";
+            case SymbolType.typedefSymbol: return "typedefSymbol";
+            case SymbolType.boundTypeParameterSymbol: return "boundTypeParameterSymbol";
+            case SymbolType.conceptSymbol: return "conceptSymbol";
+            case SymbolType.conceptGroupSymbol: return "conceptGroupSymbol";
+            case SymbolType.instantiatedConceptSymbol: return "instantiatedConceptSymbol";
+            case SymbolType.functionGroupTypeSymbol: return "functionGroupTypeSymbol";
+        }
+        return "";
+    }
+    
+    public enum SymbolSource : byte
+    {
+        project, library
+    }
+    
+    public enum SymbolAccess : byte
+    {
+        private_ = 0u, protected_ = 1u, internal_ = 2u, public_ = 3u
+    }
+    
+    public enum SymbolFlags : byte
+    {
+        none = 0u,
+        access = 1u << 0u | 1u << 1u,
+        static_ = 1u << 2u,
+        external = 1u << 3u,
+        bound = 1u << 4u,
+        project = 1u << 5u,
+        irTypeMade = 1u << 6u,
+        replica = 1u << 7u
+    }
+    
+    public abstract class Symbol
+    {
+        public nothrow Symbol(const Span& span_, const string& name_) : span(span_), name(name_), flags(SymbolFlags.none), parent(null)
+        {
+        }
+        public virtual nothrow ~Symbol()
+        {
+        }
+        public abstract nothrow SymbolType GetSymbolType() const;
+        public nothrow inline const Span& GetSpan() const
+        {
+            return span;
+        }
+        public nothrow void SetSpan(Span& span_)
+        {
+            span = span_;
+        }
+        public nothrow inline const string& Name() const
+        {
+            return name;
+        }
+        public nothrow void SetName(const string& name_)
+        {
+            name = name_;
+        }
+        public nothrow virtual string FullName() const
+        {
+            string parentFullName;
+            Symbol* p = Parent();
+            if (p != null)
+            {
+                parentFullName = p->FullName();
+            }
+            if (!parentFullName.IsEmpty())
+            {
+                return parentFullName + "." + Name();
+            }
+            else
+            {
+                return Name();
+            }
+        }
+        public nothrow virtual Symbol* Parent() const
+        {
+            return parent;
+        }
+        public nothrow inline void SetParent(Symbol* parent_)
+        {
+            parent = parent_;
+        }
+        public nothrow inline SymbolAccess Access() const
+        {
+            return cast<SymbolAccess>(flags & SymbolFlags.access);
+        }
+        public nothrow inline void SetAccess(SymbolAccess access)
+        {
+            flags = cast<SymbolFlags>(flags | cast<SymbolFlags>(cast<byte>(access)));
+        }
+        public nothrow virtual SymbolAccess DeclaredAccess() const
+        {
+            return Access();
+        }
+        public nothrow SymbolAccess EffectiveAccess() const
+        {
+            SymbolAccess effectiveAccess = Access();
+            Symbol* p = Parent();
+            while (p != null)
+            {
+                if (p->DeclaredAccess() < effectiveAccess)
+                {
+                    effectiveAccess = p->DeclaredAccess();
+                }
+                p = p->Parent();
+            }
+            return effectiveAccess;
+        }
+        public nothrow inline bool IsStatic() const
+        {
+            return GetFlag(SymbolFlags.static_);
+        }
+        public nothrow inline void SetStatic()
+        {
+            SetFlag(SymbolFlags.static_);
+        }
+        public nothrow inline bool IsExternal() const
+        {
+            return GetFlag(SymbolFlags.external);
+        }
+        public nothrow inline void SetExternal()
+        {
+            SetFlag(SymbolFlags.external);
+        }
+        public nothrow inline bool IsBound() const
+        {
+            return GetFlag(SymbolFlags.bound);
+        }
+        public nothrow inline void SetBound()
+        {
+            SetFlag(SymbolFlags.bound);
+        }
+        public nothrow inline bool IsPublic() const
+        {
+            return Access() == SymbolAccess.public_;
+        }
+        public nothrow inline void SetPublic()
+        {
+            SetAccess(SymbolAccess.public_);
+        }
+        public nothrow inline SymbolSource Source() const
+        {
+            if (GetFlag(SymbolFlags.project)) return SymbolSource.project;
+            return SymbolSource.library;
+        }
+        public nothrow inline void SetSource(SymbolSource source)
+        {
+            if (source == SymbolSource.project) 
+            {
+                SetFlag(SymbolFlags.project);
+            }
+            else
+            {
+                ResetFlag(SymbolFlags.project);
+            }
+        }
+        public nothrow inline bool IsIrTypeMade() const
+        {
+            return GetFlag(SymbolFlags.irTypeMade);
+        }
+        public nothrow inline void SetIrTypeMade() 
+        {
+            SetFlag(SymbolFlags.irTypeMade);
+        }
+        public nothrow inline bool IsReplica() const 
+        {
+            return GetFlag(SymbolFlags.replica);
+        }
+        public nothrow inline void SetReplica()
+        {
+            SetFlag(SymbolFlags.replica);
+        }
+        public virtual nothrow bool IsExportSymbol() const
+        {
+            return Source() == SymbolSource.project && IsPublic();
+        }
+        public virtual nothrow bool IsNamespaceSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsContainerSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsClassTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsClassTemplateSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsConstantSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsBasicTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsBoolTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsCharTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsEnumTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsVoidTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsIntegerTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsFloatingPointTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsDerivedTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsDelegateTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsClassDelegateTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsEnumConstantSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsFunctionSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsFunctionGroupSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsFunctionGroupTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsConceptSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsConceptGroupSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsTemplateTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsParameterSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsTypeParameterSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsBoundTypeParameterSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsMemberVariableSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsLocalVariableSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsTypedefSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow bool IsNamespaceTypeSymbol() const 
+        { 
+            return false; 
+        }
+        public virtual nothrow const char* TypeString() const
+        {
+            return "symbol";
+        }
+        public virtual void SetType(TypeSymbol* typeSymbol, int index)
+        {
+            throw Exception("member function not applicable");
+        }
+        public virtual nothrow ContainerScope* GetContainerScope() const
+        {
+            return null;
+        }
+        public virtual void Read(Reader& reader)
+        {
+            flags = cast<SymbolFlags>(reader.GetBinaryReader().ReadByte());
+        }
+        public virtual void Write(Writer& writer)
+        {
+            SymbolFlags outputFlags = cast<SymbolFlags>(flags & ~(SymbolFlags.project | SymbolFlags.irTypeMade));
+            writer.GetBinaryWriter().Write(cast<byte>(outputFlags));
+        }
+        public virtual void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
+        {
+        }
+        public virtual void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        {
+        }
+        public virtual void MakeIrType()
+        {
+            SetIrTypeMade();
+        }
+        public NamespaceSymbol* Ns() const
+        {
+            if (IsNamespaceSymbol()) 
+            {
+                return cast<NamespaceSymbol*>(this);
+            }
+            else
+            {
+                if (parent != null)
+                {
+                    return parent->Ns();
+                }
+                else
+                {
+                    throw Exception("namespace not found");
+                }
+            }
+        }
+        public nothrow ClassTypeSymbol* Class() const
+        {
+            if (IsClassTypeSymbol())
+            {
+                return cast<ClassTypeSymbol*>(this);
+            }
+            else 
+            {
+                if (parent != null)
+                {
+                    return parent->Class();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+        public nothrow ContainerSymbol* ClassOrNs() const
+        {
+            if (IsClassTypeSymbol() || IsNamespaceSymbol())
+            {
+                return cast<ContainerSymbol*>(this);
+            }
+            else 
+            {
+                if (parent != null)
+                {
+                    return parent->ClassOrNs();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+        public nothrow ClassTypeSymbol* ContainingClass() const
+        {
+            if (parent != null)
+            {
+                return parent->Class();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        public nothrow FunctionSymbol* Function() const
+        {
+            if (IsFunctionSymbol())
+            {
+                return cast<FunctionSymbol*>(this);
+            }
+            else
+            {
+                if (parent != null)
+                {
+                    return parent->Function();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+        public nothrow FunctionSymbol* ContainingFunction() const
+        {
+            if (parent != null)
+            {
+                return parent->Function();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        public nothrow virtual bool IsSameParentOrAncestorOf(Symbol* that) const
+        {
+            if (that == null)
+            {
+                return false;
+            }
+            if (this == that)
+            {
+                return true;
+            }
+            else if (that->parent != null)
+            {
+                return IsSameParentOrAncestorOf(that->parent);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        private nothrow inline bool GetFlag(SymbolFlags flag) const
+        {
+            return (flags & flag) != SymbolFlags.none;
+        }
+        private nothrow inline void SetFlag(SymbolFlags flag)
+        {
+            flags = cast<SymbolFlags>(flags | flag);
+        }
+        public nothrow inline void ResetFlag(SymbolFlags flag)
+        {
+            flags = cast<SymbolFlags>(flags & ~flag);
+        }
+        private Span span;
+        private string name;
+        private SymbolFlags flags;
+        private Symbol* parent;
+    }
+}
