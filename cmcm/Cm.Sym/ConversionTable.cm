@@ -1,0 +1,106 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class ConversionTypes
+    {
+        public nothrow ConversionTypes(TypeSymbol* sourceType_, TypeSymbol* targetType_) : sourceType(sourceType_), targetType(targetType_), hashCode(sourceType->GetHashCode() ^ targetType->GetHashCode())
+        {
+        }
+        public nothrow inline TypeSymbol* SourceType() const
+        {
+            return sourceType;
+        }
+        public nothrow inline TypeSymbol* TargetType() const
+        {
+            return targetType;
+        }
+        public nothrow inline ulong GetHashCode() const 
+        {
+            return hashCode;
+        }
+        private TypeSymbol* sourceType;
+        private TypeSymbol* targetType;
+        private ulong hashCode;
+    }
+    
+    public inline nothrow bool operator==(const ConversionTypes& left, const ConversionTypes& right)
+    {
+        return left.SourceType()->Id() == right.SourceType()->Id() && left.TargetType()->Id() == right.TargetType()->Id();
+    }
+    
+    public class ConversionTypeHash : UnaryFun<ConversionTypes, ulong>
+    {
+        public inline nothrow ulong operator()(const ConversionTypes& conversionTypes) const
+        {
+            return conversionTypes.GetHashCode();
+        }
+    }
+    
+    public class ConversionTable
+    {
+        public ConversionTable(TypeRepository& typeRepository_) : typeRepository(typeRepository_)
+        {
+        }
+        public void AddConversion(FunctionSymbol* conversion)
+        {
+            if (conversion->IsConvertingConstructor())
+            {
+                if (conversion->Parameters().Count() != 2)
+                {
+                    throw Exception("expected 2 converting constructor parameters");
+                }
+                ParameterSymbol* targetParam = conversion->Parameters()[0];
+                TypeSymbol* targetParamType = targetParam->GetType();
+                TypeSymbol* targetType = typeRepository.MakePlainTypeWithOnePointerRemoved(targetParamType);
+                ParameterSymbol* sourceParam = conversion->Parameters()[1];
+                TypeSymbol* sourceParamType = sourceParam->GetType();
+                TypeSymbol* sourceType = typeRepository.MakePlainType(sourceParamType);
+                ConversionTypes key(sourceType, targetType);
+                conversionMap[key] = conversion;
+            }
+            else if (conversion->IsConversionFunction())
+            {
+                if (conversion->Parameters().Count() != 1)
+                {
+                    throw Exception("expected 1 conversion function parameters");
+                }
+                if (conversion->GetReturnType() == null || conversion->GetReturnType()->IsVoidTypeSymbol())
+                {
+                    throw Exception("expected valid conversion function return type");
+                }
+                TypeSymbol* sourceType = conversion->SourceType();
+                TypeSymbol* targetType = conversion->TargetType();
+                ConversionTypes key(sourceType, targetType);
+                conversionMap[key] = conversion;
+            }
+            else
+            {
+                throw Exception("expected converting constructor or conversion function");
+            }
+        }
+        public FunctionSymbol* GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const
+        {
+            ConversionTypes key(sourceType, targetType);
+            HashMap<ConversionTypes, FunctionSymbol*, ConversionTypeHash>.ConstIterator i = conversionMap.CFind(key);
+            if (i != conversionMap.CEnd())
+            {
+                return i->second;
+            }
+            return null;
+        }
+        private TypeRepository& typeRepository;
+        private HashMap<ConversionTypes, FunctionSymbol*, ConversionTypeHash> conversionMap;
+    }
+}

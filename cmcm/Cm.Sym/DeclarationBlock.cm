@@ -1,0 +1,33 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class DeclarationBlock : ContainerSymbol
+    {
+        public nothrow DeclarationBlock(const Span& span_, const string& name_) : base(span_, name_)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.declarationBlock;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "declaration block";
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            return false;
+        }
+    }    
+}

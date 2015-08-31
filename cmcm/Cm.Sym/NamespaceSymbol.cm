@@ -43,7 +43,24 @@ namespace Cm.Sym
         }
         public void Import(NamespaceSymbol* that, SymbolTable& symbolTable)
         {
-            // todo
+            symbolTable.BeginNamespaceScope(that->Name(), that->GetSpan());
+            for (UniquePtr<Symbol>& ownedSymbol : that->Symbols())
+            {
+                if (ownedSymbol->IsNamespaceSymbol())
+                {
+                    NamespaceSymbol* thatNs = cast<NamespaceSymbol*>(ownedSymbol.GetPtr());
+                    Import(thatNs, symbolTable);
+                }
+                else
+                {
+                    if (!ownedSymbol->IsFunctionGroupSymbol() && !ownedSymbol->IsConceptGroupSymbol())
+                    {
+                        Symbol* symbol = ownedSymbol.Release();
+                        symbolTable.Container()->AddSymbol(symbol);
+                    }
+                }
+            }
+            symbolTable.EndNamespaceScope();
         }
     }
 }

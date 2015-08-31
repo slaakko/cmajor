@@ -112,6 +112,7 @@ int main(int argc, const char** argv)
                 "-quiet          : write no output messages for successful compiles\n" << 
                 "-trace          : instrument program/library with tracing enabled\n" <<
                 "-debug_heap     : instrument program/library with debug heap enabled\n" <<
+                "-no_call_stacks : do not generate call stack information for exceptions\n" <<
                 std::endl;
         }
         else
@@ -204,6 +205,10 @@ int main(int argc, const char** argv)
                         else if (arg == "-debug_heap")
                         {
                             Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap);
+                        }
+                        else if (arg == "-no_call_stacks")
+                        {
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::no_call_stacks);
                         }
                         else if (arg == "-ide")
                         {

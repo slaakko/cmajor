@@ -60,7 +60,6 @@ public:
 private:
     SymbolTable& symbolTable;
     int parameterIndex;
-    int memberVariableIndex;
     Cm::Ast::ClassNode* templateClassNode;
     Cm::Sym::TemplateTypeSymbol* templateType;
     bool markFunctionSymbolAsTemplateSpecialization;

@@ -117,6 +117,10 @@ namespace Cm.Ast
             }
             throw Exception("namespace '" + fullNamespaceName + "' not found");
         }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
         private UniquePtr<IdentifierNode> id;
         private NodeList<Node> members;
     }

@@ -54,4 +54,38 @@ namespace Cm.Sym
         private static UniquePtr<SymbolFactory> instance;
         private List<UniquePtr<SymbolCreator>> creators;
     }
+    
+    public abstract class ValueCreator
+    {
+        public virtual nothrow ~ValueCreator()
+        {
+        }
+        public abstract Value* CreateValue();
+    }
+    
+    public class ValueFactory
+    {
+        static ValueFactory() : instance(new ValueFactory())
+        {
+        }
+        private ValueFactory()
+        {
+            creators.Resize(int(ValueType.max));
+        }
+        public static ValueFactory& Instance()
+        {
+            return *instance;
+        }
+        public Value* CreateValue(ValueType valueType)
+        {
+            const UniquePtr<ValueCreator>& creator = creators[int(valueType)];
+            if (creator.IsNull())
+            {
+                throw Exception("no creator for value type '" + string(ValueTypeStr(valueType)) + "'");
+            }
+            return creator->CreateValue();
+        }
+        private static UniquePtr<ValueFactory> instance;
+        private List<UniquePtr<ValueCreator>> creators;
+    }
 }

@@ -42,6 +42,12 @@ namespace Cm.Sym
             binaryWriter.Write(symbol->Name());
             symbol->Write(*this);
         }
+        public void Write(Value* value)
+        {
+            ValueType valueType = value->GetValueType();
+            binaryWriter.Write(cast<byte>(valueType));
+            value->Write(binaryWriter);
+        }
         private BinaryWriter binaryWriter;
         private AstWriter astWriter;
         private SymbolTable& symbolTable;

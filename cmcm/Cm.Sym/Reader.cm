@@ -65,6 +65,17 @@ namespace Cm.Sym
             byte st = binaryReader.ReadByte();
             return cast<SymbolType>(st);
         }
+        public Value* ReadValue()
+        {
+            ValueType valueType = ReadValueType();
+            Value* value = ValueFactory.Instance().CreateValue(valueType);
+            value->Read(binaryReader);
+            return value;
+        }
+        private ValueType ReadValueType() 
+        {
+            return cast<ValueType>(binaryReader.ReadByte());
+        }
         public void FetchTypeFor(Symbol* symbol, int index)
         {
             TypeId typeId = ReadTypeId();

@@ -271,6 +271,7 @@ namespace Cm.Sym
         public override void Read(Reader& reader)
         {
             base->Read(reader);
+            classNumber = reader.GetBinaryReader().ReadUInt();
             flags = cast<ClassTypeSymbolFlags>(reader.GetBinaryReader().ReadUInt());
             bool hasBaseClass = reader.GetBinaryReader().ReadBool();
             if (hasBaseClass)
@@ -295,6 +296,7 @@ namespace Cm.Sym
         public override void Write(Writer& writer)
         {
             base->Write(writer);
+            writer.GetBinaryWriter().Write(classNumber);
             uint outputFlags = flags & ~ClassTypeSymbolFlags.vtblInitialized;
             writer.GetBinaryWriter().Write(outputFlags);
             bool hasBaseClass = baseClass != null;
@@ -456,6 +458,14 @@ namespace Cm.Sym
                     vtblToInit.Add(f);
                 }
             }
+        }
+        public inline uint ClassNumber() const
+        {
+            return classNumber;
+        }
+        public inline void SetCompileUnit(Cm.Ast.CompileUnitNode* compileUnit_)
+        {
+            compileUnit = compileUnit_;
         }
         private uint classNumber;
         private ClassTypeSymbolFlags flags;

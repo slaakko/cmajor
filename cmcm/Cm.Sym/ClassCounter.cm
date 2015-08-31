@@ -19,6 +19,7 @@ namespace Cm.Sym
         }
         public nothrow static ClassCounter* Instance() const
         {
+            #assert(instance != null);
             return instance;
         }
         public nothrow ClassCounter() : numClasses(0u), numClassesInThisProject(0u)

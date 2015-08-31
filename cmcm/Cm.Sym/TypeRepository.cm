@@ -40,7 +40,422 @@ namespace Cm.Sym
                 throw Exception("type symbol not found");
             }
         }
+        public TypeSymbol* MakeDerivedType(const Cm.Ast.DerivationList& derivations, TypeSymbol* baseType, const List<int>& arrayDimensions, const Span& span)
+        {
+            Cm.Ast.DerivationList finalDerivations = derivations;
+            TypeSymbol* finalBaseType = baseType;
+            List<int> finalArrayDimensions = arrayDimensions;
+            if (baseType->IsDerivedTypeSymbol())
+            {
+                DerivedTypeSymbol* baseDerivedType = cast<DerivedTypeSymbol*>(baseType);
+                finalDerivations = baseDerivedType->Derivations();
+                finalArrayDimensions = baseDerivedType->ArrayDimensions();
+                MergeDerivations(finalDerivations, derivations, finalArrayDimensions, arrayDimensions);
+                finalBaseType = baseDerivedType->GetBaseType();
+            }
+            if (HasRvalueRefAndReferenceDerivations(finalDerivations))
+            {
+                finalDerivations.RemoveReferences();
+                return MakeDerivedType(finalDerivations, finalBaseType, finalArrayDimensions, span); // hack to remove rvalue references to reference types
+            }
+            TypeId typeId = ComputeDerivedTypeId(finalBaseType, finalDerivations, finalArrayDimensions);
+            TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
+            if (typeSymbol != null)
+            {
+                return typeSymbol;
+            }
+            UniquePtr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType, finalArrayDimensions), finalBaseType, finalDerivations, 
+                finalArrayDimensions, typeId));
+            derivedTypeSymbol->SetAccess(SymbolAccess.public_);
+            if (!baseType->IsTypeParameterSymbol() && !baseType->IsFunctionGroupTypeSymbol())
+            {
+                // todo
+            }
+            types.Add(UniquePtr<TypeSymbol>(derivedTypeSymbol.GetPtr()));
+            AddType(derivedTypeSymbol.GetPtr());
+            return derivedTypeSymbol.Release();
+        }
+        public TypeSymbol* MakePointerType(TypeSymbol* baseType, const Span& span)
+        {
+            if (baseType->IsDerivedTypeSymbol())
+            {
+                DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(baseType);
+                Cm.Ast.DerivationList derivations = derivedType->Derivations();
+                derivations.Add(Cm.Ast.Derivation.pointer);
+                return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->ArrayDimensions(), span);
+            }
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.pointer);
+            return MakeDerivedType(derivations, baseType, List<int>(), span);
+        }
+        public TypeSymbol* MakeRvalueRefType(TypeSymbol* baseType, const Span& span)
+        {
+            if (baseType->IsRvalueRefType())
+            {
+                return baseType;
+            }
+            if (baseType->IsDerivedTypeSymbol())
+            {
+                DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(baseType);
+                Cm.Ast.DerivationList derivations = derivedType->Derivations();
+                derivations.Add(Cm.Ast.Derivation.rvalueRef);
+                return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->ArrayDimensions(), span);
+            }
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.pointer);
+            return MakeDerivedType(derivations, baseType, List<int>(), span);
+        }
+        public TypeSymbol* MakeReferenceType(TypeSymbol* baseType, const Span& span)
+        {
+            if (baseType->IsNonConstReferenceType())
+            {
+                return baseType;
+            }
+            if (baseType->IsDerivedTypeSymbol())
+            {
+                DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(baseType);
+                Cm.Ast.DerivationList derivations = derivedType->Derivations();
+                if (Find(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.reference) == derivations.CEnd())
+                {
+                    derivations.Add(Cm.Ast.Derivation.reference);
+                }
+                return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->ArrayDimensions(), span);
+            }
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.reference);
+            return MakeDerivedType(derivations, baseType, List<int>(), span);
+        }
+        public TypeSymbol* MakeConstReferenceType(TypeSymbol* baseType, const Span& span)
+        {
+            if (baseType->IsConstReferenceType())
+            {
+                return baseType;
+            }
+            if (baseType->IsDerivedTypeSymbol())
+            {
+                DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(baseType);
+                Cm.Ast.DerivationList derivations = derivedType->Derivations();
+                if (Find(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.const_) == derivations.CEnd())
+                {
+                    derivations.InsertFront(Cm.Ast.Derivation.const_);
+                }
+                if (Find(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.reference) == derivations.CEnd())
+                {
+                    derivations.Add(Cm.Ast.Derivation.reference);
+                }
+                return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->ArrayDimensions(), span);
+            }
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.const_);
+            derivations.Add(Cm.Ast.Derivation.reference);
+            return MakeDerivedType(derivations, baseType, List<int>(), span);
+        }
+        public TypeSymbol* MakeConstPointerType(TypeSymbol* baseType, const Span& span)
+        {
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.const_);
+            derivations.Add(Cm.Ast.Derivation.pointer);
+            return MakeDerivedType(derivations, baseType, List<int>(), span);
+        }
+        public TypeSymbol* MakeConstCharPtrType(const Span& span)
+        {
+            TypeId charTypeId(ShortBasicTypeId.charId);
+            TypeSymbol* charType = GetType(charTypeId);
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.const_);
+            derivations.Add(Cm.Ast.Derivation.pointer);
+            return MakeDerivedType(derivations, charType, List<int>(), span);
+        }
+        public TypeSymbol* MakeConstCharPtrPtrType(const Span& span)
+        {
+            TypeId charTypeId(ShortBasicTypeId.charId);
+            TypeSymbol* charType = GetType(charTypeId);
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.const_);
+            derivations.Add(Cm.Ast.Derivation.pointer);
+            derivations.Add(Cm.Ast.Derivation.pointer);
+            return MakeDerivedType(derivations, charType, List<int>(), span);
+        }
+        public TypeSymbol* MakeGenericPtrType(const Span& span)
+        {
+            TypeId voidTypeId(ShortBasicTypeId.voidId);
+            TypeSymbol* voidType = GetType(voidTypeId);
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.pointer);
+            return MakeDerivedType(derivations, voidType, List<int>(), span);
+        }
+        public TypeSymbol* MakeTemplateType(TypeSymbol* subjectType, const List<TypeSymbol*>& typeArguments, const Span& span)
+        {
+            TypeId typeId = ComputeTemplateTypeId(subjectType, typeArguments);
+            TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
+            if (typeSymbol != null)
+            {
+                return typeSymbol;
+            }
+            UniquePtr<TemplateTypeSymbol> templateTypeSymbol(new TemplateTypeSymbol(subjectType->GetSpan(), MakeTemplateTypeSymbolName(subjectType, typeArguments), subjectType, typeArguments, typeId));
+            templateTypeSymbol->SetParent(subjectType->Ns());
+            templateTypeSymbol->MakeIrType();
+            templateTypeSymbol->SetAccess(SymbolAccess.public_);
+            types.Add(UniquePtr<TypeSymbol>(templateTypeSymbol.GetPtr()));
+            AddType(templateTypeSymbol.GetPtr());
+            return templateTypeSymbol.Release();
+        }
+        public TypeSymbol* MakePlainType(TypeSymbol* type)
+        {
+            if (type->IsDerivedTypeSymbol())
+            {
+                DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(type);
+                Cm.Ast.DerivationList derivations = derivedType->Derivations();
+                derivations = ClearConstsRefsAndRvalueRefs(derivations);
+                if (derivations.Count() == 0)
+                {
+                   return derivedType->GetBaseType();
+                }
+                else
+                {
+                    return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->ArrayDimensions(), derivedType->GetSpan());
+                }            
+            }
+            else
+            {
+                return type;
+            }
+        }
+        public TypeSymbol* MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
+        {
+            if (type->IsDerivedTypeSymbol())
+            {
+                DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(type);
+                Cm.Ast.DerivationList derivations = derivedType->Derivations();
+                derivations = ClearConstsRefsAndRvalueRefsAndOnePointer(derivations);
+                if (derivations.Count() == 0)
+                {
+                   return derivedType->GetBaseType();
+                }
+                else
+                {
+                    return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->ArrayDimensions(), derivedType->GetSpan());
+                }
+            }
+            else
+            {
+                return type;
+            }
+        }
+        public void Import(Reader& reader)
+        {
+            int nt = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < nt; ++i)
+            {
+                Symbol* symbol = reader.ReadSymbol();
+                if (symbol->IsTemplateTypeSymbol())
+                {
+                    TemplateTypeSymbol* templateTypeSymbol = cast<TemplateTypeSymbol*>(symbol);
+                    types.Add(UniquePtr<TypeSymbol>(templateTypeSymbol));
+                }
+                else
+                {
+                    throw Exception("template type symbol expected");
+                }
+            }
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                Symbol* symbol = reader.ReadSymbol();
+                if (symbol->IsTypeSymbol())
+                {
+                    TypeSymbol* typeSymbol = cast<TypeSymbol*>(symbol);
+                    types.Add(UniquePtr<TypeSymbol>(typeSymbol));
+                }
+                else
+                {
+                    throw Exception("type symbol expected");
+                }
+            }
+            reader.MakeIrTypes();
+            if (!reader.AllTypesFetched())
+            {
+                if (GetGlobalFlag(GlobalFlags.ide))
+                {
+                    Console.Out() << "not all types fetched!" << endl();
+                }
+                else
+                {
+                    Console.Error() << "not all types fetched!" << endl();
+                }
+            }
+        }
         private HashMap<TypeId, TypeSymbol*> typeSymbolMap;
         private List<UniquePtr<TypeSymbol>> types;
+    }
+    
+    public nothrow bool HasRvalueRefAndReferenceDerivations(const Cm.Ast.DerivationList& derivations)
+    {
+        bool hasRvalueRefDerivation = false;
+        bool hasReferenceDerivation = false;
+        for (Cm.Ast.Derivation derivation : derivations)
+        {
+            if (derivation == Cm.Ast.Derivation.rvalueRef) hasRvalueRefDerivation = true;
+            if (derivation == Cm.Ast.Derivation.reference) hasReferenceDerivation = true;
+        }
+        return hasRvalueRefDerivation && hasReferenceDerivation;
+    }
+    
+    public void MergeDerivations(Cm.Ast.DerivationList& targetDerivations, const Cm.Ast.DerivationList& sourceDerivations, List<int>& targetArrayDimensions, const List<int>& sourceArrayDimensions)
+    {
+        int sourceArrayDimensionIndex = 0;
+        for (Cm.Ast.Derivation sourceDerivation : sourceDerivations)
+        {
+            bool found = false;
+            if (sourceDerivation == Cm.Ast.Derivation.reference || sourceDerivation == Cm.Ast.Derivation.rvalueRef)
+            {
+                for (Cm.Ast.Derivation targetDerivation : targetDerivations)
+                {
+                    if (targetDerivation == sourceDerivation)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found)
+            {
+                if (sourceDerivation == Cm.Ast.Derivation.const_)
+                {
+                    targetDerivations.InsertFront(Cm.Ast.Derivation.const_);
+                }
+                else if (sourceDerivation == Cm.Ast.Derivation.array)
+                {
+                    targetArrayDimensions.Add(sourceArrayDimensions[sourceArrayDimensionIndex++]);
+                    targetDerivations.Add(Cm.Ast.Derivation.array);
+                }
+                else
+                {
+                    targetDerivations.Add(sourceDerivation);
+                }
+            }
+        }
+    }
+    
+    public nothrow Cm.Ast.DerivationList RemoveDerivations(const Cm.Ast.DerivationList& targetDerivations, const Cm.Ast.DerivationList& sourceDerivations)
+    {
+        Cm.Ast.DerivationList result;
+        Cm.Ast.DerivationList srcDeriv = sourceDerivations;
+        for (Cm.Ast.Derivation targetDerivation : targetDerivations)
+        {
+            bool found = false;
+            for (Cm.Ast.Derivation& sourceDerivation : srcDeriv)
+            {
+                if (targetDerivation == sourceDerivation)
+                {
+                    found = true;
+                    sourceDerivation = Cm.Ast.Derivation.none;
+                }
+                else if (targetDerivation == Cm.Ast.Derivation.reference && sourceDerivation == Cm.Ast.Derivation.rvalueRef)
+                {
+                    found = true;
+                    sourceDerivation = Cm.Ast.Derivation.none;
+                }
+            }
+            if (!found)
+            {
+                result.Add(targetDerivation);
+            }
+        }
+        return result;
+    }
+    
+    public nothrow Cm.Ast.DerivationList ClearConstsRefsAndRvalueRefs(const Cm.Ast.DerivationList& derivations)
+    {
+        Cm.Ast.DerivationList result;
+        for (Cm.Ast.Derivation derivation : derivations)
+        {
+            if (derivation == Cm.Ast.Derivation.pointer || derivation == Cm.Ast.Derivation.array)
+            {
+                result.Add(derivation);
+            }
+        }
+        return result;
+    }
+    
+    public nothrow Cm.Ast.DerivationList ClearConstsRefsAndRvalueRefsAndOnePointer(const Cm.Ast.DerivationList& derivations)
+    {
+        Cm.Ast.DerivationList result = ClearConstsRefsAndRvalueRefs(derivations);
+        result.RemoveLastPointer();
+        return result;
+    }
+    
+    public nothrow TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm.Ast.DerivationList& derivations, const List<int>& arrayDimensions)
+    {
+        TypeId id = baseType->Id();
+        int m = derivations.Count();
+        for (int i = 0; i < m; ++i)
+        {
+            byte derivationCode = 1u << cast<byte>(derivations[i]);
+            id.SetByte(i + 1, id[i + 1] ^ derivationCode);
+        }
+        int b = 5;
+        int n = arrayDimensions.Count();
+        for (int i = 0; i < n; ++i)
+        {
+            int arrayDimension = arrayDimensions[i];
+            byte d0 = cast<byte>((arrayDimension >> 24) & 0xFF);
+            byte d1 = cast<byte>((arrayDimension >> 16) & 0xFF);
+            byte d2 = cast<byte>((arrayDimension >> 8) & 0xFF);
+            byte d3 = cast<byte>(arrayDimension & 0xFF);
+            id.SetByte(b + i, id[b + i] ^ d0);
+            id.SetByte(b + i + 1, id[b + i + 1] ^ d1);
+            id.SetByte(b + i + 2, id[b + i + 2] ^ d2);
+            id.SetByte(b + i + 3, id[b + i + 3] ^ d3);
+        }
+        return id;
+    }
+    
+    public TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const List<TypeSymbol*>& typeArguments)
+    {
+        TypeId id = subjectType->Id();
+        byte n = cast<byte>(typeArguments.Count());
+        byte m = cast<byte>(TypeId.count);
+        if (n >= m)
+        {
+            throw Error("only " + ToString(TypeId.count - 1) + " template arguments supported");
+        }
+        for (byte i = 0u; i < n; ++i)
+        {
+            TypeSymbol* typeArgument = typeArguments[i];
+            TypeId typeArgumentId = typeArgument->Id();
+            byte positionCode = i + (m / 2u) % m;
+            RandomAccessIter<byte, byte&, byte*> begin(typeArgumentId.Rep());
+            RandomAccessIter<byte, byte&, byte*> middle(typeArgumentId.Rep() + positionCode);
+            RandomAccessIter<byte, byte&, byte*> end(typeArgumentId.Rep() + TypeId.count);
+            Rotate(begin, middle, end);
+            for (int k = 0; k < TypeId.count; ++k)
+            {
+                id.SetByte(k, id[k] ^ typeArgumentId[k]);
+            }
+        }
+        return id;
+    }
+    
+    public nothrow inline string MakeDerivedTypeName(const Cm.Ast.DerivationList& derivations, TypeSymbol* baseType, const List<int>& arrayDimensions)
+    {
+        return Cm.Ast.MakeDerivedTypeName(derivations, baseType->Name(), arrayDimensions);
+    }
+    
+    public nothrow string MakeTemplateTypeSymbolName(TypeSymbol* subjectType, const List<TypeSymbol*>& typeArguments)
+    {
+        string s = subjectType->Name();
+        s.Append('<');
+        int n = typeArguments.Count();
+        for (int i = 0; i < n; ++i)
+        {
+            if (i > 0)
+            {
+                s.Append(", ");
+            }
+            s.Append(typeArguments[i]->FullName());
+        }
+        s.Append('>');
+        return s;
     }
 }

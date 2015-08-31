@@ -395,7 +395,7 @@ void Module::CheckUpToDate()
             boost::filesystem::path sfp = sourceFilePath;
             if (boost::filesystem::last_write_time(sfp) > boost::filesystem::last_write_time(mfp))
             {
-                std::string warningMessage = "library '" + name + "' is not up-to-date, because source file '" + sourceFilePath + "' is newer than library file '" + filePath + "'";
+                std::string warningMessage = "library '" + name + "' is not up-to-date, because source file '" + sourceFilePath + "' is modified after library file '" + filePath + "'";
                 std::cout << "warning: " << warningMessage << std::endl;
                 CompileWarningCollection::Instance().AddWarning(Warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage));
                 changed = true; 
@@ -410,78 +410,10 @@ void Module::CheckUpToDate()
             boost::filesystem::path rfp = referenceFilePath;
             if (boost::filesystem::last_write_time(rfp) > boost::filesystem::last_write_time(mfp))
             {
-                std::string warningMessage = "library '" + name + "' is not up-to-date, because referenced library file '" + referenceFilePath + " is newer than library file '" + filePath + "'";
+                std::string warningMessage = "library '" + name + "' is not up-to-date, because referenced library file '" + referenceFilePath + " is modified after library file '" + filePath + "'";
                 std::cout << "warning: " << warningMessage << std::endl;
                 CompileWarningCollection::Instance().AddWarning(Warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage));
             }
-        }
-    }
-}
-
-void Module::BuildSymbolTable(SymbolTable& symbolTable)
-{
-    Reader reader(filePath, symbolTable);
-    char readModuleFileId[4];
-    try
-    {
-        for (int i = 0; i < 4; ++i)
-        {
-            readModuleFileId[i] = reader.GetBinaryReader().ReadChar();
-        }
-    }
-    catch (...)
-    {
-        throw std::runtime_error("corrupted module code file '" + filePath + "'");
-    }
-    std::string readVersion(1, readModuleFileId[2]);
-    readVersion.append(".").append(1, readModuleFileId[3]);
-    std::string expectedVersion(1, moduleFileId[2]);
-    expectedVersion.append(".").append(1, moduleFileId[3]);
-    ReadName(reader);
-    ReadSourceFilePaths(reader);
-    ReadReferenceFilePaths(reader);
-    ReadCLibraryFilePaths(reader);
-    ReadDebugInfoFilePaths(reader);
-    std::unordered_set<std::string> importedModules;
-    std::vector<std::string> assemblyFilePaths;
-    std::vector<std::string> cLibs;
-    std::vector<std::string> allReferenceFilePaths;
-    std::vector<std::string> allDebugInfoFilePaths;
-    for (const std::string& referenceFilePath : referenceFilePaths)
-    {
-        if (importedModules.find(referenceFilePath) == importedModules.end())
-        {
-            importedModules.insert(referenceFilePath);
-            Module referencedModule(referenceFilePath);
-            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
-        }
-    }
-    reader.MarkSymbolsProject();
-    symbolTable.Import(reader, false);
-    int32_t nt = reader.GetBinaryReader().ReadInt();
-    for (int32_t i = 0; i < nt; ++i)
-    {
-        Symbol* symbol = reader.ReadSymbol();
-        if (symbol->IsTemplateTypeSymbol())
-        {
-            TemplateTypeSymbol* templateTypeSymbol = static_cast<TemplateTypeSymbol*>(symbol);
-        }
-        else
-        {
-            throw std::runtime_error("template type symbol expected");
-        }
-    }
-    int32_t n = reader.GetBinaryReader().ReadInt();
-    for (int32_t i = 0; i < n; ++i)
-    {
-        Symbol* symbol = reader.ReadSymbol();
-        if (symbol->IsTypeSymbol())
-        {
-            TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
-        }
-        else
-        {
-            throw std::runtime_error("type symbol expected");
         }
     }
 }

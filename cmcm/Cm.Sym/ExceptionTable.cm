@@ -1,0 +1,137 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+
+namespace Cm.Sym
+{
+    public class ExceptionRecord
+    {
+        public nothrow ExceptionRecord(TypeSymbol* exceptionType_, SymbolSource source_) : exceptionType(exceptionType_), source(source_)
+        {
+        }
+        public nothrow inline TypeSymbol* ExceptionType() const
+        {
+            return exceptionType;
+        }
+        public nothrow inline SymbolSource Source() const
+        {
+            return source;
+        }
+        private TypeSymbol* exceptionType;
+        private SymbolSource source;
+    }
+    
+    public class ExceptionTable
+    {
+        public static nothrow void SetInstance(ExceptionTable* instance_)
+        {
+            instance = instance_;
+        }
+        public static nothrow ExceptionTable* Instance() const
+        {
+            #assert(instance != null);
+            return instance;
+        }
+        public void AddLibraryException(TypeSymbol* exceptionType)
+        {
+            HashMap<TypeSymbol*, int>.ConstIterator i = exceptionMap.CFind(exceptionType);
+            if (i == exceptionMap.CEnd())
+            {
+                int exceptionId = exceptions.Count() + 1;
+                exceptions.Add(ExceptionRecord(exceptionType, SymbolSource.library));
+                exceptionMap[exceptionType] = exceptionId;
+            }
+        }
+        public void AddProjectException(TypeSymbol* exceptionType)
+        {
+            HashMap<TypeSymbol*, int>.ConstIterator i = exceptionMap.CFind(exceptionType);
+            if (i == exceptionMap.CEnd())
+            {
+                int exceptionId = exceptions.Count() + 1;
+                exceptions.Add(ExceptionRecord(exceptionType, SymbolSource.project));
+                exceptionMap[exceptionType] = exceptionId;
+            }
+        }
+        public List<TypeSymbol*> GetProjectExceptions() const
+        {
+            List<TypeSymbol*> projectExceptions;
+            for (const ExceptionRecord& exceptionRec : exceptions)
+            {
+                if (exceptionRec.Source() == SymbolSource.project)
+                {
+                    projectExceptions.Add(exceptionRec.ExceptionType());
+                }
+            }
+            return projectExceptions;
+        }
+        public int GetExceptionId(TypeSymbol* exceptionType) const
+        {
+            HashMap<TypeSymbol*, int>.ConstIterator i = exceptionMap.CFind(exceptionType);
+            if (i != exceptionMap.CEnd())
+            {
+                return i->second;
+            }
+            throw Exception("exception id for exception type '" + exceptionType->FullName() + "' not found");
+        }
+        public nothrow inline int GetNumberOfExceptions() const
+        {
+            return exceptions.Count();
+        }
+        public void GenerateExceptionTableUnit(const string& exceptionTableFilePath)
+        {
+            // todo
+        }
+        private static ExceptionTable* instance;
+        private HashMap<TypeSymbol*, int> exceptionMap;
+        private List<ExceptionRecord> exceptions;
+    }
+    
+    public void EraseExceptionIdFile(const string& irFilePath)
+    {
+        string exceptionFilePath = Path.ChangeExtension(irFilePath, ".exc");
+        remove(exceptionFilePath.Chars());
+    }
+    
+    public void WriteExceptionIdToFile(const string& irFilePath, const string& exceptionTypeFullName)
+    {
+        string exceptionFilePath = Path.ChangeExtension(irFilePath, ".exc");
+        OutputFileStream exceptionFile(exceptionFilePath, true);
+        exceptionFile << exceptionTypeFullName << endl();
+    }
+    
+    public void ProcessExceptionIdFile(const string& irFilePath, SymbolTable& symbolTable)
+    {
+        string exceptionFilePath = Path.ChangeExtension(irFilePath, ".exc");
+        if (FileExists(exceptionFilePath))
+        {
+            InputFileStream exceptionFile(exceptionFilePath);
+            while (!exceptionFile.EndOfStream())
+            {
+                string exceptionTypeFullName = exceptionFile.ReadLine();
+                if (!exceptionTypeFullName.IsEmpty())
+                {
+                    Symbol* exceptionSymbol = symbolTable.GlobalScope()->Lookup(exceptionTypeFullName);
+                    if (exceptionSymbol == null)
+                    {
+                        throw Exception("exception symbol '" + exceptionTypeFullName + "' not found");
+                    }
+                    if (!exceptionSymbol->IsTypeSymbol())
+                    {
+                        throw Exception("exception symbol '" + exceptionTypeFullName + "' is not type symbol");
+                    }
+                    TypeSymbol* exceptionTypeSymbol = cast<TypeSymbol*>(exceptionSymbol);
+                    ExceptionTable.Instance()->AddProjectException(exceptionTypeSymbol);
+                }            
+            }            
+        }
+    }
+}

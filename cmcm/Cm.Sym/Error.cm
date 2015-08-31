@@ -15,6 +15,9 @@ namespace Cm.Sym
 {
     public class Error : Exception
     {
+        public Error(const string& message_) : base(message_), message(message_), defined(), referenced()
+        {
+        }
         public Error(const string& message_, const Span& defined_) : base(Expand(message_, defined_)), message(message_), defined(defined_), referenced()
         {
         }

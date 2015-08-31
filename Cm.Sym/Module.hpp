@@ -49,7 +49,6 @@ public:
         std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths);
     void Dump();
     void CheckUpToDate();
-    void BuildSymbolTable(SymbolTable& symbolTable);
     void CheckFileVersion();
 private:
     std::string name;

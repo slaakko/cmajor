@@ -1,0 +1,80 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class Warning
+    {
+        public nothrow Warning(const string& project_, const string& message_) : project(project_), message(message_)
+        {
+        }
+        public nothrow inline const string& Project() const
+        {
+            return project;
+        }
+        public nothrow inline const string& Message() const
+        {
+            return message;
+        }
+        public nothrow inline const Span& Defined() const
+        {
+            return defined;
+        }
+        public nothrow inline const Span& Referenced() const
+        {
+            return referenced;
+        }
+        public nothrow inline void SetDefined(const Span& defined_)
+        {
+            defined = defined_;
+        }
+        public nothrow inline void SetReferenced(const Span& referenced_)
+        {
+            referenced = referenced_;
+        }
+        private string project;
+        private string message;
+        private Span defined;
+        private Span referenced;
+    }
+    
+    public class CompileWarningCollection
+    {
+        static nothrow CompileWarningCollection() : instance(new CompileWarningCollection())
+        {
+        }
+        public static nothrow CompileWarningCollection& Instance()
+        {
+            return *instance;
+        }
+        public nothrow void SetCurrentProjectName(const string& currentProjectName_)
+        {
+            currentProjectName = currentProjectName_;
+        }
+        public nothrow const string& GetCurrentProjectName() const
+        {
+            return currentProjectName;
+        }
+        public void AddWarning(const Warning& warning)
+        {
+            warnings.Add(warning);
+        }
+        public nothrow const List<Warning>& Warnings() const
+        {
+            return warnings;
+        }
+        private static UniquePtr<CompileWarningCollection> instance;
+        private string currentProjectName;
+        private List<Warning> warnings;
+    }
+}

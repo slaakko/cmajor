@@ -43,6 +43,7 @@ extern public cdecl int close(int fd);
 extern public cdecl int read_64(int fd, void* buf, ulong size);
 extern public cdecl int write_64(int fd, const void* buf, ulong size);
 extern public cdecl long lseek(int fd, long offset, int origin);
+extern public cdecl int remove(const char* filePath);
 extern public cdecl void* malloc(ulong size);
 extern public cdecl void free(void* mem);
 extern public cdecl int system(const char* command);

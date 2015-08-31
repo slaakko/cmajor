@@ -1,0 +1,324 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+
+namespace Cm.Sym
+{
+    public nothrow const char* ModuleFileTag()
+    {
+        return "MC12";
+    }
+    
+    public class ModuleFileFormatError : Error
+    {
+        public ModuleFileFormatError(const string& filePath_) : base("library file '" + filePath_ + "' format changed, please rebuild associated project")
+        {
+        }
+    }
+    
+    public class ModuleFileVersionMismatch : Error
+    {
+        public ModuleFileVersionMismatch(const string& libraryFilePath_, const string& readVersion_, const string& expectedVersion_) : 
+            base("library file (" + libraryFilePath_ + ") version mismatch: " + readVersion_ + " read, " + expectedVersion_ + " expected, please rebuild")
+        {
+        }
+    }
+    
+    public class Module
+    {
+        public nothrow Module(const string& filePath_) : filePath(filePath_)
+        {
+        }
+        public nothrow void SetName(const string& name_)
+        {
+            name = name_;
+        }
+        public void SetSourceFilePaths(const List<string>& sourceFilePaths_)
+        {
+            sourceFilePaths = sourceFilePaths_;
+        }
+        public void SetReferenceFilePaths(const List<string>& referenceFilePaths_)
+        {
+            referenceFilePaths = referenceFilePaths_;
+        }
+        public void SetCLibraryFilePaths(const List<string>& cLibraryFilePaths_)
+        {
+            cLibraryFilePaths = cLibraryFilePaths_;
+        }
+        public void SetDebugInfoFilePaths(const List<string>& debugInfoFilePaths_)
+        {
+            debugInfoFilePaths = debugInfoFilePaths_;
+        }
+        public void CheckUpToDate()
+        {
+            bool changed = false;
+            if (!FileExists(filePath))
+            {
+                string warningMessage = "library '" + name + "' is not up-to-date, because library file '" + filePath + "' does not exist";
+                Console.Out() << "warning: " << warningMessage << endl();
+                CompileWarningCollection.Instance().AddWarning(Warning(CompileWarningCollection.Instance().GetCurrentProjectName(), warningMessage));
+                changed = true;
+            }
+            else
+            {
+                for (const string& sourceFilePath : sourceFilePaths)
+                {
+                    if (LastWriteTimeLess(filePath, sourceFilePath))
+                    {
+                        string warningMessage = "library '" + name + "' is not up-to-date, because source file '" + sourceFilePath + "' is modified after library file '" + filePath + "'";
+                        Console.Out() << "warning: " << warningMessage << endl();
+                        CompileWarningCollection.Instance().AddWarning(Warning(CompileWarningCollection.Instance().GetCurrentProjectName(), warningMessage));
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+            if (!changed)
+            {
+                for (const string& referenceFilePath : referenceFilePaths)
+                {
+                    if (LastWriteTimeLess(filePath, referenceFilePath))
+                    {
+                        string warningMessage = "library '" + name + "' is not up-to-date, because referenced library file '" + referenceFilePath + "' is modified after library file '" + filePath + "'";
+                        Console.Out() << "warning: " << warningMessage << endl();
+                        CompileWarningCollection.Instance().AddWarning(Warning(CompileWarningCollection.Instance().GetCurrentProjectName(), warningMessage));
+                    }
+                }
+            }
+        }
+        public void CheckFileVersion()
+        {
+            SymbolTable symbolTable;
+            Reader reader(filePath, symbolTable);
+            CheckModuleFileId(reader);
+        }
+        public void Import(SymbolTable& symbolTable, HashSet<string>& importedModules, List<string>& assemblyFilePaths, List<string>& cLibs, 
+            List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths)
+        {
+            string assemblyFilePath = Path.ChangeExtension(filePath, ".cma");
+            assemblyFilePaths.Add(GetFullPath(assemblyFilePath));
+            bool quiet = GetGlobalFlag(GlobalFlags.quiet);
+            allReferenceFilePaths.Add(filePath);
+            Reader reader(filePath, symbolTable);
+            CheckModuleFileId(reader);
+            ReadName(reader);
+            ReadSourceFilePaths(reader);
+            ReadReferenceFilePaths(reader);
+            ReadCLibraryFilePaths(reader);
+            ReadDebugInfoFilePaths(reader);
+            for (const string& debugInfoFilePath : debugInfoFilePaths)
+            {
+                allDebugInfoFilePaths.Add(debugInfoFilePath);
+            }
+            for (const string& cLibraryFilePath : cLibraryFilePaths)
+            {
+                cLibs.Add(cLibraryFilePath);
+            }
+            for (const string& referenceFilePath : referenceFilePaths)
+            {
+                if (importedModules.CFind(referenceFilePath) == importedModules.CEnd())
+                {
+                    importedModules.Insert(referenceFilePath);
+                    Module referencedModule(referenceFilePath);
+                    referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+                    referencedModule.CheckUpToDate();
+                }
+            }
+            Cm.Parser.FileRegistry* fileRegistry = Cm.Parser.FileRegistry.Instance();
+            int fileIndexOffset = 0;
+            if (fileRegistry != null)
+            {
+                fileIndexOffset = fileRegistry->GetNumberOfParsedFiles();
+                reader.SetSpanFileIndexOffset(fileIndexOffset);
+                int n = sourceFilePaths.Count();
+                for (int i = 0; i < n; ++i)
+                {
+                    fileRegistry->RegisterParsedFile(sourceFilePaths[i]);
+                }
+            }
+            reader.MarkSymbolsBound();
+            symbolTable.Import(reader);
+            ImportExceptionTable(symbolTable, reader);
+            int numLibraryMutexes = reader.GetBinaryReader().ReadInt();
+            MutexTable.Instance()->AddLibraryMutexes(numLibraryMutexes);
+            uint numLibraryClasses = reader.GetBinaryReader().ReadUInt();
+            ClassCounter.Instance()->AddLibraryClasses(numLibraryClasses);
+            if (!quiet)
+            {
+                Console.Out() << "> " << filePath << endl();
+            }
+        }
+        public void Export(SymbolTable& symbolTable)
+        {
+            Writer writer(filePath, symbolTable);
+            WriteModuleFileId(writer);
+            WriteName(writer);
+            WriteSourceFilePaths(writer);
+            WriteReferenceFilePaths(writer);
+            WriteCLibraryFilePaths(writer);
+            WriteDebugInfoFilePaths(writer);
+            symbolTable.Export(writer);
+            ExportExceptionTable(writer);
+            int numMutexesInThisProject = MutexTable.Instance()->GetNumberOfMutexesInThisProject();
+            writer.GetBinaryWriter().Write(numMutexesInThisProject);
+            uint numClassesInThisProject = ClassCounter.Instance()->GetNumberOfClassesInThisProject();
+            writer.GetBinaryWriter().Write(numClassesInThisProject);
+        }
+        private void WriteModuleFileId(Writer& writer)
+        {
+            const char* moduleFileTag = ModuleFileTag();
+            for (int i = 0; i < 4; ++i)
+            {
+                writer.GetBinaryWriter().Write(moduleFileTag[i]);
+            }
+        }
+        private void WriteName(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(name);
+        }
+        private void WriteSourceFilePaths(Writer& writer)
+        {
+            int n = sourceFilePaths.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(sourceFilePaths[i]);
+            }
+        }
+        private void WriteReferenceFilePaths(Writer& writer)
+        {
+            int n = referenceFilePaths.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(referenceFilePaths[i]);
+            }
+        }
+        private void WriteCLibraryFilePaths(Writer& writer)
+        {
+            int n = cLibraryFilePaths.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(cLibraryFilePaths[i]);
+            }
+        }
+        private void WriteDebugInfoFilePaths(Writer& writer)
+        {
+            int n = debugInfoFilePaths.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(debugInfoFilePaths[i]);
+            }
+        }
+        private void CheckModuleFileId(Reader& reader)
+        {
+            const char* moduleFileTag = ModuleFileTag();
+            char[4] readModuleFileTag;
+            try
+            {
+                for (int i = 0; i < 4; ++i)
+                {
+                    readModuleFileTag[i] = reader.GetBinaryReader().ReadChar();
+                }
+            }        
+            catch (const Exception& ex)
+            {
+                throw ModuleFileFormatError(filePath);
+            }
+            if (readModuleFileTag[0] != moduleFileTag[0] || readModuleFileTag[1] != moduleFileTag[1])
+            {
+                throw ModuleFileFormatError(filePath);
+            }
+            if (readModuleFileTag[2] != moduleFileTag[2] || readModuleFileTag[3] != moduleFileTag[3])
+            {
+                string readVersion(readModuleFileTag[2]);
+                readVersion.Append('.').Append(readModuleFileTag[3]);
+                string expectedVersion(moduleFileTag[2]);
+                expectedVersion.Append('.').Append(moduleFileTag[3]);
+                throw ModuleFileVersionMismatch(filePath, readVersion, expectedVersion);
+            }
+        }
+        private void ReadName(Reader& reader)
+        {
+            name = reader.GetBinaryReader().ReadString();
+        }
+        private void ReadSourceFilePaths(Reader& reader)
+        {
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                string sourceFilePath = reader.GetBinaryReader().ReadString();
+                sourceFilePaths.Add(sourceFilePath);
+            }
+        }
+        private void ReadReferenceFilePaths(Reader& reader)
+        {
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                string referenceFilePath = reader.GetBinaryReader().ReadString();
+                referenceFilePaths.Add(referenceFilePath);
+            }
+        }
+        private void ReadCLibraryFilePaths(Reader& reader)
+        {
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                string cLibraryFilePath = reader.GetBinaryReader().ReadString();
+                cLibraryFilePaths.Add(cLibraryFilePath);
+            }
+        }
+        private void ReadDebugInfoFilePaths(Reader& reader)
+        {
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                string debugInfoFilePath = reader.GetBinaryReader().ReadString();
+                debugInfoFilePaths.Add(debugInfoFilePath);
+            }
+        }
+        private void ImportExceptionTable(SymbolTable& symbolTable, Reader& reader)
+        {
+            ExceptionTable* exceptionTable = ExceptionTable.Instance();
+            int numExceptionIds = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < numExceptionIds; ++i)
+            {
+                TypeId exceptionTypeId = reader.ReadTypeId();
+                TypeSymbol* exceptionType = symbolTable.GetTypeRepository().GetType(exceptionTypeId);
+                exceptionTable->AddLibraryException(exceptionType);
+            }
+        }
+        private void ExportExceptionTable(Writer& writer)
+        {
+            ExceptionTable* exceptionTable = ExceptionTable.Instance();
+            List<TypeSymbol*> exceptionTypes = exceptionTable->GetProjectExceptions();
+            int n = exceptionTypes.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                TypeSymbol* exceptionType = exceptionTypes[i];
+                const TypeId& exceptionTypeId = exceptionType->Id();
+                writer.Write(exceptionTypeId);
+            }
+        }
+        private string filePath;
+        private string name;
+        private List<string> sourceFilePaths;
+        private List<string> referenceFilePaths;
+        private List<string> cLibraryFilePaths;
+        private List<string> debugInfoFilePaths;
+        
+    }
+}

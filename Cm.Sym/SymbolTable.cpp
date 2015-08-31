@@ -330,6 +330,7 @@ void SymbolTable::BeginDeclarationScope(Cm::Ast::StatementNode* statementNode)
     DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode->GetSpan(), "");
     ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
     nodeScopeMap[statementNode] = declarationBlockScope;
+    symbolNodeMap[declarationBlock] = statementNode;
     ContainerScope* containerScope = container->GetContainerScope();
     declarationBlockScope->SetParent(containerScope);
     container->AddSymbol(declarationBlock);
@@ -349,7 +350,7 @@ void SymbolTable::AddLocalVariable(Cm::Ast::ConstructionStatementNode* construct
     symbolNodeMap[localVariableSymbol] = constructionStatementNode;
 }
 
-void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode, int memberVariableIndex)
+void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode)
 {
     Cm::Ast::IdentifierNode* memberVariableId = memberVariableNode->Id();
     MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableId->GetSpan(), memberVariableId->Str());

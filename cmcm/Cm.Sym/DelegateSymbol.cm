@@ -1,0 +1,269 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public enum DelegateSymbolFlags : byte
+    {
+        none = 0u,
+        nothrow_ = 1u << 0u,
+        throw_ = 1u << 1u
+    }
+    
+    public class DelegateTypeSymbol : TypeSymbol
+    {
+        public nothrow DelegateTypeSymbol(const Span& span_, const string& name_) : base(span_, name_), flags(DelegateSymbolFlags.none), returnType(null)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.delegateSymbol;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "delegate";
+        }
+        public nothrow override bool IsDelegateTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override bool IsValueTypeSymbol() const
+        {
+            return true;
+        }
+        public inline nothrow bool IsNothrow() const
+        {
+            return GetFlag(DelegateSymbolFlags.nothrow_);
+        }
+        public inline nothrow void SetNothrow()
+        {
+            SetFlag(DelegateSymbolFlags.nothrow_);
+        }
+        public inline nothrow bool IsThrow() const
+        {
+            return GetFlag(DelegateSymbolFlags.throw_);
+        }
+        public inline nothrow void SetThrow()
+        {
+            SetFlag(DelegateSymbolFlags.throw_);
+        }
+        public nothrow inline void SetReturnType(TypeSymbol* returnType_)
+        {
+            returnType = returnType_;
+        }
+        public override void SetType(TypeSymbol* type, int index)
+        {
+            SetReturnType(type);
+        }
+        public override void AddSymbol(Symbol* symbol)
+        {
+            base->AddSymbol(symbol);
+            if (symbol->IsParameterSymbol())
+            {
+                ParameterSymbol* parameterSymbol = cast<ParameterSymbol*>(symbol);
+                parameters.Add(parameterSymbol);
+            }
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            flags = cast<DelegateSymbolFlags>(reader.GetBinaryReader().ReadByte());
+            reader.FetchTypeFor(this, 0);
+            reader.EnqueueMakeIrTypeFor(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.GetBinaryWriter().Write(cast<byte>(flags));
+            writer.Write(returnType->Id());
+        }
+        public override void MakeIrType()
+        {
+            // todo
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return FullName();
+            // todo: return MakeAssemblyName(FullName());
+        }
+        public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
+        {
+            if (returnType != null)
+            {
+                if (returnType->IsDerivedTypeSymbol())
+                {
+                    if (collected.CFind(returnType) == collected.CEnd())
+                    {
+                        collected.Insert(returnType);
+                        returnType->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+                    }
+                }
+            }
+            for (ParameterSymbol* parameter : parameters)
+            {
+                parameter->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
+        }
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        {
+            if (returnType != null)
+            {
+                if (collected.CFind(returnType) == collected.CEnd())
+                {
+                    collected.Insert(returnType);
+                    returnType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+                }
+            }        
+            for (ParameterSymbol* parameter : parameters)
+            {
+                parameter->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            }
+        }
+        private nothrow inline bool GetFlag(DelegateSymbolFlags flag) const
+        {
+            return (flags & flag) != DelegateSymbolFlags.none;
+        }
+        private nothrow inline void SetFlag(DelegateSymbolFlags flag)
+        {
+            flags = cast<DelegateSymbolFlags>(flags | flag);
+        }
+        private DelegateSymbolFlags flags;
+        private TypeSymbol* returnType;
+        private List<ParameterSymbol*> parameters;
+    }
+
+    public enum ClassDelegateSymbolFlags : byte
+    {
+        none = 0u,
+        nothrow_ = 1u << 0u,
+        throw_ = 1u << 1u
+    }
+    
+    public class ClassDelegateTypeSymbol : ClassTypeSymbol
+    {
+        public nothrow ClassDelegateTypeSymbol(const Span& span_, const string& name_) : base(span_, name_), flags(ClassDelegateSymbolFlags.none), returnType(null)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.classDelegateSymbol;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "classs delegate";
+        }
+        public nothrow override bool IsClassDelegateTypeSymbol() const
+        {
+            return true;
+        }
+        public inline nothrow bool IsNothrow() const
+        {
+            return GetFlag(ClassDelegateSymbolFlags.nothrow_);
+        }
+        public inline nothrow void SetNothrow()
+        {
+            SetFlag(ClassDelegateSymbolFlags.nothrow_);
+        }
+        public inline nothrow bool IsThrow() const
+        {
+            return GetFlag(ClassDelegateSymbolFlags.throw_);
+        }
+        public inline nothrow void SetThrow()
+        {
+            SetFlag(ClassDelegateSymbolFlags.throw_);
+        }
+        public nothrow inline void SetReturnType(TypeSymbol* returnType_)
+        {
+            returnType = returnType_;
+        }
+        public override void SetType(TypeSymbol* type, int index)
+        {
+            SetReturnType(type);
+        }
+        public override void AddSymbol(Symbol* symbol)
+        {
+            base->AddSymbol(symbol);
+            if (symbol->IsParameterSymbol())
+            {
+                ParameterSymbol* parameterSymbol = cast<ParameterSymbol*>(symbol);
+                parameters.Add(parameterSymbol);
+            }
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            flags = cast<ClassDelegateSymbolFlags>(reader.GetBinaryReader().ReadByte());
+            reader.FetchTypeFor(this, 0);
+            reader.EnqueueMakeIrTypeFor(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.GetBinaryWriter().Write(cast<byte>(flags));
+            writer.Write(returnType->Id());
+        }
+        public override void MakeIrType()
+        {
+            // todo
+        }
+        public nothrow override string GetMangleId() const
+        {
+            return FullName();
+            // todo: return MakeAssemblyName(FullName());
+        }
+        public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
+        {
+            if (returnType != null)
+            {
+                if (returnType->IsDerivedTypeSymbol())
+                {
+                    if (collected.CFind(returnType) == collected.CEnd())
+                    {
+                        collected.Insert(returnType);
+                        returnType->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+                    }
+                }
+            }
+            for (ParameterSymbol* parameter : parameters)
+            {
+                parameter->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
+        }
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        {
+            if (returnType != null)
+            {
+                if (collected.CFind(returnType) == collected.CEnd())
+                {
+                    collected.Insert(returnType);
+                    returnType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+                }
+            }        
+            for (ParameterSymbol* parameter : parameters)
+            {
+                parameter->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            }
+        }
+        private nothrow inline bool GetFlag(ClassDelegateSymbolFlags flag) const
+        {
+            return (flags & flag) != ClassDelegateSymbolFlags.none;
+        }
+        private nothrow inline void SetFlag(ClassDelegateSymbolFlags flag)
+        {
+            flags = cast<ClassDelegateSymbolFlags>(flags | flag);
+        }
+        private ClassDelegateSymbolFlags flags;
+        private TypeSymbol* returnType;
+        private List<ParameterSymbol*> parameters;
+    }
+}
