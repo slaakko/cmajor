@@ -87,6 +87,16 @@ namespace System.IO
             int result = create_directory(directory.Chars());
         }
     }
+    
+    public void RemoveFile(const string& filePath)
+    {
+        int result = remove(filePath.Chars());
+        if (result != 0)
+        {
+            string reason = strerror(get_errno());
+            throw IOException("could not remove file '" + filePath + "': " + reason);
+        }
+    }
 
     public static class Path
     {

@@ -34,7 +34,159 @@ namespace Cm.Sym
         {
             return "template type";
         }
-        // todo
+        public nothrow override string GetMangleId() const
+        {
+            // todo
+            return string();
+        }
+        public nothrow inline TypeSymbol* SubjectType() const
+        {
+            return subjectType;
+        }    
+        public nothrow inline void SetSubjectType(TypeSymbol* subjectType_)
+        {
+            subjectType = subjectType_;
+        }
+        public nothrow inline const List<TypeSymbol*>& TypeArguments() const
+        {
+            return typeArguments;
+        }
+        public void AddTypeArgument(TypeSymbol* typeArgument)
+        {
+            typeArguments.Add(typeArgument);
+            typeArgument->AddDependentType(this);
+        }
+        public override void SetType(TypeSymbol* type, int index)
+        {
+            base->SetType(type, index);
+            if (index == -1)
+            {
+                SetSubjectType(type);
+            }
+            else if (index >= 0)
+            {
+                if (index >= typeArguments.Count())
+                {
+                    throw Exception("invalid type index");
+                }
+                typeArguments[index] = type;
+                type->AddDependentType(this);
+            }
+        }
+        public override void MakeIrType()
+        {
+            // todo
+        }    
+        public override void RecomputeIrType()
+        {
+            // todo
+        }
+        public nothrow void SetFileScope(FileScope* fileScope_)
+        {
+            fileScope.Reset(fileScope_);
+        }
+        public nothrow inline FileScope* GetFileScope() const
+        {
+            return fileScope.GetPtr();
+        }
+        public FileScope* CloneFileScope() const
+        {
+            return fileScope->Clone();
+        }
+        public nothrow void SetGlobalNs(Cm.Ast.NamespaceNode* globalNs_)
+        {
+            globalNs.Reset(globalNs_);
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            string parentName = reader.GetBinaryReader().ReadString();
+            Symbol* parent = reader.GetSymbolTable().GlobalScope()->Lookup(parentName);
+            if (parent != null)
+            {
+                if (parent->IsContainerSymbol())
+                {
+                    ContainerSymbol* containerParent = cast<ContainerSymbol*>(parent);
+                    containerParent->AddSymbol(this);
+                }
+                else
+                {
+                    throw Exception("container parent expected");
+                }
+            }
+            else
+            {
+                throw Exception("parent not found");
+            }
+            reader.FetchTypeFor(this, -1);
+            byte n = reader.GetBinaryReader().ReadByte();
+            typeArguments.Resize(n);
+            for (int i = 0; i < n; ++i)
+            {
+                reader.FetchTypeFor(this, i);
+            }
+            reader.EnqueueMakeIrTypeFor(this);
+        }    
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.GetBinaryWriter().Write(Parent()->FullName());
+            writer.Write(subjectType->Id());
+            byte n = cast<byte>(typeArguments.Count());
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.Write(typeArguments[i]->Id());
+            }
+        }
+        public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
+        {
+            base->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            if (collected.CFind(subjectType) == collected.CEnd())
+            {
+                collected.Insert(subjectType);
+                subjectType->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
+            for (TypeSymbol* typeArgument : typeArguments)
+            {
+                if (collected.CFind(typeArgument) == collected.CEnd())
+                {
+                    collected.Insert(typeArgument);
+                    typeArgument->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+                }
+            }
+        }
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        {
+            base->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            if (Source() == SymbolSource.project)
+            {
+                if (collected.CFind(subjectType) == collected.CEnd())
+                {
+                    collected.Insert(subjectType);
+                    subjectType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+                }
+                for (TypeSymbol* typeArgument : typeArguments)
+                {
+                    if (collected.CFind(typeArgument) == collected.CEnd())
+                    {
+                        collected.Insert(typeArgument);
+                        typeArgument->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+                    }
+                }
+                collected.Insert(this);
+                exportedTemplateTypes.Insert(this);
+                SetSource(SymbolSource.library);
+            }
+        }
+        public nothrow void SetConstaint(Cm.Ast.WhereConstraintNode* constraint_)
+        {
+            constraint.Reset(constraint_);
+        }
+        public nothrow inline Cm.Ast.WhereConstraintNode* Constraint() const
+        {
+            return constraint.GetPtr();
+        }
         private TypeSymbol* subjectType;
         private List<TypeSymbol*> typeArguments;
         private UniquePtr<Cm.Ast.NamespaceNode> globalNs;

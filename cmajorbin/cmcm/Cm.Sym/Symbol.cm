@@ -101,7 +101,7 @@ namespace Cm.Sym
         {
             return span;
         }
-        public nothrow void SetSpan(Span& span_)
+        public nothrow inline void SetSpan(const Span& span_)
         {
             span = span_;
         }

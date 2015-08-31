@@ -1340,6 +1340,13 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
         functionGroupSymbol = functionGroup->GetFunctionGroupSymbol();
         functionGroupName = functionGroupSymbol->Name();
+        if (currentFunction->GetFunctionSymbol()->Name() == "BeginNamespaceScope(Cm.Sym.SymbolTable*, const System.String&, const System.Text.Parsing.Span&)")
+        {
+            if (functionGroupName == "SetSpan")
+            {
+                int x = 0;
+            }
+        }
         std::unique_ptr<Cm::BoundTree::BoundExpression> firstArg;
         if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol() && !currentFunction->GetFunctionSymbol()->IsStatic())
         {
@@ -2459,6 +2466,8 @@ void ExpressionBinder::PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const
 
 Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span)
 {
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::no_call_stack)) return nullptr;
+    if (!fun->CanThrow()) return nullptr;
     if (fun->FullName() == "main()" && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::unit_test)) return nullptr;
     std::string funFullName = fun->FullName();
     Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);

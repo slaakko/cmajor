@@ -1,0 +1,190 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public class DerivedTypeSymbol : TypeSymbol
+    {
+        public nothrow DerivedTypeSymbol(const Span& span_, const string& name_) : base(span_, name_), baseType(null)
+        {
+        }
+        public DerivedTypeSymbol(const Span& span_, const string& name_, TypeSymbol* baseType_, const Cm.Ast.DerivationList& derivations_, const List<int>& arrayDimensions_, const TypeId& id_) :
+            base(span_, name_, id_), baseType(baseType_), derivations(derivations_), arrayDimensions(arrayDimensions_)
+        {
+            baseType->AddDependentType(this);
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.derivedTypeSymbol;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "derived type";
+        }
+        public nothrow override string GetMangleId() const
+        {
+            string mangleId = MakeMangleId(derivations, arrayDimensions);
+            mangleId.Append(baseType->GetMangleId());
+            return mangleId;
+        }
+        public nothrow override string FullName() const
+        {
+            return Cm.Ast.MakeDerivedTypeName(derivations, baseType->FullName(), arrayDimensions);
+        }
+        public nothrow override Cm.Ast.DerivationList Derivations() const
+        {
+            return derivations;
+        }
+        public nothrow override Symbol* Parent() const
+        {
+            Symbol* parent = base->Parent();
+            if (parent == null)
+            {
+                parent = baseType->Parent();
+            }
+            return parent;
+        }
+        public nothrow override bool IsDerivedTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override TypeSymbol* GetBaseType() const
+        {
+            return baseType;
+        }
+        public nothrow override bool IsPointerType() const
+        {
+            return Find(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.pointer) != derivations.CEnd();
+        }
+        public nothrow override bool IsPointerTypeClassType() const
+        {
+            return GetPointerCount() == 1 && baseType->IsClassTypeSymbol();
+        }
+        public nothrow override bool IsPointerToTemplateType() const
+        {
+            return GetPointerCount() == 1 && baseType->IsTemplateTypeSymbol();
+        }
+        public nothrow override bool IsVoidPtrType() const
+        {
+            return GetPointerCount() == 1 && baseType->IsVoidTypeSymbol();
+        }
+        public nothrow override int GetPointerCount() const
+        {
+            return Count(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.pointer);
+        }
+        public nothrow override bool IsReferenceType() const
+        {
+            return Find(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.reference) != derivations.CEnd();
+        }
+        public nothrow override bool IsConstType() const
+        {
+            return Find(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.const_) != derivations.CEnd();
+        }
+        public nothrow override bool IsNonConstReferenceType() const
+        {
+            for (Cm.Ast.Derivation derivation : derivations)
+            {
+                if (derivation == Cm.Ast.Derivation.const_) return false;
+                if (derivation == Cm.Ast.Derivation.reference) return true; // const is before reference in derivation list so this is non-const reference
+            }
+            return false;
+        }
+        public nothrow override bool IsConstReferenceType() const
+        {
+            bool hasConst = false;
+            bool hasReference = false;
+            for (Cm.Ast.Derivation derivation : derivations)
+            {
+                if (derivation == Cm.Ast.Derivation.const_) hasConst = true;
+                else if (derivation == Cm.Ast.Derivation.reference) hasReference = true;
+            }
+            return hasConst && hasReference;
+        }
+        public nothrow override bool IsRvalueRefType() const
+        {
+            return Find(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.rvalueRef) != derivations.CEnd();
+        }
+        public nothrow override bool IsNonClassReferenceType() const
+        {
+            bool isReferenceType = false;
+            bool isPointerType = false;
+            for (Cm.Ast.Derivation derivation : derivations)
+            {
+                if (derivation == Cm.Ast.Derivation.reference) isReferenceType = true;
+                else if (derivation == Cm.Ast.Derivation.rvalueRef) return false;
+                else if (derivation == Cm.Ast.Derivation.pointer) isPointerType = true;
+            }
+            return isReferenceType && (isPointerType || !baseType->IsClassTypeSymbol());
+        }
+        public nothrow override bool IsNonReferencePointerType() const
+        {
+            int pointerCount = 0;
+            for (Cm.Ast.Derivation derivation : derivations)
+            {
+                if (derivation == Cm.Ast.Derivation.reference) return false;
+                else if (derivation == Cm.Ast.Derivation.rvalueRef) return false;
+                else if (derivation == Cm.Ast.Derivation.pointer) ++pointerCount;
+            }
+            return pointerCount == 1;
+        }
+        public nothrow override bool IsValueTypeSymbol() const
+        {
+            return IsNonReferencePointerType();
+        }
+        public nothrow override bool IsArrayType() const
+        {
+            return !arrayDimensions.IsEmpty();
+        }
+        public nothrow override bool IsPureArrayType() const
+        {
+            return !arrayDimensions.IsEmpty() && derivations.Count() == 1 && derivations[0] == Cm.Ast.Derivation.array;
+        }
+        public nothrow inline const List<int>& ArrayDimensions() const
+        {
+            return arrayDimensions;
+        }
+        public nothrow override bool IsPrimitiveSingleDimensionArrayType() const
+        {
+            return arrayDimensions.Count() == 1 && (!baseType->IsClassTypeSymbol() || baseType->IsClassTypeSymbol() && IsPointerType());
+        }
+        public nothrow override int GetLastArrayDimension() const
+        {
+            if (!arrayDimensions.IsEmpty()) return arrayDimensions.Back();
+            return 0;
+        }
+        public nothrow override DerivationCounts GetDerivationCounts() const
+        {
+            DerivationCounts derivationsCounts;
+            for (Cm.Ast.Derivation derivation : derivations)
+            {
+                switch (derivation)
+                {
+                    case Cm.Ast.Derivation.const_: derivationsCounts.AddConst(); break;
+                    case Cm.Ast.Derivation.reference: derivationsCounts.AddRef(); break;
+                    case Cm.Ast.Derivation.rvalueRef: derivationsCounts.AddRvalueRef(); break;
+                    case Cm.Ast.Derivation.pointer: derivationsCounts.AddPointer(); break;
+                }
+            }
+            return derivationsCounts;
+        }
+        private TypeSymbol* baseType;
+        private Cm.Ast.DerivationList derivations;
+        private List<int> arrayDimensions;
+    }
+    
+    internal nothrow string MakeMangleId(const Cm.Ast.DerivationList& derivations, const List<int>& arrayDiemnsions)
+    {
+        // todo;
+        return string();
+    }
+}

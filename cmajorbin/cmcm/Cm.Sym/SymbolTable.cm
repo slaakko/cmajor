@@ -15,6 +15,9 @@ namespace Cm.Sym
 {
     public class SymbolTable
     {
+        public nothrow SymbolTable() : globalNs(Span(), ""), container(&globalNs), typeRepository(), currentClass(null), currentFunction(null), userMainFunction(null)
+        {
+        }
         public Cm.Ast.Node* GetNode(Symbol* symbol) const
         {
             return GetNode(symbol, true);            
@@ -39,11 +42,451 @@ namespace Cm.Sym
         {
             symbolNodeMap[symbol] = node;
         }
-        public TypeRepository& GetTypeRepository() 
+        public ContainerScope* GetContainerScope(Cm.Ast.Node* node) const
+        {
+            HashMap<Cm.Ast.Node*, ContainerScope*>.ConstIterator i = nodeScopeMap.CFind(node);
+            if (i != nodeScopeMap.CEnd())
+            {
+                return i->second;
+            }
+            else if (node->Parent() != null)
+            {
+                return GetContainerScope(node->Parent());
+            }
+            else
+            {
+                throw Exception("container scope not found");
+            }
+        }    
+        public FunctionSymbol* GetFunctionSymbol(Cm.Ast.Node* functionNode) const
+        {
+            HashMap<Cm.Ast.Node*, FunctionSymbol*>.ConstIterator i = functionSymbolMap.CFind(functionNode);
+            if (i != functionSymbolMap.CEnd())
+            {
+                return i->second;
+            }
+            else
+            {
+                throw Exception("function symbol for function node not found");
+            }
+        }
+        public nothrow inline TypeRepository& GetTypeRepository() 
         {
             return typeRepository;
         }
+        public nothrow inline NamespaceSymbol& GlobalNs() 
+        {
+            return globalNs;
+        }
+        public nothrow inline ContainerScope* GlobalScope() 
+        { 
+            return globalNs.GetContainerScope(); 
+        }
+        public void Import(Reader& reader)
+        {
+            Import(reader, true);
+        }
+        public nothrow inline ContainerSymbol* Container() const
+        {
+            return container;
+        }
+        public nothrow inline ClassTypeSymbol* CurrentClass() const
+        {
+            return currentClass;
+        }
+        public nothrow inline void SetCurrentClass(ClassTypeSymbol* currentClass_)
+        {
+            currentClass = currentClass_;
+        }
+        public void Import(Reader& reader, bool importTypeRepository)
+        {
+            UniquePtr<Symbol> symbol(reader.ReadSymbol());
+            if (symbol->IsNamespaceSymbol())
+            {
+                NamespaceSymbol* ns = cast<NamespaceSymbol*>(symbol.GetPtr());
+                globalNs.Import(ns, *this);
+            }
+            else
+            {
+                throw Exception("namespace symbol expected");
+            }
+            if (importTypeRepository)
+            {
+                typeRepository.Import(reader);
+            }
+        }
+        public void Export(Writer& writer)
+        {
+            HashSet<TemplateTypeSymbol*> exportedTemplateTypes;
+            HashSet<Symbol*> collectedTemplateTypes;
+            globalNs.CollectExportedTemplateTypes(collectedTemplateTypes, exportedTemplateTypes);
+            HashSet<TypeSymbol*> exportedDerivedTypes;
+            HashSet<Symbol*> collectedDerivedTypes;
+            for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
+            {
+                exportedTemplateType->CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
+            }
+            globalNs.CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
+            writer.Write(&globalNs);
+            writer.GetBinaryWriter().Write(exportedTemplateTypes.Count());
+            for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
+            {
+                writer.Write(exportedTemplateType);
+            }
+            writer.GetBinaryWriter().Write(exportedDerivedTypes.Count());
+            for (TypeSymbol* exportedDerivedType : exportedDerivedTypes)
+            {
+                writer.Write(exportedDerivedType);
+            }
+        }
+        public void BeginNamespaceScope(Cm.Ast.NamespaceNode* namespaceNode)
+        {
+            if (namespaceNode->IsGlobalNamespaceNode())
+            {
+                if (!globalNs.GetSpan().Valid())
+                {
+                    globalNs.SetSpan(namespaceNode->GetSpan());
+                }
+                BeginContainer(&globalNs);
+                nodeScopeMap[namespaceNode] = globalNs.GetContainerScope();
+            }
+            else
+            {
+                Symbol* symbol = container->GetContainerScope()->Lookup(namespaceNode->Id()->Str(), SymbolTypeSetId.lookupNamespace);
+                if (symbol != null)
+                {
+                    if (symbol->IsNamespaceSymbol())
+                    {
+                        BeginContainer(cast<ContainerSymbol*>(symbol));
+                        nodeScopeMap[namespaceNode] = symbol->GetContainerScope();
+                        symbolNodeMap[symbol] = namespaceNode;
+                    }
+                    else
+                    {
+                        throw Error("symbol '" + symbol->Name() + "' does not denote a namespace", symbol->GetSpan());
+                    }
+                }
+                else
+                {
+                    NamespaceSymbol* namespaceSymbol = container->GetContainerScope()->CreateNamespace(namespaceNode->Id()->Str(), namespaceNode->GetSpan());
+                    BeginContainer(namespaceSymbol);
+                    nodeScopeMap[namespaceNode] = namespaceSymbol->GetContainerScope();
+                    symbolNodeMap[namespaceSymbol] = namespaceNode;
+                }
+            }
+        }
+        public void BeginNamespaceScope(const string& namespaceName, const Span& span)
+        {
+            if (namespaceName.IsEmpty())
+            {
+                if (!globalNs.GetSpan().Valid())
+                {
+                    globalNs.SetSpan(span);
+                }
+                BeginContainer(&globalNs);
+            }
+            else
+            {
+                Symbol* symbol = container->GetContainerScope()->Lookup(namespaceName, SymbolTypeSetId.lookupNamespace);
+                if (symbol != null)
+                {
+                    if (symbol->IsNamespaceSymbol())
+                    {
+                        BeginContainer(cast<ContainerSymbol*>(symbol));
+                    }
+                    else
+                    {
+                        throw Error("symbol '" + symbol->Name() + "' does not denote a namespace", symbol->GetSpan());
+                    }
+                }
+                else
+                {
+                    NamespaceSymbol* namespaceSymbol = container->GetContainerScope()->CreateNamespace(namespaceName, span);
+                    BeginContainer(namespaceSymbol);
+                }
+            }
+        }
+        public void EndNamespaceScope()
+        {
+            EndContainer();
+        }
+        public void BeginContainer(ContainerSymbol* container_)
+        {
+            containerStack.Push(container);
+            container = container_;
+        }
+        public void EndContainer()
+        {
+            container = containerStack.Pop();
+        }
+        public void BeginClassScope(Cm.Ast.ClassNode* classNode)
+        {
+            Cm.Ast.IdentifierNode* classId = classNode->Id();
+            uint nextClassNumber = ClassCounter.Instance()->GetNextClassNumber();
+            ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true, nextClassNumber);
+            classSymbol->SetCompileUnit(classNode->GetCompileUnit());
+            typeRepository.AddType(classSymbol);
+            ContainerScope* classScope = classSymbol->GetContainerScope();
+            nodeScopeMap[classNode] = classScope;
+            symbolNodeMap[classSymbol] = classNode;
+            ContainerScope* containerScope = container->GetContainerScope();
+            classScope->SetParent(containerScope);
+            container->AddSymbol(classSymbol);
+            BeginContainer(classSymbol);
+            /* todo:
+            if (!classSymbol->IrTypeMade())
+            {
+                classSymbol->SetIrType(Cm.IrIntf.CreateClassTypeName(classSymbol->FullName()));
+            }
+            */
+            currentClassStack.Push(currentClass);
+            currentClass = classSymbol;
+        }
+        public void EndClassScope()
+        {
+            currentClass = currentClassStack.Pop();
+            EndContainer();
+        }
+        public void BeginTemplateTypeScope(Cm.Ast.ClassNode* templateClassNode, TemplateTypeSymbol* templateTypeSymbol)
+        {
+            ContainerScope* templateTypeScope = templateTypeSymbol->GetContainerScope();
+            nodeScopeMap[templateClassNode] = templateTypeScope;
+            symbolNodeMap[templateTypeSymbol] = templateClassNode;
+            ContainerScope* containerScope = container->GetContainerScope();
+            container->AddSymbol(templateTypeSymbol);
+            templateTypeScope->SetParent(containerScope);
+            BeginContainer(templateTypeSymbol);
+            currentClassStack.Push(currentClass);
+            currentClass = templateTypeSymbol;
+        }
+        public void EndTemplateTypeScope()
+        {
+            currentClass = currentClassStack.Pop();
+            EndContainer();
+        }
+        public void BeginEnumScope(Cm.Ast.EnumTypeNode* enumTypeNode)
+        {
+            Cm.Ast.IdentifierNode* enumTypeId = enumTypeNode->Id();
+            EnumTypeSymbol* enumTypeSymbol = new EnumTypeSymbol(enumTypeId->GetSpan(), enumTypeId->Str());
+            typeRepository.AddType(enumTypeSymbol);
+            ContainerScope* enumScope = enumTypeSymbol->GetContainerScope();
+            nodeScopeMap[enumTypeNode] = enumScope;
+            symbolNodeMap[enumTypeSymbol] = enumTypeNode;
+            ContainerScope* containerScope = container->GetContainerScope();
+            enumScope->SetParent(containerScope);
+            container->AddSymbol(enumTypeSymbol);
+            BeginContainer(enumTypeSymbol);
+        }
+        public void EndEnumScope()
+        {
+            EndContainer();
+        }
+        public void AddEnumConstant(Cm.Ast.EnumConstantNode* enumConstantNode)
+        {
+            Cm.Ast.IdentifierNode* enumConstantId = enumConstantNode->Id();
+            EnumConstantSymbol* enumConstantSymbol = new EnumConstantSymbol(enumConstantId->GetSpan(), enumConstantId->Str());
+            container->AddSymbol(enumConstantSymbol);
+            symbolNodeMap[enumConstantSymbol] = enumConstantNode;
+        }
+        public void AddTypedef(Cm.Ast.TypedefNode* typedefNode)
+        {
+            Cm.Ast.IdentifierNode* typedefId = typedefNode->Id();
+            TypedefSymbol* typedefSymbol = new TypedefSymbol(typedefId->GetSpan(), typedefId->Str());
+            container->AddSymbol(typedefSymbol);
+            symbolNodeMap[typedefSymbol] = typedefNode;
+        }
+        public void AddTypedef(Cm.Ast.TypedefStatementNode* typedefStatementNode)
+        {
+            Cm.Ast.IdentifierNode* typedefId = typedefStatementNode->Id();
+            TypedefSymbol* typedefSymbol = new TypedefSymbol(typedefId->GetSpan(), typedefId->Str());
+            container->AddSymbol(typedefSymbol);
+            symbolNodeMap[typedefSymbol] = typedefStatementNode;
+        }
+        public void BeginFunctionScope(Cm.Ast.FunctionNode* functionNode, FunctionSymbolFlags flags)
+        {
+            FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
+            currentFunction = functionSymbol;
+            if ((functionNode->GetSpecifiers() & Cm.Ast.Specifiers.static_) != Cm.Ast.Specifiers.none)
+            {
+                functionSymbol->SetStatic();
+            }
+            functionSymbol->SetFlags(flags);
+            functionSymbol->SetCompileUnit(functionNode->CompileUnit());
+            functionSymbolMap[functionNode] = functionSymbol;
+            functionSymbol->SetGroupName(functionNode->GroupId()->Str());
+            if (functionSymbol->GroupName() == "main")
+            {
+                if (userMainFunction != null)
+                {
+                    throw Error("already has main() function", functionNode->GetSpan(), userMainFunction->GetSpan());
+                }
+                else
+                {
+                    userMainFunction = functionSymbol;
+                }
+            }
+            ContainerScope* functionScope = functionSymbol->GetContainerScope();
+            nodeScopeMap[functionNode] = functionScope;
+            symbolNodeMap[functionSymbol] = functionNode;
+            ContainerScope* containerScope = container->GetContainerScope();
+            functionScope->SetParent(containerScope);
+            BeginContainer(functionSymbol);
+        }
+        public void EndFunctionScope()
+        {
+            FunctionSymbol* functionSymbol = cast<FunctionSymbol*>(container);
+            EndContainer();
+            container->AddSymbol(functionSymbol);
+            currentFunction = null;
+            if (functionSymbol->IsStaticConstructor())
+            {
+                functionSymbol->SetMutexId(MutexTable.Instance()->GetNextMutexId());
+            }
+        }
+        public void BeginDelegateScope(Cm.Ast.DelegateNode* delegateNode)
+        {
+            Cm.Ast.IdentifierNode* delegateId = delegateNode->Id();
+            DelegateTypeSymbol* delegateTypeSymbol = new DelegateTypeSymbol(delegateId->GetSpan(), delegateId->Str());
+            typeRepository.AddType(delegateTypeSymbol);
+            ContainerScope* delegateScope = delegateTypeSymbol->GetContainerScope();
+            nodeScopeMap[delegateNode] = delegateScope;
+            symbolNodeMap[delegateTypeSymbol] = delegateNode;
+            ContainerScope* containerScope = container->GetContainerScope();
+            delegateScope->SetParent(containerScope);
+            container->AddSymbol(delegateTypeSymbol);
+            BeginContainer(delegateTypeSymbol);
+        }
+        public void EndDelegateScope()
+        {
+            EndContainer();
+        }
+        public void BeginClassDelegateScope(Cm.Ast.ClassDelegateNode* classDelegateNode)
+        {
+            Cm.Ast.IdentifierNode* classDelegateId = classDelegateNode->Id();
+            ClassDelegateTypeSymbol* classDelegateTypeSymbol = new ClassDelegateTypeSymbol(classDelegateId->GetSpan(), classDelegateId->Str());
+            typeRepository.AddType(classDelegateTypeSymbol);
+            ContainerScope* classDelegateScope = classDelegateTypeSymbol->GetContainerScope();
+            nodeScopeMap[classDelegateNode] = classDelegateScope;
+            symbolNodeMap[classDelegateTypeSymbol] = classDelegateNode;
+            ContainerScope* containerScope = container->GetContainerScope();
+            classDelegateScope->SetParent(containerScope);
+            container->AddSymbol(classDelegateTypeSymbol);
+            BeginContainer(classDelegateTypeSymbol);
+        }
+        public void EndClassDelegateScope()
+        {
+            EndContainer();
+        }
+        public void AddConstant(Cm.Ast.ConstantNode* constantNode)
+        {
+            Cm.Ast.IdentifierNode* constantId = constantNode->Id();
+            ConstantSymbol* constantSymbol = new ConstantSymbol(constantId->GetSpan(), constantId->Str());
+            container->AddSymbol(constantSymbol);
+            symbolNodeMap[constantSymbol] = constantNode;
+        }
+        public void AddTemplateParameter(Cm.Ast.TemplateParameterNode* templateParameterNode)
+        {
+            Cm.Ast.IdentifierNode* templateParameterId = templateParameterNode->Id();
+            TypeParameterSymbol* typeParameterSymbol = new TypeParameterSymbol(templateParameterId->GetSpan(), templateParameterId->Str());
+            container->AddSymbol(typeParameterSymbol);
+            symbolNodeMap[typeParameterSymbol] = templateParameterNode;
+        }
+        public void AddParameter(Cm.Ast.ParameterNode* parameterNode, const string& parameterName)
+        {
+            ParameterSymbol* parameterSymbol = new ParameterSymbol(parameterNode->GetSpan(), parameterName);
+            container->AddSymbol(parameterSymbol);
+            symbolNodeMap[parameterSymbol] = parameterNode;
+        }
+        public void AddParameter(ParameterSymbol* parameterSymbol)
+        {
+            container->AddSymbol(parameterSymbol);
+        }
+        public void BeginDeclarationScope(Cm.Ast.StatementNode* statementNode)
+        {
+            DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode->GetSpan(), "");
+            ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
+            nodeScopeMap[statementNode] = declarationBlockScope;
+            symbolNodeMap[declarationBlock] = statementNode;
+            ContainerScope* containerScope = container->GetContainerScope();
+            declarationBlockScope->SetParent(containerScope);
+            container->AddSymbol(declarationBlock);
+            BeginContainer(declarationBlock);
+        }
+        public void EndDeclarationScope()
+        {
+            EndContainer();
+        }
+        public void AddLocalVariable(Cm.Ast.ConstructionStatementNode* constructionStatementNode)
+        {
+            Cm.Ast.IdentifierNode* localVariableId = constructionStatementNode->Id();
+            LocalVariableSymbol* localVariableSymbol = new LocalVariableSymbol(localVariableId->GetSpan(), localVariableId->Str());
+            container->AddSymbol(localVariableSymbol);
+            symbolNodeMap[localVariableSymbol] = constructionStatementNode;
+        }
+        public void AddMemberVariable(Cm.Ast.MemberVariableNode* memberVariableNode, int memberVariableIndex)
+        {
+            Cm.Ast.IdentifierNode* memberVariableId = memberVariableNode->Id();
+            MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableId->GetSpan(), memberVariableId->Str());
+            if ((memberVariableNode->GetSpecifiers() & Cm.Ast.Specifiers.static_) != Cm.Ast.Specifiers.none)
+            {
+                memberVariableSymbol->SetStatic();
+            }
+            container->AddSymbol(memberVariableSymbol);
+            symbolNodeMap[memberVariableSymbol] = memberVariableNode;
+        }
+        public ConceptSymbol* BeginConceptScope(Cm.Ast.ConceptNode* conceptNode)
+        {
+            Cm.Ast.IdentifierNode* conceptId = conceptNode->Id();
+            string conceptName = conceptId->Str();
+            conceptName.Append('<');
+            bool first = true;
+            for (const UniquePtr<Cm.Ast.Node>& typeParameter : conceptNode->TypeParameters())
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    conceptName.Append(", ");
+                }
+                conceptName.Append(typeParameter->Name());
+            }
+            conceptName.Append('>');
+            ConceptSymbol* conceptSymbol = new ConceptSymbol(conceptId->GetSpan(), conceptName);
+            if ((conceptNode->GetSpecifiers() & Cm.Ast.Specifiers.public_) != Cm.Ast.Specifiers.none)
+            {
+                conceptSymbol->SetAccess(SymbolAccess.public_);
+            }
+            conceptSymbol->SetGroupName(conceptId->Str());
+            for (const UniquePtr<Cm.Ast.Node>& typeParameter : conceptNode->TypeParameters())
+            {
+                TypeParameterSymbol* typeParameterSymbol = new TypeParameterSymbol(typeParameter->GetSpan(), typeParameter->Name());
+                conceptSymbol->AddSymbol(typeParameterSymbol);
+            }
+            ContainerScope* conceptScope = conceptSymbol->GetContainerScope();
+            nodeScopeMap[conceptNode] = conceptScope;
+            symbolNodeMap[conceptSymbol] = conceptNode;
+            ContainerScope* containerScope = container->GetContainerScope();
+            conceptScope->SetParent(containerScope);
+            container->AddSymbol(conceptSymbol);
+            BeginContainer(conceptSymbol);
+            return conceptSymbol;
+        }
+        public void EndConceptScope()
+        {
+            EndContainer();
+        }
+        private NamespaceSymbol globalNs;
         private HashMap<Symbol*, Cm.Ast.Node*> symbolNodeMap;
+        private HashMap<Cm.Ast.Node*, ContainerScope*> nodeScopeMap;
+        private HashMap<Cm.Ast.Node*, FunctionSymbol*> functionSymbolMap;
         private TypeRepository typeRepository;
+        private ContainerSymbol* container;
+        private Stack<ContainerSymbol*> containerStack;
+        private ClassTypeSymbol* currentClass;
+        private Stack<ClassTypeSymbol*> currentClassStack;
+        private FunctionSymbol* currentFunction;
+        private FunctionSymbol* userMainFunction;
     }
 }

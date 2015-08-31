@@ -38,6 +38,22 @@ namespace Cm.Sym
         new_ = 1u << 18u
     }
     
+    public class PersistentFunctionData
+    {
+        public ulong bodyPos;
+        public ulong bodySize;
+        public UniquePtr<Cm.Ast.Node> returnTypeExprNode;
+        public UniquePtr<Cm.Ast.FunctionGroupIdNode> groupId;
+        public UniquePtr<Cm.Ast.WhereConstraintNode> constraint;
+        public Cm.Ast.Specifiers specifiers;
+        public string cmlFilePath;
+        public Cm.Ast.NodeList<Cm.Ast.Node> usingNodes;
+        public UniquePtr<FileScope> functionFileScope;
+        public ulong functionPos;
+        public ulong functionSize;
+        public UniquePtr<Cm.Ast.FunctionNode> functionNode;
+    }
+    
     public class FunctionSymbol : ContainerSymbol
     {
         public nothrow FunctionSymbol(const Span& span_, const string& name_) : 
@@ -364,12 +380,41 @@ namespace Cm.Sym
             vtblIndex = reader.GetBinaryReader().ReadShort();
             if (IsFunctionTemplate())
             {
-                // todo
+                persistentFunctionData.Reset(new PersistentFunctionData());
+                bool hasReturnTypeExpr = reader.GetBinaryReader().ReadBool();
+                if (hasReturnTypeExpr)
+                {
+                    persistentFunctionData->returnTypeExprNode.Reset(reader.GetAstReader().ReadNode());
+                }
+                persistentFunctionData->specifiers = reader.GetAstReader().ReadSpecifiers();
+                persistentFunctionData->groupId.Reset(reader.GetAstReader().ReadFunctionGroupIdNode());
+                bool hasConstraint = reader.GetBinaryReader().ReadBool();
+                if (hasConstraint)
+                {
+                    persistentFunctionData->constraint.Reset(reader.GetAstReader().ReadWhereConstraintNode());
+                }
+                bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
+                if (hasUsingNodes)
+                {
+                    persistentFunctionData->usingNodes.Read(reader.GetAstReader());
+                }
+                persistentFunctionData->bodySize = reader.GetBinaryReader().ReadULong();
+                persistentFunctionData->bodyPos = reader.GetBinaryReader().Pos();
+                persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
+                reader.GetBinaryReader().Skip(persistentFunctionData->bodySize);
             }
             else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate())
             {
-                // todo
-                
+                persistentFunctionData.Reset(new PersistentFunctionData());
+                bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
+                if (hasUsingNodes)
+                {
+                    persistentFunctionData->usingNodes.Read(reader.GetAstReader());
+                }
+                persistentFunctionData->functionSize = reader.GetBinaryReader().ReadULong();
+                persistentFunctionData->functionPos = reader.GetBinaryReader().Pos();
+                persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
+                reader.GetBinaryReader().Skip(persistentFunctionData->functionSize);
                 bool hasReturnType = reader.GetBinaryReader().ReadBool();
                 if (hasReturnType)
                 {
@@ -393,12 +438,79 @@ namespace Cm.Sym
             writer.GetBinaryWriter().Write(vtblIndex);
             if (IsFunctionTemplate())
             {
-                // todo
+                SymbolTable& symbolTable = writer.GetSymbolTable();
+                Cm.Ast.Node* node = symbolTable.GetNode(this);
+                if (!node->IsFunctionNode())
+                {
+                    throw Exception("function node expected");
+                }                
+                Cm.Ast.FunctionNode* functionNode = cast<Cm.Ast.FunctionNode*>(node);
+                bool hasReturnTypeExpr = functionNode->ReturnTypeExpr() != null;
+                writer.GetBinaryWriter().Write(hasReturnTypeExpr);
+                if (hasReturnTypeExpr)
+                {
+                    writer.GetAstWriter().Write(functionNode->ReturnTypeExpr());
+                }
+                writer.GetAstWriter().Write(functionNode->GetSpecifiers());
+                writer.GetAstWriter().Write(functionNode->GroupId());
+                bool hasConstraint = functionNode->Constraint() != null;
+                writer.GetBinaryWriter().Write(hasConstraint);
+                if (hasConstraint)
+                {
+                    writer.GetAstWriter().Write(functionNode->Constraint());
+                }
+                bool hasUsingNodes = true;
+                if (persistentFunctionData.IsNull())
+                {
+                    hasUsingNodes = false;
+                }
+                writer.GetBinaryWriter().Write(hasUsingNodes);
+                if (hasUsingNodes)
+                {
+                    persistentFunctionData->usingNodes.Write(writer.GetAstWriter());
+                }
+                if (functionNode->Body() == null)
+                {
+                    throw Exception("write: function node has no body");
+                }
+                ulong sizePos = writer.GetBinaryWriter().Pos();
+                writer.GetBinaryWriter().Write(ulong(0u));
+                ulong bodyPos = writer.GetBinaryWriter().Pos();
+                writer.GetAstWriter().Write(functionNode->Body());
+                ulong bodyEndPos = writer.GetBinaryWriter().Pos();
+                ulong bodySize = bodyEndPos - bodyPos;
+                writer.GetBinaryWriter().Seek(sizePos);
+                writer.GetBinaryWriter().Write(bodySize);
+                writer.GetBinaryWriter().Seek(bodyEndPos);
             }
             else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate())
             {
-                // todo
-                
+                bool hasUsingNodes = true;
+                if (persistentFunctionData.IsNull())
+                {
+                    hasUsingNodes = false;
+                }
+                writer.GetBinaryWriter().Write(hasUsingNodes);
+                if (hasUsingNodes)
+                {
+                    persistentFunctionData->usingNodes.Write(writer.GetAstWriter());
+                }
+                SymbolTable& symbolTable = writer.GetSymbolTable();
+                Cm.Ast.Node* node = symbolTable.GetNode(this);
+                if (!node->IsFunctionNode())
+                {
+                    throw Exception("function node expected");
+                }
+                Cm.Ast.FunctionNode* functionNode = cast<Cm.Ast.FunctionNode*>(node);
+                ulong sizePos = writer.GetBinaryWriter().Pos();
+                writer.GetBinaryWriter().Write(ulong(0u));
+                ulong functionPos = writer.GetBinaryWriter().Pos();
+                writer.GetAstWriter().Write(functionNode);
+                ulong functionEndPos = writer.GetBinaryWriter().Pos();
+                ulong functionSize = functionEndPos - functionPos;
+                writer.GetBinaryWriter().Seek(sizePos);
+                writer.GetBinaryWriter().Write(functionSize);
+                writer.GetBinaryWriter().Seek(functionEndPos);
                 bool hasReturnType = returnType != null;
                 writer.GetBinaryWriter().Write(hasReturnType);
                 if (hasReturnType)
@@ -467,9 +579,107 @@ namespace Cm.Sym
         {
             return parameters;
         }
+        public nothrow inline const List<TypeParameterSymbol*>& TypeParameters() const
+        {
+            return typeParameters;
+        }
+        public void SetUsingNodes(const List<Cm.Ast.Node*>& usingNodes)
+        {
+            if (persistentFunctionData.IsNull())
+            {
+                persistentFunctionData.Reset(new PersistentFunctionData());
+            }
+            for (Cm.Ast.Node* usingNode : usingNodes)
+            {
+                Cm.Ast.CloneContext cloneContext;
+                persistentFunctionData->usingNodes.Add(usingNode->Clone(cloneContext));
+            }
+        }
+        public nothrow const Cm.Ast.NodeList<Cm.Ast.Node>& GetUsingNodes() const
+        {
+            return persistentFunctionData->usingNodes;
+        }
+        public nothrow Cm.Ast.Node* ReturnTypeExprNode() const
+        {
+            return persistentFunctionData->returnTypeExprNode.GetPtr();
+        }
+        public nothrow Cm.Ast.FunctionGroupIdNode* GroupId() const
+        {
+            return persistentFunctionData->groupId.GetPtr();
+        }
+        public nothrow bool HasConstraint() const
+        {
+            return !persistentFunctionData.IsNull() && !persistentFunctionData->constraint.IsNull();
+        }
+        public nothrow Cm.Ast.WhereConstraintNode* Constraint() const
+        {
+            return persistentFunctionData->constraint.GetPtr();
+        }
+        public nothrow inline ulong BodyPos() const
+        {
+            return persistentFunctionData->bodyPos;
+        }
+        public nothrow inline ulong BodySize() const
+        {
+            return persistentFunctionData->bodySize;
+        }
+        public nothrow inline Cm.Ast.Specifiers GetSpecifiers() const
+        {
+            return persistentFunctionData->specifiers;
+        }
+        public nothrow inline const string& CmlFilePath() const
+        {
+            return persistentFunctionData->cmlFilePath;
+        }
+        public nothrow inline Cm.Ast.CompileUnitNode* CompileUnit() const
+        {
+            return compileUnit;
+        }
+        public nothrow void SetCompileUnit(Cm.Ast.CompileUnitNode* compileUnit_)
+        {
+            compileUnit = compileUnit_;
+        }
+        public nothrow inline int MutexId() const
+        {
+            return mutexId;
+        }
+        public nothrow inline void SetMutexId(int mutexId_)
+        {
+            mutexId = mutexId_;
+        }
         private nothrow inline bool GetFlag(FunctionSymbolFlags flag)
         {
             return (flags & flag) != FunctionSymbolFlags.none;
+        }
+        public TypeSymbol* SourceType() const
+        {
+            if (IsConvertingConstructor())
+            {
+                return parameters[1]->GetType()->GetBaseType();
+            }
+            else if (IsConversionFunction())
+            {
+                return parameters[1]->GetType()->GetBaseType();
+            }
+            else
+            {
+                throw Exception("converting constructor or conversion function exprected");
+            }
+        }
+        public TypeSymbol* TargetType() const
+        {
+            if (IsConvertingConstructor())
+            {
+                return parameters[0]->GetType()->GetBaseType();
+            }
+            else if (IsConversionFunction())
+            {
+                return returnType;
+            }
+            else
+            {
+                throw Exception("converting constructor or conversion function exprected");
+            }
         }
         private nothrow inline void SetFlag(FunctionSymbolFlags flag)
         {
@@ -491,5 +701,6 @@ namespace Cm.Sym
         private FunctionSymbol* overriddenFunction;
         private FunctionSymbol* functionTemplate;
         private HashSet<FunctionSymbol*> overrideSet;
+        private UniquePtr<PersistentFunctionData> persistentFunctionData;
     }
 }

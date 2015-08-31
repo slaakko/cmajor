@@ -52,8 +52,45 @@ namespace Cm.Sym
         public override void Read(Reader& reader)
         {
             base->Read(reader);
-            
+            index = reader.GetBinaryReader().ReadInt();
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.GetBinaryWriter().Write(index);
         }
         private int index;
+    }
+    
+    public class BoundTypeParameterSymbol : Symbol
+    {
+        public nothrow BoundTypeParameterSymbol(const Span& span_, const string& name_) : base(span_, name_), type(null)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.boundTypeParameterSymbol;
+        }
+        public nothrow override bool IsBoundTypeParameterSymbol() const
+        {
+            return true;
+        }
+        public nothrow override const char* TypeString() const
+        {
+            return "bound type parameter";
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            return false;
+        }
+        public nothrow inline TypeSymbol* GetType() const
+        {
+            return type;
+        }
+        public nothrow inline void SetType(TypeSymbol* type_)
+        {
+            type = type_;
+        }
+        private TypeSymbol* type;
     }
 }

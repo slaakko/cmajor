@@ -69,7 +69,7 @@ namespace Cm.Sym
             rep[index + 2] = cast<byte>(r >> 8u);
             rep[index + 3] = cast<byte>(r);
         }
-        public byte* Rep() const
+        public nothrow byte* Rep() const
         {
             return &rep[0];
         }

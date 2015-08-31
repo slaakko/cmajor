@@ -34,6 +34,34 @@ namespace Cm.Sym
         {
             return true;
         }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                Symbol* symbol = reader.ReadSymbol();
+                AddSymbol(symbol);
+            }
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            List<Symbol*> exportSymbols;
+            for (const UniquePtr<Symbol>& symbol : symbols)
+            {
+                if (symbol->IsExportSymbol())
+                {
+                    exportSymbols.Add(symbol.GetPtr());
+                }
+            }
+            int n = exportSymbols.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.Write(exportSymbols[i]);
+            }
+        }
         public virtual void AddSymbol(Symbol* symbol)
         {
             if (!symbol->Name().IsEmpty() && !symbol->IsFunctionSymbol() && !symbol->IsConceptSymbol())
@@ -89,7 +117,6 @@ namespace Cm.Sym
                 }
             }
         }
-        
         private FunctionGroupSymbol* MakeFunctionGroupSymbol(const string& groupName, const Span& span)
         {
             Symbol* symbol = containerScope.Lookup(groupName);

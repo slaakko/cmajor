@@ -264,6 +264,9 @@ namespace Cm.Sym
     
     public class FileScope : Scope
     {
+        public FileScope(const FileScope& that) : containerScopes(that.containerScopes), aliasSymbolMap(that.aliasSymbolMap)
+        {
+        }
         public void InstallAlias(ContainerScope* currentContainerScope, Cm.Ast.AliasNode* aliasNode)
         {
             if (currentContainerScope != null)
@@ -379,6 +382,10 @@ namespace Cm.Sym
             {
                 return *foundSymbols.CBegin();
             }
+        }
+        public FileScope* Clone() const
+        {
+            return new FileScope(*this);
         }
         private List<ContainerScope*> containerScopes;
         private HashMap<string, Symbol*> aliasSymbolMap;

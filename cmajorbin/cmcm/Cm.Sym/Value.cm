@@ -1,0 +1,1976 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public enum ValueType 
+    {
+        none, boolValue, charValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, max
+    }
+    
+    public nothrow string ValueTypeStr(ValueType valueType)
+    {
+        switch (valueType)
+        {
+            case ValueType.none: return "";
+            case ValueType.boolValue: return "bool";
+            case ValueType.charValue: return "char";
+            case ValueType.sbyteValue: return "sbyte";
+            case ValueType.byteValue: return "byte";
+            case ValueType.shortValue: return "short";
+            case ValueType.ushortValue: return "ushort";
+            case ValueType.intValue: return "int";
+            case ValueType.uintValue: return "uint";
+            case ValueType.longValue: return "long";
+            case ValueType.ulongValue: return "ulong";
+            case ValueType.floatValue: return "float";
+            case ValueType.doubleValue: return "double";
+            case ValueType.nullValue: return "@nullptrtype";
+            case ValueType.stringValue: return "string";
+        }
+        return "";
+    }
+    
+    public abstract class Value
+    {
+        public virtual ~Value()
+        {
+        }
+        public abstract nothrow ValueType GetValueType() const;
+        public abstract nothrow Value* Clone() const;
+        public virtual void Read(Cm.Ser.BinaryReader& reader)
+        {
+        }
+        public virtual void Write(Cm.Ser.BinaryWriter& writer)
+        {
+        }
+        public abstract Value* As(ValueType targetType, bool cast_, const Span& span_);
+        // create ir object
+        public virtual nothrow bool IsScopedValue() const 
+        {
+            return false;
+        }
+        public virtual nothrow bool IsNull() const
+        {
+            return false;
+        }
+        public virtual nothrow string ToString() const
+        {
+            return "";
+        }
+    }
+    
+    public class BoolValue : Value
+    {
+        public typedef bool OperandType;
+        
+        public nothrow BoolValue() : value(false)
+        {
+        }
+        public nothrow BoolValue(bool value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.boolValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new BoolValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadBool();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    return new BoolValue(value);
+                }                
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    if (cast_)
+                    {
+                        return new LongValue(cast<long>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    if (cast_)
+                    {
+                        return new FloatValue(cast<float>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.doubleValue:
+                {
+                    if (cast_)
+                    {
+                        return new DoubleValue(cast<double>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline bool Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            if (value) return "true";
+            return "false";
+        }
+        private bool value;
+    }
+
+    public class CharValue : Value
+    {
+        public typedef char OperandType;
+        
+        public nothrow CharValue() : value('\0')
+        {
+        }
+        public nothrow CharValue(char value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.charValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new CharValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadChar();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    return new CharValue(value);
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    if (cast_)
+                    {
+                        return new LongValue(cast<long>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    if (cast_)
+                    {
+                        return new FloatValue(cast<float>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.doubleValue:
+                {
+                    if (cast_)
+                    {
+                        return new DoubleValue(cast<double>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline char Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return System.Text.MakeCharLiteral(value);
+        }
+        private char value;
+    }    
+
+    public class SByteValue : Value
+    {
+        public typedef sbyte OperandType;
+        
+        public nothrow SByteValue() : value(0)
+        {
+        }
+        public nothrow SByteValue(sbyte value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.sbyteValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new SByteValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadSByte();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    return new SByteValue(value);
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    return new ShortValue(value);
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    return new IntValue(value);
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    return new LongValue(value);
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    return new FloatValue(value);
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline sbyte Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private sbyte value;
+    }    
+
+    public class ByteValue : Value
+    {
+        public typedef byte OperandType;
+        
+        public nothrow ByteValue() : value(0u)
+        {
+        }
+        public nothrow ByteValue(byte value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.byteValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new ByteValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadByte();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    return new ByteValue(value);
+                }
+                case ValueType.shortValue: 
+                {
+                    return new ShortValue(value);
+                }
+                case ValueType.ushortValue: 
+                {
+                    return new UShortValue(value);
+                }
+                case ValueType.intValue: 
+                {
+                    return new IntValue(value);
+                }
+                case ValueType.uintValue:
+                {
+                    return new UIntValue(value);
+                }
+                case ValueType.longValue:
+                {
+                    return new LongValue(value);
+                }
+                case ValueType.ulongValue:
+                {
+                    return new ULongValue(value);
+                }
+                case ValueType.floatValue:
+                {
+                    return new FloatValue(value);
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline byte Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private byte value;
+    }    
+    
+    public class ShortValue : Value
+    {
+        public typedef short OperandType;
+        
+        public nothrow ShortValue() : value(0)
+        {
+        }
+        public nothrow ShortValue(short value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.shortValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new ShortValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadShort();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    return new ShortValue(value);
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    return new IntValue(value);
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    return new LongValue(value);
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    return new FloatValue(value);
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline short Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private short value;
+    }    
+
+    public class UShortValue : Value
+    {
+        public typedef ushort OperandType;
+        
+        public nothrow UShortValue() : value(0u)
+        {
+        }
+        public nothrow UShortValue(ushort value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.ushortValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new UShortValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadUShort();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    return new UShortValue(value);
+                }
+                case ValueType.intValue: 
+                {
+                    return new IntValue(value);
+                }
+                case ValueType.uintValue:
+                {
+                    return new UIntValue(value);
+                }
+                case ValueType.longValue:
+                {
+                    return new LongValue(value);
+                }
+                case ValueType.ulongValue:
+                {
+                    return new ULongValue(value);
+                }
+                case ValueType.floatValue:
+                {
+                    return new FloatValue(value);
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline ushort Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private ushort value;
+    }    
+
+    public class IntValue : Value
+    {
+        public typedef int OperandType;
+        
+        public nothrow IntValue() : value(0)
+        {
+        }
+        public nothrow IntValue(int value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.intValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new IntValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadInt();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    return new IntValue(value);
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    return new LongValue(value);
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    return new FloatValue(value);
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline int Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private int value;
+    } 
+
+    public class UIntValue : Value
+    {
+        public typedef uint OperandType;
+        
+        public nothrow UIntValue() : value(0u)
+        {
+        }
+        public nothrow UIntValue(uint value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.uintValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new UIntValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadUInt();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    return new UIntValue(value);
+                }
+                case ValueType.longValue:
+                {
+                    return new LongValue(value);
+                }
+                case ValueType.ulongValue:
+                {
+                    return new ULongValue(value);
+                }
+                case ValueType.floatValue:
+                {
+                    return new FloatValue(value);
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline uint Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private uint value;
+    }    
+
+    public class LongValue : Value
+    {
+        public typedef long OperandType;
+        
+        public nothrow LongValue () : value(0)
+        {
+        }
+        public nothrow LongValue(long value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.longValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new LongValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadLong();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    return new LongValue(value);
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    if (cast_)
+                    {
+                        return new FloatValue(cast<float>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline long Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private long value;
+    } 
+
+    public class ULongValue : Value
+    {
+        public typedef ulong OperandType;
+        
+        public nothrow ULongValue() : value(0u)
+        {
+        }
+        public nothrow ULongValue(ulong value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.ulongValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new ULongValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadULong();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    if (cast_)
+                    {
+                        return new LongValue(cast<long>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ulongValue:
+                {
+                    return new ULongValue(value);
+                }
+                case ValueType.floatValue:
+                {
+                    if (cast_)
+                    {
+                        return new FloatValue(cast<float>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline ulong Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private ulong value;
+    }    
+
+    public class FloatValue : Value
+    {
+        public typedef float OperandType;
+        
+        public nothrow FloatValue() : value(0.0f)
+        {
+        }
+        public nothrow FloatValue(float value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.floatValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new FloatValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadFloat();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    if (cast_)
+                    {
+                        return new LongValue(cast<long>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    return new FloatValue(value);
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline float Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private float value;
+    }    
+
+    public class DoubleValue : Value
+    {
+        public typedef double OperandType;
+        
+        public nothrow DoubleValue() : value(0.0)
+        {
+        }
+        public nothrow DoubleValue(double value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.doubleValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new DoubleValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadDouble();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    if (cast_)
+                    {
+                        return new LongValue(cast<long>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    if (cast_)
+                    {
+                        return new FloatValue(cast<float>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.doubleValue:
+                {
+                    return new DoubleValue(value);
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        // create ir object
+        public nothrow inline double Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return ToString(value);
+        }
+        private double value;
+    }
+    
+    public class NullValue : Value
+    {
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.nullValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new NullValue();
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span_);
+        }
+        public override nothrow bool IsNull() const
+        {
+            return true;
+        }    
+        // create ir object
+        public nothrow inline void SetType(TypeSymbol* type_)
+        {
+            type = type_;
+        }
+        public nothrow override string ToString() const
+        {
+            return "null";
+        }
+        private TypeSymbol* type;
+    }    
+    
+    public class StringValue : Value
+    {
+        public nothrow StringValue() : value("")
+        {
+        }
+        public nothrow StringValue(const string& value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.stringValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new StringValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = reader.ReadString();
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(value);
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span_);
+        }
+        // create ir object
+        public nothrow inline const string& Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return System.Text.MakeStringLiteral(value);
+        }
+        private string value;
+    }    
+}

@@ -71,6 +71,7 @@ bool ClassTypeSymbol::IsExportSymbol() const
 void ClassTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
+    writer.GetBinaryWriter().Write(classNumber);
     writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));
     bool hasBaseClass = baseClass != nullptr;
     writer.GetBinaryWriter().Write(hasBaseClass);
@@ -113,6 +114,7 @@ void ClassTypeSymbol::Write(Writer& writer)
 void ClassTypeSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
+    classNumber = reader.GetBinaryReader().ReadUInt();
     flags = ClassTypeSymbolFlags(reader.GetBinaryReader().ReadUInt());
     bool hasBaseClass = reader.GetBinaryReader().ReadBool();
     if (hasBaseClass)

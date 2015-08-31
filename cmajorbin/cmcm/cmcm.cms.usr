@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<DevEnv.SolutionConfig>
+    <activeConfig>debug.llvm</activeConfig>
+    <configurations>
+        <configuration>
+            <name>debug.llvm</name>
+            <conditionalCompilationSymbols />
+            <buildOptions />
+        </configuration>
+        <configuration>
+            <name>debug.c</name>
+            <conditionalCompilationSymbols />
+            <buildOptions />
+        </configuration>
+        <configuration>
+            <name>release.llvm</name>
+            <conditionalCompilationSymbols />
+            <buildOptions>
+                <quiet>false</quiet>
+                <emitOptIrCodeFile>true</emitOptIrCodeFile>
+            </buildOptions>
+        </configuration>
+        <configuration>
+            <name>release.c</name>
+            <conditionalCompilationSymbols />
+            <buildOptions />
+        </configuration>
+    </configurations>
+</DevEnv.SolutionConfig>

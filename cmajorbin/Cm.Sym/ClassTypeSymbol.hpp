@@ -300,6 +300,7 @@ public:
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
     std::string FullClassTemplateId() const;
+    uint32_t ClassNumber() const { return classNumber; }
 private:
     uint32_t classNumber;
     ClassTypeSymbolFlags flags;

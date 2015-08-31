@@ -40,6 +40,10 @@ namespace Cm.Parser
             }
             return string();
         }
+        public nothrow inline int GetNumberOfParsedFiles() const
+        {
+            return parsedFiles.Count();
+        }
         private List<string> parsedFiles;
         private static UniquePtr<FileRegistry> instance;
     }

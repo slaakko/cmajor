@@ -59,7 +59,7 @@ public:
     void BeginDeclarationScope(Cm::Ast::StatementNode* statementNode);
     void EndDeclarationcope();
     void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
-    void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode, int memberVariableIndex);
+    void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
     ConceptSymbol* BeginConceptScope(Cm::Ast::ConceptNode* conceptNode);
     void EndConceptScope();
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
@@ -87,10 +87,10 @@ public:
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
+    std::stack<ContainerSymbol*> containerStack;
     ClassTypeSymbol* currentClass;
     std::stack<ClassTypeSymbol*> currentClassStack;
     FunctionSymbol* currentFunction;
-    std::stack<ContainerSymbol*> containerStack;
     typedef std::unordered_map<Cm::Ast::Node*, ContainerScope*> NodeScopeMap;
     typedef NodeScopeMap::const_iterator NodeScopeMapIt;
     NodeScopeMap nodeScopeMap;

@@ -17,7 +17,7 @@
 namespace Cm { namespace Sym {
 
 DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : 
-    Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), memberVariableIndex(0), templateClassNode(nullptr), templateType(nullptr), markFunctionSymbolAsTemplateSpecialization(false)
+    Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(nullptr), templateType(nullptr), markFunctionSymbolAsTemplateSpecialization(false)
 {
 }
 
@@ -47,7 +47,6 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::ClassNode& classNode)
     {
         symbolTable.BeginClassScope(&classNode);
     }
-    memberVariableIndex = 0;
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
@@ -240,12 +239,7 @@ void DeclarationVisitor::Visit(Cm::Ast::ParameterNode& parameterNode)
 
 void DeclarationVisitor::Visit(Cm::Ast::MemberVariableNode& memberVariableNode)
 {
-    int index = -1;
-    if ((memberVariableNode.GetSpecifiers() & Cm::Ast::Specifiers::static_) == Cm::Ast::Specifiers::none)
-    {
-        index = memberVariableIndex++;
-    }
-    symbolTable.AddMemberVariable(&memberVariableNode, index);
+    symbolTable.AddMemberVariable(&memberVariableNode);
 }
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)

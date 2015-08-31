@@ -1794,12 +1794,10 @@ Value* NullValue::Clone() const
 
 void NullValue::Read(Cm::Ser::BinaryReader& reader)
 {
-    reader.ReadByte();
 }
 
 void NullValue::Write(Cm::Ser::BinaryWriter& writer)
 {
-    writer.Write(uint8_t(0));
 }
 
 Value* NullValue::As(ValueType targetType, bool cast, const Span& span) const

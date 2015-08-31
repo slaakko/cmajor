@@ -8,10 +8,90 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
+    public class DerivationCounts
+    {
+        public nothrow DerivationCounts() : consts(0u), refs(0u), rvalueRefs(0u), pointers(0u)
+        {
+        }
+        public nothrow inline void AddConst()
+        {
+            ++consts;
+        }
+        public nothrow inline void AddRef()
+        {
+            ++refs;
+        }
+        public nothrow inline void AddRvalueRef()
+        {
+            ++rvalueRefs;
+        }
+        public nothrow inline void AddPointer()
+        {
+            ++pointers;
+        }
+        public nothrow inline byte Consts() const
+        {
+            return consts;
+        }
+        public nothrow inline byte Refs() const
+        {
+            return refs;
+        }
+        public nothrow inline byte RvalueRefs() const
+        {
+            return rvalueRefs;
+        }
+        public nothrow inline byte Pointers() const
+        {
+            return pointers;
+        }
+        private byte consts;
+        private byte refs;
+        private byte rvalueRefs;
+        private byte pointers;
+    }
+    
+    public nothrow bool operator<(const DerivationCounts& left, const DerivationCounts& right)
+    {
+        if (left.Consts() < right.Consts())
+        {
+            return true;
+        }
+        else if (left.Consts() > right.Consts())
+        {
+            return false;
+        }
+        else if (left.Refs() < right.Refs())
+        {
+            return true;
+        }
+        else if (left.Refs() > right.Refs())
+        {
+            return false;
+        }
+        else if (left.RvalueRefs() < right.RvalueRefs())
+        {
+            return true;
+        }
+        else if (left.RvalueRefs() > right.RvalueRefs())
+        {
+            return false;
+        }
+        else if (left.Pointers() < right.Pointers())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
     public abstract class TypeSymbol : ContainerSymbol
     {
         public nothrow TypeSymbol(const Span& span_, const string& name_) : base(span_, name_)
@@ -92,15 +172,11 @@ namespace Cm.Sym
         {
             return false;
         }
-        public nothrow virtual bool IsConstPointerType() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsConstPointerPointerType() const
-        {
-            return false;
-        }
         public nothrow virtual bool IsULongType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsArrayType() const
         {
             return false;
         }
@@ -112,8 +188,44 @@ namespace Cm.Sym
         {
             return false;
         }
-        abstract nothrow string GetMangleId() const;
+        public nothrow virtual int GetLastArrayDimension() const
+        {
+            return 0;
+        }
+        public virtual nothrow int GetPointerCount() const
+        {
+            return 0;
+        }
+        public virtual nothrow DerivationCounts GetDerivationCounts() const
+        {
+            return DerivationCounts();
+        }
+        public void AddDependentType(TypeSymbol* dependentType)
+        {
+            dependentTypes.InsertFront(dependentType);   
+        }
+        public nothrow inline const ForwardList<TypeSymbol*>& DependentTypes() const
+        {
+            return dependentTypes;
+        }
+        public nothrow inline ForwardList<TypeSymbol*>& DependentTypes() 
+        {
+            return dependentTypes;
+        }
+        public nothrow virtual Cm.Ast.DerivationList Derivations() const
+        {
+            return Cm.Ast.DerivationList();
+        }
+        public abstract nothrow string GetMangleId() const;
+        public virtual void RecomputeIrType() const
+        {
+        }
+        public nothrow inline ulong GetHashCode() const
+        {
+            return id.GetHashCode();
+        }
         private TypeId id;
+        private ForwardList<TypeSymbol*> dependentTypes;
     }
     
     public nothrow inline bool TypesEqual(TypeSymbol* left, TypeSymbol* right)
