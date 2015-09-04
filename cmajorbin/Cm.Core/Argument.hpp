@@ -24,6 +24,7 @@ public:
     Argument(ArgumentCategory category_, Cm::Sym::TypeSymbol* type_);
     ArgumentCategory Category() const { return category; }
     Cm::Sym::TypeSymbol* Type() const { return type; }
+    void SetType(Cm::Sym::TypeSymbol* type_) { type = type_; }
     bool BindToRvalueRef() const { return bindToRvalueRef; }
     void SetBindToRvalueRef() { bindToRvalueRef = true; }
 private:

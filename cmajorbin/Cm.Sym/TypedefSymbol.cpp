@@ -9,6 +9,7 @@
 
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 
@@ -18,7 +19,7 @@ TypedefSymbol::TypedefSymbol(const Span& span_, const std::string& name_) : Symb
 {
 }
 
-bool TypedefSymbol::IsExportSymbol() const
+bool TypedefSymbol::IsExportSymbol() const 
 {
     if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;
@@ -69,6 +70,15 @@ void TypedefSymbol::Dump(CodeFormatter& formatter)
         typeString.append(type->FullName()).append(" ");
     }
     formatter.WriteLine(SymbolFlagStr(Flags(), DeclaredAccess(), true) + " " + TypeString() + " " + typeString + Name());
+}
+
+void TypedefSymbol::ReplaceReplicaTypes()
+{
+    if (type->IsReplica() && type->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(type);
+        type = replica->GetPrimaryTemplateTypeSymbol();
+    }
 }
 
 } } // namespace Cm::Sym

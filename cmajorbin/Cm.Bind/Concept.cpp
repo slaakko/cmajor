@@ -1133,11 +1133,11 @@ void ConstraintBinder::Visit(Cm::Ast::IdentifierNode& identifierNode)
         bool generateDocs = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs);
         if (generateDocs && identifierNode.Str() == "CommonType")
         {
-            for (const std::unique_ptr<Cm::Sym::Symbol>& symbol : boundCompileUnit->SymbolTable().GlobalNs().Symbols())
+            for (Cm::Sym::Symbol* symbol : boundCompileUnit->SymbolTable().GlobalNs().Symbols())
             {
                 if (symbol->Name() == "CommonType" && symbol->IsTypeSymbol())
                 {
-                    type = static_cast<Cm::Sym::TypeSymbol*>(symbol.get());
+                    type = static_cast<Cm::Sym::TypeSymbol*>(symbol);
                     return;
                 }
             }
@@ -1171,11 +1171,11 @@ void ConstraintBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         bool generateDocs = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs);
         if (generateDocs && type->IsTypeParameterSymbol())
         {
-            for (const std::unique_ptr<Cm::Sym::Symbol>& s : type->Symbols())
+            for (Cm::Sym::Symbol* s : type->Symbols())
             {
                 if (s->Name() == type->Name() + "." + dotNode.MemberId()->Str())
                 {
-                    symbol = s.get();
+                    symbol = s;
                     break;
                 }
             }

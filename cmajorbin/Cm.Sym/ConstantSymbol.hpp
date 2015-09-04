@@ -34,6 +34,7 @@ public:
     void SetEvaluating() { evaluating = true; }
     void ResetEvaluating() { evaluating = false; }
     void Dump(CodeFormatter& formatter) override;
+    void ReplaceReplicaTypes() override;
 private:
     TypeSymbol* type;
     std::unique_ptr<Value> value;

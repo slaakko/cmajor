@@ -301,6 +301,7 @@ public:
     std::string Syntax() const override;
     std::string FullClassTemplateId() const;
     uint32_t ClassNumber() const { return classNumber; }
+    void ReplaceReplicaTypes() override;
 private:
     uint32_t classNumber;
     ClassTypeSymbolFlags flags;

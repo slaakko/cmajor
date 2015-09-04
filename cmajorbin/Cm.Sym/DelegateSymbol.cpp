@@ -11,6 +11,7 @@
 #include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -202,6 +203,16 @@ std::string DelegateTypeSymbol::Syntax() const
     return syntax;
 }
 
+void DelegateTypeSymbol::ReplaceReplicaTypes()
+{
+    TypeSymbol::ReplaceReplicaTypes();
+    if (returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(returnType);
+        returnType = replica->GetPrimaryTemplateTypeSymbol();
+    }
+}
+
 ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_) : ClassTypeSymbol(span_, name_), flags(ClassDelegateTypeSymbolFlags::none), returnType(nullptr)
 {
 }
@@ -212,9 +223,9 @@ std::string ClassDelegateTypeSymbol::GetMangleId() const
 
 }
 
-bool ClassDelegateTypeSymbol::IsExportSymbol() const
+bool ClassDelegateTypeSymbol::IsExportSymbol() const 
 {
-    if (Parent()->IsClassTemplateSymbol()) return false;
+    if (Parent()->IsClassTemplateSymbol()) return false;;
     if (Parent()->IsTemplateTypeSymbol()) return false;
     return ClassTypeSymbol::IsExportSymbol();
 }
@@ -362,6 +373,16 @@ std::string ClassDelegateTypeSymbol::Syntax() const
     syntax.append(")");
     syntax.append(";");
     return syntax;
+}
+
+void ClassDelegateTypeSymbol::ReplaceReplicaTypes()
+{
+    ClassTypeSymbol::ReplaceReplicaTypes();
+    if (returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(returnType);
+        returnType = replica->GetPrimaryTemplateTypeSymbol();
+    }
 }
 
 } } // namespace Cm::Sym

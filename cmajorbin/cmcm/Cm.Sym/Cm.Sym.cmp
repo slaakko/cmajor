@@ -12,6 +12,7 @@ source <ConstantSymbol.cm>;
 source <ContainerSymbol.cm>;
 source <ConversionTable.cm>;
 source <DeclarationBlock.cm>;
+source <DeclarationVisitor.cm>;
 source <DelegateSymbol.cm>;
 source <DerivedTypeSymbol.cm>;
 source <EnumSymbol.cm>;

@@ -14,6 +14,8 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <stdexcept>
+#include <iostream>
+#include <unordered_set>
 
 namespace Cm { namespace Sym {
      
@@ -131,9 +133,9 @@ void Symbol::SetType(TypeSymbol* typeSymbol, int index)
     throw std::runtime_error("member function not applicable");
 }
 
-bool Symbol::IsExportSymbol() const 
+bool Symbol::IsExportSymbol() const
 { 
-    return Source() == SymbolSource::project && Access() == SymbolAccess::public_; 
+    return Source() == SymbolSource::project && Access() == SymbolAccess::public_;
 }
 
 NamespaceSymbol* Symbol::Ns() const
@@ -315,6 +317,10 @@ void Symbol::Collect(SymbolCollector& collector)
 std::string Symbol::Syntax() const
 {
     return Name();
+}
+
+void Symbol::ReplaceReplicaTypes()
+{
 }
 
 } } // namespace Cm::Sym

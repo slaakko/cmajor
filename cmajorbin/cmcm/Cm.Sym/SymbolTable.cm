@@ -423,7 +423,7 @@ namespace Cm.Sym
             container->AddSymbol(localVariableSymbol);
             symbolNodeMap[localVariableSymbol] = constructionStatementNode;
         }
-        public void AddMemberVariable(Cm.Ast.MemberVariableNode* memberVariableNode, int memberVariableIndex)
+        public void AddMemberVariable(Cm.Ast.MemberVariableNode* memberVariableNode)
         {
             Cm.Ast.IdentifierNode* memberVariableId = memberVariableNode->Id();
             MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableId->GetSpan(), memberVariableId->Str());

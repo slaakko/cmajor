@@ -22,6 +22,7 @@ class ContainerSymbol : public Symbol
 {
 public:
     ContainerSymbol(const Span& span_, const std::string& name_);
+    ~ContainerSymbol();
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     ContainerScope* GetContainerScope() const override { return const_cast<ContainerScope*>(&containerScope); }
@@ -29,15 +30,20 @@ public:
     virtual void AddSymbol(Symbol* symbol);
     FunctionGroupSymbol* MakeFunctionGroupSymbol(const std::string& groupName, const Span& span);
     ConceptGroupSymbol* MakeConceptGroupSymbol(const std::string& groupName, const Span& span);
-    std::vector<std::unique_ptr<Symbol>>& Symbols() { return symbols; }
+    std::vector<Symbol*>& Symbols() { return symbols; }
+    std::vector<std::unique_ptr<Symbol>>& OwnedSymbols() { return ownedSymbols; }
+    std::vector<Symbol*>& NonOwnedSymbols() { return nonOwnedSymbols; }
     void Dump(CodeFormatter& formatter) override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     void InitVirtualFunctionTables();
     void Collect(SymbolCollector& collector) override;
+    void ReplaceReplicaTypes() override;
 private:
     ContainerScope containerScope;
-    std::vector<std::unique_ptr<Symbol>> symbols;
+    std::vector<Symbol*> symbols;
+    std::vector<std::unique_ptr<Symbol>> ownedSymbols;
+    std::vector<Symbol*> nonOwnedSymbols;
 };
 
 } } // namespace Cm::Sym

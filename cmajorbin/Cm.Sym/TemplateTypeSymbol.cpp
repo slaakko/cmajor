@@ -56,12 +56,12 @@ TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymb
     return id;
 }
 
-TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_) : ClassTypeSymbol(span_, name_), subjectType(nullptr)
+TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_) : ClassTypeSymbol(span_, name_), subjectType(nullptr), primaryTemplateTypeSymbol(nullptr)
 {
 }
 
 TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_) :
-    ClassTypeSymbol(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_)
+    ClassTypeSymbol(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_), primaryTemplateTypeSymbol(nullptr)
 {
     subjectType->AddDependentType(this);
     for (TypeSymbol* typeArgument : typeArguments)
@@ -79,6 +79,15 @@ std::string TemplateTypeSymbol::GetMangleId() const
         mangleId.append(MakeAssemblyName(typeArgument->FullName()));
     }
     return mangleId;
+}
+
+bool TemplateTypeSymbol::IsExportSymbol() const
+{
+    for (TypeSymbol* typeArgument : typeArguments)
+    {
+        if (!typeArgument->IsPublic()) return false;
+    }
+    return true;
 }
 
 void TemplateTypeSymbol::Write(Writer& writer)
@@ -99,21 +108,25 @@ void TemplateTypeSymbol::Read(Reader& reader)
     ClassTypeSymbol::Read(reader);
     std::string parentName = reader.GetBinaryReader().ReadString();
     Cm::Sym::Symbol* parent = reader.GetSymbolTable().GlobalScope()->Lookup(parentName);
-    if (parent)
+    bool beginNamespace = false;
+    if (!parent)
     {
-        if (parent->IsContainerSymbol())
-        {
-            Cm::Sym::ContainerSymbol* containerParent = static_cast<Cm::Sym::ContainerSymbol*>(parent);
-            containerParent->AddSymbol(this);
-        }
-        else
-        {
-            throw std::runtime_error("not container parent");
-        }
+        reader.GetSymbolTable().BeginNamespaceScope(parentName, Cm::Parsing::Span());
+        parent = reader.GetSymbolTable().Container();
+        beginNamespace = true;
+    }
+    if (parent->IsContainerSymbol())
+    {
+        Cm::Sym::ContainerSymbol* containerParent = static_cast<Cm::Sym::ContainerSymbol*>(parent);
+        containerParent->AddSymbol(this);
     }
     else
     {
-        throw std::runtime_error("not parent");
+        throw std::runtime_error("not container parent");
+    }
+    if (beginNamespace)
+    {
+        reader.GetSymbolTable().EndNamespaceScope();
     }
     reader.FetchTypeFor(this, -1);
     uint8_t n = reader.GetBinaryReader().ReadByte();
@@ -183,6 +196,7 @@ void TemplateTypeSymbol::SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_)
 
 void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
+    if (!IsExportSymbol()) return;
     ClassTypeSymbol::CollectExportedDerivedTypes(collected, exportedDerivedTypes);
     if (collected.find(subjectType) == collected.end())
     {
@@ -201,6 +215,7 @@ void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>
 
 void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
 {
+    if (!IsExportSymbol()) return;
     ClassTypeSymbol::CollectExportedTemplateTypes(collected, exportedTemplateTypes);
     if (Source() == SymbolSource::project)
     {
@@ -236,6 +251,19 @@ std::string TemplateTypeSymbol::FullDocId() const
         fullDocId.append(1, '.').append(typeArgument->FullDocId());
     }
     return fullDocId;
+}
+
+void TemplateTypeSymbol::ReplaceReplicaTypes()
+{
+    ClassTypeSymbol::ReplaceReplicaTypes();
+    for (TypeSymbol*& typeArgument : typeArguments)
+    {
+        if (typeArgument->IsReplica() && typeArgument->IsTemplateTypeSymbol())
+        {
+            TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(typeArgument);
+            typeArgument = replica->GetPrimaryTemplateTypeSymbol();
+        }
+    }
 }
 
 } } // namespace Cm::Sym

@@ -21,7 +21,7 @@ NamespaceSymbol::NamespaceSymbol(const Span& span_, const std::string& name_) : 
 void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
 {
     symbolTable.BeginNamespaceScope(that->Name(), that->GetSpan());
-    for (std::unique_ptr<Symbol>& ownedSymbol : that->Symbols())
+    for (std::unique_ptr<Symbol>& ownedSymbol : that->OwnedSymbols())
     {
         if (ownedSymbol->IsNamespaceSymbol())
         {
@@ -33,8 +33,21 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
             if (!ownedSymbol->IsFunctionGroupSymbol() && !ownedSymbol->IsConceptGroupSymbol())
             {
                 Symbol* symbol = ownedSymbol.release();
+                symbol->ResetOwned();
                 symbolTable.Container()->AddSymbol(symbol);
+                if (symbol->IsTemplateTypeSymbol())
+                {
+                    symbolTable.AddImportedTemplateType(static_cast<TemplateTypeSymbol*>(symbol));
+                }
             }
+        }
+    }
+    for (Symbol* symbol : that->NonOwnedSymbols())
+    {
+        symbolTable.Container()->AddSymbol(symbol);
+        if (symbol->IsTemplateTypeSymbol())
+        {
+            symbolTable.AddImportedTemplateType(static_cast<TemplateTypeSymbol*>(symbol));
         }
     }
     symbolTable.EndNamespaceScope();

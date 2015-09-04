@@ -280,10 +280,6 @@ ReturnStatementBinder::ReturnStatementBinder(Cm::BoundTree::BoundCompileUnit& bo
 
 void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode)
 {
-    if (CurrentFunction()->GetFunctionSymbol()->Name() == "operator*(const System.Collections.HashtableIterator<Cm.Sym.Symbol*, Cm.Sym.Symbol*&, Cm.Sym.Symbol**>*) const")
-    {
-        int x = 0;
-    }
     Cm::BoundTree::BoundReturnStatement* returnStatement = new Cm::BoundTree::BoundReturnStatement(&returnStatementNode);
     Cm::Ast::FunctionNode* functionNode = returnStatementNode.GetFunction();
     Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();

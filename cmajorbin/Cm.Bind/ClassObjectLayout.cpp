@@ -14,6 +14,7 @@
 #include <Cm.Bind/Class.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Visitor.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 

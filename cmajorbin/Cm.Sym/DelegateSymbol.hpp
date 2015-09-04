@@ -72,6 +72,7 @@ public:
     bool IsValueTypeSymbol() const override { return true; }
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
+    void ReplaceReplicaTypes() override;
 private:
     DelegateTypeSymbolFlags flags;
     TypeSymbol* returnType;
@@ -139,6 +140,7 @@ public:
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
+    void ReplaceReplicaTypes() override;
 private:
     ClassDelegateTypeSymbolFlags flags;
     TypeSymbol* returnType;

@@ -11,6 +11,7 @@
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -43,6 +44,15 @@ void LocalVariableSymbol::SetType(TypeSymbol* type_, int index)
 void LocalVariableSymbol::SetUseSpan(const Cm::Parsing::Span& useSpan_)
 {
     useSpan = useSpan_;
+}
+
+void LocalVariableSymbol::ReplaceReplicaTypes()
+{
+    if (type->IsReplica() && type->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(type);
+        type = replica->GetPrimaryTemplateTypeSymbol();
+    }
 }
 
 } } // namespace Cm::Sym

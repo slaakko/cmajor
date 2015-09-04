@@ -1,0 +1,240 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+
+internal nothrow const char* Version()
+{
+    return "1.2.0";
+}
+
+internal nothrow const char* Mode() 
+{
+#if (DEBUG)
+    return "debug";
+#else
+    return "release";
+#endif
+    return "";
+}
+
+int main(int argc, const char** argv)
+{
+    try
+    {
+        List<string> solutionOrProjectFilePaths;
+        List<string> compileFileNames;
+        HashSet<string> defines;
+        // Cm.IrIntf.BackEnd backend = Cm.IrIntf.BackEnd.llvm;
+        bool rebuild = false;
+        bool prevWasCompile = false;
+        bool prevWasDefine = false;
+        if (argc < 2)
+        {
+            Console.Out() << "Cmajor " << Mode() << " mode compiler version " << Version() << "\n" <<
+            "Usage: cmcm [options] {file.cms | file.cmp}\n" <<
+            "Compile Cmajor solution file.cms or project file.cmp\n" <<
+            "options:\n" <<
+            "-R              : rebuild project or solution\n" <<
+            "-clean          : clean project or solution\n" <<
+            "-c FILENAME     : compile only FILENAME, do not link\n" <<
+            "-config=debug   : use debug configuration (default)\n" <<
+            "-config=release : use release configuration\n" <<
+            "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" <<
+            "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
+            "-backend=llvm   : use LLVM backend (default)\n" <<
+            "-backend=c      : use C backend\n" <<
+            "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
+            "-quiet          : write no output messages for successful compiles\n" <<
+            "-trace          : instrument program/library with tracing enabled\n" <<
+            "-debug_heap     : instrument program/library with debug heap enabled\n" <<
+            "-no_call_stacks : do not generate call stack information for exceptions\n" << 
+            endl();
+        }
+        else
+        {
+            for (int i = 1; i < argc; ++i)
+            {
+                string arg = argv[i];
+                if (!arg.IsEmpty())
+                {
+                    if (arg[0] == '-')
+                    {
+                        if (arg.Find('=') != -1)
+                        {
+                            List<string> v = arg.Split('=');
+                            if (v.Count() == 2)
+                            {
+                                if (v[0] == "-config")
+                                {
+                                    const string& config = v[1];
+                                    if (config != "debug" && config != "release")
+                                    {
+                                        throw Exception("unknown configuration '" + config + "'");
+                                    }
+                                    // Cm.Core.GlobalSettings.Instance().SetConfig(config);
+                                    if (config == "release")
+                                    {
+                                        Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.optimize);
+                                    }
+                                }
+                                else if (v[0] == "-O")
+                                {
+                                    string levelStr = v[1];
+                                    int level = ParseInt(levelStr);
+                                    // Cm.Core.GlobalSettings.Instace().SetOptimizationLevel(level);
+                                }
+                                else if (v[0] == "-backend")
+                                {
+                                    string backendStr = v[1];
+                                    if (backendStr == "llvm")
+                                    {
+                                        //backend = Cm.IrIntf.Backend.llvm;
+                                    }
+                                    else if (backendStr == "c")
+                                    {
+                                        //backend = Cm.IrIntf.Backend.c;
+                                    }
+                                    else
+                                    {
+                                        throw Exception("unknown backend '" + backendStr + "'");
+                                    }
+                                }
+                                else
+                                {
+                                    throw Exception("unknown argument '" + arg + "'");
+                                }
+                            }
+                            else
+                            {
+                                throw Exception("unknown argument '" + arg + "'");
+                            }
+                        }
+                        else if (arg == "-R")
+                        {
+                            rebuild = true;
+                        }
+                        else if (arg == "-clean")
+                        {
+                            Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.clean);
+                        }
+                        else if (arg == "-c")
+                        {
+                            prevWasCompile = true;
+                        }
+                        else if (arg == "-D")
+                        {
+                            prevWasDefine = true;
+                        }
+                        else if (arg == "-emit-opt")
+                        {
+                            Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.emitOpt);
+                        }
+                        else if (arg == "-quiet")
+                        {
+                            Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+                        }
+                        else if (arg == "-trace")
+                        {
+                            Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.trace);
+                        }
+                        else if (arg == "-debug_heap")
+                        {
+                            Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.debug_heap);
+                        }
+                        else if (arg == "-no_call_stacks")
+                        {
+                            Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.no_call_stacks);
+                        }
+                        else if (arg == "-ide")
+                        {
+                            Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.ide);
+                        }
+                        else
+                        {
+                            throw Exception("unknown argument '" + arg + "'");
+                        }
+                    }
+                    else
+                    {
+                        if (prevWasCompile)
+                        {
+                            compileFileNames.Add(arg);
+                            prevWasCompile = false;
+                        }
+                        else if (prevWasDefine)
+                        {
+                            defines.Insert(arg);
+                            prevWasDefine = false;
+                        }
+                        else
+                        {
+                            string ext = Path.GetExtension(arg);
+                            if (ext != ".cms" && ext != ".cmp")
+                            {
+                                throw Exception(arg + " is not Cmajor solution or project file");
+                            }
+                            solutionOrProjectFilePaths.Add(arg);
+                        }
+                    }
+                }
+            }
+            // Cm.IrIntf.SetBackEnd(backend);
+            // debug info!
+            bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+            if (!quiet)
+            {
+                Console.Out() << "Cmajor " << Mode() << " mode compiler version " << Version() << endl();
+            }
+            if (!compileFileNames.IsEmpty())
+            {
+                if (solutionOrProjectFilePaths.IsEmpty())
+                {
+                    throw Exception("solution or project must be specified when compiling single files");
+                }
+            }
+            for (const string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
+            {
+                string ext = Path.GetExtension(solutionOrProjectFilePath);
+                if (ext == ".cms")
+                {
+                    Cm.Build.BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines);
+                }
+                else if (ext == ".cmp")
+                {
+                    Cm.Build.BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines);
+                }
+                else
+                {
+                    throw Exception(solutionOrProjectFilePath + " is not Cmajor solution or project file");
+                }
+            }
+            if (!Cm.Sym.CompileWarningCollection.Instance().Warnings().IsEmpty())
+            {
+                if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.ide))
+                {
+                    // todo
+                }
+            }
+        }
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet && !solutionOrProjectFilePaths.IsEmpty())
+        {
+            // todo
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+        return 1;
+    }
+    return 0;
+}

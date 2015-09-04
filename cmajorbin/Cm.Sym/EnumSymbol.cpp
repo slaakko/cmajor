@@ -25,7 +25,7 @@ std::string EnumTypeSymbol::GetMangleId() const
     return MakeAssemblyName(FullName());
 }
 
-bool EnumTypeSymbol::IsExportSymbol() const
+bool EnumTypeSymbol::IsExportSymbol() const 
 {
     if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;

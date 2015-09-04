@@ -12,6 +12,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Exception.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
@@ -239,6 +240,11 @@ std::string DerivedTypeSymbol::FullName() const
     return Cm::Ast::MakeDerivedTypeName(derivations, baseType->FullName(), arrayDimensions);
 }
 
+bool DerivedTypeSymbol::IsExportSymbol() const
+{
+    return baseType->IsPublic();
+}
+
 std::string DerivedTypeSymbol::FullDocId() const
 {
     std::string fullDocId;
@@ -342,6 +348,7 @@ void DerivedTypeSymbol::RecomputeIrType()
 
 void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
+    if (!IsExportSymbol()) return;
     if (Source() == SymbolSource::project)
     {
         exportedDerivedTypes.insert(this);
@@ -351,6 +358,7 @@ void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>&
 
 void DerivedTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
 {
+    if (!IsExportSymbol()) return;
     if (Source() == SymbolSource::project)
     {
         if (collected.find(baseType) == collected.end())
@@ -358,6 +366,16 @@ void DerivedTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>
             collected.insert(baseType);
             baseType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
         }
+    }
+}
+
+void DerivedTypeSymbol::ReplaceReplicaTypes() 
+{
+    TypeSymbol::ReplaceReplicaTypes();
+    if (baseType->IsReplica() && baseType->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(baseType);
+        baseType = replica->GetPrimaryTemplateTypeSymbol();
     }
 }
 

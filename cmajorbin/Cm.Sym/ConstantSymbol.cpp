@@ -11,6 +11,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 
 namespace Cm { namespace Sym {
@@ -58,6 +59,15 @@ void ConstantSymbol::Dump(CodeFormatter& formatter)
         valueStr.append(" = ").append(value->ToString());
     }
     formatter.WriteLine(SymbolFlagStr(Flags(), DeclaredAccess(), true) + " " + TypeString() + " " + Name() + valueStr);
+}
+
+void ConstantSymbol::ReplaceReplicaTypes()
+{
+    if (type->IsReplica() && type->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(type);
+        type = replica->GetPrimaryTemplateTypeSymbol();
+    }
 }
 
 } } // namespace Cm::Sym

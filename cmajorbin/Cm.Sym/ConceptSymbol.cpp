@@ -20,13 +20,10 @@ ConceptSymbol::ConceptSymbol(const Span& span_, const std::string& name_) : Cont
 {
 }
 
-bool ConceptSymbol::IsExportSymbol() const 
+bool ConceptSymbol::IsExportSymbol() const
 {
-    if (ContainerSymbol::IsExportSymbol())
-    {
-        return !isIntrinsicConcept;
-    }
-    return false;
+    if (isIntrinsicConcept) return false;
+    return ContainerSymbol::IsExportSymbol();
 }
 
 void ConceptSymbol::Write(Writer& writer)

@@ -66,7 +66,7 @@ enum class SymbolAccess : uint8_t
 
 std::string AccessStr(SymbolAccess access);
 
-enum class SymbolFlags : uint8_t
+enum class SymbolFlags : uint16_t
 {
     none = 0,
     access = 1 << 0 | 1 << 1,
@@ -75,24 +75,25 @@ enum class SymbolFlags : uint8_t
     bound = 1 << 4,
     project = 1 << 5,
     irTypeMade = 1 << 6,
-    replica = 1 << 7
+    replica = 1 << 7,
+    owned = 1 << 8
 };
 
 std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess, bool addAccess);
 
 inline SymbolFlags operator~(SymbolFlags flag)
 {
-    return SymbolFlags(~uint8_t(flag));
+    return SymbolFlags(~uint16_t(flag));
 }
 
 inline SymbolFlags operator|(SymbolFlags left, SymbolFlags right)
 {
-    return SymbolFlags(uint8_t(left) | uint8_t(right));
+    return SymbolFlags(uint16_t(left) | uint16_t(right));
 }
 
 inline SymbolFlags operator&(SymbolFlags left, SymbolFlags right)
 {
-    return SymbolFlags(uint8_t(left) & uint8_t(right));
+    return SymbolFlags(uint16_t(left) & uint16_t(right));
 }
 
 class Symbol;
@@ -196,6 +197,10 @@ public:
     virtual void Collect(SymbolCollector& collector);
     virtual std::string Syntax() const;
     virtual std::string ParsingName() const { return Name(); }
+    void SetOwned() { SetFlag(SymbolFlags::owned); }
+    void ResetOwned() { ResetFlag(SymbolFlags::owned); }
+    bool Owned() const { return GetFlag(SymbolFlags::owned); }
+    virtual void ReplaceReplicaTypes();
 private:
     Span span;
     std::string name;

@@ -456,7 +456,8 @@ FunctionSymbol* SymbolTable::GetFunctionSymbol(Cm::Ast::Node* functionNode) cons
     NodeFunctionSymbolMapIt i = functionSymbolMap.find(functionNode);
     if (i != functionSymbolMap.end())
     {
-        return i->second;
+        FunctionSymbol* functionSymbol = i->second;
+        return functionSymbol;
     }
     else
     {
@@ -508,7 +509,7 @@ void SymbolTable::Import(Reader& reader, bool importTypeRepository)
     }
     if (importTypeRepository)
     {
-        typeRepository.Import(reader);
+        typeRepository.Import(reader, *this);
     }
 }
 
@@ -542,6 +543,40 @@ FunctionSymbol* SymbolTable::GetOverload(const std::string& fullOverloadGroupNam
         }
     }
     return nullptr;
+}
+
+void SymbolTable::ProcessImportedTemplateTypes()
+{
+    if (importedTemplateTypes.empty()) return;
+    std::unordered_map<std::string, std::vector<TemplateTypeSymbol*>> replicaMap;
+    for (TemplateTypeSymbol* templatetypeSymbol : importedTemplateTypes)
+    {
+        std::vector<TemplateTypeSymbol*>& replicaList = replicaMap[templatetypeSymbol->FullName()];
+        replicaList.push_back(templatetypeSymbol);
+    }
+    std::unordered_map<std::string, std::vector<TemplateTypeSymbol*>>::iterator e = replicaMap.end();
+    for (std::unordered_map<std::string, std::vector<TemplateTypeSymbol*>>::iterator i = replicaMap.begin(); i != e; ++i)
+    {
+        std::vector<TemplateTypeSymbol*>& replicaList = i->second;
+        if (!replicaList.empty())
+        {
+            TemplateTypeSymbol* representative = replicaList.back();
+            representative->ResetFlag(SymbolFlags::replica);
+            representative->ResetFlag(SymbolFlags::bound);
+            int n = int(replicaList.size());
+            for (int i = 0; i < n - 1; ++i)
+            {
+                TemplateTypeSymbol* replica = replicaList[i];
+                replica->SetReplica();
+                replica->SetBound();
+                replica->SetPrimaryTemplateTypeSymbol(representative);
+            }
+            typeRepository.AddType(representative);
+        }
+    }
+    importedTemplateTypes.clear();
+    globalNs.ReplaceReplicaTypes();
+    typeRepository.ReplaceReplicaTypes();
 }
 
 } } // namespace Cm::Sym

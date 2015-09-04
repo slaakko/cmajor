@@ -16,6 +16,7 @@
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Clone.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -245,6 +246,15 @@ void ClassTypeSymbol::InitVirtualFunctionTables()
 void ClassTypeSymbol::InitVtbl()
 {
     if (GetFlag(ClassTypeSymbolFlags::vtblInitialized)) return;
+    if (IsReplica())
+    {
+        SetFlag(ClassTypeSymbolFlags::vtblInitialized);
+        return;
+    }
+    if (!Bound() && IsTemplateTypeSymbol())
+    {
+        return;
+    }
     SetFlag(ClassTypeSymbolFlags::vtblInitialized);
     if (baseClass)
     {
@@ -320,11 +330,11 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
             virtualFunctions.push_back(destructor);
         }
     }
-    for (const std::unique_ptr<Symbol>& symbol : Symbols())
+    for (Symbol* symbol : Symbols())
     {
         if (symbol->IsFunctionSymbol())
         {
-            Cm::Sym::FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(symbol.get());
+            Cm::Sym::FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(symbol);
             if (functionSymbol->IsDestructor()) continue;
             if (functionSymbol->IsVirtualAbstractOrOverride())
             {
@@ -506,7 +516,7 @@ void ClassTypeSymbol::Dump(CodeFormatter& formatter)
     }
     formatter.WriteLine();
     formatter.IncIndent();
-    for (const std::unique_ptr<Symbol>& symbol : Symbols())
+    for (Symbol* symbol : Symbols())
     {
         symbol->Dump(formatter);
     }
@@ -542,6 +552,17 @@ std::string ClassTypeSymbol::FullClassTemplateId() const
         fullClassTemplateId.append(".").append(typeParam->Name());
     }
     return fullClassTemplateId;
+}
+
+void ClassTypeSymbol::ReplaceReplicaTypes()
+{
+    if (IsClassTemplateSymbol()) return;
+    TypeSymbol::ReplaceReplicaTypes();
+    if (baseClass && baseClass->IsReplica() && baseClass->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(baseClass);
+        baseClass = replica->GetPrimaryTemplateTypeSymbol();
+    }
 }
 
 } } // namespace Cm::Sym

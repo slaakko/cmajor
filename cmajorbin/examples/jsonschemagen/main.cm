@@ -18,9 +18,9 @@ int main(int argc, const char** argv)
         for (int i = 1; i < argc; ++i)
         {
             string fileName = argv[i];
-            string content = ReadFile(fileName);
+            FileMapping file(fileName);
             Console.Out() << "<= " << fileName << endl();
-            UniquePtr<SchemaFileContent> schemaFileContent = grammar->Parse(content, i - 1, fileName);
+            UniquePtr<SchemaFileContent> schemaFileContent = grammar->Parse(file.Begin(), file.End(), i - 1, fileName);
             string definitionFile = Path.ChangeExtension(fileName, ".cm");
             OutputFileStream stream(definitionFile);
             CodeFormatter formatter(stream);

@@ -11,6 +11,7 @@
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <algorithm>
@@ -38,19 +39,39 @@ void ContainerScope::Install(Symbol* symbol)
     SymbolMapIt i = symbolMap.find(symbol->Name());
     if (i != symbolMap.end() && !symbol->IsTemplateTypeSymbol())
     {
-        const Span& defined = symbol->GetSpan();
         Symbol* prev = i->second;
-        const Span& referenced = prev->GetSpan();
-        throw Exception("symbol '" + symbol->Name() + "' already defined", defined, referenced);
+        if (prev != symbol)
+        {
+            const Span& defined = symbol->GetSpan();
+            const Span& referenced = prev->GetSpan();
+            throw Exception("symbol '" + symbol->Name() + "' already defined", defined, referenced);
+        }
     }
     else
     {
+/*
+        if (i != symbolMap.end())
+        {
+            Symbol* prev = i->second;
+            if (prev != symbol)
+            {
+                prev->SetReplica();
+                prev->SetBound();
+                if (symbol->IsTemplateTypeSymbol() && prev->IsTemplateTypeSymbol())
+                {
+                    TemplateTypeSymbol* templateTypeSymbol = static_cast<TemplateTypeSymbol*>(symbol);
+                    TemplateTypeSymbol* prevTemplateTypeSymbol = static_cast<TemplateTypeSymbol*>(prev);
+                    prevTemplateTypeSymbol->SetPrimaryTemplateTypeSymbol(templateTypeSymbol);
+                }
+            }
+        }
+*/
         symbolMap[symbol->Name()] = symbol;
-		if (symbol->IsContainerSymbol())
-		{
-			ContainerSymbol* containerSymbol = static_cast<ContainerSymbol*>(symbol);
-			containerSymbol->GetContainerScope()->SetParent(this);
-		}
+        if (symbol->IsContainerSymbol())
+        {
+            ContainerSymbol* containerSymbol = static_cast<ContainerSymbol*>(symbol);
+            containerSymbol->GetContainerScope()->SetParent(this);
+        }
     }
 }
 
@@ -180,6 +201,11 @@ Symbol* ContainerScope::Lookup(const std::string& name, ScopeLookup lookup, Symb
             SymbolTypeSet& symbolTypeSet = GetSymbolTypeSetCollection()->GetSymbolTypeSet(symbolTypeSetId);
             if (symbolTypeSet.find(s->GetSymbolType()) != symbolTypeSet.end())
             {
+                if (s->IsReplica() && s->IsTemplateTypeSymbol())
+                {
+                    TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(s);
+                    s = replica->GetPrimaryTemplateTypeSymbol();
+                }
                 return s;
             }
         }
