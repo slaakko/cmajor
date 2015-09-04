@@ -33,6 +33,7 @@ public:
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     Cm::Ast::ParameterNode* ParameterNode() const { return ownedParameterNode.get(); }
+    void ReplaceReplicaTypes() override;
 private:
     TypeSymbol* type;
     std::unique_ptr<Cm::Ast::ParameterNode> ownedParameterNode;

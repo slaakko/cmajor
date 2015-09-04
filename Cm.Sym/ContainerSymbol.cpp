@@ -25,15 +25,24 @@ ContainerSymbol::ContainerSymbol(const Span& span_, const std::string& name_) : 
     containerScope.SetContainer(this);
 }
 
+ContainerSymbol::~ContainerSymbol()
+{
+    int n = int(ownedSymbols.size());
+    for (int i = 0; i < n; ++i)
+    {
+        ownedSymbols[i].reset();
+    }
+}
+
 void ContainerSymbol::Write(Writer& writer)
 {
     Symbol::Write(writer);
     std::vector<Symbol*> exportSymbols;
-    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    for (Symbol* symbol : symbols)
     {
         if (symbol->IsExportSymbol())
         {
-            exportSymbols.push_back(symbol.get());
+            exportSymbols.push_back(symbol);
         }
     }
     int32_t n = int32_t(exportSymbols.size());
@@ -76,9 +85,15 @@ void ContainerSymbol::AddSymbol(Symbol* symbol)
         ConceptGroupSymbol* conceptGroupSymbol = MakeConceptGroupSymbol(conceptSymbol->GroupName(), conceptSymbol->GetSpan());
         conceptGroupSymbol->AddConcept(conceptSymbol);
     }
-    if (!symbol->IsTemplateTypeSymbol())
+    symbols.push_back(symbol);
+    if (!symbol->Owned())
     {
-        symbols.push_back(std::unique_ptr<Symbol>(symbol));
+        symbol->SetOwned();
+        ownedSymbols.push_back(std::unique_ptr<Symbol>(symbol));
+    }
+    else
+    {
+        nonOwnedSymbols.push_back(symbol);
     }
     symbol->SetParent(this);
 }
@@ -130,7 +145,7 @@ void ContainerSymbol::Dump(CodeFormatter& formatter)
     if (!IsProject() && !IsNamespaceSymbol()) return;
     Symbol::Dump(formatter);
     formatter.IncIndent();
-    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    for (Symbol* symbol : symbols)
     {
         symbol->Dump(formatter);
     }
@@ -140,13 +155,13 @@ void ContainerSymbol::Dump(CodeFormatter& formatter)
 
 void ContainerSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
-    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    for (Symbol* symbol : symbols)
     {
         if (symbol->IsExportSymbol())
         {
-            if (collected.find(symbol.get()) == collected.end())
+            if (collected.find(symbol) == collected.end())
             {
-                collected.insert(symbol.get());
+                collected.insert(symbol);
                 symbol->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
             }
         }
@@ -155,13 +170,13 @@ void ContainerSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& c
 
 void ContainerSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
 {
-    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    for (Symbol* symbol : symbols)
     {
         if (symbol->IsExportSymbol())
         {
-            if (collected.find(symbol.get()) == collected.end())
+            if (collected.find(symbol) == collected.end())
             {
-                collected.insert(symbol.get());
+                collected.insert(symbol);
                 symbol->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
             }
         }
@@ -170,7 +185,7 @@ void ContainerSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& 
 
 void ContainerSymbol::InitVirtualFunctionTables()
 {
-    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    for (Symbol* symbol : symbols)
     {
         symbol->InitVirtualFunctionTables();
     }
@@ -179,11 +194,19 @@ void ContainerSymbol::InitVirtualFunctionTables()
 void ContainerSymbol::Collect(SymbolCollector& collector)
 {
     Symbol::Collect(collector);
-    for (const std::unique_ptr<Symbol>& symbol : symbols)
+    for (Symbol* symbol : symbols)
     {
         symbol->Collect(collector);
     }
     collector.EndContainer();
+}
+
+void ContainerSymbol::ReplaceReplicaTypes()
+{
+    for (Symbol* symbol : symbols)
+    {
+        symbol->ReplaceReplicaTypes();
+    }
 }
 
 } } // namespace Cm::Sym

@@ -134,6 +134,7 @@ std::string ResolveLibraryReference(const boost::filesystem::path& projectOutput
 Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const std::vector<std::string>& sourceFilePaths)
 {
     Cm::Parser::CompileUnitGrammar* compileUnitGrammar = Cm::Parser::CompileUnitGrammar::Create();
+    compileUnitGrammar->SetMaxLogLineLength(64 * 1024 * 1024);
     Cm::Ast::SyntaxTree syntaxTree;
     for (const std::string& sourceFilePath : sourceFilePaths)
     {
@@ -172,6 +173,7 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
             module.CheckUpToDate();
         }
     }
+    symbolTable.ProcessImportedTemplateTypes();
 }
 
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 

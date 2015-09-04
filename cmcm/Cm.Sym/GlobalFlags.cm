@@ -23,7 +23,8 @@ namespace Cm.Sym
         clean = 1u << 6u,
         unit_test = 1u << 7u,
         generate_debug_info = 1u << 8u,
-        generate_docs = 1u << 9u
+        generate_docs = 1u << 9u,
+        no_call_stacks = 1u << 10u
     }
     
     public class GlobalFlagsHolder

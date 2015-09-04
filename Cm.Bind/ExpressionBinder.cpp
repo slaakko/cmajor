@@ -24,6 +24,7 @@
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Core/Argument.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
@@ -1054,10 +1055,13 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
     else
     {
         Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(expression->GetType());
-        if (type->IsTemplateTypeSymbol() && !type->Bound())
+        if (type->IsTemplateTypeSymbol())
         {
             Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(type);
-            boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, fileScopes);
+            if (!templateTypeSymbol->Bound())
+            {
+                boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, fileScopes);
+            }
         }
         if (type->IsClassTypeSymbol())
         {
@@ -1340,13 +1344,6 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
         functionGroupSymbol = functionGroup->GetFunctionGroupSymbol();
         functionGroupName = functionGroupSymbol->Name();
-        if (currentFunction->GetFunctionSymbol()->Name() == "BeginNamespaceScope(Cm.Sym.SymbolTable*, const System.String&, const System.Text.Parsing.Span&)")
-        {
-            if (functionGroupName == "SetSpan")
-            {
-                int x = 0;
-            }
-        }
         std::unique_ptr<Cm::BoundTree::BoundExpression> firstArg;
         if (currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol() && !currentFunction->GetFunctionSymbol()->IsStatic())
         {
@@ -2466,8 +2463,8 @@ void ExpressionBinder::PrepareFunctionSymbol(Cm::Sym::FunctionSymbol* fun, const
 
 Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span)
 {
-    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::no_call_stack)) return nullptr;
-    if (!fun->CanThrow()) return nullptr;
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::no_call_stacks)) return nullptr;
+    if (Cm::Core::GetGlobalSettings()->Config() == "release" && !fun->CanThrow()) return nullptr;
     if (fun->FullName() == "main()" && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::unit_test)) return nullptr;
     std::string funFullName = fun->FullName();
     Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);

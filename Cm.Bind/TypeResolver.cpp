@@ -167,6 +167,20 @@ void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
         }
         typeArguments.push_back(argumentType);
     }
+    if (subjectType->IsClassTypeSymbol())
+    {
+        Cm::Sym::ClassTypeSymbol* subjectClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectType);
+        int n = int(subjectClassType->TypeParameters().size());
+        int m = int(typeArguments.size());
+        if (m < n)
+        {
+            classTemplateRepository.ResolveDefaultTypeArguments(typeArguments, subjectClassType, currentContainerScope, fileScopes, templateIdNode.GetSpan());
+        }
+    }
+    else
+    {
+        throw std::runtime_error("class type symbol expected");
+    }
     typeSymbol = symbolTable.GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
 }
 

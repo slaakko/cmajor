@@ -24,6 +24,8 @@ public:
     void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* memberFunctionSymbol) override;
     void BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes) override;
     void InstantiateVirtualFunctionsFor(Cm::Sym::ContainerScope* containerScope, Cm::Sym::ClassTypeSymbol* templateTypeSymbol) override;
+    void ResolveDefaultTypeArguments(std::vector<Cm::Sym::TypeSymbol*>& typeArguments, Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol, Cm::Sym::ContainerScope* containerScope,
+        const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, const Cm::Parsing::Span& span) override;
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     typedef std::unordered_set<Cm::Sym::ClassTypeSymbol*> ClassTemplateSet;

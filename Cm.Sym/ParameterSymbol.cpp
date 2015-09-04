@@ -12,6 +12,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <stdexcept>
 
 namespace Cm { namespace Sym {
@@ -90,6 +91,15 @@ void ParameterSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& 
             collected.insert(type);
             type->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
         }
+    }
+}
+
+void ParameterSymbol::ReplaceReplicaTypes()
+{
+    if (type->IsReplica() && type->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(type);
+        type = replica->GetPrimaryTemplateTypeSymbol();
     }
 }
 

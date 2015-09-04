@@ -1,0 +1,5 @@
+project Cm.Build;
+target=library;
+assembly <Cm.Build.cma>;
+reference <../Cm.Sym/Cm.Sym.cml>;
+source <Build.cm>;

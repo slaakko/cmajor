@@ -12,6 +12,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
@@ -19,11 +20,11 @@ MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string&
 {
 }
 
-bool MemberVariableSymbol::IsExportSymbol() const 
+bool MemberVariableSymbol::IsExportSymbol() const
 {
     if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;
-    return true; 
+    return true;
 }
 
 void MemberVariableSymbol::Write(Writer& writer)
@@ -74,6 +75,15 @@ void MemberVariableSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbo
 
 void MemberVariableSymbol::Dump(CodeFormatter& formatter)
 {
+}
+
+void MemberVariableSymbol::ReplaceReplicaTypes()
+{
+    if (type->IsReplica() && type->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(type);
+        type = replica->GetPrimaryTemplateTypeSymbol();
+    }
 }
 
 } } // namespace Cm::Sym

@@ -23,7 +23,7 @@ IrClassTypeRepository::~IrClassTypeRepository()
 
 bool IrClassTypeRepository::Added(Cm::Sym::ClassTypeSymbol* classType) const
 {
-    return classTypes.find(classType) != classTypes.end();
+    return classTypes.find(classType) != classTypes.cend();
 }
 
 void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol)

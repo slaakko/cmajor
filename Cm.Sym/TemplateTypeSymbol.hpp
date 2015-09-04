@@ -26,6 +26,7 @@ public:
     bool IsTemplateTypeSymbol() const override { return true; }
     std::string TypeString() const override { return "template type"; };
     std::string GetMangleId() const override;
+    bool IsExportSymbol() const override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetSubjectType(TypeSymbol* subjectType_);
@@ -44,12 +45,16 @@ public:
     void SetConstraint(Cm::Ast::WhereConstraintNode* constraint);
     Cm::Ast::WhereConstraintNode* GetConstraint() const { return constraint.get(); }
     std::string FullDocId() const override;
+    void SetPrimaryTemplateTypeSymbol(TemplateTypeSymbol* primaryTemplateTypeSymbol_) { primaryTemplateTypeSymbol = primaryTemplateTypeSymbol_; }
+    TemplateTypeSymbol* GetPrimaryTemplateTypeSymbol() const { return primaryTemplateTypeSymbol; }
+    void ReplaceReplicaTypes() override;
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs;
     std::unique_ptr<FileScope> fileScope;
     std::unique_ptr<Cm::Ast::WhereConstraintNode> constraint;
+    TemplateTypeSymbol* primaryTemplateTypeSymbol;
 };
 
 } } // namespace Cm::Sym

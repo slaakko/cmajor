@@ -249,6 +249,7 @@ public:
     std::string FullDocId() const override;
     std::string Syntax() const override;
     std::string ParsingName() const override;
+    void ReplaceReplicaTypes() override;
 private:
     FunctionSymbolFlags flags;
     std::string groupName;

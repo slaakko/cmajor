@@ -84,6 +84,8 @@ public:
     void EndContainer();
     Cm::Sym::FunctionSymbol* UserMainFunction() const { return userMainFunction; }
     NamespaceSymbol& GlobalNs() { return globalNs; }
+    void AddImportedTemplateType(TemplateTypeSymbol* importedTemplateType) { importedTemplateTypes.push_back(importedTemplateType); }
+    void ProcessImportedTemplateTypes();
 private:
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
@@ -103,6 +105,7 @@ private:
     ConversionTable standardConversionTable;
     SymbolNodeMap symbolNodeMap;
     Cm::Sym::FunctionSymbol* userMainFunction;
+    std::vector<TemplateTypeSymbol*> importedTemplateTypes;
 };
 
 } } // namespace Cm::Sym

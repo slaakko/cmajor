@@ -25,9 +25,75 @@
 
 namespace Cm { namespace Bind {
 
+void ClassTemplateRepository::ResolveDefaultTypeArguments(std::vector<Cm::Sym::TypeSymbol*>& typeArguments, Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol, Cm::Sym::ContainerScope* containerScope,
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, const Cm::Parsing::Span& span)
+{
+    std::vector<Cm::Sym::FileScope*> clonedFileScopes;
+    for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
+    {
+        clonedFileScopes.push_back(fileScope->Clone());
+    }
+    int numAddedFileScopes = int(clonedFileScopes.size());
+    for (Cm::Sym::FileScope* fileScope : clonedFileScopes)
+    {
+        boundCompileUnit.AddFileScope(fileScope);
+    }
+    Cm::Sym::FileScope* subjectFileScope = new Cm::Sym::FileScope();
+    subjectFileScope->InstallNamespaceImport(containerScope, new Cm::Ast::NamespaceImportNode(subjectClassTypeSymbol->GetSpan(), new Cm::Ast::IdentifierNode(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName())));
+    boundCompileUnit.AddFileScope(subjectFileScope);
+    ++numAddedFileScopes;
+    Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(subjectClassTypeSymbol, false);
+    if (!node)
+    {
+        subjectClassTypeSymbol->ReadClassNode(boundCompileUnit.SymbolTable(), subjectClassTypeSymbol->GetSpan().FileIndex());
+        node = boundCompileUnit.SymbolTable().GetNode(subjectClassTypeSymbol);
+    }
+    if (!node->IsClassNode())
+    {
+        throw std::runtime_error("node is not class node");
+    }
+    Cm::Ast::ClassNode* classNode = static_cast<Cm::Ast::ClassNode*>(node);
+    int n = int(subjectClassTypeSymbol->TypeParameters().size());
+    int m = int(typeArguments.size());
+    Cm::Sym::ContainerScope resolveDefaultTemplateArgScope;
+    resolveDefaultTemplateArgScope.SetParent(containerScope);
+    std::vector<std::unique_ptr<Cm::Sym::BoundTypeParameterSymbol>> boundTypeParams;
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::TypeParameterSymbol* typeParameterSymbol = subjectClassTypeSymbol->TypeParameters()[i];
+        Cm::Sym::BoundTypeParameterSymbol* boundTypeParam = new Cm::Sym::BoundTypeParameterSymbol(typeParameterSymbol->GetSpan(), typeParameterSymbol->Name());
+        boundTypeParams.push_back(std::unique_ptr<Cm::Sym::BoundTypeParameterSymbol>(boundTypeParam));
+        if (i < m)
+        {
+            boundTypeParam->SetType(typeArguments[i]);
+            resolveDefaultTemplateArgScope.Install(boundTypeParam);
+        }
+        else
+        {
+            if (i >= classNode->TemplateParameters().Count())
+            {
+                throw Cm::Core::Exception("too few template arguments", span);
+            }
+            Cm::Ast::TemplateParameterNode* templateParameterNode = classNode->TemplateParameters()[i];
+            Cm::Ast::Node* defaultTemplateArgumentNode = templateParameterNode->DefaultTemplateArgument();
+            if (!defaultTemplateArgumentNode)
+            {
+                throw Cm::Core::Exception("too few template arguments", span);
+            }
+            Cm::Sym::TypeSymbol* typeArgument = ResolveType(boundCompileUnit.SymbolTable(), &resolveDefaultTemplateArgScope, boundCompileUnit.GetFileScopes(), *this, defaultTemplateArgumentNode);
+            typeArguments.push_back(typeArgument);
+        }
+    }
+    for (int i = 0; i < numAddedFileScopes; ++i)
+    {
+        boundCompileUnit.RemoveLastFileScope();
+    }
+}
+
 void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol* templateTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes)
 {
+    if (templateTypeSymbol->Bound()) return;
     std::vector<Cm::Sym::FileScope*> clonedFileScopes;
     for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
     {
@@ -100,8 +166,9 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     }
     if (m < n)
     {
+        Cm::Sym::TypeId completeId = Cm::Sym::ComputeTemplateTypeId(templateTypeSymbol->GetSubjectType(), templateTypeSymbol->TypeArguments());
         templateTypeSymbol->SetName(Cm::Sym::MakeTemplateTypeSymbolName(templateTypeSymbol->GetSubjectType(), templateTypeSymbol->TypeArguments()));
-        templateTypeSymbol->SetId(Cm::Sym::ComputeTemplateTypeId(templateTypeSymbol->GetSubjectType(), templateTypeSymbol->TypeArguments()));
+        templateTypeSymbol->SetId(completeId);
         templateTypeSymbol->RecomputeIrType();
         boundCompileUnit.SymbolTable().GetTypeRepository().AddType(templateTypeSymbol);     // add to type repository with new id
     }

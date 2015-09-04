@@ -36,7 +36,8 @@ public:
     TypeSymbol* MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
     TypeSymbol* MakePlainType(TypeSymbol* type);
     TypeSymbol* MakePlainTypeWithOnePointerRemoved(TypeSymbol* type);
-    void Import(Reader& reader);
+    void Import(Reader& reader, SymbolTable& symbolTable);
+    void ReplaceReplicaTypes();
 private:
     typedef std::unordered_map<TypeId, TypeSymbol*, TypeIdHash> TypeSymbolMap;
     typedef TypeSymbolMap::const_iterator TypeSymbolMapIt;

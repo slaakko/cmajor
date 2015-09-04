@@ -149,7 +149,7 @@ Symbol* Reader::ReadSymbol()
         {
             symbol->SetProject();
         }
-        if (symbol->IsTemplateTypeSymbol())
+        if (symbol->IsTemplateTypeSymbol() && !symbol->IsReplica())
         {
             symbol->ResetFlag(SymbolFlags::bound);
         }

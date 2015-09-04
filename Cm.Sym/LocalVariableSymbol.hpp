@@ -24,7 +24,7 @@ public:
     bool IsLocalVariableSymbol() const override { return true; }
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::private_; }
     std::string TypeString() const override { return "local variable"; };
-    bool IsExportSymbol() const { return false; }
+    bool IsExportSymbol() const override { return false; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const;
@@ -34,6 +34,7 @@ public:
     void SetUsed() { used = true; }
     void SetUseSpan(const Cm::Parsing::Span& useSpan_);
     const Cm::Parsing::Span& GetUseSpan() const { return useSpan; }
+    void ReplaceReplicaTypes() override;
 private:
     TypeSymbol* type;
     bool used;

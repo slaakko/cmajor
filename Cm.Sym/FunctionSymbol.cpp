@@ -16,6 +16,7 @@
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Clone.hpp>
 #include <stdexcept>
@@ -227,12 +228,12 @@ bool FunctionSymbol::IsConversionFunction() const
 }
 
 bool FunctionSymbol::IsExportSymbol() const 
-{ 
+{
     if (IsFunctionTemplateSpecialization()) return false;
     if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;
-    if (IsReplica()) return false;
-    return ContainerSymbol::IsExportSymbol(); 
+    if (IsReplica()) return false;;
+    return ContainerSymbol::IsExportSymbol();
 }
 
 void FunctionSymbol::SetConvertingConstructor()
@@ -682,7 +683,7 @@ std::string FunctionSymbol::Syntax() const
         syntax.append(groupName);
     }
     syntax.append("(");
-    int n = Parameters().size();
+    int n = int(Parameters().size());
     for (int i = startParamIndex; i < n; ++i)
     {
         if (i > startParamIndex)
@@ -739,7 +740,7 @@ std::string FunctionSymbol::ParsingName() const
         parsingName.append(groupName);
     }
     parsingName.append("(");
-    int n = Parameters().size();
+    int n = int(Parameters().size());
     for (int i = startParamIndex; i < n; ++i)
     {
         if (i > startParamIndex)
@@ -938,6 +939,25 @@ void FunctionSymbol::AddToOverrideSet(FunctionSymbol* overrideFun)
 void FunctionSymbol::SetConstraintDocId(const std::string& constraintDocId_)
 {
     constraintDocId = constraintDocId_;
+}
+
+void FunctionSymbol::ReplaceReplicaTypes()
+{
+    if (IsFunctionTemplate()) return;
+    ContainerSymbol::ReplaceReplicaTypes();
+    if (returnType && returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(returnType);
+        returnType = replica->GetPrimaryTemplateTypeSymbol();
+    }
+    for (TypeSymbol*& typeSymbol : typeArguments)
+    {
+        if (typeSymbol->IsReplica() && typeSymbol->IsTemplateTypeSymbol())
+        {
+            TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(typeSymbol);
+            typeSymbol = replica->GetPrimaryTemplateTypeSymbol();
+        }
+    }
 }
 
 } } // namespace Cm::Sym

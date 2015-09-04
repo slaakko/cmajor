@@ -771,7 +771,8 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
         Cm::Sym::ClassTypeSymbol* memberVariableClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
         if (memberVariableClassType->IsTemplateTypeSymbol() && !memberVariableClassType->Bound())
         {
-            compileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(static_cast<Cm::Sym::TemplateTypeSymbol*>(memberVariableClassType), containerScope, compileUnit.GetFileScopes());
+            Cm::Sym::TemplateTypeSymbol* memberVariableTemplateType = static_cast<Cm::Sym::TemplateTypeSymbol*>(memberVariableClassType);
+            compileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(memberVariableTemplateType, containerScope, compileUnit.GetFileScopes());
         }
         if (!memberVariableClassType->Destructor()) continue;
         Cm::Sym::FunctionSymbol* memberDtor = memberVariableClassType->Destructor();
@@ -791,7 +792,8 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
         Cm::Sym::ClassTypeSymbol* baseClass = classTypeSymbol->BaseClass();
         if (baseClass->IsTemplateTypeSymbol() && !baseClass->Bound())
         {
-            compileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(static_cast<Cm::Sym::TemplateTypeSymbol*>(baseClass), containerScope, compileUnit.GetFileScopes());
+            Cm::Sym::TemplateTypeSymbol* baseClassTemplateType = static_cast<Cm::Sym::TemplateTypeSymbol*>(baseClass);
+            compileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(baseClassTemplateType, containerScope, compileUnit.GetFileScopes());
         }
         Cm::Sym::FunctionSymbol* baseClassDtor = baseClass->Destructor();
         if (!baseClassDtor)

@@ -16,6 +16,7 @@
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <iostream>
 
@@ -394,6 +395,7 @@ TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std:
     templateTypeSymbol->SetParent(subjectType->Ns());
     templateTypeSymbol->MakeIrType();
     templateTypeSymbol->SetAccess(SymbolAccess::public_);
+    templateTypeSymbol->SetOwned();
     types.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol.get()));
     AddType(templateTypeSymbol.get());
     return templateTypeSymbol.release();
@@ -464,7 +466,7 @@ TypeSymbol* TypeRepository::MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
     }
 }
 
-void TypeRepository::Import(Reader& reader)
+void TypeRepository::Import(Reader& reader, SymbolTable& symbolTable)
 {
     int32_t nt = reader.GetBinaryReader().ReadInt();
     for (int32_t i = 0; i < nt; ++i)
@@ -473,7 +475,12 @@ void TypeRepository::Import(Reader& reader)
         if (symbol->IsTemplateTypeSymbol())
         {
             TemplateTypeSymbol* templateTypeSymbol = static_cast<TemplateTypeSymbol*>(symbol);
-            types.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol));
+            if (!templateTypeSymbol->Owned())
+            {
+                templateTypeSymbol->SetOwned();
+                types.push_back(std::unique_ptr<TypeSymbol>(templateTypeSymbol));
+            }
+            symbolTable.AddImportedTemplateType(templateTypeSymbol);
         }
         else
         {
@@ -504,6 +511,24 @@ void TypeRepository::Import(Reader& reader)
         else
         {
             std::cerr << "not all types fetched!" << std::endl;
+        }
+    }
+}
+
+void TypeRepository::ReplaceReplicaTypes()
+{
+    TypeSymbolMap::iterator e = typeSymbolMap.end();
+    for (TypeSymbolMap::iterator i = typeSymbolMap.begin(); i != e; ++i)
+    {
+        TypeSymbol*& typeSymbol = i->second;
+        if (typeSymbol->IsReplica() && typeSymbol->IsTemplateTypeSymbol())
+        {
+            TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(typeSymbol);
+            typeSymbol = replica->GetPrimaryTemplateTypeSymbol();
+        }
+        else
+        {
+            typeSymbol->ReplaceReplicaTypes();
         }
     }
 }

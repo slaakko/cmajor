@@ -41,6 +41,7 @@ public:
     std::string TypeString() const override { return "derived type"; };
     std::string GetMangleId() const override;
     std::string FullName() const override;
+    bool IsExportSymbol() const override;
     const Cm::Ast::DerivationList& Derivations() const override { return derivations; }
     Symbol* Parent() const override;
     bool IsDerivedTypeSymbol() const override { return true; }
@@ -79,6 +80,7 @@ public:
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
     std::string FullDocId() const override;
+    void ReplaceReplicaTypes() override;
 private:
     TypeSymbol* baseType;
     Cm::Ast::DerivationList derivations;

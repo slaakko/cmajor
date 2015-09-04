@@ -667,7 +667,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     Cm::Sym::ConversionType conversionType, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, OverloadResolutionFlags flags, FunctionMatch& bestMatch,
     std::unique_ptr<Cm::Core::Exception>& exception)
 {
-    for (const Cm::Core::Argument& argument : arguments)
+    for (Cm::Core::Argument& argument : arguments)
     {
         if (argument.Type()->GetBaseType()->IsTemplateTypeSymbol())
         {
