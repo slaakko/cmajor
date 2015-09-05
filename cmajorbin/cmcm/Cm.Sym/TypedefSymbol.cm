@@ -78,12 +78,20 @@ namespace Cm.Sym
                 type->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
             }
         }
-        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
             if (collected.CFind(type) == collected.CEnd())
             {
                 collected.Insert(type);
                 type->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            }
+        }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
+                type = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
         private TypeSymbol* type;

@@ -61,7 +61,7 @@ void MemberVariableSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol
 	}
 }
 
-void MemberVariableSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void MemberVariableSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
 	if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())
 	{

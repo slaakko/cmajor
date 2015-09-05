@@ -83,6 +83,7 @@ std::string TemplateTypeSymbol::GetMangleId() const
 
 bool TemplateTypeSymbol::IsExportSymbol() const
 {
+    if (IsReplica()) return false;
     for (TypeSymbol* typeArgument : typeArguments)
     {
         if (!typeArgument->IsPublic()) return false;
@@ -213,7 +214,7 @@ void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>
     }
 }
 
-void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
     if (!IsExportSymbol()) return;
     ClassTypeSymbol::CollectExportedTemplateTypes(collected, exportedTemplateTypes);
@@ -233,7 +234,7 @@ void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*
             }
         }
         collected.insert(this);
-        exportedTemplateTypes.insert(this);
+        exportedTemplateTypes[Id()] = this;
         SetSource(SymbolSource::library);
     }
 }

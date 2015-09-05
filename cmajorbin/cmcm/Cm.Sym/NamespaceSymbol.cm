@@ -44,7 +44,7 @@ namespace Cm.Sym
         public void Import(NamespaceSymbol* that, SymbolTable& symbolTable)
         {
             symbolTable.BeginNamespaceScope(that->Name(), that->GetSpan());
-            for (UniquePtr<Symbol>& ownedSymbol : that->Symbols())
+            for (UniquePtr<Symbol>& ownedSymbol : that->OwnedSymbols())
             {
                 if (ownedSymbol->IsNamespaceSymbol())
                 {
@@ -56,8 +56,21 @@ namespace Cm.Sym
                     if (!ownedSymbol->IsFunctionGroupSymbol() && !ownedSymbol->IsConceptGroupSymbol())
                     {
                         Symbol* symbol = ownedSymbol.Release();
+                        symbol->ResetOwned();
                         symbolTable.Container()->AddSymbol(symbol);
+                        if (symbol->IsTemplateTypeSymbol())
+                        {
+                            symbolTable.AddImportedTemplateType(cast<TemplateTypeSymbol*>(symbol));
+                        }
                     }
+                }
+            }
+            for (Symbol* symbol : that->NonOwnedSymbols())
+            {
+                symbolTable.Container()->AddSymbol(symbol);
+                if (symbol->IsTemplateTypeSymbol())
+                {
+                    symbolTable.AddImportedTemplateType(cast<TemplateTypeSymbol*>(symbol));
                 }
             }
             symbolTable.EndNamespaceScope();

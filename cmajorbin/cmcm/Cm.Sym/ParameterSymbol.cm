@@ -8,6 +8,7 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
@@ -45,6 +46,75 @@ namespace Cm.Sym
         {
             type = type_;
         }
+        public override void SetType(TypeSymbol* type_, int index)
+        {
+            SetType(type_);
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            bool hasType = reader.GetBinaryReader().ReadBool();
+            if (hasType)
+            {
+                reader.FetchTypeFor(this, 0);
+            }
+            else
+            {
+                Cm.Ast.ParameterNode* parameterNode = reader.GetAstReader().ReadParameterNode();
+                ownedParameterNode.Reset(parameterNode);
+                reader.GetSymbolTable().SetNode(this, parameterNode);
+            }
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            bool hasType = type != null;
+            writer.GetBinaryWriter().Write(hasType);
+            if (!hasType)
+            {
+                SymbolTable& symbolTable = writer.GetSymbolTable();
+                Cm.Ast.Node* parameterNode = symbolTable.GetNode(this);
+                writer.GetAstWriter().Write(parameterNode);
+            }
+            else
+            {
+                writer.Write(type->Id());
+            }
+        }
+        
+        public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
+        {
+            if (type == null) return;
+            if (type->IsDerivedTypeSymbol())
+            {
+                if (collected.CFind(type) == collected.CEnd())
+                {
+                    collected.Insert(type);
+                    type->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+                }
+            }
+        }
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
+        {
+            if (type == null) return;
+            if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())
+            {
+                if (collected.CFind(type) == collected.CEnd())
+                {
+                    collected.Insert(type);
+                    type->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+                }
+            }
+        }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
+                type = replica->GetPrimaryTemplateTypeSymbol();
+            }
+        }
         private TypeSymbol* type;
+        private UniquePtr<Cm.Ast.ParameterNode> ownedParameterNode;
     }
 }

@@ -347,6 +347,15 @@ namespace Cm.Sym
         public void InitVtbl()
         {
             if (GetFlag(ClassTypeSymbolFlags.vtblInitialized)) return;
+            if (IsReplica())
+            {
+                SetFlag(ClassTypeSymbolFlags.vtblInitialized);
+                return;
+            }            
+            if (!IsBound() && IsTemplateTypeSymbol())
+            {
+                return;
+            }
             SetFlag(ClassTypeSymbolFlags.vtblInitialized);
             if (baseClass != null)
             {
@@ -409,11 +418,11 @@ namespace Cm.Sym
                     virtualFunctions.Add(destructor);
                 }
             }
-            for (const UniquePtr<Symbol>& symbol : Symbols())
+            for (Symbol* symbol : Symbols())
             {
                 if (symbol->IsFunctionSymbol())
                 {
-                    FunctionSymbol* functionSymbol = cast<FunctionSymbol*>(symbol.GetPtr());
+                    FunctionSymbol* functionSymbol = cast<FunctionSymbol*>(symbol);
                     if (functionSymbol->IsDestructor()) continue;
                     if (functionSymbol->IsVirtualAbstractOrOverride())
                     {
@@ -467,6 +476,16 @@ namespace Cm.Sym
         {
             compileUnit = compileUnit_;
         }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            if (IsClassTemplateSymbol()) return;
+            base->ReplaceReplicaTypes();
+            if (baseClass != null && baseClass->IsReplica() && baseClass->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(baseClass);
+                baseClass = replica->GetPrimaryTemplateTypeSymbol();
+            }
+        }    
         private uint classNumber;
         private ClassTypeSymbolFlags flags;
         private ClassTypeSymbol* baseClass;

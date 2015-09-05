@@ -40,7 +40,7 @@ void ContainerSymbol::Write(Writer& writer)
     std::vector<Symbol*> exportSymbols;
     for (Symbol* symbol : symbols)
     {
-        if (symbol->IsExportSymbol())
+        if (symbol->IsExportSymbol() && !symbol->IsTemplateTypeSymbol())
         {
             exportSymbols.push_back(symbol);
         }
@@ -168,7 +168,7 @@ void ContainerSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& c
     }
 }
 
-void ContainerSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void ContainerSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
     for (Symbol* symbol : symbols)
     {

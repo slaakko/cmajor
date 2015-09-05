@@ -15,11 +15,11 @@ namespace Cm.Sym
 {
     public class TemplateTypeSymbol : ClassTypeSymbol
     {
-        public nothrow TemplateTypeSymbol(const Span& span_, const string& name_) : base(span_, name_), subjectType(null)
+        public nothrow TemplateTypeSymbol(const Span& span_, const string& name_) : base(span_, name_), subjectType(null), primaryTemplateTypeSymbol(null)
         {
         }
         public nothrow TemplateTypeSymbol(const Span& span_, const string& name_, TypeSymbol* subjectType_, const List<TypeSymbol*>& typeArguments_, const TypeId& id_) : 
-            base(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_)
+            base(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_), primaryTemplateTypeSymbol(null)
         {
         }    
         public nothrow override SymbolType GetSymbolType() const
@@ -38,6 +38,15 @@ namespace Cm.Sym
         {
             // todo
             return string();
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            if (IsReplica()) return false;
+            for (TypeSymbol* typeArgument : typeArguments)
+            {
+                if (!typeArgument->IsPublic()) return false;
+            }
+            return true;
         }
         public nothrow inline TypeSymbol* SubjectType() const
         {
@@ -156,7 +165,7 @@ namespace Cm.Sym
                 }
             }
         }
-        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
             base->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
             if (Source() == SymbolSource.project)
@@ -175,7 +184,7 @@ namespace Cm.Sym
                     }
                 }
                 collected.Insert(this);
-                exportedTemplateTypes.Insert(this);
+                exportedTemplateTypes[Id()] = this;
                 SetSource(SymbolSource.library);
             }
         }
@@ -187,10 +196,33 @@ namespace Cm.Sym
         {
             return constraint.GetPtr();
         }
+        public nothrow inline TemplateTypeSymbol* GetPrimaryTemplateTypeSymbol() const
+        {
+            return primaryTemplateTypeSymbol;
+        }
+        public nothrow inline void SetPrimaryTemplateTypeSymbol(TemplateTypeSymbol* primaryTemplateTypeSymbol_)
+        {
+            primaryTemplateTypeSymbol = primaryTemplateTypeSymbol_;
+        }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            base->ReplaceReplicaTypes();
+            int n = typeArguments.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                TypeSymbol* typeArgument = typeArguments[i];
+                if (typeArgument->IsReplica() && typeArgument->IsTemplateTypeSymbol())
+                {
+                    TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(typeArgument);
+                    typeArguments[i] = replica->GetPrimaryTemplateTypeSymbol();
+                }
+            }
+        }
         private TypeSymbol* subjectType;
         private List<TypeSymbol*> typeArguments;
         private UniquePtr<Cm.Ast.NamespaceNode> globalNs;
         private UniquePtr<FileScope> fileScope;
         private UniquePtr<Cm.Ast.WhereConstraintNode> constraint;
+        private TemplateTypeSymbol* primaryTemplateTypeSymbol;
     }
 }

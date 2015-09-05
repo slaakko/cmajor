@@ -41,7 +41,7 @@ public:
     FileScope* CloneFileScope() const { return fileScope->Clone(); }
     void SetGlobalNs(Cm::Ast::NamespaceNode* globalNs_);
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
     void SetConstraint(Cm::Ast::WhereConstraintNode* constraint);
     Cm::Ast::WhereConstraintNode* GetConstraint() const { return constraint.get(); }
     std::string FullDocId() const override;

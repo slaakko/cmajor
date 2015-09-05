@@ -88,7 +88,10 @@ namespace Cm.Sym
             if (i != symbolMap.CEnd() && !symbol->IsTemplateTypeSymbol())
             {
                 Symbol* prev = i->second;
-                throw Error("symbol '" + symbol->Name() + "' already defined", symbol->GetSpan(), prev->GetSpan());
+                if (prev != symbol)
+                {
+                    throw Error("symbol '" + symbol->Name() + "' already defined", symbol->GetSpan(), prev->GetSpan());
+                }                
             }
             else
             {
@@ -338,7 +341,7 @@ namespace Cm.Sym
             HashMap<string, Symbol*>.ConstIterator i = aliasSymbolMap.CFind(name);
             if (i != aliasSymbolMap.CEnd())
             {
-                Symbol* symbol = null;//i->second;
+                Symbol* symbol = i->second;
                 const HashSet<SymbolType, SymbolTypeHash>& symbolTypeSet = SymbolTypeSetCollection.Instance().GetSymbolTypeSet(symbolTypeSetId);
                 if (symbolTypeSet.CFind(symbol->GetSymbolType()) != symbolTypeSet.CEnd())
                 {

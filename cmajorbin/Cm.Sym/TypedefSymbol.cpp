@@ -52,7 +52,7 @@ void TypedefSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& col
     }
 }
 
-void TypedefSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void TypedefSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
     if (collected.find(type) == collected.end())
     {

@@ -41,6 +41,13 @@ namespace Cm.Sym
         {
             return true;
         }
+        public nothrow override bool IsExportSymbol() const
+        {
+            if (Parent()->IsClassTemplateSymbol()) return false;
+            if (Parent()->IsTemplateTypeSymbol()) return false;
+            if (Parent()->IsClassDelegateTypeSymbol()) return true;
+            return base->IsExportSymbol();
+        }
         public inline nothrow bool IsNothrow() const
         {
             return GetFlag(DelegateSymbolFlags.nothrow_);
@@ -114,7 +121,7 @@ namespace Cm.Sym
                 parameter->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
             }
         }
-        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
             if (returnType != null)
             {
@@ -127,6 +134,15 @@ namespace Cm.Sym
             for (ParameterSymbol* parameter : parameters)
             {
                 parameter->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            }
+        }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            base->ReplaceReplicaTypes();
+            if (returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(returnType);
+                returnType = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
         private nothrow inline bool GetFlag(DelegateSymbolFlags flag) const
@@ -160,11 +176,17 @@ namespace Cm.Sym
         }
         public nothrow override const char* TypeString() const
         {
-            return "classs delegate";
+            return "class delegate";
         }
         public nothrow override bool IsClassDelegateTypeSymbol() const
         {
             return true;
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            if (Parent()->IsClassTemplateSymbol()) return false;
+            if (Parent()->IsTemplateTypeSymbol()) return false;
+            return base->IsExportSymbol();
         }
         public inline nothrow bool IsNothrow() const
         {
@@ -239,7 +261,7 @@ namespace Cm.Sym
                 parameter->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
             }
         }
-        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
             if (returnType != null)
             {
@@ -252,6 +274,15 @@ namespace Cm.Sym
             for (ParameterSymbol* parameter : parameters)
             {
                 parameter->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            }
+        }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            base->ReplaceReplicaTypes();
+            if (returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(returnType);
+                returnType = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
         private nothrow inline bool GetFlag(ClassDelegateSymbolFlags flag) const

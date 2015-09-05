@@ -31,7 +31,7 @@ public:
     void SetType(TypeSymbol* type_) { SetType(type_, 0); }
     void SetType(TypeSymbol* type_, int index) override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
     Cm::Ast::ParameterNode* ParameterNode() const { return ownedParameterNode.get(); }
     void ReplaceReplicaTypes() override;
 private:

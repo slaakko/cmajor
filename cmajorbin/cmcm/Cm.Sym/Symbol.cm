@@ -13,6 +13,12 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
+    public concept SymbolClass<T>
+    {
+        where Derived<T, Symbol>;
+        T(const System.Text.Parsing.Span&, const string&);
+    }
+    
     public enum SymbolType : byte
     {
         boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
@@ -76,7 +82,7 @@ namespace Cm.Sym
         private_ = 0u, protected_ = 1u, internal_ = 2u, public_ = 3u
     }
     
-    public enum SymbolFlags : byte
+    public enum SymbolFlags : ushort
     {
         none = 0u,
         access = 1u << 0u | 1u << 1u,
@@ -85,7 +91,8 @@ namespace Cm.Sym
         bound = 1u << 4u,
         project = 1u << 5u,
         irTypeMade = 1u << 6u,
-        replica = 1u << 7u
+        replica = 1u << 7u,
+        owned = 1u << 8u
     }
     
     public abstract class Symbol
@@ -140,7 +147,7 @@ namespace Cm.Sym
         }
         public nothrow inline SymbolAccess Access() const
         {
-            return cast<SymbolAccess>(flags & SymbolFlags.access);
+            return cast<SymbolAccess>(cast<byte>(flags & SymbolFlags.access));
         }
         public nothrow inline void SetAccess(SymbolAccess access)
         {
@@ -366,17 +373,17 @@ namespace Cm.Sym
         }
         public virtual void Read(Reader& reader)
         {
-            flags = cast<SymbolFlags>(reader.GetBinaryReader().ReadByte());
+            flags = cast<SymbolFlags>(reader.GetBinaryReader().ReadUShort());
         }
         public virtual void Write(Writer& writer)
         {
-            SymbolFlags outputFlags = cast<SymbolFlags>(flags & ~(SymbolFlags.project | SymbolFlags.irTypeMade));
-            writer.GetBinaryWriter().Write(cast<byte>(outputFlags));
+            SymbolFlags outputFlags = cast<SymbolFlags>(flags & ~(SymbolFlags.project | SymbolFlags.irTypeMade | SymbolFlags.owned));
+            writer.GetBinaryWriter().Write(cast<ushort>(outputFlags));
         }
         public virtual void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
         {
         }
-        public virtual void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        public virtual void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
         }
         public virtual void MakeIrType()
@@ -495,6 +502,21 @@ namespace Cm.Sym
             {
                 return false;
             }
+        }
+        public nothrow inline void SetOwned()
+        {
+            SetFlag(SymbolFlags.owned);
+        }
+        public nothrow inline void ResetOwned()
+        {
+            ResetFlag(SymbolFlags.owned);
+        }
+        public nothrow inline bool Owned() const
+        {
+            return GetFlag(SymbolFlags.owned);
+        }
+        public nothrow virtual void ReplaceReplicaTypes()
+        {
         }
         private nothrow inline bool GetFlag(SymbolFlags flag) const
         {

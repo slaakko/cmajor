@@ -54,7 +54,7 @@ namespace Cm.Sym
             {
                 symbol->SetSource(SymbolSource.project);
             }
-            if (symbol->IsTemplateTypeSymbol())
+            if (symbol->IsTemplateTypeSymbol() && !symbol->IsReplica())
             {
                 symbol->ResetFlag(SymbolFlags.bound);
             }

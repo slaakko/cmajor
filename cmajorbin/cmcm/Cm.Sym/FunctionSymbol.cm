@@ -681,6 +681,26 @@ namespace Cm.Sym
                 throw Exception("converting constructor or conversion function exprected");
             }
         }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            if (IsFunctionTemplate()) return;
+            base->ReplaceReplicaTypes();
+            if (returnType != null && returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(returnType);
+                returnType = replica->GetPrimaryTemplateTypeSymbol();
+            }
+            int n = typeArguments.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                TypeSymbol* typeArgument = typeArguments[i];
+                if (typeArgument->IsReplica() && typeArgument->IsTemplateTypeSymbol())
+                {
+                    TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(typeArgument);
+                    typeArguments[i] = replica->GetPrimaryTemplateTypeSymbol();
+                }
+            }
+        }
         private nothrow inline void SetFlag(FunctionSymbolFlags flag)
         {
             flags = cast<FunctionSymbolFlags>(flags | flag);
