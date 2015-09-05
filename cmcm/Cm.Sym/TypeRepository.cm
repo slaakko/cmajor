@@ -196,6 +196,7 @@ namespace Cm.Sym
             templateTypeSymbol->SetParent(subjectType->Ns());
             templateTypeSymbol->MakeIrType();
             templateTypeSymbol->SetAccess(SymbolAccess.public_);
+            templateTypeSymbol->SetOwned();
             types.Add(UniquePtr<TypeSymbol>(templateTypeSymbol.GetPtr()));
             AddType(templateTypeSymbol.GetPtr());
             return templateTypeSymbol.Release();
@@ -242,7 +243,7 @@ namespace Cm.Sym
                 return type;
             }
         }
-        public void Import(Reader& reader)
+        public void Import(Reader& reader, SymbolTable& symbolTable)
         {
             int nt = reader.GetBinaryReader().ReadInt();
             for (int i = 0; i < nt; ++i)
@@ -251,7 +252,12 @@ namespace Cm.Sym
                 if (symbol->IsTemplateTypeSymbol())
                 {
                     TemplateTypeSymbol* templateTypeSymbol = cast<TemplateTypeSymbol*>(symbol);
-                    types.Add(UniquePtr<TypeSymbol>(templateTypeSymbol));
+                    if (!templateTypeSymbol->Owned())
+                    {
+                        templateTypeSymbol->SetOwned();
+                        types.Add(UniquePtr<TypeSymbol>(templateTypeSymbol));
+                    }                    
+                    symbolTable.AddImportedTemplateType(templateTypeSymbol);
                 }
                 else
                 {
@@ -282,6 +288,23 @@ namespace Cm.Sym
                 else
                 {
                     Console.Error() << "not all types fetched!" << endl();
+                }
+            }
+        }
+        public nothrow void ReplaceReplicaTypes()
+        {
+            HashMap<TypeId, TypeSymbol*>.Iterator e = typeSymbolMap.End();
+            for (HashMap<TypeId, TypeSymbol*>.Iterator i = typeSymbolMap.Begin(); i != e; ++i)
+            {
+                TypeSymbol* typeSymbol = i->second;
+                if (typeSymbol->IsReplica() && typeSymbol->IsTemplateTypeSymbol())
+                {
+                    TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(typeSymbol);
+                    i->second = replica->GetPrimaryTemplateTypeSymbol();
+                }
+                else
+                {
+                    typeSymbol->ReplaceReplicaTypes();
                 }
             }
         }

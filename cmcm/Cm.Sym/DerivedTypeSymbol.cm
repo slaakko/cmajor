@@ -31,6 +31,10 @@ namespace Cm.Sym
         {
             return "derived type";
         }
+        public nothrow override bool IsExportSymbol() const
+        {
+            return baseType->IsPublic() && !baseType->IsReplica();
+        }
         public nothrow override string GetMangleId() const
         {
             string mangleId = MakeMangleId(derivations, arrayDimensions);
@@ -176,6 +180,74 @@ namespace Cm.Sym
                 }
             }
             return derivationsCounts;
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            derivations = reader.GetAstReader().ReadDerivationList();
+            reader.FetchTypeFor(this, 0);
+            reader.EnqueueMakeIrTypeFor(this);
+            byte n = reader.GetBinaryReader().ReadByte();
+            for (int i = 0; i < n; ++i)
+            {
+                int arrayDimension = reader.GetBinaryReader().ReadInt();
+                arrayDimensions.Add(arrayDimension);
+            }
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.GetAstWriter().Write(derivations);
+            writer.Write(baseType->Id());
+            byte n = cast<byte>(arrayDimensions.Count());
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(arrayDimensions[i]);
+            }
+        }
+        public override void SetType(TypeSymbol* type, int index)
+        {
+            baseType = type;
+            baseType->AddDependentType(this);
+        }
+        public override void MakeIrType()
+        {
+            // todo
+        }
+        public override void RecomputeIrType()
+        {
+            // todo
+        }
+        public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
+        {
+            if (!IsExportSymbol()) return;
+            if (Source() == SymbolSource.project)
+            {
+                exportedDerivedTypes.Insert(this);
+                SetSource(SymbolSource.library);
+            }
+        }
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
+        {
+            if (!IsExportSymbol()) return;
+            if (Source() == SymbolSource.project)
+            {
+                if (collected.CFind(baseType) == collected.CEnd())
+                {
+                    collected.Insert(baseType);
+                    baseType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+                }
+            }            
+        }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            base->ReplaceReplicaTypes();
+            if (baseType->IsReplica() && baseType->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(baseType);
+                baseType = replica->GetPrimaryTemplateTypeSymbol();
+            }
         }
         private TypeSymbol* baseType;
         private Cm.Ast.DerivationList derivations;

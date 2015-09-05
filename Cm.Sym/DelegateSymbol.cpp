@@ -112,7 +112,7 @@ void DelegateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>
     }
 }
 
-void DelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void DelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
     if (returnType)
     {
@@ -284,7 +284,7 @@ void ClassDelegateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Sym
     }
 }
 
-void ClassDelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void ClassDelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash >& exportedTemplateTypes)
 {
     if (returnType)
     {

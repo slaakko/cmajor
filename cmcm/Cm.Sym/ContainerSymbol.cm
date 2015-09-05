@@ -22,13 +22,29 @@ namespace Cm.Sym
         {
             return &containerScope;
         }
-        public nothrow inline const List<UniquePtr<Symbol>>& Symbols() const
+        public nothrow inline const List<Symbol*>& Symbols() const
         {
             return symbols;
         }
-        public nothrow inline List<UniquePtr<Symbol>>& Symbols() 
+        public nothrow inline List<Symbol*>& Symbols() 
         {
             return symbols;
+        }
+        public nothrow inline const List<UniquePtr<Symbol>>& OwnedSymbols() const
+        {
+            return ownedSymbols;
+        }
+        public nothrow inline List<UniquePtr<Symbol>>& OwnedSymbols()
+        {
+            return ownedSymbols;
+        }
+        public nothrow inline const List<Symbol*>& NonOwnedSymbols() const
+        {
+            return nonOwnedSymbols;
+        }
+        public nothrow inline List<Symbol*>& NonOwnedSymbols()
+        {
+            return nonOwnedSymbols;
         }
         public override nothrow bool IsContainerSymbol() const
         {
@@ -48,11 +64,11 @@ namespace Cm.Sym
         {
             base->Write(writer);
             List<Symbol*> exportSymbols;
-            for (const UniquePtr<Symbol>& symbol : symbols)
+            for (Symbol* symbol : symbols)
             {
-                if (symbol->IsExportSymbol())
+                if (symbol->IsExportSymbol() && !symbol->IsTemplateTypeSymbol())
                 {
-                    exportSymbols.Add(symbol.GetPtr());
+                    exportSymbols.Add(symbol);
                 }
             }
             int n = exportSymbols.Count();
@@ -83,35 +99,41 @@ namespace Cm.Sym
                 ConceptGroupSymbol* conceptGroupSymbol = MakeConceptGroupSymbol(conceptSymbol->GroupName(), conceptSymbol->GetSpan());
                 conceptGroupSymbol->AddConcept(conceptSymbol);
             }
-            if (!symbol->IsTemplateTypeSymbol())
+            symbols.Add(symbol);
+            if (!symbol->Owned())
             {
-                symbols.Add(UniquePtr<Symbol>(symbol));
+                symbol->SetOwned();
+                ownedSymbols.Add(UniquePtr<Symbol>(symbol));
+            }
+            else
+            {
+                nonOwnedSymbols.Add(symbol);
             }
             symbol->SetParent(this);
         }
         public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
         {
-            for (const UniquePtr<Symbol>& symbol : symbols)
+            for (Symbol* symbol : symbols)
             {
                 if (symbol->IsExportSymbol())
                 {
-                    if (collected.CFind(symbol.GetPtr()) == collected.CEnd())
+                    if (collected.CFind(symbol) == collected.CEnd())
                     {
-                        collected.Insert(symbol.GetPtr());
+                        collected.Insert(symbol);
                         symbol->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
                     }
                 }
             }
         }
-        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashSet<TemplateTypeSymbol*>& exportedTemplateTypes)
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
-            for (const UniquePtr<Symbol>& symbol : symbols)
+            for (Symbol* symbol : symbols)
             {
                 if (symbol->IsExportSymbol())
                 {
-                    if (collected.CFind(symbol.GetPtr()) == collected.CEnd())
+                    if (collected.CFind(symbol) == collected.CEnd())
                     {
-                        collected.Insert(symbol.GetPtr());
+                        collected.Insert(symbol);
                         symbol->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
                     }
                 }
@@ -158,6 +180,8 @@ namespace Cm.Sym
             }
         }
         private ContainerScope containerScope;
-        private List<UniquePtr<Symbol>> symbols;
+        private List<Symbol*> symbols;
+        private List<UniquePtr<Symbol>> ownedSymbols;
+        private List<Symbol*> nonOwnedSymbols;
     }
 }

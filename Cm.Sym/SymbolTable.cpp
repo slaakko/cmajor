@@ -28,9 +28,11 @@
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Sym/MutexTable.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <iostream>
 
 namespace Cm { namespace Sym {
 
@@ -467,20 +469,23 @@ FunctionSymbol* SymbolTable::GetFunctionSymbol(Cm::Ast::Node* functionNode) cons
 
 void SymbolTable::Export(Writer& writer)
 {
-    std::unordered_set<TemplateTypeSymbol*> exportedTemplateTypes;
+    std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash> exportedTemplateTypes;
     std::unordered_set<Symbol*> collectedTemplateTypes;
     globalNs.CollectExportedTemplateTypes(collectedTemplateTypes, exportedTemplateTypes);
     std::unordered_set<Symbol*> collectedDerivedTypes;
     std::unordered_set<TypeSymbol*> exportedDerivedTypes;
-    for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
+    std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>::const_iterator e = exportedTemplateTypes.cend();
+    for (std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>::const_iterator i = exportedTemplateTypes.cbegin(); i != e; ++i)
     {
+        TemplateTypeSymbol* exportedTemplateType = i->second;
         exportedTemplateType->CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
     }
     globalNs.CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
     writer.Write(&globalNs);
     writer.GetBinaryWriter().Write(int(exportedTemplateTypes.size()));
-    for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
+    for (std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>::const_iterator i = exportedTemplateTypes.cbegin(); i != e; ++i)
     {
+        TemplateTypeSymbol* exportedTemplateType = i->second;
         writer.Write(exportedTemplateType);
     }
     writer.GetBinaryWriter().Write(int(exportedDerivedTypes.size()));
@@ -548,14 +553,14 @@ FunctionSymbol* SymbolTable::GetOverload(const std::string& fullOverloadGroupNam
 void SymbolTable::ProcessImportedTemplateTypes()
 {
     if (importedTemplateTypes.empty()) return;
-    std::unordered_map<std::string, std::vector<TemplateTypeSymbol*>> replicaMap;
-    for (TemplateTypeSymbol* templatetypeSymbol : importedTemplateTypes)
+    std::unordered_map<TypeId, std::vector<TemplateTypeSymbol*>, TypeIdHash> replicaMap;
+    for (TemplateTypeSymbol* templateTypeSymbol : importedTemplateTypes)
     {
-        std::vector<TemplateTypeSymbol*>& replicaList = replicaMap[templatetypeSymbol->FullName()];
-        replicaList.push_back(templatetypeSymbol);
+        std::vector<TemplateTypeSymbol*>& replicaList = replicaMap[templateTypeSymbol->Id()];
+        replicaList.push_back(templateTypeSymbol);
     }
-    std::unordered_map<std::string, std::vector<TemplateTypeSymbol*>>::iterator e = replicaMap.end();
-    for (std::unordered_map<std::string, std::vector<TemplateTypeSymbol*>>::iterator i = replicaMap.begin(); i != e; ++i)
+    std::unordered_map<TypeId, std::vector<TemplateTypeSymbol*>, TypeIdHash>::iterator e = replicaMap.end();
+    for (std::unordered_map<TypeId, std::vector<TemplateTypeSymbol*>, TypeIdHash>::iterator i = replicaMap.begin(); i != e; ++i)
     {
         std::vector<TemplateTypeSymbol*>& replicaList = i->second;
         if (!replicaList.empty())

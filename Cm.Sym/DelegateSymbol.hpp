@@ -68,7 +68,7 @@ public:
     }
     void MakeIrType() override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
     bool IsValueTypeSymbol() const override { return true; }
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
@@ -137,7 +137,7 @@ public:
         SetFlag(ClassDelegateTypeSymbolFlags::throw_);
     }
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
     void ReplaceReplicaTypes() override;

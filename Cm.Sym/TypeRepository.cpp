@@ -520,11 +520,11 @@ void TypeRepository::ReplaceReplicaTypes()
     TypeSymbolMap::iterator e = typeSymbolMap.end();
     for (TypeSymbolMap::iterator i = typeSymbolMap.begin(); i != e; ++i)
     {
-        TypeSymbol*& typeSymbol = i->second;
+        TypeSymbol* typeSymbol = i->second;
         if (typeSymbol->IsReplica() && typeSymbol->IsTemplateTypeSymbol())
         {
             TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(typeSymbol);
-            typeSymbol = replica->GetPrimaryTemplateTypeSymbol();
+            i->second = replica->GetPrimaryTemplateTypeSymbol();
         }
         else
         {

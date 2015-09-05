@@ -40,11 +40,8 @@ namespace Cm.Sym
         }
         public nothrow override bool IsExportSymbol() const
         {
-            if (base->IsExportSymbol())
-            {
-                return !isIntrinsicConcept;
-            }
-            return false;
+            if (isIntrinsicConcept) return false;
+            return base->IsExportSymbol();
         }
         public nothrow const List<TypeParameterSymbol*>& TypeParameters() const
         {

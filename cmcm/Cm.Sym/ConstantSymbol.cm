@@ -78,6 +78,14 @@ namespace Cm.Sym
         {
             evaluating = false;
         }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
+                type = replica->GetPrimaryTemplateTypeSymbol();
+            }
+        }
         private TypeSymbol* type;
         private UniquePtr<Value> value;
         private bool evaluating;

@@ -61,6 +61,14 @@ namespace Cm.Sym
         {
             return useSpan;
         }
+        public nothrow override void ReplaceReplicaTypes()
+        {
+            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
+                type = replica->GetPrimaryTemplateTypeSymbol();
+            }
+        }
         private TypeSymbol* type;
         private bool used;
         private Span useSpan;

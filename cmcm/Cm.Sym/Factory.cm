@@ -18,7 +18,15 @@ namespace Cm.Sym
         public virtual nothrow ~SymbolCreator()
         {
         }
-        public abstract Symbol* CreateSymbol(const Span& span, const string& name);
+        public abstract nothrow Symbol* CreateSymbol(const Span& span, const string& name);
+    }
+    
+    public class ConcreteSymbolCreator<T> : SymbolCreator where T is SymbolClass
+    {
+        public override nothrow Symbol* CreateSymbol(const Span& span, const string& name)
+        {
+            return new T(span, name);
+        }
     }
     
     public class SymbolFactory
@@ -29,6 +37,23 @@ namespace Cm.Sym
         private SymbolFactory()
         {
             creators.Resize(int(SymbolType.maxSymbol));
+            Register(SymbolType.classSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
+            Register(SymbolType.constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
+            Register(SymbolType.declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
+            Register(SymbolType.delegateSymbol, new ConcreteSymbolCreator<DelegateTypeSymbol>());
+            Register(SymbolType.classDelegateSymbol, new ConcreteSymbolCreator<ClassDelegateTypeSymbol>());
+            Register(SymbolType.enumTypeSymbol, new ConcreteSymbolCreator<EnumTypeSymbol>());
+            Register(SymbolType.enumConstantSymbol, new ConcreteSymbolCreator<EnumConstantSymbol>());
+            Register(SymbolType.functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
+            Register(SymbolType.localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
+            Register(SymbolType.memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());
+            Register(SymbolType.namespaceSymbol, new ConcreteSymbolCreator<NamespaceSymbol>());
+            Register(SymbolType.parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
+            Register(SymbolType.typeParameterSymbol, new ConcreteSymbolCreator<TypeParameterSymbol>());
+            Register(SymbolType.templateTypeSymbol, new ConcreteSymbolCreator<TemplateTypeSymbol>());
+            Register(SymbolType.derivedTypeSymbol, new ConcreteSymbolCreator<DerivedTypeSymbol>());
+            Register(SymbolType.typedefSymbol, new ConcreteSymbolCreator<TypedefSymbol>());
+            Register(SymbolType.conceptSymbol, new ConcreteSymbolCreator<ConceptSymbol>());
         }
         public static nothrow SymbolFactory& Instance()
         {
@@ -50,6 +75,10 @@ namespace Cm.Sym
             {
                 throw Exception("could not create symbol '" + name + "'");
             }
+        }
+        private void Register(SymbolType symbolType, SymbolCreator* creator)
+        {
+            creators[int(symbolType)] = UniquePtr<SymbolCreator>(creator);
         }
         private static UniquePtr<SymbolFactory> instance;
         private List<UniquePtr<SymbolCreator>> creators;

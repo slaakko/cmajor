@@ -294,7 +294,7 @@ public:
     void MakeIrType() override;
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
     Cm::Ast::CompileUnitNode* CompileUnit() const { return compileUnit; }
     void SetCompileUnit(Cm::Ast::CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     void Dump(CodeFormatter& formatter) override;

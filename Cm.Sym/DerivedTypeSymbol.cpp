@@ -242,7 +242,7 @@ std::string DerivedTypeSymbol::FullName() const
 
 bool DerivedTypeSymbol::IsExportSymbol() const
 {
-    return baseType->IsPublic();
+    return baseType->IsPublic() && !baseType->IsReplica();
 }
 
 std::string DerivedTypeSymbol::FullDocId() const
@@ -356,7 +356,7 @@ void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>&
     }
 }
 
-void DerivedTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void DerivedTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
     if (!IsExportSymbol()) return;
     if (Source() == SymbolSource::project)

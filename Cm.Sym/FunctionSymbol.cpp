@@ -809,7 +809,7 @@ void FunctionSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& co
     }
 }
 
-void FunctionSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void FunctionSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
     if (returnType)
     {

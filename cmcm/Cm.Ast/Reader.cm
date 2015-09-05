@@ -196,6 +196,18 @@ namespace Cm.Ast
         {
             node = ReadNode();
         }
+        public ParameterNode* ReadParameterNode()
+        {
+            Node* n = ReadNode();
+            if (n->GetNodeType() == NodeType.parameterNode)
+            {
+                return cast<ParameterNode*>(n);
+            }                   
+            else
+            {
+                throw Exception("parameter node expected");
+            }            
+        }
         public void Read(ParameterNode*& node)
         {
             Node* n = ReadNode();

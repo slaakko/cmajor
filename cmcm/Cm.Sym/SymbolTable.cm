@@ -112,25 +112,28 @@ namespace Cm.Sym
             }
             if (importTypeRepository)
             {
-                typeRepository.Import(reader);
+                typeRepository.Import(reader, *this);
             }
         }
         public void Export(Writer& writer)
         {
-            HashSet<TemplateTypeSymbol*> exportedTemplateTypes;
+            HashMap<TypeId, TemplateTypeSymbol*> exportedTemplateTypes;
             HashSet<Symbol*> collectedTemplateTypes;
             globalNs.CollectExportedTemplateTypes(collectedTemplateTypes, exportedTemplateTypes);
             HashSet<TypeSymbol*> exportedDerivedTypes;
             HashSet<Symbol*> collectedDerivedTypes;
-            for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
+            HashMap<TypeId, TemplateTypeSymbol*>.ConstIterator e = exportedTemplateTypes.CEnd();
+            for (HashMap<TypeId, TemplateTypeSymbol*>.ConstIterator i = exportedTemplateTypes.CBegin(); i != e; ++i)
             {
+                TemplateTypeSymbol* exportedTemplateType = i->second;
                 exportedTemplateType->CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
             }
             globalNs.CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
             writer.Write(&globalNs);
             writer.GetBinaryWriter().Write(exportedTemplateTypes.Count());
-            for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
+            for (HashMap<TypeId, TemplateTypeSymbol*>.ConstIterator i = exportedTemplateTypes.CBegin(); i != e; ++i)
             {
+                TemplateTypeSymbol* exportedTemplateType = i->second;
                 writer.Write(exportedTemplateType);
             }
             writer.GetBinaryWriter().Write(exportedDerivedTypes.Count());
@@ -477,6 +480,43 @@ namespace Cm.Sym
         {
             EndContainer();
         }
+        public void AddImportedTemplateType(TemplateTypeSymbol* importedTemplateType) 
+        { 
+            importedTemplateTypes.Add(importedTemplateType); 
+        }
+        public void ProcessImportedTemplateTypes()
+        {
+            if (importedTemplateTypes.IsEmpty()) return;
+            HashMap<TypeId, List<TemplateTypeSymbol*>> replicaMap;
+            for (TemplateTypeSymbol* templateTypeSymbol : importedTemplateTypes)
+            {
+                List<TemplateTypeSymbol*>& replicaList = replicaMap[templateTypeSymbol->Id()];
+                replicaList.Add(templateTypeSymbol);
+            }
+            HashMap<TypeId, List<TemplateTypeSymbol*>>.Iterator e = replicaMap.End();
+            for (HashMap<TypeId, List<TemplateTypeSymbol*>>.Iterator i = replicaMap.Begin(); i != e; ++i)
+            {
+                List<TemplateTypeSymbol*>& replicaList = i->second;
+                if (!replicaList.IsEmpty())
+                {
+                    TemplateTypeSymbol* representative = replicaList.Back();
+                    representative->ResetFlag(SymbolFlags.replica);
+                    representative->ResetFlag(SymbolFlags.bound);
+                    int n = replicaList.Count();
+                    for (int i = 0; i < n - 1; ++i)
+                    {
+                        TemplateTypeSymbol* replica = replicaList[i];
+                        replica->SetReplica();
+                        replica->SetBound();
+                        replica->SetPrimaryTemplateTypeSymbol(representative);
+                    }
+                    typeRepository.AddType(representative);
+                }
+            }
+            importedTemplateTypes.Clear();
+            globalNs.ReplaceReplicaTypes();
+            typeRepository.ReplaceReplicaTypes();
+        }
         private NamespaceSymbol globalNs;
         private HashMap<Symbol*, Cm.Ast.Node*> symbolNodeMap;
         private HashMap<Cm.Ast.Node*, ContainerScope*> nodeScopeMap;
@@ -488,5 +528,6 @@ namespace Cm.Sym
         private Stack<ClassTypeSymbol*> currentClassStack;
         private FunctionSymbol* currentFunction;
         private FunctionSymbol* userMainFunction;
+        private List<TemplateTypeSymbol*> importedTemplateTypes;
     }
 }

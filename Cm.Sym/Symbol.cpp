@@ -87,12 +87,12 @@ Symbol::~Symbol()
 
 void Symbol::Write(Writer& writer)
 {
-    writer.GetBinaryWriter().Write(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::irTypeMade)));
+    writer.GetBinaryWriter().Write(uint16_t(flags & ~(SymbolFlags::project | SymbolFlags::irTypeMade | SymbolFlags::owned)));
 }
 
 void Symbol::Read(Reader& reader)
 {
-    flags = SymbolFlags(reader.GetBinaryReader().ReadByte());
+    flags = SymbolFlags(reader.GetBinaryReader().ReadUShort());
 }
 
 std::string Symbol::FullName() const
@@ -278,7 +278,7 @@ void Symbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected,
 {
 }
 
-void Symbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void Symbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
 }
 

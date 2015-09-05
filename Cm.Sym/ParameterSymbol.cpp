@@ -81,7 +81,7 @@ void ParameterSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& c
     }
 }
 
-void ParameterSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes)
+void ParameterSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
     if (!type) return;
     if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())

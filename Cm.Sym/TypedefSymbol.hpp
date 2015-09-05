@@ -32,7 +32,7 @@ public:
     void SetEvaluating() { evaluating = true; }
     void ResetEvaluating() { evaluating = false; }
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
     void Dump(CodeFormatter& formatter) override;
     void ReplaceReplicaTypes() override;
 private:
