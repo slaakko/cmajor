@@ -190,6 +190,7 @@ namespace System.Collections
             if (bucket == null)
             {
                 int index = table->GetBucketIndex(old->Value());
+                #assert(index != -1);
                 ++index;
                 int n = table->GetBucketCount();
                 while (bucket == null && index < n)
@@ -298,6 +299,7 @@ namespace System.Collections
             }
             const KeyType& key = KeyOf(value);
             int index = Hash(key);
+            #assert(index != -1);
             Bucket<ValueType>* bucket = buckets[index];
             while (bucket != null)
             {
@@ -317,6 +319,7 @@ namespace System.Collections
         public nothrow void Remove(const KeyType& key) 
         {
             int index = Hash(key);
+            if (index == -1) return;
             Bucket<ValueType>* bucket = buckets[index];
             Bucket<ValueType>* prev = null;
             while (bucket != null)
@@ -346,6 +349,7 @@ namespace System.Collections
             if (bucket != null)
             {
                 int index = Hash(KeyOf(bucket->Value()));
+                if (index == -1) return;
                 Bucket<ValueType>* b = buckets[index];
                 Bucket<ValueType>* prev = null;
                 while (b != bucket && b != null)
@@ -372,43 +376,52 @@ namespace System.Collections
         public nothrow Iterator Find(const KeyType& key) 
         {
             int index = Hash(key);
-            Bucket<ValueType>* bucket = buckets[index];
-            while (bucket != null)
+            if (index >= 0)
             {
-                if (Equal(KeyOf(bucket->Value()), key))
+                Bucket<ValueType>* bucket = buckets[index];
+                while (bucket != null)
                 {
-                    return Iterator (this, bucket);
+                    if (Equal(KeyOf(bucket->Value()), key))
+                    {
+                        return Iterator (this, bucket);
+                    }
+                    bucket = bucket->Next();
                 }
-                bucket = bucket->Next();
-            }
+            }            
             return Iterator(this, null);
         }
         public nothrow ConstIterator Find(const KeyType& key) const
         {
             int index = Hash(key);
-            Bucket<ValueType>* bucket = buckets[index];
-            while (bucket != null)
+            if (index >= 0)
             {
-                if (Equal(KeyOf(bucket->Value()), key))
+                Bucket<ValueType>* bucket = buckets[index];
+                while (bucket != null)
                 {
-                    return ConstIterator(this, bucket);
+                    if (Equal(KeyOf(bucket->Value()), key))
+                    {
+                        return ConstIterator(this, bucket);
+                    }
+                    bucket = bucket->Next();
                 }
-                bucket = bucket->Next();
-            }
+            }            
             return ConstIterator(this, null);
         }
         public nothrow ConstIterator CFind(const KeyType& key) const
         {
             int index = Hash(key);
-            Bucket<ValueType>* bucket = buckets[index];
-            while (bucket != null)
+            if (index >= 0)
             {
-                if (Equal(KeyOf(bucket->Value()), key))
+                Bucket<ValueType>* bucket = buckets[index];
+                while (bucket != null)
                 {
-                    return ConstIterator(this, bucket);
+                    if (Equal(KeyOf(bucket->Value()), key))
+                    {
+                        return ConstIterator(this, bucket);
+                    }
+                    bucket = bucket->Next();
                 }
-                bucket = bucket->Next();
-            }
+            }            
             return ConstIterator(this, null);
         }
         public override nothrow int GetBucketCount() const
@@ -456,6 +469,7 @@ namespace System.Collections
                 {
                     const KeyType& key = KeyOf(bucket->Value());
                     int index = Hash(key);
+                    #assert(index != -1);
                     Bucket<ValueType>* next = bucket->Next();
                     bucket->SetNext(buckets[index]);
                     buckets[index] = bucket;
@@ -500,6 +514,7 @@ namespace System.Collections
         }
         private nothrow inline int Hash(const KeyType& key) const
         {
+            if (buckets.IsEmpty()) return -1;
             return cast<int>(hash(key) % cast<ulong>(buckets.Count()));
         }
         private nothrow inline bool Equal(const KeyType& left, const KeyType& right) const

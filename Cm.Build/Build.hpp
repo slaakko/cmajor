@@ -15,7 +15,7 @@
 namespace Cm { namespace Build {
 
 void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines);
-bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines);
+void BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines);
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GetLibraryDirectories(std::vector<std::string>& libraryDirectories);
