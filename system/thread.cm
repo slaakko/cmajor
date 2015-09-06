@@ -149,7 +149,7 @@ namespace System.Threading
     {
         long secs = d.Rep() / 1000000000;
         int nanosecs = cast<int>(d.Rep() % 1000000000);
-        int result = sleep(secs, nanosecs);
+        int result = cmsleep(secs, nanosecs);
         if (result != 0)
         {
             string reason = strerror(result);

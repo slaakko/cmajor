@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <signal.h>
 #include <limits.h>
-#ifdef LINUX
+#if defined(__linux) || defined(__unix) || defined(__posix)
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -87,7 +87,7 @@ int create_directory(const char* directoryName)
 
 enum OpenFlags
 {
-    none = 0, readOnly = 1, writeOnly = 2, readWrite = 4, create = 8, append = 16, truncate = 32, text = 64, binary = 128
+    none = 0, readOnly = 1, writeOnly = 2, readWrite = 4, create = 8, append = 16, trunc = 32, text = 64, binary = 128
 };
 
 int open_file(const char* filename, enum OpenFlags openFlags, int pmode)
@@ -113,7 +113,7 @@ int open_file(const char* filename, enum OpenFlags openFlags, int pmode)
     {
         oflags |= O_APPEND; // note: in Linux 0x0400, in Windows 0x0008
     }
-    if ((openFlags & truncate) != none)
+    if ((openFlags & trunc) != none)
     {
         oflags |= O_TRUNC;
     }
@@ -250,15 +250,7 @@ char* get_current_working_directory(char* buf, int bufSize)
 
 #elif defined(__linux) || defined(__unix) || defined(__posix)
 
-    long retval = getcwd(buf, (unsigned long)bufSize);
-    if (retval == -1)
-    {
-        return NULL;
-    }
-    else
-    {
-        return buf;
-    }
+    return getcwd(buf, (unsigned long)bufSize);
 
 #else
 
@@ -541,7 +533,7 @@ int time_nanosecs(long long* secs, int* nanosecs)
     return 0;
 }
 
-int sleep(long long secs, int nanosecs)
+int cmsleep(long long secs, int nanosecs)
 {
     struct timespec request;
     request.tv_sec = secs;
