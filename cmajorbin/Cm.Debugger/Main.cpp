@@ -64,10 +64,11 @@ int main(int argc, const char** argv)
         std::string executable;
         std::vector<std::string> arguments;
         bool firstNonOption = true;
+        bool receiveProgramArguments = false;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
-            if (Cm::Util::StartsWith(arg, "-"))
+            if (!receiveProgramArguments && Cm::Util::StartsWith(arg, "-"))
             {
                 if (arg == "-ide")
                 {
@@ -101,6 +102,7 @@ int main(int argc, const char** argv)
             {
                 firstNonOption = false;
                 executable = arg;
+                receiveProgramArguments = true;
             }
             else
             {

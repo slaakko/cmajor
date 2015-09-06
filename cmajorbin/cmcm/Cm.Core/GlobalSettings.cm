@@ -1,0 +1,66 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Cm.Core
+{
+    public class GlobalSettings
+    {
+        static nothrow GlobalSettings() : instance(new GlobalSettings())
+        {
+        }
+        public static nothrow GlobalSettings& Instance()
+        {
+            return *instance;
+        }
+        private nothrow GlobalSettings() : config("debug"), optimizationLevel(-1)
+        {
+        }
+        public nothrow void SetConfig(const string& config_)
+        {
+            config = config_;
+        }
+        public nothrow const string& Config() const
+        {
+            return config;
+        }
+        public nothrow void SetOptimizationLevel(int optimizationLevel_)
+        {
+            optimizationLevel = optimizationLevel_;
+        }
+        public nothrow int OptimizationLevel() const
+        {
+            if (optimizationLevel == -1)
+            {
+                if (config == "debug")
+                {
+                    return 0;
+                }
+                else if (config == "release")
+                {
+                    return 3;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            return optimizationLevel;
+        }
+        private static UniquePtr<GlobalSettings> instance;
+        private string config;
+        private int optimizationLevel;
+    }
+    
+    public nothrow const string& GetConfig()
+    {
+        return GlobalSettings.Instance().Config();
+    }
+}

@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #if defined(_WIN32)
 #define _CRT_RAND_S
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -19,9 +21,11 @@
 #include <time.h>
 #include <stdint.h>
 #include <signal.h>
+#include <limits.h>
 #ifdef LINUX
 #include <unistd.h>
 #include <sys/types.h>
+#include <dirent.h>
 #endif
 #include <pthread.h>
 #if defined(_WIN32)
@@ -262,6 +266,118 @@ char* get_current_working_directory(char* buf, int bufSize)
 
 #endif
 }
+
+#ifdef _WIN32
+
+int remove_all(const char* dirPath)
+{
+    char filter[PATH_MAX];
+    char absolutePath[PATH_MAX];
+    HANDLE findHandle;
+    WIN32_FIND_DATA findData;
+    BOOL removeResult;
+    int result;
+
+    snprintf(filter, PATH_MAX, "%s\\*", dirPath);
+    findHandle = FindFirstFile(filter, &findData);
+    if (findHandle == INVALID_HANDLE_VALUE)
+    {
+        return -1;
+    }
+    while (1)
+    {
+        snprintf(absolutePath, PATH_MAX, "%s\\%s", dirPath, findData.cFileName);
+        if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+        {
+            if (strcmp(findData.cFileName, ".") != 0 && strcmp(findData.cFileName, "..") != 0)
+            {
+                result = remove_all(absolutePath);
+                if (result != 0)
+                {
+                    FindClose(findHandle);
+                    return result;
+                }
+            }
+        }
+        else 
+        {
+            removeResult = DeleteFile(absolutePath);
+            if (removeResult == 0)
+            {
+                FindClose(findHandle);
+                return -1;
+            }
+        }
+        if (FindNextFile(findHandle, &findData) == 0)
+        {
+            break;
+        }
+    }
+    FindClose(findHandle);
+    removeResult = RemoveDirectory(dirPath);
+    if (removeResult == 0)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+
+int remove_all(const char* dirPath)
+{
+    DIR* dir;
+    struct dirent* entry;
+    char absolutePath[PATH_MAX];
+    int result;
+
+    dir = opendir(dirPath);
+    if (!dir)
+    {
+        return -1;
+    }
+    while (1)
+    {
+        entry = readdir(dir);
+        if (!entry)
+        {
+            break;
+        }
+        snprintf(absolutePath, PATH_MAX, "%s/%s", dirPath, entry->d_name);
+        if (entry->d_type == DT_DIR) // directory
+        {
+            if (strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0) continue;
+            result = remove_all(absolutePath);
+            if (result != 0)
+            {
+                closedir(dir);
+                return result;
+            }
+        }
+        else if (entry->d_type == DT_REG) // regular file
+        {
+            result = remove(absolutePath);
+            if (result != 0)
+            {
+                closedir(dir);
+                return result;
+            }
+        }
+    }
+    closedir(dir);
+    result = remove(dirPath);
+    if (result != 0)
+    {
+        return result;
+    }
+    return 0;
+}
+
+#else
+
+#error unknown platform
+
+#endif
 
 char* get_environment_variable(const char* varName)
 {

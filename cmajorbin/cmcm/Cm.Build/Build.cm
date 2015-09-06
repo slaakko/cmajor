@@ -9,17 +9,180 @@
 
 using System;
 using System.Collections;
+using System.IO;
 
 namespace Cm.Build
 {
+    public class Grammars
+    {
+        static Grammars() : instance(new Grammars())
+        {
+        }
+        public static Grammars& Instance()
+        {
+            return *instance;
+        }
+        private Grammars() : solutionGrammar(Cm.Parser.SolutionGrammar.Create()), projectGrammar(Cm.Parser.ProjectGrammar.Create())
+        {
+        }
+        public Cm.Parser.SolutionGrammar* GetSolutionGrammar() 
+        {
+            return solutionGrammar;
+        }
+        public Cm.Parser.ProjectGrammar* GetProjectGrammar()
+        {
+            return projectGrammar;
+        }
+        private static UniquePtr<Grammars> instance;
+        private Cm.Parser.SolutionGrammar* solutionGrammar;
+        private Cm.Parser.ProjectGrammar* projectGrammar;
+    }
+    
     public void BuildSolution(const string& solutionFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
     {
-        // todo
+        int built = 0;
+        int uptodate = 0;
+        if (!FileExists(solutionFilePath))
+        {
+            throw Cm.Core.Error("solution file '" + solutionFilePath + "' not found");
+        }
+        Cm.Parser.SolutionGrammar* solutionGrammar = Grammars.Instance().GetSolutionGrammar();
+        FileMapping solutionFile(solutionFilePath);
+        UniquePtr<Cm.Ast.Solution> solution(solutionGrammar->Parse(solutionFile.Begin(), solutionFile.End(), 0, solutionFilePath));
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        bool clean = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.clean);
+        if (!quiet)
+        {
+            string work = "Building";
+            if (rebuild)
+            {
+                work = "Rebuilding";
+            }            
+            else if (clean)
+            {
+                work = "Cleaning";
+            }
+            Console.Out() << work << " solution '" << solution->Name() << "' (" << solution->FilePath() << ") using " << Cm.Core.GetConfig() << " configuration..." << endl();
+        }
+        solution->ResolveDeclarations();
+        List<UniquePtr<Cm.Ast.Project>> projects;
+        for (const string& projectFilePath : solution->ProjectFilePaths())
+        {
+            if (!FileExists(projectFilePath))
+            {
+                throw Cm.Core.Error("project file '" + projectFilePath + "' not found");
+            }
+            Cm.Parser.ProjectGrammar* projectGrammar = Grammars.Instance().GetProjectGrammar();
+            FileMapping projectFile(projectFilePath);
+            string backend = "llvm"; // todo
+            string os = "windows"; // todo
+            UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os));
+            project->ResolveDeclarations();
+            solution->AddProject(Rvalue(project));
+        }
+        List<Cm.Ast.Project*> buildOrder = solution->CreateBuildOrder();
+        for (Cm.Ast.Project* project : buildOrder)
+        {
+            if (clean)
+            {
+                CleanProject(project);
+            }
+            else
+            {
+                bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines);
+                if (projectChanged)
+                {
+                    rebuild = true;
+                    ++built;
+                }
+                else
+                {
+                    ++uptodate;
+                }
+            }
+        }
+        if (!quiet)
+        {
+            if (clean)
+            {
+                Console.Out() << "Solution '" << solution->Name() << "' (" << solution->FilePath() << ") cleaned successfully" << endl();
+            }
+            else
+            {
+                string builtStr = "project";
+                if (built != 1)
+                {
+                    builtStr.Append('s');
+                }
+                string uptodateStr = "project";
+                if (uptodate != 1)
+                {
+                    uptodateStr.Append('s');
+                }
+                Console.Out() << built << " " << builtStr << " built, " << uptodate << " " << uptodateStr << " up-to-date" << endl();
+                Console.Out() << "Solution '" << solution->Name() << "' (" << solution->FilePath() << ") built successfully" << endl();
+            }
+        }
     }
     
     public void BuildProject(const string& projectFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
     {
+        if (!FileExists(projectFilePath))
+        {
+            throw Cm.Core.Error("project file '" + projectFilePath + "' not found");
+        }
+        Cm.Parser.ProjectGrammar* projectGrammar = Grammars.Instance().GetProjectGrammar();
+        FileMapping projectFile(projectFilePath);
+        string backend = "llvm"; // todo
+        string os = "windows"; // todo
+        UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os));
+        project->ResolveDeclarations();
+        bool clean = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.clean);
+        if (clean)
+        {
+            CleanProject(project.GetPtr());
+        }
+        else
+        {
+            BuildProject(project.GetPtr(), rebuild, compileFileNames, defines);
+        }
+    }
+    
+    public bool BuildProject(Cm.Ast.Project* project, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
+    {
+        bool changed = false;
         // todo
+        return changed;
+    }
+    
+    public void CleanProject(Cm.Ast.Project* project)
+    {
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet)
+        {
+            Console.Out() << "Cleaning project '" << project->Name() << "' (" << GetFullPath(project->OutputBasePath()) << ")" << endl();
+        }
+        if (DirectoryExists(project->OutputBasePath()))
+        {
+            int result = remove_all(project->OutputBasePath().Chars());
+            if (result == 0)
+            {
+                if (!quiet)
+                {
+                    Console.Out() << "Project '" << project->Name() << "' (" << GetFullPath(project->OutputBasePath()) << ") cleaned successfully" << endl();
+                }
+            }            
+            else
+            {
+                throw Exception("could not remove directory " + GetFullPath(project->OutputBasePath()));
+            }
+        }        
+        else
+        {
+            if (!quiet)
+            {
+                Console.Out() << "Project '" << project->Name() << "' (" << GetFullPath(project->OutputBasePath()) << ") cleaned successfully" << endl();
+            }
+        }
     }
 }
-

@@ -357,7 +357,7 @@ namespace Cm.Sym
             constantAndEnumConstantSymbols.Insert(SymbolType.enumConstantSymbol);
             symbolTypeSets.Add(Rvalue(constantAndEnumConstantSymbols));
         }
-        public nothrow inline const HashSet<SymbolType, SymbolTypeHash>& GetSymbolTypeSet(SymbolTypeSetId symbolTypeSetId) const
+        public nothrow const HashSet<SymbolType, SymbolTypeHash>& GetSymbolTypeSet(SymbolTypeSetId symbolTypeSetId) const
         {
             int index = cast<int>(symbolTypeSetId);
             #assert(index >= 0 && index < symbolTypeSets.Count());

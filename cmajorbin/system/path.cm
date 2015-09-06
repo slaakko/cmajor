@@ -97,7 +97,7 @@ namespace System.IO
             throw IOException("could not remove file '" + filePath + "': " + reason);
         }
     }
-
+    
     public static class Path
     {
         public static string MakeCanonical(const string& path)

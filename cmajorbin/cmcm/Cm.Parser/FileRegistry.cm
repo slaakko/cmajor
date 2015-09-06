@@ -40,7 +40,7 @@ namespace Cm.Parser
             }
             return string();
         }
-        public nothrow inline int GetNumberOfParsedFiles() const
+        public nothrow int GetNumberOfParsedFiles() const
         {
             return parsedFiles.Count();
         }

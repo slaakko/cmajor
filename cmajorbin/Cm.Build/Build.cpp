@@ -1038,7 +1038,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
 
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;
 
-bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
+void BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
 {
     if (!boost::filesystem::exists(projectFilePath))
     {
@@ -1055,11 +1055,10 @@ bool BuildProject(const std::string& projectFilePath, bool rebuild, const std::v
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean))
     {
         CleanProject(project.get());
-        return true;
     }
     else
     {
-        return BuildProject(project.get(), rebuild, compileFileNames, defines);
+        BuildProject(project.get(), rebuild, compileFileNames, defines);
     }
 }
 

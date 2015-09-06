@@ -1,0 +1,6 @@
+project Cm.Core;
+target=library;
+assembly <Cm.Core.cma>;
+reference <../Cm.Sym/Cm.Sym.cml>;
+source <Error.cm>;
+source <GlobalSettings.cm>;

@@ -80,7 +80,7 @@ int main(int argc, const char** argv)
                                     {
                                         throw Exception("unknown configuration '" + config + "'");
                                     }
-                                    // Cm.Core.GlobalSettings.Instance().SetConfig(config);
+                                    Cm.Core.GlobalSettings.Instance().SetConfig(config);
                                     if (config == "release")
                                     {
                                         Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.optimize);
@@ -90,7 +90,7 @@ int main(int argc, const char** argv)
                                 {
                                     string levelStr = v[1];
                                     int level = ParseInt(levelStr);
-                                    // Cm.Core.GlobalSettings.Instace().SetOptimizationLevel(level);
+                                    Cm.Core.GlobalSettings.Instance().SetOptimizationLevel(level);
                                 }
                                 else if (v[0] == "-backend")
                                 {
