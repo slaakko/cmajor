@@ -7,66 +7,49 @@
 
 ========================================================================*/
 
-#include <chrono>
+#include "profile.hpp"
 #include <stdio.h>
-#include <stdint.h>
 
-namespace 
+ProfileRec* profileBuf = nullptr;
+ProfileRec* profileBufPtr = nullptr;
+ProfileRec* profileBufEnd = nullptr;
+FILE* profDataFile = nullptr;
+
+inline void AppendProfileEvent(uint32_t fid, uint32_t evnt)
 {
-    const uint32_t startFunEvent = 0;
-    const uint32_t endFunEvent = 1;
-    const uint32_t flushFid = (uint32_t)-1;
+    *profileBufPtr++ = ProfileRec(fid, evnt);
+}
 
-    struct ProfileRec
+void FlushProfileBuf(bool last)
+{
+    if (!profDataFile) return;
+    if (!last)
     {
-        ProfileRec() : timestamp(), fid(), evnt() {}
-        ProfileRec(uint32_t fid_, uint32_t evnt_) : timestamp(std::chrono::steady_clock::now()), fid(fid_), evnt(evnt_) {}
-        std::chrono::steady_clock::time_point timestamp;
-        uint32_t fid;
-        uint32_t evnt;
-    };
-
-    ProfileRec* profileBuf = nullptr;
-    ProfileRec* profileBufPtr = nullptr;
-    ProfileRec* profileBufEnd = nullptr;
-    FILE* profileData = nullptr;
-
-    inline void AppendProfileEvent(uint32_t fid, uint32_t evnt)
-    {
-        *profileBufPtr++ = ProfileRec(fid, evnt);
+        AppendProfileEvent(flushFid, startFunEvent);
     }
-
-    void FlushProfileBuf(bool last)
+    fwrite(profileBuf, sizeof(ProfileRec), profileBufPtr - profileBuf, profDataFile);
+    profileBufPtr = profileBuf;
+    if (!last)
     {
-        if (!profileData) return;
-        if (!last)
-        {
-            AppendProfileEvent(flushFid, startFunEvent);
-        }
-        fwrite(profileBuf, sizeof(ProfileRec), profileBufPtr - profileBuf, profileData);
-        profileBufPtr = profileBuf;
-        if (!last)
-        {
-            AppendProfileEvent(flushFid, endFunEvent);
-        }
+        AppendProfileEvent(flushFid, endFunEvent);
     }
 }
 
-extern "C" void start_profiling(const char* profile)
+extern "C" void start_profiling(const char* profDataFilePath)
 {
     profileBuf = new ProfileRec[(1024 * 1024) / sizeof(ProfileRec)];
     profileBufPtr = profileBuf;
     profileBufEnd = profileBuf + (1024 * 1024) / sizeof(ProfileRec) - 1;
-    profileData = fopen(profile, "wb");
+    profDataFile = fopen(profDataFilePath, "wb");
 }
 
 extern "C" void end_profiling()
 {
-    if (profileData)
+    if (profDataFile)
     {
         FlushProfileBuf(true);
-        fclose(profileData);
-    }    
+        fclose(profDataFile);
+    }
 }
 
 extern "C" void start_profiled_fun(uint32_t fid)
