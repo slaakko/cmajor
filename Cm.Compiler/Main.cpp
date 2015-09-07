@@ -104,6 +104,7 @@ int main(int argc, const char** argv)
                 "-c FILENAME     : compile only FILENAME, do not link\n" <<
                 "-config=debug   : use debug configuration (default)\n" <<
                 "-config=release : use release configuration\n" <<
+                "-config=profile : instrument program/library with profiling enabled\n" <<
                 "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" << 
                 "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
                 "-backend=llvm   : use LLVM backend (default)\n" <<
@@ -132,12 +133,12 @@ int main(int argc, const char** argv)
                                 if (v[0] == "-config")
                                 {
                                     const std::string& config = v[1];
-                                    if (config != "debug" && config != "release")
+                                    if (config != "debug" && config != "release" && config != "profile")
                                     {
                                         throw std::runtime_error("unknown configuration '" + config + "'");
                                     }
                                     Cm::Core::GetGlobalSettings()->SetConfig(config);
-                                    if (config == "release")
+                                    if (config == "release" || config == "profile")
                                     {
                                         Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::optimize);
                                     }

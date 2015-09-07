@@ -47,6 +47,7 @@ protected:
     Cm::Sym::FunctionSymbol* EnterTracedCallFun() { return enterTracedCallFun; }
     Cm::Sym::FunctionSymbol* LeaveTracedCallFun() {return leaveTracedCallFun; }
     Cm::Sym::SymbolTable* SymbolTable() const { return symbolTable; }
+    bool Profile() const { return profile; }
 private:
 	Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
@@ -65,6 +66,7 @@ private:
     Cm::Sym::FunctionSymbol* leaveTracedCallFun;
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> processedClasses;
     Cm::Sym::SymbolTable* symbolTable;
+    bool profile;
 };
 
 } } // namespace Cm::Emit

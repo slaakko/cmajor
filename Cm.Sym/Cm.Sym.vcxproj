@@ -38,6 +38,7 @@
     <ClInclude Include="Factory.hpp" />
     <ClInclude Include="FunctionGroupSymbol.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
+    <ClInclude Include="FunctionTable.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
     <ClInclude Include="InitDone.hpp" />
     <ClInclude Include="LocalVariableSymbol.hpp" />
@@ -82,6 +83,7 @@
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="FunctionGroupSymbol.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
+    <ClCompile Include="FunctionTable.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />
     <ClCompile Include="InitDone.cpp" />
     <ClCompile Include="LocalVariableSymbol.cpp" />

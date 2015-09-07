@@ -1,0 +1,48 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Sym
+{
+    public void Define(const HashSet<string>& symbols)
+    {
+        Defines.Instance().Set(symbols);
+    }
+    
+    public bool IsSymbolDefined(const string& symbol)
+    {
+        return Defines.Instance().Defined(symbol);
+    }
+    
+    internal class Defines
+    {
+        static Defines() : instance(new Defines())
+        {
+        }
+        public static Defines& Instance() 
+        {
+            return *instance;
+        }
+        private Defines()
+        {
+        }
+        public void Set(const HashSet<string>& symbols_)
+        {
+            symbols = symbols_;
+        }
+        public nothrow bool Defined(const string& symbol)
+        {
+            return symbols.CFind(symbol) != symbols.CEnd();
+        }
+        private static UniquePtr<Defines> instance;
+        private HashSet<string> symbols;
+    }
+}

@@ -26,10 +26,61 @@ internal nothrow const char* Mode()
     return "";
 }
 
+internal string DurationStr(const Duration& duration)
+{
+    string durationStr;
+    long hours = duration.Hours();
+    long minutes = duration.Minutes() % 60;
+    long seconds = duration.Seconds() % 60;
+    if (hours > 0)
+    {
+        durationStr = ToString(hours);
+        if (hours != 1)
+        {
+            durationStr.Append(" hours");
+        }
+        else
+        {
+            durationStr.Append(" hour");
+        }
+    }
+    if (minutes > 0)
+    {
+        if (!durationStr.IsEmpty())
+        {
+            durationStr.Append(' ');
+        }
+        durationStr.Append(ToString(minutes));
+        if (minutes != 1)
+        {
+            durationStr.Append(" minutes");
+        }
+        else
+        {
+            durationStr.Append(" minute");
+        }
+    }
+    if (!durationStr.IsEmpty())
+    {
+        durationStr.Append(' ');
+    }
+    durationStr.Append(ToString(seconds));
+    if (seconds != 1)
+    {
+        durationStr.Append(" seconds");
+    }
+    else
+    {
+        durationStr.Append(" second");
+    }        
+    return durationStr;
+}
+
 int main(int argc, const char** argv)
 {
     try
     {
+        TimePoint start = Now();
         List<string> solutionOrProjectFilePaths;
         List<string> compileFileNames;
         HashSet<string> defines;
@@ -228,7 +279,9 @@ int main(int argc, const char** argv)
         bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
         if (!quiet && !solutionOrProjectFilePaths.IsEmpty())
         {
-            // todo
+            TimePoint end = Now();
+            Duration duration = end - start;
+            Console.Out() << DurationStr(duration) << endl();
         }
     }
     catch (const Exception& ex)

@@ -272,6 +272,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "system", "system", "{AAF2D7
 		system\os.cmp = system\os.cmp
 		system\pair.cm = system\pair.cm
 		system\path.cm = system\path.cm
+		system\profile.cpp = system\profile.cpp
 		system\ptr.cm = system\ptr.cm
 		system\queue.cm = system\queue.cm
 		system\rbtree.cm = system\rbtree.cm

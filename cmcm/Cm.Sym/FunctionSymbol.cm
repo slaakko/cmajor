@@ -38,6 +38,21 @@ namespace Cm.Sym
         new_ = 1u << 18u
     }
     
+    public enum ConversionType : byte
+    {
+        explicit_, implicit
+    }
+    
+    public enum ConversionRank : byte
+    {
+        exactMatch, promotion, conversion
+    }
+    
+    public nothrow inline bool BetterConversionRank(ConversionRank left, ConversionRank right)
+    {
+        return left < right;
+    }
+    
     public class PersistentFunctionData
     {
         public ulong bodyPos;
@@ -102,6 +117,7 @@ namespace Cm.Sym
             if (Parent()->IsClassTemplateSymbol()) return false;
             if (Parent()->IsTemplateTypeSymbol()) return false;
             if (IsReplica()) return false;
+            if (Source() == SymbolSource.project && GetGlobalFlag(GlobalFlags.optimize) && IsInline()) return true;
             return base->IsExportSymbol(); 
         }
         public nothrow void SetFlags(FunctionSymbolFlags flags_)
@@ -344,7 +360,7 @@ namespace Cm.Sym
         {
             return groupName == "@destructor" && parameters.Count() == 1;
         }
-        public nothrow inline bool IsConvertingConstructor() const
+        public nothrow virtual bool IsConvertingConstructor() const
         {
             return IsConstructor() && GetFlag(FunctionSymbolFlags.conversion);
         }
@@ -647,10 +663,6 @@ namespace Cm.Sym
         {
             mutexId = mutexId_;
         }
-        private nothrow inline bool GetFlag(FunctionSymbolFlags flag)
-        {
-            return (flags & flag) != FunctionSymbolFlags.none;
-        }
         public TypeSymbol* SourceType() const
         {
             if (IsConvertingConstructor())
@@ -681,6 +693,119 @@ namespace Cm.Sym
                 throw Exception("converting constructor or conversion function exprected");
             }
         }
+        public void ComputeName()
+        {
+            string s;
+            if (IsConversionFunction())
+            {
+                groupName = "operator_" + GetReturnType()->FullName();
+            }
+            s.Append(groupName);
+            if (!typeArguments.IsEmpty())
+            {
+                s.Append('<');
+            }
+            bool first = true;
+            for (TypeSymbol* typeArgument : typeArguments)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    s.Append(", ");
+                }
+                s.Append(typeArgument->FullName());
+            }
+            s.Append('>');
+            bool isConst = false;
+            s.Append('(');
+            first = true;
+            for (ParameterSymbol* parameter : parameters)
+            {
+                if (first)
+                {
+                    first = false;
+                    if (IsMemberFunctionSymbol())
+                    {
+                        if (parameter->GetType()->IsConstType())
+                        {
+                            isConst = true;
+                        }
+                    }
+                }
+                else
+                {
+                    s.Append(", ");
+                }
+                TypeSymbol* paramType = parameter->GetType();
+                s.Append(paramType->FullName());
+            }
+            s.Append(')');
+            if (isConst)
+            {
+                s.Append(" const");
+            }
+            SetName(s);
+        }
+        public nothrow virtual ConversionType GetConversionType() const 
+        { 
+            if (IsExplicit())
+            {
+                return Cm.Sym.ConversionType.explicit_;
+            }
+            return Cm.Sym.ConversionType.implicit;
+        }        
+        public nothrow virtual ConversionRank GetConversionRank() const 
+        { 
+            if (IsConvertingConstructor() || IsConversionFunction()) 
+            {
+                return ConversionRank.conversion;
+            }
+            else
+            {
+                return ConversionRank.exactMatch; 
+            }
+        }        
+        public nothrow virtual int GetConversionDistance() const 
+        { 
+            if (IsConvertingConstructor() || IsConversionFunction())
+            {
+                return 100;
+            }            
+            return 0;
+        }    
+        public virtual Cm.Sym.TypeSymbol* GetTargetType() const
+        {
+            if (IsConvertingConstructor())
+            {
+                return parameters[0]->GetType()->GetBaseType();
+            }
+            else if (IsConversionFunction())
+            {
+                return returnType;
+            }
+            else
+            {
+                throw Error("not converting constructor or conversion function", GetSpan());
+            }
+        }
+        public virtual Cm.Sym.TypeSymbol* GetSourceType() const
+        {
+            if (IsConvertingConstructor())
+            {
+                return parameters[1]->GetType()->GetBaseType();
+            }
+            else if (IsConversionFunction())
+            {
+                return parameters[0]->GetType()->GetBaseType();
+            }
+            else
+            {
+                throw Error("not converting constructor or conversion function", GetSpan());
+            }
+        }
         public nothrow override void ReplaceReplicaTypes()
         {
             if (IsFunctionTemplate()) return;
@@ -701,7 +826,11 @@ namespace Cm.Sym
                 }
             }
         }
-        private nothrow inline void SetFlag(FunctionSymbolFlags flag)
+        public nothrow inline bool GetFlag(FunctionSymbolFlags flag)
+        {
+            return (flags & flag) != FunctionSymbolFlags.none;
+        }
+        public nothrow inline void SetFlag(FunctionSymbolFlags flag)
         {
             flags = cast<FunctionSymbolFlags>(flags | flag);
         }

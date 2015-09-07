@@ -232,7 +232,8 @@ bool FunctionSymbol::IsExportSymbol() const
     if (IsFunctionTemplateSpecialization()) return false;
     if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;
-    if (IsReplica()) return false;;
+    if (IsReplica()) return false;
+    if (Source() == SymbolSource::project && GetGlobalFlag(GlobalFlags::optimize) && IsInline()) return true;
     return ContainerSymbol::IsExportSymbol();
 }
 

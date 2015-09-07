@@ -15,7 +15,7 @@ namespace Cm.Sym
 {
     public class SymbolTable
     {
-        public nothrow SymbolTable() : globalNs(Span(), ""), container(&globalNs), typeRepository(), currentClass(null), currentFunction(null), userMainFunction(null)
+        public nothrow SymbolTable() : globalNs(Span(), ""), container(&globalNs), typeRepository(), currentClass(null), currentFunction(null), userMainFunction(null), standardConversionTable(typeRepository)
         {
         }
         public Cm.Ast.Node* GetNode(Symbol* symbol) const
@@ -97,6 +97,22 @@ namespace Cm.Sym
         public nothrow inline void SetCurrentClass(ClassTypeSymbol* currentClass_)
         {
             currentClass = currentClass_;
+        }
+        public void AddPredefinedSymbolToGlobalScope(Symbol* symbol)
+        {
+            symbol->SetBound();
+            symbol->SetSource(SymbolSource.library);
+            symbol->SetPublic();
+            globalNs.AddSymbol(symbol);
+            if (symbol->IsTypeSymbol())
+            {
+                TypeSymbol* typeSymbol = cast<TypeSymbol*>(symbol);
+                typeRepository.AddType(typeSymbol);
+            }
+        }
+        public nothrow inline ConversionTable& GetStandardConversionTable() 
+        { 
+            return standardConversionTable; 
         }
         public void Import(Reader& reader, bool importTypeRepository)
         {
@@ -529,5 +545,6 @@ namespace Cm.Sym
         private FunctionSymbol* currentFunction;
         private FunctionSymbol* userMainFunction;
         private List<TemplateTypeSymbol*> importedTemplateTypes;
+        private ConversionTable standardConversionTable;
     }
 }

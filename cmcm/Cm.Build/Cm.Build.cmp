@@ -3,3 +3,4 @@ target=library;
 assembly <Cm.Build.cma>;
 reference <../Cm.Core/Cm.Core.cml>;
 source <Build.cm>;
+source <MainUnit.cm>;

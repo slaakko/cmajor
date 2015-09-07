@@ -29,7 +29,7 @@ int GlobalSettings::OptimizationLevel() const
         {
             return 0;
         }
-        else if (config == "release")
+        else if (config == "release" || config == "profile")
         {
             return 3;
         }

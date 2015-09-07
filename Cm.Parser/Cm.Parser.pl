@@ -166,6 +166,7 @@ namespace Cm.Parser
         SourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         AsmSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         CSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        CppSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         TextFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         ReferenceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         AssemblyFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;

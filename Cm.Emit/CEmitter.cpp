@@ -122,7 +122,7 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     }
     CFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(),
         ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(),
-        start, end, debugInfoFile != nullptr);
+        start, end, debugInfoFile != nullptr, Profile());
     functionEmitter.SetFunctionMap(&functionMap);
     functionEmitter.SetCFilePath(cFilePath);
     functionEmitter.SetSymbolTable(SymbolTable());

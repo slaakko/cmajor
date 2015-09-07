@@ -17,9 +17,9 @@ LlvmFunctionEmitter::LlvmFunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_
     std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_,
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_,
     Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
-    Cm::Sym::FunctionSymbol* leaveTracedCallFun_) : FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
+    Cm::Sym::FunctionSymbol* leaveTracedCallFun_, bool profile_) : FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
     internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_, externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCalllFun_,
-    leaveTracedCallFun_, false)
+    leaveTracedCallFun_, false, profile_)
 {
 }
 

@@ -27,6 +27,7 @@
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/SymbolTypeSet.hpp>
 #include <Cm.Sym/Conditional.hpp>
+#include <Cm.Sym/FunctionTable.hpp>
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/Binder.hpp>
@@ -134,7 +135,6 @@ std::string ResolveLibraryReference(const boost::filesystem::path& projectOutput
 Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const std::vector<std::string>& sourceFilePaths)
 {
     Cm::Parser::CompileUnitGrammar* compileUnitGrammar = Cm::Parser::CompileUnitGrammar::Create();
-    compileUnitGrammar->SetMaxLogLineLength(64 * 1024 * 1024);
     Cm::Ast::SyntaxTree syntaxTree;
     for (const std::string& sourceFilePath : sourceFilePaths)
     {
@@ -188,6 +188,21 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConcept
         Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
         compileUnit->Accept(declarationVisitor);
     }
+}
+
+void ImportFunctionTables(const std::vector<std::string>& allReferenceFilePaths)
+{
+    for (const std::string& referenceFilePath : allReferenceFilePaths)
+    {
+        std::string functionTableFileName = boost::filesystem::path(referenceFilePath).replace_extension(".fid").generic_string();
+        Cm::Sym::FunctionTable::Instance()->Import(functionTableFileName);
+    }
+}
+
+void ExportFunctionTable(const std::string& cmlFilePath)
+{
+    std::string functionTableFileName = boost::filesystem::path(cmlFilePath).replace_extension(".fid").generic_string();
+    Cm::Sym::FunctionTable::Instance()->Export(functionTableFileName);
 }
 
 void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
@@ -434,6 +449,76 @@ bool CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
             }
         }
         boost::filesystem::remove(ccErrorFilePath);
+    }
+    return true;
+}
+
+bool CompileCppFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
+{
+    bool changed = false;
+    for (const std::string& cppSourceFilePath : project->CppSourceFilePaths())
+    {
+        std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cppSourceFilePath).filename().replace_extension(".o")).generic_string());
+        objectFilePaths.push_back(objectFilePath);
+        boost::filesystem::path ofp = objectFilePath;
+        if (!boost::filesystem::exists(ofp))
+        {
+            changed = true;
+        }
+        else
+        {
+            boost::filesystem::path cfp = cppSourceFilePath;
+            if (boost::filesystem::last_write_time(cfp) > boost::filesystem::last_write_time(ofp))
+            {
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (!changed) return false;
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+    if (!quiet && !project->CppSourceFilePaths().empty())
+    {
+        std::cout << "Compiling C++ files..." << std::endl;
+    }
+    std::string gFlag;
+    if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+    {
+        gFlag = "-g ";
+    }
+    for (const std::string& cppSourceFilePath : project->CppSourceFilePaths())
+    {
+        std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cppSourceFilePath).filename().replace_extension(".o")).generic_string());
+        std::string cxxCommand = "g++ " + gFlag + "-O" + std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel());
+        cxxCommand.append(" -std=c++11 -pthread -c ").append(Cm::Util::QuotedPath(cppSourceFilePath)).append(" -o ").append(Cm::Util::QuotedPath(objectFilePath));
+        std::string cxxErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(objectFilePath).replace_extension(".cpp.error").generic_string());
+        try
+        {
+            if (!quiet)
+            {
+                std::cout << "> " << Cm::Util::GetFullPath(cppSourceFilePath) << std::endl;
+            }
+            Cm::Util::System(cxxCommand, 2, cxxErrorFilePath);
+        }
+        catch (const std::exception&)
+        {
+            Cm::Util::MappedInputFile file(cxxErrorFilePath);
+            try
+            {
+                if (!toolErrorGrammar)
+                {
+                    toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+                }
+                Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, cxxErrorFilePath);
+                throw Cm::Core::ToolErrorExcecption(toolError);
+            }
+            catch (const std::exception&)
+            {
+                std::string errorText(file.Begin(), file.End());
+                throw std::runtime_error(errorText);
+            }
+        }
+        boost::filesystem::remove(cxxErrorFilePath);
     }
     return true;
 }
@@ -907,6 +992,10 @@ void AddPlatformAndConfigDefines(std::unordered_set<std::string>& defines)
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
 {
     bool changed = false;
+    if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+    {
+        rebuild = true;
+    }
     Cm::Core::GetGlobalSettings()->SetCurrentProjectName(project->Name());
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
@@ -930,6 +1019,8 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     Cm::Core::GlobalConceptData globalConceptData;
     Cm::Core::SetGlobalConceptData(&globalConceptData);
     Cm::Sym::SymbolTable symbolTable;
+    Cm::Sym::FunctionTable functionTable;
+    Cm::Sym::FunctionTable::SetInstance(&functionTable);
     Cm::Sym::SymbolTypeSetCollection symbolTypeSetCollection;
     Cm::Sym::SetSymbolTypeSetCollection(&symbolTypeSetCollection);
     Cm::Sym::ExceptionTable exceptionTable;
@@ -950,12 +1041,21 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         module.CheckFileVersion();
     }
     BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+    if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+    {
+        ImportFunctionTables(allReferenceFilePaths);
+    }
     boost::filesystem::create_directories(project->OutputBasePath());
     std::vector<std::string> objectFilePaths;
     bool cFilesChanged = CompileCFiles(project, objectFilePaths);
     if (!changed)
     {
         changed = cFilesChanged;
+    }
+    bool cppFilesChanged = CompileCppFiles(project, objectFilePaths);
+    if (!changed)
+    {
+        changed = cppFilesChanged;
     }
     bool asmSourcesChanged = CompileAsmSources(project, objectFilePaths);
     if (!changed)
@@ -969,7 +1069,8 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     }
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
-        bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, changed || rebuild);
+        bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), 
+            boost::filesystem::path(project->ExecutableFilePath()).replace_extension(".cmprof").generic_string(), objectFilePaths, changed || rebuild);
         if (!changed)
         {
             changed = mainCompileUnitGenerated;
@@ -1007,6 +1108,10 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
         projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
         projectModule.Export(symbolTable);
+        if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+        {
+            ExportFunctionTable(cmlFilePath);
+        }
     }
     if (project->GetTarget() == Cm::Ast::Target::program && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info))
     {
@@ -1021,7 +1126,8 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     Cm::Sym::SetExceptionTable(nullptr);
     Cm::Sym::SetMutexTable(nullptr);
     Cm::Sym::SetClassCounter(nullptr);
-    if (!quiet)
+    Cm::Sym::FunctionTable::SetInstance(nullptr);
+        if (!quiet)
     {
         if (!changed)
         {

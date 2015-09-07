@@ -79,7 +79,7 @@ private:
     std::vector<CompoundDestructionStack> compoundDestructionStacks;
 };
 
-class FunctionEmitter : public Cm::BoundTree::Visitor
+class FunctionEmitter : public Cm::BoundTree::Visitor, public Cm::Core::ProfilingHandler
 {
 public:
     FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
@@ -87,7 +87,7 @@ public:
         std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, 
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_, 
-        Cm::Sym::FunctionSymbol* leaveTracedCallFun_, bool generateDebugInfo_);
+        Cm::Sym::FunctionSymbol* leaveTracedCallFun_, bool generateDebugInfo_, bool profile_);
 
     virtual void EmitDummyVar(Cm::Core::Emitter* emitter) = 0;
     virtual void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) = 0;
@@ -213,6 +213,8 @@ private:
     Cm::Ast::CompileUnitNode* currentCompileUnit;
     Cm::BoundTree::BoundClass* currentClass;
     Cm::BoundTree::BoundFunction* currentFunction;
+    bool profile;
+    uint32_t fid;
     Cm::Sym::ParameterSymbol* thisParam;
     std::unordered_set<std::string>& internalFunctionNames;
     std::unordered_set<Ir::Intf::Function*>& externalFunctions;
@@ -238,6 +240,7 @@ private:
     Cm::Sym::FunctionSymbol* leaveTracedCallFun;
     Cm::Sym::SymbolTable* symbolTable;
     std::stack<std::vector<Ir::Intf::LabelObject*>> nextTargetsStack;
+    Ir::Intf::LabelObject* endProfiledFunLabel;
     void ClearCompoundDestructionStack(Cm::Core::GenResult& result);
     void ExitCompound(Cm::Core::GenResult& result, const CompoundDestructionStack& compoundDestructionStack, bool& first);
     void ExitCompounds(Cm::BoundTree::BoundCompoundStatement* fromCompound, Cm::BoundTree::BoundCompoundStatement* targetCompound, Cm::Core::GenResult& result);
@@ -258,6 +261,8 @@ private:
     void GenerateLandingPadCode();
     void GenerateClassDelegateInitFromFun(Cm::Bind::ClassDelegateFromFunCtor* ctor, Cm::Core::GenResult& result);
     void GenerateClassDelegateAssignmentFromFun(Cm::Bind::ClassDelegateFromFunAssignment* assignment, Cm::Core::GenResult& result);
+    void EmitStartProfiledFun(const std::string& functionName);
+    void EmitEndProfiledFun(Ir::Intf::LabelObject* label) override;
 };
 
 } } // namespace Cm::Emit

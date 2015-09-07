@@ -143,6 +143,18 @@ void Project::ResolveDeclarations()
                     cSourceFilePaths.push_back(sfd->FilePath());
                     break;
                 }
+                case SourceFileType::cpp:
+                {
+                    for (const std::string& prev : cppSourceFilePaths)
+                    {
+                        if (prev == sfd->FilePath())
+                        {
+                            throw std::runtime_error("C++ source file '" + prev + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(sfd->GetSpan().LineNumber()) + ")");
+                        }
+                    }
+                    cppSourceFilePaths.push_back(sfd->FilePath());
+                    break;
+                }
                 case SourceFileType::text:
                 {
                     for (const std::string& prev : textFilePaths)

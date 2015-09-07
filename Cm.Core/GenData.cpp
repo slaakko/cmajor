@@ -143,7 +143,7 @@ void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label_)
     nextTargets.clear();
 }
 
-Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr), cDebugNode(nullptr), activeCfgNode(nullptr)
+Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr), cDebugNode(nullptr), activeCfgNode(nullptr), profilingHandler(nullptr)
 {
 }
 
@@ -163,9 +163,9 @@ void Emitter::RemoveLabelRequestFor(std::shared_ptr<GenData> genData)
 
 void Emitter::Emit(Ir::Intf::Instruction* instruction)
 {
-    if (!labelRequestSet.empty() || !nextInstructionLabels.empty())
+    Ir::Intf::LabelObject* label = nullptr;
+    if ((!labelRequestSet.empty() || !nextInstructionLabels.empty()) && !instruction->GetLabel())
     {
-        Ir::Intf::LabelObject* label = nullptr;
         if (gotoTargetLabel)
         {
             label = gotoTargetLabel;
@@ -182,7 +182,10 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
                 nextInstructionLabel->Set(label);
             }
         }
-        instruction->SetLabel(label);
+        if (!profilingHandler || !instruction->IsRet())
+        {
+            instruction->SetLabel(label);
+        }
 
         for (std::shared_ptr<GenData> genData : labelRequestSet)
         {
@@ -201,6 +204,10 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
     {
         instruction->SetCDebugNode(cDebugNode);
         cDebugNode = nullptr;
+    }
+    if (profilingHandler && instruction->IsRet())
+    {
+        profilingHandler->EmitEndProfiledFun(label);
     }
     irFunction->AddInstruction(instruction);
     if (instruction->IsRet())

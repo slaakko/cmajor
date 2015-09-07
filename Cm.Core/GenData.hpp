@@ -100,6 +100,12 @@ private:
 
 class CfgNode;
 
+class ProfilingHandler
+{
+public:
+    virtual void EmitEndProfiledFun(Ir::Intf::LabelObject* label) = 0;
+};
+
 class Emitter : public Ir::Intf::Emitter
 {
 public:
@@ -118,6 +124,7 @@ public:
     void UseCDebugNode(Ir::Intf::CDebugNode* cDebugNode_) { cDebugNode = cDebugNode_; }
     void SetActiveCfgNode(CfgNode* activeCfgNode_) { activeCfgNode = activeCfgNode_; }
     CfgNode* GetActiveCfgNode() const { return activeCfgNode; }
+    void SetProfilingHandler(ProfilingHandler* profilingHandler_) { profilingHandler = profilingHandler_; }
 private:
     Ir::Intf::Function* irFunction;
     std::unordered_set<std::shared_ptr<GenData>> labelRequestSet;
@@ -129,6 +136,7 @@ private:
     std::vector<std::unique_ptr<Ir::Intf::Function>> ownedFuns;
     Ir::Intf::CDebugNode* cDebugNode;
     CfgNode* activeCfgNode;
+    ProfilingHandler* profilingHandler;
 };
 
 class GenResult

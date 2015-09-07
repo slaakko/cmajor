@@ -1,5 +1,5 @@
-#ifndef Project_hpp_24386
-#define Project_hpp_24386
+#ifndef Project_hpp_3964
+#define Project_hpp_3964
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -23,6 +23,7 @@ private:
     class SourceFileDeclarationRule;
     class AsmSourceFileDeclarationRule;
     class CSourceFileDeclarationRule;
+    class CppSourceFileDeclarationRule;
     class TextFileDeclarationRule;
     class ReferenceFileDeclarationRule;
     class AssemblyFileDeclarationRule;
@@ -35,4 +36,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Project_hpp_24386
+#endif // Project_hpp_3964
