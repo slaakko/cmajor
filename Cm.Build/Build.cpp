@@ -904,6 +904,20 @@ bool CreateDebugInfoFile(const std::string& executableFilePath, const std::vecto
     return true;
 }
 
+void CreateCmProfFile(const std::string& cmlFilePath, const std::vector<std::string>& allReferenceFilePaths)
+{
+    std::string cmProfFile = boost::filesystem::path(cmlFilePath).replace_extension(".cmprof").generic_string();
+    Cm::Sym::FunctionTable globalFunctionTable;
+    for (const std::string& referenceFilePath : allReferenceFilePaths)
+    {
+        std::string fidFilePath = boost::filesystem::path(referenceFilePath).replace_extension(".fid").generic_string();
+        globalFunctionTable.ReadFunctionsById(fidFilePath);
+    }
+    std::string fidFilePath = boost::filesystem::path(cmlFilePath).replace_extension(".fid").generic_string();
+    globalFunctionTable.ReadFunctionsById(fidFilePath);
+    globalFunctionTable.WriteFunctionsById(cmProfFile);
+}
+
 bool GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths, bool changed)
 {
     boost::filesystem::path outputBase(projectOutputBasePath);
@@ -1070,7 +1084,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     if (project->GetTarget() == Cm::Ast::Target::program)
     {
         bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), 
-            boost::filesystem::path(project->ExecutableFilePath()).replace_extension(".cmprof").generic_string(), objectFilePaths, changed || rebuild);
+            boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, changed || rebuild);
         if (!changed)
         {
             changed = mainCompileUnitGenerated;
@@ -1121,6 +1135,10 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         {
             changed = debugInfoFileCreated;
         }
+    }
+    if (project->GetTarget() == Cm::Ast::Target::program && Cm::Core::GetGlobalSettings()->Config() == "profile")
+    {
+        CreateCmProfFile(cmlFilePath, allReferenceFilePaths);
     }
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);

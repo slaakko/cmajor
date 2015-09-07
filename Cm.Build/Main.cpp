@@ -36,7 +36,7 @@
 
 namespace Cm { namespace Build {
 
-bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profile, std::vector<std::string>& objectFilePaths, bool changed)
+bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profDataFilePath, std::vector<std::string>& objectFilePaths, bool changed)
 {
     Cm::Sym::FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
     if (!userMainFunction)
@@ -165,11 +165,11 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         {
             Cm::Sym::FunctionSymbol* startProfiling = symbolTable.GetOverload("start_profiling");
             Cm::BoundTree::BoundExpressionList startProfilingArguments;
-            int profileId = mainCompileUnit.StringRepository().Install(profile);
-            Cm::BoundTree::BoundStringLiteral* profileArg = new Cm::BoundTree::BoundStringLiteral(nullptr, profileId);
+            int profDataFileId = mainCompileUnit.StringRepository().Install(profDataFilePath);
+            Cm::BoundTree::BoundStringLiteral* profDataFileArg = new Cm::BoundTree::BoundStringLiteral(nullptr, profDataFileId);
             Cm::Sym::TypeSymbol* constCharPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrType(userMainFunction->GetSpan());
-            profileArg->SetType(constCharPtrType);
-            startProfilingArguments.Add(profileArg);
+            profDataFileArg->SetType(constCharPtrType);
+            startProfilingArguments.Add(profDataFileArg);
             Cm::BoundTree::BoundFunctionCallStatement* startProfilingStatement = new Cm::BoundTree::BoundFunctionCallStatement(startProfiling, std::move(startProfilingArguments));
             mainBody->AddStatement(startProfilingStatement);
         }
@@ -306,11 +306,11 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         {
             Cm::Sym::FunctionSymbol* startProfiling = symbolTable.GetOverload("start_profiling");
             Cm::BoundTree::BoundExpressionList startProfilingArguments;
-            int profileId = mainCompileUnit.StringRepository().Install(profile);
-            Cm::BoundTree::BoundStringLiteral* profileArg = new Cm::BoundTree::BoundStringLiteral(nullptr, profileId);
+            int profDataFileId = mainCompileUnit.StringRepository().Install(profDataFilePath);
+            Cm::BoundTree::BoundStringLiteral* profDataFileArg = new Cm::BoundTree::BoundStringLiteral(nullptr, profDataFileId);
             Cm::Sym::TypeSymbol* constCharPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrType(userMainFunction->GetSpan());
-            profileArg->SetType(constCharPtrType);
-            startProfilingArguments.Add(profileArg);
+            profDataFileArg->SetType(constCharPtrType);
+            startProfilingArguments.Add(profDataFileArg);
             Cm::BoundTree::BoundFunctionCallStatement* startProfilingStatement = new Cm::BoundTree::BoundFunctionCallStatement(startProfiling, std::move(startProfilingArguments));
             mainBody->AddStatement(startProfilingStatement);
         }
