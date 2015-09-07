@@ -22,7 +22,7 @@ namespace Cm.Build
         {
             return *instance;
         }
-        private Grammars() : solutionGrammar(Cm.Parser.SolutionGrammar.Create()), projectGrammar(Cm.Parser.ProjectGrammar.Create())
+        private Grammars() : solutionGrammar(Cm.Parser.SolutionGrammar.Create()), projectGrammar(Cm.Parser.ProjectGrammar.Create()), compileUnitGrammar(Cm.Parser.CompileUnitGrammar.Create())
         {
         }
         public Cm.Parser.SolutionGrammar* GetSolutionGrammar() 
@@ -33,9 +33,14 @@ namespace Cm.Build
         {
             return projectGrammar;
         }
+        public Cm.Parser.CompileUnitGrammar* GetCompileUnitGrammar()
+        {
+            return compileUnitGrammar;
+        }
         private static UniquePtr<Grammars> instance;
         private Cm.Parser.SolutionGrammar* solutionGrammar;
         private Cm.Parser.ProjectGrammar* projectGrammar;
+        private Cm.Parser.CompileUnitGrammar* compileUnitGrammar;
     }
     
     public void BuildSolution(const string& solutionFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
@@ -75,7 +80,7 @@ namespace Cm.Build
             Cm.Parser.ProjectGrammar* projectGrammar = Grammars.Instance().GetProjectGrammar();
             FileMapping projectFile(projectFilePath);
             string backend = "llvm"; // todo
-            string os = "windows"; // todo
+            string os = GetOs();
             UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os));
             project->ResolveDeclarations();
             solution->AddProject(Rvalue(project));
@@ -134,7 +139,7 @@ namespace Cm.Build
         Cm.Parser.ProjectGrammar* projectGrammar = Grammars.Instance().GetProjectGrammar();
         FileMapping projectFile(projectFilePath);
         string backend = "llvm"; // todo
-        string os = "windows"; // todo
+        string os = GetOs();
         UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os));
         project->ResolveDeclarations();
         bool clean = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.clean);
@@ -151,8 +156,289 @@ namespace Cm.Build
     public bool BuildProject(Cm.Ast.Project* project, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
     {
         bool changed = false;
+        Cm.Core.GlobalSettings.Instance().SetCurrentProjectName(project->Name());
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet)
+        {
+            string work = "Building";
+            if (rebuild)
+            {
+                work = "Rebuilding";
+            }
+            Console.Out() << work << " project '" << project->Name() << "' (" << project->FilePath() << ") using " << Cm.Core.GetConfig() << " configuration..." << endl();
+        }
+        HashSet<string> allDefines = defines;
+        if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.ide))
+        {
+            ReadIdeDefines(allDefines, project);
+        }
+        AddPlatformAndConfigDefines(allDefines);
+        Cm.Sym.Define(allDefines);
+        Cm.Parser.FileRegistry.Init();
+        Cm.Ast.SyntaxTree syntaxTree = ParseSources(Cm.Parser.FileRegistry.Instance(), project->SourceFilePaths());
+        Cm.Core.GlobalConceptData globalConceptData;
+        Cm.Core.GlobalConceptData.SetInstance(&globalConceptData);
+        Cm.Sym.SymbolTable symbolTable;
+        Cm.Sym.ExceptionTable exceptionTable;
+        Cm.Sym.ExceptionTable.SetInstance(&exceptionTable);
+        Cm.Sym.MutexTable mutexTable;
+        Cm.Sym.MutexTable.SetInstance(&mutexTable);
+        Cm.Sym.ClassCounter classCounter;
+        Cm.Sym.ClassCounter.SetInstance(&classCounter);
+        List<string> assemblyFilePaths;
+        assemblyFilePaths.Add(project->AssemblyFilePath());
+        List<string> cLibraryFilePaths = project->CLibraryFilePaths();
+        List<string> libraryDirectories;
+        GetLibraryDirectories(libraryDirectories);
+        List<string> allReferenceFilePaths;
+        List<string> allDebugInfoFilePaths;
+        string libraryFilePath = Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(project->FilePath()), ".cml"));
+        if (!rebuild && FileExists(libraryFilePath))
+        {
+            Cm.Sym.Module module(libraryFilePath);
+            module.CheckFileVersion();
+        }
+        BuildSymbolTable(symbolTable, syntaxTree, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths);
+        CreateDirectories(project->OutputBasePath());
+        List<string> objectFilePaths;
+        bool cFilesChanged = CompileCFiles(project, objectFilePaths);
+        if (!changed)
+        {
+            changed = cFilesChanged;
+        }
+        bool asmSouresChanged = CompileAsmSources(project, objectFilePaths);
+        if (!changed)
+        {
+            changed = asmSouresChanged;
+        }
+        List<string> debugInfoFilePaths;
+        if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths))
+        {
+            changed = true;
+        }
+        if (project->GetTarget() == Cm.Ast.Target.program)
+        {
+/*            
+            bool mainCompileUnitGenerated = CreateMainCompileUnit(symbolTable, project->OutputBasePath(), objectFilePaths, changed || rebuild);
+            if (!changed)
+            {
+                changed = mainCompileUnitGenerated;
+            }
+*/            
+/*            
+            bool exceptionTableUnitGenerated = CreateExceptionTableUnit(symbolTable, project->OutputBasePath(), objectFilePaths, changed || rebuild);
+            if (!changed)
+            {
+                changed = exceptionTableUnitGenerated;
+            }
+*/            
+        }
+        bool objectFilesChanged = Archive(objectFilePaths, project->AssemblyFilePath());
+        if (!changed)
+        {
+            changed = objectFilesChanged;
+        }
+        if (project->GetTarget() == Cm.Ast.Target.program)
+        {
+            bool linked = Link(assemblyFilePaths, cLibraryFilePaths, project->ExecutableFilePath());
+            if (!changed)
+            {
+                changed = linked;
+            }
+        }
+        if (changed)
+        {
+            if (!quiet)
+            {
+                Console.Out() << "Generating library file..." << endl();
+                Console.Out() << "=> " << libraryFilePath << endl();
+            }
+            Cm.Sym.Module projectModule(libraryFilePath);
+            projectModule.SetName(project->Name());
+            projectModule.SetSourceFilePaths(project->SourceFilePaths());
+            projectModule.SetReferenceFilePaths(allReferenceFilePaths);
+            projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
+            projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
+            projectModule.Export(symbolTable);
+        }
+        if (project->GetTarget() == Cm.Ast.Target.program && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_debug_info))
+        {
+            for (const string& debugInfoFilePath : debugInfoFilePaths)
+            {
+                allDebugInfoFilePaths.Add(debugInfoFilePath);
+            }
+            bool debugInfoFileCreated = CreateDebugInfoFile(project->ExecutableFilePath(), allDebugInfoFilePaths);
+            if (!changed)
+            {
+                changed = debugInfoFileCreated;
+            }
+        }
+        Cm.Sym.ClassCounter.SetInstance(null);
+        Cm.Sym.MutexTable.SetInstance(null);
+        Cm.Sym.ExceptionTable.SetInstance(null);
+        if (!quiet)
+        {
+            if (!changed)
+            {
+                Console.Out() << "Project '" << project->Name() << "' (" << project->FilePath() << ") is up-to-date" << endl();
+            }
+            else
+            {
+                Console.Out() << "Project '" << project->Name() << "' (" << project->FilePath() << ") built successfully" << endl();
+            }
+        }
+        Cm.Core.GlobalSettings.Instance().SetCurrentProjectName("");
+        return changed;
+    }
+    
+    public Cm.Ast.SyntaxTree ParseSources(Cm.Parser.FileRegistry* fileRegistry, const List<string>& sourceFilePaths)
+    {
+        Cm.Parser.CompileUnitGrammar* compileUnitGrammar = Grammars.Instance().GetCompileUnitGrammar();
+        Cm.Ast.SyntaxTree syntaxTree;
+        for (const string& sourceFilePath : sourceFilePaths)
+        {
+            FileMapping sourceFile(sourceFilePath);
+            int sourceFileIndex = fileRegistry->RegisterParsedFile(sourceFilePath);
+            Cm.Parser.ParsingContext ctx;
+            Cm.Ast.CompileUnitNode* compileUnit = compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), sourceFileIndex, sourceFilePath, &ctx);
+            syntaxTree.AddCompileUnit(compileUnit);
+        }
+        return syntaxTree;
+    }
+    
+    public void BuildSymbolTable(Cm.Sym.SymbolTable& symbolTable, const Cm.Ast.SyntaxTree& syntaxTree, Cm.Ast.Project* project, 
+        const List<string>& libraryDirectories, const List<string>& assemblyFilePaths, const List<string>& cLibraryFilePaths, List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths)
+    {
+        TimePoint s = Now();
+        Cm.Core.InitSymbolTable(symbolTable);
+        TimePoint e = Now();
+        Console.Out() << (e - s).Milliseconds() << endl();
+        // todo
+    }
+    
+    public bool CompileCFiles(Cm.Ast.Project* project, List<string>& objectFilePaths)
+    {
+        bool changed = false;
+        // todo
+        if (!changed) return false;
+        // todo
+        return true;
+    }
+    
+    public bool CompileAsmSources(Cm.Ast.Project* project, List<string>& objectFilePaths)
+    {
+        bool changed = false;
+        // todo
+        if (!changed) return false;
+        // todo
+        return true;
+    }
+    
+    public bool Compile(const string& projectName, Cm.Sym.SymbolTable& symbolTable, const Cm.Ast.SyntaxTree& syntaxTree, const string& outputBasePath, List<string>& objectFilePaths, bool rebuild,
+        const List<string>& compileFileNames, List<string>& debugInfoFilePaths)
+    {
+        bool changed = false;
         // todo
         return changed;
+    }
+    
+    public bool Archive(const List<string>& objectFilePaths, const string& assemblyFilePath)
+    {
+        bool changed = false;
+        // todo
+        if (!changed) return false;
+        // todo
+        return true;
+    }
+    
+    public bool Link(const List<string>& assemblyFilePaths, const List<string>& cLibraryFilePaths, const string& executableFilePath)
+    {
+        bool changed = false;
+        // todo
+        if (!changed) return false;
+        // todo
+        return true;
+    }
+    
+    public bool CreateDebugInfoFile(const string& executableFilePath, const List<string>& allDebugInfoFilePaths)
+    {
+        bool changed = false;
+        // todo
+        if (!changed) return false;
+        // todo
+        return true;
+    }
+    
+/*    
+    public bool CreateExceptionTableUnit(Cm.Sym.SymbolTable& symbolTable, const string& projectOutputBasePath, List<string>& objectFilePaths, bool changed)
+    {
+        // todo
+        if (!changed) return false;
+        // todo
+        return true;
+    }
+*/
+    
+    public void GetLibraryDirectories(List<string>& libraryDirectories)
+    {
+        char platformPathSeparatorChar = GetPlatformPathSeparatorChar();
+        char* cmLibraryPath = get_environment_variable("CM_LIBRARY_PATH");
+        if (cmLibraryPath != null)
+        {
+            string libraryPath = cmLibraryPath;
+            libraryDirectories = libraryPath.Split(platformPathSeparatorChar);
+        }
+        else
+        {
+            throw Exception("please set CM_LIBRARY_PATH environment variable to contain (at least) /path/to/system directory (dirs separated by '" + string(platformPathSeparatorChar) + ")'");
+        }
+    }
+    
+    public char GetPlatformPathSeparatorChar()
+    {
+    #if (WINDOWS)
+        return ';';
+    #endif
+        return ':';
+    }
+    
+    public const char* GetOs() 
+    {
+    #if (WINDOWS)
+        return "windows";
+    #endif
+        return "linux";
+    }
+    
+    public void ReadIdeDefines(HashSet<string>& allDefines, Cm.Ast.Project* project)
+    {
+        string projectDefinePath = Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(project->FilePath()), ".cmp.sym"));
+        if (FileExists(projectDefinePath))
+        {
+            InputFileStream projectDefineFile(projectDefinePath);
+            while (!projectDefineFile.EndOfStream())
+            {
+                string symbol = projectDefineFile.ReadLine();
+                allDefines.Insert(symbol);
+            }
+        }
+    }
+    
+    public void AddPlatformAndConfigDefines(HashSet<string>& allDefines)
+    {
+    #if (WINDOWS)
+        allDefines.Insert("WINDOWS");
+    #else 
+        allDefines.Insert("LINUX");
+    #endif
+        if (Cm.Core.GetConfig() == "debug")
+        {
+            allDefines.Insert("DEBUG");
+        }
+        else
+        {
+            allDefines.Insert("RELEASE");
+        }
     }
     
     public void CleanProject(Cm.Ast.Project* project)

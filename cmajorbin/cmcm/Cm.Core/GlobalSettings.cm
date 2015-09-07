@@ -23,6 +23,14 @@ namespace Cm.Core
         private nothrow GlobalSettings() : config("debug"), optimizationLevel(-1)
         {
         }
+        public nothrow void SetCurrentProjectName(const string& currentProjectName_)
+        {
+            currentProjectName = currentProjectName_;
+        }
+        public nothrow const string& CurrentProjectName() const
+        {
+            return currentProjectName;
+        }
         public nothrow void SetConfig(const string& config_)
         {
             config = config_;
@@ -55,6 +63,7 @@ namespace Cm.Core
             return optimizationLevel;
         }
         private static UniquePtr<GlobalSettings> instance;
+        private string currentProjectName;
         private string config;
         private int optimizationLevel;
     }

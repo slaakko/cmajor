@@ -1,0 +1,463 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Core
+{
+    public abstract class BasicTypeOp : Cm.Sym.FunctionSymbol
+    {
+        public nothrow BasicTypeOp(Cm.Sym.TypeSymbol* type_) : base(Span(), "*basic_type_op*"), type(type_)
+        {
+            SetAccess(Cm.Sym.SymbolAccess.public_);
+            SetNothrow();
+        }
+        public nothrow override bool IsBasicTypeOp() const
+        {
+            return true;
+        }
+        public nothrow inline Cm.Sym.TypeSymbol* Type() const
+        {
+            return type;
+        }
+        public abstract void Generate(Emitter& emitter, GenResult& result);
+        // todo
+        private Cm.Sym.TypeSymbol* type;
+    }
+    
+    public class DefaultCtor : BasicTypeOp
+    {
+        public DefaultCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            AddSymbol(thisParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+    
+    public class CopyCtor : BasicTypeOp
+    {
+        public CopyCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(Type());
+            AddSymbol(thatParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+    
+    public class CopyAssignment : BasicTypeOp
+    {
+        public CopyAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator=");
+            Cm.Sym.TypeSymbol* voidType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+            SetReturnType(voidType);
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(Type());
+            AddSymbol(thatParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+
+    public class MoveCtor : BasicTypeOp
+    {
+        public MoveCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span()));
+            AddSymbol(thatParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+    
+    public class MoveAssignment : BasicTypeOp
+    {
+        public MoveAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator=");
+            Cm.Sym.TypeSymbol* voidType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+            SetReturnType(voidType);
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span()));
+            AddSymbol(thatParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+    
+    public class OpEqual : BasicTypeOp
+    {
+        public OpEqual(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator==");
+            Cm.Sym.TypeSymbol* boolType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+            SetReturnType(boolType);
+            Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
+            leftParam->SetType(Type());
+            AddSymbol(leftParam);
+            Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
+            rightParam->SetType(Type());
+            AddSymbol(rightParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+
+    public class OpLess : BasicTypeOp
+    {
+        public OpLess(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator<");
+            Cm.Sym.TypeSymbol* boolType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+            SetReturnType(boolType);
+            Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
+            leftParam->SetType(Type());
+            AddSymbol(leftParam);
+            Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
+            rightParam->SetType(Type());
+            AddSymbol(rightParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+    
+    public abstract class BinOp : BasicTypeOp
+    {
+        public BinOp(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_, const string& groupName_) : base(type_)
+        {
+            SetGroupName(groupName_);
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* leftParam(new Cm.Sym.ParameterSymbol(Span(), "left"));
+            leftParam->SetType(Type());
+            AddSymbol(leftParam);
+            Cm.Sym.ParameterSymbol* rightParam(new Cm.Sym.ParameterSymbol(Span(), "right"));
+            rightParam->SetType(Type());
+            AddSymbol(rightParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+        public abstract void CreateInstruction(); // todo : create instruction
+    }
+    
+    public class OpAdd : BinOp
+    {
+        public OpAdd(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator+")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpSub : BinOp
+    {
+        public OpSub(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator-")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpMul : BinOp
+    {
+        public OpMul(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator*")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpDiv : BinOp
+    {
+        public OpDiv(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator/")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpRem : BinOp
+    {
+        public OpRem(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator%")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpShl : BinOp
+    {
+        public OpShl(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator<<")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpShr : BinOp
+    {
+        public OpShr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator>>")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpBitAnd : BinOp
+    {
+        public OpBitAnd(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator&")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpBitOr : BinOp
+    {
+        public OpBitOr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator|")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+
+    public class OpBitXor : BinOp
+    {
+        public OpBitXor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator^")
+        {
+        }
+        public override void CreateInstruction()
+        {
+            // todo
+        }
+    }
+    
+    public class OpNot : BasicTypeOp
+    {
+        public OpNot(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator!");
+            Cm.Sym.TypeSymbol* boolType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+            SetReturnType(boolType);
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            AddSymbol(operandParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+    
+    public class OpUnaryPlus : BasicTypeOp
+    {
+        public OpUnaryPlus(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator+");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            AddSymbol(operandParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+
+    public class OpUnaryMinus : BasicTypeOp
+    {
+        public OpUnaryMinus(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator-");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            AddSymbol(operandParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+
+    public class OpComplement : BasicTypeOp
+    {
+        public OpComplement(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator~");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            AddSymbol(operandParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+
+    public class OpIncrement : BasicTypeOp
+    {
+        public OpIncrement(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator++");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            AddSymbol(operandParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+
+    public class OpDecrement : BasicTypeOp
+    {
+        public OpDecrement(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator--");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            AddSymbol(operandParam);
+            ComputeName();
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+    }
+    
+    public enum ConversionInst : byte
+    {
+        none, sext, zext, trunc, bitcast, uitofp, sitofp, fptoui, fptosi, fpext, fptrunc, ptrtoint
+    }
+ 
+    public class ConvertingCtor : BasicTypeOp
+    {
+        public ConvertingCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* targetType_, Cm.Sym.TypeSymbol* sourceType_, Cm.Sym.ConversionType conversionType_, ConversionInst conversionInst_,
+            Cm.Sym.ConversionRank conversionRank_, int conversionDistance_) : base(targetType_), targetType(targetType_), sourceType(sourceType_), conversionType(conversionType_), conversionInst(conversionInst_),
+            conversionRank(conversionRank_), conversionDistance(conversionDistance_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(targetType, Span()));
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(typeRepository.MakeRvalueRefType(sourceType, Span()));
+            AddSymbol(thatParam);
+            ComputeName();
+           
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            // todo
+        } 
+        public nothrow override bool IsConvertingConstructor() const
+        {
+            return true;
+        }
+        public nothrow override Cm.Sym.ConversionType GetConversionType() const
+        {
+            return conversionType;
+        }
+        public override Cm.Sym.TypeSymbol* GetTargetType() const
+        {
+            return targetType;
+        }
+        public override Cm.Sym.TypeSymbol* GetSourceType() const
+        {
+            return sourceType;
+        }
+        public nothrow override Cm.Sym.ConversionRank GetConversionRank() const
+        {
+            return conversionRank;
+        }
+        public nothrow override int GetConversionDistance() const
+        {
+            return conversionDistance;
+        }
+        private Cm.Sym.TypeSymbol* targetType;
+        private Cm.Sym.TypeSymbol* sourceType;
+        private Cm.Sym.ConversionType conversionType;
+        private ConversionInst conversionInst;
+        private Cm.Sym.ConversionRank conversionRank;
+        private int conversionDistance;
+    }   
+}

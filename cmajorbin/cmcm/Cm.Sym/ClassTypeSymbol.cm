@@ -391,11 +391,11 @@ namespace Cm.Sym
                 }
             }
         }
-        private nothrow inline bool GetFlag(ClassTypeSymbolFlags flag) const
+        public nothrow inline bool GetFlag(ClassTypeSymbolFlags flag) const
         {
             return (flags & flag) != ClassTypeSymbolFlags.none;
         }
-        private nothrow inline void SetFlag(ClassTypeSymbolFlags flag)
+        public nothrow inline void SetFlag(ClassTypeSymbolFlags flag)
         {
             flags = cast<ClassTypeSymbolFlags>(flags | flag);
         }

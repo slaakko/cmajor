@@ -33,6 +33,7 @@ namespace Cm.Parser
             ::= SourceFileDeclaration(project){ value = SourceFileDeclaration; }
             |   AsmSourceFileDeclaration(project){ value = AsmSourceFileDeclaration; }
             |   CSourceFileDeclaration(project){ value = CSourceFileDeclaration; }
+            |   CppSourceFileDeclaration(project){ value = CppSourceFileDeclaration; }
             |   TextFileDeclaration(project){ value = TextFileDeclaration; }
             |   ReferenceFileDeclaration(project){ value = ReferenceFileDeclaration; }
             |   CLibraryDeclaration{ value = CLibraryDeclaration; }
@@ -51,6 +52,10 @@ namespace Cm.Parser
 
         CSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
             ::= (keyword("csource") FilePath! Properties? ';'!){ value = new SourceFileDeclaration(span, SourceFileType::c, FilePath, project->BasePath(), Properties); }
+            ;
+
+        CppSourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("cppsource") FilePath! Properties? ';'!){ value = new SourceFileDeclaration(span, SourceFileType::cpp, FilePath, project->BasePath(), Properties); }
             ;
 
         TextFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*

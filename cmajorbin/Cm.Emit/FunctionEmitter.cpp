@@ -19,6 +19,7 @@
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/FunctionTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Llvm.Ir/Type.hpp>
 
@@ -204,15 +205,15 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, 
     Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCallFun_, Cm::Sym::FunctionSymbol* leaveTracedCallFun_,
-    bool generateDebugInfo_) :
+    bool generateDebugInfo_, bool profile_) :
     Cm::BoundTree::Visitor(true), emitter(new Cm::Core::Emitter()), codeFormatter(codeFormatter_), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_),
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), localVariableIrObjectRepository(&irFunctionRepository), 
     compoundResult(), currentCompileUnit(currentCompileUnit_),
-    currentClass(currentClass_), currentFunction(nullptr), thisParam(nullptr), internalFunctionNames(internalFunctionNames_), externalFunctions(externalFunctions_), 
+    currentClass(currentClass_), currentFunction(nullptr), fid(uint32_t(-1)), profile(profile_), thisParam(nullptr), internalFunctionNames(internalFunctionNames_), externalFunctions(externalFunctions_), 
     staticMemberVariableRepository(staticMemberVariableRepository_), externalConstantRepository(externalConstantRepository_),
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), 
     currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_),
-    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr)
+    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr), endProfiledFunLabel(nullptr)
 {
 }
 
@@ -227,6 +228,12 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     emitter->SetIrFunction(irFunction);
 
     irFunction->SetComment(boundFunction.GetFunctionSymbol()->FullName());
+
+    if (profile)
+    {
+        emitter->SetProfilingHandler(this);
+        EmitStartProfiledFun(boundFunction.GetFunctionSymbol()->FullName());
+    }
 
     Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
     Ir::Intf::Object* exceptionCodeVariable = nullptr;
@@ -2712,6 +2719,11 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::
         else
         {
             Ir::Intf::Instruction* callInst = Cm::IrIntf::Call(result.MainObject(), fun, result.Args());
+            if (endProfiledFunLabel)
+            {
+                callInst->SetLabel(endProfiledFunLabel);
+                endProfiledFunLabel = nullptr;
+            }
             if (generateDebugInfo)
             {
                 SetCallDebugInfoInfo(callInst, fun);
@@ -3074,6 +3086,34 @@ void FunctionEmitter::GenerateLandingPadCode()
             }
         }
     }
+}
+
+void FunctionEmitter::EmitStartProfiledFun(const std::string& functionName)
+{
+    fid = Cm::Sym::FunctionTable::Instance()->GetFid(functionName);
+    Cm::Sym::FunctionSymbol* startProfiledFun = symbolTable->GetOverload("start_profiled_fun");
+    Cm::BoundTree::BoundExpressionList startProfiledFunArguments;
+    Cm::BoundTree::BoundLiteral* fidLiteral = new Cm::BoundTree::BoundLiteral(nullptr);
+    fidLiteral->SetValue(new Cm::Sym::UIntValue(fid));
+    Cm::Sym::TypeSymbol* uintType = symbolTable->GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
+    fidLiteral->SetType(uintType);
+    startProfiledFunArguments.Add(fidLiteral);
+    Cm::BoundTree::BoundFunctionCallStatement callStartProfileFunStatement(startProfiledFun, std::move(startProfiledFunArguments));
+    callStartProfileFunStatement.Accept(*this);
+}
+
+void FunctionEmitter::EmitEndProfiledFun(Ir::Intf::LabelObject* label)
+{
+    endProfiledFunLabel = label;
+    Cm::Sym::FunctionSymbol* endProfiledFun = symbolTable->GetOverload("end_profiled_fun");
+    Cm::BoundTree::BoundExpressionList endProfiledFunArguments;
+    Cm::BoundTree::BoundLiteral* fidLiteral = new Cm::BoundTree::BoundLiteral(nullptr);
+    fidLiteral->SetValue(new Cm::Sym::UIntValue(fid));
+    Cm::Sym::TypeSymbol* uintType = symbolTable->GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
+    fidLiteral->SetType(uintType);
+    endProfiledFunArguments.Add(fidLiteral);
+    Cm::BoundTree::BoundFunctionCallStatement callEndProfileFunStatement(endProfiledFun, std::move(endProfiledFunArguments));
+    callEndProfileFunStatement.Accept(*this);
 }
 
 } } // namespace Cm::Emit

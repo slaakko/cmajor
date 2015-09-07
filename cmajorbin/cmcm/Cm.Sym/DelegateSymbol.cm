@@ -145,11 +145,11 @@ namespace Cm.Sym
                 returnType = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
-        private nothrow inline bool GetFlag(DelegateSymbolFlags flag) const
+        public nothrow inline bool GetFlag(DelegateSymbolFlags flag) const
         {
             return (flags & flag) != DelegateSymbolFlags.none;
         }
-        private nothrow inline void SetFlag(DelegateSymbolFlags flag)
+        public nothrow inline void SetFlag(DelegateSymbolFlags flag)
         {
             flags = cast<DelegateSymbolFlags>(flags | flag);
         }
@@ -285,11 +285,11 @@ namespace Cm.Sym
                 returnType = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
-        private nothrow inline bool GetFlag(ClassDelegateSymbolFlags flag) const
+        public nothrow inline bool GetFlag(ClassDelegateSymbolFlags flag) const
         {
             return (flags & flag) != ClassDelegateSymbolFlags.none;
         }
-        private nothrow inline void SetFlag(ClassDelegateSymbolFlags flag)
+        public nothrow inline void SetFlag(ClassDelegateSymbolFlags flag)
         {
             flags = cast<ClassDelegateSymbolFlags>(flags | flag);
         }

@@ -8,6 +8,7 @@ source <ClassCounter.cm>;
 source <ClassTypeSymbol.cm>;
 source <ConceptGroupSymbol.cm>;
 source <ConceptSymbol.cm>;
+source <Conditional.cm>;
 source <ConstantSymbol.cm>;
 source <ContainerSymbol.cm>;
 source <ConversionTable.cm>;

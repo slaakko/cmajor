@@ -518,11 +518,11 @@ namespace Cm.Sym
         public nothrow virtual void ReplaceReplicaTypes()
         {
         }
-        private nothrow inline bool GetFlag(SymbolFlags flag) const
+        public nothrow inline bool GetFlag(SymbolFlags flag) const
         {
             return (flags & flag) != SymbolFlags.none;
         }
-        private nothrow inline void SetFlag(SymbolFlags flag)
+        public nothrow inline void SetFlag(SymbolFlags flag)
         {
             flags = cast<SymbolFlags>(flags | flag);
         }

@@ -11,6 +11,7 @@
 #include <Cm.Emit/FunctionEmitter.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -18,7 +19,7 @@ Emitter::Emitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRep
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
     Cm::BoundTree::Visitor(false), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_),
     externalConstantRepository(externalConstantRepository_), irFile(irFilePath), codeFormatter(irFile), currentClass(nullptr), enterFrameFun(nullptr), leaveFrameFun(nullptr),
-    enterTracedCallFun(nullptr), leaveTracedCallFun(nullptr), symbolTable(nullptr)
+    enterTracedCallFun(nullptr), leaveTracedCallFun(nullptr), symbolTable(nullptr), profile(false)
 {
 }
 
@@ -33,6 +34,10 @@ void Emitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     enterTracedCallFun = compileUnit.SymbolTable().GetOverload("enter_traced_call");
     leaveTracedCallFun = compileUnit.SymbolTable().GetOverload("leave_traced_call");
     symbolTable = &compileUnit.SymbolTable();
+    if (!compileUnit.IsMainUnit() && Cm::Core::GetGlobalSettings()->Config() == "profile")
+    {
+        profile = true;
+    }
 }
 
 } } // namespace Cm::Emit

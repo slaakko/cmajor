@@ -127,3 +127,7 @@ extern public cdecl void pass_unit_test_assertion(const char* expression);
 extern public cdecl void fail_unit_test_assertion(const char* expression, const char* file, int line);
 extern public cdecl int create_file_mapping(const char* filePath, const char** begin, const char** end);
 extern public cdecl int close_file_mapping(int file_mapping_handle);
+extern public cdecl void start_profiling(const char* profile);
+extern public cdecl void end_profiling();
+extern public cdecl void start_profiled_fun(uint fid);
+extern public cdecl void end_profiled_fun(uint fid);

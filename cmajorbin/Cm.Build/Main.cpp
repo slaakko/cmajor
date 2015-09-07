@@ -36,7 +36,7 @@
 
 namespace Cm { namespace Build {
 
-bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, bool changed)
+bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profile, std::vector<std::string>& objectFilePaths, bool changed)
 {
     Cm::Sym::FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
     if (!userMainFunction)
@@ -161,6 +161,19 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 		Cm::BoundTree::BoundFunctionCallStatement* callMutexTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(mutexTableInit, std::move(mutexTblInitArguments));
 		mainBody->AddStatement(callMutexTblInitStatement);
 
+        if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+        {
+            Cm::Sym::FunctionSymbol* startProfiling = symbolTable.GetOverload("start_profiling");
+            Cm::BoundTree::BoundExpressionList startProfilingArguments;
+            int profileId = mainCompileUnit.StringRepository().Install(profile);
+            Cm::BoundTree::BoundStringLiteral* profileArg = new Cm::BoundTree::BoundStringLiteral(nullptr, profileId);
+            Cm::Sym::TypeSymbol* constCharPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrType(userMainFunction->GetSpan());
+            profileArg->SetType(constCharPtrType);
+            startProfilingArguments.Add(profileArg);
+            Cm::BoundTree::BoundFunctionCallStatement* startProfilingStatement = new Cm::BoundTree::BoundFunctionCallStatement(startProfiling, std::move(startProfilingArguments));
+            mainBody->AddStatement(startProfilingStatement);
+        }
+
         Cm::BoundTree::BoundExpressionList arguments;
         if (argcParam && argvParam)
         {
@@ -206,6 +219,14 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundFunctionCallStatement* callMainUnhandlerExceptionStatement = new Cm::BoundTree::BoundFunctionCallStatement(mainUnhandlerException, std::move(mainUnhandlerExceptionArguments));
         testExceptionVarStatement->AddStatement(callMainUnhandlerExceptionStatement);
         mainBody->AddStatement(testExceptionVarStatement);
+
+        if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+        {
+            Cm::Sym::FunctionSymbol* endProfiling = symbolTable.GetOverload("end_profiling");
+            Cm::BoundTree::BoundExpressionList endProfilingArguments;
+            Cm::BoundTree::BoundFunctionCallStatement* endProfilingStatement = new Cm::BoundTree::BoundFunctionCallStatement(endProfiling, std::move(endProfilingArguments));
+            mainBody->AddStatement(endProfilingStatement);
+        }
 
         Cm::Sym::FunctionSymbol* cmExit = symbolTable.GetOverload("cm_exit");
         Cm::BoundTree::BoundExpressionList cmExitArguments;
@@ -281,6 +302,19 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 		Cm::BoundTree::BoundFunctionCallStatement* callMutexTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(mutexTableInit, std::move(mutexTblInitArguments));
 		mainBody->AddStatement(callMutexTblInitStatement);
 
+        if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+        {
+            Cm::Sym::FunctionSymbol* startProfiling = symbolTable.GetOverload("start_profiling");
+            Cm::BoundTree::BoundExpressionList startProfilingArguments;
+            int profileId = mainCompileUnit.StringRepository().Install(profile);
+            Cm::BoundTree::BoundStringLiteral* profileArg = new Cm::BoundTree::BoundStringLiteral(nullptr, profileId);
+            Cm::Sym::TypeSymbol* constCharPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrType(userMainFunction->GetSpan());
+            profileArg->SetType(constCharPtrType);
+            startProfilingArguments.Add(profileArg);
+            Cm::BoundTree::BoundFunctionCallStatement* startProfilingStatement = new Cm::BoundTree::BoundFunctionCallStatement(startProfiling, std::move(startProfilingArguments));
+            mainBody->AddStatement(startProfilingStatement);
+        }
+
         Cm::BoundTree::BoundFunctionCall* callUserMainExpr = new Cm::BoundTree::BoundFunctionCall(nullptr, std::move(arguments));
         callUserMainExpr->SetFunction(userMainFunction);
         callUserMainExpr->SetType(userMainFunction->GetReturnType());
@@ -322,6 +356,14 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         Cm::BoundTree::BoundFunctionCallStatement* callMainUnhandlerExceptionStatement = new Cm::BoundTree::BoundFunctionCallStatement(mainUnhandlerException, std::move(mainUnhandlerExceptionArguments));
         testExceptionVarStatement->AddStatement(callMainUnhandlerExceptionStatement);
         mainBody->AddStatement(testExceptionVarStatement);
+
+        if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+        {
+            Cm::Sym::FunctionSymbol* endProfiling = symbolTable.GetOverload("end_profiling");
+            Cm::BoundTree::BoundExpressionList endProfilingArguments;
+            Cm::BoundTree::BoundFunctionCallStatement* endProfilingStatement = new Cm::BoundTree::BoundFunctionCallStatement(endProfiling, std::move(endProfilingArguments));
+            mainBody->AddStatement(endProfilingStatement);
+        }
 
         Cm::Sym::FunctionSymbol* cmExit = symbolTable.GetOverload("cm_exit");
         Cm::BoundTree::BoundExpressionList cmExitArguments;

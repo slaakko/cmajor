@@ -58,7 +58,7 @@ void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
     LlvmFunctionEmitter functionEmitter(CodeFormatter(), TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(), 
-        ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun());
+        ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), Profile());
     functionEmitter.SetSymbolTable(SymbolTable());
     boundFunction.Accept(functionEmitter);
 }

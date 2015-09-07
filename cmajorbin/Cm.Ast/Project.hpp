@@ -19,7 +19,7 @@ class Visitor;
 
 enum class SourceFileType
 {
-    cm, asm_, c, text
+    cm, asm_, c, cpp, text
 };
 
 enum class Target
@@ -133,6 +133,7 @@ public:
     const std::vector<std::string>& SourceFilePaths() const { return sourceFilePaths; }
     const std::vector<std::string>& AsmSourceFilePaths() const { return asmSourceFilePaths; }
     const std::vector<std::string>& CSourceFilePaths() const { return cSourceFilePaths; }
+    const std::vector<std::string>& CppSourceFilePaths() const { return cppSourceFilePaths; }
     const std::vector<std::string>& TextFilePaths() const { return textFilePaths; }
     const std::vector<std::string>& ReferenceFilePaths() const { return referenceFilePaths; }
     const std::vector<std::string>& CLibraryFilePaths() const { return cLibraryFilePaths; }
@@ -152,6 +153,7 @@ private:
     std::vector<std::string> sourceFilePaths;
     std::vector<std::string> asmSourceFilePaths;
     std::vector<std::string> cSourceFilePaths;
+    std::vector<std::string> cppSourceFilePaths;
     std::vector<std::string> textFilePaths;
     std::vector<std::string> referenceFilePaths;
     std::vector<std::string> cLibraryFilePaths;
