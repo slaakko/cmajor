@@ -73,18 +73,21 @@ std::string GetOs()
 #endif
 }
 
-void GetLibraryDirectories(std::vector<std::string>& libraryDirectories)
+std::string GetCmLibraryPath()
 {
     char* cmLibraryPath = getenv("CM_LIBRARY_PATH");
-    if (cmLibraryPath)
-    {
-        libraryDirectories = Cm::Util::Split(cmLibraryPath, GetPlatformPathSeparatorChar());
-    }
-    else
-    {
+    if (!cmLibraryPath)
+    { 
         throw std::runtime_error("please set CM_LIBRARY_PATH environment variable to contain (at least) /path/to/system directory " +
             std::string("(dirs separated by '") + std::string(1, GetPlatformPathSeparatorChar()) + "')");
     }
+    return std::string(cmLibraryPath);
+}
+
+void GetLibraryDirectories(std::vector<std::string>& libraryDirectories)
+{
+    std::string cmLibraryPath = GetCmLibraryPath();
+    libraryDirectories = Cm::Util::Split(cmLibraryPath, GetPlatformPathSeparatorChar());
 }
 
 std::string ResolveLibraryReference(const boost::filesystem::path& projectOutputBase, const std::string& config, const std::vector<std::string>& libraryDirs, const std::string& libraryReferencePath)
@@ -911,11 +914,11 @@ void CreateCmProfFile(const std::string& cmlFilePath, const std::vector<std::str
     for (const std::string& referenceFilePath : allReferenceFilePaths)
     {
         std::string fidFilePath = boost::filesystem::path(referenceFilePath).replace_extension(".fid").generic_string();
-        globalFunctionTable.ReadFunctionsById(fidFilePath);
+        globalFunctionTable.Import(fidFilePath);
     }
     std::string fidFilePath = boost::filesystem::path(cmlFilePath).replace_extension(".fid").generic_string();
-    globalFunctionTable.ReadFunctionsById(fidFilePath);
-    globalFunctionTable.WriteFunctionsById(cmProfFile);
+    globalFunctionTable.Import(fidFilePath);
+    globalFunctionTable.Write(cmProfFile);
 }
 
 bool GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths, bool changed)
@@ -1003,8 +1006,37 @@ void AddPlatformAndConfigDefines(std::unordered_set<std::string>& defines)
     }
 }
 
+void ReadNextFid(Cm::Sym::FunctionTable& functionTable)
+{
+    std::vector<std::string> libraryDirectories;
+    GetLibraryDirectories(libraryDirectories); 
+    uint32_t nextFid = 0;
+    boost::filesystem::path nextFidPath = boost::filesystem::path(libraryDirectories[0]) / "next.fid";
+    if (boost::filesystem::exists(nextFidPath))
+    {
+        std::ifstream nextFidFile(nextFidPath.generic_string());
+        nextFidFile >> nextFid;
+    }
+    functionTable.SetNextFid(nextFid);
+}
+
+void WriteNextFid(Cm::Sym::FunctionTable& functionTable)
+{
+    std::vector<std::string> libraryDirectories;
+    GetLibraryDirectories(libraryDirectories);
+    uint32_t nextFid = functionTable.GetNextFid();
+    boost::filesystem::path nextFidPath = boost::filesystem::path(libraryDirectories[0]) / "next.fid";
+    std::ofstream nextFidFile(nextFidPath.generic_string());
+    nextFidFile << nextFid;
+}
+
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
 {
+    Cm::Sym::FunctionTable functionTable;
+    if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+    {
+        ReadNextFid(functionTable);
+    }
     bool changed = false;
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
     {
@@ -1033,7 +1065,6 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     Cm::Core::GlobalConceptData globalConceptData;
     Cm::Core::SetGlobalConceptData(&globalConceptData);
     Cm::Sym::SymbolTable symbolTable;
-    Cm::Sym::FunctionTable functionTable;
     Cm::Sym::FunctionTable::SetInstance(&functionTable);
     Cm::Sym::SymbolTypeSetCollection symbolTypeSetCollection;
     Cm::Sym::SetSymbolTypeSetCollection(&symbolTypeSetCollection);
@@ -1145,7 +1176,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     Cm::Sym::SetMutexTable(nullptr);
     Cm::Sym::SetClassCounter(nullptr);
     Cm::Sym::FunctionTable::SetInstance(nullptr);
-        if (!quiet)
+    if (!quiet)
     {
         if (!changed)
         {
@@ -1157,6 +1188,10 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         }
     }
     Cm::Core::GetGlobalSettings()->SetCurrentProjectName("");
+    if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+    {
+        WriteNextFid(functionTable);
+    }
     return changed;
 }
 

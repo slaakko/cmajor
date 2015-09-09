@@ -367,6 +367,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SourceRead", "SourceRead\So
 		{3720AEB0-BEB8-4C7E-AF9B-50A0DB65348B} = {3720AEB0-BEB8-4C7E-AF9B-50A0DB65348B}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cm.Profiler", "Cm.Profiler\Cm.Profiler.vcxproj", "{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}"
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -704,6 +706,18 @@ Global
 		{EE63E132-F6BB-4CB8-B211-A2C268D6D073}.Release|Win32.Build.0 = Release|Win32
 		{EE63E132-F6BB-4CB8-B211-A2C268D6D073}.Release|x64.ActiveCfg = Release|x64
 		{EE63E132-F6BB-4CB8-B211-A2C268D6D073}.Release|x64.Build.0 = Release|x64
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Debug|Win32.Build.0 = Debug|Win32
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Debug|x64.ActiveCfg = Debug|x64
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Debug|x64.Build.0 = Debug|x64
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Release|Win32.ActiveCfg = Release|Win32
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Release|Win32.Build.0 = Release|Win32
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Release|x64.ActiveCfg = Release|x64
+		{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
