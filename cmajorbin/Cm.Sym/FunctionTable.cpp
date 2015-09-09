@@ -25,6 +25,10 @@ FunctionInfo::FunctionInfo(bool currentProject_, uint32_t fid_) : currentProject
 
 FunctionTable* FunctionTable::instance;
 
+FunctionTable::FunctionTable() : nextFid(0)
+{
+}
+
 uint32_t FunctionTable::GetFid(const std::string& functionName)
 {
     std::unordered_map<std::string, FunctionInfo>::const_iterator i = functionMap.find(functionName);
@@ -33,7 +37,7 @@ uint32_t FunctionTable::GetFid(const std::string& functionName)
         const FunctionInfo& functionInfo = i->second;
         return functionInfo.Fid();
     }
-    uint32_t fid = uint32_t(functionMap.size());
+    uint32_t fid = nextFid++;
     FunctionInfo functionInfo(true, fid);
     functionMap[functionName] = functionInfo;
     return fid;
@@ -53,8 +57,8 @@ void FunctionTable::Import(const std::string& fileName)
         }
         std::string functionName = components[0];
         std::string fidStr = components[1];
-        int fid = std::stoi(fidStr);
-        FunctionInfo functionInfo(false, uint32_t(fid));
+        uint32_t fid = static_cast<uint32_t>(std::stoi(fidStr));
+        FunctionInfo functionInfo(false, fid);
         functionMap[functionName] = functionInfo;
     }
 }
@@ -89,48 +93,29 @@ void FunctionTable::Export(const std::string& fileName)
     }
 }
 
-void FunctionTable::ReadFunctionsById(const std::string& fileName)
+struct FidLess
 {
-    std::ifstream file(fileName);
-    std::string line;
-    while (std::getline(file, line))
+    bool operator()(const std::pair<uint32_t, std::string>& left, const std::pair<uint32_t, std::string>& right) const
     {
-        std::vector<std::string> components = Cm::Util::Split(line, ':');
-        if (components.size() != 2)
-        {
-            throw std::runtime_error("two components expected");
-        }
-        std::string functionName = components[0];
-        std::string fidStr = components[1];
-        int fid = std::stoi(fidStr);
-        functionsById[uint32_t(fid)] = functionName;
+        return left.first < right.first;
     }
-}
+};
 
-void FunctionTable::WriteFunctionsById(const std::string& fileName)
+void FunctionTable::Write(const std::string& fileName)
 {
-    std::vector<std::string> functionNames;
-    std::unordered_map<uint32_t, std::string>::const_iterator e = functionsById.cend();
-    for (std::unordered_map<uint32_t, std::string>::const_iterator i = functionsById.cbegin(); i != e; ++i)
+    std::vector<std::pair<uint32_t, std::string>> data;
+    std::unordered_map<std::string, FunctionInfo>::iterator e = functionMap.end();
+    for (std::unordered_map<std::string, FunctionInfo>::iterator i = functionMap.begin(); i != e; ++i)
     {
-        uint32_t fid = i->first;
-        std::string functionName = i->second;
-        while (functionNames.size() <= fid)
-        {
-            functionNames.push_back(std::string());
-        }
-        if (!functionNames[fid].empty())
-        {
-            std::cout << "warning: nonempty function name for fid " << fid << std::endl;
-        }
-        functionNames[fid] = functionName;
+        const std::string& functionName = i->first;
+        FunctionInfo& functionInfo = i->second;
+        data.push_back(std::make_pair(functionInfo.Fid(), functionName));
     }
+    std::sort(data.begin(), data.end(), FidLess());
     std::ofstream file(fileName);
-    int n = int(functionNames.size());
-    for (int i = 0; i < n; ++i)
+    for (const std::pair<uint32_t, std::string>& idFunNamePair : data)
     {
-        const std::string& functionName = functionNames[i];
-        file << i << ":" << functionName << std::endl;
+        file << idFunNamePair.first << ":" << idFunNamePair.second << std::endl;
     }
 }
 
