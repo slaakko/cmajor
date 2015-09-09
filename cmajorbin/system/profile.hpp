@@ -18,10 +18,9 @@ const uint32_t flushFid = (uint32_t)-1;
 
 struct ProfileRec
 {
-    ProfileRec() : timestamp(), fid(), evnt() {}
-    ProfileRec(uint32_t fid_, uint32_t evnt_) : timestamp(std::chrono::steady_clock::now()), fid(fid_), evnt(evnt_) {}
-    ProfileRec(const std::chrono::steady_clock::time_point& timestamp_, uint32_t fid_, uint32_t evnt_) : timestamp(timestamp_), fid(fid_), evnt(evnt_) {}
-    std::chrono::steady_clock::time_point timestamp;
+    ProfileRec() : elapsed(), fid(), evnt() {}
+    ProfileRec(const std::chrono::steady_clock::duration& elapsed_, uint32_t fid_, uint32_t evnt_) : elapsed(elapsed_), fid(fid_), evnt(evnt_) {}
+    std::chrono::steady_clock::duration elapsed;
     uint32_t fid;
     uint32_t evnt;
 };

@@ -29,10 +29,9 @@ const uint32_t flushFid = (uint32_t)-1;
 
 struct ProfileRec
 {
-    ProfileRec() : timestamp(), fid(), evnt() {}
-    ProfileRec(uint32_t fid_, uint32_t evnt_) : timestamp(std::chrono::steady_clock::now()), fid(fid_), evnt(evnt_) {}
-    ProfileRec(const std::chrono::steady_clock::time_point& timestamp_, uint32_t fid_, uint32_t evnt_) : timestamp(timestamp_), fid(fid_), evnt(evnt_) {}
-    std::chrono::steady_clock::time_point timestamp;
+    ProfileRec() : elapsed(), fid(), evnt() {}
+    ProfileRec(const std::chrono::steady_clock::duration elapsed_, uint32_t fid_, uint32_t evnt_) : elapsed(elapsed_), fid(fid_), evnt(evnt_) {}
+    std::chrono::steady_clock::duration elapsed;
     uint32_t fid;
     uint32_t evnt;
 };
@@ -45,24 +44,22 @@ public:
     uint32_t Fid() const { return fid; }
     const std::string& Name() const { return name; }
     int Called() const { return called; }
+    void PushTimestamp(const std::chrono::steady_clock::time_point& timestamp) { timestampStack.push(timestamp); }
+    std::chrono::steady_clock::time_point PopTimestamp()
+    {
+        if (timestampStack.empty())
+        {
+            throw std::runtime_error("timestamp stack empty");
+        }
+        std::chrono::steady_clock::time_point timestamp = timestampStack.top();
+        timestampStack.pop();
+        return timestamp;
+    }
+    const std::chrono::steady_clock::duration& TotalElapsed() const { return totalElapsed; }
     const std::chrono::steady_clock::duration& ElapsedInclusive() const { return elapsedInclusive; }
     const std::chrono::steady_clock::duration& ElapsedChild() const { return elapsedChild; }
     std::chrono::steady_clock::duration ElapsedExclusive() const { return elapsedInclusive - elapsedChild; }
     void IncCalled() { ++called; }
-    void Push(const std::chrono::steady_clock::time_point& timestamp)
-    {
-        timestampStack.push(timestamp);
-    }
-    std::chrono::steady_clock::time_point Pop()
-    {
-        if (timestampStack.empty())
-        {
-            throw std::runtime_error("timestamp stack is empty");
-        }
-        std::chrono::steady_clock::time_point top = timestampStack.top();
-        timestampStack.pop();
-        return top;
-    }
     void AddToElapsedInclusive(const std::chrono::steady_clock::duration& duration)
     {
         elapsedInclusive += duration;
@@ -98,6 +95,7 @@ private:
     std::uint32_t fid;
     std::string name;
     int called;
+    std::chrono::steady_clock::duration totalElapsed;
     std::chrono::steady_clock::duration elapsedInclusive;
     std::chrono::steady_clock::duration elapsedChild;
     std::stack<std::chrono::steady_clock::time_point> timestampStack;
@@ -216,10 +214,14 @@ struct CalledGreater
         {
             return false;
         }
+        else
+        {
+            return false;
+        }
     }
 };
 
-void WriteProfileReport(const std::string& cmProfRptFileName)
+void WriteProfileReports(const std::string& cmProfRptFileName)
 {
     std::chrono::steady_clock::duration totalInclusive = std::chrono::steady_clock::duration();
     std::chrono::steady_clock::duration totalExclusive = std::chrono::steady_clock::duration();
@@ -228,6 +230,7 @@ void WriteProfileReport(const std::string& cmProfRptFileName)
     for (std::unordered_map<uint32_t, std::unique_ptr<Function>>::iterator i = functionMap.begin(); i != e; ++i)
     {
         Function* fun = i->second.get();
+        if (fun->Called() == 0) continue;
         functions.push_back(fun);
         if (fun->ElapsedInclusive() > totalInclusive)
         {
@@ -251,30 +254,34 @@ void WriteProfileReport(const std::string& cmProfRptFileName)
         fun->SetData(elapsedIclusiveMs, elapsedExclusiveMs, percentInclusive, percentExclusive);
         reportFile << fun->Fid() << ":" << fun->Name() << ":" << fun->Called() << ":" << elapsedIclusiveMs << ":" << percentInclusive << ":" << elapsedExclusiveMs << ":" << percentExclusive << std::endl;
     }
+    std::cout << "=> " << cmProfRptFileName << std::endl;
     std::sort(functions.begin(), functions.end(), CalledGreater());
-    std::ofstream countFile(boost::filesystem::path(cmProfRptFileName).replace_extension(".cnt.txt").generic_string());
+    std::string countFileName = boost::filesystem::path(cmProfRptFileName).replace_extension(".count.txt").generic_string();
+    std::ofstream countFile(countFileName);
     for (Function* fun : functions)
     {
-        if (fun->Called() == 0) continue;
         countFile << fun->Fid() << ":" << fun->Name() << ":" << fun->Called() << ":" << fun->ElapsedInclusiveMs() << ":" << fun->PercentInclusive() << ":" << fun->ElapsedExclusiveMs() << ":" << 
             fun->PercentExclusive() << std::endl;
     }
+    std::cout << "=> " << countFileName << std::endl;
     std::sort(functions.begin(), functions.end(), ElapsedInclusiveGreater());
-    std::ofstream incFile(boost::filesystem::path(cmProfRptFileName).replace_extension(".inc.txt").generic_string());
+    std::string incFileName = boost::filesystem::path(cmProfRptFileName).replace_extension(".inclusive.txt").generic_string();
+    std::ofstream incFile(incFileName);
     for (Function* fun : functions)
     {
-        if (fun->Called() == 0) continue;
         incFile << fun->Fid() << ":" << fun->Name() << ":" << fun->Called() << ":" << fun->ElapsedInclusiveMs() << ":" << fun->PercentInclusive() << ":" << fun->ElapsedExclusiveMs() << ":" <<
             fun->PercentExclusive() << std::endl;
     }
+    std::cout << "=> " << incFileName << std::endl;
     std::sort(functions.begin(), functions.end(), ElapsedExclusiveGreater());
-    std::ofstream excFile(boost::filesystem::path(cmProfRptFileName).replace_extension(".exc.txt").generic_string());
+    std::string excFileName = boost::filesystem::path(cmProfRptFileName).replace_extension(".exclusive.txt").generic_string();
+    std::ofstream excFile(excFileName);
     for (Function* fun : functions)
     {
-        if (fun->Called() == 0) continue;
         excFile << fun->Fid() << ":" << fun->Name() << ":" << fun->Called() << ":" << fun->ElapsedInclusiveMs() << ":" << fun->PercentInclusive() << ":" << fun->ElapsedExclusiveMs() << ":" <<
             fun->PercentExclusive() << std::endl;
     }
+    std::cout << "=> " << excFileName << std::endl;
 }
 
 class FileHandle
@@ -295,6 +302,7 @@ void ReadProfileData(const std::string& profDataFile)
     {
         throw std::runtime_error("could not open '" + profDataFile + "' for reading");
     }
+    std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::time_point();
     std::unique_ptr<ProfileRec[]> profileRecs(new ProfileRec[(1024 * 1024) / sizeof(ProfileRec)]);
     int n = int(fread(profileRecs.get(), sizeof(ProfileRec), (1024 * 1024) / sizeof(ProfileRec), file));
     while (n > 0)
@@ -309,35 +317,23 @@ void ReadProfileData(const std::string& profDataFile)
                 throw std::runtime_error("function " + std::to_string(profileRec.fid) + " not found");
             }
             Function* fun = f->second.get();
-            if (fun->Name() == "main(int, const char**)")
-            {
-                int x = 0;
-            }
+            std::chrono::steady_clock::duration elapsed = profileRec.elapsed;
+            currentTime += elapsed;
             if (profileRec.evnt == startFunEvent)
             {
-                functionPath.push_back(fun);
-                fun->Push(profileRec.timestamp);
                 fun->IncCalled();
+                functionPath.push_back(fun);
+                fun->PushTimestamp(currentTime);
             }
             else if (profileRec.evnt == endFunEvent)
             {
-                if (functionPath.empty() || functionPath.back() != fun)
-                {
-                    int x = 0;
-                }
-                std::chrono::steady_clock::time_point start = fun->Pop();
-                std::chrono::steady_clock::time_point end = profileRec.timestamp;
-                std::chrono::steady_clock::duration elapsed = end - start;
-                fun->AddToElapsedInclusive(elapsed);
+                std::chrono::steady_clock::duration funElapsed = currentTime - fun->PopTimestamp();
+                fun->AddToElapsedInclusive(funElapsed);
                 functionPath.pop_back();
                 if (!functionPath.empty())
                 {
                     Function* parent = functionPath.back();
-                    if (parent->Name() == "main(int, const char**)")
-                    {
-                        int x = 0;
-                    }
-                    parent->AddToElapsedChild(elapsed);
+                    parent->AddToElapsedChild(funElapsed);
                 }
             }
             else
@@ -401,7 +397,7 @@ int main(int argc, const char** argv)
             functionMap[flushFid] = std::unique_ptr<Function>(new Function(flushFid, "<flush>"));
             ReadFunctions(cmProfFileName);
             ReadProfileData(profDataFile);
-            WriteProfileReport(cmProfRptFileName);
+            WriteProfileReports(cmProfRptFileName);
         }
     }
     catch (const std::exception& ex)

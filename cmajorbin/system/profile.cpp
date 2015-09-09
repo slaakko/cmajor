@@ -14,10 +14,14 @@ ProfileRec* profileBuf = nullptr;
 ProfileRec* profileBufPtr = nullptr;
 ProfileRec* profileBufEnd = nullptr;
 FILE* profDataFile = nullptr;
+std::chrono::steady_clock::time_point prevEventTime = std::chrono::steady_clock::time_point();
 
 inline void AppendProfileEvent(uint32_t fid, uint32_t evnt)
 {
-    *profileBufPtr++ = ProfileRec(fid, evnt);
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::duration elapsed = now - prevEventTime;
+    *profileBufPtr++ = ProfileRec(elapsed, fid, evnt);
+    prevEventTime = now;
 }
 
 void FlushProfileBuf(bool last)
@@ -41,6 +45,7 @@ extern "C" void start_profiling(const char* profDataFilePath)
     profileBufPtr = profileBuf;
     profileBufEnd = profileBuf + (1024 * 1024) / sizeof(ProfileRec) - 1;
     profDataFile = fopen(profDataFilePath, "wb");
+    prevEventTime = std::chrono::steady_clock::now();
 }
 
 extern "C" void end_profiling()
