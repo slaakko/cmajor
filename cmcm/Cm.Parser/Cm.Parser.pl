@@ -148,6 +148,7 @@ namespace Cm.Parser
         SourceFileDeclaration(Project* project): ProjectDeclaration*;
         AsmSourceFileDeclaration(Project* project): ProjectDeclaration*;
         CSourceFileDeclaration(Project* project): ProjectDeclaration*;
+        CppSourceFileDeclaration(Project* project): ProjectDeclaration*;
         TextFileDeclaration(Project* project): ProjectDeclaration*;
         ReferenceFileDeclaration(Project* project): ProjectDeclaration*;
         CLibraryDeclaration(Project* project): ProjectDeclaration*;

@@ -131,7 +131,6 @@ void Module::Export(SymbolTable& symbolTable)
     symbolTable.Export(writer);
     ExportExceptionTable(writer);
 	writer.GetBinaryWriter().Write(int32_t(GetMutexTable()->GetNumberOfMutexesInThisProject()));
-    writer.GetBinaryWriter().Write(GetClassCounter()->GetNumberOfClassesInThisProject());
 }
 
 void Module::CheckModuleFileId(Reader& reader)
@@ -252,8 +251,6 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
     ImportExceptionTable(symbolTable, reader);
 	int numLibraryMutexes = reader.GetBinaryReader().ReadInt();
 	GetMutexTable()->AddLibraryMutexes(numLibraryMutexes);
-    uint32_t numLibraryClasses = reader.GetBinaryReader().ReadUInt();
-    GetClassCounter()->AddLibryClasses(numLibraryClasses);
     if (!quiet)
     {
         std::cout << "> " << filePath << std::endl;

@@ -22,9 +22,11 @@ DelegateFromFunCtor::DelegateFromFunCtor(Cm::Sym::TypeRepository& typeRepository
 {
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
+    typeRepository.GetSymbolTable().SetSidAndAddSymbol(thisParam);
     thisParam->SetType(delegatePtrType_);
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* funParam(new Cm::Sym::ParameterSymbol(Span(), "fun"));
+    typeRepository.GetSymbolTable().SetSidAndAddSymbol(funParam);
     funParam->SetType(delegatePtrType_);
     AddSymbol(funParam);
     ComputeName();
@@ -43,9 +45,11 @@ DelegateFromFunAssignment::DelegateFromFunAssignment(Cm::Sym::TypeRepository& ty
     Cm::Sym::TypeSymbol* voidType = typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
     SetReturnType(voidType);
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
+    typeRepository.GetSymbolTable().SetSidAndAddSymbol(thisParam);
     thisParam->SetType(delegatePtrType_);
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* funParam(new Cm::Sym::ParameterSymbol(Span(), "fun"));
+    typeRepository.GetSymbolTable().SetSidAndAddSymbol(funParam);
     funParam->SetType(delegatePtrType_);
     AddSymbol(funParam);
     ComputeName();

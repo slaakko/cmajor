@@ -75,7 +75,7 @@ namespace Cm.Ast
         }
         public virtual void Accept(Visitor& visitor)
         {
-            ThrowMemFunNotApplicable();
+            ThrowMemFunNotImplemented();
         }
         public virtual nothrow string Name() const
         {
@@ -102,24 +102,24 @@ namespace Cm.Ast
         }
         public virtual Node* GetValue() const
         {
-            ThrowMemFunNotApplicable();
+            ThrowMemFunNotImplemented();
             return null;
         }
         public virtual void AddArgument(Node* argument)
         {
-            ThrowMemFunNotApplicable();
+            ThrowMemFunNotImplemented();
         }
         public virtual void AddParameter(ParameterNode* parameter)
         {
-            ThrowMemFunNotApplicable();
+            ThrowMemFunNotImplemented();
         }
         public virtual void AddTemplateParameter(TemplateParameterNode* templateParameter)
         {
-            ThrowMemFunNotApplicable();
+            ThrowMemFunNotImplemented();
         }
         public virtual void AddInitializer(InitializerNode* initializer)
         {
-            ThrowMemFunNotApplicable();
+            ThrowMemFunNotImplemented();    
         }
         public virtual nothrow bool IsNamespaceNode() const
         {
@@ -490,8 +490,8 @@ namespace Cm.Ast
         private List<UniquePtr<T>> nodes;
     }
     
-    public void ThrowMemFunNotApplicable()
+    public void ThrowMemFunNotImplemented()
     {
-        throw Exception("member function not applicable");
+        throw Exception("member function not implemented");
     }
 }

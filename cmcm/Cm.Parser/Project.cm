@@ -219,6 +219,8 @@ namespace Cm.Parser
                 a7ActionParser->SetAction(ParsingAction(A7Action));
                 ActionParser* a8ActionParser = GetAction("A8");
                 a8ActionParser->SetAction(ParsingAction(A8Action));
+                ActionParser* a9ActionParser = GetAction("A9");
+                a9ActionParser->SetAction(ParsingAction(A9Action));
                 NonterminalParser* sourceFileDeclarationNonterminalParser = GetNonterminal("SourceFileDeclaration");
                 sourceFileDeclarationNonterminalParser->SetPreCall(PreCall(PreSourceFileDeclaration));
                 sourceFileDeclarationNonterminalParser->SetPostCall(PostCall(PostSourceFileDeclaration));
@@ -228,6 +230,9 @@ namespace Cm.Parser
                 NonterminalParser* cSourceFileDeclarationNonterminalParser = GetNonterminal("CSourceFileDeclaration");
                 cSourceFileDeclarationNonterminalParser->SetPreCall(PreCall(PreCSourceFileDeclaration));
                 cSourceFileDeclarationNonterminalParser->SetPostCall(PostCall(PostCSourceFileDeclaration));
+                NonterminalParser* cppSourceFileDeclarationNonterminalParser = GetNonterminal("CppSourceFileDeclaration");
+                cppSourceFileDeclarationNonterminalParser->SetPreCall(PreCall(PreCppSourceFileDeclaration));
+                cppSourceFileDeclarationNonterminalParser->SetPostCall(PostCall(PostCppSourceFileDeclaration));
                 NonterminalParser* textFileDeclarationNonterminalParser = GetNonterminal("TextFileDeclaration");
                 textFileDeclarationNonterminalParser->SetPreCall(PreCall(PreTextFileDeclaration));
                 textFileDeclarationNonterminalParser->SetPostCall(PostCall(PostTextFileDeclaration));
@@ -260,25 +265,29 @@ namespace Cm.Parser
             }
             public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromTextFileDeclaration;
+                context.value = context.fromCppSourceFileDeclaration;
             }
             public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromReferenceFileDeclaration;
+                context.value = context.fromTextFileDeclaration;
             }
             public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromCLibraryDeclaration;
+                context.value = context.fromReferenceFileDeclaration;
             }
             public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromTargetDeclaration;
+                context.value = context.fromCLibraryDeclaration;
             }
             public throw void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromAssemblyFileDeclaration;
+                context.value = context.fromTargetDeclaration;
             }
             public throw void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromAssemblyFileDeclaration;
+            }
+            public throw void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromExecutableFileDeclaration;
             }
@@ -316,6 +325,18 @@ namespace Cm.Parser
                 {
                     UniquePtr<Object> fromCSourceFileDeclaration_value = stack.Pop();
                     context.fromCSourceFileDeclaration = *cast<ValueObject<ProjectDeclaration*>*>(fromCSourceFileDeclaration_value.GetPtr());
+                }
+            }
+            public throw void PreCppSourceFileDeclaration(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<Project*>(context.project)));
+            }
+            public throw void PostCppSourceFileDeclaration(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromCppSourceFileDeclaration_value = stack.Pop();
+                    context.fromCppSourceFileDeclaration = *cast<ValueObject<ProjectDeclaration*>*>(fromCppSourceFileDeclaration_value.GetPtr());
                 }
             }
             public throw void PreTextFileDeclaration(Stack<UniquePtr<Object>>& stack)
@@ -393,6 +414,7 @@ namespace Cm.Parser
                 public ProjectDeclaration* fromSourceFileDeclaration;
                 public ProjectDeclaration* fromAsmSourceFileDeclaration;
                 public ProjectDeclaration* fromCSourceFileDeclaration;
+                public ProjectDeclaration* fromCppSourceFileDeclaration;
                 public ProjectDeclaration* fromTextFileDeclaration;
                 public ProjectDeclaration* fromReferenceFileDeclaration;
                 public ProjectDeclaration* fromCLibraryDeclaration;
@@ -562,6 +584,68 @@ namespace Cm.Parser
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = new SourceFileDeclaration(span, SourceFileType.c, context.fromFilePath, context.project->BasePath(), context.fromProperties);
+            }
+            public throw void PostFilePath(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromFilePath_value = stack.Pop();
+                    context.fromFilePath = *cast<ValueObject<string>*>(fromFilePath_value.GetPtr());
+                }
+            }
+            public throw void PostProperties(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromProperties_value = stack.Pop();
+                    context.fromProperties = *cast<ValueObject<Properties>*>(fromProperties_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Project* project;
+                public ProjectDeclaration* value;
+                public string fromFilePath;
+                public Properties fromProperties;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class CppSourceFileDeclarationRule: System.Text.Parsing.Rule
+        {
+            public CppSourceFileDeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("Project*", "project"));
+                SetValueTypeName("ProjectDeclaration*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> project_value = stack.Pop();
+                context.project = *cast<ValueObject<Project*>*>(project_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ProjectDeclaration*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
+                filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
+                NonterminalParser* propertiesNonterminalParser = GetNonterminal("Properties");
+                propertiesNonterminalParser->SetPostCall(PostCall(PostProperties));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new SourceFileDeclaration(span, SourceFileType.cpp, context.fromFilePath, context.project->BasePath(), context.fromProperties);
             }
             public throw void PostFilePath(Stack<UniquePtr<Object>>& stack, bool matched)
             {
@@ -1036,9 +1120,9 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRule(new ProjectRule("Project", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
@@ -1062,23 +1146,26 @@ namespace Cm.Parser
                                     new AlternativeParser(
                                         new AlternativeParser(
                                             new AlternativeParser(
-                                                new ActionParser("A0",
-                                                    new NonterminalParser("SourceFileDeclaration", "SourceFileDeclaration", 1)),
-                                                new ActionParser("A1",
-                                                    new NonterminalParser("AsmSourceFileDeclaration", "AsmSourceFileDeclaration", 1))),
-                                            new ActionParser("A2",
-                                                new NonterminalParser("CSourceFileDeclaration", "CSourceFileDeclaration", 1))),
-                                        new ActionParser("A3",
+                                                new AlternativeParser(
+                                                    new ActionParser("A0",
+                                                        new NonterminalParser("SourceFileDeclaration", "SourceFileDeclaration", 1)),
+                                                    new ActionParser("A1",
+                                                        new NonterminalParser("AsmSourceFileDeclaration", "AsmSourceFileDeclaration", 1))),
+                                                new ActionParser("A2",
+                                                    new NonterminalParser("CSourceFileDeclaration", "CSourceFileDeclaration", 1))),
+                                            new ActionParser("A3",
+                                                new NonterminalParser("CppSourceFileDeclaration", "CppSourceFileDeclaration", 1))),
+                                        new ActionParser("A4",
                                             new NonterminalParser("TextFileDeclaration", "TextFileDeclaration", 1))),
-                                    new ActionParser("A4",
+                                    new ActionParser("A5",
                                         new NonterminalParser("ReferenceFileDeclaration", "ReferenceFileDeclaration", 1))),
-                                new ActionParser("A5",
+                                new ActionParser("A6",
                                     new NonterminalParser("CLibraryDeclaration", "CLibraryDeclaration", 1))),
-                            new ActionParser("A6",
+                            new ActionParser("A7",
                                 new NonterminalParser("TargetDeclaration", "TargetDeclaration", 0))),
-                        new ActionParser("A7",
+                        new ActionParser("A8",
                             new NonterminalParser("AssemblyFileDeclaration", "AssemblyFileDeclaration", 1))),
-                    new ActionParser("A8",
+                    new ActionParser("A9",
                         new NonterminalParser("ExecutableFileDeclaration", "ExecutableFileDeclaration", 1)))));
             AddRule(new SourceFileDeclarationRule("SourceFileDeclaration", GetScope(),
                 new ActionParser("A0",
@@ -1110,6 +1197,18 @@ namespace Cm.Parser
                         new SequenceParser(
                             new SequenceParser(
                                 new KeywordParser("csource"),
+                                new ExpectationParser(
+                                    new NonterminalParser("FilePath", "FilePath", 0))),
+                            new OptionalParser(
+                                new NonterminalParser("Properties", "Properties", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new CppSourceFileDeclarationRule("CppSourceFileDeclaration", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("cppsource"),
                                 new ExpectationParser(
                                     new NonterminalParser("FilePath", "FilePath", 0))),
                             new OptionalParser(

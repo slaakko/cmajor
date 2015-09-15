@@ -221,6 +221,7 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeDefaultConstructor(Cm::Sym::TypeSymbol
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(Cm::Parsing::Span(), "this");
     thisParam->SetType(ptrType);
     Cm::Sym::FunctionSymbol* defaultConstructorSymbol = new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "@array_constructor");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(defaultConstructorSymbol);
     defaultConstructorSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     defaultConstructorSymbol->SetGroupName("@array_constructor_" + std::to_string(n));
     defaultConstructorSymbol->SetParent(containerScope->Ns());
@@ -265,6 +266,7 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeCopyConstructor(Cm::Sym::TypeSymbol* a
     int n = arrayType->GetLastArrayDimension();
     Cm::Sym::TypeSymbol* elementType = arrayType->GetBaseType();
     Cm::Sym::FunctionSymbol* copyConstructorSymbol = new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "@array_constructor");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(copyConstructorSymbol);
     copyConstructorSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     copyConstructorSymbol->SetGroupName("@array_constructor_" + std::to_string(n));
     copyConstructorSymbol->SetParent(containerScope->Ns());
@@ -326,6 +328,7 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeCopyAssignment(Cm::Sym::TypeSymbol* ar
     int n = arrayType->GetLastArrayDimension();
     Cm::Sym::TypeSymbol* elementType = arrayType->GetBaseType();
     Cm::Sym::FunctionSymbol* assignmentSymbol = new Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "@array_assignment");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(assignmentSymbol);
     assignmentSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     assignmentSymbol->SetGroupName("@array_assignment_" + std::to_string(n));
     assignmentSymbol->SetParent(containerScope->Ns());

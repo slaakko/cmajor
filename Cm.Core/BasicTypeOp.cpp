@@ -9,7 +9,7 @@
 
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
-#include <Cm.Sym/TypeRepository.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Core {

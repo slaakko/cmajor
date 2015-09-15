@@ -72,11 +72,13 @@ struct PersistentClassData
     std::unique_ptr<Cm::Ast::ClassNode> classNode;
 };
 
+const uint32_t noCid = -1;
+
 class ClassTypeSymbol : public TypeSymbol
 {
 public:
     ClassTypeSymbol(const Span& span_, const std::string& name_);
-    ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId, uint32_t classNumber_);
+    ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId, uint32_t cid_);
     ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
     std::string TypeString() const override { return "class"; };
@@ -300,10 +302,10 @@ public:
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
     std::string FullClassTemplateId() const;
-    uint32_t ClassNumber() const { return classNumber; }
+    uint32_t Cid() const { return cid; }
     void ReplaceReplicaTypes() override;
 private:
-    uint32_t classNumber;
+    uint32_t cid;
     ClassTypeSymbolFlags flags;
     ClassTypeSymbol* baseClass;
     std::vector<MemberVariableSymbol*> memberVariables;

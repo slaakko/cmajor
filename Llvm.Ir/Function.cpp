@@ -19,7 +19,8 @@ namespace Llvm {
 const char* exceptionCodeParamName = "$ex$p";
 const char* classObjectResultParamName = "$cls$result$p";
 
-Function::Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_): Ir::Intf::Function(name_, returnType_, parameters_), isDoNothingFunction(false)
+Function::Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_): Ir::Intf::Function(name_, returnType_, parameters_), 
+    isDoNothingFunction(false), isMemSetFunction(false)
 {
 }
 

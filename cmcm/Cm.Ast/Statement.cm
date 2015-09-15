@@ -1706,7 +1706,7 @@ namespace Cm.Ast
         }
         public override Node* Clone(CloneContext& cloneContext) const
         {
-            ThrowMemFunNotApplicable();
+            ThrowMemFunNotImplemented();
             return null;
         }
         public nothrow inline TryStatementNode* TryNode() const
@@ -1731,7 +1731,7 @@ namespace Cm.Ast
         }
         public override Node* Clone(CloneContext& cloneContext) const
         {
-            ThrowMemFunNotApplicable();
+            ThrowMemFunNotImplemented();
             return null;
         }
         public override void Accept(Visitor& visitor)

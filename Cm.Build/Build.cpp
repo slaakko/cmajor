@@ -179,11 +179,14 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
     symbolTable.ProcessImportedTemplateTypes();
 }
 
+void ReadNextSid(Cm::Sym::SymbolTable& symbolTable);
+
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths,
     std::vector<std::string>& allDebugInfoFilePaths)
 {
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
+    ReadNextSid(symbolTable);
     ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
     symbolTable.InitVirtualFunctionTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
@@ -1011,7 +1014,7 @@ void ReadNextFid(Cm::Sym::FunctionTable& functionTable)
     std::vector<std::string> libraryDirectories;
     GetLibraryDirectories(libraryDirectories); 
     uint32_t nextFid = 0;
-    boost::filesystem::path nextFidPath = boost::filesystem::path(libraryDirectories[0]) / "next.fid";
+    boost::filesystem::path nextFidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + ".next.fid");
     if (boost::filesystem::exists(nextFidPath))
     {
         std::ifstream nextFidFile(nextFidPath.generic_string());
@@ -1025,9 +1028,57 @@ void WriteNextFid(Cm::Sym::FunctionTable& functionTable)
     std::vector<std::string> libraryDirectories;
     GetLibraryDirectories(libraryDirectories);
     uint32_t nextFid = functionTable.GetNextFid();
-    boost::filesystem::path nextFidPath = boost::filesystem::path(libraryDirectories[0]) / "next.fid";
+    boost::filesystem::path nextFidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + ".next.fid");
     std::ofstream nextFidFile(nextFidPath.generic_string());
     nextFidFile << nextFid;
+}
+
+void ReadNextCid(Cm::Sym::ClassCounter& classCounter)
+{
+    std::vector<std::string> libraryDirectories;
+    GetLibraryDirectories(libraryDirectories);
+    uint32_t nextCid = 0;
+    boost::filesystem::path nextCidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.cid");
+    if (boost::filesystem::exists(nextCidPath))
+    {
+        std::ifstream nextCidFile(nextCidPath.generic_string());
+        nextCidFile >> nextCid;
+    }
+    classCounter.SetNextCid(nextCid);
+}
+
+void WriteNextCid(Cm::Sym::ClassCounter& classCounter)
+{
+    std::vector<std::string> libraryDirectories;
+    GetLibraryDirectories(libraryDirectories);
+    uint32_t nextCid = classCounter.GetNextCid();
+    boost::filesystem::path nextCidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.cid");
+    std::ofstream nextCidFile(nextCidPath.generic_string());
+    nextCidFile << nextCid;
+}
+
+void ReadNextSid(Cm::Sym::SymbolTable& symbolTable)
+{
+    std::vector<std::string> libraryDirectories;
+    GetLibraryDirectories(libraryDirectories);
+    uint32_t nextSid = symbolTable.GetNextSid();
+    boost::filesystem::path nextSidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.sid");
+    if (boost::filesystem::exists(nextSidPath))
+    {
+        std::ifstream nextSidFile(nextSidPath.generic_string());
+        nextSidFile >> nextSid;
+    }
+    symbolTable.SetNextSid(nextSid);
+}
+
+void WriteNextSid(Cm::Sym::SymbolTable& symbolTable)
+{
+    std::vector<std::string> libraryDirectories;
+    GetLibraryDirectories(libraryDirectories);
+    uint32_t nextSid = symbolTable.GetNextSid();
+    boost::filesystem::path nextSidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.sid");
+    std::ofstream nextSidFile(nextSidPath.generic_string());
+    nextSidFile << nextSid;
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
@@ -1074,6 +1125,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     Cm::Sym::SetMutexTable(&mutexTable);
     Cm::Sym::ClassCounter classCounter;
     Cm::Sym::SetClassCounter(&classCounter);
+    ReadNextCid(classCounter);
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
@@ -1174,6 +1226,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);
     Cm::Sym::SetMutexTable(nullptr);
+    WriteNextCid(classCounter);
     Cm::Sym::SetClassCounter(nullptr);
     Cm::Sym::FunctionTable::SetInstance(nullptr);
     if (!quiet)
@@ -1192,6 +1245,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     {
         WriteNextFid(functionTable);
     }
+    WriteNextSid(symbolTable);
     return changed;
 }
 

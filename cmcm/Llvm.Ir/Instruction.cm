@@ -1,0 +1,369 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Llvm
+{
+    public class BinOpInstruction : Ir.Intf.Instruction
+    {
+        public nothrow BinOpInstruction(Ir.Intf.Type* type_, const string& name_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : 
+            base(name_), type(type_), result(result_), operand1(operand1_), operand2(operand2_)
+        {
+        }
+        public nothrow override bool ReturnsResult() const
+        {
+            return true;
+        }
+        public nothrow override Ir.Intf.Object* GetResult() const
+        {
+            return result;
+        }
+        public nothrow override string ToString() const
+        {
+            string s(result->Name());
+            s.Append(" = ").Append(Name()).Append(' ').Append(type->Name()).Append(' ').Append(operand1->Name()).Append(", ").Append(operand2->Name());
+            return s;
+        }
+        private Ir.Intf.Type* type;
+        private Ir.Intf.Object* result;
+        private Ir.Intf.Object* operand1;
+        private Ir.Intf.Object* operand2;
+    }
+    
+    public class AddInst : BinOpInstruction
+    {
+        public nothrow AddInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "add", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Add(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new AddInst(integerType, result, operand1, operand2);
+    }
+    
+    public class SubInst : BinOpInstruction
+    {
+        public nothrow SubInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "sub", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Sub(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new SubInst(integerType, result, operand1, operand2);
+    }
+    
+    public class MulInst : BinOpInstruction
+    {
+        public nothrow MulInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "mul", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Mul(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new MulInst(integerType, result, operand1, operand2);
+    }
+
+    public class UDivInst : BinOpInstruction
+    {
+        public nothrow UDivInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "udiv", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* UDiv(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new UDivInst(integerType, result, operand1, operand2);
+    }
+
+    public class SDivInst : BinOpInstruction
+    {
+        public nothrow SDivInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "sdiv", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* SDiv(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new SDivInst(integerType, result, operand1, operand2);
+    }
+    
+    public class URemInst : BinOpInstruction
+    {
+        public nothrow URemInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "urem", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* URem(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new URemInst(integerType, result, operand1, operand2);
+    }
+
+    public class SRemInst : BinOpInstruction
+    {
+        public nothrow SRemInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "srem", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* SRem(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new SRemInst(integerType, result, operand1, operand2);
+    }
+    
+    public class ShlInst : BinOpInstruction
+    {
+        public nothrow ShlInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "shl", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Shl(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new ShlInst(integerType, result, operand1, operand2);
+    }
+    
+    public class LShrInst : BinOpInstruction
+    {
+        public nothrow LShrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "lshr", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* LShr(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new LShrInst(integerType, result, operand1, operand2);
+    }
+
+    public class AShrInst : BinOpInstruction
+    {
+        public nothrow AShrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "ashr", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* AShr(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new AShrInst(integerType, result, operand1, operand2);
+    }
+    
+    public class AndInst : BinOpInstruction
+    {
+        public nothrow AndInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "and", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* And(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new AndInst(integerType, result, operand1, operand2);
+    }
+    
+    public class OrInst : BinOpInstruction
+    {
+        public nothrow OrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "or", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Or(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new OrInst(integerType, result, operand1, operand2);
+    }
+
+    public class XorInst : BinOpInstruction
+    {
+        public nothrow XorInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "xor", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Xor(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new XorInst(integerType, result, operand1, operand2);
+    }
+    
+    public class FAddInst : BinOpInstruction
+    {
+        public nothrow FAddInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "fadd", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* FAdd(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new FAddInst(floatingPointType, result, operand1, operand2);
+    }
+
+    public class FSubInst : BinOpInstruction
+    {
+        public nothrow FSubInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "fsub", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* FSub(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new FSubInst(floatingPointType, result, operand1, operand2);
+    }
+
+    public class FMulInst : BinOpInstruction
+    {
+        public nothrow FMulInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "fmul", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* FMul(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new FMulInst(floatingPointType, result, operand1, operand2);
+    }
+
+    public class FDivInst : BinOpInstruction
+    {
+        public nothrow FDivInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "fdiv", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* FDiv(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new FDivInst(floatingPointType, result, operand1, operand2);
+    }
+
+    public class FRemInst : BinOpInstruction
+    {
+        public nothrow FRemInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "frem", result_, operand1_, operand2_)
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* FRem(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return new FRemInst(floatingPointType, result, operand1, operand2);
+    }
+    
+    public class RetInst : Ir.Intf.Instruction
+    {
+        public nothrow RetInst() : base("ret"), value(null)
+        {
+        }
+        public nothrow RetInst(Ir.Intf.Object* value_) : base("ret"), value(value_)
+        {
+        }
+        public nothrow override bool IsTerminator() const
+        {
+            return true;
+        }
+        public nothrow override bool IsRet() const
+        {
+            return true;
+        }
+        public nothrow override string ToString() const
+        {
+            string ret(Name());
+            if (value != null)
+            {
+                ret.Append(' ').Append(value->GetType()->Name()).Append(' ').Append(value->Name());
+            }
+            else
+            {
+                ret.Append(' ').Append(Ir.Intf.Factory.Instance()->GetVoid()->Name());
+            }
+            return ret;
+        }
+        private Ir.Intf.Object* value;
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Ret()
+    {
+        return new RetInst();
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Ret(Ir.Intf.Object* value)
+    {
+        return new RetInst(value);
+    }
+    
+    public class BrInst : Ir.Intf.Instruction
+    {
+        public nothrow BrInst(Ir.Intf.LabelObject* dest_) : base("br"), dest(dest_), cond(null), trueLabel(null), falseLabel(null)
+        {
+        }
+        public nothrow BrInst(Ir.Intf.Object* cond_, Ir.Intf.LabelObject* trueLabel_, Ir.Intf.LabelObject* falseLabel_) : base("br"), dest(null), cond(cond_), trueLabel(trueLabel_), falseLabel(falseLabel_)
+        {
+        }
+        public nothrow override string ToString() const
+        {
+            string br(Name());
+            Ir.Intf.Type* labelType = Ir.Intf.Factory.Instance()->GetLabelType();
+            if (cond != null)
+            {
+                br.Append(' ').Append(Ir.Intf.Factory.Instance()->GetI1()->Name()).Append(' ').Append(cond->Name()).Append(", ").Append(labelType->Name()).Append(' ').Append(trueLabel->Name()).Append(", ").
+                    Append(labelType->Name()).Append(' ').Append(falseLabel->Name());
+            }
+            else
+            {
+                br.Append(' ').Append(labelType->Name()).Append(' ').Append(dest->Name());
+            }
+            return br;
+        }
+        public override void AddTargetLabels(HashSet<string>& targetLabels)
+        {
+            if (dest != null)
+            {
+                targetLabels.Insert(dest->Name());
+            }
+            else
+            {
+                if (trueLabel != null)
+                {
+                    targetLabels.Insert(trueLabel->Name());
+                }
+                if (falseLabel != null)
+                {
+                    targetLabels.Insert(falseLabel->Name());
+                }
+            }
+        }
+        public nothrow override bool IsTerminator() const
+        {
+            return true;
+        }
+        public nothrow override Ir.Intf.LabelObject* GetTargetLabel() const
+        {
+            return dest;
+        }
+        public nothrow override bool IsUnconditionalBr() const
+        {
+            return dest != null;
+        }
+        private Ir.Intf.LabelObject* dest;
+        private Ir.Intf.Object* cond;
+        private Ir.Intf.LabelObject* trueLabel;
+        private Ir.Intf.LabelObject* falseLabel;
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Br(Ir.Intf.LabelObject* dest)
+    {
+        return new BrInst(dest);
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* Br(Ir.Intf.Object* cond, Ir.Intf.LabelObject* trueLabel, Ir.Intf.LabelObject* falseLabel)
+    {
+        return new BrInst(cond, trueLabel, falseLabel);
+    }
+    
+    
+}

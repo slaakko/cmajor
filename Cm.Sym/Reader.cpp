@@ -153,6 +153,7 @@ Symbol* Reader::ReadSymbol()
         {
             symbol->ResetFlag(SymbolFlags::bound);
         }
+        symbolTable.AddSymbol(symbol);
         return symbol;
     }
 }

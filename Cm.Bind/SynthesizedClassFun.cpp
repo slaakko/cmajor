@@ -248,8 +248,10 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
 {
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
     thisParam->SetType(classTypePointer);
     Cm::Sym::FunctionSymbol* defaultConstructorSymbol = new Cm::Sym::FunctionSymbol(span, "@default_ctor");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(defaultConstructorSymbol);
     defaultConstructorSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     defaultConstructorSymbol->SetGroupName("@constructor");
     defaultConstructorSymbol->SetParent(classTypeSymbol);
@@ -328,11 +330,14 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
 {
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
     thisParam->SetType(classTypePointer);
     Cm::Sym::TypeSymbol* constRefType = compileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thatParam = new Cm::Sym::ParameterSymbol(span, "that");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thatParam);
     thatParam->SetType(constRefType);
     Cm::Sym::FunctionSymbol* copyConstructorSymbol = new Cm::Sym::FunctionSymbol(span, "@copy_ctor");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(copyConstructorSymbol);
     copyConstructorSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     copyConstructorSymbol->SetGroupName("@constructor");
     copyConstructorSymbol->SetParent(classTypeSymbol);
@@ -425,11 +430,14 @@ Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bo
 {
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
     thisParam->SetType(classTypePointer);
     Cm::Sym::TypeSymbol* rvalueRefType = compileUnit.SymbolTable().GetTypeRepository().MakeRvalueRefType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thatParam = new Cm::Sym::ParameterSymbol(span, "that");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thatParam);
     thatParam->SetType(rvalueRefType);
     Cm::Sym::FunctionSymbol* moveConstructorSymbol = new Cm::Sym::FunctionSymbol(span, "@move_ctor");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(moveConstructorSymbol);
     moveConstructorSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     moveConstructorSymbol->SetGroupName("@constructor");
     moveConstructorSymbol->SetParent(classTypeSymbol);
@@ -534,11 +542,14 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
 {
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
     thisParam->SetType(classTypePointer);
     Cm::Sym::TypeSymbol* constRefType = compileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thatParam = new Cm::Sym::ParameterSymbol(span, "that");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thatParam);
     thatParam->SetType(constRefType);
     Cm::Sym::FunctionSymbol* copyAssignmentSymbol = new Cm::Sym::FunctionSymbol(span, "@copy_assignment");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(copyAssignmentSymbol);
     copyAssignmentSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     copyAssignmentSymbol->SetGroupName("operator=");
     copyAssignmentSymbol->SetParent(classTypeSymbol);
@@ -618,11 +629,14 @@ Cm::Sym::FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, boo
 {
     Cm::Sym::TypeSymbol* classTypePointer = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
     thisParam->SetType(classTypePointer);
     Cm::Sym::TypeSymbol* rvalueRefType = compileUnit.SymbolTable().GetTypeRepository().MakeRvalueRefType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thatParam = new Cm::Sym::ParameterSymbol(span, "that");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(thatParam);
     thatParam->SetType(rvalueRefType);
     Cm::Sym::FunctionSymbol* moveAssignmentSymbol = new Cm::Sym::FunctionSymbol(span, "@move_assignment");
+    compileUnit.SymbolTable().SetSidAndAddSymbol(moveAssignmentSymbol);
     moveAssignmentSymbol->SetCompileUnit(compileUnit.SyntaxUnit());
     moveAssignmentSymbol->SetGroupName("operator=");
     Cm::Sym::TypeSymbol* voidType = compileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
@@ -706,8 +720,10 @@ Cm::Sym::FunctionSymbol* GenerateDestructorSymbol(Cm::Sym::SymbolTable& symbolTa
 {
     Cm::Sym::TypeSymbol* classTypePointer = symbolTable.GetTypeRepository().MakePointerType(classTypeSymbol, span);
     Cm::Sym::ParameterSymbol* thisParam = new Cm::Sym::ParameterSymbol(span, "this");
+    symbolTable.SetSidAndAddSymbol(thisParam);
     thisParam->SetType(classTypePointer);
     Cm::Sym::FunctionSymbol* destructorSymbol = new Cm::Sym::FunctionSymbol(span, "@dtor");
+    symbolTable.SetSidAndAddSymbol(destructorSymbol);
     if (classTypeSymbol->IsVirtual())
     {
         if (classTypeSymbol->BaseClass() && classTypeSymbol->BaseClass()->IsVirtual())
@@ -734,6 +750,7 @@ Cm::Sym::FunctionSymbol* GenerateDestructorSymbol(Cm::Sym::SymbolTable& symbolTa
 Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& symbolTable, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Ast::CompileUnitNode* compileUnit)
 {
     Cm::Sym::FunctionSymbol* staticConstructorSymbol = new Cm::Sym::FunctionSymbol(span, "@static_ctor");
+    symbolTable.SetSidAndAddSymbol(staticConstructorSymbol);
     staticConstructorSymbol->SetStatic();
     staticConstructorSymbol->SetCompileUnit(compileUnit);
     staticConstructorSymbol->SetGroupName("@static_constructor");

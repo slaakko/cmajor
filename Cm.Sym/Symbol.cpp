@@ -76,7 +76,7 @@ SymbolCollector::~SymbolCollector()
 {
 }
 
-Symbol::Symbol(const Span& span_, const std::string& name_) : span(span_), name(name_), flags(), parent(nullptr)
+Symbol::Symbol(const Span& span_, const std::string& name_) : sid(noSid), span(span_), name(name_), flags(), parent(nullptr)
 {
     SetSource(SymbolSource::project);
 }
@@ -87,11 +87,13 @@ Symbol::~Symbol()
 
 void Symbol::Write(Writer& writer)
 {
+    writer.GetBinaryWriter().Write(sid);
     writer.GetBinaryWriter().Write(uint16_t(flags & ~(SymbolFlags::project | SymbolFlags::irTypeMade | SymbolFlags::owned)));
 }
 
 void Symbol::Read(Reader& reader)
 {
+    sid = reader.GetBinaryReader().ReadUInt();
     flags = SymbolFlags(reader.GetBinaryReader().ReadUShort());
 }
 

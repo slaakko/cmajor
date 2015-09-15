@@ -1,0 +1,100 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Ir.Intf
+{
+    public abstract class Object
+    {
+        public nothrow Object(const string& name_, Type* type_) : name(name_), type(type_), owned(false)
+        {
+            if (!type->Owned())
+            {
+                type->SetOwned();
+                ownedType.Reset(type);
+            }
+        }
+        public virtual ~Object()
+        {
+        }
+        public nothrow inline const string& Name() const
+        {
+            return name;
+        }
+        public nothrow inline void SetName(const string& name_)
+        {
+            name = name_;
+        }
+        public nothrow inline Type* GetType() const
+        {
+            return type;
+        }
+        public nothrow inline void SetType(Type* type_)
+        {
+            type = type_;
+        }
+        public abstract void InitTo(Emitter& emitter, Type* type, Object* to);
+        public abstract void InitFrom(Emitter& emitter, Type* type, Constant& constant);
+        public abstract void InitFrom(Emitter& emitter, Type* type, Global& global);
+        public abstract void InitFrom(Emitter& emitter, Type* type, RegVar& regVar);
+        public abstract void InitFrom(Emitter& emitter, Type* type, StackVar& stackVar);
+        public abstract void InitFrom(Emitter& emitter, Type* type, MemberVar& memberVar);
+        public abstract void InitFrom(Emitter& emitter, Type* type, RefVar& refVar);
+        public abstract void InitFrom(Emitter& emitter, Type* type, Parameter& parameter);
+        public abstract void AssignTo(Emitter& emitter, Type* type, Object* to);
+        public abstract void AssignFrom(Emitter& emitter, Type* type, Constant& constant);
+        public abstract void AssignFrom(Emitter& emitter, Type* type, Global& global);
+        public abstract void AssignFrom(Emitter& emitter, Type* type, RegVar& regVar);
+        public abstract void AssignFrom(Emitter& emitter, Type* type, StackVar& stackVar);
+        public abstract void AssignFrom(Emitter& emitter, Type* type, MemberVar& memberVar);
+        public abstract void AssignFrom(Emitter& emitter, Type* type, RefVar& refVar);
+        public abstract void AssignFrom(Emitter& emitter, Type* type, Parameter& parameter);
+        public virtual Object* CreateAddr(Emitter& emitter, Type* type)
+        {
+            throw Exception("CreateAddr() not supported by this object type");
+        }
+        public virtual nothrow bool IsNull() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsConstant() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsRegVar() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsStackVar() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsGlobal() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsParameter() const
+        {
+            return false;
+        }
+        public inline nothrow bool Owned() const
+        {
+            return owned;
+        }
+        public inline nothrow void SetOwned()
+        {
+            owned = true;
+        }
+        private string name;
+        private Type* type;
+        private UniquePtr<Type> ownedType;
+        private bool owned;
+    }
+}

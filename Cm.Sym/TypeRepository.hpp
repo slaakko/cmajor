@@ -21,6 +21,8 @@ Cm::Ast::DerivationList RemoveDerivations(const Cm::Ast::DerivationList& targetD
 class TypeRepository
 {
 public:
+    TypeRepository(SymbolTable& symbolTable_);
+    SymbolTable& GetSymbolTable() { return symbolTable; }
     void AddType(TypeSymbol* type);
     TypeSymbol* GetTypeNothrow(const TypeId& typeId) const;
     TypeSymbol* GetType(const TypeId& typeId) const;
@@ -39,6 +41,7 @@ public:
     void Import(Reader& reader, SymbolTable& symbolTable);
     void ReplaceReplicaTypes();
 private:
+    SymbolTable& symbolTable;
     typedef std::unordered_map<TypeId, TypeSymbol*, TypeIdHash> TypeSymbolMap;
     typedef TypeSymbolMap::const_iterator TypeSymbolMapIt;
     TypeSymbolMap typeSymbolMap;

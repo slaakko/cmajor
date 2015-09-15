@@ -1,0 +1,157 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using CodeFormatter = System.Text.CodeFormatter;
+
+namespace Llvm
+{
+    public nothrow const char* ExceptionCodeParamName()
+    {
+        return "$ex$p";
+    }
+    
+    public nothrow const char* ClassObjectResultParamName()
+    {
+        return "$cls$result$p";
+    }
+    
+    public class Function : Ir.Intf.Function
+    {
+        public Function(const string& name_, Ir.Intf.Type* returnType_, const List<Ir.Intf.Parameter*>& parameters_) : base(name_, returnType_, parameters_), isDoNothingFunction(false), isMemSetFunction(false)
+        {
+        }
+        public override nothrow string ParameterListStr() const
+        {
+            string parameterListStr('(');
+            bool first = true;
+            for (Ir.Intf.Parameter* parameter : Parameters())
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    parameterListStr.Append(", ");
+                }
+                parameterListStr.Append(parameter->GetType()->Name()).Append(' ').Append(parameter->Name());
+            }
+            parameterListStr.Append(')');
+            return parameterListStr;
+        }
+        public override void AddInstruction(Ir.Intf.Instruction* instruction)
+        {
+            Ir.Intf.Object* result = null;
+            if (instruction->ReturnsResult())
+            {
+                result = instruction->GetResult();
+            }
+            if (result != null)
+            {
+                if (result->Name() == "%%")
+                {
+                    result->SetName("%" + ToString(GetNextInstNumber()));
+                }
+            }
+            DoAddInstruction(instruction);
+            Own(instruction);
+        }
+        public override void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_)
+        {
+            formatter.WriteLine();
+            const string& comment = Comment();
+            if (!comment.IsEmpty())
+            {
+                formatter.WriteLine("; " + comment);
+            }
+            string define("define ");
+            if (inline_ || weakOdr)
+            {
+                define.Append("weak_odr ");
+            }
+            define.Append(GetReturnType()->Name()).Append(" @").Append(Name()).Append(ParameterListStr()).Append(" nounwind");
+            if (inline_)
+            {
+                define.Append(" inlinehint");
+            }
+            formatter.WriteLine(define);
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            Ir.Intf.Instruction* prev = null;
+            for (Ir.Intf.Instruction* inst : Instructions())
+            {
+                if (inst->Removed())
+                {
+                    continue;
+                }
+                Ir.Intf.LabelObject* label = inst->GetLabel();
+                if (label != null || prev != null && prev->IsTerminator())
+                {
+                    if (label != null)
+                    {
+                        if (prev != null && !prev->IsTerminator())
+                        {
+                            UniquePtr<Ir.Intf.Instruction> br(Br(label));
+                            formatter.WriteLine(br->ToString());
+                        }
+                    }
+                    else
+                    {
+                        label = CreateNextLocalLabel();
+                        Own(label);
+                    }
+                    formatter.DecIndent();
+                    formatter.WriteLine();
+                    formatter.WriteLine(label->Target());
+                    formatter.IncIndent();
+                }
+                string s = inst->ToString();
+                const string& comment = inst->Comment();
+                if (!comment.IsEmpty())
+                {
+                    s.Append(" ; ").Append(comment);
+                }
+                formatter.WriteLine(s);
+                prev = inst;
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_) 
+        {
+            string declaration("declare ");
+            declaration.Append(GetReturnType()->Name()).Append(" @").Append(Name()).Append(ParameterListStr()).Append(" nounwind");
+            formatter.WriteLine(declaration);
+        }
+        public override nothrow bool ContainsExceptionCodeParam() const
+        {
+            return !Parameters().IsEmpty() && Parameters().Back()->Name() == string("%") + ExceptionCodeParamName();
+        }
+        public nothrow override bool IsDoNothingFunction() const
+        {
+            return isDoNothingFunction;
+        }
+        public nothrow inline void SetDoNothingFunction()
+        {
+            isDoNothingFunction = true;
+        }
+        public nothrow override bool IsMemSetFunction()
+        {
+            return isMemSetFunction;
+        }
+        public nothrow inline void SetMemSetFunction()
+        {
+            isMemSetFunction = true;
+        }
+        private bool isDoNothingFunction;
+        private bool isMemSetFunction;
+    }
+}

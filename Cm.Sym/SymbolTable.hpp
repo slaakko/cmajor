@@ -86,7 +86,13 @@ public:
     NamespaceSymbol& GlobalNs() { return globalNs; }
     void AddImportedTemplateType(TemplateTypeSymbol* importedTemplateType) { importedTemplateTypes.push_back(importedTemplateType); }
     void ProcessImportedTemplateTypes();
+    uint32_t GetNextSid() const { return nextSid; }
+    void SetNextSid(uint32_t nextSid_) { nextSid = nextSid_; }
+    void AddSymbol(Symbol* symbol);
+    void SetSidAndAddSymbol(Symbol* symbol);
+    Symbol* GetSymbol(uint32_t sid) const;
 private:
+    uint32_t nextSid;
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
     std::stack<ContainerSymbol*> containerStack;
@@ -106,6 +112,7 @@ private:
     SymbolNodeMap symbolNodeMap;
     Cm::Sym::FunctionSymbol* userMainFunction;
     std::vector<TemplateTypeSymbol*> importedTemplateTypes;
+    std::unordered_map<uint32_t, Symbol*> symbolMap;
 };
 
 } } // namespace Cm::Sym

@@ -1,0 +1,190 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using CodeFormatter = System.Text.CodeFormatter;
+
+namespace Ir.Intf
+{
+    public abstract class Emitter
+    {
+        public virtual ~Emitter()
+        {
+        }
+        public abstract void Emit(Instruction* instruction);
+        public abstract void Own(Object* object);
+        public abstract void Own(Type* type);
+        public abstract void Own(Function* function);
+    }
+    
+    public abstract class Function
+    {
+        public Function(const string& name_, Type* returnType_, const List<Parameter*>& parameters_) : name(name_), returnType(returnType_), parameters(parameters_), instNumber(0)
+        {
+            for (Parameter* parameter : parameters)
+            {
+                if (!parameter->Owned())
+                {
+                    parameter->SetOwned();
+                    ownedParameters.Add(UniquePtr<Parameter>(parameter));
+                }
+            }
+        }
+        public virtual ~Function()
+        {
+        }
+        public inline nothrow const string& Name() const
+        {
+            return name;
+        }
+        public inline nothrow Type* ReturnType() const
+        {
+            return returnType;
+        }
+        public abstract void AddInstruction(Instruction* instruction);
+        public void Own(Instruction* instruction)
+        {
+            ownedInstuctions.Add(UniquePtr<Instruction>(instruction));
+        }
+        public void Own(Object* object)
+        {
+            ownedObjects.Add(UniquePtr<Object>(object));
+        }
+        public void Own(Function* function)
+        {
+            ownedFunctions.Add(UniquePtr<Function>(function));
+        }
+        public nothrow void SetLastInstructionLabel(LabelObject* label)
+        {
+            instructions.Back()->SetLabel(label);
+        }
+        public void Clean()
+        {
+            HashSet<string> targetLabels;
+            for (Instruction* instruction : instructions)
+            {
+                instruction->AddTargetLabels(targetLabels);
+            }
+            Instruction* prev = null;
+            Instruction* prevPrev = null;
+            for (Instruction* instruction : instructions)
+            {
+                LabelObject* label = instruction->GetLabel();
+                if (label != null)
+                {
+                    if (prev == null || prev != null && !prev->IsTerminator())
+                    {
+                        if (targetLabels.CFind(label->Name()) == targetLabels.CEnd()) // if label not used
+                        {
+                            instruction->RemoveLabel(); // remove the label
+                        }
+                    }
+                    // if previous br begins a basic block and it has no label...
+                    if (prevPrev != null && prevPrev->IsTerminator() && prev != null && prev->IsUnconditionalBr() && prev->GetLabel() == null)
+                    {
+                        LabelObject* prevTarget = prev->GetTargetLabel();
+                        if (prevTarget != null && prevTarget->Name() == label->Name()) // ...and previous br jumps to this inst
+                        {
+                            prev->Remove(); // remove br
+                        }
+                    }
+                }
+                prevPrev = prev;
+                prev = instruction;
+            }
+            HashSet<string> existingTargets;
+            for (Instruction* instruction : instructions)
+            {
+                LabelObject* label = instruction->GetLabel();
+                if (label != null)
+                {
+                    existingTargets.Insert(label->Name());
+                }
+            }
+            for (Instruction* instruction : instructions)
+            {
+                LabelObject* target = instruction->GetTargetLabel();
+                if (target != null && existingTargets.CFind(target->Name()) == existingTargets.CEnd()) // if br target not found
+                {
+                    instruction->Remove(); // remove this br
+                }
+            }
+        }
+        public abstract void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_);
+        public void WriteInlineDefinition(CodeFormatter& formatter)
+        {
+            WriteDefinition(formatter, true, true); 
+        }
+        public abstract void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_);
+        public abstract nothrow bool ContainsExceptionCodeParam() const;
+        public nothrow virtual bool IsDoNothingFunction() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsMemSetFunction() const
+        {
+            return false;
+        }
+        public nothrow bool LastInstructionIsRet() const
+        {
+            if (!instructions.IsEmpty())
+            {
+                return instructions.Back()->IsRet();
+            }
+            return false;
+        }
+        public nothrow void SetComment(const string& comment_)
+        {
+            comment = comment_;
+        }
+        public void Release()
+        {
+            instructions.Clear();
+            ownedInstuctions.Clear();
+            ownedObjects.Clear();
+            ownedFunctions.Clear();
+        }
+        public inline nothrow const List<Parameter*>& Parameters() const
+        {
+            return parameters;
+        }
+        public inline nothrow Type* GetReturnType() const
+        {
+            return returnType;
+        }
+        public void DoAddInstruction(Instruction* instruction)
+        {
+            instructions.Add(instruction);
+        }
+        public nothrow int GetNextInstNumber() const
+        {
+            return ++instNumber;
+        }
+        public abstract nothrow string ParameterListStr() const;
+        public nothrow inline const string& Comment() const
+        {
+            return comment;
+        }
+        public nothrow inline const List<Instruction*>& Instructions() const
+        {
+            return instructions;
+        }
+        private string name;
+        private Type* returnType;
+        private List<Parameter*> parameters;
+        private List<Instruction*> instructions;
+        private List<UniquePtr<Instruction>> ownedInstuctions;
+        private List<UniquePtr<Object>> ownedObjects;
+        private List<UniquePtr<Function>> ownedFunctions;
+        private List<UniquePtr<Parameter>> ownedParameters;
+        private int instNumber;
+        private string comment;
+    }
+}

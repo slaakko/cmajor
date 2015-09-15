@@ -33,6 +33,7 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
             if (!ownedSymbol->IsFunctionGroupSymbol() && !ownedSymbol->IsConceptGroupSymbol())
             {
                 Symbol* symbol = ownedSymbol.release();
+                symbolTable.AddSymbol(symbol);
                 symbol->ResetOwned();
                 symbolTable.Container()->AddSymbol(symbol);
                 if (symbol->IsTemplateTypeSymbol())
@@ -44,6 +45,7 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
     }
     for (Symbol* symbol : that->NonOwnedSymbols())
     {
+        symbolTable.AddSymbol(symbol);
         symbolTable.Container()->AddSymbol(symbol);
         if (symbol->IsTemplateTypeSymbol())
         {

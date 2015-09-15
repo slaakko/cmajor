@@ -16,7 +16,7 @@ namespace Cm.Ast
 {
     public enum SourceFileType : byte
     {
-        cm, asm, c, text
+        cm, asm, c, cpp, text
     }
     
     public enum Target : byte
@@ -244,6 +244,10 @@ namespace Cm.Ast
         {
             return cSourceFilePaths;
         }        
+        public nothrow inline const List<string>& CppSourceFilePaths() const
+        {
+            return cppSourceFilePaths;
+        }        
         public nothrow inline const List<string>& TextFilePaths() const
         {
             return textFilePaths;
@@ -328,6 +332,18 @@ namespace Cm.Ast
                                 }
                             }
                             cSourceFilePaths.Add(sfd->FilePath());
+                            break;
+                        }
+                        case SourceFileType.cpp:
+                        {
+                            for (const string& prev : cppSourceFilePaths)
+                            {
+                                if (prev == sfd->FilePath())
+                                {
+                                    throw Exception("C++ source file '" + prev + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(sfd->GetSpan().LineNumber()) + ")");
+                                }
+                            }
+                            cppSourceFilePaths.Add(sfd->FilePath());
                             break;
                         }
                         case SourceFileType.text:
@@ -429,6 +445,7 @@ namespace Cm.Ast
         private List<string> sourceFilePaths;
         private List<string> asmSourceFilePaths;
         private List<string> cSourceFilePaths;
+        private List<string> cppSourceFilePaths;
         private List<string> textFilePaths;
         private List<string> referenceFilePaths;
         private List<string> cLibraryFilePaths;

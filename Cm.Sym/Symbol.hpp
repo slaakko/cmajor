@@ -108,6 +108,8 @@ public:
     virtual void EndContainer() = 0;
 };
 
+const uint32_t noSid = -1;
+
 class Symbol
 {
 public:
@@ -203,7 +205,10 @@ public:
     void ResetOwned() { ResetFlag(SymbolFlags::owned); }
     bool Owned() const { return GetFlag(SymbolFlags::owned); }
     virtual void ReplaceReplicaTypes();
+    uint32_t Sid() const { return sid; }
+    void SetSid(uint32_t sid_) { sid = sid_; }
 private:
+    uint32_t sid;
     Span span;
     std::string name;
     SymbolFlags flags;
