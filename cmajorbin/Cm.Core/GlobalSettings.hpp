@@ -23,10 +23,16 @@ public:
     void SetOptimizationLevel(int optimizationLevel_);
     void SetCurrentProjectName(const std::string& currentProjectName_);
     const std::string& CurrentProjectName() const { return currentProjectName; }
+    void SetTargetTriple(const std::string& targetTriple_);
+    const std::string& TargetTriple() const { return targetTriple; }
+    void SetDatalayout(const std::string& datalayout_);
+    const std::string& Datalayout() const { return datalayout; }
 private:
     std::string config;
     int optimizationLevel;
     std::string currentProjectName;
+    std::string targetTriple;
+    std::string datalayout;
 };
 
 GlobalSettings* GetGlobalSettings();

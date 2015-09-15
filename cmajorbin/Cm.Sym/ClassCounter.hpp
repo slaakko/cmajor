@@ -17,13 +17,11 @@ class ClassCounter
 {
 public:
     ClassCounter();
-    void AddLibryClasses(uint32_t numLibraryClasses);
-    uint32_t GetNextClassNumber();
-    uint32_t GetNumberOfClasses() const;
-    uint32_t GetNumberOfClassesInThisProject() const;
+    uint32_t GetCid() { return nextCid++; }
+    void SetNextCid(uint32_t nextCid_) { nextCid = nextCid_; }
+    uint32_t GetNextCid() const { return nextCid; }
 private:
-    uint32_t numClasses;
-    uint32_t numClassesInThisProject;
+    uint32_t nextCid;
 };
 
 ClassCounter* GetClassCounter();

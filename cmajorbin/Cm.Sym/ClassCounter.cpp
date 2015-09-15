@@ -11,29 +11,8 @@
 
 namespace Cm { namespace Sym {
 
-ClassCounter::ClassCounter(): numClasses(0), numClassesInThisProject(0)
+ClassCounter::ClassCounter(): nextCid(0)
 {
-}
-
-void ClassCounter::AddLibryClasses(uint32_t numLibraryClasses)
-{
-    numClasses = numClasses + numLibraryClasses;
-}
-
-uint32_t ClassCounter::GetNextClassNumber()
-{
-    ++numClassesInThisProject;
-    return ++numClasses;
-}
-
-uint32_t ClassCounter::GetNumberOfClasses() const
-{
-    return numClasses;
-}
-
-uint32_t ClassCounter::GetNumberOfClassesInThisProject() const
-{
-    return numClassesInThisProject;
 }
 
 ClassCounter* classCounter = nullptr;

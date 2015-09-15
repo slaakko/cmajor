@@ -11,8 +11,22 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Emit/LlvmFunctionEmitter.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 
 namespace Cm { namespace Emit {
+
+std::string Unquote(const std::string& s)
+{
+    std::string t;
+    for (char c : s)
+    {
+        if (c != '"')
+        {
+            t.append(1, c);
+        }
+    }
+    return t;
+}
 
 LlvmEmitter::LlvmEmitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
@@ -22,7 +36,16 @@ LlvmEmitter::LlvmEmitter(const std::string& irFilePath, Cm::Sym::TypeRepository&
 
 void LlvmEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
 {
-    // nothing to do for LLVM backend
+    std::string targetTriple = Unquote(Cm::Core::GetGlobalSettings()->TargetTriple());
+    if (!targetTriple.empty())
+    {
+        codeFormatter.WriteLine("target triple = \"" + targetTriple + "\"");
+    }
+    std::string dataLayout = Unquote(Cm::Core::GetGlobalSettings()->Datalayout());
+    if (!dataLayout.empty())
+    {
+        codeFormatter.WriteLine("target datalayout = \"" + dataLayout + "\"");
+    }
 }
 
 void LlvmEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)

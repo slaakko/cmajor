@@ -71,6 +71,82 @@ const char* CompilerMode()
 #endif
 }
 
+std::string GetTargetTriple()
+{
+    std::string targetTriple;
+    char* cmTargetTriple = getenv("CM_TARGET_TRIPLE");
+    if (cmTargetTriple)
+    {
+        targetTriple = cmTargetTriple;
+    }
+    if (targetTriple.empty())
+    {
+
+#ifdef _WIN32
+
+    #if defined(_M_X64)
+        targetTriple = "x86_64-w64-windows-gnu";
+    #else
+        targetTriple = "i686-pc-windows-gnu";
+    #endif
+
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+
+    #if defined(__x86_64__)
+        targetTriple = "x86_64-pc-linux-gnu";
+    #else
+        targetTriple = "i686-pc-linux-gnu";
+    #endif
+
+#else
+
+#error unknown platform
+
+#endif
+
+    }
+
+    return targetTriple;
+}
+
+std::string GetDataLayout()
+{
+    std::string dataLayout;
+    char* cmDataLayout = getenv("CM_TARGET_DATALAYOUT");
+    if (cmDataLayout)
+    {
+        dataLayout = cmDataLayout;
+    }
+    if (dataLayout.empty())
+    {
+
+#ifdef _WIN32
+
+#if defined(_M_X64)
+        dataLayout  = "e-m:e-i64:64-f80:128-n8:16:32:64-S128";
+#else
+        dataLayout = "e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32";
+#endif
+
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+
+#if defined(__x86_64__)
+        dataLayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128";
+#else
+        dataLayout = "e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32";
+#endif
+
+#else
+
+#error unknown platform
+
+#endif
+
+    }
+
+    return dataLayout;
+}
+
 int main(int argc, const char** argv)
 {
 #if defined(_MSC_VER) && !defined(NDEBUG)
@@ -92,6 +168,12 @@ int main(int argc, const char** argv)
         bool rebuild = false;
         bool prevWasCompile = false;
         bool prevWasDefine = false;
+        bool prevWasTargetTriple = false;
+        bool prevWasDatalayout = false;
+        bool emitNoTriple = false;
+        bool emitNoLayout = false;
+        std::string targetTriple = GetTargetTriple();
+        std::string datalayout = GetDataLayout();
         if (argc < 2)
         {
             std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
@@ -109,12 +191,20 @@ int main(int argc, const char** argv)
                 "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
                 "-backend=llvm   : use LLVM backend (default)\n" <<
                 "-backend=c      : use C backend\n" <<
+                "-m TRIPLE       : override LLVM target triple to emit to .ll files\n" << 
+                "-emit-no-triple : do not emit any LLVM target triple to .ll files\n" <<
+                "-d DATALAYOUT   : override LLVM target datalayout to emit to .ll files\n" <<
+                "-emit-no-layout : do not emit any LLVM datalayout to .ll files\n" <<
                 "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
                 "-quiet          : write no output messages for successful compiles\n" << 
                 "-trace          : instrument program/library with tracing enabled\n" <<
                 "-debug_heap     : instrument program/library with debug heap enabled\n" <<
                 "-no_call_stacks : do not generate call stack information for exceptions\n" <<
                 std::endl;
+            std::cout << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
+                "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << std::endl;
+            std::cout << "If no -d option is given, LLVM target datalayout is obtained from environment variable CM_TARGET_DATALAYOUT. " << 
+                "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << std::endl; 
         }
         else
         {
@@ -191,9 +281,25 @@ int main(int argc, const char** argv)
                         {
                             prevWasDefine = true;
                         }
+                        else if (arg == "-m")
+                        {
+                            prevWasTargetTriple = true;
+                        }
+                        else if (arg == "-d")
+                        {
+                            prevWasDatalayout = true;
+                        }
                         else if (arg == "-emit-opt")
                         {
                             Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt);
+                        }
+                        else if (arg == "-emit-no-triple")
+                        {
+                            emitNoTriple = true;
+                        }
+                        else if (arg == "-emit-no-layout")
+                        {
+                            emitNoLayout = true;
                         }
                         else if (arg == "-quiet")
                         {
@@ -232,6 +338,16 @@ int main(int argc, const char** argv)
                             defines.insert(arg);
                             prevWasDefine = false;
                         }
+                        else if (prevWasTargetTriple)
+                        {
+                            targetTriple = arg;
+                            prevWasTargetTriple = false;
+                        }
+                        else if (prevWasDatalayout)
+                        {
+                            datalayout = arg;
+                            prevWasDatalayout = false;
+                        }
                         else
                         {
                             std::string ext = Cm::Util::Path::GetExtension(arg);
@@ -253,6 +369,39 @@ int main(int argc, const char** argv)
             if (!quiet)
             {
                 std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
+            }
+            if (backend == Cm::IrIntf::BackEnd::llvm)
+            {
+                if (!emitNoTriple)
+                {
+                    Cm::Core::GetGlobalSettings()->SetTargetTriple(targetTriple);
+                    if (!quiet)
+                    {
+                        std::cout << "using LLVM target triple = \"" << targetTriple << "\"" << std::endl;;
+                    }
+                }
+                else
+                {
+                    if (!quiet)
+                    {
+                        std::cout << "emitting no LLVM target triple" << std::endl;
+                    }
+                }
+                if (!emitNoLayout)
+                {
+                    Cm::Core::GetGlobalSettings()->SetDatalayout(datalayout);
+                    if (!quiet)
+                    {
+                        std::cout << "using LLVM target datalayout = \"" << datalayout << "\"" << std::endl;;
+                    }
+                }
+                else
+                {
+                    if (!quiet)
+                    {
+                        std::cout << "emitting no LLVM target datalayout" << std::endl;
+                    }
+                }
             }
             if (!compileFileNames.empty())
             {

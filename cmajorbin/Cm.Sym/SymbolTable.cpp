@@ -36,7 +36,7 @@
 
 namespace Cm { namespace Sym {
 
-SymbolTable::SymbolTable() : globalNs(Span(), ""), container(&globalNs), currentClass(nullptr), currentFunction(nullptr), typeRepository(), standardConversionTable(typeRepository),
+SymbolTable::SymbolTable() : nextSid(0), globalNs(Span(), ""), container(&globalNs), currentClass(nullptr), currentFunction(nullptr), typeRepository(*this), standardConversionTable(typeRepository),
     userMainFunction(nullptr)
 {
 }
@@ -130,8 +130,9 @@ void SymbolTable::BeginNamespaceScope(const std::string& namespaceName, const Sp
 void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
 {
     Cm::Ast::IdentifierNode* classId = classNode->Id();
-    uint32_t nextClassNumber = GetClassCounter()->GetNextClassNumber();
+    uint32_t nextClassNumber = GetClassCounter()->GetCid();
     ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true, nextClassNumber);
+    SetSidAndAddSymbol(classSymbol);
     classSymbol->SetCompileUnit(classNode->GetCompileUnit());
     typeRepository.AddType(classSymbol);
     ContainerScope* classScope = classSymbol->GetContainerScope();
@@ -179,6 +180,7 @@ void SymbolTable::BeginEnumScope(Cm::Ast::EnumTypeNode* enumTypeNode)
 {
     Cm::Ast::IdentifierNode* enumTypeId = enumTypeNode->Id();
     EnumTypeSymbol* enumTypeSymbol = new EnumTypeSymbol(enumTypeId->GetSpan(), enumTypeId->Str());
+    SetSidAndAddSymbol(enumTypeSymbol);
     typeRepository.AddType(enumTypeSymbol);
     ContainerScope* enumScope = enumTypeSymbol->GetContainerScope();
     nodeScopeMap[enumTypeNode] = enumScope;
@@ -198,6 +200,7 @@ void SymbolTable::AddEnumConstant(Cm::Ast::EnumConstantNode* enumConstantNode)
 {
     Cm::Ast::IdentifierNode* enumConstantId = enumConstantNode->Id();
     EnumConstantSymbol* enumConstantSymbol = new EnumConstantSymbol(enumConstantId->GetSpan(), enumConstantId->Str());
+    SetSidAndAddSymbol(enumConstantSymbol);
     container->AddSymbol(enumConstantSymbol);
     symbolNodeMap[enumConstantSymbol] = enumConstantNode;
 }
@@ -206,6 +209,7 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefNode* typedefNode)
 {
     Cm::Ast::IdentifierNode* typedefId = typedefNode->Id();
     TypedefSymbol* typedefSymbol = new TypedefSymbol(typedefId->GetSpan(), typedefId->Str());
+    SetSidAndAddSymbol(typedefSymbol);
     container->AddSymbol(typedefSymbol);
     symbolNodeMap[typedefSymbol] = typedefNode;
 }
@@ -214,6 +218,7 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefStatementNode* typedefStatementNode
 {
     Cm::Ast::IdentifierNode* typedefId = typedefStatementNode->Id();
     TypedefSymbol* typedefSymbol = new TypedefSymbol(typedefId->GetSpan(), typedefId->Str());
+    SetSidAndAddSymbol(typedefSymbol);
     container->AddSymbol(typedefSymbol);
     symbolNodeMap[typedefSymbol] = typedefStatementNode;
 }
@@ -221,6 +226,7 @@ void SymbolTable::AddTypedef(Cm::Ast::TypedefStatementNode* typedefStatementNode
 void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, FunctionSymbolFlags flags)
 {
     FunctionSymbol* functionSymbol = new FunctionSymbol(functionNode->GetSpan(), functionNode->Name());
+    SetSidAndAddSymbol(functionSymbol);
     currentFunction = functionSymbol;
     if ((functionNode->GetSpecifiers() & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
     {
@@ -265,6 +271,7 @@ void SymbolTable::BeginDelegateScope(Cm::Ast::DelegateNode* delegateNode)
 {
     Cm::Ast::IdentifierNode* delegateId = delegateNode->Id();
     DelegateTypeSymbol* delegateSymbol = new DelegateTypeSymbol(delegateId->GetSpan(), delegateId->Str());
+    SetSidAndAddSymbol(delegateSymbol);
     typeRepository.AddType(delegateSymbol);
     ContainerScope* delegateScope = delegateSymbol->GetContainerScope();
     nodeScopeMap[delegateNode] = delegateScope;
@@ -284,6 +291,7 @@ void SymbolTable::BeginClassDelegateScope(Cm::Ast::ClassDelegateNode* classDeleg
 {
     Cm::Ast::IdentifierNode* classDelegateId = classDelegateNode->Id();
     ClassDelegateTypeSymbol* classDelegateSymbol = new ClassDelegateTypeSymbol(classDelegateId->GetSpan(), classDelegateId->Str());
+    SetSidAndAddSymbol(classDelegateSymbol);
     typeRepository.AddType(classDelegateSymbol);
     ContainerScope* classDelegateScope = classDelegateSymbol->GetContainerScope();
     nodeScopeMap[classDelegateNode] = classDelegateScope;
@@ -303,6 +311,7 @@ void SymbolTable::AddConstant(Cm::Ast::ConstantNode* constantNode)
 {
     Cm::Ast::IdentifierNode* constantId = constantNode->Id();
     ConstantSymbol* constantSymbol = new ConstantSymbol(constantId->GetSpan(), constantId->Str());
+    SetSidAndAddSymbol(constantSymbol);
     container->AddSymbol(constantSymbol);
     symbolNodeMap[constantSymbol] = constantNode;
 }
@@ -310,12 +319,14 @@ void SymbolTable::AddConstant(Cm::Ast::ConstantNode* constantNode)
 void SymbolTable::AddParameter(ParameterSymbol* parameterSymbol)
 {
     container->AddSymbol(parameterSymbol);
+    SetSidAndAddSymbol(parameterSymbol);
 }
 
 void SymbolTable::AddParameter(Cm::Ast::ParameterNode* parameterNode, const std::string& parameterName)
 {
     ParameterSymbol* parameterSymbol = new ParameterSymbol(parameterNode->GetSpan(), parameterName);
     container->AddSymbol(parameterSymbol);
+    SetSidAndAddSymbol(parameterSymbol);
     symbolNodeMap[parameterSymbol] = parameterNode;
 }
 
@@ -323,6 +334,7 @@ void SymbolTable::AddTemplateParameter(Cm::Ast::TemplateParameterNode* templateP
 {
     Cm::Ast::IdentifierNode* templateParameterId = templateParameterNode->Id();
     TypeParameterSymbol* typeParameterSymbol = new TypeParameterSymbol(templateParameterId->GetSpan(), templateParameterId->Str());
+    SetSidAndAddSymbol(typeParameterSymbol);
     container->AddSymbol(typeParameterSymbol);
     symbolNodeMap[typeParameterSymbol] = templateParameterNode;
 }
@@ -330,6 +342,7 @@ void SymbolTable::AddTemplateParameter(Cm::Ast::TemplateParameterNode* templateP
 void SymbolTable::BeginDeclarationScope(Cm::Ast::StatementNode* statementNode)
 {
     DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode->GetSpan(), "");
+    SetSidAndAddSymbol(declarationBlock);
     ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
     nodeScopeMap[statementNode] = declarationBlockScope;
     symbolNodeMap[declarationBlock] = statementNode;
@@ -348,6 +361,7 @@ void SymbolTable::AddLocalVariable(Cm::Ast::ConstructionStatementNode* construct
 {
     Cm::Ast::IdentifierNode* localVariableId = constructionStatementNode->Id();
     LocalVariableSymbol* localVariableSymbol = new LocalVariableSymbol(localVariableId->GetSpan(), localVariableId->Str());
+    SetSidAndAddSymbol(localVariableSymbol);
     container->AddSymbol(localVariableSymbol);
     symbolNodeMap[localVariableSymbol] = constructionStatementNode;
 }
@@ -356,6 +370,7 @@ void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableN
 {
     Cm::Ast::IdentifierNode* memberVariableId = memberVariableNode->Id();
     MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableId->GetSpan(), memberVariableId->Str());
+    SetSidAndAddSymbol(memberVariableSymbol);
     if ((memberVariableNode->GetSpecifiers() & Cm::Ast::Specifiers::static_) != Cm::Ast::Specifiers::none)
     {
         memberVariableSymbol->SetStatic();
@@ -384,6 +399,7 @@ ConceptSymbol* SymbolTable::BeginConceptScope(Cm::Ast::ConceptNode* conceptNode)
     }
     conceptName.append(1, '>');
     ConceptSymbol* conceptSymbol = new ConceptSymbol(conceptId->GetSpan(), conceptName);
+    SetSidAndAddSymbol(conceptSymbol);
     if ((conceptNode->GetSpecifiers() & Cm::Ast::Specifiers::public_) != Cm::Ast::Specifiers::none)
     {
         conceptSymbol->SetAccess(SymbolAccess::public_);
@@ -392,6 +408,7 @@ ConceptSymbol* SymbolTable::BeginConceptScope(Cm::Ast::ConceptNode* conceptNode)
     for (const std::unique_ptr<Cm::Ast::Node>& typeParameter : conceptNode->TypeParameters())
     {
         Cm::Sym::TypeParameterSymbol* typeParameterSymbol = new Cm::Sym::TypeParameterSymbol(typeParameter->GetSpan(), typeParameter->Name());
+        SetSidAndAddSymbol(typeParameterSymbol);
         conceptSymbol->AddSymbol(typeParameterSymbol);
     }
     ContainerScope* conceptScope = conceptSymbol->GetContainerScope();
@@ -529,6 +546,14 @@ void SymbolTable::AddPredefinedSymbolToGlobalScope(Symbol* symbol)
         TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
         typeRepository.AddType(typeSymbol);
     }
+    if (symbol->Sid() == noSid)
+    {
+        SetSidAndAddSymbol(symbol);
+    }
+    else
+    {
+        AddSymbol(symbol);
+    }
 }
 
 void SymbolTable::InitVirtualFunctionTables()
@@ -582,6 +607,27 @@ void SymbolTable::ProcessImportedTemplateTypes()
     importedTemplateTypes.clear();
     globalNs.ReplaceReplicaTypes();
     typeRepository.ReplaceReplicaTypes();
+}
+
+void SymbolTable::AddSymbol(Symbol* symbol)
+{
+    symbolMap[symbol->Sid()] = symbol;
+}
+
+void SymbolTable::SetSidAndAddSymbol(Symbol* symbol)
+{
+    symbol->SetSid(nextSid++);
+    AddSymbol(symbol);
+}
+
+Symbol* SymbolTable::GetSymbol(uint32_t sid) const
+{
+    std::unordered_map<uint32_t, Symbol*>::const_iterator i = symbolMap.find(sid);
+    if (i != symbolMap.cend())
+    {
+        return i->second;
+    }
+    return nullptr;
 }
 
 } } // namespace Cm::Sym

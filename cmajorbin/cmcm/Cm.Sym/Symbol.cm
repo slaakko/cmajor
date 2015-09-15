@@ -365,7 +365,7 @@ namespace Cm.Sym
         }
         public virtual void SetType(TypeSymbol* typeSymbol, int index)
         {
-            throw Exception("member function not applicable");
+            throw Exception("member function not implemented");
         }
         public virtual nothrow ContainerScope* GetContainerScope() const
         {

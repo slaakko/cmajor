@@ -22,6 +22,10 @@
 
 namespace Cm { namespace Sym {
 
+TypeRepository::TypeRepository(SymbolTable& symbolTable_) : symbolTable(symbolTable_)
+{
+}
+
 void TypeRepository::AddType(TypeSymbol* type)
 {
     typeSymbolMap[type->Id()] = type;
@@ -243,6 +247,7 @@ TypeSymbol* TypeRepository::MakeDerivedType(const Cm::Ast::DerivationList& deriv
     }
     std::unique_ptr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType, finalArrayDimensions), finalBaseType, finalDerivations,
         finalArrayDimensions, typeId));
+    symbolTable.SetSidAndAddSymbol(derivedTypeSymbol.get());
     derivedTypeSymbol->SetAccess(SymbolAccess::public_);
     if (!baseType->IsTypeParameterSymbol() && !baseType->IsFunctionGroupTypeSymbol())
     {
@@ -392,6 +397,7 @@ TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std:
         return typeSymbol;
     }
     std::unique_ptr<TemplateTypeSymbol> templateTypeSymbol(new TemplateTypeSymbol(subjectType->GetSpan(), MakeTemplateTypeSymbolName(subjectType, typeArguments), subjectType, typeArguments, typeId));
+    symbolTable.SetSidAndAddSymbol(templateTypeSymbol.get());
     templateTypeSymbol->SetParent(subjectType->Ns());
     templateTypeSymbol->MakeIrType();
     templateTypeSymbol->SetAccess(SymbolAccess::public_);

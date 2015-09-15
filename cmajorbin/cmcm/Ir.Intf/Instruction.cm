@@ -1,0 +1,139 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Ir.Intf
+{
+    public abstract class CDebugNode
+    {
+        public virtual ~CDebugNode()
+        {
+        }
+        public abstract void SetCLine(int cLine);
+    }
+    
+    public enum Indirection : byte
+    {
+        none, deref, addr
+    }
+    
+    public enum IConditionCode : byte
+    {
+        eq, ne, ugt, uge, ult, ule, sgt, sge, slt, sle
+    }
+    
+    public enum FConditionCode : byte
+    {
+        false_, oeq, ogt, oge, olt, ole, one, ord, ueq, ugt, uge, ult, ule, une, uno, true_
+    }
+    
+    public abstract class Instruction
+    {
+        public nothrow Instruction(const string& name_) : name(name_), removed(false), label(null), cdebugNode(null), funCallNode(null)
+        {
+        }
+        public virtual ~Instruction()
+        {
+        }
+        public inline nothrow const string& Name() const
+        {
+            return name;
+        }
+        public inline nothrow LabelObject* GetLabel() const
+        {
+            return label;
+        }
+        public inline nothrow void SetLabel(LabelObject* label_)
+        {
+            label = label_;
+        }
+        public inline nothrow void RemoveLabel()
+        {
+            label = null;
+        }
+        public abstract nothrow string ToString() const;
+        public virtual nothrow void SetAlignment(int) 
+        {
+        }
+        public virtual nothrow void SetInbounds() 
+        {
+        }
+        public virtual void AddTargetLabels(HashSet<string>& targetLabels)
+        {
+        }
+        public virtual nothrow Object* GetResult() const
+        {
+            return null;
+        }
+        public virtual nothrow bool ReturnsResult() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsTerminator() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsUnconditionalBr() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsRet() const
+        {
+            return false;
+        }
+        public virtual nothrow bool IsCall() const
+        {
+            return false;
+        }
+        public virtual nothrow LabelObject* GetTargetLabel() const
+        {
+            return null;
+        }
+        public nothrow inline void Remove()
+        {
+            removed = true;
+        }
+        public nothrow inline bool Removed() const
+        {
+            return removed;
+        }
+        public nothrow inline void SetComment(const string& comment_)
+        {
+            comment = comment_;
+        }
+        public nothrow inline const string& Comment() const
+        {
+            return comment;
+        }
+        public nothrow inline void SetCDebugNode(CDebugNode* cdebugNode_)
+        {
+            cdebugNode = cdebugNode_;
+        }
+        public nothrow inline CDebugNode* GetCDebugNode() const
+        {
+            return cdebugNode;
+        }
+        public nothrow inline void SetFunCallNode(CDebugNode* funCallNode_)
+        {
+            funCallNode = funCallNode_;
+        }
+        public nothrow inline CDebugNode* GetFunCallNode() const
+        {
+            return funCallNode;
+        }
+        private string name;
+        private bool removed;
+        private LabelObject* label;
+        private string comment;
+        private CDebugNode* cdebugNode;
+        private CDebugNode* funCallNode;
+    }
+}

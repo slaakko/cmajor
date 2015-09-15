@@ -1,0 +1,33 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Ir.Intf
+{
+    public abstract class MemberVar : Object
+    {
+        public nothrow MemberVar(const string& name_, Object* ptr_, int index_, Type* type_) : base(name_, type_), ptr(ptr_), index(index_)
+        {
+        }
+        public nothrow inline Object* Ptr() const
+        {
+            return ptr;
+        }
+        public nothrow inline int Index() const
+        {
+            return index;
+        }
+        public virtual nothrow void SetDotMember()
+        {
+        }
+        private Object* ptr;
+        private int index;
+    }
+}

@@ -9,7 +9,7 @@
 
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
-#include <Cm.Sym/TypeRepository.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>

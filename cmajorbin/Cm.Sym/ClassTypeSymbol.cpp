@@ -27,14 +27,14 @@ PersistentClassData::PersistentClassData() : classNodePos(0), classNodeSize(0)
 {
 }
 
-TypeId GetNextClassTypeId(uint32_t nextClassNumber)
+TypeId GetNextClassTypeId(uint32_t cid)
 {
     TypeId id;
     uint8_t n = uint8_t(id.Rep().Tag().size());
-    for (uint8_t i = 0; i < sizeof(nextClassNumber); ++i)
+    for (uint8_t i = 0; i < sizeof(cid); ++i)
     {
-        uint8_t b = *(reinterpret_cast<uint8_t*>(&nextClassNumber) + i);
-        uint8_t p = (n - uint8_t(sizeof(nextClassNumber))) + i;
+        uint8_t b = *(reinterpret_cast<uint8_t*>(&cid) + i);
+        uint8_t p = (n - uint8_t(sizeof(cid))) + i;
         id.Rep().Tag().data[p] = b;
     }
     id.InvalidateHashCode();
@@ -42,18 +42,18 @@ TypeId GetNextClassTypeId(uint32_t nextClassNumber)
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
-    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), classNumber(-1), compileUnit(nullptr)
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), cid(noCid), compileUnit(nullptr)
 {
 }
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_, uint32_t classNumber_) : 
-    TypeSymbol(span_, name_, getNextId_ ? GetNextClassTypeId(classNumber_) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr), 
-    staticConstructor(nullptr), initializedVar(nullptr), classNumber(classNumber_), compileUnit(nullptr)
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_, uint32_t cid_) :
+    TypeSymbol(span_, name_, getNextId_ ? GetNextClassTypeId(cid_) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr),
+    staticConstructor(nullptr), initializedVar(nullptr), cid(cid_), compileUnit(nullptr)
 {
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : TypeSymbol(span_, name_, id_), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
-    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), classNumber(-1), compileUnit(nullptr)
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), cid(noCid), compileUnit(nullptr)
 {
 }
 
@@ -72,7 +72,7 @@ bool ClassTypeSymbol::IsExportSymbol() const
 void ClassTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
-    writer.GetBinaryWriter().Write(classNumber);
+    writer.GetBinaryWriter().Write(cid);
     writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));
     bool hasBaseClass = baseClass != nullptr;
     writer.GetBinaryWriter().Write(hasBaseClass);
@@ -115,7 +115,7 @@ void ClassTypeSymbol::Write(Writer& writer)
 void ClassTypeSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
-    classNumber = reader.GetBinaryReader().ReadUInt();
+    cid = reader.GetBinaryReader().ReadUInt();
     flags = ClassTypeSymbolFlags(reader.GetBinaryReader().ReadUInt());
     bool hasBaseClass = reader.GetBinaryReader().ReadBool();
     if (hasBaseClass)

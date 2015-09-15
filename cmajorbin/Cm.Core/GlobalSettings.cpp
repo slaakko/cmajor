@@ -60,6 +60,16 @@ void GlobalSettings::SetCurrentProjectName(const std::string& currentProjectName
     Cm::Sym::CompileWarningCollection::Instance().SetCurrentProjectName(currentProjectName);
 }
 
+void GlobalSettings::SetTargetTriple(const std::string& targetTriple_)
+{
+    targetTriple = targetTriple_;
+}
+
+void GlobalSettings::SetDatalayout(const std::string& datalayout_)
+{
+    datalayout = datalayout_;
+}
+
 GlobalSettings* globalSettings = nullptr;
 
 GlobalSettings* GetGlobalSettings()

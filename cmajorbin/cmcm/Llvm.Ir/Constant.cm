@@ -1,0 +1,270 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Llvm
+{
+    public nothrow string MakeStringConstantName(const string& s)
+    {
+        string name("c\"");
+        for (char c : s)
+        {
+            if (c != '"' && c != '\\' && IsPrintable(c))
+            {
+                name.Append(c);
+            }
+            else
+            {
+                name.Append('\\').Append(ToHexString(cast<byte>(c)));
+            }
+        }
+        name.Append("\\00\"");
+        return name;
+    }
+    
+    public void ThrowNotImplemented()
+    {
+        throw Exception("member function not implemented");
+    }
+    
+    public class Constant : Ir.Intf.Constant
+    {
+        public nothrow Constant(const string& valueName_, Ir.Intf.Type* type_) : base(valueName_, type_)
+        {
+        }
+        public override void InitTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
+        {
+            to->InitFrom(emitter, type, *this);
+        }
+        public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
+        {
+            ThrowNotImplemented();
+        }
+        public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
+        {
+            ThrowNotImplemented();
+        }
+        public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
+        {
+            ThrowNotImplemented();
+        }
+        public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
+        {
+            ThrowNotImplemented();
+        }
+        public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
+        {
+            ThrowNotImplemented();
+        }
+        public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
+        {
+            ThrowNotImplemented();
+        }
+        public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
+        {
+            ThrowNotImplemented();
+        }
+        public override void AssignTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
+        {
+            to->AssignFrom(emitter, type, *this);
+        }
+        public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
+        {
+            ThrowNotImplemented();
+        }
+        public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
+        {
+            ThrowNotImplemented();
+        }
+        public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
+        {
+            ThrowNotImplemented();
+        }
+        public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
+        {
+            ThrowNotImplemented();
+        }
+        public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
+        {
+            ThrowNotImplemented();
+        }
+        public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
+        {
+            ThrowNotImplemented();
+        }
+        public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
+        {
+            ThrowNotImplemented();
+        }
+    }
+    
+    public inline nothrow Ir.Intf.Object* MakeConstant(const string& name, Ir.Intf.Type* type)
+    {
+        return new Constant(name, type);
+    }
+    
+    public class BooleanConstant : Constant
+    {
+        public nothrow BooleanConstant(bool value) : base(ToString(value), Ir.Intf.Factory.Instance()->GetI1())
+        {
+        }
+    }
+    
+    public inline nothrow Ir.Intf.Object* True()
+    {
+        return new BooleanConstant(true);
+    }
+    
+    public inline nothrow Ir.Intf.Object* False()
+    {
+        return new BooleanConstant(false);
+    }
+    
+    public inline nothrow Ir.Intf.Object* MakeBooleanConstant(bool value)
+    {
+        return new BooleanConstant(value);
+    }
+    
+    public class CharConstant : Constant
+    {
+        public nothrow CharConstant(char value_) : base(ToString(cast<byte>(value_)), Ir.Intf.Factory.Instance()->GetI8())
+        {
+        }
+    }
+    
+    public inline nothrow Ir.Intf.Object* MakeCharConstant(char value)
+    {
+        return new CharConstant(value);
+    }
+    
+    public class StringConstant : Constant
+    {
+        public nothrow StringConstant(const string& value_) : base(MakeStringConstantName(value_), MakeStringType(value_.Length() + 1))
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Object* MakeStringConstant(const string& value)
+    {
+        return new StringConstant(value);
+    }
+    
+    public class NullConstant : Constant
+    {
+        public nothrow NullConstant(Ir.Intf.Type* ptrType_) : base("null", ptrType_)
+        {
+        }
+        public nothrow override bool IsNull() const
+        {
+            return true;
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Object* MakeNull(Ir.Intf.Type* ptrType)
+    {
+        return new NullConstant(ptrType);
+    }
+    
+    public class I8Constant : Constant
+    {
+        public nothrow I8Constant(sbyte value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetI8())
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Object* MakeI8Constant(sbyte value)
+    {
+        return new I8Constant(value);
+    }
+    
+    public class I16Constant : Constant
+    {
+        public nothrow I16Constant(short value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetI16())
+        {
+        }
+    }
+
+    public nothrow inline Ir.Intf.Object* MakeI16Constant(short value)
+    {
+        return new I16Constant(value);
+    }
+
+    public class I32Constant : Constant
+    {
+        public nothrow I32Constant(int value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetI32())
+        {
+        }
+    }
+
+    public nothrow inline Ir.Intf.Object* MakeI32Constant(int value)
+    {
+        return new I32Constant(value);
+    }
+
+    public class UI32Constant : Constant
+    {
+        public nothrow UI32Constant(uint value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetI32())
+        {
+        }
+    }
+
+    public nothrow inline Ir.Intf.Object* MakeUI32Constant(uint value)
+    {
+        return new UI32Constant(value);
+    }
+
+    public class I64Constant : Constant
+    {
+        public nothrow I64Constant(long value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetI64())
+        {
+        }
+    }
+
+    public nothrow inline Ir.Intf.Object* MakeI64Constant(long value)
+    {
+        return new I64Constant(value);
+    }
+
+    public class UI64Constant : Constant
+    {
+        public nothrow UI64Constant(ulong value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetI64())
+        {
+        }
+    }
+
+    public nothrow inline Ir.Intf.Object* MakeUI64Constant(ulong value)
+    {
+        return new UI64Constant(value);
+    }
+    
+    public class FloatConstant : Constant
+    {
+        public nothrow FloatConstant(float value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetFloat())
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Object* MakeFloatConstant(float value)
+    {
+        return new FloatConstant(value);
+    }
+
+    public class DoubleConstant : Constant
+    {
+        public nothrow DoubleConstant(double value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetDouble())
+        {
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Object* MakeDoubleConstant(double value)
+    {
+        return new DoubleConstant(value);
+    }
+}

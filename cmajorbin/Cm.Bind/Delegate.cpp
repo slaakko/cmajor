@@ -176,17 +176,22 @@ void CompleBindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::Contain
     Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, classDelegateNode->ReturnTypeExpr());
     classDelegateTypeSymbol->SetReturnType(returnType);
     Cm::Sym::MemberVariableSymbol* obj = new Cm::Sym::MemberVariableSymbol(classDelegateNode->GetSpan(), "obj");
+    symbolTable.SetSidAndAddSymbol(obj);
     obj->SetType(symbolTable.GetTypeRepository().MakeGenericPtrType(classDelegateNode->GetSpan()));
     classDelegateTypeSymbol->AddSymbol(obj);
     Cm::Sym::MemberVariableSymbol* dlg = new Cm::Sym::MemberVariableSymbol(classDelegateNode->GetSpan(), "dlg");
+    symbolTable.SetSidAndAddSymbol(dlg);
     Cm::Sym::DelegateTypeSymbol* dlgType = new Cm::Sym::DelegateTypeSymbol(classDelegateNode->GetSpan(), "dlgType");
+    symbolTable.SetSidAndAddSymbol(dlgType);
     dlgType->SetReturnType(returnType);
     Cm::Sym::ParameterSymbol* dlgTypeObjParam = new Cm::Sym::ParameterSymbol(classDelegateNode->GetSpan(), "obj");
+    symbolTable.SetSidAndAddSymbol(dlgTypeObjParam);
     dlgTypeObjParam->SetType(symbolTable.GetTypeRepository().MakeGenericPtrType(classDelegateNode->GetSpan()));
     dlgType->AddSymbol(dlgTypeObjParam);
     for (Cm::Sym::ParameterSymbol* classDelegateParam : classDelegateTypeSymbol->Parameters())
     {
         Cm::Sym::ParameterSymbol* dlgTypeParam = new Cm::Sym::ParameterSymbol(classDelegateNode->GetSpan(), classDelegateParam->Name());
+        symbolTable.SetSidAndAddSymbol(dlgTypeParam);
         dlgTypeParam->SetType(classDelegateParam->GetType());
         dlgType->AddSymbol(dlgTypeParam);
     }

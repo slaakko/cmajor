@@ -1,0 +1,43 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Ir.Intf
+{
+    public abstract class Factory
+    {
+        public virtual ~Factory()
+        {
+        }
+        public static nothrow Factory* Instance() 
+        {
+            #assert(instance != null);
+            return instance;
+        }
+        public static nothrow void SetInstance(Factory* instance_)
+        {
+            instance = instance_;
+        }
+        public abstract nothrow Type* GetLabelType() const;
+        public abstract nothrow Type* GetI1() const;
+        public abstract nothrow Type* GetI8() const;
+        public abstract nothrow Type* GetUI8() const;
+        public abstract nothrow Type* GetI16() const;
+        public abstract nothrow Type* GetUI16() const;
+        public abstract nothrow Type* GetI32() const;
+        public abstract nothrow Type* GetUI32() const;
+        public abstract nothrow Type* GetI64() const;
+        public abstract nothrow Type* GetUI64() const;
+        public abstract nothrow Type* GetFloat() const;
+        public abstract nothrow Type* GetDouble() const;
+        public abstract nothrow Type* GetVoid() const;
+        private static Factory* instance;
+    }
+}
