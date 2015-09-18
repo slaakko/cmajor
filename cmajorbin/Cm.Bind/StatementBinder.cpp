@@ -385,6 +385,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                     returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
                 }
                 returnStatement->SetExpression(returnValue);
+                returnStatement->SetBoundReturnValue(new Cm::BoundTree::BoundReturnValue(&returnStatementNode, CurrentFunction()->GetFunctionSymbol()->ReturnValue()));
             }
             else
             {

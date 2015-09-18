@@ -118,7 +118,7 @@ PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), speci
 }
 
 FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
-    classObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr), functionTemplate(nullptr)
+    classObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr), functionTemplate(nullptr), returnValueSymbol(nullptr)
 {
 }
 
@@ -156,6 +156,10 @@ void FunctionSymbol::AddSymbol(Symbol* symbol)
         typeParameterSymbol->SetIndex(int(typeParameters.size()));
         typeParameters.push_back(typeParameterSymbol);
     }
+    else if (symbol->IsReturnValueSymbol())
+    {
+        returnValueSymbol = static_cast<ReturnValueSymbol*>(symbol);
+    }
 }
 
 void FunctionSymbol::SetReturnType(TypeSymbol* returnType_)
@@ -166,6 +170,16 @@ void FunctionSymbol::SetReturnType(TypeSymbol* returnType_)
 bool FunctionSymbol::ReturnsClassObjectByValue() const
 {
     return returnType && returnType->IsClassTypeSymbol();
+}
+
+ParameterSymbol* FunctionSymbol::ThisParameter() const
+{
+    return parameters[0];
+}
+
+ReturnValueSymbol* FunctionSymbol::ReturnValue() const
+{
+    return returnValueSymbol;
 }
 
 bool FunctionSymbol::IsConstructor() const
@@ -958,6 +972,19 @@ void FunctionSymbol::ReplaceReplicaTypes()
             TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(typeSymbol);
             typeSymbol = replica->GetPrimaryTemplateTypeSymbol();
         }
+    }
+}
+
+void FunctionSymbol::DoSerialize()
+{
+    ContainerSymbol::DoSerialize();
+    if (returnType)
+    {
+        returnType->DoSerialize();
+    }
+    for (ParameterSymbol* parameter : parameters)
+    {
+        parameter->DoSerialize();
     }
 }
 

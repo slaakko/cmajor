@@ -17,15 +17,14 @@
 
 namespace Cm { namespace Sym {
 
-ParameterSymbol::ParameterSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr)
+ParameterSymbol::ParameterSymbol(const Span& span_, const std::string& name_) : VariableSymbol(span_, name_)
 {
 }
 
 void ParameterSymbol::Write(Writer& writer)
 {
-    Symbol::Write(writer);
-    bool hasType = type != nullptr;
-    writer.GetBinaryWriter().Write(hasType);
+    VariableSymbol::Write(writer);
+    bool hasType = GetType() != nullptr;
     if (!hasType) 
     {
         SymbolTable* symbolTable = writer.GetSymbolTable();
@@ -36,21 +35,13 @@ void ParameterSymbol::Write(Writer& writer)
         }
         writer.GetAstWriter().Write(parameterNode);
     }
-    else
-    {
-        writer.Write(type->Id());
-    }
 }
 
 void ParameterSymbol::Read(Reader& reader)
 {
-    Symbol::Read(reader);
-    bool hasType = reader.GetBinaryReader().ReadBool();
-    if (hasType)
-    {
-        reader.FetchTypeFor(this, 0);
-    }
-    else
+    VariableSymbol::Read(reader);
+    bool hasType = HasType();
+    if (!hasType)
     {
         Cm::Ast::ParameterNode* parameterNode = reader.GetAstReader().ReadParameterNode();
         ownedParameterNode.reset(parameterNode);
@@ -58,18 +49,9 @@ void ParameterSymbol::Read(Reader& reader)
     }
 }
 
-TypeSymbol* ParameterSymbol::GetType() const
-{
-    return type;
-}
-
-void ParameterSymbol::SetType(TypeSymbol* type_, int index)
-{
-    type = type_;
-}
-
 void ParameterSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
+    TypeSymbol* type = GetType();
     if (!type) return;
     if (type->IsDerivedTypeSymbol())
     {
@@ -83,6 +65,7 @@ void ParameterSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& c
 
 void ParameterSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
+    TypeSymbol* type = GetType();
     if (!type) return;
     if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())
     {
@@ -96,6 +79,7 @@ void ParameterSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& 
 
 void ParameterSymbol::ReplaceReplicaTypes()
 {
+    TypeSymbol* type = GetType();
     if (type->IsReplica() && type->IsTemplateTypeSymbol())
     {
         TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(type);

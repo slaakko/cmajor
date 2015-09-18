@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicTypeSymbol.hpp" />
+    <ClInclude Include="BoundCompileUnitSerialization.hpp" />
     <ClInclude Include="ClassCounter.hpp" />
     <ClInclude Include="ClassTypeSymbol.hpp" />
     <ClInclude Include="ConceptGroupSymbol.hpp" />
@@ -49,6 +50,7 @@
     <ClInclude Include="NamespaceSymbol.hpp" />
     <ClInclude Include="ParameterSymbol.hpp" />
     <ClInclude Include="Reader.hpp" />
+    <ClInclude Include="ReturnValueSymbol.hpp" />
     <ClInclude Include="Scope.hpp" />
     <ClInclude Include="Symbol.hpp" />
     <ClInclude Include="SymbolTable.hpp" />
@@ -60,11 +62,13 @@
     <ClInclude Include="TypeRepository.hpp" />
     <ClInclude Include="TypeSymbol.hpp" />
     <ClInclude Include="Value.hpp" />
+    <ClInclude Include="VariableSymbol.hpp" />
     <ClInclude Include="Warning.hpp" />
     <ClInclude Include="Writer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicTypeSymbol.cpp" />
+    <ClCompile Include="BoundCompileUnitSerialization.cpp" />
     <ClCompile Include="ClassCounter.cpp" />
     <ClCompile Include="ClassTypeSymbol.cpp" />
     <ClCompile Include="ConceptGroupSymbol.cpp" />
@@ -94,6 +98,7 @@
     <ClCompile Include="NamespaceSymbol.cpp" />
     <ClCompile Include="ParameterSymbol.cpp" />
     <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="ReturnValueSymbol.cpp" />
     <ClCompile Include="Scope.cpp" />
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
@@ -105,6 +110,7 @@
     <ClCompile Include="TypeRepository.cpp" />
     <ClCompile Include="TypeSymbol.cpp" />
     <ClCompile Include="Value.cpp" />
+    <ClCompile Include="VariableSymbol.cpp" />
     <ClCompile Include="Warning.cpp" />
     <ClCompile Include="Writer.cpp" />
   </ItemGroup>

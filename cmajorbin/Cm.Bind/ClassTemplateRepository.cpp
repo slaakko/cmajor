@@ -39,7 +39,10 @@ void ClassTemplateRepository::ResolveDefaultTypeArguments(std::vector<Cm::Sym::T
         boundCompileUnit.AddFileScope(fileScope);
     }
     Cm::Sym::FileScope* subjectFileScope = new Cm::Sym::FileScope();
-    subjectFileScope->InstallNamespaceImport(containerScope, new Cm::Ast::NamespaceImportNode(subjectClassTypeSymbol->GetSpan(), new Cm::Ast::IdentifierNode(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName())));
+    if (!subjectClassTypeSymbol->Ns()->IsGlobalNamespace())
+    {
+        subjectFileScope->InstallNamespaceImport(containerScope, new Cm::Ast::NamespaceImportNode(subjectClassTypeSymbol->GetSpan(), new Cm::Ast::IdentifierNode(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName())));
+    }
     boundCompileUnit.AddFileScope(subjectFileScope);
     ++numAddedFileScopes;
     Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(subjectClassTypeSymbol, false);
@@ -111,7 +114,10 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     }
     Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectTypeSymbol);
     Cm::Sym::FileScope* subjectFileScope = new Cm::Sym::FileScope();
-    subjectFileScope->InstallNamespaceImport(containerScope, new Cm::Ast::NamespaceImportNode(subjectClassTypeSymbol->GetSpan(), new Cm::Ast::IdentifierNode(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName())));
+    if (!subjectClassTypeSymbol->Ns()->IsGlobalNamespace())
+    {
+        subjectFileScope->InstallNamespaceImport(containerScope, new Cm::Ast::NamespaceImportNode(subjectClassTypeSymbol->GetSpan(), new Cm::Ast::IdentifierNode(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName())));
+    }
     boundCompileUnit.AddFileScope(subjectFileScope);
     ++numAddedFileScopes;
     classTemplates.insert(subjectClassTypeSymbol);

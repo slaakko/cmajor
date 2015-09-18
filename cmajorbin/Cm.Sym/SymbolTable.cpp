@@ -19,6 +19,7 @@
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
+#include <Cm.Sym/ReturnValueSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
@@ -341,7 +342,7 @@ void SymbolTable::AddTemplateParameter(Cm::Ast::TemplateParameterNode* templateP
 
 void SymbolTable::BeginDeclarationScope(Cm::Ast::StatementNode* statementNode)
 {
-    DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode->GetSpan(), "");
+    DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode->GetSpan(), "@local");
     SetSidAndAddSymbol(declarationBlock);
     ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
     nodeScopeMap[statementNode] = declarationBlockScope;
@@ -377,6 +378,14 @@ void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableN
     }
     container->AddSymbol(memberVariableSymbol);
     symbolNodeMap[memberVariableSymbol] = memberVariableNode;
+}
+
+void SymbolTable::AddReturnTypeSymbol(Cm::Ast::Node* returnTypeExprNode)
+{
+    ReturnValueSymbol* returnValueSymbol = new ReturnValueSymbol(returnTypeExprNode->GetSpan(), "return");
+    SetSidAndAddSymbol(returnValueSymbol);
+    container->AddSymbol(returnValueSymbol);
+    symbolNodeMap[returnValueSymbol] = returnTypeExprNode;
 }
 
 ConceptSymbol* SymbolTable::BeginConceptScope(Cm::Ast::ConceptNode* conceptNode)
@@ -612,6 +621,11 @@ void SymbolTable::ProcessImportedTemplateTypes()
 void SymbolTable::AddSymbol(Symbol* symbol)
 {
     symbolMap[symbol->Sid()] = symbol;
+    if (symbol->IsClassTypeSymbol())
+    {
+        ClassTypeSymbol* cls = static_cast<ClassTypeSymbol*>(symbol);
+        classMap[cls->Cid()] = cls;
+    }
 }
 
 void SymbolTable::SetSidAndAddSymbol(Symbol* symbol)
@@ -624,6 +638,16 @@ Symbol* SymbolTable::GetSymbol(uint32_t sid) const
 {
     std::unordered_map<uint32_t, Symbol*>::const_iterator i = symbolMap.find(sid);
     if (i != symbolMap.cend())
+    {
+        return i->second;
+    }
+    return nullptr;
+}
+
+ClassTypeSymbol* SymbolTable::GetClass(uint32_t cid) const
+{
+    std::unordered_map<uint32_t, ClassTypeSymbol*>::const_iterator i = classMap.find(cid);
+    if (i != classMap.end())
     {
         return i->second;
     }

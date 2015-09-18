@@ -113,6 +113,10 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionN
         thisParam->SetBound();
         symbolTable.AddParameter(thisParam);
     }
+    if (memberFunctionNode.ReturnTypeExpr())
+    {
+        symbolTable.AddReturnTypeSymbol(memberFunctionNode.ReturnTypeExpr());
+    }
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode) 
@@ -137,6 +141,10 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionF
     }
     thisParam->SetBound();
     symbolTable.AddParameter(thisParam);
+    if (conversionFunctionNode.ReturnTypeExpr())
+    {
+        symbolTable.AddReturnTypeSymbol(conversionFunctionNode.ReturnTypeExpr());
+    }
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFunctionNode)
@@ -183,6 +191,10 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
     }
     symbolTable.BeginFunctionScope(&functionNode, flags);
     parameterIndex = 0;
+    if (functionNode.ReturnTypeExpr())
+    {
+        symbolTable.AddReturnTypeSymbol(functionNode.ReturnTypeExpr());
+    }
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::FunctionNode& functionNode)

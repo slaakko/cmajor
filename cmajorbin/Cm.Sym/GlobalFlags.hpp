@@ -17,16 +17,17 @@ enum class GlobalFlags : uint16_t
 {
     none = 0,
     optimize = 1 << 0,
-    quiet = 1 << 1,
-    emitOpt = 1 << 2,
-    ide = 1 << 3,
-    trace = 1 << 4,
-    debug_heap = 1 << 5,
-    clean = 1 << 6,
-    unit_test = 1 << 7,
-    generate_debug_info = 1 << 8,
-    generate_docs = 1 << 9,
-    no_call_stacks = 1 << 10
+    wpo = 1 << 1,
+    quiet = 1 << 2,
+    emitOpt = 1 << 3,
+    ide = 1 << 4,
+    trace = 1 << 5,
+    debug_heap = 1 << 6,
+    clean = 1 << 7,
+    unit_test = 1 << 8,
+    generate_debug_info = 1 << 9,
+    generate_docs = 1 << 10,
+    no_call_stacks = 1 << 11
 };
 
 inline GlobalFlags operator|(GlobalFlags left, GlobalFlags right)

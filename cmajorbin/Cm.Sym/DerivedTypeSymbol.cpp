@@ -242,7 +242,7 @@ std::string DerivedTypeSymbol::FullName() const
 
 bool DerivedTypeSymbol::IsExportSymbol() const
 {
-    return baseType->IsPublic() && !baseType->IsReplica();
+    return (baseType->IsPublic() || baseType->Serialize()) && !baseType->IsReplica();
 }
 
 std::string DerivedTypeSymbol::FullDocId() const

@@ -9,16 +9,19 @@
 
 #ifndef CM_CORE_STRING_REPOSITORY_INCLUDED
 #define CM_CORE_STRING_REPOSITORY_INCLUDED
+#include <Cm.Sym/BoundCompileUnitSerialization.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
 #include <Ir.Intf/Constant.hpp>
 #include <unordered_map>
 
 namespace Cm { namespace Core {
 
-class StringRepository
+class StringRepository : Cm::Sym::BcuItem
+
 {
 public:
     virtual ~StringRepository();
+    void Write(Cm::Sym::BcuWriter& writer) override;
     int Install(const std::string& str);
     Ir::Intf::Object* GetStringConstant(int id) const;
     Ir::Intf::Object* GetStringObject(int id) const;

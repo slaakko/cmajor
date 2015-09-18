@@ -86,7 +86,7 @@ bool TemplateTypeSymbol::IsExportSymbol() const
     if (IsReplica()) return false;
     for (TypeSymbol* typeArgument : typeArguments)
     {
-        if (!typeArgument->IsPublic()) return false;
+        if (!typeArgument->IsPublic() && !typeArgument->Serialize()) return false;
     }
     return true;
 }

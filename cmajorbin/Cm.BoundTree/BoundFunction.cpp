@@ -9,6 +9,7 @@
 
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
+#include <Cm.Sym/FunctionSymbol.hpp>
 #include <stdexcept>
 
 namespace Cm { namespace BoundTree {
@@ -30,6 +31,25 @@ BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol
 BoundFunction::~BoundFunction()
 {
 
+}
+
+void BoundFunction::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(body.get());
+    writer.Write(functionSymbol);
+    int n = int(localVariables.size());
+    writer.GetBinaryWriter().Write(n);
+    for (Cm::Sym::LocalVariableSymbol* localVariable : localVariables)
+    {
+        writer.Write(localVariable);
+    }
+    int nt = int(temporaries.size());
+    writer.GetBinaryWriter().Write(nt);
+    for (const std::unique_ptr<Cm::Sym::LocalVariableSymbol>& temporary : temporaries)
+    {
+        writer.Write(temporary.get());
+    }
+    writer.GetBinaryWriter().Write(isMain);
 }
 
 void BoundFunction::SetBody(BoundCompoundStatement* body_)

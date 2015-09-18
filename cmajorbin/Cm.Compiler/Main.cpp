@@ -172,6 +172,7 @@ int main(int argc, const char** argv)
         bool prevWasDatalayout = false;
         bool emitNoTriple = false;
         bool emitNoLayout = false;
+        bool wpo = false;
         std::string targetTriple = GetTargetTriple();
         std::string datalayout = GetDataLayout();
         if (argc < 2)
@@ -189,6 +190,7 @@ int main(int argc, const char** argv)
                 "-config=profile : instrument program/library with profiling enabled\n" <<
                 "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" << 
                 "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
+                "-wpo            : enable whole program optimization in release config (experimental)\n" <<
                 "-backend=llvm   : use LLVM backend (default)\n" <<
                 "-backend=c      : use C backend\n" <<
                 "-m TRIPLE       : override LLVM target triple to emit to .ll files\n" << 
@@ -301,6 +303,10 @@ int main(int argc, const char** argv)
                         {
                             emitNoLayout = true;
                         }
+                        else if (arg == "-wpo")
+                        {
+                            wpo = true;
+                        }
                         else if (arg == "-quiet")
                         {
                             Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
@@ -364,6 +370,14 @@ int main(int argc, const char** argv)
             if (Cm::Core::GetGlobalSettings()->Config() == "debug" && backend == Cm::IrIntf::BackEnd::c)
             {
                 Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::generate_debug_info);
+            }
+            if (wpo)
+            {
+                if (Cm::Core::GetGlobalSettings()->Config() != "release")
+                {
+                    throw std::runtime_error("-WPO can be specified only for release config");
+                }
+                Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::wpo);
             }
             bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
             if (!quiet)

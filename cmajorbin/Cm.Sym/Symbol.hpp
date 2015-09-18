@@ -9,6 +9,7 @@
 
 #ifndef CM_SYM_SYMBOL_INCLUDED
 #define CM_SYM_SYMBOL_INCLUDED
+#include <Cm.Sym/BoundCompileUnitSerialization.hpp>
 #include <Cm.Parsing/Scanner.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
 #include <Cm.Ast/Specifier.hpp>
@@ -33,7 +34,7 @@ enum class SymbolType : uint8_t
     boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
     classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
     memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
-    conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol,
+    conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol, returnValueSymbol,
     maxSymbol
 };
 
@@ -78,7 +79,8 @@ enum class SymbolFlags : uint16_t
     project = 1 << 5,
     irTypeMade = 1 << 6,
     replica = 1 << 7,
-    owned = 1 << 8
+    owned = 1 << 8,
+    serialize = 1 << 9
 };
 
 std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess, bool addAccess);
@@ -110,11 +112,10 @@ public:
 
 const uint32_t noSid = -1;
 
-class Symbol
+class Symbol : public BcuItem
 {
 public:
     Symbol(const Span& span_, const std::string& name_);
-    virtual ~Symbol();
     virtual SymbolType GetSymbolType() const = 0;
     virtual void Write(Writer& writer);
     virtual void Read(Reader& reader);
@@ -173,8 +174,10 @@ public:
     virtual bool IsBoundTypeParameterSymbol() const { return false; }
     virtual bool IsMemberVariableSymbol() const { return false; }
     virtual bool IsLocalVariableSymbol() const { return false; }
+    virtual bool IsReturnValueSymbol() const { return false; }
     virtual bool IsTypedefSymbol() const { return false; }
     virtual bool IsNamespaceTypeSymbol() const { return false; }
+    virtual bool IsDeclarationBlock() const { return false; }
     NamespaceSymbol* Ns() const;
     ClassTypeSymbol* Class() const;
     ContainerSymbol* ClassOrNs() const;
@@ -204,9 +207,12 @@ public:
     void SetOwned() { SetFlag(SymbolFlags::owned); }
     void ResetOwned() { ResetFlag(SymbolFlags::owned); }
     bool Owned() const { return GetFlag(SymbolFlags::owned); }
+    bool Serialize() const { return GetFlag(SymbolFlags::serialize); }
+    virtual void DoSerialize();
     virtual void ReplaceReplicaTypes();
     uint32_t Sid() const { return sid; }
     void SetSid(uint32_t sid_) { sid = sid_; }
+    virtual TypeSymbol* GetType() const;
 private:
     uint32_t sid;
     Span span;

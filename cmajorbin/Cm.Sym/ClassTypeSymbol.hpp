@@ -92,6 +92,8 @@ public:
     bool IsClassTemplateSymbol() const { return !typeParameters.empty(); }
     ClassTypeSymbol* BaseClass() const { return baseClass; }
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
+    const std::unordered_set<ClassTypeSymbol*>& DerivedClasses() const { return derivedClasses; }
+    void AddDerivedClass(ClassTypeSymbol* derivedClass);
     void SetType(TypeSymbol* type, int index);
     bool HasBaseClass(ClassTypeSymbol* cls) const;
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
@@ -303,11 +305,13 @@ public:
     std::string Syntax() const override;
     std::string FullClassTemplateId() const;
     uint32_t Cid() const { return cid; }
+    void SetCid(uint32_t cid_) { cid = cid_; }
     void ReplaceReplicaTypes() override;
 private:
     uint32_t cid;
     ClassTypeSymbolFlags flags;
     ClassTypeSymbol* baseClass;
+    std::unordered_set<ClassTypeSymbol*> derivedClasses;
     std::vector<MemberVariableSymbol*> memberVariables;
     std::vector<MemberVariableSymbol*> staticMemberVariables;
     std::vector<TypeParameterSymbol*> typeParameters;

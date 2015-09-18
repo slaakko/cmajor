@@ -43,10 +43,11 @@ public:
 void SetCompileUnitMap(CompileUnitMap* compileUnitMap);
 CompileUnitMap* GetCompileUnitMap();
 
-class BoundCompileUnit
+class BoundCompileUnit : public Cm::Sym::BcuItem
 {
 public:
     BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_);
+    void Write(Cm::Sym::BcuWriter& writer) override;
     Cm::Ast::CompileUnitNode* SyntaxUnit() const { return syntaxUnit; }
     void AddFileScope(Cm::Sym::FileScope* fileScope_);
     void RemoveLastFileScope();
@@ -55,6 +56,7 @@ public:
     const std::string& OptIrFilePath() const { return optIrFilePath; }
     const std::string& ObjectFilePath() const { return objectFilePath; }
     const std::string& CDebugInfoFilePath() const { return cDebugInfoFilePath; }
+    const std::string& BcuPath() const { return bcuPath; }
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
@@ -106,6 +108,7 @@ private:
     std::string dependencyFilePath;
     std::string changedFilePath;
     std::string cDebugInfoFilePath;
+    std::string bcuPath;
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;

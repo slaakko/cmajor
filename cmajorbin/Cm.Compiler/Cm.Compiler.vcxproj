@@ -97,7 +97,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Programming\boost32;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Opt.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
@@ -117,7 +117,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Opt.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
@@ -139,7 +139,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Programming\boost32;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Opt.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
@@ -162,7 +162,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Opt.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>

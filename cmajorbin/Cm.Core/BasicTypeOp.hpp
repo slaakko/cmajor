@@ -20,6 +20,7 @@ class BasicTypeOp : public Cm::Sym::FunctionSymbol
 {
 public:
     BasicTypeOp(Cm::Sym::TypeSymbol* type_);
+    void Write(Cm::Sym::BcuWriter& writer) override;
     bool IsBasicTypeOp() const override { return true; }
     Cm::Sym::TypeSymbol* Type() const { return type; }
     virtual void Generate(Emitter& emitter, GenResult& result) = 0;
@@ -36,6 +37,7 @@ class DefaultCtor : public BasicTypeOp
 public:
     DefaultCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuDefaultCtor; }
 };
 
 class CopyCtor : public BasicTypeOp
@@ -44,6 +46,8 @@ public:
     CopyCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
     bool IsBasicTypeCopyCtor() const override { return true; }
+    bool IsBasicTypeCopyMoveOrAssignmentOp() const override { return true; }
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuCopyCtor; }
 };
 
 class CopyAssignment : public BasicTypeOp
@@ -51,6 +55,8 @@ class CopyAssignment : public BasicTypeOp
 public:
     CopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    bool IsBasicTypeCopyMoveOrAssignmentOp() const override { return true; }
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuCopyAssignment; }
 };
 
 class MoveCtor : public BasicTypeOp
@@ -58,6 +64,8 @@ class MoveCtor : public BasicTypeOp
 public:
     MoveCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    bool IsBasicTypeCopyMoveOrAssignmentOp() const override { return true; }
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuMoveCtor; }
 };
 
 class MoveAssignment : public BasicTypeOp
@@ -65,6 +73,8 @@ class MoveAssignment : public BasicTypeOp
 public:
     MoveAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    bool IsBasicTypeCopyMoveOrAssignmentOp() const override { return true; }
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuMoveAssignment; }
 };
 
 class OpEqual : public BasicTypeOp
@@ -72,6 +82,7 @@ class OpEqual : public BasicTypeOp
 public:
     OpEqual(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpEqual; }
 };
 
 class OpLess : public BasicTypeOp
@@ -79,6 +90,7 @@ class OpLess : public BasicTypeOp
 public:
     OpLess(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpLess; }
 };
 
 class BinOp : public BasicTypeOp
@@ -94,6 +106,7 @@ class OpAdd : public BinOp
 public:
     OpAdd(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpAdd; }
 };
 
 class OpSub : public BinOp
@@ -101,6 +114,7 @@ class OpSub : public BinOp
 public:
     OpSub(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpSub; }
 };
 
 class OpMul : public BinOp
@@ -108,6 +122,7 @@ class OpMul : public BinOp
 public:
     OpMul(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpMul; }
 };
 
 class OpDiv : public BinOp
@@ -115,6 +130,7 @@ class OpDiv : public BinOp
 public:
     OpDiv(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpDiv; }
 };
 
 class OpRem : public BinOp
@@ -122,6 +138,7 @@ class OpRem : public BinOp
 public:
     OpRem(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpRem; }
 };
 
 class OpShl : public BinOp
@@ -129,6 +146,7 @@ class OpShl : public BinOp
 public:
     OpShl(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpShl; }
 };
 
 class OpShr : public BinOp
@@ -136,6 +154,7 @@ class OpShr : public BinOp
 public:
     OpShr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpShr; }
 };
 
 class OpBitAnd : public BinOp
@@ -143,6 +162,7 @@ class OpBitAnd : public BinOp
 public:
     OpBitAnd(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpBitAnd; }
 };
 
 class OpBitOr : public BinOp
@@ -150,6 +170,7 @@ class OpBitOr : public BinOp
 public:
     OpBitOr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpBitOr; }
 };
 
 class OpBitXor : public BinOp
@@ -157,6 +178,7 @@ class OpBitXor : public BinOp
 public:
     OpBitXor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     Ir::Intf::Instruction* CreateInstruction(Ir::Intf::Type* irType, Ir::Intf::Object* result, Ir::Intf::Object* operand1, Ir::Intf::Object* operand2) const override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpBitXor; }
 };
 
 class OpNot : public BasicTypeOp
@@ -164,6 +186,7 @@ class OpNot : public BasicTypeOp
 public:
     OpNot(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpNot; }
 };
 
 class OpUnaryPlus : public BasicTypeOp
@@ -171,6 +194,7 @@ class OpUnaryPlus : public BasicTypeOp
 public:
     OpUnaryPlus(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpUnaryPlus; }
 };
 
 class OpUnaryMinus : public BasicTypeOp
@@ -178,6 +202,7 @@ class OpUnaryMinus : public BasicTypeOp
 public:
     OpUnaryMinus(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpUnaryMinus; }
 };
 
 class OpComplement : public BasicTypeOp
@@ -185,6 +210,7 @@ class OpComplement : public BasicTypeOp
 public:
     OpComplement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpComplement; }
 };
 
 class OpIncrement : public BasicTypeOp
@@ -192,6 +218,7 @@ class OpIncrement : public BasicTypeOp
 public:
     OpIncrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpIncrement; }
 };
 
 class OpDecrement : public BasicTypeOp
@@ -199,9 +226,10 @@ class OpDecrement : public BasicTypeOp
 public:
     OpDecrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpDecrement; }
 };
 
-enum class ConversionInst
+enum class ConversionInst : uint8_t
 {
     none, sext, zext, trunc, bitcast, uitofp, sitofp, fptoui, fptosi, fpext, fptrunc, ptrtoint
 };
@@ -211,6 +239,8 @@ class ConvertingCtor : public BasicTypeOp
 public:
     ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, Cm::Sym::ConversionType conversionType_, ConversionInst conversionInst_, 
         Cm::Sym::ConversionRank conversionRank_, int conversionDistance_);
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuConvertingCtor; }
+    void Write(Cm::Sym::BcuWriter& writer) override;
     Cm::Sym::ConversionType GetConversionType() const override { return conversionType; }
     bool IsConvertingConstructor() const override { return true; }
     void Generate(Emitter& emitter, GenResult& result) override;

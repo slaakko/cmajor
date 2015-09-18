@@ -15,16 +15,17 @@
 
 namespace Cm { namespace Core {
 
-class IrClassTypeRepository
-{
+class IrClassTypeRepository : public Cm::Sym::BcuItem
+{ 
 public:
     virtual ~IrClassTypeRepository();
+    void Write(Cm::Sym::BcuWriter& writer) override;
     bool Added(Cm::Sym::ClassTypeSymbol* classType) const;
     void AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol);
-    virtual void Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
+    virtual void Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
         IrFunctionRepository& irFunctionRepository) = 0;
     virtual void WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter) = 0;
-    virtual void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit,
+    virtual void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
         std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository) = 0;
     virtual void WriteDestructionNodeDef(Cm::Util::CodeFormatter& codeFormatter) = 0;
 protected:
@@ -36,10 +37,10 @@ private:
 class LlvmIrClassTypeRepository : public IrClassTypeRepository
 {
 public:
-    void Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
+    void Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
         IrFunctionRepository& irFunctionRepository) override;
     void WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter) override;
-    void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit,
+    void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
         std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository) override;
     void WriteDestructionNodeDef(Cm::Util::CodeFormatter& codeFormatter) override;
 };
@@ -47,10 +48,10 @@ public:
 class CIrClassTypeRepository : public IrClassTypeRepository
 {
 public:
-    void Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
+    void Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
         IrFunctionRepository& irFunctionRepository) override;
     void WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter) override;
-    void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit,
+    void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
         std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository) override;
     void WriteDestructionNodeDef(Cm::Util::CodeFormatter& codeFormatter) override;
 };

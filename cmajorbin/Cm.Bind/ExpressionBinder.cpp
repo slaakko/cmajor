@@ -2135,6 +2135,7 @@ void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* target
     }
     Cm::BoundTree::BoundCast* cast = new Cm::BoundTree::BoundCast(node, sourceExpr, convertingCtor);
     cast->SetType(targetType);
+    cast->SetSourceType(sourceExpr->GetType());
     boundExpressionStack.Push(cast);
 }
 

@@ -21,6 +21,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::declarationBlock; }
     std::string TypeString() const override { return "declaration block"; };
     bool IsExportSymbol() const override { return false; }
+    bool IsDeclarationBlock() const override { return true; }
 };
 
 } } // namespace Cm::Sym

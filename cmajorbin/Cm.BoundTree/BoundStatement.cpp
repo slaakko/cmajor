@@ -73,6 +73,16 @@ BoundStatementList::BoundStatementList()
 {
 }
 
+void BoundStatementList::Write(Cm::Sym::BcuWriter& writer)
+{
+    int n = int(statements.size());
+    writer.GetBinaryWriter().Write(n);
+    for (const std::unique_ptr<BoundStatement>& statement : statements)
+    {
+        writer.Write(statement.get());
+    }
+}
+
 void BoundStatementList::AddStatement(BoundStatement* statement)
 {
     statements.push_back(std::unique_ptr<BoundStatement>(statement));
@@ -99,6 +109,11 @@ BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : Bou
 {
 }
 
+void BoundCompoundStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    statementList.Write(writer);
+}
+
 void BoundCompoundStatement::AddStatement(BoundStatement* statement)
 {
     statement->SetParent(this);
@@ -122,6 +137,12 @@ BoundReceiveStatement::BoundReceiveStatement(Cm::Sym::ParameterSymbol* parameter
 {
 }
 
+void BoundReceiveStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(parameterSymbol);
+    writer.Write(ctor);
+}
+
 void BoundReceiveStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -129,6 +150,11 @@ void BoundReceiveStatement::Accept(Visitor& visitor)
 
 BoundInitClassObjectStatement::BoundInitClassObjectStatement(BoundFunctionCall* functionCall_) : BoundStatement(nullptr), functionCall(functionCall_)
 {
+}
+
+void BoundInitClassObjectStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(functionCall.get());
 }
 
 void BoundInitClassObjectStatement::Accept(Visitor& visitor)
@@ -140,6 +166,11 @@ BoundInitVPtrStatement::BoundInitVPtrStatement(Cm::Sym::ClassTypeSymbol* classTy
 {
 }
 
+void BoundInitVPtrStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(classType);
+}
+
 void BoundInitVPtrStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -148,6 +179,14 @@ void BoundInitVPtrStatement::Accept(Visitor& visitor)
 BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::FunctionSymbol* ctor_, BoundExpressionList&& arguments_) : 
     BoundStatement(nullptr), ctor(ctor_), arguments(std::move(arguments_)), registerDestructor(false), memberVarSymbol(nullptr)
 {
+}
+
+void BoundInitMemberVariableStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(memberVarSymbol);
+    writer.Write(ctor);
+    arguments.Write(writer);
+    writer.GetBinaryWriter().Write(registerDestructor);
 }
 
 void BoundInitMemberVariableStatement::Accept(Visitor& visitor) 
@@ -164,6 +203,13 @@ BoundFunctionCallStatement::BoundFunctionCallStatement(Cm::Sym::FunctionSymbol* 
 {
 }
 
+void BoundFunctionCallStatement::Write(Cm::Sym::BcuWriter& writer) 
+{
+    writer.Write(function);
+    arguments.Write(writer);
+    writer.Write(traceCallInfo.get());
+}
+
 void BoundFunctionCallStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -176,6 +222,16 @@ void BoundFunctionCallStatement::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
 
 BoundReturnStatement::BoundReturnStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_), ctor(nullptr), returnType(nullptr)
 {
+}
+
+void BoundReturnStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(expression.get());
+    writer.Write(ctor);
+    writer.Write(returnType);
+    writer.Write(traceCallInfo.get());
+    writer.Write(boundTemporary.get());
+    writer.Write(boundReturnValue.get());
 }
 
 void BoundReturnStatement::SetExpression(BoundExpression* expression_)
@@ -198,8 +254,18 @@ void BoundReturnStatement::SetBoundTemporary(Cm::BoundTree::BoundLocalVariable* 
     boundTemporary.reset(boundTemporary_);
 }
 
+void BoundReturnStatement::SetBoundReturnValue(BoundReturnValue* returnValue)
+{
+    boundReturnValue.reset(returnValue);
+}
+
 BoundBeginTryStatement::BoundBeginTryStatement(Cm::Ast::Node* syntaxNode_, int firstCatchId_) : BoundStatement(syntaxNode_), firstCatchId(firstCatchId_)
 {
+}
+
+void BoundBeginTryStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(firstCatchId);
 }
 
 void BoundBeginTryStatement::Accept(Visitor& visitor)
@@ -220,6 +286,11 @@ BoundExitBlocksStatement::BoundExitBlocksStatement(Cm::Ast::Node* syntaxNode_, B
 {
 }
 
+void BoundExitBlocksStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    // todo
+}
+
 void BoundExitBlocksStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -227,6 +298,11 @@ void BoundExitBlocksStatement::Accept(Visitor& visitor)
 
 BoundPushGenDebugInfoStatement::BoundPushGenDebugInfoStatement(Cm::Ast::Node* syntaxNode_, bool generate_) : BoundStatement(syntaxNode_), generate(generate_)
 {
+}
+
+void BoundPushGenDebugInfoStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(generate);
 }
 
 void BoundPushGenDebugInfoStatement::Accept(Visitor& visitor)
@@ -274,6 +350,14 @@ BoundConstructionStatement::BoundConstructionStatement(Cm::Ast::Node* syntaxNode
 {
 }
 
+void BoundConstructionStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(localVariable);
+    arguments.Write(writer);
+    writer.Write(ctor);
+    writer.Write(traceCallInfo.get());
+}
+
 void BoundConstructionStatement::SetArguments(BoundExpressionList&& arguments_) 
 { 
     arguments = std::move(arguments_); 
@@ -318,6 +402,12 @@ BoundDestructionStatement::BoundDestructionStatement(Cm::Ast::Node* syntaxNode_,
 {
 }
 
+void BoundDestructionStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    // todo: object
+    writer.Write(destructor);
+}
+
 void BoundDestructionStatement::Accept(Visitor& visitor) 
 {
     visitor.Visit(*this);
@@ -326,6 +416,14 @@ void BoundDestructionStatement::Accept(Visitor& visitor)
 BoundAssignmentStatement::BoundAssignmentStatement(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_, Cm::Sym::FunctionSymbol* assignment_) : 
     BoundStatement(syntaxNode_), left(left_), right(right_), assignment(assignment_)
 {
+}
+
+void BoundAssignmentStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(left.get());
+    writer.Write(right.get());
+    writer.Write(assignment);
+    writer.Write(traceCallInfo.get());
 }
 
 void BoundAssignmentStatement::Accept(Visitor& visitor)
@@ -342,6 +440,11 @@ BoundSimpleStatement::BoundSimpleStatement(Cm::Ast::Node* syntaxNode_) : BoundSt
 {
 }
 
+void BoundSimpleStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(expression.get());
+}
+
 void BoundSimpleStatement::SetExpression(BoundExpression* expression_)
 {
     expression.reset(expression_);
@@ -354,6 +457,13 @@ void BoundSimpleStatement::Accept(Visitor& visitor)
 
 BoundSwitchStatement::BoundSwitchStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
+}
+
+void BoundSwitchStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(condition.get());
+    caseStatements.Write(writer);
+    writer.Write(defaultStatement.get());
 }
 
 void BoundSwitchStatement::SetCondition(BoundExpression* condition_)
@@ -393,6 +503,17 @@ BoundCaseStatement::BoundCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundParent
 {
 }
 
+void BoundCaseStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    statements.Write(writer);
+    int n = int(values.size());
+    writer.GetBinaryWriter().Write(n);
+    for (const std::unique_ptr<Cm::Sym::Value>& value : values)
+    {
+        writer.GetSymbolWriter().Write(value.get());
+    }
+}
+
 void BoundCaseStatement::AddStatement(BoundStatement* statement_)
 {
     statement_->SetParent(this);
@@ -411,6 +532,11 @@ void BoundCaseStatement::AddValue(Cm::Sym::Value* value)
 
 BoundDefaultStatement::BoundDefaultStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
+}
+
+void BoundDefaultStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    statements.Write(writer);
 }
 
 void BoundDefaultStatement::AddStatement(BoundStatement* statement_)
@@ -447,6 +573,14 @@ BoundGotoStatement::BoundGotoStatement(Cm::Ast::Node* syntaxNode_, const std::st
 {
 }
 
+void BoundGotoStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(targetLabel);
+    // todo: targetStatement
+    // todo: targetCompoundParent
+    writer.GetBinaryWriter().Write(isExceptionHandlingGoto);
+}
+
 void BoundGotoStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -454,6 +588,11 @@ void BoundGotoStatement::Accept(Visitor& visitor)
 
 BoundGotoCaseStatement::BoundGotoCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
+}
+
+void BoundGotoCaseStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetSymbolWriter().Write(value.get());
 }
 
 void BoundGotoCaseStatement::SetValue(Cm::Sym::Value* value_)
@@ -477,6 +616,13 @@ void BoundGotoDefaultStatement::Accept(Visitor& visitor)
 
 BoundConditionalStatement::BoundConditionalStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
+}
+
+void BoundConditionalStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(condition.get());
+    writer.Write(thenS.get());
+    writer.Write(elseS.get());
 }
 
 void BoundConditionalStatement::SetCondition(BoundExpression* condition_)
@@ -514,6 +660,12 @@ void BoundConditionalStatement::Accept(Visitor& visitor)
 
 BoundWhileStatement::BoundWhileStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
+}
+
+void BoundWhileStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(condition.get());
+    writer.Write(statement.get());
 }
 
 void BoundWhileStatement::SetCondition(BoundExpression* condition_)
@@ -562,6 +714,12 @@ BoundDoStatement::BoundDoStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStat
 {
 }
 
+void BoundDoStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(statement.get());
+    writer.Write(condition.get());
+}
+
 void BoundDoStatement::SetCondition(BoundExpression* condition_)
 {
     condition.reset(condition_);
@@ -606,6 +764,14 @@ void BoundDoStatement::AddToContinueNextSet(Cm::Core::CfgNode* node)
 
 BoundForStatement::BoundForStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
+}
+
+void BoundForStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(initS.get());
+    writer.Write(condition.get());
+    writer.Write(increment.get());
+    writer.Write(action.get());
 }
 
 void BoundForStatement::SetCondition(BoundExpression* condition_)

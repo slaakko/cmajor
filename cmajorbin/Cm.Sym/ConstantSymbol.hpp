@@ -25,7 +25,7 @@ public:
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type_) { type = type_; }
     void SetType(TypeSymbol* type_, int index) override;
-    TypeSymbol* GetType() const { return type; }
+    TypeSymbol* GetType() const override { return type; }
     virtual bool IsConstantSymbol() const { return true; }
     bool IsExportSymbol() const override;
     void SetValue(Value* value_);

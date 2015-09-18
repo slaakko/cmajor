@@ -17,6 +17,7 @@
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <iostream>
 
@@ -397,6 +398,7 @@ TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std:
         return typeSymbol;
     }
     std::unique_ptr<TemplateTypeSymbol> templateTypeSymbol(new TemplateTypeSymbol(subjectType->GetSpan(), MakeTemplateTypeSymbolName(subjectType, typeArguments), subjectType, typeArguments, typeId));
+    templateTypeSymbol->SetCid(GetClassCounter()->GetCid());
     symbolTable.SetSidAndAddSymbol(templateTypeSymbol.get());
     templateTypeSymbol->SetParent(subjectType->Ns());
     templateTypeSymbol->MakeIrType();

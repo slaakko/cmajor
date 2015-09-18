@@ -43,6 +43,7 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
     dependencyFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".dep").generic_string());
     changedFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".chg").generic_string());
     cDebugInfoFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".cdi").generic_string());
+    bcuPath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".bcu").generic_string());
     if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
     {
         stringRepository.reset(new Cm::Core::LlvmStringRepository());
@@ -58,6 +59,23 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
     else
     {
         throw std::runtime_error("backend not set");
+    }
+}
+
+void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(irFilePath);
+    writer.GetBinaryWriter().Write(objectFilePath);
+    writer.GetBinaryWriter().Write(optIrFilePath);
+    writer.GetBinaryWriter().Write(dependencyFilePath);
+    writer.GetBinaryWriter().Write(changedFilePath);
+    writer.GetBinaryWriter().Write(cDebugInfoFilePath);
+    stringRepository->Write(writer);
+    irClassTypeRepository->Write(writer);
+    writer.GetBinaryWriter().Write(int(boundNodes.size()));
+    for (const std::unique_ptr<BoundNode>& boundNode : boundNodes)
+    {
+        writer.Write(boundNode.get());
     }
 }
 

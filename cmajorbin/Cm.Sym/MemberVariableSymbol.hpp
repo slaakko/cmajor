@@ -9,14 +9,14 @@
 
 #ifndef CM_SYM_MEMBER_VARIABLE_SYMBOL_INCLUDED
 #define CM_SYM_MEMBER_VARIABLE_SYMBOL_INCLUDED
-#include <Cm.Sym/Symbol.hpp>
+#include <Cm.Sym/VariableSymbol.hpp>
 #include <Cm.Ast/Class.hpp>
 
 namespace Cm { namespace Sym {
 
 class TypeSymbol;
 
-class MemberVariableSymbol : public Symbol
+class MemberVariableSymbol : public VariableSymbol
 {
 public:
     MemberVariableSymbol(const Span& span_, const std::string& name_);
@@ -24,11 +24,6 @@ public:
     std::string TypeString() const override { return "member variable"; };
     bool IsMemberVariableSymbol() const override { return true; }
     bool IsExportSymbol() const override;
-    void Write(Writer& writer) override;
-    void Read(Reader& reader) override;
-    TypeSymbol* GetType() const;
-    void SetType(TypeSymbol* type_) { type = type_; }
-    void SetType(TypeSymbol* type_, int index_) override;
     int LayoutIndex() const { return layoutIndex; }
     void SetLayoutIndex(int layoutIndex_) { layoutIndex = layoutIndex_; }
 	void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
@@ -36,7 +31,6 @@ public:
     void Dump(CodeFormatter& formatter) override;
     void ReplaceReplicaTypes() override;
 private:
-    TypeSymbol* type;
     int layoutIndex;
 };
 

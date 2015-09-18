@@ -38,6 +38,7 @@
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ControlFlowAnalyzer.hpp>
 #include <Cm.Bind/ArrayTypeOpRepository.hpp>
+#include <Cm.Opt/TypePropagationGraph.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Core/CompileUnitMap.hpp>
@@ -529,9 +530,13 @@ bool CompileCppFiles(Cm::Ast::Project* project, std::vector<std::string>& object
     return true;
 }
 
-bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, 
+bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, 
     bool rebuild, const std::vector<std::string>& compileFileNames, std::vector<std::string>& debugInfoFilePaths)
 {
+/*
+    Cm::Opt::TpGraph typePropagationGraph;
+    Cm::Opt::TpGraphBuilderVisitor tpgVisitor(typePropagationGraph);
+*/
     bool changed = false;
     if (syntaxTree.CompileUnits().empty()) return changed;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
@@ -567,7 +572,7 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         Cm::Bind::VirtualBinder virtualBinder(symbolTable, compileUnit.get(), prebindCompileUnit);
         compileUnit->Accept(virtualBinder);
     }
-    if (projectName == "system")
+    if (project->Name() == "system")
     {
         Cm::Sym::ExceptionTable* exceptionTable = Cm::Sym::GetExceptionTable();
         Cm::Sym::Symbol* systemExceptionSymbol = symbolTable.GlobalScope()->Lookup("System.Exception");
@@ -674,15 +679,24 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
             boundCompileUnit->SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(*boundCompileUnit));
             boundCompileUnit->AddFileScope(fileScopes[index].release());
             Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
+            //boundCompileUnit->Accept(tpgVisitor);
             if (boundCompileUnit->HasGotos())
             {
                 AnalyzeControlFlow(*boundCompileUnit);
             }
-            Emit(symbolTable.GetTypeRepository(), *boundCompileUnit);
-            GenerateObjectCode(*boundCompileUnit);
-            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::wpo))
             {
-                GenerateOptimizedLlvmCodeFile(*boundCompileUnit);
+                Cm::Sym::BcuWriter bcuWriter(boundCompileUnit->BcuPath(), &symbolTable);
+                boundCompileUnit->Write(bcuWriter);
+            }
+            else
+            {
+                Emit(symbolTable.GetTypeRepository(), *boundCompileUnit);
+                GenerateObjectCode(*boundCompileUnit);
+                if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+                {
+                    GenerateOptimizedLlvmCodeFile(*boundCompileUnit);
+                }
             }
         }
         else
@@ -697,6 +711,13 @@ bool Compile(const std::string& projectName, Cm::Sym::SymbolTable& symbolTable, 
         boundCompileUnit->WriteDependencyFile();
     }
     Cm::Core::SetCompileUnitMap(nullptr);
+/*
+    typePropagationGraph.Process();
+    std::ofstream tpgFile("C:\\Temp\\tpg.txt");
+    Cm::Util::CodeFormatter tpgFormatter(tpgFile);
+    //typePropagationGraph.Print(tpgFormatter);
+    tpgVisitor.PrintVirtualCalls(tpgFormatter);
+*/
     return changed;
 }
 
@@ -1089,6 +1110,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         ReadNextFid(functionTable);
     }
     bool changed = false;
+    bool wpo = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::wpo);
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
     {
         rebuild = true;
@@ -1160,11 +1182,11 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         changed = asmSourcesChanged;
     }
     std::vector<std::string> debugInfoFilePaths;
-    if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths))
+    if (Compile(project, symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths))
     {
         changed = true;
     }
-    if (project->GetTarget() == Cm::Ast::Target::program)
+    if (project->GetTarget() == Cm::Ast::Target::program && !wpo)
     {
         bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), 
             boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, changed || rebuild);
@@ -1178,12 +1200,15 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
             changed = exceptionTableUnitGenerated;
         }
     }
-    bool objectFilesChanged = Archive(objectFilePaths, project->AssemblyFilePath());
-    if (!changed)
+    if (!wpo)
     {
-        changed = objectFilesChanged;
+        bool objectFilesChanged = Archive(objectFilePaths, project->AssemblyFilePath());
+        if (!changed)
+        {
+            changed = objectFilesChanged;
+        }
     }
-    if (project->GetTarget() == Cm::Ast::Target::program)
+    if (project->GetTarget() == Cm::Ast::Target::program && !wpo)
     {
         bool linked = Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
         if (!changed)
