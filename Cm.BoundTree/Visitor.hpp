@@ -21,6 +21,7 @@ class BoundConstant;
 class BoundEnumConstant;
 class BoundLocalVariable;
 class BoundMemberVariable;
+class BoundReturnValue;
 class BoundFunctionId;
 class BoundParameter;
 class BoundConversion;
@@ -95,6 +96,7 @@ public:
     virtual void Visit(BoundEnumConstant& boundEnumConstant) {}
     virtual void Visit(BoundLocalVariable& boundLocalVariable) {}
     virtual void Visit(BoundMemberVariable& boundMemberVariable) {}
+    virtual void Visit(BoundReturnValue& boundReturnValue) {}
     virtual void Visit(BoundFunctionId& boundFunctionId) {}
     virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundConversion& boundConversion) {}
@@ -165,6 +167,7 @@ public:
     virtual void Visit(BoundConcept& concept) {}
 
     bool VisitFunctionBody() const { return visitFunctionBody; }
+    void SetVisitFunctionBody(bool visitFunctionBody_) { visitFunctionBody = visitFunctionBody_; }
     void PushSkipContent();
     void PopSkipContent();
     bool SkipContent() const { return skipContent; }

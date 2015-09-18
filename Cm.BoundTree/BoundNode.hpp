@@ -9,6 +9,7 @@
 
 #ifndef CM_BOUND_TREE_BOUND_NODE_INCLUDED
 #define CM_BOUND_TREE_BOUND_NODE_INCLUDED
+#include <Cm.Sym/BoundCompileUnitSerialization.hpp>
 #include <Cm.Ast/Node.hpp>
 
 namespace Cm { namespace BoundTree {
@@ -46,11 +47,10 @@ inline BoundNodeFlags operator~(BoundNodeFlags flag)
     return BoundNodeFlags(~uint16_t(flag));
 }
 
-class BoundNode
+class BoundNode : public Cm::Sym::BcuItem
 {
 public:
     BoundNode(Cm::Ast::Node* syntaxNode_);
-    virtual ~BoundNode();
     Cm::Ast::Node* SyntaxNode() const { return syntaxNode; }
     virtual bool IsBoundExpressionNode() const { return false;  }
     virtual void Accept(Visitor& visitor) = 0;

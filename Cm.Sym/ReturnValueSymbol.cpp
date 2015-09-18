@@ -7,12 +7,12 @@
 
 ========================================================================*/
 
-#include <Cm.BoundTree/BoundNode.hpp>
+#include <Cm.Sym/ReturnValueSymbol.hpp>
 
-namespace Cm { namespace BoundTree {
+namespace Cm { namespace Sym {
 
-BoundNode::BoundNode(Cm::Ast::Node* syntaxNode_) : flags(BoundNodeFlags::none), syntaxNode(syntaxNode_)
+ReturnValueSymbol::ReturnValueSymbol(const Span& span_, const std::string& name_) : VariableSymbol(span_, name_)
 {
 }
 
-} } // namespace Cm::BoundTree
+} } // namespace Cm::Sym

@@ -13,7 +13,7 @@
 
 namespace Cm { namespace Core {
 
-enum class ArgumentCategory
+enum class ArgumentCategory : uint8_t
 {
     rvalue, lvalue
 };

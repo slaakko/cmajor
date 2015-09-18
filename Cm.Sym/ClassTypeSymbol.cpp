@@ -72,6 +72,10 @@ bool ClassTypeSymbol::IsExportSymbol() const
 void ClassTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
+    if (cid == noCid)
+    {
+        int x = 0;
+    }
     writer.GetBinaryWriter().Write(cid);
     writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));
     bool hasBaseClass = baseClass != nullptr;
@@ -172,6 +176,11 @@ void ClassTypeSymbol::FreeClassNode(Cm::Sym::SymbolTable& symbolTable)
         persistentClassData->classNode.reset();
         symbolTable.SetNode(this, nullptr);
     }
+}
+
+void ClassTypeSymbol::AddDerivedClass(ClassTypeSymbol* derivedClass)
+{
+    derivedClasses.insert(derivedClass);
 }
 
 void ClassTypeSymbol::SetType(TypeSymbol* type, int index) 

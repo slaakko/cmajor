@@ -15,30 +15,13 @@
 
 namespace Cm { namespace Sym {
 
-LocalVariableSymbol::LocalVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr), used(false)
+LocalVariableSymbol::LocalVariableSymbol(const Span& span_, const std::string& name_) : VariableSymbol(span_, name_), used(false)
 {
 }
 
-void LocalVariableSymbol::Write(Writer& writer)
+bool LocalVariableSymbol::IsExportSymbol() const
 {
-    Symbol::Write(writer);
-    writer.Write(type->Id());
-}
-
-void LocalVariableSymbol::Read(Reader& reader)
-{
-    Symbol::Read(reader);
-    reader.FetchTypeFor(this, 0);
-}
-
-TypeSymbol* LocalVariableSymbol::GetType() const
-{
-    return type;
-}
-
-void LocalVariableSymbol::SetType(TypeSymbol* type_, int index)
-{
-    type = type_;
+    return Source() == SymbolSource::project && Serialize();
 }
 
 void LocalVariableSymbol::SetUseSpan(const Cm::Parsing::Span& useSpan_)
@@ -48,6 +31,7 @@ void LocalVariableSymbol::SetUseSpan(const Cm::Parsing::Span& useSpan_)
 
 void LocalVariableSymbol::ReplaceReplicaTypes()
 {
+    TypeSymbol* type = GetType();
     if (type->IsReplica() && type->IsTemplateTypeSymbol())
     {
         TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(type);

@@ -27,7 +27,7 @@ void Emitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     WriteCompileUnitHeader(codeFormatter);
     stringRepository.Write(codeFormatter);
-    irClassTypeRepository.Write(codeFormatter, compileUnit.SyntaxUnit(), externalFunctions, irFunctionRepository);
+    irClassTypeRepository.Write(codeFormatter, externalFunctions, irFunctionRepository);
     currentCompileUnit = compileUnit.SyntaxUnit();
     enterFrameFun = compileUnit.SymbolTable().GetOverload("enter_frame");
     leaveFrameFun = compileUnit.SymbolTable().GetOverload("leave_frame");

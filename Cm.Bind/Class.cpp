@@ -143,6 +143,7 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
                     throw Cm::Core::Exception("base class type must be at least as accessible as the class type itself", baseClassTypeSymbol->GetSpan(), classTypeSymbol->GetSpan());
                 }
                 classTypeSymbol->SetBaseClass(baseClassTypeSymbol);
+                baseClassTypeSymbol->AddDerivedClass(classTypeSymbol);
                 classTypeSymbol->GetContainerScope()->SetBase(baseClassTypeSymbol->GetContainerScope());
             }
             else

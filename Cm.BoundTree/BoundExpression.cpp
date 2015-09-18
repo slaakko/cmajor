@@ -12,6 +12,8 @@
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/NamespaceSymbol.hpp>
+#include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <algorithm>
 #include <stdexcept>
 
@@ -30,8 +32,25 @@ TraceCallInfo::TraceCallInfo(BoundExpression* fun_, BoundExpression* file_, Boun
 {
 }
 
+void TraceCallInfo::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(fun.get());
+    writer.Write(file.get());
+    writer.Write(line.get());
+}
+
 BoundExpressionList::BoundExpressionList()
 {
+}
+
+void BoundExpressionList::Write(Cm::Sym::BcuWriter& writer)
+{
+    int n = int(expressions.size());
+    writer.GetBinaryWriter().Write(n);
+    for (const std::unique_ptr<BoundExpression>& expr : expressions)
+    {
+        writer.Write(expr.get());
+    }
 }
 
 void BoundExpressionList::Add(BoundExpression* expression)
@@ -75,6 +94,11 @@ BoundStringLiteral::BoundStringLiteral(Cm::Ast::Node* syntaxNode_, int id_) : Bo
 {
 }
 
+void BoundStringLiteral::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(id);
+}
+
 void BoundStringLiteral::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -82,6 +106,11 @@ void BoundStringLiteral::Accept(Visitor& visitor)
 
 BoundLiteral::BoundLiteral(Cm::Ast::Node* syntaxNode_) : BoundExpression(syntaxNode_)
 {
+}
+
+void BoundLiteral::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetSymbolWriter().Write(value.get());
 }
 
 void BoundLiteral::Accept(Visitor& visitor)
@@ -103,6 +132,11 @@ BoundConstant::BoundConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConstantSymbol
 {
 }
 
+void BoundConstant::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(symbol);
+}
+
 void BoundConstant::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -116,6 +150,11 @@ BoundEnumConstant::BoundEnumConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::EnumCo
 {
 }
 
+void BoundEnumConstant::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(symbol);
+}
+
 void BoundEnumConstant::Accept(Visitor& visitor) 
 {
     visitor.Visit(*this);
@@ -123,6 +162,11 @@ void BoundEnumConstant::Accept(Visitor& visitor)
 
 BoundLocalVariable::BoundLocalVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::LocalVariableSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
+}
+
+void BoundLocalVariable::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(symbol);
 }
 
 void BoundLocalVariable::Accept(Visitor& visitor)
@@ -142,6 +186,11 @@ BoundParameter::BoundParameter(Cm::Ast::Node* syntaxNode_, Cm::Sym::ParameterSym
 {
 }
 
+void BoundParameter::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(symbol);
+}
+
 Cm::Core::ArgumentCategory BoundParameter::GetArgumentCategory() const
 {
     if (GetType()->IsNonConstReferenceType()) return Cm::Core::ArgumentCategory::lvalue;
@@ -153,8 +202,28 @@ void BoundParameter::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundReturnValue::BoundReturnValue(Cm::Ast::Node* syntaxNode_, Cm::Sym::ReturnValueSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
+{
+}
+
+void BoundReturnValue::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(symbol);
+}
+
+void BoundReturnValue::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundMemberVariable::BoundMemberVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::MemberVariableSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
+}
+
+void BoundMemberVariable::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(classObject.get());
+    writer.Write(symbol);
 }
 
 void BoundMemberVariable::Accept(Visitor& visitor)
@@ -171,6 +240,11 @@ BoundFunctionId::BoundFunctionId(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSy
 {
 }
 
+void BoundFunctionId::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(functionSymbol);
+}
+
 void BoundFunctionId::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -180,13 +254,30 @@ BoundTypeExpression::BoundTypeExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::Ty
 {
 }
 
+void BoundTypeExpression::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(typeSymbol);
+}
+
 void BoundTypeExpression::Accept(Visitor& visitor)
 {
     throw std::runtime_error("member function not applicable");
 }
 
+void BoundNamespaceExpression::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(namespaceSymbol);
+}
+
 BoundConversion::BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_) : BoundExpression(syntaxNode_), operand(operand_), conversionFun(conversionFun_)
 {
+}
+
+void BoundConversion::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(operand.get());
+    writer.Write(conversionFun);
+    writer.Write(boundTemporary.get());
 }
 
 void BoundConversion::Accept(Visitor& visitor)
@@ -199,8 +290,16 @@ void BoundConversion::SetBoundTemporary(Cm::BoundTree::BoundExpression* boundTem
     boundTemporary.reset(boundTemporary_);
 }
 
-BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_) : BoundExpression(syntaxNode_), operand(operand_), conversionFun(conversionFun_)
+BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_) : 
+    BoundExpression(syntaxNode_), operand(operand_), conversionFun(conversionFun_), sourceType(nullptr)
 {
+}
+
+void BoundCast::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(operand.get());
+    writer.Write(conversionFun);
+    writer.Write(sourceType);
 }
 
 void BoundCast::Accept(Visitor& visitor)
@@ -212,6 +311,11 @@ BoundSizeOfExpression::BoundSizeOfExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym
 {
 }
 
+void BoundSizeOfExpression::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(type);
+}
+
 void BoundSizeOfExpression::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -220,6 +324,12 @@ void BoundSizeOfExpression::Accept(Visitor& visitor)
 BoundDynamicTypeNameExpression::BoundDynamicTypeNameExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* subject_, Cm::Sym::ClassTypeSymbol* classType_) : 
     BoundExpression(syntaxNode_), subject(subject_), classType(classType_)
 {
+}
+
+void BoundDynamicTypeNameExpression::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(subject.get());
+    writer.Write(classType);
 }
 
 void BoundDynamicTypeNameExpression::Accept(Visitor& visitor)
@@ -241,6 +351,15 @@ BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_
 {
 }
 
+void BoundUnaryOp::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(operand.get());
+    writer.Write(fun);
+    writer.Write(classObjectResultVar);
+    writer.Write(traceCallInfo.get());
+    writer.GetBinaryWriter().Write(uint8_t(argumentCategory));
+}
+
 void BoundUnaryOp::Accept(Visitor& visitor)
 {
     operand->Accept(visitor);
@@ -255,6 +374,15 @@ void BoundUnaryOp::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
 BoundBinaryOp::BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(syntaxNode_), left(left_), right(right_), fun(nullptr), 
     classObjectResultVar(nullptr)
 {
+}
+
+void BoundBinaryOp::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(left.get());
+    writer.Write(right.get());
+    writer.Write(fun);
+    writer.Write(classObjectResultVar);
+    writer.Write(traceCallInfo.get());
 }
 
 void BoundBinaryOp::Accept(Visitor& visitor)
@@ -273,6 +401,12 @@ BoundPostfixIncDecExpr::BoundPostfixIncDecExpr(Cm::Ast::Node* syntaxNode_, Bound
 {
 }
 
+void BoundPostfixIncDecExpr::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(value.get());
+    writer.Write(statement.get());
+}
+
 void BoundPostfixIncDecExpr::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -280,6 +414,18 @@ void BoundPostfixIncDecExpr::Accept(Visitor& visitor)
 
 BoundFunctionGroup::BoundFunctionGroup(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_) : BoundExpression(syntaxNode_), functionGroupSymbol(functionGroupSymbol_)
 {
+}
+
+void BoundFunctionGroup::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(functionGroupSymbol);
+    int n = int(boundTemplateArguments.size());
+    writer.GetBinaryWriter().Write(n);
+    for (Cm::Sym::TypeSymbol* templateArg : boundTemplateArguments)
+    {
+        writer.Write(templateArg);
+    }
+    writer.Write(ownedTypeSymbol.get());
 }
 
 void BoundFunctionGroup::Accept(Visitor& visitor)
@@ -303,6 +449,15 @@ BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpression
 {
 }
 
+void BoundFunctionCall::Write(Cm::Sym::BcuWriter& writer)
+{
+    arguments.Write(writer);
+    writer.Write(fun);
+    writer.Write(classObjectResultVar);
+    writer.Write(temporary.get());
+    writer.Write(traceCallInfo.get());
+}
+
 void BoundFunctionCall::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -318,6 +473,13 @@ BoundDelegateCall::BoundDelegateCall(Cm::Sym::DelegateTypeSymbol* delegateType_,
 {
 }
 
+void BoundDelegateCall::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(delegateType);
+    writer.Write(subject.get());
+    arguments.Write(writer);
+}
+
 void BoundDelegateCall::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -326,6 +488,13 @@ void BoundDelegateCall::Accept(Visitor& visitor)
 BoundClassDelegateCall::BoundClassDelegateCall(Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) :
     BoundExpression(syntaxNode_), classDelegateType(classDelegateType_), subject(subject_), arguments(std::move(arguments_))
 {
+}
+
+void BoundClassDelegateCall::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(classDelegateType);
+    writer.Write(subject.get());
+    arguments.Write(writer);
 }
 
 void BoundClassDelegateCall::Accept(Visitor& visitor)
@@ -337,8 +506,20 @@ BoundBooleanBinaryExpression::BoundBooleanBinaryExpression(Cm::Ast::Node* syntax
 {
 }
 
+void BoundBooleanBinaryExpression::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(left.get());
+    writer.Write(right.get());
+}
+
 BoundDisjunction::BoundDisjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(syntaxNode_, left_, right_), resultVar(nullptr)
 {
+}
+
+void BoundDisjunction::Write(Cm::Sym::BcuWriter& writer)
+{
+    BoundBooleanBinaryExpression::Write(writer);
+    writer.Write(resultVar);
 }
 
 void BoundDisjunction::Accept(Visitor& visitor)
@@ -348,6 +529,12 @@ void BoundDisjunction::Accept(Visitor& visitor)
 
 BoundConjunction::BoundConjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(syntaxNode_, left_, right_), resultVar(nullptr)
 {
+}
+
+void BoundConjunction::Write(Cm::Sym::BcuWriter& writer)
+{
+    BoundBooleanBinaryExpression::Write(writer);
+    writer.Write(resultVar);
 }
 
 void BoundConjunction::Accept(Visitor& visitor)

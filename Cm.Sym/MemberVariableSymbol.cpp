@@ -16,7 +16,7 @@
 
 namespace Cm { namespace Sym {
 
-MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string& name_) : Symbol(span_, name_), type(nullptr), layoutIndex(-1)
+MemberVariableSymbol::MemberVariableSymbol(const Span& span_, const std::string& name_) : VariableSymbol(span_, name_), layoutIndex(-1)
 {
 }
 
@@ -27,30 +27,9 @@ bool MemberVariableSymbol::IsExportSymbol() const
     return true;
 }
 
-void MemberVariableSymbol::Write(Writer& writer)
-{
-    Symbol::Write(writer);
-    writer.Write(type->Id());
-}
-
-void MemberVariableSymbol::Read(Reader& reader)
-{
-    Symbol::Read(reader);
-    reader.FetchTypeFor(this, 0);
-}
-
-TypeSymbol* MemberVariableSymbol::GetType() const
-{
-    return type;
-}
-
-void MemberVariableSymbol::SetType(TypeSymbol* type_, int index)
-{
-    type = type_;
-}
-
 void MemberVariableSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
 {
+    TypeSymbol* type = GetType();
 	if (type->IsDerivedTypeSymbol())
 	{
         if (collected.find(type) == collected.end())
@@ -63,6 +42,7 @@ void MemberVariableSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol
 
 void MemberVariableSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
 {
+    TypeSymbol* type = GetType();
 	if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())
 	{
 		if (collected.find(type) == collected.end())
@@ -79,6 +59,7 @@ void MemberVariableSymbol::Dump(CodeFormatter& formatter)
 
 void MemberVariableSymbol::ReplaceReplicaTypes()
 {
+    TypeSymbol* type = GetType();
     if (type->IsReplica() && type->IsTemplateTypeSymbol())
     {
         TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(type);

@@ -60,6 +60,7 @@ public:
     void EndDeclarationcope();
     void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
     void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
+    void AddReturnTypeSymbol(Cm::Ast::Node* returnTypeExpr);
     ConceptSymbol* BeginConceptScope(Cm::Ast::ConceptNode* conceptNode);
     void EndConceptScope();
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }
@@ -91,6 +92,7 @@ public:
     void AddSymbol(Symbol* symbol);
     void SetSidAndAddSymbol(Symbol* symbol);
     Symbol* GetSymbol(uint32_t sid) const;
+    ClassTypeSymbol* GetClass(uint32_t cid) const;
 private:
     uint32_t nextSid;
     NamespaceSymbol globalNs;
@@ -113,6 +115,7 @@ private:
     Cm::Sym::FunctionSymbol* userMainFunction;
     std::vector<TemplateTypeSymbol*> importedTemplateTypes;
     std::unordered_map<uint32_t, Symbol*> symbolMap;
+    std::unordered_map<uint32_t, ClassTypeSymbol*> classMap;
 };
 
 } } // namespace Cm::Sym

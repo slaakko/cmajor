@@ -9,14 +9,14 @@
 
 #ifndef CM_SYM_PARAMETER_SYMBOL_INCLUDED
 #define CM_SYM_PARAMETER_SYMBOL_INCLUDED
-#include <Cm.Sym/Symbol.hpp>
+#include <Cm.Sym/VariableSymbol.hpp>
 #include <Cm.Ast/Parameter.hpp>
 
 namespace Cm { namespace Sym {
 
 class TypeSymbol;
 
-class ParameterSymbol : public Symbol
+class ParameterSymbol : public VariableSymbol
 {
 public:
     ParameterSymbol(const Span& span_, const std::string& name_);
@@ -27,15 +27,11 @@ public:
     bool IsExportSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
-    TypeSymbol* GetType() const;
-    void SetType(TypeSymbol* type_) { SetType(type_, 0); }
-    void SetType(TypeSymbol* type_, int index) override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
     Cm::Ast::ParameterNode* ParameterNode() const { return ownedParameterNode.get(); }
     void ReplaceReplicaTypes() override;
 private:
-    TypeSymbol* type;
     std::unique_ptr<Cm::Ast::ParameterNode> ownedParameterNode;
 };
 

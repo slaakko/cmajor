@@ -16,6 +16,16 @@ BoundClass::BoundClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol_, Cm::Ast::Clas
 {
 }
 
+void BoundClass::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(classTypeSymbol);
+    writer.GetBinaryWriter().Write(int(members.size()));
+    for (const std::unique_ptr<BoundNode>& member : members)
+    {
+        writer.Write(member.get());
+    }
+}
+
 void BoundClass::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);

@@ -16,6 +16,17 @@ StringRepository::~StringRepository()
 {
 }
 
+void StringRepository::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(int(stringIntMap.size()));
+    StringIntMapIt e = stringIntMap.end();
+    for (StringIntMapIt i = stringIntMap.begin(); i != e; ++i)
+    {
+        writer.GetBinaryWriter().Write(i->first);
+        writer.GetBinaryWriter().Write(i->second);
+    }
+}
+
 int StringRepository::Install(const std::string& str)
 {
     StringIntMapIt i = stringIntMap.find(str);

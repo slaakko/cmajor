@@ -11,6 +11,7 @@
 #define CM_SYM_FUNCTION_SYMBOL_INCLUDED
 #include <Cm.Sym/ContainerSymbol.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
+#include <Cm.Sym/ReturnValueSymbol.hpp>
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
 #include <Cm.Ast/Concept.hpp>
@@ -35,12 +36,12 @@ inline bool operator==(const FunctionLookup& left, const FunctionLookup& right)
     return left.Lookup() == right.Lookup() && left.Scope() == right.Scope();
 }
 
-enum class ConversionType
+enum class ConversionType : uint8_t
 {
     explicit_, implicit
 };
 
-enum class ConversionRank
+enum class ConversionRank : uint8_t
 {
     exactMatch, promotion, conversion
 };
@@ -135,6 +136,7 @@ public:
     std::string TypeString() const override { return "function"; };
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
+    virtual bool IsBasicTypeCopyMoveOrAssignmentOp() const { return false; }
     virtual bool IsBasicTypeCopyCtor() const { return false; }
     virtual bool IsDelegateFromFunCtor() const { return false; }
     virtual bool IsClassDelegateFromFunCtor() const { return false; }
@@ -221,6 +223,8 @@ public:
     int Arity() const { return int(parameters.size()); }
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void SetParameter(ParameterSymbol* parameter, int index) { parameters[index] = parameter; }
+    ParameterSymbol* ThisParameter() const;
+    ReturnValueSymbol* ReturnValue() const;
     void ComputeName();
     virtual TypeSymbol* GetTargetType() const;
     virtual TypeSymbol* GetSourceType() const;
@@ -250,11 +254,13 @@ public:
     std::string Syntax() const override;
     std::string ParsingName() const override;
     void ReplaceReplicaTypes() override;
+    void DoSerialize() override;
 private:
     FunctionSymbolFlags flags;
     std::string groupName;
     int16_t vtblIndex;
     TypeSymbol* returnType;
+    ReturnValueSymbol* returnValueSymbol;
     std::vector<ParameterSymbol*> parameters;
     std::vector<TypeParameterSymbol*> typeParameters;
     std::vector<Cm::Sym::TypeSymbol*> typeArguments;

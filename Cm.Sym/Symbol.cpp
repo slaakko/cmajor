@@ -23,7 +23,8 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
 {
     "boolSymbol", "charSymbol", "voidSymbol", "sbyteSymbol", "byteSymbol", "shortSymbol", "ushortSymbol", "intSymbol", "uintSymbol", "longSymbol", "ulongSymbol", "floatSymbol", "doubleSymbol", "nullptrSymbol",
     "classSymbol", "constantSymbol", "declarationBlock", "delegateSymbol", "classDelegateSymbol", "enumTypeSymbol", "enumConstantSymbol", "functionSymbol", "functionGroupSymbol", "localVariableSymbol", "memberVariableSymbol",
-    "namespaceSymbol", "parameterSymbol", "typeParameterSymbol", "templateTypeSymbol", "derivedTypeSymbol", "typedefSymbol", "boundTypeParameterSymbol"
+    "namespaceSymbol", "parameterSymbol", "typeParameterSymbol", "templateTypeSymbol", "derivedTypeSymbol", "typedefSymbol", "boundTypeParameterSymbol", "conceptSymbol", "conceptGroupSymbol", 
+    "instantiatedConceptSymbol", "functionGroupTypeSymbol", "returnValueSymbol"
 };
 
 std::string SymbolTypeStr(SymbolType st)
@@ -81,10 +82,6 @@ Symbol::Symbol(const Span& span_, const std::string& name_) : sid(noSid), span(s
     SetSource(SymbolSource::project);
 }
 
-Symbol::~Symbol()
-{
-}
-
 void Symbol::Write(Writer& writer)
 {
     writer.GetBinaryWriter().Write(sid);
@@ -137,7 +134,7 @@ void Symbol::SetType(TypeSymbol* typeSymbol, int index)
 
 bool Symbol::IsExportSymbol() const
 { 
-    return Source() == SymbolSource::project && Access() == SymbolAccess::public_;
+    return Source() == SymbolSource::project && (Access() == SymbolAccess::public_ || Serialize());
 }
 
 NamespaceSymbol* Symbol::Ns() const
@@ -314,6 +311,28 @@ std::string Symbol::FullDocId() const
 void Symbol::Collect(SymbolCollector& collector)
 {
     collector.Add(this);
+}
+
+void Symbol::DoSerialize() 
+{ 
+    SetFlag(SymbolFlags::serialize); 
+    if (parent)
+    {
+        if (!parent->Serialize())
+        {
+            parent->DoSerialize();
+        }
+    }
+    TypeSymbol* type = GetType();
+    if (type)
+    {
+        type->DoSerialize();
+    }
+}
+
+TypeSymbol* Symbol::GetType() const
+{
+    return nullptr;
 }
 
 std::string Symbol::Syntax() const

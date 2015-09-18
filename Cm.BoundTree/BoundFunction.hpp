@@ -33,6 +33,8 @@ class BoundFunction : public BoundNode
 public:
     BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_);
     ~BoundFunction();
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuFunction; }
+    void Write(Cm::Sym::BcuWriter& writer) override;
     Cm::Sym::FunctionSymbol* GetFunctionSymbol() const { return functionSymbol; }
     void SetBody(BoundCompoundStatement* body_);
     BoundCompoundStatement* Body() const { return body.get(); }

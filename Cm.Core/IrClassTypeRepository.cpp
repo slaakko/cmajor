@@ -21,6 +21,15 @@ IrClassTypeRepository::~IrClassTypeRepository()
 {
 }
 
+void IrClassTypeRepository::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(int(classTypes.size()));
+    for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
+    {
+        writer.Write(classType);
+    }
+}
+
 bool IrClassTypeRepository::Added(Cm::Sym::ClassTypeSymbol* classType) const
 {
     return classTypes.find(classType) != classTypes.cend();
@@ -31,7 +40,7 @@ void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymb
     classTypes.insert(classTypeSymbol);
 }
 
-void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
+void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
     IrFunctionRepository& irFunctionRepository)
 {
     bool exitDeclarationsGenerated = false;
@@ -40,7 +49,7 @@ void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm
         WriteIrLayout(classType, codeFormatter);
         if (classType->IsVirtual())
         {
-            WriteVtbl(classType, codeFormatter, syntaxUnit, externalFunctions, irFunctionRepository);
+            WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
         }
         for (Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol : classType->StaticMemberVariables())
         {
@@ -109,7 +118,7 @@ void LlvmIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classTyp
 	codeFormatter.WriteLine(typeDeclaration);
 }
 
-void LlvmIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, 
+void LlvmIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, 
     std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
 {
     if (!classType->IsVirtual()) return;
@@ -220,7 +229,7 @@ std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(std::unordered_map<Cm::S
     return classOrder;
 }
 
-void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
+void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
     IrFunctionRepository& irFunctionRepository)
 {
     std::unordered_map<Cm::Sym::ClassTypeSymbol*, std::vector<Cm::Sym::ClassTypeSymbol*>> dependencyMap;
@@ -258,7 +267,7 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, Cm::A
     }
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
     {
-        WriteVtbl(classType, codeFormatter, syntaxUnit, externalFunctions, irFunctionRepository);
+        WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
     }
     bool exitDeclarationsGenerated = false;
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
@@ -334,7 +343,7 @@ void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, 
     codeFormatter.WriteLine("typedef " + irTypeDeclaration->Name() + " " + typeName->Name() + ";");
 }
 
-void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, Cm::Ast::CompileUnitNode* syntaxUnit,
+void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
     std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
 {
     if (!classType->IsVirtual()) return;

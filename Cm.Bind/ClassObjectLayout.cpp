@@ -311,6 +311,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     }
     PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), nullptr, memberCtor->Parameters(), arguments, true, BoundCompileUnit().IrClassTypeRepository(), memberCtor->IsBasicTypeOp());
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
+    initMemberVariableStatement->SetMemberVariableSymbol(memberVariableSymbol);
     return initMemberVariableStatement;
 }
 
@@ -621,6 +622,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializer
         }
     }
     Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
+    initMemberVariableStatement->SetMemberVariableSymbol(memberVariableSymbol);
     return initMemberVariableStatement;
 }
 

@@ -967,6 +967,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
             }
         }
         Cm::BoundTree::BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm::BoundTree::BoundInitMemberVariableStatement(memberCtor, std::move(arguments));
+        initMemberVariableStatement->SetMemberVariableSymbol(memberVariableSymbol);
         staticConstructor->Body()->AddStatement(initMemberVariableStatement);
     }
 

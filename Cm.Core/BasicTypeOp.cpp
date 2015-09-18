@@ -22,6 +22,11 @@ BasicTypeOp::BasicTypeOp(Cm::Sym::TypeSymbol* type_) : Cm::Sym::FunctionSymbol(S
     SetNothrow();
 }
 
+void BasicTypeOp::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(type);
+}
+
 DefaultCtor::DefaultCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
     SetGroupName("@constructor");
@@ -558,6 +563,16 @@ ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     thatParam->SetType(sourceType);
     AddSymbol(thatParam);
     ComputeName();
+}
+
+void ConvertingCtor::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(targetType);
+    writer.Write(sourceType);
+    writer.GetBinaryWriter().Write(uint8_t(conversionType));
+    writer.GetBinaryWriter().Write(uint8_t(conversionInst));
+    writer.GetBinaryWriter().Write(uint8_t(conversionRank));
+    writer.GetBinaryWriter().Write(conversionDistance);
 }
 
 void ConvertingCtor::Generate(Emitter& emitter, GenResult& result)
