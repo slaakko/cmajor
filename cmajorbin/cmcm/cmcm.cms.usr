@@ -18,6 +18,7 @@
             <buildOptions>
                 <quiet>false</quiet>
                 <emitOptIrCodeFile>true</emitOptIrCodeFile>
+                <wpo>true</wpo>
             </buildOptions>
         </configuration>
         <configuration>

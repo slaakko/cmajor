@@ -50,6 +50,7 @@ inline BoundNodeFlags operator~(BoundNodeFlags flag)
 class BoundNode : public Cm::Sym::BcuItem
 {
 public:
+    BoundNode();
     BoundNode(Cm::Ast::Node* syntaxNode_);
     Cm::Ast::Node* SyntaxNode() const { return syntaxNode; }
     virtual bool IsBoundExpressionNode() const { return false;  }
@@ -57,6 +58,7 @@ public:
     void SetFlag(BoundNodeFlags flag) { flags = flags | flag; }
     bool GetFlag(BoundNodeFlags flag) const { return (flags & flag) != BoundNodeFlags::none; }
     void ResetFlag(BoundNodeFlags flag) { flags = flags & ~flag; }
+    bool IsBoundNode() const override { return true; }
 private:
     BoundNodeFlags flags;
     Cm::Ast::Node* syntaxNode;

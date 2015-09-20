@@ -30,6 +30,16 @@ void IrClassTypeRepository::Write(Cm::Sym::BcuWriter& writer)
     }
 }
 
+void IrClassTypeRepository::Read(Cm::Sym::BcuReader& reader)
+{
+    int n = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::ClassTypeSymbol* classType = reader.ReadClassTypeSymbol();
+        AddClassType(classType);
+    }
+}
+
 bool IrClassTypeRepository::Added(Cm::Sym::ClassTypeSymbol* classType) const
 {
     return classTypes.find(classType) != classTypes.cend();

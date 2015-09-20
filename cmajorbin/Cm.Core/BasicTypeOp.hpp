@@ -237,10 +237,12 @@ enum class ConversionInst : uint8_t
 class ConvertingCtor : public BasicTypeOp
 {
 public:
+    ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_);
     ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, Cm::Sym::ConversionType conversionType_, ConversionInst conversionInst_, 
         Cm::Sym::ConversionRank conversionRank_, int conversionDistance_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuConvertingCtor; }
     void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
     Cm::Sym::ConversionType GetConversionType() const override { return conversionType; }
     bool IsConvertingConstructor() const override { return true; }
     void Generate(Emitter& emitter, GenResult& result) override;
