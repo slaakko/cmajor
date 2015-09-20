@@ -43,11 +43,12 @@ public:
 void SetCompileUnitMap(CompileUnitMap* compileUnitMap);
 CompileUnitMap* GetCompileUnitMap();
 
-class BoundCompileUnit : public Cm::Sym::BcuItem
+class BoundCompileUnit : public Cm::Sym::BoundCompileUnit
 {
 public:
     BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_);
-    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Write(Cm::Sym::BcuWriter& writer);
+    void Read(Cm::Sym::BcuReader& reader);
     Cm::Ast::CompileUnitNode* SyntaxUnit() const { return syntaxUnit; }
     void AddFileScope(Cm::Sym::FileScope* fileScope_);
     void RemoveLastFileScope();
@@ -82,7 +83,7 @@ public:
     Cm::Core::ConceptRepository& ConceptRepository() { return conceptRepository; }
     void AddBoundNode(BoundNode* boundNode);
     void Accept(Visitor& visitor);
-    void Own(Cm::Sym::FunctionSymbol* functionSymbol);
+    void Own(Cm::Sym::FunctionSymbol* functionSymbol) override;
     bool Instantiated(Cm::Sym::FunctionSymbol* functionSymbol) const;
     void AddToInstantiated(Cm::Sym::FunctionSymbol* functionSymbol);
     void SetHasGotos() { hasGotos = true; }

@@ -17,9 +17,11 @@ namespace Cm { namespace BoundTree {
 class BoundClass : public BoundNode
 {
 public:
+    BoundClass();
     BoundClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol_, Cm::Ast::ClassNode* classNode_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuClass; }
     void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
     void Accept(Visitor& visitor) override;
     void AddBoundNode(BoundNode* member);
     Cm::Sym::ClassTypeSymbol* Symbol() const { return classTypeSymbol; }

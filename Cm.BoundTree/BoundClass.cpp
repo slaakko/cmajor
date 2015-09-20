@@ -12,6 +12,10 @@
 
 namespace Cm { namespace BoundTree {
 
+BoundClass::BoundClass() : classTypeSymbol(nullptr)
+{
+}
+
 BoundClass::BoundClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol_, Cm::Ast::ClassNode* classNode_) : BoundNode(classNode_), classTypeSymbol(classTypeSymbol_)
 {
 }
@@ -23,6 +27,25 @@ void BoundClass::Write(Cm::Sym::BcuWriter& writer)
     for (const std::unique_ptr<BoundNode>& member : members)
     {
         writer.Write(member.get());
+    }
+}
+
+void BoundClass::Read(Cm::Sym::BcuReader& reader)
+{
+    classTypeSymbol = reader.ReadClassTypeSymbol();
+    int n = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::BcuItem* item = reader.ReadItem();
+        if (item->IsBoundNode())
+        {
+            BoundNode* node = static_cast<BoundNode*>(item);
+            members.push_back(std::unique_ptr<BoundNode>(node));
+        }
+        else
+        {
+            throw std::runtime_error("bound node expected");
+        }
     }
 }
 

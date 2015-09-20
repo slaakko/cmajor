@@ -22,6 +22,7 @@ class StringRepository : Cm::Sym::BcuItem
 public:
     virtual ~StringRepository();
     void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
     int Install(const std::string& str);
     Ir::Intf::Object* GetStringConstant(int id) const;
     Ir::Intf::Object* GetStringObject(int id) const;

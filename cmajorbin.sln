@@ -369,6 +369,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SourceRead", "SourceRead\So
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cm.Profiler", "Cm.Profiler\Cm.Profiler.vcxproj", "{43D7F92D-3CE4-4C63-A6F0-C222A86B64AE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD} = {F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cm.Opt", "Cm.Opt\Cm.Opt.vcxproj", "{162B6786-147B-4BB6-A393-3A4A61ACC71F}"
 EndProject

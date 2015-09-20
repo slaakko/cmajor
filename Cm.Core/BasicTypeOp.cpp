@@ -16,6 +16,49 @@ namespace Cm { namespace Core {
 
 using Cm::Parsing::Span;
 
+class BasicTypeOpFactory : public Cm::Sym::BcuBasicTypeOpSymbolFactory
+{
+public:
+    Cm::Sym::Symbol* CreateBasicTypeOpSymbol(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type) const override;
+    Cm::Sym::Symbol* CreateConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType, Cm::Sym::TypeSymbol* sourceType) const override;
+};
+
+Cm::Sym::Symbol* BasicTypeOpFactory::CreateBasicTypeOpSymbol(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type) const
+{
+    switch (itemType)
+    {
+        case Cm::Sym::BcuItemType::bcuDefaultCtor: return new DefaultCtor(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuCopyCtor: return new CopyCtor(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuCopyAssignment: return new CopyAssignment(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuMoveCtor: return new MoveCtor(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuMoveAssignment: return new MoveAssignment(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpEqual: return new OpEqual(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpLess: return new OpLess(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpAdd: return new OpAdd(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpSub: return new OpSub(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpMul: return new OpMul(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpDiv: return new OpDiv(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpRem: return new OpRem(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpShl: return new OpShl(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpShr: return new OpShr(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpBitAnd: return new OpBitAnd(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpBitOr: return new OpBitOr(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpBitXor: return new OpBitXor(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpNot: return new OpNot(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpUnaryPlus: return new OpUnaryPlus(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpUnaryMinus: return new OpUnaryMinus(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpComplement: return new OpComplement(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpIncrement: return new OpIncrement(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpDecrement: return new OpDecrement(typeRepository, type);
+    }
+    return nullptr;
+}
+
+Cm::Sym::Symbol* BasicTypeOpFactory::CreateConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType, Cm::Sym::TypeSymbol* sourceType) const
+{
+    return new ConvertingCtor(typeRepository, targetType, sourceType);
+}
+
 BasicTypeOp::BasicTypeOp(Cm::Sym::TypeSymbol* type_) : Cm::Sym::FunctionSymbol(Span(), "*basic_type_op*"), type(type_)
 { 
     SetAccess(Cm::Sym::SymbolAccess::public_);
@@ -551,6 +594,18 @@ void OpDecrement::Generate(Emitter& emitter, GenResult& result)
     Cm::IrIntf::Assign(emitter, GetIrType(), result.MainObject(), result.Arg1());
 }
 
+ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_) : BasicTypeOp(targetType_)
+{
+    SetGroupName("@constructor");
+    Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
+    thisParam->SetType(typeRepository.MakePointerType(targetType, Span()));
+    AddSymbol(thisParam);
+    Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
+    thatParam->SetType(sourceType);
+    AddSymbol(thatParam);
+    ComputeName();
+}
+
 ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, Cm::Sym::ConversionType conversionType_, ConversionInst conversionInst_,
     Cm::Sym::ConversionRank conversionRank_, int conversionDistance_) : BasicTypeOp(targetType_), targetType(targetType_), sourceType(sourceType_), conversionType(conversionType_), conversionInst(conversionInst_),
     conversionRank(conversionRank_), conversionDistance(conversionDistance_)
@@ -573,6 +628,14 @@ void ConvertingCtor::Write(Cm::Sym::BcuWriter& writer)
     writer.GetBinaryWriter().Write(uint8_t(conversionInst));
     writer.GetBinaryWriter().Write(uint8_t(conversionRank));
     writer.GetBinaryWriter().Write(conversionDistance);
+}
+
+void ConvertingCtor::Read(Cm::Sym::BcuReader& reader)
+{
+    conversionType = Cm::Sym::ConversionType(reader.GetBinaryReader().ReadByte());
+    conversionInst = ConversionInst(reader.GetBinaryReader().ReadByte());
+    conversionRank = Cm::Sym::ConversionRank(reader.GetBinaryReader().ReadByte());
+    conversionDistance = reader.GetBinaryReader().ReadInt();
 }
 
 void ConvertingCtor::Generate(Emitter& emitter, GenResult& result)

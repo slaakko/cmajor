@@ -70,12 +70,56 @@ void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
     writer.GetBinaryWriter().Write(dependencyFilePath);
     writer.GetBinaryWriter().Write(changedFilePath);
     writer.GetBinaryWriter().Write(cDebugInfoFilePath);
+    writer.GetBinaryWriter().Write(bcuPath);
     stringRepository->Write(writer);
     irClassTypeRepository->Write(writer);
     writer.GetBinaryWriter().Write(int(boundNodes.size()));
     for (const std::unique_ptr<BoundNode>& boundNode : boundNodes)
     {
         writer.Write(boundNode.get());
+    }
+}
+
+void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
+{
+    irFilePath = reader.GetBinaryReader().ReadString();
+    objectFilePath = reader.GetBinaryReader().ReadString();
+    optIrFilePath = reader.GetBinaryReader().ReadString();
+    dependencyFilePath = reader.GetBinaryReader().ReadString();
+    changedFilePath = reader.GetBinaryReader().ReadString();
+    cDebugInfoFilePath = reader.GetBinaryReader().ReadString();
+    bcuPath = reader.GetBinaryReader().ReadString();
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
+    {
+        stringRepository.reset(new Cm::Core::LlvmStringRepository());
+    }
+    else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
+    {
+        stringRepository.reset(new Cm::Core::CStringRepository());
+    }
+    stringRepository->Read(reader);
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
+    {
+        irClassTypeRepository.reset(new Cm::Core::LlvmIrClassTypeRepository());
+    }
+    else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
+    {
+        irClassTypeRepository.reset(new Cm::Core::CIrClassTypeRepository());
+    }
+    irClassTypeRepository->Read(reader);
+    int n = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::BcuItem* item = reader.ReadItem();
+        if (item->IsBoundNode())
+        {
+            BoundNode* node = static_cast<BoundNode*>(item);
+            boundNodes.push_back(std::unique_ptr<BoundNode>(node));
+        }
+        else
+        {
+            throw std::runtime_error("bound node expected");
+        }
     }
 }
 

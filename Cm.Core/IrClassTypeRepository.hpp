@@ -20,6 +20,7 @@ class IrClassTypeRepository : public Cm::Sym::BcuItem
 public:
     virtual ~IrClassTypeRepository();
     void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
     bool Added(Cm::Sym::ClassTypeSymbol* classType) const;
     void AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol);
     virtual void Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,

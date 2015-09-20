@@ -30,6 +30,31 @@ BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNod
     }
 }
 
+void BoundStatement::Write(Cm::Sym::BcuWriter& writer)
+{
+    bool hasLabel = !label.empty();
+    writer.GetBinaryWriter().Write(hasLabel);
+    if (hasLabel)
+    {
+        if (CompoundParent()->GetCompoundId() == noCompoundId)
+        {
+            CompoundParent()->SetCompoundId(writer.GetCompoundId());
+        }
+        std::string labeledStatementId = std::to_string(CompoundParent()->GetCompoundId()) + "." + label;
+        writer.GetBinaryWriter().Write(labeledStatementId);
+    }
+}
+
+void BoundStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    bool hasLabel = reader.GetBinaryReader().ReadBool();
+    if (hasLabel)
+    {
+        std::string labeledStatementId = reader.GetBinaryReader().ReadString();
+        // todo
+    }
+}
+
 BoundCompoundStatement* BoundStatement::CompoundParent() const
 {
     BoundStatement* p = parent;
@@ -83,6 +108,19 @@ void BoundStatementList::Write(Cm::Sym::BcuWriter& writer)
     }
 }
 
+void BoundStatementList::Read(Cm::Sym::BcuReader& reader)
+{
+    int n = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::BcuItem* item = reader.ReadItem();
+        if (item->IsBoundStatement())
+        {
+            statements.push_back(std::unique_ptr<BoundStatement>(static_cast<BoundStatement*>(item)));
+        }
+    }
+}
+
 void BoundStatementList::AddStatement(BoundStatement* statement)
 {
     statements.push_back(std::unique_ptr<BoundStatement>(statement));
@@ -105,13 +143,27 @@ BoundParentStatement::BoundParentStatement(Cm::Ast::Node* syntaxNode_) : BoundSt
 {
 }
 
-BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
+BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_), compoundId(noCompoundId)
 {
 }
 
 void BoundCompoundStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundParentStatement::Write(writer);
     statementList.Write(writer);
+    if (compoundId == noCompoundId)
+    {
+        compoundId = writer.GetCompoundId();
+    }
+    writer.GetBinaryWriter().Write(compoundId);
+}
+
+void BoundCompoundStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundParentStatement::Read(reader);
+    statementList.Read(reader);
+    compoundId = reader.GetBinaryReader().ReadUInt();
+    // todo
 }
 
 void BoundCompoundStatement::AddStatement(BoundStatement* statement)
@@ -139,8 +191,32 @@ BoundReceiveStatement::BoundReceiveStatement(Cm::Sym::ParameterSymbol* parameter
 
 void BoundReceiveStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.Write(parameterSymbol);
     writer.Write(ctor);
+}
+
+void BoundReceiveStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    Cm::Sym::Symbol* p = reader.ReadSymbol();
+    if (p->IsParameterSymbol())
+    {
+        parameterSymbol = static_cast<Cm::Sym::ParameterSymbol*>(p);
+    }
+    else
+    {
+        throw std::runtime_error("parameter symbol expected");
+    }
+    Cm::Sym::Symbol* c = reader.ReadSymbol();
+    if (c->IsFunctionSymbol())
+    {
+        ctor = static_cast<Cm::Sym::FunctionSymbol*>(c);
+    }
+    else
+    {
+        throw std::runtime_error("function symbol expected");
+    }
 }
 
 void BoundReceiveStatement::Accept(Visitor& visitor)
@@ -154,7 +230,22 @@ BoundInitClassObjectStatement::BoundInitClassObjectStatement(BoundFunctionCall* 
 
 void BoundInitClassObjectStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.Write(functionCall.get());
+}
+
+void BoundInitClassObjectStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    Cm::Sym::BcuItem* item = reader.ReadItem();
+    if (item->IsBoundFunctionCall())
+    {
+        functionCall.reset(static_cast<BoundFunctionCall*>(item));
+    }
+    else
+    {
+        throw std::runtime_error("bound function call expected");
+    }
 }
 
 void BoundInitClassObjectStatement::Accept(Visitor& visitor)
@@ -168,7 +259,14 @@ BoundInitVPtrStatement::BoundInitVPtrStatement(Cm::Sym::ClassTypeSymbol* classTy
 
 void BoundInitVPtrStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.Write(classType);
+}
+
+void BoundInitVPtrStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    classType = reader.ReadClassTypeSymbol();
 }
 
 void BoundInitVPtrStatement::Accept(Visitor& visitor)
@@ -183,10 +281,36 @@ BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::Func
 
 void BoundInitMemberVariableStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.Write(memberVarSymbol);
     writer.Write(ctor);
     arguments.Write(writer);
     writer.GetBinaryWriter().Write(registerDestructor);
+}
+
+void BoundInitMemberVariableStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    Cm::Sym::Symbol* s = reader.ReadSymbol();
+    if (s->IsMemberVariableSymbol())
+    {
+        memberVarSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(s);
+    }
+    else
+    {
+        throw std::runtime_error("member variable symbol expected");
+    }
+    Cm::Sym::Symbol* f = reader.ReadSymbol();
+    if (f->IsFunctionSymbol())
+    {
+        ctor = static_cast<Cm::Sym::FunctionSymbol*>(f);
+    }
+    else
+    {
+        throw std::runtime_error("function symbol expected");
+    }
+    arguments.Read(reader);
+    registerDestructor = reader.GetBinaryReader().ReadBool();
 }
 
 void BoundInitMemberVariableStatement::Accept(Visitor& visitor) 
@@ -205,9 +329,37 @@ BoundFunctionCallStatement::BoundFunctionCallStatement(Cm::Sym::FunctionSymbol* 
 
 void BoundFunctionCallStatement::Write(Cm::Sym::BcuWriter& writer) 
 {
+    BoundStatement::Write(writer);
     writer.Write(function);
     arguments.Write(writer);
     writer.Write(traceCallInfo.get());
+}
+
+void BoundFunctionCallStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    Cm::Sym::Symbol* f = reader.ReadSymbol();
+    if (f->IsFunctionSymbol())
+    {
+        function = static_cast<Cm::Sym::FunctionSymbol*>(f);
+    }
+    else
+    {
+        throw std::runtime_error("function symbol expected");
+    }
+    arguments.Read(reader);
+    Cm::Sym::BcuItem* traceCallItem = reader.ReadItem();
+    if (traceCallItem)
+    {
+        if (traceCallItem->IsTraceCall())
+        {
+            traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
+        }
+        else
+        {
+            throw std::runtime_error("trace call info expected");
+        }
+    }
 }
 
 void BoundFunctionCallStatement::Accept(Visitor& visitor)
@@ -226,12 +378,75 @@ BoundReturnStatement::BoundReturnStatement(Cm::Ast::Node* syntaxNode_) : BoundSt
 
 void BoundReturnStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.Write(expression.get());
     writer.Write(ctor);
     writer.Write(returnType);
     writer.Write(traceCallInfo.get());
     writer.Write(boundTemporary.get());
     writer.Write(boundReturnValue.get());
+}
+
+void BoundReturnStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    Cm::Sym::BcuItem* exprItem = reader.ReadItem();
+    if (exprItem->IsBoundExpression())
+    {
+        expression.reset(static_cast<BoundExpression*>(exprItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    Cm::Sym::Symbol* c = reader.ReadSymbol();
+    if (c->IsFunctionSymbol())
+    {
+        ctor = static_cast<Cm::Sym::FunctionSymbol*>(c);
+    }
+    else
+    {
+        throw std::runtime_error("function symbol expected");
+    }
+    Cm::Sym::Symbol* t = reader.ReadSymbol();
+    if (t->IsTypeSymbol())
+    {
+        returnType = static_cast<Cm::Sym::TypeSymbol*>(t);
+    }
+    else
+    {
+        throw std::runtime_error("type symbol expected");
+    }
+    Cm::Sym::BcuItem* traceCallItem = reader.ReadItem();
+    if (traceCallItem)
+    {
+        if (traceCallItem->IsTraceCall())
+        {
+            traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
+        }
+        else
+        {
+            throw std::runtime_error("trace call info expected");
+        }
+    }
+    Cm::Sym::BcuItem* temp = reader.ReadItem();
+    if (temp->IsBoundLocalVariable())
+    {
+        boundTemporary.reset(static_cast<BoundLocalVariable*>(temp));
+    }
+    else
+    {
+        throw std::runtime_error("bound local variable expected");
+    }
+    Cm::Sym::BcuItem* retVal = reader.ReadItem();
+    if (retVal->IsBoundReturnValue())
+    {
+        boundReturnValue.reset(static_cast<BoundReturnValue*>(retVal));
+    }
+    else
+    {
+        throw std::runtime_error("bound return value expected");
+    }
 }
 
 void BoundReturnStatement::SetExpression(BoundExpression* expression_)
@@ -265,7 +480,14 @@ BoundBeginTryStatement::BoundBeginTryStatement(Cm::Ast::Node* syntaxNode_, int f
 
 void BoundBeginTryStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.GetBinaryWriter().Write(firstCatchId);
+}
+
+void BoundBeginTryStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    firstCatchId = reader.GetBinaryReader().ReadInt();
 }
 
 void BoundBeginTryStatement::Accept(Visitor& visitor)
@@ -288,6 +510,17 @@ BoundExitBlocksStatement::BoundExitBlocksStatement(Cm::Ast::Node* syntaxNode_, B
 
 void BoundExitBlocksStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
+    if (targetBlock->GetCompoundId() == noCompoundId)
+    {
+        targetBlock->SetCompoundId(writer.GetCompoundId());
+    }
+    writer.GetBinaryWriter().Write(targetBlock->GetCompoundId());
+}
+
+void BoundExitBlocksStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
     // todo
 }
 
@@ -302,7 +535,14 @@ BoundPushGenDebugInfoStatement::BoundPushGenDebugInfoStatement(Cm::Ast::Node* sy
 
 void BoundPushGenDebugInfoStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.GetBinaryWriter().Write(generate);
+}
+
+void BoundPushGenDebugInfoStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    generate = reader.GetBinaryReader().ReadBool();
 }
 
 void BoundPushGenDebugInfoStatement::Accept(Visitor& visitor)
@@ -352,10 +592,47 @@ BoundConstructionStatement::BoundConstructionStatement(Cm::Ast::Node* syntaxNode
 
 void BoundConstructionStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.Write(localVariable);
     arguments.Write(writer);
     writer.Write(ctor);
     writer.Write(traceCallInfo.get());
+}
+
+void BoundConstructionStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    Cm::Sym::Symbol* l = reader.ReadSymbol();
+    if (l->IsLocalVariableSymbol())
+    {
+        localVariable = static_cast<Cm::Sym::LocalVariableSymbol*>(l);
+    }
+    else
+    {
+        throw std::runtime_error("local variable symbol expected");
+    }
+    arguments.Read(reader);
+    Cm::Sym::Symbol* f = reader.ReadSymbol();
+    if (f->IsFunctionSymbol())
+    {
+        ctor = static_cast<Cm::Sym::FunctionSymbol*>(f);
+    }
+    else
+    {
+        throw std::runtime_error("function symbol expected");
+    }
+    Cm::Sym::BcuItem* traceCallItem = reader.ReadItem();
+    if (traceCallItem)
+    {
+        if (traceCallItem->IsTraceCall())
+        {
+            traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
+        }
+        else
+        {
+            throw std::runtime_error("trace call info expected");
+        }
+    }
 }
 
 void BoundConstructionStatement::SetArguments(BoundExpressionList&& arguments_) 
@@ -402,12 +679,6 @@ BoundDestructionStatement::BoundDestructionStatement(Cm::Ast::Node* syntaxNode_,
 {
 }
 
-void BoundDestructionStatement::Write(Cm::Sym::BcuWriter& writer)
-{
-    // todo: object
-    writer.Write(destructor);
-}
-
 void BoundDestructionStatement::Accept(Visitor& visitor) 
 {
     visitor.Visit(*this);
@@ -420,10 +691,55 @@ BoundAssignmentStatement::BoundAssignmentStatement(Cm::Ast::Node* syntaxNode_, B
 
 void BoundAssignmentStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.Write(left.get());
     writer.Write(right.get());
     writer.Write(assignment);
     writer.Write(traceCallInfo.get());
+}
+
+void BoundAssignmentStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    Cm::Sym::BcuItem* leftItem = reader.ReadItem();
+    if (leftItem->IsBoundExpression())
+    {
+        left.reset(static_cast<BoundExpression*>(leftItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    Cm::Sym::BcuItem* rightItem = reader.ReadItem();
+    if (rightItem->IsBoundExpression())
+    {
+        right.reset(static_cast<BoundExpression*>(rightItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    Cm::Sym::Symbol* a = reader.ReadSymbol();
+    if (a->IsFunctionSymbol())
+    {
+        assignment = static_cast<Cm::Sym::FunctionSymbol*>(a);
+    }
+    else
+    {
+        throw std::runtime_error("function symbol expected");
+    }
+    Cm::Sym::BcuItem* traceCallItem = reader.ReadItem();
+    if (traceCallItem)
+    {
+        if (traceCallItem->IsTraceCall())
+        {
+            traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
+        }
+        else
+        {
+            throw std::runtime_error("trace call info expected");
+        }
+    }
 }
 
 void BoundAssignmentStatement::Accept(Visitor& visitor)
@@ -442,7 +758,25 @@ BoundSimpleStatement::BoundSimpleStatement(Cm::Ast::Node* syntaxNode_) : BoundSt
 
 void BoundSimpleStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.Write(expression.get());
+}
+
+void BoundSimpleStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    Cm::Sym::BcuItem* item = reader.ReadItem();
+    if (item)
+    {
+        if (item->IsBoundExpression())
+        {
+            expression.reset(static_cast<BoundExpression*>(item));
+        }
+        else
+        {
+            throw std::runtime_error("bound expression expected");
+        }
+    }
 }
 
 void BoundSimpleStatement::SetExpression(BoundExpression* expression_)
@@ -461,9 +795,37 @@ BoundSwitchStatement::BoundSwitchStatement(Cm::Ast::Node* syntaxNode_) : BoundPa
 
 void BoundSwitchStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundParentStatement::Write(writer);
     writer.Write(condition.get());
     caseStatements.Write(writer);
     writer.Write(defaultStatement.get());
+}
+
+void BoundSwitchStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundParentStatement::Read(reader);
+    Cm::Sym::BcuItem* condItem = reader.ReadItem();
+    if (condItem->IsBoundExpression())
+    {
+        condition.reset(static_cast<BoundExpression*>(condItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    caseStatements.Read(reader);
+    Cm::Sym::BcuItem* s = reader.ReadItem();
+    if (s)
+    {
+        if (s->IsBoundStatement())
+        {
+            defaultStatement.reset(static_cast<BoundStatement*>(s));
+        }
+        else
+        {
+            throw std::runtime_error("bound statement expected");
+        }
+    }
 }
 
 void BoundSwitchStatement::SetCondition(BoundExpression* condition_)
@@ -505,12 +867,25 @@ BoundCaseStatement::BoundCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundParent
 
 void BoundCaseStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundParentStatement::Write(writer);
     statements.Write(writer);
     int n = int(values.size());
     writer.GetBinaryWriter().Write(n);
     for (const std::unique_ptr<Cm::Sym::Value>& value : values)
     {
         writer.GetSymbolWriter().Write(value.get());
+    }
+}
+
+void BoundCaseStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundParentStatement::Read(reader);
+    statements.Read(reader);
+    int n = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < n; ++i)
+    {
+        std::unique_ptr<Cm::Sym::Value> value(reader.GetSymbolReader().ReadValue());
+        values.push_back(std::move(value));
     }
 }
 
@@ -536,7 +911,14 @@ BoundDefaultStatement::BoundDefaultStatement(Cm::Ast::Node* syntaxNode_) : Bound
 
 void BoundDefaultStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundParentStatement::Write(writer);
     statements.Write(writer);
+}
+
+void BoundDefaultStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundParentStatement::Read(reader);
+    statements.Read(reader);
 }
 
 void BoundDefaultStatement::AddStatement(BoundStatement* statement_)
@@ -575,10 +957,23 @@ BoundGotoStatement::BoundGotoStatement(Cm::Ast::Node* syntaxNode_, const std::st
 
 void BoundGotoStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.GetBinaryWriter().Write(targetLabel);
-    // todo: targetStatement
-    // todo: targetCompoundParent
+    if (targetCompoundParent->GetCompoundId() == noCompoundId)
+    {
+        targetCompoundParent->SetCompoundId(writer.GetCompoundId());
+    }
+    writer.GetBinaryWriter().Write(targetCompoundParent->GetCompoundId());
     writer.GetBinaryWriter().Write(isExceptionHandlingGoto);
+}
+
+void BoundGotoStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundStatement::Read(reader);
+    targetLabel = reader.GetBinaryReader().ReadString();
+    uint32_t compoundId = reader.GetBinaryReader().ReadUInt();
+    // todo
+    isExceptionHandlingGoto = reader.GetBinaryReader().ReadBool();
 }
 
 void BoundGotoStatement::Accept(Visitor& visitor)
@@ -593,6 +988,11 @@ BoundGotoCaseStatement::BoundGotoCaseStatement(Cm::Ast::Node* syntaxNode_) : Bou
 void BoundGotoCaseStatement::Write(Cm::Sym::BcuWriter& writer)
 {
     writer.GetSymbolWriter().Write(value.get());
+}
+
+void BoundGotoCaseStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    value.reset(reader.GetSymbolReader().ReadValue());
 }
 
 void BoundGotoCaseStatement::SetValue(Cm::Sym::Value* value_)
@@ -620,9 +1020,45 @@ BoundConditionalStatement::BoundConditionalStatement(Cm::Ast::Node* syntaxNode_)
 
 void BoundConditionalStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundParentStatement::Write(writer);
     writer.Write(condition.get());
     writer.Write(thenS.get());
     writer.Write(elseS.get());
+}
+
+void BoundConditionalStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundParentStatement::Read(reader);
+    Cm::Sym::BcuItem* condItem = reader.ReadItem();
+    if (condItem->IsBoundExpression())
+    {
+        condition.reset(static_cast<BoundExpression*>(condItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    Cm::Sym::BcuItem* thenItem = reader.ReadItem();
+    if (thenItem->IsBoundStatement())
+    {
+        thenS.reset(static_cast<BoundStatement*>(thenItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound statement expected");
+    }
+    Cm::Sym::BcuItem* elseItem = reader.ReadItem();
+    if (elseItem)
+    {
+        if (elseItem->IsBoundStatement())
+        {
+            elseS.reset(static_cast<BoundStatement*>(elseItem));
+        }
+        else
+        {
+            throw std::runtime_error("bound statement expected");
+        }
+    }
 }
 
 void BoundConditionalStatement::SetCondition(BoundExpression* condition_)
@@ -664,8 +1100,32 @@ BoundWhileStatement::BoundWhileStatement(Cm::Ast::Node* syntaxNode_) : BoundPare
 
 void BoundWhileStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundParentStatement::Write(writer);
     writer.Write(condition.get());
     writer.Write(statement.get());
+}
+
+void BoundWhileStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundParentStatement::Read(reader);
+    Cm::Sym::BcuItem* condItem = reader.ReadItem();
+    if (condItem->IsBoundExpression())
+    {
+        condition.reset(static_cast<BoundExpression*>(condItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    Cm::Sym::BcuItem* statementItem = reader.ReadItem();
+    if (statementItem->IsBoundStatement())
+    {
+        statement.reset(static_cast<BoundStatement*>(statementItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound statement expected");
+    }
 }
 
 void BoundWhileStatement::SetCondition(BoundExpression* condition_)
@@ -716,8 +1176,32 @@ BoundDoStatement::BoundDoStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStat
 
 void BoundDoStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundParentStatement::Write(writer);
     writer.Write(statement.get());
     writer.Write(condition.get());
+}
+
+void BoundDoStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundParentStatement::Read(reader);
+    Cm::Sym::BcuItem* statementItem = reader.ReadItem();
+    if (statementItem->IsBoundStatement())
+    {
+        statement.reset(static_cast<BoundStatement*>(statementItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound statement expected");
+    }
+    Cm::Sym::BcuItem* condItem = reader.ReadItem();
+    if (condItem->IsBoundExpression())
+    {
+        condition.reset(static_cast<BoundExpression*>(condItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
 }
 
 void BoundDoStatement::SetCondition(BoundExpression* condition_)
@@ -768,10 +1252,52 @@ BoundForStatement::BoundForStatement(Cm::Ast::Node* syntaxNode_) : BoundParentSt
 
 void BoundForStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundParentStatement::Write(writer);
     writer.Write(initS.get());
     writer.Write(condition.get());
     writer.Write(increment.get());
     writer.Write(action.get());
+}
+
+void BoundForStatement::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundParentStatement::Read(reader);
+    Cm::Sym::BcuItem* initItem = reader.ReadItem();
+    if (initItem->IsBoundStatement())
+    {
+        initS.reset(static_cast<BoundStatement*>(initItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound statement expected");
+    }
+    Cm::Sym::BcuItem* condItem = reader.ReadItem();
+    if (condItem->IsBoundExpression())
+    {
+        condition.reset(static_cast<BoundExpression*>(condItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    Cm::Sym::BcuItem* incItem = reader.ReadItem();
+    if (incItem->IsBoundExpression())
+    {
+        increment.reset(static_cast<BoundExpression*>(incItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    Cm::Sym::BcuItem* actionItem = reader.ReadItem();
+    if (actionItem->IsBoundStatement())
+    {
+        action.reset(static_cast<BoundStatement*>(actionItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound statement expected");
+    }
 }
 
 void BoundForStatement::SetCondition(BoundExpression* condition_)

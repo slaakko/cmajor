@@ -684,7 +684,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
             {
                 AnalyzeControlFlow(*boundCompileUnit);
             }
-            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::wpo))
+            if (Cm::Core::GetGlobalSettings()->Config() == "full")
             {
                 Cm::Sym::BcuWriter bcuWriter(boundCompileUnit->BcuPath(), &symbolTable);
                 boundCompileUnit->Write(bcuWriter);
@@ -1110,7 +1110,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         ReadNextFid(functionTable);
     }
     bool changed = false;
-    bool wpo = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::wpo);
+    bool full = Cm::Core::GetGlobalSettings()->Config() == "full";
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
     {
         rebuild = true;
@@ -1186,7 +1186,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     {
         changed = true;
     }
-    if (project->GetTarget() == Cm::Ast::Target::program && !wpo)
+    if (project->GetTarget() == Cm::Ast::Target::program && !full)
     {
         bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), 
             boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, changed || rebuild);
@@ -1200,7 +1200,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
             changed = exceptionTableUnitGenerated;
         }
     }
-    if (!wpo)
+    if (!full)
     {
         bool objectFilesChanged = Archive(objectFilePaths, project->AssemblyFilePath());
         if (!changed)
@@ -1208,7 +1208,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
             changed = objectFilesChanged;
         }
     }
-    if (project->GetTarget() == Cm::Ast::Target::program && !wpo)
+    if (project->GetTarget() == Cm::Ast::Target::program && !full)
     {
         bool linked = Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
         if (!changed)

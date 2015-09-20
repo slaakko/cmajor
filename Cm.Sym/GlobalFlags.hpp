@@ -17,7 +17,6 @@ enum class GlobalFlags : uint16_t
 {
     none = 0,
     optimize = 1 << 0,
-    wpo = 1 << 1,
     quiet = 1 << 2,
     emitOpt = 1 << 3,
     ide = 1 << 4,

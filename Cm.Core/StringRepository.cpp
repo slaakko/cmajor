@@ -27,6 +27,31 @@ void StringRepository::Write(Cm::Sym::BcuWriter& writer)
     }
 }
 
+void StringRepository::Read(Cm::Sym::BcuReader& reader)
+{
+    int n = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < n; ++i)
+    {
+        std::string str = reader.GetBinaryReader().ReadString();
+        int id = reader.GetBinaryReader().ReadInt();
+        while (stringConstants.size() <= id)
+        {
+            stringConstants.push_back(std::unique_ptr<Ir::Intf::Object>());
+        }
+        Ir::Intf::Object* stringConstant = Cm::IrIntf::CreateStringConstant(str);
+        stringConstant->SetOwned();
+        stringConstants[id] = std::unique_ptr<Ir::Intf::Object>(stringConstant);
+        while (stringObjects.size() <= id)
+        {
+            stringObjects.push_back(std::unique_ptr<Ir::Intf::Object>());
+        }
+        std::string stringObjectName = Cm::IrIntf::GetStringValuePrefix() + std::to_string(id);
+        Ir::Intf::Object* stringObject = Cm::IrIntf::CreateGlobal(stringObjectName, stringConstant->GetType());
+        stringObject->SetOwned();
+        stringObjects[id] = std::unique_ptr<Ir::Intf::Object>(stringObject);
+    }
+}
+
 int StringRepository::Install(const std::string& str)
 {
     StringIntMapIt i = stringIntMap.find(str);
