@@ -114,6 +114,7 @@ public:
     std::string GetClassObjectResultParamName() override;
     std::string GetExceptionCodeParamName() override;
     std::string GetExceptionBaseIdTableName() override;
+    std::string GetClassHierarchyTableName() override;
     int GetDebugAttrEncodingBoolean() override;
     int GetDebugAttrEncodingUnsigned() override;
     int GetDebugAttrEncodingSigned() override;

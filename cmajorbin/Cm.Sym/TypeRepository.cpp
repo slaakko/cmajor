@@ -474,6 +474,33 @@ TypeSymbol* TypeRepository::MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
     }
 }
 
+void TypeRepository::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
+{
+    for (const std::unique_ptr<TypeSymbol>& type : types)
+    {
+        if (collected.find(type.get()) == collected.end())
+        {
+            collected.insert(type.get());
+            type->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+        }
+    }
+}
+
+void TypeRepository::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes)
+{
+    for (const std::unique_ptr<TypeSymbol>& type : types)
+    {
+        if (type->IsDerivedTypeSymbol())
+        {
+            if (collected.find(type.get()) == collected.end())
+            {
+                collected.insert(type.get());
+                type->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
+        }
+    }
+}
+
 void TypeRepository::Import(Reader& reader, SymbolTable& symbolTable)
 {
     int32_t nt = reader.GetBinaryReader().ReadInt();
@@ -539,6 +566,11 @@ void TypeRepository::ReplaceReplicaTypes()
             typeSymbol->ReplaceReplicaTypes();
         }
     }
+}
+
+void TypeRepository::Own(TypeSymbol* type)
+{
+    types.push_back(std::unique_ptr<TypeSymbol>(type));
 }
 
 } } // namespace Cm::Sym

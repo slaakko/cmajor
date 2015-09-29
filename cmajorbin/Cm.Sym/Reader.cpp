@@ -79,7 +79,7 @@ Value* Reader::ReadValue()
 {
     ValueType valueType = ReadValueType();
     Value* value = ValueFactory::Instance().CreateValue(valueType);
-    value->Read(binaryReader);
+    value->Read(*this);
     return value;
 }
 

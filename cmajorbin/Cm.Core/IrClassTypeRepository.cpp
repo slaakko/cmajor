@@ -144,6 +144,21 @@ void LlvmIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, C
     std::unique_ptr<Ir::Intf::Object> classNameIrObject(Cm::IrIntf::CreateGlobal(Cm::IrIntf::MakeClassNameAssemblyName(classType->FullName()), Cm::IrIntf::Pointer(classNameIrValue->GetType(), 1)));
     classNameIrObject->SetOwned();
     codeFormatter.WriteLine(classNameIrObject->Name() + " = linkonce_odr unnamed_addr constant " + classNameIrValue->GetType()->Name() + " " + classNameIrValue->Name());
+
+    std::string classRttiName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "rtti");
+    std::vector<Ir::Intf::Type*> rttiElementTypes;
+    rttiElementTypes.push_back(i8ptrType->Clone());
+    rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    std::vector<std::string> rttiElementNames;
+    rttiElementNames.push_back("class_name");
+    rttiElementNames.push_back("class_id");
+    std::unique_ptr<Ir::Intf::Type> rttiIrType(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames));
+    rttiIrType->SetOwned();
+    std::unique_ptr<Ir::Intf::Object> rttiIrObject(Cm::IrIntf::CreateGlobal(classRttiName, rttiIrType.get()));
+    rttiIrObject->SetOwned();
+    codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " +
+        std::to_string(classType->Cid()) + "}");
+
     std::string vtblHeader;
     vtblHeader.append(vtblIrObject->Name()).append(" = linkonce_odr unnamed_addr constant ").append(vtblIrType->Name());
     codeFormatter.WriteLine(vtblHeader);
@@ -372,6 +387,20 @@ void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::
     std::string vtblName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "vtbl");
     std::unique_ptr<Ir::Intf::Object> vtblIrObject(Cm::IrIntf::CreateGlobal(vtblName, vtblIrType.get()));
     vtblIrObject->SetOwned();
+
+    std::string classRttiName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "rtti");
+    std::vector<Ir::Intf::Type*> rttiElementTypes;
+    rttiElementTypes.push_back(Cm::IrIntf::Pointer(Cm::IrIntf::Char(), 1));
+    rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    std::vector<std::string> rttiElementNames;
+    rttiElementNames.push_back("class_name");
+    rttiElementNames.push_back("class_id");
+    std::unique_ptr<Ir::Intf::Type> rttiIrType(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames));
+    rttiIrType->SetOwned();
+    std::unique_ptr<Ir::Intf::Object> rttiIrObject(Cm::IrIntf::CreateGlobal(classRttiName, rttiIrType.get()));
+    rttiIrObject->SetOwned();
+    codeFormatter.WriteLine("rtti " + classRttiName + " = {\"" + Cm::Util::StringStr(classType->FullName()) + "\", " + std::to_string(classType->Cid()) + "};");
+
     std::string vtblHeader = "static void* ";
     vtblHeader.append(vtblIrObject->Name()).append("[").append(std::to_string(classType->Vtbl().size())).append("] =");
     codeFormatter.WriteLine(vtblHeader);

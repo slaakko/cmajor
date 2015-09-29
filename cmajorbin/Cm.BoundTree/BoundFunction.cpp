@@ -10,6 +10,7 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <stdexcept>
 
 namespace Cm { namespace BoundTree {
@@ -23,46 +24,55 @@ void LandingPad::AddDestructionStatement(BoundDestructionStatement* destructionS
     destructionStatements.push_back(std::unique_ptr<BoundDestructionStatement>(destructionStatement));
 }
 
-BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : 
-    BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0), hasGotos(false), nextCatchId(0), currentTry(nullptr), inHandler(false), isMain(false)
+BoundFunction::BoundFunction() : BoundNode(nullptr), functionSymbol(), classObjectLayoutFunIndex(0), hasGotos(false), nextCatchId(0), currentTry(nullptr), inHandler(false), isRealMain(false), 
+    isUserMain(false)
 {
 }
 
-BoundFunction::~BoundFunction()
+BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) :
+    BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0), hasGotos(false), nextCatchId(0), currentTry(nullptr), inHandler(false), isRealMain(false), isUserMain(false)
 {
-
 }
 
 void BoundFunction::Write(Cm::Sym::BcuWriter& writer)
 {
-    writer.Write(body.get());
+    BoundNode::Write(writer);
     writer.Write(functionSymbol);
+    if (functionSymbol->Name() == "@static_constructor()")
+    {
+        int x = 0;
+    }
     int n = int(localVariables.size());
     writer.GetBinaryWriter().Write(n);
     for (Cm::Sym::LocalVariableSymbol* localVariable : localVariables)
     {
-        writer.Write(localVariable);
+        writer.GetSymbolWriter().Write(localVariable);
     }
-    int nt = int(temporaries.size());
+    int nt = 0;
+    for (const std::unique_ptr<Cm::Sym::LocalVariableSymbol>& temporary : temporaries)
+    {
+        if (temporary)
+        {
+            ++nt;
+        }
+    }
     writer.GetBinaryWriter().Write(nt);
     for (const std::unique_ptr<Cm::Sym::LocalVariableSymbol>& temporary : temporaries)
     {
-        writer.Write(temporary.get());
+        if (temporary)
+        {
+            writer.GetSymbolWriter().Write(temporary.get());
+        }
     }
-    writer.GetBinaryWriter().Write(isMain);
+    writer.Write(body.get());
+    writer.GetBinaryWriter().Write(isRealMain);
+    isUserMain = functionSymbol == writer.GetSymbolWriter().GetSymbolTable()->UserMainFunction();
+    writer.GetBinaryWriter().Write(isUserMain);
 }
 
 void BoundFunction::Read(Cm::Sym::BcuReader& reader)
 {
-    Cm::Sym::BcuItem* bodyItem = reader.ReadItem();
-    if (bodyItem->IsBoundCompoundStatement())
-    {
-        body.reset(static_cast<BoundCompoundStatement*>(bodyItem));
-    }
-    else
-    {
-        throw std::runtime_error("bound compound statement expected");
-    }
+    BoundNode::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsFunctionSymbol())
     {
@@ -72,13 +82,18 @@ void BoundFunction::Read(Cm::Sym::BcuReader& reader)
     {
         throw std::runtime_error("function symbol expected");
     }
+    if (functionSymbol->Name() == "@static_constructor()")
+    {
+        int x = 0;
+    }
     int n = reader.GetBinaryReader().ReadInt();
     for (int i = 0; i < n; ++i)
     {
-        Cm::Sym::Symbol* l = reader.ReadSymbol();
+        Cm::Sym::Symbol* l = reader.GetSymbolReader().ReadSymbol();
         if (l->IsLocalVariableSymbol())
         {
             localVariables.push_back(static_cast<Cm::Sym::LocalVariableSymbol*>(l));
+            reader.GetSymbolReader().GetSymbolTable().Own(static_cast<Cm::Sym::LocalVariableSymbol*>(l));
         }
         else
         {
@@ -88,13 +103,30 @@ void BoundFunction::Read(Cm::Sym::BcuReader& reader)
     int nt = reader.GetBinaryReader().ReadInt();
     for (int i = 0; i < nt; ++i)
     {
-        Cm::Sym::Symbol* t = reader.ReadSymbol();
+        Cm::Sym::Symbol* t = reader.GetSymbolReader().ReadSymbol();
         if (t->IsLocalVariableSymbol())
         {
-            temporaries.push_back(std::unique_ptr<Cm::Sym::LocalVariableSymbol>(static_cast<Cm::Sym::LocalVariableSymbol*>(t)));
+            reader.GetSymbolReader().GetSymbolTable().Own(static_cast<Cm::Sym::LocalVariableSymbol*>(t));
+        }
+        else
+        {
+            throw std::runtime_error("local variable symbol expected");
         }
     }
-    isMain = reader.GetBinaryReader().ReadBool();
+    Cm::Sym::BcuItem* bodyItem = reader.ReadItem();
+    if (bodyItem)
+    {
+        if (bodyItem->IsBoundCompoundStatement())
+        {
+            body.reset(static_cast<BoundCompoundStatement*>(bodyItem));
+        }
+        else
+        {
+            throw std::runtime_error("bound compound statement expected");
+        }
+    }
+    isRealMain = reader.GetBinaryReader().ReadBool();
+    isUserMain = reader.GetBinaryReader().ReadBool();
 }
 
 void BoundFunction::SetBody(BoundCompoundStatement* body_)

@@ -467,7 +467,9 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
 	mutexIdLiteral->SetType(intType);
 	Cm::BoundTree::BoundExpressionList constructMutexGuardArguments;
 	constructMutexGuardArguments.Add(mutexIdLiteral);
-	constructMutexGuardStatement->SetLocalVariable(currentFunction->CreateTempLocalVariable(mutexGuardClassType));
+    Cm::Sym::LocalVariableSymbol* temp = currentFunction->CreateTempLocalVariable(mutexGuardClassType);
+    temp->SetSid(boundCompileUnit.SymbolTable().GetSid());
+	constructMutexGuardStatement->SetLocalVariable(temp);
 	constructMutexGuardStatement->SetArguments(std::move(constructMutexGuardArguments));
 	constructMutexGuardStatement->SetConstructor(mutexGuardConstructor);
 	constructMutexGuardStatement->InsertLocalVariableToArguments();
@@ -494,6 +496,7 @@ void GenerateStaticCheckInitializedStatement(Cm::BoundTree::BoundCompileUnit& bo
 	currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
 
     Cm::Sym::MemberVariableSymbol* initializedVar = new Cm::Sym::MemberVariableSymbol(staticConstructorNode->GetSpan(), Cm::IrIntf::GetPrivateSeparator() + "initialized");
+    initializedVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
     initializedVar->SetParent(classType);
     Cm::Sym::TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     initializedVar->SetType(boolType);

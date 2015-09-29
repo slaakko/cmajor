@@ -28,6 +28,33 @@ void BoundExpression::SetCfgNode(Cm::Core::CfgNode* cfgNode_)
     cfgNode = cfgNode_;
 }
 
+void BoundExpression::Write(Cm::Sym::BcuWriter& writer)
+{
+    BoundNode::Write(writer);
+    writer.Write(type);
+    if (type)
+    {
+        type->DoSerialize();
+    }
+}
+
+void BoundExpression::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundNode::Read(reader);
+    Cm::Sym::Symbol* symbol = reader.ReadSymbol();
+    if (symbol)
+    {
+        if (symbol->IsTypeSymbol())
+        {
+            type = static_cast<Cm::Sym::TypeSymbol*>(symbol);
+        }
+    }
+}
+
+TraceCallInfo::TraceCallInfo() : fun(), file(), line()
+{
+}
+
 TraceCallInfo::TraceCallInfo(BoundExpression* fun_, BoundExpression* file_, BoundExpression* line_) : fun(fun_), file(file_), line(line_)
 {
 }
@@ -126,17 +153,23 @@ void BoundExpressionList::Accept(Visitor& visitor)
     }
 }
 
+BoundStringLiteral::BoundStringLiteral() : BoundExpression(nullptr), id(-1)
+{
+}
+
 BoundStringLiteral::BoundStringLiteral(Cm::Ast::Node* syntaxNode_, int id_) : BoundExpression(syntaxNode_), id(id_)
 {
 }
 
 void BoundStringLiteral::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.GetBinaryWriter().Write(id);
 }
 
 void BoundStringLiteral::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     id = reader.GetBinaryReader().ReadInt();
 }
 
@@ -145,17 +178,23 @@ void BoundStringLiteral::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundLiteral::BoundLiteral() : BoundExpression(nullptr)
+{
+}
+
 BoundLiteral::BoundLiteral(Cm::Ast::Node* syntaxNode_) : BoundExpression(syntaxNode_)
 {
 }
 
 void BoundLiteral::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.GetSymbolWriter().Write(value.get());
 }
 
 void BoundLiteral::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     value.reset(reader.GetSymbolReader().ReadValue());
 }
 
@@ -174,25 +213,34 @@ void BoundLiteral::SetType(Cm::Sym::TypeSymbol* type_)
     }
 }
 
+BoundConstant::BoundConstant() : BoundExpression(nullptr), symbol(nullptr)
+{
+}
+
 BoundConstant::BoundConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConstantSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }
 
 void BoundConstant::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(symbol);
 }
 
 void BoundConstant::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
-    if (s->IsConstantSymbol())
+    if (s)
     {
-        symbol = static_cast<Cm::Sym::ConstantSymbol*>(s);
-    }
-    else
-    {
-        throw std::runtime_error("constant symbol expected");
+        if (s->IsConstantSymbol())
+        {
+            symbol = static_cast<Cm::Sym::ConstantSymbol*>(s);
+        }
+        else
+        {
+            throw std::runtime_error("constant symbol expected");
+        }
     }
 }
 
@@ -201,7 +249,23 @@ void BoundConstant::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundExceptionTableConstant::BoundExceptionTableConstant() : BoundConstant(nullptr, nullptr)
+{
+}
+
 BoundExceptionTableConstant::BoundExceptionTableConstant(Cm::Ast::Node* syntaxNode_) : BoundConstant(syntaxNode_, nullptr)
+{
+}
+
+BoundClassHierarchyTableConstant::BoundClassHierarchyTableConstant() : BoundConstant(nullptr, nullptr)
+{
+}
+
+BoundClassHierarchyTableConstant::BoundClassHierarchyTableConstant(Cm::Ast::Node* syntaxNode_) : BoundConstant(syntaxNode_, nullptr)
+{
+}
+
+BoundEnumConstant::BoundEnumConstant() : BoundExpression(nullptr), symbol(nullptr)
 {
 }
 
@@ -211,11 +275,13 @@ BoundEnumConstant::BoundEnumConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::EnumCo
 
 void BoundEnumConstant::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(symbol);
 }
 
 void BoundEnumConstant::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsEnumConstantSymbol())
     {
@@ -232,25 +298,34 @@ void BoundEnumConstant::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundLocalVariable::BoundLocalVariable() : BoundExpression(nullptr), symbol(nullptr)
+{
+}
+
 BoundLocalVariable::BoundLocalVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::LocalVariableSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }
 
 void BoundLocalVariable::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(symbol);
 }
 
 void BoundLocalVariable::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
-    if (s->IsLocalVariableSymbol())
+    if (s)
     {
-        symbol = static_cast<Cm::Sym::LocalVariableSymbol*>(s);
-    }
-    else
-    {
-        throw std::runtime_error("local variable symbol expected");
+        if (s->IsLocalVariableSymbol())
+        {
+            symbol = static_cast<Cm::Sym::LocalVariableSymbol*>(s);
+        }
+        else
+        {
+            throw std::runtime_error("local variable symbol expected");
+        }
     }
 }
 
@@ -267,25 +342,34 @@ BoundExceptionCodeParameter::BoundExceptionCodeParameter() : BoundParameter(null
 {
 }
 
+BoundParameter::BoundParameter() : BoundExpression(nullptr), symbol(nullptr)
+{
+}
+
 BoundParameter::BoundParameter(Cm::Ast::Node* syntaxNode_, Cm::Sym::ParameterSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }
 
 void BoundParameter::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(symbol);
 }
 
 void BoundParameter::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
-    if (s->IsParameterSymbol())
+    if (s)
     {
-        symbol = static_cast<Cm::Sym::ParameterSymbol*>(s);
-    }
-    else
-    {
-        throw std::runtime_error("parameter symbol expected");
+        if (s->IsParameterSymbol())
+        {
+            symbol = static_cast<Cm::Sym::ParameterSymbol*>(s);
+        }
+        else
+        {
+            throw std::runtime_error("parameter symbol expected");
+        }
     }
 }
 
@@ -300,17 +384,23 @@ void BoundParameter::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundReturnValue::BoundReturnValue() : BoundExpression(nullptr), symbol(nullptr)
+{
+}
+
 BoundReturnValue::BoundReturnValue(Cm::Ast::Node* syntaxNode_, Cm::Sym::ReturnValueSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }
 
 void BoundReturnValue::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(symbol);
 }
 
 void BoundReturnValue::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsReturnValueSymbol())
     {
@@ -327,26 +417,35 @@ void BoundReturnValue::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundMemberVariable::BoundMemberVariable() : BoundExpression(nullptr), symbol(nullptr)
+{
+}
+
 BoundMemberVariable::BoundMemberVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::MemberVariableSymbol* symbol_) : BoundExpression(syntaxNode_), symbol(symbol_)
 {
 }
 
 void BoundMemberVariable::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(classObject.get());
     writer.Write(symbol);
 }
 
 void BoundMemberVariable::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* item = reader.ReadItem();
-    if (item->IsBoundExpression())
+    if (item)
     {
-        classObject.reset(static_cast<BoundExpression*>(item));
-    }
-    else
-    {
-        throw std::runtime_error("bound expression expected");
+        if (item->IsBoundExpression())
+        {
+            classObject.reset(static_cast<BoundExpression*>(item));
+        }
+        else
+        {
+            throw std::runtime_error("bound expression expected");
+        }
     }
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsMemberVariableSymbol())
@@ -369,17 +468,23 @@ void BoundMemberVariable::SetClassObject(Cm::BoundTree::BoundExpression* classOb
     classObject.reset(classObject_);
 }
 
+BoundFunctionId::BoundFunctionId() : BoundExpression(nullptr), functionSymbol(nullptr)
+{
+}
+
 BoundFunctionId::BoundFunctionId(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) : BoundExpression(syntaxNode_), functionSymbol(functionSymbol_)
 {
 }
 
 void BoundFunctionId::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(functionSymbol);
 }
 
 void BoundFunctionId::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsFunctionSymbol())
     {
@@ -396,17 +501,23 @@ void BoundFunctionId::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundTypeExpression::BoundTypeExpression() : BoundExpression(nullptr), typeSymbol(nullptr)
+{
+}
+
 BoundTypeExpression::BoundTypeExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* typeSymbol_) : BoundExpression(syntaxNode_), typeSymbol(typeSymbol_)
 {
 }
 
 void BoundTypeExpression::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(typeSymbol);
 }
 
 void BoundTypeExpression::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsTypeSymbol())
     {
@@ -423,13 +534,28 @@ void BoundTypeExpression::Accept(Visitor& visitor)
     throw std::runtime_error("member function not applicable");
 }
 
+BoundNamespaceExpression::BoundNamespaceExpression() : BoundExpression(nullptr), namespaceSymbol(nullptr)
+{
+}
+
+BoundNamespaceExpression::BoundNamespaceExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::NamespaceSymbol* namespaceSymbol_) : BoundExpression(syntaxNode_), namespaceSymbol(namespaceSymbol_)
+{
+}
+
+void BoundNamespaceExpression::Accept(Visitor& visitor)
+{
+    throw std::runtime_error("member function not applicable");
+}
+
 void BoundNamespaceExpression::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(namespaceSymbol);
 }
 
 void BoundNamespaceExpression::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsNamespaceSymbol())
     {
@@ -441,12 +567,17 @@ void BoundNamespaceExpression::Read(Cm::Sym::BcuReader& reader)
     }
 }
 
+BoundConversion::BoundConversion() : BoundExpression(nullptr), operand(nullptr), conversionFun(nullptr)
+{
+}
+
 BoundConversion::BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_) : BoundExpression(syntaxNode_), operand(operand_), conversionFun(conversionFun_)
 {
 }
 
 void BoundConversion::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(operand.get());
     writer.Write(conversionFun);
     writer.Write(boundTemporary.get());
@@ -454,6 +585,7 @@ void BoundConversion::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundConversion::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* operandItem = reader.ReadItem();
     if (operandItem->IsBoundExpression())
     {
@@ -473,13 +605,16 @@ void BoundConversion::Read(Cm::Sym::BcuReader& reader)
         throw std::runtime_error("function symbol expected");
     }
     Cm::Sym::BcuItem* temporaryItem = reader.ReadItem();
-    if (temporaryItem->IsBoundExpression())
+    if (temporaryItem)
     {
-        boundTemporary.reset(static_cast<BoundExpression*>(temporaryItem));
-    }
-    else
-    {
-        throw std::runtime_error("bound expression expected");
+        if (temporaryItem->IsBoundExpression())
+        {
+            boundTemporary.reset(static_cast<BoundExpression*>(temporaryItem));
+        }
+        else
+        {
+            throw std::runtime_error("bound expression expected");
+        }
     }
 }
 
@@ -493,6 +628,10 @@ void BoundConversion::SetBoundTemporary(Cm::BoundTree::BoundExpression* boundTem
     boundTemporary.reset(boundTemporary_);
 }
 
+BoundCast::BoundCast() : BoundExpression(nullptr), operand(nullptr), conversionFun(nullptr), sourceType(nullptr)
+{
+}
+
 BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_) : 
     BoundExpression(syntaxNode_), operand(operand_), conversionFun(conversionFun_), sourceType(nullptr)
 {
@@ -500,6 +639,7 @@ BoundCast::BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::
 
 void BoundCast::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(operand.get());
     writer.Write(conversionFun);
     writer.Write(sourceType);
@@ -507,6 +647,7 @@ void BoundCast::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundCast::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* operandItem = reader.ReadItem();
     if (operandItem->IsBoundExpression())
     {
@@ -541,17 +682,59 @@ void BoundCast::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundIsExpression::BoundIsExpression() : BoundExpression(nullptr)
+{
+
+}
+
+BoundIsExpression::BoundIsExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* expr_, Cm::Sym::ClassTypeSymbol* classTypeSymbol_) : BoundExpression(syntaxNode_), expr(expr_), classTypeSymbol(classTypeSymbol_)
+{
+}
+
+void BoundIsExpression::Write(Cm::Sym::BcuWriter& writer)
+{
+    BoundExpression::Write(writer);
+    writer.Write(expr.get());
+    writer.Write(classTypeSymbol);
+}
+
+void BoundIsExpression::Read(Cm::Sym::BcuReader& reader)
+{
+    BoundExpression::Read(reader);
+    Cm::Sym::BcuItem* exprItem = reader.ReadItem();
+    if (exprItem->IsBoundExpression())
+    {
+        expr.reset(static_cast<Cm::BoundTree::BoundExpression*>(exprItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    classTypeSymbol = reader.ReadClassTypeSymbol();
+}
+
+void BoundIsExpression::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundSizeOfExpression::BoundSizeOfExpression() : BoundExpression(nullptr), type(nullptr)
+{
+}
+
 BoundSizeOfExpression::BoundSizeOfExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* type_) : BoundExpression(syntaxNode_), type(type_)
 {
 }
 
 void BoundSizeOfExpression::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(type);
 }
 
 void BoundSizeOfExpression::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsTypeSymbol())
     {
@@ -568,6 +751,10 @@ void BoundSizeOfExpression::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundDynamicTypeNameExpression::BoundDynamicTypeNameExpression() : BoundExpression(nullptr), subject(nullptr), classType(nullptr)
+{
+}
+
 BoundDynamicTypeNameExpression::BoundDynamicTypeNameExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* subject_, Cm::Sym::ClassTypeSymbol* classType_) : 
     BoundExpression(syntaxNode_), subject(subject_), classType(classType_)
 {
@@ -575,12 +762,14 @@ BoundDynamicTypeNameExpression::BoundDynamicTypeNameExpression(Cm::Ast::Node* sy
 
 void BoundDynamicTypeNameExpression::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(subject.get());
     writer.Write(classType);
 }
 
 void BoundDynamicTypeNameExpression::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* item = reader.ReadItem();
     if (item->IsBoundExpression())
     {
@@ -598,13 +787,8 @@ void BoundDynamicTypeNameExpression::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundNamespaceExpression::BoundNamespaceExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::NamespaceSymbol* namespaceSymbol_) : BoundExpression(syntaxNode_), namespaceSymbol(namespaceSymbol_)
+BoundUnaryOp::BoundUnaryOp() : BoundExpression(nullptr), operand(nullptr), fun(nullptr), classObjectResultVar(nullptr), argumentCategory(Cm::Core::ArgumentCategory::rvalue)
 {
-}
-
-void BoundNamespaceExpression::Accept(Visitor& visitor)
-{
-    throw std::runtime_error("member function not applicable");
 }
 
 BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_) : 
@@ -614,6 +798,7 @@ BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_
 
 void BoundUnaryOp::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(operand.get());
     writer.Write(fun);
     writer.Write(classObjectResultVar);
@@ -623,6 +808,7 @@ void BoundUnaryOp::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundUnaryOp::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* operandItem = reader.ReadItem();
     if (operandItem->IsBoundExpression())
     {
@@ -634,22 +820,28 @@ void BoundUnaryOp::Read(Cm::Sym::BcuReader& reader)
         fun = static_cast<Cm::Sym::FunctionSymbol*>(s);
     }
     Cm::Sym::Symbol* t = reader.ReadSymbol();
-    if (t->IsLocalVariableSymbol())
+    if (t)
     {
-        classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
-    }
-    else
-    {
-        throw std::runtime_error("local variable symbol expected");
+        if (t->IsLocalVariableSymbol())
+        {
+            classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
+        }
+        else
+        {
+            throw std::runtime_error("local variable symbol expected");
+        }
     }
     Cm::Sym::BcuItem* traceCallItem = reader.ReadItem();
-    if (traceCallItem->IsTraceCall())
+    if (traceCallItem)
     {
-        traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
-    }
-    else
-    {
-        throw std::runtime_error("trace call info expected");
+        if (traceCallItem->IsTraceCall())
+        {
+            traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
+        }
+        else
+        {
+            throw std::runtime_error("trace call info expected");
+        }
     }
     argumentCategory = Cm::Core::ArgumentCategory(reader.GetBinaryReader().ReadByte());
 }
@@ -665,6 +857,10 @@ void BoundUnaryOp::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
     traceCallInfo.reset(traceCallInfo_);
 }
 
+BoundBinaryOp::BoundBinaryOp() : BoundExpression(nullptr), left(nullptr), right(nullptr), fun(nullptr), classObjectResultVar(nullptr)
+{
+}
+
 BoundBinaryOp::BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(syntaxNode_), left(left_), right(right_), fun(nullptr), 
     classObjectResultVar(nullptr)
 {
@@ -672,6 +868,7 @@ BoundBinaryOp::BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_,
 
 void BoundBinaryOp::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(left.get());
     writer.Write(right.get());
     writer.Write(fun);
@@ -681,6 +878,7 @@ void BoundBinaryOp::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundBinaryOp::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* leftItem = reader.ReadItem();
     if (leftItem->IsBoundExpression())
     {
@@ -701,22 +899,28 @@ void BoundBinaryOp::Read(Cm::Sym::BcuReader& reader)
         throw std::runtime_error("function symbol expected");
     }
     Cm::Sym::Symbol* t = reader.ReadSymbol();
-    if (t->IsLocalVariableSymbol())
+    if (t)
     {
-        classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
-    }
-    else
-    {
-        throw std::runtime_error("local variable symbol expected");
+        if (t->IsLocalVariableSymbol())
+        {
+            classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
+        }
+        else
+        {
+            throw std::runtime_error("local variable symbol expected");
+        }
     }
     Cm::Sym::BcuItem* traceCallItem = reader.ReadItem();
-    if (traceCallItem->IsTraceCall())
+    if (traceCallItem)
     {
-        traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
-    }
-    else
-    {
-        throw std::runtime_error("trace call info expected");
+        if (traceCallItem->IsTraceCall())
+        {
+            traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
+        }
+        else
+        {
+            throw std::runtime_error("trace call info expected");
+        }
     }
 }
 
@@ -732,18 +936,24 @@ void BoundBinaryOp::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
     traceCallInfo.reset(traceCallInfo_);
 }
 
+BoundPostfixIncDecExpr::BoundPostfixIncDecExpr() : BoundExpression(nullptr), value(nullptr), statement(nullptr)
+{
+}
+
 BoundPostfixIncDecExpr::BoundPostfixIncDecExpr(Cm::Ast::Node* syntaxNode_, BoundExpression* value_, BoundStatement* statement_) : BoundExpression(syntaxNode_), value(value_), statement(statement_)
 {
 }
 
 void BoundPostfixIncDecExpr::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(value.get());
     writer.Write(statement.get());
 }
 
 void BoundPostfixIncDecExpr::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* valueItem = reader.ReadItem();
     if (valueItem->IsBoundExpression())
     {
@@ -769,12 +979,17 @@ void BoundPostfixIncDecExpr::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundFunctionGroup::BoundFunctionGroup() : BoundExpression(nullptr), functionGroupSymbol(nullptr)
+{
+}
+
 BoundFunctionGroup::BoundFunctionGroup(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_) : BoundExpression(syntaxNode_), functionGroupSymbol(functionGroupSymbol_)
 {
 }
 
 void BoundFunctionGroup::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(functionGroupSymbol);
     int n = int(boundTemplateArguments.size());
     writer.GetBinaryWriter().Write(n);
@@ -787,6 +1002,7 @@ void BoundFunctionGroup::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundFunctionGroup::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsFunctionGroupSymbol())
     {
@@ -809,7 +1025,8 @@ void BoundFunctionGroup::Read(Cm::Sym::BcuReader& reader)
             throw std::runtime_error("type symbol expected");
         }
     }
-    Cm::Sym::Symbol* u = reader.ReadSymbol();
+//  todo:
+    Cm::Sym::Symbol* u = reader.ReadSymbol(); 
     if (u->IsTypeSymbol())
     {
         SetType(static_cast<Cm::Sym::TypeSymbol*>(u));
@@ -832,6 +1049,10 @@ void BoundFunctionGroup::SetType(Cm::Sym::TypeSymbol* type_)
     ownedTypeSymbol.reset(type_);
 }
 
+BoundFunctionCall::BoundFunctionCall() : BoundExpression(nullptr), arguments(), fun(nullptr), classObjectResultVar(nullptr)
+{
+}
+
 BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_)), fun(nullptr), 
     classObjectResultVar(nullptr)
 {
@@ -839,6 +1060,7 @@ BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpression
 
 void BoundFunctionCall::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     arguments.Write(writer);
     writer.Write(fun);
     writer.Write(classObjectResultVar);
@@ -848,6 +1070,7 @@ void BoundFunctionCall::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundFunctionCall::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     arguments.Read(reader);
     Cm::Sym::Symbol* s = reader.ReadSymbol();
     if (s->IsFunctionSymbol())
@@ -859,31 +1082,40 @@ void BoundFunctionCall::Read(Cm::Sym::BcuReader& reader)
         throw std::runtime_error("function symbol expected");
     }
     Cm::Sym::Symbol* t = reader.ReadSymbol();
-    if (t->IsLocalVariableSymbol())
+    if (t)
     {
-        classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
-    }
-    else
-    {
-        throw std::runtime_error("local variable symbol expected");
+        if (t->IsLocalVariableSymbol())
+        {
+            classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
+        }
+        else
+        {
+            throw std::runtime_error("local variable symbol expected");
+        }
     }
     Cm::Sym::BcuItem* item = reader.ReadItem();
-    if (item->IsBoundLocalVariable())
+    if (item)
     {
-        temporary.reset(static_cast<BoundLocalVariable*>(item));
-    }
-    else
-    {
-        throw std::runtime_error("bound local variable expected");
+        if (item->IsBoundLocalVariable())
+        {
+            temporary.reset(static_cast<BoundLocalVariable*>(item));
+        }
+        else
+        {
+            throw std::runtime_error("bound local variable expected");
+        }
     }
     Cm::Sym::BcuItem* traceCallItem = reader.ReadItem();
-    if (traceCallItem->IsTraceCall())
+    if (traceCallItem)
     {
-        traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
-    }
-    else
-    {
-        throw std::runtime_error("trace call info expected");
+        if (traceCallItem->IsTraceCall())
+        {
+            traceCallInfo.reset(static_cast<TraceCallInfo*>(traceCallItem));
+        }
+        else
+        {
+            throw std::runtime_error("trace call info expected");
+        }
     }
 }
 
@@ -897,6 +1129,10 @@ void BoundFunctionCall::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
     traceCallInfo.reset(traceCallInfo_);
 }
 
+BoundDelegateCall::BoundDelegateCall() : BoundExpression(nullptr), delegateType(nullptr), subject(nullptr), arguments()
+{
+}
+
 BoundDelegateCall::BoundDelegateCall(Cm::Sym::DelegateTypeSymbol* delegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) :
     BoundExpression(syntaxNode_), delegateType(delegateType_), subject(subject_), arguments(std::move(arguments_))
 {
@@ -904,6 +1140,7 @@ BoundDelegateCall::BoundDelegateCall(Cm::Sym::DelegateTypeSymbol* delegateType_,
 
 void BoundDelegateCall::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(delegateType);
     writer.Write(subject.get());
     arguments.Write(writer);
@@ -911,6 +1148,7 @@ void BoundDelegateCall::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundDelegateCall::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* d = reader.ReadSymbol();
     if (d->IsDelegateTypeSymbol())
     {
@@ -937,6 +1175,10 @@ void BoundDelegateCall::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundClassDelegateCall::BoundClassDelegateCall() : BoundExpression(nullptr), classDelegateType(nullptr), subject(nullptr), arguments()
+{
+}
+
 BoundClassDelegateCall::BoundClassDelegateCall(Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) :
     BoundExpression(syntaxNode_), classDelegateType(classDelegateType_), subject(subject_), arguments(std::move(arguments_))
 {
@@ -944,6 +1186,7 @@ BoundClassDelegateCall::BoundClassDelegateCall(Cm::Sym::ClassDelegateTypeSymbol*
 
 void BoundClassDelegateCall::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(classDelegateType);
     writer.Write(subject.get());
     arguments.Write(writer);
@@ -951,6 +1194,7 @@ void BoundClassDelegateCall::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundClassDelegateCall::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::Symbol* d = reader.ReadSymbol();
     if (d->IsClassDelegateTypeSymbol())
     {
@@ -983,12 +1227,14 @@ BoundBooleanBinaryExpression::BoundBooleanBinaryExpression(Cm::Ast::Node* syntax
 
 void BoundBooleanBinaryExpression::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundExpression::Write(writer);
     writer.Write(left.get());
     writer.Write(right.get());
 }
 
 void BoundBooleanBinaryExpression::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* leftItem = reader.ReadItem();
     if (leftItem->IsBoundExpression())
     {
@@ -1007,6 +1253,10 @@ void BoundBooleanBinaryExpression::Read(Cm::Sym::BcuReader& reader)
     {
         throw std::runtime_error("bound expression expected");
     }
+}
+
+BoundDisjunction::BoundDisjunction() : BoundBooleanBinaryExpression(nullptr, nullptr, nullptr), resultVar(nullptr)
+{
 }
 
 BoundDisjunction::BoundDisjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(syntaxNode_, left_, right_), resultVar(nullptr)
@@ -1036,6 +1286,10 @@ void BoundDisjunction::Read(Cm::Sym::BcuReader& reader)
 void BoundDisjunction::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundConjunction::BoundConjunction() : BoundBooleanBinaryExpression(nullptr, nullptr, nullptr), resultVar(nullptr)
+{
 }
 
 BoundConjunction::BoundConjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(syntaxNode_, left_, right_), resultVar(nullptr)

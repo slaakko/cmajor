@@ -376,6 +376,16 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConstant& boundConstant)
         resultStack.Push(result);
         return;
     }
+    else if (boundConstant.IsBoundClassHierarchyTableConstant())
+    {
+        Ir::Intf::Object* classHierarchyTableConstant = externalConstantRepository.GetClassHierarchyTable();
+        Cm::Sym::TypeSymbol* type = boundConstant.GetType();
+        result->SetMainObject(type, typeRepository);
+        result->AddObject(classHierarchyTableConstant);
+        Cm::IrIntf::Init(*emitter, type->GetIrType(), result->Arg1(), result->MainObject());
+        resultStack.Push(result);
+        return;
+    }
     Ir::Intf::Object* constantValue = boundConstant.Symbol()->GetValue()->CreateIrObject();
     emitter->Own(constantValue);
     result->SetMainObject(constantValue);
@@ -664,6 +674,18 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCast& boundCast)
     {
         result->SetLabel(resultLabel);
     }
+    resultStack.Push(result);
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundIsExpression& boundIsExpression)
+{
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
+    resultStack.Push(result);
+}
+
+void FunctionEmitter::Visit(Cm::BoundTree::BoundAsExpression& boundAsExpression)
+{
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     resultStack.Push(result);
 }
 

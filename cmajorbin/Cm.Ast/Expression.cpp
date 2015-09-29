@@ -922,6 +922,84 @@ void CastNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+IsNode::IsNode(const Span& span_) : Node(span_)
+{
+}
+
+IsNode::IsNode(const Span& span_, Node* expr_, Node* typeExpr_) : Node(span_), expr(expr_), typeExpr(typeExpr_)
+{
+}
+
+Node* IsNode::Clone(CloneContext& cloneContext) const
+{
+    return new IsNode(GetSpan(), expr->Clone(cloneContext), typeExpr->Clone(cloneContext));
+}
+
+void IsNode::Read(Reader& reader)
+{
+    expr.reset(reader.ReadNode());
+    expr->SetParent(this);
+    typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
+}
+
+void IsNode::Write(Writer& writer)
+{
+    writer.Write(expr.get());
+    writer.Write(typeExpr.get());
+}
+
+std::string IsNode::ToString() const
+{
+    std::string s = expr->ToString();
+    s.append(" is ").append(typeExpr->ToString());
+    return s;
+}
+
+void IsNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+AsNode::AsNode(const Span& span_) : Node(span_)
+{
+}
+
+AsNode::AsNode(const Span& span_, Node* expr_, Node* typeExpr_) : Node(span_), expr(expr_), typeExpr(typeExpr_)
+{
+}
+
+Node* AsNode::Clone(CloneContext& cloneContext) const
+{
+    return new AsNode(GetSpan(), expr->Clone(cloneContext), typeExpr->Clone(cloneContext));
+}
+
+void AsNode::Read(Reader& reader)
+{
+    expr.reset(reader.ReadNode());
+    expr->SetParent(this);
+    typeExpr.reset(reader.ReadNode());
+    typeExpr->SetParent(this);
+}
+
+void AsNode::Write(Writer& writer)
+{
+    writer.Write(expr.get());
+    writer.Write(typeExpr.get());
+}
+
+std::string AsNode::ToString() const
+{
+    std::string s = expr->ToString();
+    s.append(" as ").append(typeExpr->ToString());
+    return s;
+}
+
+void AsNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 NewNode::NewNode(const Span& span_) : Node(span_)
 {
 }

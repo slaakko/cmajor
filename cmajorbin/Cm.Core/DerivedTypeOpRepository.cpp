@@ -8,7 +8,6 @@
 ========================================================================*/
 
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
-#include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
@@ -18,13 +17,6 @@
 namespace Cm { namespace Core {
 
 using Cm::Parsing::Span;
-
-class OpAddPtrInt : public BasicTypeOp
-{
-public:
-    OpAddPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-};
 
 OpAddPtrInt::OpAddPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
@@ -66,13 +58,6 @@ void OpAddPtrInt::Generate(Emitter& emitter, GenResult& result)
     }
 }
 
-class OpAddIntPtr : public BasicTypeOp
-{
-public:
-    OpAddIntPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-};
-
 OpAddIntPtr::OpAddIntPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
     SetGroupName("operator+");
@@ -112,13 +97,6 @@ void OpAddIntPtr::Generate(Emitter& emitter, GenResult& result)
         emitter.Emit(Cm::IrIntf::Add(ptrType, result.MainObject(), arg1, arg2));
     }
 }
-
-class OpSubPtrInt : public BasicTypeOp
-{
-public:
-    OpSubPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-};
 
 OpSubPtrInt::OpSubPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
@@ -165,13 +143,6 @@ void OpSubPtrInt::Generate(Emitter& emitter, GenResult& result)
     }
 }
 
-class OpSubPtrPtr : public BasicTypeOp
-{
-public:
-    OpSubPtrPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-};
-
 OpSubPtrPtr::OpSubPtrPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
     SetGroupName("operator-");
@@ -217,15 +188,6 @@ void OpSubPtrPtr::Generate(Emitter& emitter, GenResult& result)
         emitter.Emit(Cm::IrIntf::Sub(Type()->GetIrType(), result.MainObject(), result.Arg1(), result.Arg2()));
     }
 }
-
-class OpDeref : public BasicTypeOp
-{
-public:
-    OpDeref(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-private:
-    Cm::Sym::TypeRepository& typeRepository;
-};
 
 OpDeref::OpDeref(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_), typeRepository(typeRepository_)
 {
@@ -283,15 +245,6 @@ void OpDeref::Generate(Emitter& emitter, GenResult& result)
     }
 }
 
-class OpIncPtr : public BasicTypeOp
-{
-public:
-    OpIncPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-private:
-    Cm::Sym::TypeRepository& typeRepository;
-};
-
 OpIncPtr::OpIncPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_), typeRepository(typeRepository_)
 {
     SetGroupName("operator++");
@@ -332,15 +285,6 @@ void OpIncPtr::Generate(Emitter& emitter, GenResult& result)
         Cm::IrIntf::Assign(emitter, GetIrType(), result.MainObject(), result.Arg1());
     }
 }
-
-class OpDecPtr : public BasicTypeOp
-{
-public:
-    OpDecPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-private:
-    Cm::Sym::TypeRepository& typeRepository;
-};
 
 OpDecPtr::OpDecPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_), typeRepository(typeRepository_)
 {
@@ -383,13 +327,6 @@ void OpDecPtr::Generate(Emitter& emitter, GenResult& result)
     }
 }
 
-class OpAddrOf : public BasicTypeOp
-{
-public:
-    OpAddrOf(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-};
-
 OpAddrOf::OpAddrOf(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
     SetGroupName("operator&");
@@ -419,13 +356,6 @@ void OpAddrOf::Generate(Emitter& emitter, GenResult& result)
         }
     }
 }
-
-class OpArrow: public BasicTypeOp
-{
-public:
-    OpArrow(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
-    void Generate(Emitter& emitter, GenResult& result) override;
-};
 
 OpArrow::OpArrow(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
 {
@@ -646,7 +576,6 @@ Cm::Sym::FunctionSymbol* DerivedTypeOpCache::GetOpArrow(Cm::Sym::TypeRepository&
 
 DerivedTypeOpGroup::~DerivedTypeOpGroup()
 {
-
 }
 
 void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::Core::Argument>& arguments, Cm::Sym::ConversionTable& conversionTable, const Cm::Parsing::Span& span,

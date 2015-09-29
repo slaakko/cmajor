@@ -42,18 +42,18 @@ TypeId GetNextClassTypeId(uint32_t cid)
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
-    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), cid(noCid), compileUnit(nullptr)
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), cid(noCid), key(0), level(0), priority(0), compileUnit(nullptr)
 {
 }
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_, uint32_t cid_) :
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_, uint64_t cid_) :
     TypeSymbol(span_, name_, getNextId_ ? GetNextClassTypeId(cid_) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr),
-    staticConstructor(nullptr), initializedVar(nullptr), cid(cid_), compileUnit(nullptr)
+    staticConstructor(nullptr), initializedVar(nullptr), cid(cid_), key(0), level(0), priority(0), compileUnit(nullptr)
 {
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_) : TypeSymbol(span_, name_, id_), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
-    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), cid(noCid), compileUnit(nullptr)
+    vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), cid(noCid), key(0), level(0), priority(0), compileUnit(nullptr)
 {
 }
 
@@ -72,10 +72,6 @@ bool ClassTypeSymbol::IsExportSymbol() const
 void ClassTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
-    if (cid == noCid)
-    {
-        int x = 0;
-    }
     writer.GetBinaryWriter().Write(cid);
     writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));
     bool hasBaseClass = baseClass != nullptr;
@@ -83,6 +79,12 @@ void ClassTypeSymbol::Write(Writer& writer)
     if (hasBaseClass)
     {
         writer.Write(baseClass->Id());
+    }
+    bool hasInitializedVar = initializedVar != nullptr;
+    writer.GetBinaryWriter().Write(hasInitializedVar);
+    if (initializedVar)
+    {
+        writer.Write(initializedVar.get());
     }
     if (IsClassTemplateSymbol())
     {
@@ -119,12 +121,23 @@ void ClassTypeSymbol::Write(Writer& writer)
 void ClassTypeSymbol::Read(Reader& reader)
 {
     TypeSymbol::Read(reader);
-    cid = reader.GetBinaryReader().ReadUInt();
+    cid = reader.GetBinaryReader().ReadULong();
     flags = ClassTypeSymbolFlags(reader.GetBinaryReader().ReadUInt());
     bool hasBaseClass = reader.GetBinaryReader().ReadBool();
     if (hasBaseClass)
     {
         reader.FetchTypeFor(this, -2);
+    }
+    bool hasInitializedVar = reader.GetBinaryReader().ReadBool();
+    if (hasInitializedVar)
+    {
+        Symbol* symbol = reader.ReadSymbol();
+        if (symbol->IsMemberVariableSymbol())
+        {
+            MemberVariableSymbol* memberVarSymbol = static_cast<MemberVariableSymbol*>(symbol);
+            initializedVar.reset(memberVarSymbol);
+            reader.GetSymbolTable().AddSymbol(memberVarSymbol);
+        }
     }
     if (IsClassTemplateSymbol())
     {
@@ -176,11 +189,6 @@ void ClassTypeSymbol::FreeClassNode(Cm::Sym::SymbolTable& symbolTable)
         persistentClassData->classNode.reset();
         symbolTable.SetNode(this, nullptr);
     }
-}
-
-void ClassTypeSymbol::AddDerivedClass(ClassTypeSymbol* derivedClass)
-{
-    derivedClasses.insert(derivedClass);
 }
 
 void ClassTypeSymbol::SetType(TypeSymbol* type, int index) 
@@ -329,7 +337,7 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
     }
     if (vtblToInit.empty())
     {
-        vtblToInit.push_back(nullptr); // first entry is reserved for class name 
+        vtblToInit.push_back(nullptr); // first entry is reserved for RTTI
     }
     std::vector<FunctionSymbol*> virtualFunctions;
     if (destructor)
@@ -351,7 +359,7 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
             }
         }
     }
-    int16_t n = int16_t(virtualFunctions.size()) + 1; // number of virtual functions + class name entry
+    int16_t n = int16_t(virtualFunctions.size()) + 1; // number of virtual functions + RTTI entry
     for (int16_t i = 1; i < n; ++i)
     {
         FunctionSymbol* f = virtualFunctions[i - 1];

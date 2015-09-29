@@ -131,3 +131,5 @@ extern public cdecl void start_profiling(const char* profile);
 extern public cdecl void end_profiling();
 extern public cdecl void start_profiled_fun(uint fid);
 extern public cdecl void end_profiled_fun(uint fid);
+extern public cdecl void init_class_hierarchy(ulong* classHierarchyTable, int numEntries);
+extern public cdecl bool is_class_same_or_derived_from(ulong derivedCid, ulong baseCid);

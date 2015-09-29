@@ -30,7 +30,6 @@ class BoundExpression : public BoundNode
 {
 public:
     BoundExpression(Cm::Ast::Node* syntaxNode_);
-    bool IsBoundExpressionNode() const override { return true; }
     bool IsBoundExpression() const override { return true; }
     virtual bool IsBoundNamespaceExpression() const { return false; }
     virtual bool IsBoundFunctionGroup() const { return false; }
@@ -43,10 +42,10 @@ public:
     virtual bool IsBoundExceptionCodeVariable() const { return false; }
     virtual bool IsBoundExceptionCodeParameter() const { return false; }
     virtual bool IsBoundConversion() const { return false; }
-    virtual bool IsLiteral() const { return false; }
     virtual bool IsBoundNullLiteral() const { return false; }
     virtual bool IsConstant() const { return false; }
     virtual bool IsBoundExceptionTableConstant() const { return false; }
+    virtual bool IsBoundClassHierarchyTableConstant() const { return false; }
     virtual bool IsEnumConstant() const { return false; }
     virtual bool IsBoundCast() const { return false; }
     virtual void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
@@ -54,6 +53,8 @@ public:
     virtual Cm::Core::ArgumentCategory GetArgumentCategory() const { return Cm::Core::ArgumentCategory::rvalue; }
     void SetCfgNode(Cm::Core::CfgNode* cfgNode_);
     Cm::Core::CfgNode* GetCfgNode() const { return cfgNode; }
+    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
 private:
     Cm::Sym::TypeSymbol* type;
     Cm::Core::CfgNode* cfgNode;
@@ -62,7 +63,9 @@ private:
 class TraceCallInfo : public Cm::Sym::BcuItem
 {
 public:
+    TraceCallInfo();
     TraceCallInfo(BoundExpression* fun_, BoundExpression* file_, BoundExpression* line_);
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuTraceCallInfo; }
     bool IsTraceCall() const override { return true; }
     void Write(Cm::Sym::BcuWriter& writer) override;
     void Read(Cm::Sym::BcuReader& reader) override;
@@ -102,6 +105,7 @@ private:
 class BoundStringLiteral : public BoundExpression
 {
 public:
+    BoundStringLiteral();
     BoundStringLiteral(Cm::Ast::Node* syntaxNode_, int id_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuStringLiteral; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -115,6 +119,7 @@ private:
 class BoundLiteral : public BoundExpression
 {
 public:
+    BoundLiteral();
     BoundLiteral(Cm::Ast::Node* syntaxNode_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuLiteral; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -122,7 +127,7 @@ public:
     void SetValue(Cm::Sym::Value* value_) { value.reset(value_); }
     Cm::Sym::Value* GetValue() const { return value.get(); }
     void Accept(Visitor& visitor) override;
-    bool IsLiteral() const override { return true; }
+    bool IsBoundLiteral() const override { return true; }
     bool IsBoundNullLiteral() const override { return value->IsNull(); }
     void SetType(Cm::Sym::TypeSymbol* type_) override;
 private:
@@ -132,6 +137,7 @@ private:
 class BoundConstant : public BoundExpression
 {
 public:
+    BoundConstant();
     BoundConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConstantSymbol* symbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuConstant; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -146,14 +152,25 @@ private:
 class BoundExceptionTableConstant : public BoundConstant
 {
 public:
+    BoundExceptionTableConstant();
     BoundExceptionTableConstant(Cm::Ast::Node* syntaxNode_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuExceptionTableConstant; }
     bool IsBoundExceptionTableConstant() const override { return true; }
 };
 
+class BoundClassHierarchyTableConstant : public BoundConstant
+{
+public:
+    BoundClassHierarchyTableConstant();
+    BoundClassHierarchyTableConstant(Cm::Ast::Node* syntaxNode_);
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuClassHierarchyTableConstant; }
+    bool IsBoundClassHierarchyTableConstant() const override { return true; }
+};
+
 class BoundEnumConstant : public BoundExpression
 {
 public:
+    BoundEnumConstant();
     BoundEnumConstant(Cm::Ast::Node* syntaxNode_, Cm::Sym::EnumConstantSymbol* symbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuEnumConstant; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -168,6 +185,7 @@ private:
 class BoundLocalVariable : public BoundExpression
 {
 public:
+    BoundLocalVariable();
     BoundLocalVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::LocalVariableSymbol* symbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuLocalVariable; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -191,6 +209,7 @@ public:
 class BoundParameter: public BoundExpression
 {
 public:
+    BoundParameter();
     BoundParameter(Cm::Ast::Node* syntaxNode_, Cm::Sym::ParameterSymbol* symbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuParameter; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -203,9 +222,18 @@ private:
     Cm::Sym::ParameterSymbol* symbol;
 };
 
+class BoundExceptionCodeParameter : public BoundParameter
+{
+public:
+    BoundExceptionCodeParameter();
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuExceptionCodeParameter; }
+    bool IsBoundExceptionCodeParameter() const override { return true; }
+};
+
 class BoundReturnValue : public BoundExpression
 {
 public:
+    BoundReturnValue();
     BoundReturnValue(Cm::Ast::Node* syntaxNode_, Cm::Sym::ReturnValueSymbol* symbol_);
     bool IsBoundReturnValue() const override { return true; }
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuReturnValue; }
@@ -217,17 +245,10 @@ private:
     Cm::Sym::ReturnValueSymbol* symbol;
 };
 
-class BoundExceptionCodeParameter : public BoundParameter
-{
-public:
-    BoundExceptionCodeParameter();
-    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuExceptionCodeParameter; }
-    bool IsBoundExceptionCodeParameter() const override { return true; }
-};
-
 class BoundMemberVariable : public BoundExpression
 {
 public:
+    BoundMemberVariable();
     BoundMemberVariable(Cm::Ast::Node* syntaxNode_, Cm::Sym::MemberVariableSymbol* symbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuMemberVariable; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -246,6 +267,7 @@ private:
 class BoundFunctionId : public BoundExpression
 {
 public:
+    BoundFunctionId();
     BoundFunctionId(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuFunctionId; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -259,6 +281,7 @@ private:
 class BoundTypeExpression : public BoundExpression
 {
 public:
+    BoundTypeExpression();
     BoundTypeExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* typeSymbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuTypeExpression; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -273,6 +296,7 @@ private:
 class BoundNamespaceExpression : public BoundExpression
 {
 public:
+    BoundNamespaceExpression();
     BoundNamespaceExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::NamespaceSymbol* namespaceSymbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuNamespaceExpression; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -287,6 +311,7 @@ private:
 class BoundConversion : public BoundExpression
 {
 public:
+    BoundConversion();
     BoundConversion(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuConversion; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -302,12 +327,13 @@ public:
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* conversionFun;
-    std::unique_ptr<Cm::BoundTree::BoundExpression> boundTemporary;
+    std::unique_ptr<BoundExpression> boundTemporary;
 };
 
 class BoundCast : public BoundExpression
 {
 public:
+    BoundCast();
     BoundCast(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_, Cm::Sym::FunctionSymbol* conversionFun_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuCast; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -324,9 +350,24 @@ private:
     Cm::Sym::TypeSymbol* sourceType;
 };
 
+class BoundIsExpression : public BoundExpression
+{
+public:
+    BoundIsExpression();
+    BoundIsExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* expr_, Cm::Sym::ClassTypeSymbol* classTypeSymbol_);
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuIsExpr; }
+    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
+    void Accept(Visitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> expr;
+    Cm::Sym::ClassTypeSymbol* classTypeSymbol;
+};
+
 class BoundSizeOfExpression : public BoundExpression
 {
 public:
+    BoundSizeOfExpression();
     BoundSizeOfExpression(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* type_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuSizeOfExpression; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -340,6 +381,7 @@ private:
 class BoundDynamicTypeNameExpression : public BoundExpression
 {
 public:
+    BoundDynamicTypeNameExpression();
     BoundDynamicTypeNameExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* subject_, Cm::Sym::ClassTypeSymbol* classType_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuDynamicTypeNameExpression; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -355,6 +397,7 @@ private:
 class BoundUnaryOp : public BoundExpression
 {
 public:
+    BoundUnaryOp();
     BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuUnaryOp; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -382,6 +425,7 @@ private:
 class BoundBinaryOp : public BoundExpression
 {
 public:
+    BoundBinaryOp();
     BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuBinaryOp; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -407,6 +451,7 @@ private:
 class BoundPostfixIncDecExpr : public BoundExpression
 {
 public:
+    BoundPostfixIncDecExpr();
     BoundPostfixIncDecExpr(Cm::Ast::Node* syntaxNode_, BoundExpression* value_, BoundStatement* statement_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuPostfixIncDecExpr; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -424,6 +469,7 @@ private:
 class BoundFunctionGroup : public BoundExpression
 {
 public:
+    BoundFunctionGroup();
     BoundFunctionGroup(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuFunctionGroup; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -443,6 +489,7 @@ private:
 class BoundFunctionCall : public BoundExpression
 {
 public:
+    BoundFunctionCall();
     BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuFunctionCall; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -469,6 +516,7 @@ private:
 class BoundDelegateCall : public BoundExpression
 {
 public:
+    BoundDelegateCall();
     BoundDelegateCall(Cm::Sym::DelegateTypeSymbol* delegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuDelegateCall; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -486,6 +534,7 @@ private:
 class BoundClassDelegateCall : public BoundExpression
 {
 public:
+    BoundClassDelegateCall();
     BoundClassDelegateCall(Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_, BoundExpression* subject_, Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuClassDelegateCall; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -516,6 +565,7 @@ private:
 class BoundDisjunction : public BoundBooleanBinaryExpression
 {
 public:    
+    BoundDisjunction();
     BoundDisjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuDisjunction; }
     void Write(Cm::Sym::BcuWriter& writer) override;
@@ -530,6 +580,7 @@ private:
 class BoundConjunction : public BoundBooleanBinaryExpression
 {
 public:
+    BoundConjunction();
     BoundConjunction(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuConjunction; }
     void Write(Cm::Sym::BcuWriter& writer) override;

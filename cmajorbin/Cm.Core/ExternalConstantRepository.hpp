@@ -20,11 +20,14 @@ public:
     ExternalConstantRepository();
     virtual ~ExternalConstantRepository();
     Ir::Intf::Global* GetExceptionBaseIdTable();
+    Ir::Intf::Global* GetClassHierarchyTable();
     virtual void Write(Cm::Util::CodeFormatter& codeFormatter) = 0;
 protected:
     Ir::Intf::Global* ExceptionBaseIdTable() const { return exceptionBaseIdTable; }
+    Ir::Intf::Global* ClassHierarchyTable() const { return classHierarchyTable; }
 private:
     Ir::Intf::Global* exceptionBaseIdTable;
+    Ir::Intf::Global* classHierarchyTable;
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedObjects;
 };
 

@@ -87,6 +87,7 @@ bool TemplateTypeSymbol::IsExportSymbol() const
     for (TypeSymbol* typeArgument : typeArguments)
     {
         if (!typeArgument->IsPublic() && !typeArgument->Serialize()) return false;
+        if (typeArgument->IsTypeParameterSymbol()) return false;
     }
     return true;
 }
@@ -264,6 +265,19 @@ void TemplateTypeSymbol::ReplaceReplicaTypes()
             TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(typeArgument);
             typeArgument = replica->GetPrimaryTemplateTypeSymbol();
         }
+    }
+}
+
+void TemplateTypeSymbol::DoSerialize()
+{
+    for (TypeSymbol* typeArgument : typeArguments)
+    {
+        if (typeArgument->IsTypeParameterSymbol()) return;
+    }
+    ClassTypeSymbol::DoSerialize();
+    for (TypeSymbol* typeArgument : typeArguments)
+    {
+        typeArgument->DoSerialize();
     }
 }
 

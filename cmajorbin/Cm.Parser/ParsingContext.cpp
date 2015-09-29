@@ -87,4 +87,16 @@ void ParsingContext::EndParsingArguments()
     parsingArgumentsStack.pop();
 }
 
+void ParsingContext::PushParsingIsOrAs(bool enable)
+{
+    parsingIsOrAsStack.push(parsingIsOrAs);
+    parsingIsOrAs = enable;
+}
+
+void ParsingContext::PopParsingIsOrAs()
+{
+    parsingIsOrAs = parsingIsOrAsStack.top();
+    parsingIsOrAsStack.pop();
+}
+
 } } // namespace Cm::Parser

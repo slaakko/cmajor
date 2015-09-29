@@ -503,6 +503,11 @@ std::string GetExceptionBaseIdTableName()
     return GetBackEndImpl()->GetExceptionBaseIdTableName();
 }
 
+std::string GetClassHierarchyTableName()
+{
+    return GetBackEndImpl()->GetClassHierarchyTableName();
+}
+
 Ir::Intf::Parameter* CreateParameter(const std::string& parameterName, Ir::Intf::Type* parameterType)
 {
     return GetBackEndImpl()->CreateParameter(parameterName, parameterType);

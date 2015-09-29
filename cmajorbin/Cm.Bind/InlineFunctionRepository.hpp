@@ -21,9 +21,13 @@ public:
     InlineFunctionRepository(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_);
     ~InlineFunctionRepository();
     void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* functionSymbol) override;
+    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     std::unordered_set<Cm::Sym::FunctionSymbol*> instantiatedFunctions;
+    std::vector<Cm::Sym::FunctionSymbol*> functionIntanceSymbols;
+    std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionInstanceSymbols;
 };
 
 } } // namespace Cm::Bind

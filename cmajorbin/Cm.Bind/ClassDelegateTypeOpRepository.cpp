@@ -76,8 +76,12 @@ void ClassDelegateFromFunAssignment::Generate(Cm::Core::Emitter& emitter, Cm::Co
     // implementation is provided by FunctionEmitter
 }
 
-ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType) : 
-    Cm::Sym::FunctionSymbol(classDelegateType->GetSpan(), "*class_delegate_equal*")
+ClassDelegateEqualOp::ClassDelegateEqualOp() : Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "*class_delegate_equal*"), classDelegateType(nullptr), ns()
+{
+}
+
+ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_) : 
+    Cm::Sym::FunctionSymbol(classDelegateType_->GetSpan(), "*class_delegate_equal*"), classDelegateType(classDelegateType_), ns(containerScope->Ns()->FullName())
 {
     SetGroupName("operator==");
     Cm::Sym::TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
@@ -173,6 +177,33 @@ ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerSco
     returnTrue->SetConstructor(boolCopyCtor);
     opEqual->Body()->AddStatement(returnTrue);
     boundCompileUnit.AddBoundNode(opEqual.release());
+}
+
+void ClassDelegateEqualOp::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(ns);
+    writer.Write(classDelegateType);
+}
+
+void ClassDelegateEqualOp::Read(Cm::Sym::BcuReader& reader)
+{
+    ns = reader.GetBinaryReader().ReadString();
+    Cm::Sym::BoundCompileUnit* symbolUnit = reader.GetBoundCompileUnit();
+    Cm::BoundTree::BoundCompileUnit* boundCompileUnit = static_cast<Cm::BoundTree::BoundCompileUnit*>(symbolUnit);
+    Cm::Sym::SymbolTable& symbolTable = boundCompileUnit->SymbolTable();
+    Cm::Sym::Symbol* nsSymbol = symbolTable.GlobalScope()->Lookup(ns);
+    Cm::Sym::ContainerScope* containerScope = nsSymbol->GetContainerScope();
+    Cm::Sym::Symbol* classDelegateSymbol = reader.ReadSymbol();
+    if (classDelegateSymbol->IsClassDelegateTypeSymbol())
+    {
+        Cm::Sym::ClassDelegateTypeSymbol* classDelegateType = static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(classDelegateSymbol);
+        ClassDelegateEqualOp* replacement = new ClassDelegateEqualOp(containerScope, *boundCompileUnit, classDelegateType);
+        reader.SetClassDelegateEqualOp(replacement);
+    }
+    else
+    {
+        throw std::runtime_error("class delegate type symbol expected");
+    }
 }
 
 Cm::Sym::FunctionSymbol* ResolveClassDelegateOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
@@ -370,6 +401,22 @@ void ClassDelegateTypeOpRepository::CollectViableFunctions(Cm::Sym::ContainerSco
         group->CollectViableFunctions(boundCompileUnit, containerScope, span, arity, arguments, conversionTable, boundCompileUnit.SymbolTable().GetTypeRepository(), classDelegateTypeOpCacheMap,
             viableFunctions);
     }
+}
+
+Cm::Sym::FunctionSymbol* ClassDelegateTypeOpFactory::CreateClassDelegateOp(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol,
+    Cm::Sym::FunctionSymbol* functionSymbol) const
+{
+    switch (itemType)
+    {
+        case Cm::Sym::BcuItemType::bcuClassDelegateFromFunCtor: return new ClassDelegateFromFunCtor(typeRepository, classDelegateTypeSymbol, functionSymbol);
+        case Cm::Sym::BcuItemType::bcuClassDelegateFromFunAssignment: return new ClassDelegateFromFunAssignment(typeRepository, classDelegateTypeSymbol, functionSymbol);
+    }
+    throw std::runtime_error("unknown item type " + std::to_string(uint8_t(itemType)));
+}
+
+Cm::Sym::FunctionSymbol* ClassDelegateTypeOpFactory::CreateClassDelegateOpEqual() const
+{
+    return new ClassDelegateEqualOp();
 }
 
 } } // namespace Cm::Bind

@@ -12,7 +12,7 @@
 
 namespace Cm { namespace Core {
 
-ExternalConstantRepository::ExternalConstantRepository() : exceptionBaseIdTable(nullptr)
+ExternalConstantRepository::ExternalConstantRepository() : exceptionBaseIdTable(nullptr), classHierarchyTable(nullptr)
 {
 }
 
@@ -27,11 +27,22 @@ Ir::Intf::Global* ExternalConstantRepository::GetExceptionBaseIdTable()
     return exceptionBaseIdTable;
 }
 
+Ir::Intf::Global* ExternalConstantRepository::GetClassHierarchyTable()
+{
+    classHierarchyTable = Cm::IrIntf::CreateGlobal(Cm::IrIntf::GetClassHierarchyTableName(), Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI64(), 2));
+    ownedObjects.push_back(std::unique_ptr<Ir::Intf::Object>(classHierarchyTable));
+    return classHierarchyTable;
+}
+
 void LlvmExternalConstantRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
 {
     if (ExceptionBaseIdTable())
     {
         codeFormatter.WriteLine("@" + Cm::IrIntf::GetExceptionBaseIdTableName() + " = external constant i32*");
+    }
+    if (ClassHierarchyTable())
+    {
+        codeFormatter.WriteLine("@" + Cm::IrIntf::GetClassHierarchyTableName() + " = external constant i64*");
     }
 }
 
@@ -40,6 +51,10 @@ void CExternalConstantRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
     if (ExceptionBaseIdTable())
     {
         codeFormatter.WriteLine("extern i32* " + Cm::IrIntf::GetExceptionBaseIdTableName() + ";");
+    }
+    if (ClassHierarchyTable())
+    {
+        codeFormatter.WriteLine("extern ui64* " + Cm::IrIntf::GetClassHierarchyTableName() + ";");
     }
 }
 

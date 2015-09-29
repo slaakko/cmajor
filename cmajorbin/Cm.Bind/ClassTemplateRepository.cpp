@@ -97,6 +97,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes)
 {
     if (templateTypeSymbol->Bound()) return;
+    templateTypeSymbols.insert(templateTypeSymbol);
     std::vector<Cm::Sym::FileScope*> clonedFileScopes;
     for (const std::unique_ptr<Cm::Sym::FileScope>& fileScope : fileScopes)
     {
@@ -363,6 +364,7 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         }
         InstantiateVirtualFunctionsFor(containerScope, templateTypeSymbol);
     }
+    memberFunctionSymbols.push_back(memberFunctionSymbol);
 }
 
 void ClassTemplateRepository::InstantiateVirtualFunctionsFor(Cm::Sym::ContainerScope* containerScope, Cm::Sym::ClassTypeSymbol* templateTypeSymbol)
@@ -386,6 +388,48 @@ void ClassTemplateRepository::InstantiateVirtualFunctionsFor(Cm::Sym::ContainerS
                     Instantiate(containerScope, virtualFunction);
                 }
             }
+        }
+    }
+}
+
+void ClassTemplateRepository::Write(Cm::Sym::BcuWriter& writer)
+{
+    int32_t n = int32_t(memberFunctionSymbols.size());
+    writer.GetBinaryWriter().Write(n);
+    for (Cm::Sym::FunctionSymbol* memberFunctionSymbool : memberFunctionSymbols)
+    {
+        writer.GetSymbolWriter().Write(memberFunctionSymbool);
+    }
+    int32_t nt = int32_t(templateTypeSymbols.size());
+    writer.GetBinaryWriter().Write(nt);
+    writer.GetSymbolWriter().PushExportMemberVariables(true);
+    for (Cm::Sym::TemplateTypeSymbol* templateTypeSymbol : templateTypeSymbols)
+    {
+        writer.GetSymbolWriter().Write(templateTypeSymbol);
+    }
+    writer.GetSymbolWriter().PopExportMemberVariables();
+}
+
+void ClassTemplateRepository::Read(Cm::Sym::BcuReader& reader)
+{
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Cm::Sym::Symbol* symbol = reader.GetSymbolReader().ReadSymbol();
+        if (symbol->IsFunctionSymbol())
+        {
+            Cm::Sym::FunctionSymbol* memberFunctionSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
+            ownedMemberFunctionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(memberFunctionSymbol));
+        }
+    }
+    int32_t nt = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < nt; ++i)
+    {
+        Cm::Sym::Symbol* symbol = reader.GetSymbolReader().ReadSymbol();
+        if (symbol->IsTemplateTypeSymbol())
+        {
+            Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(symbol);
+            reader.GetSymbolReader().GetSymbolTable().GetTypeRepository().Own(templateTypeSymbol);
         }
     }
 }

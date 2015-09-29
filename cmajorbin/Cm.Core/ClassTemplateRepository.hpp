@@ -28,6 +28,8 @@ public:
     virtual void ResolveDefaultTypeArguments(std::vector<Cm::Sym::TypeSymbol*>& typeArguments, Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol, 
         Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
         const Cm::Parsing::Span& span) = 0;
+    virtual void Write(Cm::Sym::BcuWriter& writer) = 0;
+    virtual void Read(Cm::Sym::BcuReader& reader) = 0;
 };
 
 } } // namespace Cm::Core

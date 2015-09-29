@@ -493,6 +493,42 @@ private:
     std::unique_ptr<Node> sourceExpr;
 };
 
+class IsNode : public Node
+{
+public:
+    IsNode(const Span& span_);
+    IsNode(const Span& span_, Node* expr_, Node* typeExpr_);
+    NodeType GetNodeType() const override { return NodeType::isNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    Node* Expr() const { return expr.get(); }
+    Node* TypeExpr() const { return typeExpr.get(); }
+private:
+    std::unique_ptr<Node> expr;
+    std::unique_ptr<Node> typeExpr;
+};
+
+class AsNode : public Node
+{
+public:
+    AsNode(const Span& span_);
+    AsNode(const Span& span_, Node* expr_, Node* typeExpr_);
+    NodeType GetNodeType() const override { return NodeType::isNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    Node* Expr() const { return expr.get(); }
+    Node* TypeExpr() const { return typeExpr.get(); }
+private:
+    std::unique_ptr<Node> expr;
+    std::unique_ptr<Node> typeExpr;
+};
+
 class NewNode : public Node
 {
 public:

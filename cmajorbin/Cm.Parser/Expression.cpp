@@ -998,6 +998,7 @@ public:
         AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
         AddLocalVariable(AttrOrVariable("Span", "s"));
         AddLocalVariable(AttrOrVariable("Operator", "op"));
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "typeExpr"));
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
@@ -1032,9 +1033,25 @@ public:
         a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelationalRule>(this, &RelationalRule::A5Action));
         Cm::Parsing::ActionParser* a6ActionParser = GetAction("A6");
         a6ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelationalRule>(this, &RelationalRule::A6Action));
+        Cm::Parsing::ActionParser* a7ActionParser = GetAction("A7");
+        a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelationalRule>(this, &RelationalRule::A7Action));
+        Cm::Parsing::ActionParser* a8ActionParser = GetAction("A8");
+        a8ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelationalRule>(this, &RelationalRule::A8Action));
+        Cm::Parsing::ActionParser* a9ActionParser = GetAction("A9");
+        a9ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelationalRule>(this, &RelationalRule::A9Action));
+        Cm::Parsing::ActionParser* a10ActionParser = GetAction("A10");
+        a10ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelationalRule>(this, &RelationalRule::A10Action));
+        Cm::Parsing::ActionParser* a11ActionParser = GetAction("A11");
+        a11ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelationalRule>(this, &RelationalRule::A11Action));
         Cm::Parsing::NonterminalParser* leftNonterminalParser = GetNonterminal("left");
         leftNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<RelationalRule>(this, &RelationalRule::Preleft));
         leftNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<RelationalRule>(this, &RelationalRule::Postleft));
+        Cm::Parsing::NonterminalParser* isTypeNonterminalParser = GetNonterminal("isType");
+        isTypeNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<RelationalRule>(this, &RelationalRule::PreisType));
+        isTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<RelationalRule>(this, &RelationalRule::PostisType));
+        Cm::Parsing::NonterminalParser* asTypeNonterminalParser = GetNonterminal("asType");
+        asTypeNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<RelationalRule>(this, &RelationalRule::PreasType));
+        asTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<RelationalRule>(this, &RelationalRule::PostasType));
         Cm::Parsing::NonterminalParser* rightNonterminalParser = GetNonterminal("right");
         rightNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<RelationalRule>(this, &RelationalRule::Preright));
         rightNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<RelationalRule>(this, &RelationalRule::Postright));
@@ -1051,25 +1068,68 @@ public:
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
-        else context.op = Operator::lessOrEq;
+        else
+        {
+            context.op = Operator::lessOrEq;
+            context.ctx->PushParsingIsOrAs(false);
+        }
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
-        else context.op = Operator::greaterOrEq;
+        else
+        {
+            context.op = Operator::greaterOrEq;
+            context.ctx->PushParsingIsOrAs(false);
+        }
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
-        else context.op = Operator::less;
+        else
+        {
+            context.op = Operator::less;
+            context.ctx->PushParsingIsOrAs(false);
+        }
     }
     void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
-        else context.op = Operator::greater;
+        else
+        {
+            context.op = Operator::greater;
+            context.ctx->PushParsingIsOrAs(false);
+        }
     }
     void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
+        if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
+        else
+        {
+            context.op = Operator::is;
+            context.ctx->PushParsingIsOrAs(true);
+        }
+    }
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.typeExpr.reset(context.fromisType);
+    }
+    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
+        else
+        {
+            context.op = Operator::as;
+            context.ctx->PushParsingIsOrAs(true);
+        }
+    }
+    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.typeExpr.reset(context.fromasType);
+    }
+    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.ctx->PopParsingIsOrAs();
         context.s.SetEnd(span.End());
         switch (context.op)
         {
@@ -1081,7 +1141,15 @@ public:
             break;
             case Operator::greater: context.expr.reset(new GreaterNode(context.s, context.expr.release(), context.fromright));
             break;
+            case Operator::is: context.expr.reset(new IsNode(context.s, context.expr.release(), context.typeExpr.release()));
+            break;
+            case Operator::as: context.expr.reset(new AsNode(context.s, context.expr.release(), context.typeExpr.release()));
+            break;
         }
+    }
+    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        if (!context.ctx->ParsingIsOrAs()) pass = false;
     }
     void Preleft(Cm::Parsing::ObjectStack& stack)
     {
@@ -1093,6 +1161,32 @@ public:
         {
             std::unique_ptr<Cm::Parsing::Object> fromleft_value = std::move(stack.top());
             context.fromleft = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromleft_value.get());
+            stack.pop();
+        }
+    }
+    void PreisType(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostisType(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromisType_value = std::move(stack.top());
+            context.fromisType = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromisType_value.get());
+            stack.pop();
+        }
+    }
+    void PreasType(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostasType(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromasType_value = std::move(stack.top());
+            context.fromasType = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromasType_value.get());
             stack.pop();
         }
     }
@@ -1112,13 +1206,16 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), expr(), s(), op(), fromleft(), fromright() {}
+        Context(): ctx(), value(), expr(), s(), op(), typeExpr(), fromleft(), fromisType(), fromasType(), fromright() {}
         ParsingContext* ctx;
         Cm::Ast::Node* value;
         std::unique_ptr<Node> expr;
         Span s;
         Operator op;
+        std::unique_ptr<Node> typeExpr;
         Cm::Ast::Node* fromleft;
+        Cm::Ast::Node* fromisType;
+        Cm::Ast::Node* fromasType;
         Cm::Ast::Node* fromright;
     };
     std::stack<Context> contextStack;
@@ -2557,39 +2654,40 @@ void ExpressionGrammar::GetReferencedGrammars()
         grammar1 = Cm::Parser::LiteralGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::TemplateGrammar::Create(pd);
+        grammar2 = Cm::Parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parsing::stdlib::Create(pd);
+        grammar3 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::BasicTypeGrammar::Create(pd);
+        grammar4 = Cm::Parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar5 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar5);
 }
 
 void ExpressionGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new ExpressionRule("Expression", GetScope(),
         new Cm::Parsing::ActionParser("A0",
@@ -2707,25 +2805,39 @@ void ExpressionGrammar::CreateRules()
                         new Cm::Parsing::AlternativeParser(
                             new Cm::Parsing::AlternativeParser(
                                 new Cm::Parsing::AlternativeParser(
-                                    new Cm::Parsing::ActionParser("A2",
-                                        new Cm::Parsing::DifferenceParser(
-                                            new Cm::Parsing::StringParser("<="),
-                                            new Cm::Parsing::StringParser("<=>"))),
-                                    new Cm::Parsing::ActionParser("A3",
-                                        new Cm::Parsing::StringParser(">="))),
-                                new Cm::Parsing::ActionParser("A4",
-                                    new Cm::Parsing::DifferenceParser(
-                                        new Cm::Parsing::CharParser('<'),
+                                    new Cm::Parsing::AlternativeParser(
                                         new Cm::Parsing::AlternativeParser(
-                                            new Cm::Parsing::StringParser("<<"),
-                                            new Cm::Parsing::StringParser("<=>"))))),
-                            new Cm::Parsing::ActionParser("A5",
-                                new Cm::Parsing::DifferenceParser(
-                                    new Cm::Parsing::CharParser('>'),
-                                    new Cm::Parsing::StringParser(">>")))),
-                        new Cm::Parsing::ActionParser("A6",
-                            new Cm::Parsing::ExpectationParser(
-                                new Cm::Parsing::NonterminalParser("right", "Shift", 1)))))))));
+                                            new Cm::Parsing::ActionParser("A2",
+                                                new Cm::Parsing::DifferenceParser(
+                                                    new Cm::Parsing::StringParser("<="),
+                                                    new Cm::Parsing::StringParser("<=>"))),
+                                            new Cm::Parsing::ActionParser("A3",
+                                                new Cm::Parsing::StringParser(">="))),
+                                        new Cm::Parsing::ActionParser("A4",
+                                            new Cm::Parsing::DifferenceParser(
+                                                new Cm::Parsing::CharParser('<'),
+                                                new Cm::Parsing::AlternativeParser(
+                                                    new Cm::Parsing::StringParser("<<"),
+                                                    new Cm::Parsing::StringParser("<=>"))))),
+                                    new Cm::Parsing::ActionParser("A5",
+                                        new Cm::Parsing::DifferenceParser(
+                                            new Cm::Parsing::CharParser('>'),
+                                            new Cm::Parsing::StringParser(">>")))),
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::ActionParser("A6",
+                                        new Cm::Parsing::KeywordParser("is")),
+                                    new Cm::Parsing::ActionParser("A7",
+                                        new Cm::Parsing::NonterminalParser("isType", "TypeExpr", 1)))),
+                            new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::ActionParser("A8",
+                                    new Cm::Parsing::KeywordParser("as")),
+                                new Cm::Parsing::ActionParser("A9",
+                                    new Cm::Parsing::NonterminalParser("asType", "TypeExpr", 1)))),
+                        new Cm::Parsing::ActionParser("A10",
+                            new Cm::Parsing::AlternativeParser(
+                                new Cm::Parsing::NonterminalParser("right", "Shift", 1),
+                                new Cm::Parsing::ActionParser("A11",
+                                    new Cm::Parsing::EmptyParser())))))))));
     AddRule(new ShiftRule("Shift", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(

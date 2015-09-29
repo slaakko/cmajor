@@ -225,7 +225,7 @@ std::string ClassDelegateTypeSymbol::GetMangleId() const
 
 bool ClassDelegateTypeSymbol::IsExportSymbol() const 
 {
-    if (Parent()->IsClassTemplateSymbol()) return false;;
+    if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;
     return ClassTypeSymbol::IsExportSymbol();
 }

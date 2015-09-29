@@ -759,8 +759,8 @@ public:
     Cm::Sym::ContainerSymbol* ContainerSymbol() const { return containerSymbol; }
     Cm::Sym::ValueType GetValueType() const override { throw std::runtime_error("member function not applicable"); }
     Cm::Sym::Value* Clone() const override { throw std::runtime_error("member function not applicable"); }
-    void Read(Cm::Ser::BinaryReader& reader) override { throw std::runtime_error("member function not applicable"); }
-    void Write(Cm::Ser::BinaryWriter& writer) override { throw std::runtime_error("member function not applicable"); }
+    void Read(Cm::Sym::Reader& reader) override { throw std::runtime_error("member function not applicable"); }
+    void Write(Cm::Sym::Writer& writer) override { throw std::runtime_error("member function not applicable"); }
     Cm::Sym::Value* As(Cm::Sym::ValueType targetType, bool cast, const Span& span) const override { throw std::runtime_error("member function not applicable"); }
     virtual Ir::Intf::Object* CreateIrObject() const override { throw std::runtime_error("member function not applicable"); }
 private:

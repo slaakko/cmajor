@@ -48,6 +48,7 @@ public:
     void SetPrimaryTemplateTypeSymbol(TemplateTypeSymbol* primaryTemplateTypeSymbol_) { primaryTemplateTypeSymbol = primaryTemplateTypeSymbol_; }
     TemplateTypeSymbol* GetPrimaryTemplateTypeSymbol() const { return primaryTemplateTypeSymbol; }
     void ReplaceReplicaTypes() override;
+    void DoSerialize() override;
 private:
     TypeSymbol* subjectType;
     std::vector<TypeSymbol*> typeArguments;

@@ -14,7 +14,7 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), parent(nullptr), cfgNode(nullptr)
+BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), parent(nullptr), cfgNode(nullptr), statementId(noStatementdId)
 {
     if (syntaxNode_)
     {
@@ -30,28 +30,48 @@ BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNod
     }
 }
 
+void BoundStatement::SetStatementId(uint32_t statementId_)
+{
+    statementId = statementId_;
+}
+
+void BoundStatement::SetLabeledStatementId(uint32_t labeledStatementId_)
+{
+    labeledStatementId = labeledStatementId_;
+}
+
 void BoundStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundNode::Write(writer);
+    if (statementId == noStatementdId)
+    {
+        statementId = writer.GetStatementId();
+    }
+    writer.GetBinaryWriter().Write(statementId);
     bool hasLabel = !label.empty();
     writer.GetBinaryWriter().Write(hasLabel);
     if (hasLabel)
     {
-        if (CompoundParent()->GetCompoundId() == noCompoundId)
+        writer.GetBinaryWriter().Write(label);
+        if (labeledStatementId == noStatementdId)
         {
-            CompoundParent()->SetCompoundId(writer.GetCompoundId());
+            labeledStatementId = writer.GetStatementId();
         }
-        std::string labeledStatementId = std::to_string(CompoundParent()->GetCompoundId()) + "." + label;
         writer.GetBinaryWriter().Write(labeledStatementId);
     }
 }
 
 void BoundStatement::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundNode::Read(reader);
+    statementId = reader.GetBinaryReader().ReadUInt();
+    reader.SetCompoundTargetStatement(statementId, this);
     bool hasLabel = reader.GetBinaryReader().ReadBool();
     if (hasLabel)
     {
-        std::string labeledStatementId = reader.GetBinaryReader().ReadString();
-        // todo
+        label = reader.GetBinaryReader().ReadString();
+        labeledStatementId = reader.GetBinaryReader().ReadUInt();
+        reader.SetLabeledStatement(labeledStatementId, this);
     }
 }
 
@@ -118,6 +138,10 @@ void BoundStatementList::Read(Cm::Sym::BcuReader& reader)
         {
             statements.push_back(std::unique_ptr<BoundStatement>(static_cast<BoundStatement*>(item)));
         }
+        else
+        {
+            throw std::runtime_error("statement expected");
+        }
     }
 }
 
@@ -143,7 +167,11 @@ BoundParentStatement::BoundParentStatement(Cm::Ast::Node* syntaxNode_) : BoundSt
 {
 }
 
-BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_), compoundId(noCompoundId)
+BoundCompoundStatement::BoundCompoundStatement() : BoundParentStatement(nullptr)
+{
+}
+
+BoundCompoundStatement::BoundCompoundStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
 
@@ -151,19 +179,12 @@ void BoundCompoundStatement::Write(Cm::Sym::BcuWriter& writer)
 {
     BoundParentStatement::Write(writer);
     statementList.Write(writer);
-    if (compoundId == noCompoundId)
-    {
-        compoundId = writer.GetCompoundId();
-    }
-    writer.GetBinaryWriter().Write(compoundId);
 }
 
 void BoundCompoundStatement::Read(Cm::Sym::BcuReader& reader)
 {
     BoundParentStatement::Read(reader);
     statementList.Read(reader);
-    compoundId = reader.GetBinaryReader().ReadUInt();
-    // todo
 }
 
 void BoundCompoundStatement::AddStatement(BoundStatement* statement)
@@ -185,7 +206,11 @@ void BoundCompoundStatement::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-BoundReceiveStatement::BoundReceiveStatement(Cm::Sym::ParameterSymbol* parameterSymbol_) : BoundStatement(nullptr), parameterSymbol(parameterSymbol_)
+BoundReceiveStatement::BoundReceiveStatement() : BoundStatement(nullptr), parameterSymbol(nullptr), ctor(nullptr)
+{
+}
+
+BoundReceiveStatement::BoundReceiveStatement(Cm::Sym::ParameterSymbol* parameterSymbol_) : BoundStatement(nullptr), parameterSymbol(parameterSymbol_), ctor(nullptr)
 {
 }
 
@@ -224,6 +249,10 @@ void BoundReceiveStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundInitClassObjectStatement::BoundInitClassObjectStatement() : BoundStatement(nullptr), functionCall(nullptr)
+{
+}
+
 BoundInitClassObjectStatement::BoundInitClassObjectStatement(BoundFunctionCall* functionCall_) : BoundStatement(nullptr), functionCall(functionCall_)
 {
 }
@@ -253,6 +282,10 @@ void BoundInitClassObjectStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundInitVPtrStatement::BoundInitVPtrStatement() : BoundStatement(nullptr), classType(nullptr)
+{
+}
+
 BoundInitVPtrStatement::BoundInitVPtrStatement(Cm::Sym::ClassTypeSymbol* classType_) : BoundStatement(nullptr), classType(classType_)
 {
 }
@@ -274,6 +307,10 @@ void BoundInitVPtrStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundInitMemberVariableStatement::BoundInitMemberVariableStatement() : BoundStatement(nullptr), ctor(nullptr), arguments(), registerDestructor(false), memberVarSymbol(nullptr)
+{
+}
+
 BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::FunctionSymbol* ctor_, BoundExpressionList&& arguments_) : 
     BoundStatement(nullptr), ctor(ctor_), arguments(std::move(arguments_)), registerDestructor(false), memberVarSymbol(nullptr)
 {
@@ -281,6 +318,10 @@ BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::Func
 
 void BoundInitMemberVariableStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    if (memberVarSymbol->Name() == "mt")
+    {
+        int x = 0;
+    }
     BoundStatement::Write(writer);
     writer.Write(memberVarSymbol);
     writer.Write(ctor);
@@ -321,6 +362,10 @@ void BoundInitMemberVariableStatement::Accept(Visitor& visitor)
 void BoundInitMemberVariableStatement::SetMemberVariableSymbol(Cm::Sym::MemberVariableSymbol* memberVarSymbol_)
 {
     memberVarSymbol = memberVarSymbol_;
+}
+
+BoundFunctionCallStatement::BoundFunctionCallStatement() : BoundStatement(nullptr), function(nullptr), arguments()
+{
 }
 
 BoundFunctionCallStatement::BoundFunctionCallStatement(Cm::Sym::FunctionSymbol* function_, BoundExpressionList&& arguments_) : BoundStatement(nullptr), function(function_), arguments(std::move(arguments_))
@@ -372,6 +417,10 @@ void BoundFunctionCallStatement::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
     traceCallInfo.reset(traceCallInfo_);
 }
 
+BoundReturnStatement::BoundReturnStatement() : BoundStatement(nullptr), ctor(nullptr), returnType(nullptr)
+{
+}
+
 BoundReturnStatement::BoundReturnStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_), ctor(nullptr), returnType(nullptr)
 {
 }
@@ -391,31 +440,40 @@ void BoundReturnStatement::Read(Cm::Sym::BcuReader& reader)
 {
     BoundStatement::Read(reader);
     Cm::Sym::BcuItem* exprItem = reader.ReadItem();
-    if (exprItem->IsBoundExpression())
+    if (exprItem)
     {
-        expression.reset(static_cast<BoundExpression*>(exprItem));
-    }
-    else
-    {
-        throw std::runtime_error("bound expression expected");
+        if (exprItem->IsBoundExpression())
+        {
+            expression.reset(static_cast<BoundExpression*>(exprItem));
+        }
+        else
+        {
+            throw std::runtime_error("bound expression expected");
+        }
     }
     Cm::Sym::Symbol* c = reader.ReadSymbol();
-    if (c->IsFunctionSymbol())
+    if (c)
     {
-        ctor = static_cast<Cm::Sym::FunctionSymbol*>(c);
-    }
-    else
-    {
-        throw std::runtime_error("function symbol expected");
+        if (c->IsFunctionSymbol())
+        {
+            ctor = static_cast<Cm::Sym::FunctionSymbol*>(c);
+        }
+        else
+        {
+            throw std::runtime_error("function symbol expected");
+        }
     }
     Cm::Sym::Symbol* t = reader.ReadSymbol();
-    if (t->IsTypeSymbol())
+    if (t)
     {
-        returnType = static_cast<Cm::Sym::TypeSymbol*>(t);
-    }
-    else
-    {
-        throw std::runtime_error("type symbol expected");
+        if (t->IsTypeSymbol())
+        {
+            returnType = static_cast<Cm::Sym::TypeSymbol*>(t);
+        }
+        else
+        {
+            throw std::runtime_error("type symbol expected");
+        }
     }
     Cm::Sym::BcuItem* traceCallItem = reader.ReadItem();
     if (traceCallItem)
@@ -430,22 +488,28 @@ void BoundReturnStatement::Read(Cm::Sym::BcuReader& reader)
         }
     }
     Cm::Sym::BcuItem* temp = reader.ReadItem();
-    if (temp->IsBoundLocalVariable())
+    if (temp)
     {
-        boundTemporary.reset(static_cast<BoundLocalVariable*>(temp));
-    }
-    else
-    {
-        throw std::runtime_error("bound local variable expected");
+        if (temp->IsBoundLocalVariable())
+        {
+            boundTemporary.reset(static_cast<BoundLocalVariable*>(temp));
+        }
+        else
+        {
+            throw std::runtime_error("bound local variable expected");
+        }
     }
     Cm::Sym::BcuItem* retVal = reader.ReadItem();
-    if (retVal->IsBoundReturnValue())
+    if (retVal)
     {
-        boundReturnValue.reset(static_cast<BoundReturnValue*>(retVal));
-    }
-    else
-    {
-        throw std::runtime_error("bound return value expected");
+        if (retVal->IsBoundReturnValue())
+        {
+            boundReturnValue.reset(static_cast<BoundReturnValue*>(retVal));
+        }
+        else
+        {
+            throw std::runtime_error("bound return value expected");
+        }
     }
 }
 
@@ -474,6 +538,10 @@ void BoundReturnStatement::SetBoundReturnValue(BoundReturnValue* returnValue)
     boundReturnValue.reset(returnValue);
 }
 
+BoundBeginTryStatement::BoundBeginTryStatement() : BoundStatement(nullptr), firstCatchId(-1)
+{
+}
+
 BoundBeginTryStatement::BoundBeginTryStatement(Cm::Ast::Node* syntaxNode_, int firstCatchId_) : BoundStatement(syntaxNode_), firstCatchId(firstCatchId_)
 {
 }
@@ -495,6 +563,10 @@ void BoundBeginTryStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundEndTryStatement::BoundEndTryStatement() : BoundStatement(nullptr)
+{
+}
+
 BoundEndTryStatement::BoundEndTryStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -504,6 +576,10 @@ void BoundEndTryStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundExitBlocksStatement::BoundExitBlocksStatement() : BoundStatement(nullptr), targetBlock(nullptr)
+{
+}
+
 BoundExitBlocksStatement::BoundExitBlocksStatement(Cm::Ast::Node* syntaxNode_, BoundCompoundStatement* targetBlock_) : BoundStatement(syntaxNode_), targetBlock(targetBlock_)
 {
 }
@@ -511,22 +587,32 @@ BoundExitBlocksStatement::BoundExitBlocksStatement(Cm::Ast::Node* syntaxNode_, B
 void BoundExitBlocksStatement::Write(Cm::Sym::BcuWriter& writer)
 {
     BoundStatement::Write(writer);
-    if (targetBlock->GetCompoundId() == noCompoundId)
+    if (targetBlock->GetStatementId() == noStatementdId)
     {
-        targetBlock->SetCompoundId(writer.GetCompoundId());
+        targetBlock->SetStatementId(writer.GetStatementId());
     }
-    writer.GetBinaryWriter().Write(targetBlock->GetCompoundId());
+    writer.GetBinaryWriter().Write(targetBlock->GetStatementId());
 }
 
 void BoundExitBlocksStatement::Read(Cm::Sym::BcuReader& reader)
 {
     BoundStatement::Read(reader);
-    // todo
+    uint32_t statementId = reader.GetBinaryReader().ReadUInt();
+    reader.FetchCompoundTargetStatement(this, statementId);
+}
+
+void BoundExitBlocksStatement::SetCompoundTargetStatement(void* targetStatement)
+{
+    targetBlock = reinterpret_cast<BoundCompoundStatement*>(targetStatement);
 }
 
 void BoundExitBlocksStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundPushGenDebugInfoStatement::BoundPushGenDebugInfoStatement() : BoundStatement(nullptr), generate(false)
+{
 }
 
 BoundPushGenDebugInfoStatement::BoundPushGenDebugInfoStatement(Cm::Ast::Node* syntaxNode_, bool generate_) : BoundStatement(syntaxNode_), generate(generate_)
@@ -550,6 +636,10 @@ void BoundPushGenDebugInfoStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundPopGenDebugInfoStatement::BoundPopGenDebugInfoStatement() : BoundStatement(nullptr)
+{
+}
+
 BoundPopGenDebugInfoStatement::BoundPopGenDebugInfoStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -557,6 +647,10 @@ BoundPopGenDebugInfoStatement::BoundPopGenDebugInfoStatement(Cm::Ast::Node* synt
 void BoundPopGenDebugInfoStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundBeginThrowStatement::BoundBeginThrowStatement() : BoundStatement(nullptr)
+{
 }
 
 BoundBeginThrowStatement::BoundBeginThrowStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
@@ -568,6 +662,10 @@ void BoundBeginThrowStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundEndThrowStatement::BoundEndThrowStatement() : BoundStatement(nullptr)
+{
+}
+
 BoundEndThrowStatement::BoundEndThrowStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -577,6 +675,10 @@ void BoundEndThrowStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundBeginCatchStatement::BoundBeginCatchStatement() : BoundStatement(nullptr)
+{
+}
+
 BoundBeginCatchStatement::BoundBeginCatchStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -584,6 +686,10 @@ BoundBeginCatchStatement::BoundBeginCatchStatement(Cm::Ast::Node* syntaxNode_) :
 void BoundBeginCatchStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundConstructionStatement::BoundConstructionStatement() : BoundStatement(nullptr), localVariable(nullptr), ctor(nullptr)
+{
 }
 
 BoundConstructionStatement::BoundConstructionStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_), localVariable(nullptr), ctor(nullptr)
@@ -684,6 +790,10 @@ void BoundDestructionStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundAssignmentStatement::BoundAssignmentStatement() : BoundStatement(nullptr), left(nullptr), right(nullptr), assignment(nullptr)
+{
+}
+
 BoundAssignmentStatement::BoundAssignmentStatement(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_, Cm::Sym::FunctionSymbol* assignment_) : 
     BoundStatement(syntaxNode_), left(left_), right(right_), assignment(assignment_)
 {
@@ -752,6 +862,10 @@ void BoundAssignmentStatement::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
     traceCallInfo.reset(traceCallInfo_);
 }
 
+BoundSimpleStatement::BoundSimpleStatement() : BoundStatement(nullptr)
+{
+}
+
 BoundSimpleStatement::BoundSimpleStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -787,6 +901,10 @@ void BoundSimpleStatement::SetExpression(BoundExpression* expression_)
 void BoundSimpleStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundSwitchStatement::BoundSwitchStatement() : BoundParentStatement(nullptr)
+{
 }
 
 BoundSwitchStatement::BoundSwitchStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
@@ -861,6 +979,10 @@ void BoundSwitchStatement::AddToBreakNextSet(Cm::Core::CfgNode* node)
     breakNextSet.insert(node);
 }
 
+BoundCaseStatement::BoundCaseStatement() : BoundParentStatement(nullptr)
+{
+}
+
 BoundCaseStatement::BoundCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
@@ -905,6 +1027,10 @@ void BoundCaseStatement::AddValue(Cm::Sym::Value* value)
     values.push_back(std::unique_ptr<Cm::Sym::Value>(value));
 }
 
+BoundDefaultStatement::BoundDefaultStatement() : BoundParentStatement(nullptr)
+{
+}
+
 BoundDefaultStatement::BoundDefaultStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
@@ -932,6 +1058,10 @@ void BoundDefaultStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundBreakStatement::BoundBreakStatement() : BoundStatement(nullptr)
+{
+}
+
 BoundBreakStatement::BoundBreakStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -939,6 +1069,10 @@ BoundBreakStatement::BoundBreakStatement(Cm::Ast::Node* syntaxNode_) : BoundStat
 void BoundBreakStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundContinueStatement::BoundContinueStatement() : BoundStatement(nullptr)
+{
 }
 
 BoundContinueStatement::BoundContinueStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
@@ -950,6 +1084,10 @@ void BoundContinueStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundGotoStatement::BoundGotoStatement() : BoundStatement(nullptr), targetLabel(), targetStatement(nullptr), targetCompoundParent(nullptr), isExceptionHandlingGoto(false)
+{
+}
+
 BoundGotoStatement::BoundGotoStatement(Cm::Ast::Node* syntaxNode_, const std::string& targetLabel_) : 
     BoundStatement(syntaxNode_), targetLabel(targetLabel_), targetStatement(nullptr), targetCompoundParent(nullptr), isExceptionHandlingGoto(false)
 {
@@ -959,11 +1097,16 @@ void BoundGotoStatement::Write(Cm::Sym::BcuWriter& writer)
 {
     BoundStatement::Write(writer);
     writer.GetBinaryWriter().Write(targetLabel);
-    if (targetCompoundParent->GetCompoundId() == noCompoundId)
+    if (targetStatement->GetLabeledStatementId() == noStatementdId)
     {
-        targetCompoundParent->SetCompoundId(writer.GetCompoundId());
+        targetStatement->SetLabeledStatementId(writer.GetStatementId());
     }
-    writer.GetBinaryWriter().Write(targetCompoundParent->GetCompoundId());
+    writer.GetBinaryWriter().Write(targetStatement->GetLabeledStatementId());
+    if (targetCompoundParent->GetStatementId() == noStatementdId)
+    {
+        targetCompoundParent->SetStatementId(writer.GetStatementId());
+    }
+    writer.GetBinaryWriter().Write(targetCompoundParent->GetStatementId());
     writer.GetBinaryWriter().Write(isExceptionHandlingGoto);
 }
 
@@ -971,14 +1114,30 @@ void BoundGotoStatement::Read(Cm::Sym::BcuReader& reader)
 {
     BoundStatement::Read(reader);
     targetLabel = reader.GetBinaryReader().ReadString();
-    uint32_t compoundId = reader.GetBinaryReader().ReadUInt();
-    // todo
+    uint32_t labeledStatementId = reader.GetBinaryReader().ReadUInt();
+    reader.FetchLabeledStatement(this, labeledStatementId);
+    uint32_t statementId = reader.GetBinaryReader().ReadUInt();
+    reader.FetchCompoundTargetStatement(this, statementId);
     isExceptionHandlingGoto = reader.GetBinaryReader().ReadBool();
+}
+
+void BoundGotoStatement::SetLabeledStatement(void* labeledStatement)
+{
+    targetStatement = reinterpret_cast<BoundStatement*>(labeledStatement);
+}
+
+void BoundGotoStatement::SetCompoundTargetStatement(void* targetStatement)
+{
+    targetCompoundParent = reinterpret_cast<BoundCompoundStatement*>(targetStatement);
 }
 
 void BoundGotoStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundGotoCaseStatement::BoundGotoCaseStatement() : BoundStatement(nullptr)
+{
 }
 
 BoundGotoCaseStatement::BoundGotoCaseStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
@@ -987,11 +1146,13 @@ BoundGotoCaseStatement::BoundGotoCaseStatement(Cm::Ast::Node* syntaxNode_) : Bou
 
 void BoundGotoCaseStatement::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundStatement::Write(writer);
     writer.GetSymbolWriter().Write(value.get());
 }
 
 void BoundGotoCaseStatement::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundStatement::Read(reader);
     value.reset(reader.GetSymbolReader().ReadValue());
 }
 
@@ -1005,6 +1166,10 @@ void BoundGotoCaseStatement::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundGotoDefaultStatement::BoundGotoDefaultStatement() : BoundStatement(nullptr)
+{
+}
+
 BoundGotoDefaultStatement::BoundGotoDefaultStatement(Cm::Ast::Node* syntaxNode_) : BoundStatement(syntaxNode_)
 {
 }
@@ -1012,6 +1177,10 @@ BoundGotoDefaultStatement::BoundGotoDefaultStatement(Cm::Ast::Node* syntaxNode_)
 void BoundGotoDefaultStatement::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+BoundConditionalStatement::BoundConditionalStatement() : BoundParentStatement(nullptr)
+{
 }
 
 BoundConditionalStatement::BoundConditionalStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
@@ -1094,6 +1263,10 @@ void BoundConditionalStatement::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
+BoundWhileStatement::BoundWhileStatement() : BoundParentStatement(nullptr)
+{
+}
+
 BoundWhileStatement::BoundWhileStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
@@ -1170,6 +1343,10 @@ void BoundWhileStatement::AddToContinueNextSet(Cm::Core::CfgNode* node)
     continueNextSet.insert(node);
 }
 
+BoundDoStatement::BoundDoStatement() : BoundParentStatement(nullptr)
+{
+}
+
 BoundDoStatement::BoundDoStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)
 {
 }
@@ -1244,6 +1421,10 @@ void BoundDoStatement::AddToBreakNextSet(Cm::Core::CfgNode* node)
 void BoundDoStatement::AddToContinueNextSet(Cm::Core::CfgNode* node)
 {
     continueNextSet.insert(node);
+}
+
+BoundForStatement::BoundForStatement() : BoundParentStatement(nullptr)
+{
 }
 
 BoundForStatement::BoundForStatement(Cm::Ast::Node* syntaxNode_) : BoundParentStatement(syntaxNode_)

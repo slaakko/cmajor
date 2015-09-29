@@ -876,6 +876,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
 	Cm::BoundTree::BoundExpressionList constructMutexGuardArguments;
 	constructMutexGuardArguments.Add(mutexIdLiteral);
 	Cm::Sym::LocalVariableSymbol* mutexGuardVar = new Cm::Sym::LocalVariableSymbol(span, "mtxGuard");
+    mutexGuardVar->SetSid(compileUnit.SymbolTable().GetSid());
     staticConstructor->AddLocalVariable(mutexGuardVar);
     mutexGuardVar->SetType(mutexGuardClassType);
 	constructMutexGuardStatement->SetLocalVariable(mutexGuardVar);
@@ -886,6 +887,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
 	staticConstructor->Body()->AddStatement(constructMutexGuardStatement);
 
     Cm::Sym::MemberVariableSymbol* initializedVar = new Cm::Sym::MemberVariableSymbol(span, Cm::IrIntf::GetPrivateSeparator() + "initialized");
+    initializedVar->SetSid(compileUnit.SymbolTable().GetSid());
     initializedVar->SetParent(classTypeSymbol);
     Cm::Sym::TypeSymbol* boolType = compileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     initializedVar->SetType(boolType);
@@ -981,26 +983,31 @@ void GenerateSynthesizedFunctionImplementation(Cm::Sym::FunctionSymbol* function
     if (classTypeSymbol->GenerateDefaultConstructor() && function->IsDefaultConstructor())
     {
         Cm::Sym::FunctionSymbol* functionSymbol = GenerateDefaultConstructor(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
+        compileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateCopyConstructor() && function->IsCopyConstructor())
     {
         Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyConstructor(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
+        compileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateMoveConstructor() && function->IsMoveConstructor())
     {
         Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveConstructor(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
+        compileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateCopyAssignment() && function->IsCopyAssignment())
     {
         Cm::Sym::FunctionSymbol* functionSymbol = GenerateCopyAssignment(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
+        compileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
         compileUnit.Own(functionSymbol);
     }
     else if (classTypeSymbol->GenerateMoveAssignment() && function->IsMoveAssignment())
     {
         Cm::Sym::FunctionSymbol* functionSymbol = GenerateMoveAssignment(true, unique, span, classTypeSymbol, containerScope, compileUnit, exception);
+        compileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
         compileUnit.Own(functionSymbol);
     }
     if (exception)
@@ -1286,6 +1293,72 @@ void SynthesizedClassFunRepository::CollectViableFunctions(const std::string& gr
         SynthesizedClassFunGroup* group = i->second;
         group->CollectViableFunctions(cacheMap, classType, arity, arguments, span, containerScope, viableFunctions, exception);
     }
+}
+
+void SynthesizedClassFunRepository::Write(Cm::Sym::BcuWriter& writer)
+{
+    std::vector<Cm::Sym::FunctionSymbol*> collectedFunctionSymbols;
+    collectedFunctionSymbols.insert(collectedFunctionSymbols.end(), defaultFunctionSymbols.begin(), defaultFunctionSymbols.end());
+    SynthesizedClassTypeCacheMapIt e = cacheMap.end();
+    for (SynthesizedClassTypeCacheMapIt i = cacheMap.begin(); i != e; ++i)
+    {
+        const SynthesizedClassFunCache& cache = i->second;
+        Cm::Sym::FunctionSymbol* defaultCtor = cache.DefaultCtor();
+        if (defaultCtor)
+        {
+            collectedFunctionSymbols.push_back(defaultCtor);
+        }
+        Cm::Sym::FunctionSymbol* copyCtor = cache.CopyCtor();
+        if (copyCtor)
+        {
+            collectedFunctionSymbols.push_back(copyCtor);
+        }
+        Cm::Sym::FunctionSymbol* moveCtor = cache.MoveCtor();
+        if (moveCtor)
+        {
+            collectedFunctionSymbols.push_back(moveCtor);
+        }
+        Cm::Sym::FunctionSymbol* copyAssignment = cache.CopyAssignment();
+        if (copyAssignment)
+        {
+            collectedFunctionSymbols.push_back(copyAssignment);
+        }
+        Cm::Sym::FunctionSymbol* moveAssignment = cache.MoveAssignment();
+        if (moveAssignment)
+        {
+            collectedFunctionSymbols.push_back(moveAssignment);
+        }
+    }
+    int32_t n = int32_t(collectedFunctionSymbols.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Cm::Sym::FunctionSymbol* functionSymbol = collectedFunctionSymbols[i];
+        writer.GetSymbolWriter().Write(functionSymbol);
+    }
+}
+
+void SynthesizedClassFunRepository::Read(Cm::Sym::BcuReader& reader)
+{
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Cm::Sym::Symbol* symbol = reader.GetSymbolReader().ReadSymbol();
+        if (symbol->IsFunctionSymbol())
+        {
+            Cm::Sym::FunctionSymbol* functionSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
+            ownedFunctionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
+        }
+        else
+        {
+            throw std::runtime_error("function symbol expected");
+        }
+    }
+}
+
+void SynthesizedClassFunRepository::AddDefaultFunctionSymbol(Cm::Sym::FunctionSymbol* defaultFunctionSymbol)
+{
+    defaultFunctionSymbols.push_back(defaultFunctionSymbol);
 }
 
 } } // namespace Cm::Bind

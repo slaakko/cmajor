@@ -38,6 +38,7 @@
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ControlFlowAnalyzer.hpp>
 #include <Cm.Bind/ArrayTypeOpRepository.hpp>
+#include <Cm.BoundTree/Factory.hpp>
 #include <Cm.Opt/TypePropagationGraph.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
@@ -46,10 +47,12 @@
 #include <Cm.Emit/LlvmEmitter.hpp>
 #include <Cm.Emit/CEmitter.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
+#include <Cm.IrIntf/Rep.hpp>
 #include <Cm.Util/MappedInputFile.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <Cm.Util/System.hpp>
 #include <Cm.Util/Path.hpp>
+#include <Cm.Util/Prime.hpp>
 #include <Llvm.Ir/Type.hpp>
 #include <chrono>
 #include <iostream>
@@ -152,7 +155,8 @@ Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const s
 }
 
 void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths,
-    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths)
+    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allBcuPaths, 
+    std::vector<uint64_t>& classHierarchyTable)
 {
     boost::filesystem::path projectBase = project->BasePath();
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
@@ -173,7 +177,7 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
         {
             importedModules.insert(libraryReferencePath);
             Cm::Sym::Module module(libraryReferencePath);
-            module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+            module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
             module.CheckUpToDate();
         }
     }
@@ -184,11 +188,11 @@ void ReadNextSid(Cm::Sym::SymbolTable& symbolTable);
 
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths,
-    std::vector<std::string>& allDebugInfoFilePaths)
+    std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable)
 {
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
     ReadNextSid(symbolTable);
-    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
     symbolTable.InitVirtualFunctionTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
@@ -531,12 +535,8 @@ bool CompileCppFiles(Cm::Ast::Project* project, std::vector<std::string>& object
 }
 
 bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, 
-    bool rebuild, const std::vector<std::string>& compileFileNames, std::vector<std::string>& debugInfoFilePaths)
+    bool rebuild, const std::vector<std::string>& compileFileNames, std::vector<std::string>& debugInfoFilePaths, std::vector<std::string>& bcuPaths)
 {
-/*
-    Cm::Opt::TpGraph typePropagationGraph;
-    Cm::Opt::TpGraphBuilderVisitor tpgVisitor(typePropagationGraph);
-*/
     bool changed = false;
     if (syntaxTree.CompileUnits().empty()) return changed;
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
@@ -603,6 +603,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
         std::string ext = backend == Cm::IrIntf::BackEnd::llvm ? ".ll" : backend == Cm::IrIntf::BackEnd::c ? ".c" : "";
         std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(ext)).generic_string());
         std::unique_ptr<Cm::BoundTree::BoundCompileUnit> boundCompileUnit(new Cm::BoundTree::BoundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable));
+        bcuPaths.push_back(boundCompileUnit->BcuPath());
         compileUnitMap.MapCompileUnit(compileUnit.get(), boundCompileUnit.get());
         boundCompileUnits.push_back(std::move(boundCompileUnit));
     }
@@ -679,7 +680,6 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
             boundCompileUnit->SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(*boundCompileUnit));
             boundCompileUnit->AddFileScope(fileScopes[index].release());
             Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
-            //boundCompileUnit->Accept(tpgVisitor);
             if (boundCompileUnit->HasGotos())
             {
                 AnalyzeControlFlow(*boundCompileUnit);
@@ -711,13 +711,6 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
         boundCompileUnit->WriteDependencyFile();
     }
     Cm::Core::SetCompileUnitMap(nullptr);
-/*
-    typePropagationGraph.Process();
-    std::ofstream tpgFile("C:\\Temp\\tpg.txt");
-    Cm::Util::CodeFormatter tpgFormatter(tpgFile);
-    //typePropagationGraph.Print(tpgFormatter);
-    tpgVisitor.PrintVirtualCalls(tpgFormatter);
-*/
     return changed;
 }
 
@@ -986,6 +979,127 @@ bool GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::st
     return true;
 }
 
+bool GenerateClassHierarchyUnit(Cm::Sym::SymbolTable& symbolTable, std::vector<uint64_t>& classHierarchyTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths, bool changed)
+{
+    if (!symbolTable.ProjectClasses().empty())
+    {
+        changed = true;
+    }
+    for (Cm::Sym::ClassTypeSymbol* projectClass : symbolTable.ProjectClasses())
+    {
+        if (projectClass->IsVirtual())
+        {
+            classHierarchyTable.push_back(projectClass->Cid());
+            if (projectClass->BaseClass())
+            {
+                classHierarchyTable.push_back(projectClass->BaseClass()->Cid());
+            }
+            else
+            {
+                classHierarchyTable.push_back(Cm::Sym::noCid);
+            }
+        }
+    }
+    int n = int(classHierarchyTable.size());
+    if ((n & 1) != 0)
+    {
+        throw std::runtime_error("invalid class hierarachy table (not even number of entries)");
+    }
+    boost::filesystem::path outputBase(projectOutputBasePath);
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    Cm::Parsing::Span span;
+    Cm::Ast::CompileUnitNode syntaxUnit(span);
+    std::string ext;
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        ext = ".ll";
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        ext = ".c";
+    }
+    std::string classHierarchyUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__class_hierarchy__" + ext)).generic_string());
+    Cm::BoundTree::BoundCompileUnit classHierarchyUnit(&syntaxUnit, classHierarchyUnitIrFilePath, symbolTable);
+    objectFilePaths.push_back(classHierarchyUnit.ObjectFilePath());
+    if (!changed)
+    {
+        boost::filesystem::path ifp = classHierarchyUnit.IrFilePath();
+        boost::filesystem::path ofp = classHierarchyUnit.ObjectFilePath();
+        if (!boost::filesystem::exists(ifp))
+        {
+            changed = true;
+        }
+        else if (!boost::filesystem::exists(ofp))
+        {
+            changed = true;
+        }
+        else if (boost::filesystem::last_write_time(ifp) > boost::filesystem::last_write_time(ofp))
+        {
+            changed = true;
+        }
+    }
+    if (!changed) return false;
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        std::ofstream classHierarachyFile(classHierarchyUnitIrFilePath);
+        Cm::Util::CodeFormatter formatter(classHierarachyFile);
+        std::unique_ptr<Ir::Intf::Type> classHierarchyArrayType(Cm::IrIntf::Array(Cm::IrIntf::I64(), n)); 
+        classHierarchyArrayType->SetOwned();
+        formatter.WriteLine("@class$hierarchy = constant " + classHierarchyArrayType->Name());
+        formatter.WriteLine("[");
+        formatter.IncIndent();
+        for (int i = 0; i < n; ++i)
+        {
+            uint64_t entry = classHierarchyTable[i];
+            std::string entryStr;
+            entryStr.append(Ir::Intf::GetFactory()->GetI64()->Name()).append(" ").append(std::to_string(entry));
+            if (i < n - 1)
+            {
+                entryStr.append(", ");
+            }
+            formatter.Write(entryStr);
+            if ((i & 1) == 1)
+            {
+                formatter.WriteLine();
+            }
+        }
+        formatter.DecIndent();
+        formatter.WriteLine("]");
+        std::unique_ptr<Ir::Intf::Type> pointerToClassHierarchyTable(Cm::IrIntf::Pointer(classHierarchyArrayType.get(), 1));
+        pointerToClassHierarchyTable->SetOwned();
+        formatter.WriteLine("@class$hierarchy$table$addr = constant i64* bitcast (" + pointerToClassHierarchyTable->Name() + " @class$hierarchy to i64*)");
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        std::ofstream classHierarachyFile(classHierarchyUnitIrFilePath);
+        Cm::Util::CodeFormatter formatter(classHierarachyFile);
+        formatter.WriteLine("#include <stdint.h>");
+        formatter.WriteLine("int64_t class_X_hierarchy[" + std::to_string(n) + "] =");
+        formatter.WriteLine("{");
+        formatter.IncIndent();
+        for (int i = 0; i < n; ++i)
+        {
+            uint64_t entry = classHierarchyTable[i];
+            std::string entryStr;
+            entryStr.append(std::to_string(entry));
+            if (i < n - 1)
+            {
+                entryStr.append(", ");
+            }
+            formatter.Write(entryStr);
+            if ((i & 1) == 1)
+            {
+                formatter.WriteLine();
+            }
+        }
+        formatter.DecIndent();
+        formatter.WriteLine("};");
+        formatter.WriteLine("int64_t* class_X_hierarchy_table_addr = class_X_hierarchy;");
+    }
+    GenerateObjectCode(classHierarchyUnit);
+    return true;
+}
+
 void CleanProject(Cm::Ast::Project* project)
 {
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
@@ -1058,7 +1172,7 @@ void ReadNextCid(Cm::Sym::ClassCounter& classCounter)
 {
     std::vector<std::string> libraryDirectories;
     GetLibraryDirectories(libraryDirectories);
-    uint32_t nextCid = 0;
+    uint64_t nextCid = 0;
     boost::filesystem::path nextCidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.cid");
     if (boost::filesystem::exists(nextCidPath))
     {
@@ -1072,7 +1186,7 @@ void WriteNextCid(Cm::Sym::ClassCounter& classCounter)
 {
     std::vector<std::string> libraryDirectories;
     GetLibraryDirectories(libraryDirectories);
-    uint32_t nextCid = classCounter.GetNextCid();
+    uint64_t nextCid = classCounter.GetNextCid();
     boost::filesystem::path nextCidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.cid");
     std::ofstream nextCidFile(nextCidPath.generic_string());
     nextCidFile << nextCid;
@@ -1100,6 +1214,206 @@ void WriteNextSid(Cm::Sym::SymbolTable& symbolTable)
     boost::filesystem::path nextSidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.sid");
     std::ofstream nextSidFile(nextSidPath.generic_string());
     nextSidFile << nextSid;
+}
+
+int NumberOfAncestors(Cm::Sym::ClassTypeSymbol* cls)
+{
+    int numAncestors = 0;
+    Cm::Sym::ClassTypeSymbol* baseClass = cls->BaseClass();
+    while (baseClass != nullptr)
+    {
+        ++numAncestors;
+        baseClass = baseClass->BaseClass();
+    }
+    return numAncestors;
+}
+
+void AssignPriorities(std::vector<Cm::Sym::ClassTypeSymbol*>& leaves)
+{
+    for (Cm::Sym::ClassTypeSymbol* leaf : leaves)
+    {
+        int priority = leaf->Level();
+        leaf->SetPriority(priority);
+        Cm::Sym::ClassTypeSymbol* base = leaf->BaseClass();
+        while (base)
+        {
+            if (base->Priority() < priority)
+            {
+                base->SetPriority(priority);
+            }
+            else
+            {
+                priority = base->Priority();
+            }
+            base = base->BaseClass();
+        }
+    }
+}
+
+struct PriorityGreater
+{
+    bool operator()(Cm::Sym::ClassTypeSymbol* left, Cm::Sym::ClassTypeSymbol* right) const
+    {
+        if (left->Level() < right->Level())
+        {
+            return true;
+        }
+        else if (right->Level() < left->Level())
+        {
+            return false;
+        }
+        else
+        {
+            return left->Priority() > right->Priority();
+        }
+    }
+};
+
+void AssignKeys(std::vector<Cm::Sym::ClassTypeSymbol*>& classesByPriority)
+{
+    uint64_t key = 2;
+    uint64_t minLevelKey = key;
+    uint64_t maxLevelKey = key;
+    int predLevel = -1;
+    std::unordered_set<Cm::Sym::ClassTypeSymbol*> bases;
+    for (Cm::Sym::ClassTypeSymbol* cls : classesByPriority)
+    {
+        int level = cls->Level();
+        if (level == 0)
+        {
+            cls->SetKey(key);
+            key = Cm::Util::NextPrime(key + 1);
+            maxLevelKey = key;
+        }
+        else
+        {
+            if (predLevel != level)
+            {
+                bases.clear();
+                bases.insert(cls->BaseClass());
+                key = Cm::Util::NextPrime(maxLevelKey + 1);
+                minLevelKey = key;
+                cls->SetKey(key);
+                key = Cm::Util::NextPrime(key + 1);
+                maxLevelKey = key;
+            }
+            else
+            {
+                if (bases.find(cls->BaseClass()) == bases.end())
+                {
+                    key = minLevelKey;
+                }
+                bases.insert(cls->BaseClass());
+                cls->SetKey(key);
+                key = Cm::Util::NextPrime(key + 1);
+                if (key > maxLevelKey)
+                {
+                    maxLevelKey = key;
+                }
+            }
+            predLevel = level;
+        }
+    }
+}
+
+uint64_t ComputeCid(Cm::Sym::ClassTypeSymbol* cls)
+{
+    uint64_t cid = cls->Key();
+    Cm::Sym::ClassTypeSymbol* base = cls->BaseClass();
+    while (base)
+    {
+        cid *= base->Key();
+        base = base->BaseClass();
+    }
+    return cid;
+}
+
+void AssignCids(std::vector<Cm::Sym::ClassTypeSymbol*>& classesByPriority)
+{
+    for (Cm::Sym::ClassTypeSymbol* cls : classesByPriority)
+    {
+        cls->SetCid(ComputeCid(cls));
+    }
+}
+
+void ProcessClasses(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classes)
+{
+    std::vector<Cm::Sym::ClassTypeSymbol*> virtualClasses;
+    for (Cm::Sym::ClassTypeSymbol* cls : classes)
+    {
+        if (cls->IsVirtual())
+        {
+            virtualClasses.push_back(cls);
+        }
+    }
+    for (Cm::Sym::ClassTypeSymbol* cls : virtualClasses)
+    {
+        cls->SetLevel(NumberOfAncestors(cls));
+        if (cls->BaseClass())
+        {
+            cls->BaseClass()->SetNonLeaf();
+        }
+    }
+    std::vector<Cm::Sym::ClassTypeSymbol*> leaves;
+    for (Cm::Sym::ClassTypeSymbol* cls : virtualClasses)
+    {
+        if (!cls->IsNonLeaf())
+        {
+            leaves.push_back(cls);
+        }
+    }
+    AssignPriorities(leaves);
+    std::vector<Cm::Sym::ClassTypeSymbol*> classesByPriority;
+    for (Cm::Sym::ClassTypeSymbol* cls : virtualClasses)
+    {
+        classesByPriority.push_back(cls);
+    }
+    std::sort(classesByPriority.begin(), classesByPriority.end(), PriorityGreater());
+    AssignKeys(classesByPriority);
+    AssignCids(classesByPriority);
+    for (Cm::Sym::ClassTypeSymbol* cls : classesByPriority)
+    {
+        std::string baseClassName;
+        if (cls->BaseClass())
+        {
+            baseClassName = cls->BaseClass()->FullName();
+        }
+        std::cout << cls->FullName() << " : " << baseClassName << " level=" << cls->Level() << ", priority=" << cls->Priority() << ", key=" << cls->Key() << ", cid=" << cls->Cid() << std::endl;
+    }
+}
+
+void ProcessProgram(Cm::Ast::Project* project)
+{
+    std::vector<std::string> assemblyFilePaths;
+    assemblyFilePaths.push_back(project->AssemblyFilePath());
+    std::vector<std::string> cLibs;
+    cLibs.insert(cLibs.end(), project->CLibraryFilePaths().begin(), project->CLibraryFilePaths().end());
+    Cm::Core::GlobalConceptData globalConceptData;
+    Cm::Sym::SymbolTable symbolTable;
+    std::vector<std::string> libraryDirs;
+    GetLibraryDirectories(libraryDirs);
+    Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
+    std::vector<std::string> allReferenceFilePaths;
+    std::vector<std::string> allDebugInfoFilePaths;
+    std::vector<std::string> allBcuPaths;
+    std::vector<uint64_t> classHierarchyTable;
+    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
+    symbolTable.InitVirtualFunctionTables();
+    ProcessClasses(symbolTable.Classes());
+    for (const std::string& bcuPath : allBcuPaths)
+    {
+        Cm::Core::BasicTypeOpFactory basicTypeOpFactory;
+        Cm::BoundTree::Factory itemFactory;
+        Cm::Bind::ArrayTypeOpFactory arrayTypeOpFactory;
+        Cm::Bind::DelegateTypeOpFactory delegateTypeOpFactory;
+        Cm::Bind::ClassDelegateTypeOpFactory classDelegateTypeOpFactory;
+        Cm::Sym::BcuReader reader(bcuPath, symbolTable, basicTypeOpFactory, itemFactory, arrayTypeOpFactory, delegateTypeOpFactory, classDelegateTypeOpFactory);
+        Cm::BoundTree::BoundCompileUnit compileUnit(symbolTable);
+        compileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(compileUnit));
+        compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));
+        compileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(compileUnit));
+        compileUnit.Read(reader);
+    }
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
@@ -1152,6 +1466,8 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
     std::vector<std::string> allDebugInfoFilePaths;
+    std::vector<std::string> allBcuPaths;
+    std::vector<uint64_t> classHierarchyTable;
     boost::filesystem::path outputBasePath = project->OutputBasePath();
     std::string cmlFilePath = Cm::Util::GetFullPath((outputBasePath / boost::filesystem::path(project->FilePath()).filename().replace_extension(".cml")).generic_string());
     if (!rebuild && boost::filesystem::exists(cmlFilePath))
@@ -1159,7 +1475,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         Cm::Sym::Module module(cmlFilePath);
         module.CheckFileVersion();
     }
-    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
     {
         ImportFunctionTables(allReferenceFilePaths);
@@ -1182,22 +1498,28 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         changed = asmSourcesChanged;
     }
     std::vector<std::string> debugInfoFilePaths;
-    if (Compile(project, symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths))
+    std::vector<std::string> bcuPaths;
+    if (Compile(project, symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths, bcuPaths))
     {
         changed = true;
     }
     if (project->GetTarget() == Cm::Ast::Target::program && !full)
     {
-        bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), 
-            boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, changed || rebuild);
-        if (!changed)
-        {
-            changed = mainCompileUnitGenerated;
-        }
         bool exceptionTableUnitGenerated = GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, changed || rebuild);
         if (!changed)
         {
             changed = exceptionTableUnitGenerated;
+        }
+        bool classHierachyUnitGenerated = GenerateClassHierarchyUnit(symbolTable, classHierarchyTable, project->OutputBasePath().generic_string(), objectFilePaths, changed || rebuild);
+        if (!changed)
+        {
+            changed = classHierachyUnitGenerated;
+        }
+        bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(),
+            boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, int(classHierarchyTable.size()), changed || rebuild);
+        if (!changed)
+        {
+            changed = mainCompileUnitGenerated;
         }
     }
     if (!full)
@@ -1229,6 +1551,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         projectModule.SetReferenceFilePaths(allReferenceFilePaths);
         projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
         projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
+        projectModule.SetBcuPaths(bcuPaths);
         projectModule.Export(symbolTable);
         if (Cm::Core::GetGlobalSettings()->Config() == "profile")
         {
@@ -1247,6 +1570,11 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     if (project->GetTarget() == Cm::Ast::Target::program && Cm::Core::GetGlobalSettings()->Config() == "profile")
     {
         CreateCmProfFile(cmlFilePath, allReferenceFilePaths);
+    }
+    if (project->GetTarget() == Cm::Ast::Target::program && full)
+    {
+        project->AddReferenceFilePath(boost::filesystem::path(cmlFilePath).filename().generic_string());
+        ProcessProgram(project);
     }
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);

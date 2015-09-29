@@ -65,6 +65,7 @@ void InlineFunctionRepository::Instantiate(Cm::Sym::ContainerScope* containerSco
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     globalNs->Accept(declarationVisitor);
     Cm::Sym::FunctionSymbol* functionInstanceSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
+    functionIntanceSymbols.push_back(functionInstanceSymbol);
     functionInstanceSymbol->SetReplica();
     if (classTypeSymbol)
     {
@@ -93,6 +94,30 @@ void InlineFunctionRepository::Instantiate(Cm::Sym::ContainerScope* containerSco
     }
     boundCompileUnit.RemoveLastFileScope();
     functionSymbol->SetGlobalNs(globalNs.release());
+}
+
+void InlineFunctionRepository::Write(Cm::Sym::BcuWriter& writer)
+{
+    int32_t n = int32_t(instantiatedFunctions.size());
+    writer.GetBinaryWriter().Write(n);
+    for (Cm::Sym::FunctionSymbol* functionInstanceSymbol : functionIntanceSymbols)
+    {
+        writer.GetSymbolWriter().Write(functionInstanceSymbol);
+    }
+}
+
+void InlineFunctionRepository::Read(Cm::Sym::BcuReader& reader)
+{
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Cm::Sym::Symbol* symbol = reader.GetSymbolReader().ReadSymbol();
+        if (symbol->IsFunctionSymbol())
+        {
+            Cm::Sym::FunctionSymbol* functionInstanceSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
+            ownedFunctionInstanceSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionInstanceSymbol));
+        }
+    }
 }
 
 } } // namespace Cm::Bind

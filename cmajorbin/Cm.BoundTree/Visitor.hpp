@@ -26,6 +26,8 @@ class BoundFunctionId;
 class BoundParameter;
 class BoundConversion;
 class BoundCast;
+class BoundIsExpression;
+class BoundAsExpression;
 class BoundSizeOfExpression;
 class BoundDynamicTypeNameExpression;
 class BoundUnaryOp;
@@ -101,6 +103,8 @@ public:
     virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundCast& boundCast) {}
+    virtual void Visit(BoundIsExpression& boundIsExpression) {}
+    virtual void Visit(BoundAsExpression& boundAsExpression) {}
     virtual void Visit(BoundSizeOfExpression& boundSizeOfExpr) {}
     virtual void Visit(BoundDynamicTypeNameExpression& boundDynamicTypeNameExpression) {}
     virtual void Visit(BoundUnaryOp& boundUnaryOp) {}

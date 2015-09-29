@@ -17,11 +17,11 @@ class ClassCounter
 {
 public:
     ClassCounter();
-    uint32_t GetCid() { return nextCid++; }
-    void SetNextCid(uint32_t nextCid_) { nextCid = nextCid_; }
-    uint32_t GetNextCid() const { return nextCid; }
+    uint64_t GetCid() { return nextCid++; }
+    void SetNextCid(uint64_t nextCid_) { nextCid = nextCid_; }
+    uint64_t GetNextCid() const { return nextCid; }
 private:
-    uint32_t nextCid;
+    uint64_t nextCid;
 };
 
 ClassCounter* GetClassCounter();

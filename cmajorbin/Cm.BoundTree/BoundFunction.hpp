@@ -31,8 +31,8 @@ private:
 class BoundFunction : public BoundNode
 {
 public:
+    BoundFunction();
     BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_);
-    ~BoundFunction();
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuFunction; }
     void Write(Cm::Sym::BcuWriter& writer) override;
     void Read(Cm::Sym::BcuReader& reader) override;
@@ -63,8 +63,10 @@ public:
     const std::vector<std::unique_ptr<LandingPad>>& GetLandingPads() const { return landingPads; }
     void AddTryCompound(Cm::Ast::TryStatementNode* tryNode, BoundCompoundStatement* tryCompound);
     BoundCompoundStatement* GetTryCompound(Cm::Ast::TryStatementNode* tryNode);
-    void SetMainFunction() { isMain = true; };
-    bool IsMainFunction() const { return isMain; }
+    void SetMainFunction() { isRealMain = true; };
+    bool IsMainFunction() const { return isRealMain; }
+    bool IsUserMain() const { return isUserMain; }
+    void SetUserMain() { isUserMain = true; }
 private:
     std::unique_ptr<BoundCompoundStatement> body;
     Cm::Sym::FunctionSymbol* functionSymbol;
@@ -82,7 +84,8 @@ private:
     std::vector<Cm::Ast::TryStatementNode*> tryNodeStack;
     bool inHandler;
     std::stack<bool> inHandlerStack;
-    bool isMain;
+    bool isRealMain;
+    bool isUserMain;
 };
 
 } } // namespace Cm::BoundTree

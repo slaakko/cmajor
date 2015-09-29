@@ -15,7 +15,7 @@ namespace Cm { namespace Parser {
 
 enum class Operator : uint8_t
 {
-    or_, and_, eq, neq, less, greater, lessOrEq, greaterOrEq, plus, minus, mul, div, rem, not_, const_, typename_, addressOf, deref,
+    or_, and_, eq, neq, less, greater, lessOrEq, greaterOrEq, is, as, plus, minus, mul, div, rem, not_, const_, typename_, addressOf, deref,
     bitOr, bitXor, bitAnd, shiftLeft, shiftRight, complement, preInc, preDec, postInc, postDec
 };
 

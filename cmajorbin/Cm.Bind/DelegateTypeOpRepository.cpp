@@ -18,7 +18,7 @@ namespace Cm { namespace Bind {
 
 DelegateFromFunCtor::DelegateFromFunCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* delegatePtrType_, Cm::Sym::DelegateTypeSymbol* delegateType_,
     Cm::Sym::FunctionSymbol* functionSymbol_) :
-    Cm::Core::BasicTypeOp(delegateType_), delegateType(delegateType_), functionSymbol(functionSymbol_)
+    Cm::Core::BasicTypeOp(delegateType_), delegatePtrType(delegatePtrType_), delegateType(delegateType_), functionSymbol(functionSymbol_)
 {
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
@@ -32,6 +32,13 @@ DelegateFromFunCtor::DelegateFromFunCtor(Cm::Sym::TypeRepository& typeRepository
     ComputeName();
 }
 
+void DelegateFromFunCtor::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(delegatePtrType);
+    writer.Write(delegateType);
+    writer.Write(functionSymbol);
+}
+
 void DelegateFromFunCtor::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)
 {
     Cm::IrIntf::Init(emitter, GetIrType(), result.Arg1(), result.MainObject());
@@ -39,7 +46,7 @@ void DelegateFromFunCtor::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResu
 
 DelegateFromFunAssignment::DelegateFromFunAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* delegatePtrType_, Cm::Sym::DelegateTypeSymbol* delegateType_, 
     Cm::Sym::FunctionSymbol* functionSymbol_) :
-    Cm::Core::BasicTypeOp(delegateType_), delegateType(delegateType_), functionSymbol(functionSymbol_)
+    Cm::Core::BasicTypeOp(delegateType_), delegatePtrType(delegatePtrType_), delegateType(delegateType_), functionSymbol(functionSymbol_)
 {
     SetGroupName("operator=");
     Cm::Sym::TypeSymbol* voidType = typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
@@ -53,6 +60,13 @@ DelegateFromFunAssignment::DelegateFromFunAssignment(Cm::Sym::TypeRepository& ty
     funParam->SetType(delegatePtrType_);
     AddSymbol(funParam);
     ComputeName();
+}
+
+void DelegateFromFunAssignment::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(delegatePtrType);
+    writer.Write(delegateType);
+    writer.Write(functionSymbol);
 }
 
 void DelegateFromFunAssignment::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)
@@ -335,6 +349,17 @@ void DelegateTypeOpRepository::CollectViableFunctions(Cm::Sym::ContainerScope* c
         group->CollectViableFunctions(boundCompileUnit, containerScope, span, arity, arguments, conversionTable, boundCompileUnit.SymbolTable().GetTypeRepository(), delegateTypeOpCacheMap, 
             viableFunctions);
     }
+}
+
+Cm::Sym::FunctionSymbol* DelegateTypeOpFactory::CreateDelegateOp(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* delegatePtrType, Cm::Sym::DelegateTypeSymbol* delegateType,
+    Cm::Sym::FunctionSymbol* functionSymbol) const
+{
+    switch (itemType)
+    {
+        case Cm::Sym::BcuItemType::bcuDelegateFromFunCtor: return new DelegateFromFunCtor(typeRepository, delegatePtrType, delegateType, functionSymbol);
+        case Cm::Sym::BcuItemType::bcuDelegateFromFunAssignment: return new DelegateFromFunAssignment(typeRepository, delegatePtrType, delegateType, functionSymbol);
+    }
+    throw std::runtime_error("unknown item type " + std::to_string(uint8_t(itemType)));
 }
 
 } } // namespace Cm::Bind

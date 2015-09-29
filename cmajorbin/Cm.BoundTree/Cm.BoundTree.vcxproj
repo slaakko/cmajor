@@ -26,6 +26,7 @@
     <ClInclude Include="BoundFunction.hpp" />
     <ClInclude Include="BoundNode.hpp" />
     <ClInclude Include="BoundStatement.hpp" />
+    <ClInclude Include="Factory.hpp" />
     <ClInclude Include="Visitor.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -36,6 +37,7 @@
     <ClCompile Include="BoundFunction.cpp" />
     <ClCompile Include="BoundNode.cpp" />
     <ClCompile Include="BoundStatement.cpp" />
+    <ClCompile Include="Factory.cpp" />
     <ClCompile Include="Visitor.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

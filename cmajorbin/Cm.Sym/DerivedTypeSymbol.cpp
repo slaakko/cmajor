@@ -242,6 +242,15 @@ std::string DerivedTypeSymbol::FullName() const
 
 bool DerivedTypeSymbol::IsExportSymbol() const
 {
+    if (baseType->IsTypeParameterSymbol()) return false;
+    if (baseType->IsTemplateTypeSymbol())
+    {
+        TemplateTypeSymbol* baseTemplateType = static_cast<TemplateTypeSymbol*>(baseType);
+        for (TypeSymbol* typeArgument : baseTemplateType->TypeArguments())
+        {
+            if (typeArgument->IsTypeParameterSymbol()) return false;
+        }
+    }
     return (baseType->IsPublic() || baseType->Serialize()) && !baseType->IsReplica();
 }
 
@@ -377,6 +386,12 @@ void DerivedTypeSymbol::ReplaceReplicaTypes()
         TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(baseType);
         baseType = replica->GetPrimaryTemplateTypeSymbol();
     }
+}
+
+void DerivedTypeSymbol::DoSerialize()
+{
+    TypeSymbol::DoSerialize();
+    baseType->DoSerialize();
 }
 
 } } // namespace Cm::Sym

@@ -38,12 +38,17 @@ struct FunctionTempalateKeyHash
 class FunctionTemplateRepository
 {
 public:
+    FunctionTemplateRepository(Cm::Sym::SymbolTable& symbolTable_);
     Cm::Sym::FunctionSymbol* GetFunctionTemplateInstance(const FunctionTemplateKey& key) const;
     void AddFunctionTemplateInstance(const FunctionTemplateKey& key, Cm::Sym::FunctionSymbol* functionTemplateInstance);
+    void Read(Cm::Sym::BcuReader& reader);
+    void Write(Cm::Sym::BcuWriter& writer);
 private:
+    Cm::Sym::SymbolTable& symbolTable;
     typedef std::unordered_map<FunctionTemplateKey, Cm::Sym::FunctionSymbol*, FunctionTempalateKeyHash> FunctionTemplateMap;
     typedef FunctionTemplateMap::const_iterator FunctionTemplateMapIt;
     FunctionTemplateMap functionTemplateMap;
+    std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> functionSymbols;
 };
 
 } } // namespace Cm::Core

@@ -78,6 +78,12 @@ private:
     ArrayTypeIndexGroup arrayTypeIndexGroup;
 };
 
+class ArrayTypeOpFactory : public Cm::Sym::BcuArrayTypeOpFactory
+{
+public:
+    Cm::Sym::FunctionSymbol* CreateArrayTypeOp(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type) const override;
+};
+
 } } // namespace Cm::Bind
 
 #endif // CM_BIND_ARRAY_TYPE_OP_REPOSITORY_INCLUDED

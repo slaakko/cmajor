@@ -22,6 +22,7 @@ BoundClass::BoundClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol_, Cm::Ast::Clas
 
 void BoundClass::Write(Cm::Sym::BcuWriter& writer)
 {
+    BoundNode::Write(writer);
     writer.Write(classTypeSymbol);
     writer.GetBinaryWriter().Write(int(members.size()));
     for (const std::unique_ptr<BoundNode>& member : members)
@@ -32,6 +33,7 @@ void BoundClass::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundClass::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundNode::Read(reader);
     classTypeSymbol = reader.ReadClassTypeSymbol();
     int n = reader.GetBinaryReader().ReadInt();
     for (int i = 0; i < n; ++i)

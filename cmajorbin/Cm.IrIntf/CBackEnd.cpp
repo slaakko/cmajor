@@ -546,6 +546,11 @@ std::string CBackEnd::GetExceptionBaseIdTableName()
     return "_X_exception_X_base_X_id_X_table_X_addr";
 }
 
+std::string CBackEnd::GetClassHierarchyTableName()
+{
+    return "class_X_hierarchy_table_addr";
+}
+
 int CBackEnd::GetDebugAttrEncodingBoolean()
 {
     throw std::runtime_error("member function not applicable to C backend");

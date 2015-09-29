@@ -19,4 +19,14 @@ BoundNode::BoundNode(Cm::Ast::Node* syntaxNode_) : flags(BoundNodeFlags::none), 
 {
 }
 
+void BoundNode::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.GetBinaryWriter().Write(uint16_t(flags));
+}
+
+void BoundNode::Read(Cm::Sym::BcuReader& reader)
+{
+    flags = BoundNodeFlags(reader.GetBinaryReader().ReadUShort());
+}
+
 } } // namespace Cm::BoundTree

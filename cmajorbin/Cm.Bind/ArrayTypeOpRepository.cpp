@@ -29,6 +29,7 @@ public:
     PrimitiveArrayTypeDefaultConstructor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
     bool IsPrimitiveArrayTypeDefaultConstructor() const override { return true; }
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuPrimitiveArrayTypeOpDefaultConstructor; }
 };
 
 PrimitiveArrayTypeDefaultConstructor::PrimitiveArrayTypeDefaultConstructor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
@@ -83,6 +84,7 @@ public:
     PrimitiveArrayTypeCopyConstructor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
     bool IsPrimitiveArrayTypeCopyConstructorOrCopyAssignment() const override { return true; }
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuPrimitiveArrayTypeOpCopyConstructor; }
 };
 
 PrimitiveArrayTypeCopyConstructor::PrimitiveArrayTypeCopyConstructor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
@@ -151,6 +153,7 @@ public:
     PrimitiveArrayTypeCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
     bool IsPrimitiveArrayTypeCopyConstructorOrCopyAssignment() const override { return true; }
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuPrimitiveArrayTypeOpCopyAssignment; }
 };
 
 PrimitiveArrayTypeCopyAssignment::PrimitiveArrayTypeCopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
@@ -388,6 +391,7 @@ class ArrayIndexing : public Cm::Core::BasicTypeOp
 public:
     ArrayIndexing(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
     void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuArrayIndexing; }
 };
 
 ArrayIndexing::ArrayIndexing(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
@@ -581,6 +585,18 @@ void ArrayTypeOpRepository::CollectViableFunctions(const std::string& groupName,
         ArrayTypeOpFunGroup* group = i->second;
         group->CollectViableFunctions(cacheMap, arrayType, containerScope, compileUnit, span, arity, arguments, viableFunctions);
     }
+}
+
+Cm::Sym::FunctionSymbol* ArrayTypeOpFactory::CreateArrayTypeOp(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type) const
+{
+    switch (itemType)
+    {
+        case Cm::Sym::BcuItemType::bcuPrimitiveArrayTypeOpDefaultConstructor: return new PrimitiveArrayTypeDefaultConstructor(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuPrimitiveArrayTypeOpCopyConstructor: return new PrimitiveArrayTypeCopyConstructor(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuPrimitiveArrayTypeOpCopyAssignment: return new PrimitiveArrayTypeCopyAssignment(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuArrayIndexing: return new ArrayIndexing(typeRepository, type);
+    }
+    throw std::runtime_error("unknown item type " + std::to_string(uint8_t(itemType)));
 }
 
 } } // namespace Cm::Bind

@@ -142,6 +142,8 @@ void InitFactory()
     Factory::Instance().Register(NodeType::sizeOfNode, new Creator<SizeOfNode>());
     Factory::Instance().Register(NodeType::typeNameNode, new Creator<TypeNameNode>());
     Factory::Instance().Register(NodeType::castNode, new Creator<CastNode>());
+    Factory::Instance().Register(NodeType::isNode, new Creator<IsNode>());
+    Factory::Instance().Register(NodeType::asNode, new Creator<AsNode>());
     Factory::Instance().Register(NodeType::newNode, new Creator<NewNode>());
     Factory::Instance().Register(NodeType::constructNode, new Creator<ConstructNode>());
     Factory::Instance().Register(NodeType::thisNode, new Creator<ThisNode>());

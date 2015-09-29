@@ -46,6 +46,7 @@ CompileUnitMap* GetCompileUnitMap();
 class BoundCompileUnit : public Cm::Sym::BoundCompileUnit
 {
 public:
+    BoundCompileUnit(Cm::Sym::SymbolTable& symbolTable_);
     BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_);
     void Write(Cm::Sym::BcuWriter& writer);
     void Read(Cm::Sym::BcuReader& reader);

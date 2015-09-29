@@ -9,6 +9,7 @@
 
 #ifndef CM_CORE_DERIVED_TYPE_OP_REPOSITORY_INCLUDED
 #define CM_CORE_DERIVED_TYPE_OP_REPOSITORY_INCLUDED
+#include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Sym/ConversionTable.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
@@ -16,6 +17,84 @@
 namespace Cm { namespace Core {
 
 using Cm::Parsing::Span;
+
+class OpAddPtrInt : public BasicTypeOp
+{
+public:
+    OpAddPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpAddPtrInt; }
+};
+
+class OpAddIntPtr : public BasicTypeOp
+{
+public:
+    OpAddIntPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpAddIntPtr; }
+};
+
+class OpSubPtrInt : public BasicTypeOp
+{
+public:
+    OpSubPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpSubPtrInt; }
+};
+
+class OpSubPtrPtr : public BasicTypeOp
+{
+public:
+    OpSubPtrPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpSubPtrPtr; }
+};
+
+class OpDeref : public BasicTypeOp
+{
+public:
+    OpDeref(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpDeref; }
+private:
+    Cm::Sym::TypeRepository& typeRepository;
+};
+
+class OpIncPtr : public BasicTypeOp
+{
+public:
+    OpIncPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpIncPtr; }
+private:
+    Cm::Sym::TypeRepository& typeRepository;
+};
+
+class OpDecPtr : public BasicTypeOp
+{
+public:
+    OpDecPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpDecPtr; }
+private:
+    Cm::Sym::TypeRepository& typeRepository;
+};
+
+class OpAddrOf : public BasicTypeOp
+{
+public:
+    OpAddrOf(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpAddrOf; }
+};
+
+class OpArrow : public BasicTypeOp
+{
+public:
+    OpArrow(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_);
+    void Generate(Emitter& emitter, GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuOpArrow; }
+};
 
 class DerivedTypeOpCache
 {

@@ -40,7 +40,7 @@ void ContainerSymbol::Write(Writer& writer)
     std::vector<Symbol*> exportSymbols;
     for (Symbol* symbol : symbols)
     {
-        if (symbol->IsExportSymbol() && !symbol->IsTemplateTypeSymbol())
+        if (symbol->IsExportSymbol() && !symbol->IsTemplateTypeSymbol() || writer.ExportMemberVariables() && symbol->IsMemberVariableSymbol())
         {
             exportSymbols.push_back(symbol);
         }
