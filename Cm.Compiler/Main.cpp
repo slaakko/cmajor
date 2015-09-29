@@ -123,7 +123,7 @@ std::string GetDataLayout()
 #ifdef _WIN32
 
 #if defined(_M_X64)
-        dataLayout  = "e-m:e-i64:64-f80:128-n8:16:32:64-S128";
+        dataLayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128";
 #else
         dataLayout = "e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32";
 #endif
@@ -232,6 +232,10 @@ int main(int argc, const char** argv)
                                     if (config == "release" || config == "profile" || config == "full")
                                     {
                                         Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::optimize);
+                                        if (config == "full")
+                                        {
+                                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig);
+                                        }
                                     }
                                 }
                                 else if (v[0] == "-O")

@@ -13,6 +13,7 @@
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/ConversionTable.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Class.hpp>
 #include <Cm.Ast/Enumeration.hpp>
@@ -90,9 +91,13 @@ public:
     uint32_t GetNextSid() const { return nextSid; }
     void SetNextSid(uint32_t nextSid_) { nextSid = nextSid_; }
     void AddSymbol(Symbol* symbol);
+    uint32_t GetSid() { return nextSid++; }
     void SetSidAndAddSymbol(Symbol* symbol);
     Symbol* GetSymbol(uint32_t sid) const;
-    ClassTypeSymbol* GetClass(uint32_t cid) const;
+    ClassTypeSymbol* GetClass(uint64_t cid) const;
+    void Own(LocalVariableSymbol* localVariable);
+    const std::unordered_set<ClassTypeSymbol*>& Classes() const;
+    const std::unordered_set<ClassTypeSymbol*>& ProjectClasses() const;
 private:
     uint32_t nextSid;
     NamespaceSymbol globalNs;
@@ -115,7 +120,11 @@ private:
     Cm::Sym::FunctionSymbol* userMainFunction;
     std::vector<TemplateTypeSymbol*> importedTemplateTypes;
     std::unordered_map<uint32_t, Symbol*> symbolMap;
-    std::unordered_map<uint32_t, ClassTypeSymbol*> classMap;
+    std::unordered_map<uint64_t, ClassTypeSymbol*> classMap;
+    std::unordered_set<ClassTypeSymbol*> classes;
+    std::unordered_set<ClassTypeSymbol*> projectClasses;
+    std::vector<std::unique_ptr<LocalVariableSymbol>> ownedLocalVariables;
+    std::vector<uint64_t> classHierarchyTable;
 };
 
 } } // namespace Cm::Sym

@@ -95,7 +95,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             else if (paramType->IsConstReferenceType())
             {
                 if ((argument->GetType()->IsValueTypeSymbol()) &&
-                    (argument->IsLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argument->IsBoundUnaryOp() || argument->IsBoundBinaryOp() || 
+                    (argument->IsBoundLiteral() || argument->IsConstant() || argument->IsEnumConstant() || argument->IsBoundUnaryOp() || argument->IsBoundBinaryOp() || 
                     argument->IsBoundFunctionCall() || argument->IsBoundConversion() || argument->IsBoundCast()))
                 {
                     if (!currentFunction)
@@ -113,7 +113,9 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
                     std::vector<Cm::Sym::FunctionSymbol*> conversions;
                     Cm::Sym::FunctionSymbol* basicTypeCopyCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, resolutionLookups,
                         argument->SyntaxNode()->GetSpan(), conversions);
-                    Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(argument->SyntaxNode(), currentFunction->CreateTempLocalVariable(argument->GetType()));
+                    Cm::Sym::LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(argument->GetType());
+                    temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
+                    Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(argument->SyntaxNode(), temporary);
                     boundTemporary->SetType(argument->GetType());
                     Cm::BoundTree::BoundConversion* conversion = new Cm::BoundTree::BoundConversion(argument->SyntaxNode(), argument, basicTypeCopyCtor);
                     boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
@@ -213,7 +215,9 @@ Cm::BoundTree::BoundConversion* CreateBoundConversion(Cm::Sym::ContainerScope* c
     }
     if (conversionFun->GetTargetType()->IsClassTypeSymbol())
     {
-        Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, currentFunction->CreateTempLocalVariable(conversionFun->GetTargetType()));
+        Cm::Sym::LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(conversionFun->GetTargetType());
+        temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
+        Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, temporary);
         boundTemporary->SetType(conversionFun->GetTargetType());
         boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
         conversion->SetBoundTemporary(boundTemporary);
@@ -232,7 +236,9 @@ Cm::BoundTree::BoundConversion* CreateBoundConversion(Cm::Sym::ContainerScope* c
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
         Cm::Sym::FunctionSymbol* copyCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, resolutionLookups,
             argument->SyntaxNode()->GetSpan(), conversions);
-        Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(argument->SyntaxNode(), currentFunction->CreateTempLocalVariable(argument->GetType()));
+        Cm::Sym::LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(argument->GetType());
+        temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
+        Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(argument->SyntaxNode(), temporary);
         boundTemporary->SetType(argument->GetType());
         Cm::BoundTree::BoundConversion* constRefConversion = new Cm::BoundTree::BoundConversion(argument->SyntaxNode(), argument, copyCtor);
         constRefConversion->SetType(pointerType);
@@ -327,6 +333,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     if (fun->ReturnsClassObjectByValue() && !fun->IsBasicTypeOp())
     {
         Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
+        classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
         op->SetClassObjectResultVar(classObjectResultVar);
     }
     if (!fun->IsBasicTypeOp())
@@ -397,6 +404,7 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     if (fun->ReturnsClassObjectByValue())
     {
         Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
+        classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
         op->SetClassObjectResultVar(classObjectResultVar);
     }
     if (!fun->IsBasicTypeOp())
@@ -421,6 +429,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode)
     Cm::BoundTree::BoundDisjunction* disjunction = new Cm::BoundTree::BoundDisjunction(&disjunctionNode, left, right);
     disjunction->SetType(left->GetType());
     Cm::Sym::LocalVariableSymbol* resultVar = currentFunction->CreateTempLocalVariable(disjunction->GetType());
+    resultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
     disjunction->SetResultVar(resultVar);
     boundExpressionStack.Push(disjunction);
 }
@@ -440,6 +449,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode)
     Cm::BoundTree::BoundConjunction* conjunction = new Cm::BoundTree::BoundConjunction(&conjunctionNode, left, right);
     conjunction->SetType(left->GetType());
     Cm::Sym::LocalVariableSymbol* resultVar = currentFunction->CreateTempLocalVariable(conjunction->GetType());
+    resultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
     conjunction->SetResultVar(resultVar);
     boundExpressionStack.Push(conjunction);
 }
@@ -1520,6 +1530,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     if (fun->ReturnsClassObjectByValue())
     {
         Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(type);
+        classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
         functionCall->SetClassObjectResultVar(classObjectResultVar);
     }
     if (generateVirtualCall)
@@ -1544,6 +1555,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
     ctorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, typeSymbol->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Core::Argument> ctorResolutionArguments;
     temporary = currentFunction->CreateTempLocalVariable(typeSymbol);
+    temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
     ctorResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(typeSymbol, node->GetSpan())));
     if (typeSymbol->IsClassDelegateTypeSymbol())
     {
@@ -2144,6 +2156,70 @@ void ExpressionBinder::Visit(Cm::Ast::CastNode& castNode)
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
     Cm::Ast::Node* sourceExpr = castNode.SourceExpr();
     BindCast(&castNode, targetTypeExpr, sourceExpr, castNode.GetSpan());
+}
+
+void ExpressionBinder::Visit(Cm::Ast::IsNode& isNode)
+{
+    Cm::Ast::Node* expr = isNode.Expr();
+    expr->Accept(*this);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> boundExpr(Pop());
+    if (boundExpr->GetType()->IsPointerToClassType())
+    {
+        Cm::Sym::TypeSymbol* exprBaseType = boundExpr->GetType()->GetBaseType();
+        if (exprBaseType->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* exprClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(exprBaseType);
+            if (exprClassType->IsVirtual())
+            {
+                Cm::Ast::Node* typeExpr = isNode.TypeExpr();
+                Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), typeExpr);
+                if (type->IsPointerToClassType())
+                {
+                    Cm::Sym::TypeSymbol* baseType = type->GetBaseType();
+                    if (baseType->IsClassTypeSymbol())
+                    {
+                        Cm::Sym::ClassTypeSymbol* rightClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(baseType);
+                        if (rightClassType->IsVirtual())
+                        {
+                            Cm::BoundTree::BoundExpression* boundIsExpression = new Cm::BoundTree::BoundIsExpression(&isNode, boundExpr.release(), rightClassType);
+                            Cm::Sym::TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+                            boundIsExpression->SetType(boolType);
+                            boundExpressionStack.Push(boundIsExpression);
+                        }
+                        else
+                        {
+                            throw Cm::Core::Exception("right operand of is-expression must be virtual class type", typeExpr->GetSpan());
+                        }
+                    }
+                    else
+                    {
+                        throw Cm::Core::Exception("right operand of is-expression must be virtual class type", typeExpr->GetSpan());
+                    }
+                }
+                else
+                {
+                    throw Cm::Core::Exception("right operand of is-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm::Core::Exception("type of left operand of is-expression must be pointer to virtual class type", expr->GetSpan());
+            }
+        }
+        else
+        {
+            throw std::runtime_error("not class type");
+        }
+    }
+    else
+    {
+        throw Cm::Core::Exception("type of left operand of is-expression must be pointer to virtual class type", expr->GetSpan());
+    }
+}
+
+void ExpressionBinder::Visit(Cm::Ast::AsNode& asNode)
+{
+
 }
 
 void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes, Cm::BoundTree::BoundExpression* allocationArg)

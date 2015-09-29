@@ -8,6 +8,8 @@ csource <mutextbl.c>;
 source <os.cm>;
 cppsource <profile.cpp>;
 text <profile.hpp>;
+cppsource <class_hierarchy.cpp>;
+text <class_hierarchy.hpp>;
 csource <threadtbl.c>;
 clib <stdc++>;
 clib <rt>[os=linux];

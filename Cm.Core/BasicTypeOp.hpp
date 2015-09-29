@@ -16,6 +16,13 @@
 
 namespace Cm { namespace Core {
 
+class BasicTypeOpFactory : public Cm::Sym::BcuBasicTypeOpSymbolFactory
+{
+public:
+    Cm::Sym::Symbol* CreateBasicTypeOpSymbol(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type) const override;
+    Cm::Sym::Symbol* CreateConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType, Cm::Sym::TypeSymbol* sourceType) const override;
+};
+
 class BasicTypeOp : public Cm::Sym::FunctionSymbol
 {
 public:

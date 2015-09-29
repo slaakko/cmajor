@@ -96,6 +96,8 @@ public:
 
     void Visit(Cm::Ast::SizeOfNode& sizeOfNode) override;
     void Visit(Cm::Ast::CastNode& castNode) override;
+    void Visit(Cm::Ast::IsNode& isNode) override;
+    void Visit(Cm::Ast::AsNode& asNode) override;
     void Visit(Cm::Ast::ConstructNode& constructNode) override;
     void Visit(Cm::Ast::NewNode& newNode) override;
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;

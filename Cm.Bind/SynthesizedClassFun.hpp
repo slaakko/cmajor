@@ -36,6 +36,11 @@ public:
         Cm::BoundTree::BoundCompileUnit& compileUnit, std::unique_ptr<Cm::Core::Exception>& exception);
     Cm::Sym::FunctionSymbol* GetMoveAssignment(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope, 
         Cm::BoundTree::BoundCompileUnit& compileUnit, std::unique_ptr<Cm::Core::Exception>& exception);
+    Cm::Sym::FunctionSymbol* DefaultCtor() const { return defaultConstructor.get(); }
+    Cm::Sym::FunctionSymbol* CopyCtor() const { return copyConstructor.get(); }
+    Cm::Sym::FunctionSymbol* MoveCtor() const { return moveConstructor.get(); }
+    Cm::Sym::FunctionSymbol* CopyAssignment() const { return copyAssignment.get(); }
+    Cm::Sym::FunctionSymbol* MoveAssignment() const { return moveAssignment.get(); }
 private:
     std::unique_ptr<Cm::Sym::FunctionSymbol> defaultConstructor;
     std::unique_ptr<Cm::Sym::FunctionSymbol> copyConstructor;
@@ -81,6 +86,9 @@ public:
     SynthesizedClassFunRepository(Cm::BoundTree::BoundCompileUnit& compileUnit_);
     void CollectViableFunctions(const std::string& groupName, int arity, const std::vector<Cm::Core::Argument>& arguments, const Cm::Parsing::Span& span, Cm::Sym::ContainerScope* containerScope,
         std::unordered_set<Cm::Sym::FunctionSymbol*>& viableFunctions, std::unique_ptr<Cm::Core::Exception>& exception) override;
+    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
+    void AddDefaultFunctionSymbol(Cm::Sym::FunctionSymbol* defaultFunctionSymbol);
 private:
     Cm::BoundTree::BoundCompileUnit& compileUnit;
     SynthesizedClassTypeCacheMap cacheMap;
@@ -89,6 +97,8 @@ private:
     SynthesizedClassFunGroupMap synthesizedClassFunGroupMap;
     SynthesizedConstructorGroup synthesizedConstructorGroup;
     SynthesizedAssignmentGroup synthesizedAssignmentGroup;
+    std::vector<Cm::Sym::FunctionSymbol*> defaultFunctionSymbols;
+    std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedFunctionSymbols;
 };
 
 } } // namespace Cm::Bind

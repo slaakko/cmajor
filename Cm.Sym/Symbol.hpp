@@ -80,7 +80,8 @@ enum class SymbolFlags : uint16_t
     irTypeMade = 1 << 6,
     replica = 1 << 7,
     owned = 1 << 8,
-    serialize = 1 << 9
+    serialize = 1 << 9,
+    justSymbol = 1 << 10
 };
 
 std::string SymbolFlagStr(SymbolFlags flags, SymbolAccess declaredAccess, bool addAccess);
@@ -210,6 +211,8 @@ public:
     bool Serialize() const { return GetFlag(SymbolFlags::serialize); }
     virtual void DoSerialize();
     virtual void ReplaceReplicaTypes();
+    void SetJustSymbol() { SetFlag(SymbolFlags::justSymbol); }
+    bool JustSymbol() const { return GetFlag(SymbolFlags::justSymbol); }
     uint32_t Sid() const { return sid; }
     void SetSid(uint32_t sid_) { sid = sid_; }
     virtual TypeSymbol* GetType() const;

@@ -20,7 +20,7 @@ public:
     DeclarationBlock(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::declarationBlock; }
     std::string TypeString() const override { return "declaration block"; };
-    bool IsExportSymbol() const override { return false; }
+    bool IsExportSymbol() const override;
     bool IsDeclarationBlock() const override { return true; }
 };
 

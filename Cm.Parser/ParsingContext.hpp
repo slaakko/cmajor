@@ -35,6 +35,9 @@ public:
     bool ParsingArguments() const { return parsingArguments; }
     void BeginParsingArguments();
     void EndParsingArguments();
+    void PushParsingIsOrAs(bool enable); 
+    void PopParsingIsOrAs();
+    bool ParsingIsOrAs() const { return parsingIsOrAs;  }
 private:
     bool parsingTypeExpr;
     std::stack<bool> parsingTypeExprStack;
@@ -48,6 +51,8 @@ private:
     std::stack<bool> parsingLvalueStack;
     bool parsingArguments;
     std::stack<bool> parsingArgumentsStack;
+    bool parsingIsOrAs;
+    std::stack<bool> parsingIsOrAsStack;
 };
 
 } } // namespace Cm::Parser

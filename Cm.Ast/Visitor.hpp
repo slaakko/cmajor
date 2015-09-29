@@ -95,6 +95,8 @@ class DerivedTypeExprNode;
 
 class SizeOfNode;
 class CastNode;
+class IsNode;
+class AsNode;
 class ConstructNode;
 class NewNode;
 class TemplateIdNode;
@@ -268,6 +270,8 @@ public:
 
     virtual void Visit(SizeOfNode& sizeOfNode) {}
     virtual void Visit(CastNode& castNode) {}
+    virtual void Visit(IsNode& isNode) {}
+    virtual void Visit(AsNode& asNode) {}
     virtual void Visit(ConstructNode& constructNode) {}
     virtual void Visit(NewNode& newNode) {}
     virtual void Visit(TemplateIdNode& templateIdNode) {}

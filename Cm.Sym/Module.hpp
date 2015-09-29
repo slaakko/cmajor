@@ -44,9 +44,10 @@ public:
     void SetReferenceFilePaths(const std::vector<std::string>& referenceFilePaths_);
     void SetCLibraryFilePaths(const std::vector<std::string>& cLibraryFilePaths_);
     void SetDebugInfoFilePaths(const std::vector<std::string>& debugInfoFilePaths_);
+    void SetBcuPaths(const std::vector<std::string>& bcuPaths_);
     void Export(SymbolTable& symbolTable);
     void Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs,
-        std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths);
+        std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable);
     void Dump();
     void CheckUpToDate();
     void CheckFileVersion();
@@ -57,18 +58,21 @@ private:
     std::vector<std::string> referenceFilePaths;
     std::vector<std::string> cLibraryFilePaths;
     std::vector<std::string> debugInfoFilePaths;
+    std::vector<std::string> bcuPaths;
     void WriteModuleFileId(Writer& writer);
     void WriteName(Writer& writer);
     void WriteSourceFilePaths(Writer& writer);
     void WriteReferenceFilePaths(Writer& writer);
     void WriteCLibraryFilePaths(Writer& writer);
     void WriteDebugInfoFilePaths(Writer& writer);
+    void WriteBcuPaths(Writer& writer);
     void CheckModuleFileId(Reader& reader);
     void ReadName(Reader& reader);
     void ReadSourceFilePaths(Reader& reader);
     void ReadReferenceFilePaths(Reader& reader);
     void ReadCLibraryFilePaths(Reader& reader);
     void ReadDebugInfoFilePaths(Reader& reader);
+    void ReadBcuPaths(Reader& reader);
     void ExportExceptionTable(Writer& writer);
     void ImportExceptionTable(SymbolTable& symbolTable, Reader& reader);
 };

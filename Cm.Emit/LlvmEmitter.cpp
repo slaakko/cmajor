@@ -46,6 +46,7 @@ void LlvmEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
     {
         codeFormatter.WriteLine("target datalayout = \"" + dataLayout + "\"");
     }
+    codeFormatter.WriteLine("%rtti = type { i8*, i64 }");
 }
 
 void LlvmEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)

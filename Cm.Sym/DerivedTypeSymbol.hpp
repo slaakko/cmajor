@@ -81,6 +81,7 @@ public:
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
     std::string FullDocId() const override;
     void ReplaceReplicaTypes() override;
+    void DoSerialize() override;
 private:
     TypeSymbol* baseType;
     Cm::Ast::DerivationList derivations;

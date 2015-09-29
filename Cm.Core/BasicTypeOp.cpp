@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Core/BasicTypeOp.hpp>
+#include <Cm.Core/DerivedTypeOpRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -15,13 +16,6 @@
 namespace Cm { namespace Core {
 
 using Cm::Parsing::Span;
-
-class BasicTypeOpFactory : public Cm::Sym::BcuBasicTypeOpSymbolFactory
-{
-public:
-    Cm::Sym::Symbol* CreateBasicTypeOpSymbol(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type) const override;
-    Cm::Sym::Symbol* CreateConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType, Cm::Sym::TypeSymbol* sourceType) const override;
-};
 
 Cm::Sym::Symbol* BasicTypeOpFactory::CreateBasicTypeOpSymbol(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type) const
 {
@@ -50,8 +44,17 @@ Cm::Sym::Symbol* BasicTypeOpFactory::CreateBasicTypeOpSymbol(Cm::Sym::BcuItemTyp
         case Cm::Sym::BcuItemType::bcuOpComplement: return new OpComplement(typeRepository, type);
         case Cm::Sym::BcuItemType::bcuOpIncrement: return new OpIncrement(typeRepository, type);
         case Cm::Sym::BcuItemType::bcuOpDecrement: return new OpDecrement(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpAddPtrInt: return new OpAddPtrInt(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpAddIntPtr: return new OpAddIntPtr(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpSubPtrInt: return new OpSubPtrInt(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpSubPtrPtr: return new OpSubPtrPtr(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpDeref: return new OpDeref(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpIncPtr: return new OpIncPtr(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpDecPtr: return new OpDecPtr(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpAddrOf: return new OpAddrOf(typeRepository, type);
+        case Cm::Sym::BcuItemType::bcuOpArrow: return new OpArrow(typeRepository, type);
     }
-    return nullptr;
+    throw std::runtime_error("unknown item type " + std::to_string(uint8_t(itemType)));
 }
 
 Cm::Sym::Symbol* BasicTypeOpFactory::CreateConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType, Cm::Sym::TypeSymbol* sourceType) const
@@ -594,7 +597,8 @@ void OpDecrement::Generate(Emitter& emitter, GenResult& result)
     Cm::IrIntf::Assign(emitter, GetIrType(), result.MainObject(), result.Arg1());
 }
 
-ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_) : BasicTypeOp(targetType_)
+ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_) : 
+    BasicTypeOp(targetType_), targetType(targetType_), sourceType(sourceType_), conversionType(), conversionInst(), conversionRank(), conversionDistance()
 {
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));

@@ -39,6 +39,7 @@ void CEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
     codeFormatter.WriteLine("typedef uint32_t ui32;");
     codeFormatter.WriteLine("typedef int64_t i64;");
     codeFormatter.WriteLine("typedef uint64_t ui64;");
+    codeFormatter.WriteLine("typedef struct { const char* class_name; ui64 class_id; } rtti;");
 }
 
 void CEmitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)

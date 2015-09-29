@@ -20,6 +20,7 @@ VariableSymbol::VariableSymbol(const Span& span_, const std::string& name_) : Sy
 
 void VariableSymbol::Write(Writer& writer)
 {
+    Symbol::Write(writer);
     bool hasType = type != nullptr;
     writer.GetBinaryWriter().Write(hasType);
     if (hasType)
@@ -30,6 +31,7 @@ void VariableSymbol::Write(Writer& writer)
 
 void VariableSymbol::Read(Reader& reader)
 {
+    Symbol::Read(reader);
     hasType = reader.GetBinaryReader().ReadBool();
     if (hasType)
     {

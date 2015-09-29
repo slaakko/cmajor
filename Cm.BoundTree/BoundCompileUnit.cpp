@@ -33,10 +33,16 @@ CompileUnitMap* GetCompileUnitMap()
     return globalCompileUnitMap;
 }
 
+BoundCompileUnit::BoundCompileUnit(Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(nullptr), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), 
+    classConversionTable(symbolTable.GetTypeRepository()), derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()),
+    irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false), isMainUnit(false), functionTemplateRepository(symbolTable)
+{
+}
+
 BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(syntaxUnit_),
     fileScopes(), irFilePath(irFilePath_), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), 
     derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false), 
-    isMainUnit(false)
+    isMainUnit(false), functionTemplateRepository(symbolTable)
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
     optIrFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".opt.ll").generic_string());
@@ -65,6 +71,10 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
 void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
 {
     writer.GetBinaryWriter().Write(irFilePath);
+    if (irFilePath == "C:/Programming/cmajorbin/system/full/llvm/mt.ll")
+    {
+        int x = 0;
+    }
     writer.GetBinaryWriter().Write(objectFilePath);
     writer.GetBinaryWriter().Write(optIrFilePath);
     writer.GetBinaryWriter().Write(dependencyFilePath);
@@ -73,16 +83,27 @@ void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
     writer.GetBinaryWriter().Write(bcuPath);
     stringRepository->Write(writer);
     irClassTypeRepository->Write(writer);
+    functionTemplateRepository.Write(writer);
+    classTemplateRepository->Write(writer);
+    synthesizedClassFunRepository->Write(writer);
+    inlineFunctionRepository->Write(writer);
     writer.GetBinaryWriter().Write(int(boundNodes.size()));
+    int i = 0;
     for (const std::unique_ptr<BoundNode>& boundNode : boundNodes)
     {
         writer.Write(boundNode.get());
+        ++i;
     }
 }
 
 void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
 {
+    reader.SetBoundCompileUnit(this);
     irFilePath = reader.GetBinaryReader().ReadString();
+    if (irFilePath == "C:/Programming/cmajorbin/system/full/llvm/mt.ll")
+    {
+        int x = 0;
+    }
     objectFilePath = reader.GetBinaryReader().ReadString();
     optIrFilePath = reader.GetBinaryReader().ReadString();
     dependencyFilePath = reader.GetBinaryReader().ReadString();
@@ -107,6 +128,10 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
         irClassTypeRepository.reset(new Cm::Core::CIrClassTypeRepository());
     }
     irClassTypeRepository->Read(reader);
+    functionTemplateRepository.Read(reader);
+    classTemplateRepository->Read(reader);
+    synthesizedClassFunRepository->Read(reader);
+    inlineFunctionRepository->Read(reader);
     int n = reader.GetBinaryReader().ReadInt();
     for (int i = 0; i < n; ++i)
     {

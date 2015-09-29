@@ -24,6 +24,7 @@
     <ClInclude Include="Handle.hpp" />
     <ClInclude Include="MappedInputFile.hpp" />
     <ClInclude Include="Path.hpp" />
+    <ClInclude Include="Prime.hpp" />
     <ClInclude Include="System.hpp" />
     <ClInclude Include="TextUtils.hpp" />
     <ClInclude Include="ToolError.hpp" />
@@ -33,6 +34,7 @@
     <ClCompile Include="CodeFormatter.cpp" />
     <ClCompile Include="MappedInputFile.cpp" />
     <ClCompile Include="Path.cpp" />
+    <ClCompile Include="Prime.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="TextUtils.cpp" />
     <ClCompile Include="ToolError.cpp" />

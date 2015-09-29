@@ -66,6 +66,11 @@ void Module::SetDebugInfoFilePaths(const std::vector<std::string>& debugInfoFile
     debugInfoFilePaths = debugInfoFilePaths_;
 }
 
+void Module::SetBcuPaths(const std::vector<std::string>& bcuPaths_)
+{
+    bcuPaths = bcuPaths_;
+}
+
 void Module::WriteModuleFileId(Writer& writer)
 {
     for (int i = 0; i < 4; ++i)
@@ -119,6 +124,16 @@ void Module::WriteDebugInfoFilePaths(Writer& writer)
     }
 }
 
+void Module::WriteBcuPaths(Writer& writer)
+{
+    int32_t n = int32_t(bcuPaths.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        writer.GetBinaryWriter().Write(bcuPaths[i]);
+    }
+}
+
 void Module::Export(SymbolTable& symbolTable)
 {
     Writer writer(filePath, &symbolTable);
@@ -128,9 +143,32 @@ void Module::Export(SymbolTable& symbolTable)
     WriteReferenceFilePaths(writer);
     WriteCLibraryFilePaths(writer);
     WriteDebugInfoFilePaths(writer);
+    WriteBcuPaths(writer);
     symbolTable.Export(writer);
     ExportExceptionTable(writer);
 	writer.GetBinaryWriter().Write(int32_t(GetMutexTable()->GetNumberOfMutexesInThisProject()));
+    std::vector<uint64_t> classHierarchyTable;
+    for (ClassTypeSymbol* projectClass : symbolTable.ProjectClasses())
+    {
+        if (projectClass->IsVirtual())
+        {
+            classHierarchyTable.push_back(projectClass->Cid());
+            if (projectClass->BaseClass())
+            {
+                classHierarchyTable.push_back(projectClass->BaseClass()->Cid());
+            }
+            else
+            {
+                classHierarchyTable.push_back(noCid);
+            }
+        }
+    }
+    int n = int(classHierarchyTable.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int i = 0; i < n; ++i)
+    {
+        writer.GetBinaryWriter().Write(classHierarchyTable[i]);
+    }
 }
 
 void Module::CheckModuleFileId(Reader& reader)
@@ -206,8 +244,18 @@ void Module::ReadDebugInfoFilePaths(Reader& reader)
     }
 }
 
+void Module::ReadBcuPaths(Reader& reader)
+{
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        std::string bcuPath = reader.GetBinaryReader().ReadString();
+        bcuPaths.push_back(bcuPath);
+    }
+}
+
 void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, 
-    std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths)
+    std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable)
 {
     boost::filesystem::path afp = filePath;
     afp.replace_extension(".cma");
@@ -221,7 +269,9 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
     ReadReferenceFilePaths(reader);
     ReadCLibraryFilePaths(reader);
     ReadDebugInfoFilePaths(reader);
+    ReadBcuPaths(reader);
     allDebugInfoFilePaths.insert(allDebugInfoFilePaths.end(), debugInfoFilePaths.begin(), debugInfoFilePaths.end());
+    allBcuPaths.insert(allBcuPaths.end(), bcuPaths.begin(), bcuPaths.end());
     cLibs.insert(cLibs.end(), cLibraryFilePaths.begin(), cLibraryFilePaths.end());
     for (const std::string& referenceFilePath : referenceFilePaths)
     {
@@ -229,7 +279,7 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
         {
             importedModules.insert(referenceFilePath);
             Module referencedModule(referenceFilePath);
-            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
             referencedModule.CheckUpToDate();
         }
     }
@@ -251,6 +301,12 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
     ImportExceptionTable(symbolTable, reader);
 	int numLibraryMutexes = reader.GetBinaryReader().ReadInt();
 	GetMutexTable()->AddLibraryMutexes(numLibraryMutexes);
+    int numEntries = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < numEntries; ++i)
+    {
+        uint64_t cid = reader.GetBinaryReader().ReadULong();
+        classHierarchyTable.push_back(cid);
+    }
     if (!quiet)
     {
         std::cout << "> " << filePath << std::endl;
@@ -322,18 +378,21 @@ void Module::Dump()
     ReadReferenceFilePaths(reader);
     ReadCLibraryFilePaths(reader);
     ReadDebugInfoFilePaths(reader);
+    ReadBcuPaths(reader);
     std::unordered_set<std::string> importedModules;
     std::vector<std::string> assemblyFilePaths;
     std::vector<std::string> cLibs;
     std::vector<std::string> allReferenceFilePaths;
     std::vector<std::string> allDebugInfoFilePaths;
+    std::vector<std::string> allBcuPaths;
+    std::vector<uint64_t> classHierarchyTable;
     for (const std::string& referenceFilePath : referenceFilePaths)
     {
         if (importedModules.find(referenceFilePath) == importedModules.end())
         {
             importedModules.insert(referenceFilePath);
             Module referencedModule(referenceFilePath);
-            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
         }
     }
     reader.MarkSymbolsProject();

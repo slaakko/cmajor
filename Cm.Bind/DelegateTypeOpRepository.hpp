@@ -12,6 +12,7 @@
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Core/DelegateTypeOpRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
+#include <Cm.Sym/BoundCompileUnitSerialization.hpp>
 
 namespace Cm { namespace Bind {
 
@@ -19,11 +20,14 @@ class DelegateFromFunCtor : public Cm::Core::BasicTypeOp
 {
 public:
     DelegateFromFunCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* delegatePtrType_, Cm::Sym::DelegateTypeSymbol* delegateType_, Cm::Sym::FunctionSymbol* functionSymbol_);
+    void Write(Cm::Sym::BcuWriter& writer) override;
     Cm::Sym::DelegateTypeSymbol* DelegateType() const { return delegateType; }
     Cm::Sym::FunctionSymbol* FunctionSymbol() const { return functionSymbol; }
     bool IsDelegateFromFunCtor() const override { return true; }
     void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuDelegateFromFunCtor; }
 private:
+    Cm::Sym::TypeSymbol* delegatePtrType;
     Cm::Sym::DelegateTypeSymbol* delegateType;
     Cm::Sym::FunctionSymbol* functionSymbol;
 };
@@ -32,11 +36,14 @@ class DelegateFromFunAssignment : public Cm::Core::BasicTypeOp
 {
 public:
     DelegateFromFunAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* delegatePtrType_, Cm::Sym::DelegateTypeSymbol* delegateType_, Cm::Sym::FunctionSymbol* functionSymbol_);
+    void Write(Cm::Sym::BcuWriter& writer) override;
     Cm::Sym::DelegateTypeSymbol* DelegateType() const { return delegateType; }
     Cm::Sym::FunctionSymbol* FunctionSymbol() const { return functionSymbol; }
     bool IsDelegateFromFunAssignment() const override { return true; }
     void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuDelegateFromFunAssignment; }
 private:
+    Cm::Sym::TypeSymbol* delegatePtrType;
     Cm::Sym::DelegateTypeSymbol* delegateType;
     Cm::Sym::FunctionSymbol* functionSymbol;
 };
@@ -127,7 +134,13 @@ private:
     DelegateAssignmentOpGroup delegateAssignmentOpGroup;
     DelegateEqualOpGroup delegateEqualOpGroup;
     DelegateLessOpGroup delegateLessOpGroup;
+};
 
+class DelegateTypeOpFactory : public Cm::Sym::BcuDelegateTypeOpFactory
+{
+public:
+    Cm::Sym::FunctionSymbol* CreateDelegateOp(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* delegatePtrType, Cm::Sym::DelegateTypeSymbol* delegateType, 
+        Cm::Sym::FunctionSymbol* functionSymbol) const override;
 };
 
 } } // namespace Cm::Bind

@@ -24,6 +24,7 @@ public:
     Cm::Sym::FunctionSymbol* FunctionSymbol() const { return functionSymbol; }
     bool IsClassDelegateFromFunCtor() const override { return true; }
     void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuClassDelegateFromFunCtor; }
 private:
     Cm::Sym::ClassDelegateTypeSymbol* classDelegateType;
     Cm::Sym::DelegateTypeSymbol* delegateType;
@@ -39,6 +40,7 @@ public:
     Cm::Sym::FunctionSymbol* FunctionSymbol() const { return functionSymbol; }
     bool IsClassDelegateFromFunAssignment() const override { return true; }
     void Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result) override;
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuClassDelegateFromFunAssignment; }
 private:
     Cm::Sym::ClassDelegateTypeSymbol* classDelegateType;
     Cm::Sym::DelegateTypeSymbol* delegateType;
@@ -48,7 +50,14 @@ private:
 class ClassDelegateEqualOp : public Cm::Sym::FunctionSymbol
 {
 public:
-    ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType);
+    ClassDelegateEqualOp();
+    ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_);
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuClassDelegateEqualOp; }
+    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
+private:
+    Cm::Sym::ClassDelegateTypeSymbol* classDelegateType;
+    std::string ns;
 };
 
 class ClassDelegateTypeOpCache
@@ -114,6 +123,14 @@ private:
     ClassDelegateConstructorOpGroup classDelegateConstructorOpGroup;
     ClassDelegateAssignmentOpGroup classDelegateAssignmentOpGroup;
     ClassDelegateEqualOpGroup classDelegateEqualOpGroup;
+};
+
+class ClassDelegateTypeOpFactory : public Cm::Sym::BcuClassDelegateTypeOpFactory
+{
+public:
+    Cm::Sym::FunctionSymbol* CreateClassDelegateOp(Cm::Sym::BcuItemType itemType, Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol, 
+        Cm::Sym::FunctionSymbol* functionSymbol) const override;
+    Cm::Sym::FunctionSymbol* CreateClassDelegateOpEqual() const override;
 };
 
 } } // namespace Cm::Bind

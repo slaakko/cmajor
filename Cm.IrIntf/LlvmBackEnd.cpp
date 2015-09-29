@@ -546,6 +546,11 @@ std::string LlvmBackEnd::GetExceptionBaseIdTableName()
     return "$exception$base$id$table$addr";
 }
 
+std::string LlvmBackEnd::GetClassHierarchyTableName()
+{
+    return "class$hierarchy$table$addr";
+}
+
 int LlvmBackEnd::GetDebugAttrEncodingBoolean()
 {
     return Llvm::debugAttrEncodingBoolean;

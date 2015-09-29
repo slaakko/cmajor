@@ -26,6 +26,7 @@ namespace Cm.Parser
         using LiteralGrammar.Literal;
         using BasicTypeGrammar.BasicType;
         using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
         using TemplateGrammar.TemplateId;
         using TypeExprGrammar.TypeExpr;
         using stdlib.spaces_and_comments;
@@ -142,17 +143,22 @@ namespace Cm.Parser
             }
             ;
 
-        Relational(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Cm::Ast::Node*
+        Relational(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op, var std::unique_ptr<Node> typeExpr): Cm::Ast::Node*
             ::=
             (   Shift(ctx):left{ expr.reset(left); s = span; }
                 (
-                    (   ("<=" - "<=>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::lessOrEq; }
-                    |   ">="{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::greaterOrEq; }
-                    |   ('<' - ("<<" | "<=>")){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::less; }
-                    |   ('>' - ">>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator::greater; }
+                    (   ("<=" - "<=>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::lessOrEq; ctx->PushParsingIsOrAs(false); } }
+                    |   ">="{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::greaterOrEq; ctx->PushParsingIsOrAs(false); } }
+                    |   ('<' - ("<<" | "<=>")){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::less; ctx->PushParsingIsOrAs(false); } }
+                    |   ('>' - ">>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::greater; ctx->PushParsingIsOrAs(false); } }
+                    |   (keyword("is"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::is; ctx->PushParsingIsOrAs(true); } }  
+                        TypeExpr(ctx):isType{ typeExpr.reset(isType); })
+                    |   (keyword("as"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::as; ctx->PushParsingIsOrAs(true); } } 
+                        TypeExpr(ctx):asType{ typeExpr.reset(asType); })
                     )
-                    Shift(ctx):right!
+                    (Shift(ctx):right | empty{ if (!ctx->ParsingIsOrAs()) pass = false; })
                     { 
+                        ctx->PopParsingIsOrAs();
                         s.SetEnd(span.End()); 
                         switch (op)
                         {
@@ -160,6 +166,8 @@ namespace Cm.Parser
                             case Operator::greaterOrEq: expr.reset(new GreaterOrEqualNode(s, expr.release(), right)); break;
                             case Operator::less: expr.reset(new LessNode(s, expr.release(), right)); break;
                             case Operator::greater: expr.reset(new GreaterNode(s, expr.release(), right)); break;
+                            case Operator::is: expr.reset(new IsNode(s, expr.release(), typeExpr.release())); break;
+                            case Operator::as: expr.reset(new AsNode(s, expr.release(), typeExpr.release())); break;
                         }
                     }
                 )*

@@ -7,17 +7,18 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/DeclarationBlock.hpp>
+#ifndef CM_UTIL_PRIME_INCLUDED
+#define CM_UTIL_PRIME_INCLUDED
+#include <stdint.h>
 
-namespace Cm { namespace Sym {
+namespace Cm { namespace Util {
 
-DeclarationBlock::DeclarationBlock(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_)
-{
-}
+// Returns smallest prime greater than or equal to x
 
-bool DeclarationBlock::IsExportSymbol() const
-{
-    return false;
-}
+uint64_t NextPrime(uint64_t x);
 
-} } // namespace Cm::Sym
+} } // namespace Cm::Util
+
+#endif // CM_UTIL_PRIME_INCLUDED
+
+

@@ -11,6 +11,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/DelegateSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace Sym {
@@ -27,7 +28,7 @@ void BcuItem::Read(BcuReader& reader)
 {
 }
 
-BcuWriter::BcuWriter(const std::string& fileName_, SymbolTable* symbolTable_) : writer(fileName_, symbolTable_), nextCompoundId(0)
+BcuWriter::BcuWriter(const std::string& fileName_, SymbolTable* symbolTable_) : writer(fileName_, symbolTable_), nextStatementId(0)
 {
 }
 
@@ -87,6 +88,10 @@ void BcuWriter::Write(Symbol* symbol)
         {
             uint8_t itemType = uint8_t(BcuItemType::bcuOtherSymbol);
             writer.GetBinaryWriter().Write(itemType);
+            if (symbol->Sid() == noSid)
+            {
+                int x = 0;
+            }
             writer.GetBinaryWriter().Write(symbol->Sid());
             symbol->DoSerialize();
         }
@@ -106,12 +111,34 @@ BcuItemFactory::~BcuItemFactory()
 {
 }
 
+BcuArrayTypeOpFactory::~BcuArrayTypeOpFactory()
+{
+}
+
+BcuDelegateTypeOpFactory::~BcuDelegateTypeOpFactory()
+{
+}
+
+BcuClassDelegateTypeOpFactory::~BcuClassDelegateTypeOpFactory()
+{
+}
+
 BoundCompileUnit::~BoundCompileUnit()
 {
 }
 
-BcuReader::BcuReader(const std::string& fileName_, SymbolTable& symbolTable_, BcuBasicTypeOpSymbolFactory& basicTypeOpSymbolFactory_, BcuItemFactory& itemFactory_) :
-    reader(fileName_, symbolTable_), boundCompileUnit(nullptr), basicTypeOpSymbolFactory(basicTypeOpSymbolFactory_), itemFactory(itemFactory_)
+CompoundTargetStatement::~CompoundTargetStatement()
+{
+}
+
+LabelTargetStatement::~LabelTargetStatement()
+{
+}
+
+BcuReader::BcuReader(const std::string& fileName_, SymbolTable& symbolTable_, BcuBasicTypeOpSymbolFactory& basicTypeOpSymbolFactory_, BcuItemFactory& itemFactory_, BcuArrayTypeOpFactory& arrayTypeOpFactory_,
+    BcuDelegateTypeOpFactory& delegateTypeOpFactory_, BcuClassDelegateTypeOpFactory& classDelegateTypeOpFactory_) :
+    reader(fileName_, symbolTable_), boundCompileUnit(nullptr), basicTypeOpSymbolFactory(basicTypeOpSymbolFactory_), itemFactory(itemFactory_), arrayTypeOpFactory(arrayTypeOpFactory_), 
+    delegateTypeOpFactory(delegateTypeOpFactory_), classDelegateTypeOpFactory(classDelegateTypeOpFactory_), classDelegateEqualOp(nullptr)
 {
 }
 
@@ -151,22 +178,30 @@ Symbol* BcuReader::ReadSymbol()
         {
             uint32_t sid = reader.GetBinaryReader().ReadUInt();
             Symbol* functionSymbol = reader.GetSymbolTable().GetSymbol(sid);
+            if (!functionSymbol)
+            {
+                throw std::runtime_error("could not get function symbol for sid " + std::to_string(sid) + " from symbol table");
+            }
             return functionSymbol;
         }
         case BcuItemType::bcuClassSymbol:
         {
             uint32_t cid = reader.GetBinaryReader().ReadUInt();
             Symbol* classSymbol = reader.GetSymbolTable().GetClass(cid);
+            if (!classSymbol)
+            {
+                throw std::runtime_error("could not get class symbol for cid " + std::to_string(cid) + " from symbol table");
+            }
             return classSymbol;
         }
         case BcuItemType::bcuDefaultCtor: case BcuItemType::bcuCopyCtor: case BcuItemType::bcuCopyAssignment: case BcuItemType::bcuMoveCtor: case BcuItemType::bcuMoveAssignment: 
         case BcuItemType::bcuOpEqual: case BcuItemType::bcuOpLess: case BcuItemType::bcuOpAdd: case BcuItemType::bcuOpSub: case BcuItemType::bcuOpMul: case BcuItemType::bcuOpDiv:
         case BcuItemType::bcuOpRem: case BcuItemType::bcuOpShl: case BcuItemType::bcuOpShr: case BcuItemType::bcuOpBitAnd: case BcuItemType::bcuOpBitOr: case BcuItemType::bcuOpBitXor: 
         case BcuItemType::bcuOpNot: case BcuItemType::bcuOpUnaryPlus: case BcuItemType::bcuOpUnaryMinus: case BcuItemType::bcuOpComplement: case BcuItemType::bcuOpIncrement: 
-        case BcuItemType::bcuOpDecrement: 
+        case BcuItemType::bcuOpDecrement: case BcuItemType::bcuOpAddPtrInt: case BcuItemType::bcuOpAddIntPtr: case BcuItemType::bcuOpSubPtrInt: case BcuItemType::bcuOpSubPtrPtr:
+        case BcuItemType::bcuOpDeref: case BcuItemType::bcuOpIncPtr: case BcuItemType::bcuOpDecPtr: case BcuItemType::bcuOpAddrOf: case BcuItemType::bcuOpArrow:
         {
-            uint32_t sid = reader.GetBinaryReader().ReadUInt();
-            Symbol* typeSymbol = reader.GetSymbolTable().GetSymbol(sid);
+            Symbol* typeSymbol = ReadSymbol();
             if (typeSymbol->IsTypeSymbol())
             {
                 TypeSymbol* type = static_cast<TypeSymbol*>(typeSymbol);
@@ -188,13 +223,11 @@ Symbol* BcuReader::ReadSymbol()
         }
         case BcuItemType::bcuConvertingCtor:
         {
-            uint32_t targetSid = reader.GetBinaryReader().ReadUInt();
-            Symbol* targetTypeSymbol = reader.GetSymbolTable().GetSymbol(targetSid);
+            Symbol* targetTypeSymbol = ReadSymbol();
             if (targetTypeSymbol->IsTypeSymbol())
             {
                 TypeSymbol* targetType = static_cast<TypeSymbol*>(targetTypeSymbol);
-                uint32_t sourceSid = reader.GetBinaryReader().ReadUInt();
-                Symbol* sourceTypeSymbol = reader.GetSymbolTable().GetSymbol(sourceSid);
+                Symbol* sourceTypeSymbol = ReadSymbol();
                 if (sourceTypeSymbol->IsTypeSymbol())
                 {
                     TypeSymbol* sourceType = static_cast<TypeSymbol*>(sourceTypeSymbol);
@@ -220,11 +253,116 @@ Symbol* BcuReader::ReadSymbol()
                 throw std::runtime_error("type symbol expected");
             }
         }
+        case BcuItemType::bcuPrimitiveArrayTypeOpDefaultConstructor: case BcuItemType::bcuPrimitiveArrayTypeOpCopyConstructor: case BcuItemType::bcuPrimitiveArrayTypeOpCopyAssignment: case BcuItemType::bcuArrayIndexing:
+        {
+            Symbol* typeSymbol = ReadSymbol();
+            if (typeSymbol->IsTypeSymbol())
+            {
+                TypeSymbol* type = static_cast<TypeSymbol*>(typeSymbol);
+                FunctionSymbol* functionSymbol = arrayTypeOpFactory.CreateArrayTypeOp(itemType, reader.GetSymbolTable().GetTypeRepository(), type);
+                if (boundCompileUnit)
+                {
+                    boundCompileUnit->Own(functionSymbol);
+                }
+                return functionSymbol;
+            }
+            else
+            {
+                throw std::runtime_error("type symbol expected");
+            }
+        }
+        case BcuItemType::bcuDelegateFromFunCtor: case BcuItemType::bcuDelegateFromFunAssignment:
+        {
+            Symbol* typeSymbol = ReadSymbol();
+            if (typeSymbol->IsTypeSymbol())
+            {
+                TypeSymbol* delegatePtrType = static_cast<TypeSymbol*>(typeSymbol);
+                Symbol* delegateTypeSymbol = ReadSymbol();
+                if (delegateTypeSymbol->IsDelegateTypeSymbol())
+                {
+                    DelegateTypeSymbol* delegateType = static_cast<DelegateTypeSymbol*>(delegateTypeSymbol);
+                    Symbol* functionSymbol = ReadSymbol();
+                    if (functionSymbol->IsFunctionSymbol())
+                    {
+                        FunctionSymbol* fun = static_cast<FunctionSymbol*>(functionSymbol);
+                        boundCompileUnit->Own(fun);
+                        FunctionSymbol* delegateOp = delegateTypeOpFactory.CreateDelegateOp(itemType, reader.GetSymbolTable().GetTypeRepository(), delegatePtrType, delegateType, fun);
+                        boundCompileUnit->Own(delegateOp);
+                        return delegateOp;
+                    }
+                    else
+                    {
+                        throw std::runtime_error("function symbol expected");
+                    }
+                }
+                else
+                {
+                    throw std::runtime_error("delegate type symbol expected");
+                }
+            }
+            else
+            {
+                throw std::runtime_error("type symbol expected");
+            }
+        }
+        case BcuItemType::bcuClassDelegateFromFunCtor: case BcuItemType::bcuClassDelegateFromFunAssignment:
+        {
+            Symbol* typeSymbol = ReadSymbol();
+            if (typeSymbol->IsClassDelegateTypeSymbol())
+            {
+                ClassDelegateTypeSymbol* classDelegateType = static_cast<ClassDelegateTypeSymbol*>(typeSymbol);
+                Symbol* functionSymbol = ReadSymbol();
+                if (functionSymbol->IsFunctionSymbol())
+                {
+                    FunctionSymbol* fun = static_cast<FunctionSymbol*>(functionSymbol);
+                    boundCompileUnit->Own(fun);
+                    FunctionSymbol* classDelegateOp = classDelegateTypeOpFactory.CreateClassDelegateOp(itemType, reader.GetSymbolTable().GetTypeRepository(), classDelegateType, fun);
+                    boundCompileUnit->Own(classDelegateOp);
+                    return classDelegateOp;
+                }
+                else
+                {
+                    throw std::runtime_error("function symbol expected");
+                }
+            }
+            else
+            {
+                throw std::runtime_error("class delegate type symbol expected");
+            }
+
+        }
+        case BcuItemType::bcuClassDelegateEqualOp:
+        {
+            FunctionSymbol* createdClassDelegateEqualOp = classDelegateTypeOpFactory.CreateClassDelegateOpEqual();
+            static_cast<BcuItem*>(createdClassDelegateEqualOp)->Read(*this);
+            delete createdClassDelegateEqualOp;
+            if (classDelegateEqualOp)
+            {
+                boundCompileUnit->Own(classDelegateEqualOp);
+                return classDelegateEqualOp;
+            }
+            else
+            {
+                throw std::runtime_error("class delegate equal op not set");
+            }
+        }
         case BcuItemType::bcuOtherSymbol:
         {
             uint32_t sid = reader.GetBinaryReader().ReadUInt();
+            if (sid == noSid)
+            {
+                int x = 0;
+            }
             Symbol* symbol = reader.GetSymbolTable().GetSymbol(sid);
+            if (!symbol)
+            {
+                throw std::runtime_error("could not get symbol for sid " + std::to_string(sid) + " from symbol table");
+            }
             return symbol;
+        }
+        case BcuItemType::bcuNull:
+        {
+            return nullptr;
         }
         default:
         {
@@ -243,6 +381,62 @@ ClassTypeSymbol* BcuReader::ReadClassTypeSymbol()
     else
     {
         throw std::runtime_error("class type symbol expected");
+    }
+}
+
+void BcuReader::FetchCompoundTargetStatement(CompoundTargetStatement* statement, uint32_t statementId)
+{
+    std::unordered_map<uint32_t, void*>::const_iterator i = boundStatementMap.find(statementId);
+    if (i != boundStatementMap.end())
+    {
+        void* targetStatement = i->second;
+        statement->SetCompoundTargetStatement(targetStatement);
+    }
+    else
+    {
+        compoundTargetStatementMap[statementId].push_front(statement);
+    }
+}
+
+void BcuReader::SetCompoundTargetStatement(uint32_t statementId, void* targetStatement)
+{
+    boundStatementMap[statementId] = targetStatement;
+    std::unordered_map<uint32_t, std::forward_list<CompoundTargetStatement*>>::iterator i = compoundTargetStatementMap.find(statementId);
+    if (i != compoundTargetStatementMap.end())
+    {
+        std::forward_list<CompoundTargetStatement*>& targets = i->second;
+        for (CompoundTargetStatement* target : targets)
+        {
+            target->SetCompoundTargetStatement(targetStatement);
+        }
+    }
+}
+
+void BcuReader::FetchLabeledStatement(LabelTargetStatement* statement, uint32_t statementId)
+{
+    std::unordered_map<uint32_t, void*>::const_iterator i = labelStatementMap.find(statementId);
+    if (i != labelStatementMap.end())
+    {
+        void* labeledStatement = i->second;
+        statement->SetLabeledStatement(labeledStatement);
+    }
+    else
+    {
+        labelTargetStatementMap[statementId].push_front(statement);
+    }
+}
+
+void BcuReader::SetLabeledStatement(uint32_t statementId, void* labeledStatement)
+{
+    labelStatementMap[statementId] = labeledStatement;
+    std::unordered_map<uint32_t, std::forward_list<LabelTargetStatement*>>::iterator i = labelTargetStatementMap.find(statementId);
+    if (i != labelTargetStatementMap.end())
+    {
+        std::forward_list<LabelTargetStatement*>& targets = i->second;
+        for (LabelTargetStatement* target : targets)
+        {
+            target->SetLabeledStatement(labeledStatement);
+        }
     }
 }
 

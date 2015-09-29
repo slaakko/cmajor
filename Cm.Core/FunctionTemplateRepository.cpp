@@ -9,6 +9,7 @@
 
 #include <Cm.Core/FunctionTemplateRepository.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 
 namespace Cm { namespace Core {
 
@@ -42,6 +43,10 @@ bool operator==(const FunctionTemplateKey& left, const FunctionTemplateKey& righ
     return left.Subject() == right.Subject() && left.TemplateArguments() == right.TemplateArguments();
 }
 
+FunctionTemplateRepository::FunctionTemplateRepository(Cm::Sym::SymbolTable& symbolTable_) : symbolTable(symbolTable_)
+{
+}
+
 Cm::Sym::FunctionSymbol* FunctionTemplateRepository::GetFunctionTemplateInstance(const FunctionTemplateKey& key) const
 {
     FunctionTemplateMapIt i = functionTemplateMap.find(key);
@@ -55,6 +60,37 @@ Cm::Sym::FunctionSymbol* FunctionTemplateRepository::GetFunctionTemplateInstance
 void FunctionTemplateRepository::AddFunctionTemplateInstance(const FunctionTemplateKey& key, Cm::Sym::FunctionSymbol* functionTemplateInstance)
 {
     functionTemplateMap[key] = functionTemplateInstance;
+}
+
+void FunctionTemplateRepository::Write(Cm::Sym::BcuWriter& writer)
+{
+    int n = int(functionTemplateMap.size());
+    writer.GetBinaryWriter().Write(n);
+    FunctionTemplateMapIt e = functionTemplateMap.end();
+    for (FunctionTemplateMapIt i = functionTemplateMap.begin(); i != e; ++i)
+    {
+        Cm::Sym::FunctionSymbol* functionSymbol = i->second;
+        writer.GetSymbolWriter().Write(functionSymbol);
+    }
+}
+
+void FunctionTemplateRepository::Read(Cm::Sym::BcuReader& reader)
+{
+    int n = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::Symbol* symbol = reader.GetSymbolReader().ReadSymbol();
+        symbolTable.AddSymbol(symbol);
+        if (symbol->IsFunctionSymbol())
+        {
+            Cm::Sym::FunctionSymbol* functionSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
+            functionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
+        }
+        else
+        {
+            throw std::runtime_error("function symbol expected");
+        }
+    }
 }
 
 } } // namespace Cm::Core

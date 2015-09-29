@@ -7,17 +7,19 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/DeclarationBlock.hpp>
+#include <Cm.Sym/BoundCompileUnitSerialization.hpp>
 
-namespace Cm { namespace Sym {
+#ifndef CM_BOUND_TREE_FACTORY_INCLUDED
+#define CM_BOUND_TREE_FACTORY_INCLUDED
 
-DeclarationBlock::DeclarationBlock(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_)
+namespace Cm { namespace BoundTree {
+
+class Factory : public Cm::Sym::BcuItemFactory
 {
-}
+public:
+    Cm::Sym::BcuItem* CreateItem(Cm::Sym::BcuItemType itemType) const override;
+};
 
-bool DeclarationBlock::IsExportSymbol() const
-{
-    return false;
-}
+} } // namespace Cm::BoundTree
 
-} } // namespace Cm::Sym
+#endif // CM_BOUND_TREE_FACTORY_INCLUDED

@@ -53,12 +53,13 @@ public:
     BoundNode();
     BoundNode(Cm::Ast::Node* syntaxNode_);
     Cm::Ast::Node* SyntaxNode() const { return syntaxNode; }
-    virtual bool IsBoundExpressionNode() const { return false;  }
     virtual void Accept(Visitor& visitor) = 0;
     void SetFlag(BoundNodeFlags flag) { flags = flags | flag; }
     bool GetFlag(BoundNodeFlags flag) const { return (flags & flag) != BoundNodeFlags::none; }
     void ResetFlag(BoundNodeFlags flag) { flags = flags & ~flag; }
     bool IsBoundNode() const override { return true; }
+    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
 private:
     BoundNodeFlags flags;
     Cm::Ast::Node* syntaxNode;

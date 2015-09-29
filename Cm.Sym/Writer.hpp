@@ -14,6 +14,7 @@
 #include <Cm.Ast/TypeExpr.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Util/Uuid.hpp>
+#include <stack>
 
 namespace Cm { namespace Sym {
 
@@ -34,10 +35,15 @@ public:
     BinaryWriter& GetBinaryWriter() { return binaryWriter; }
     SymbolTable* GetSymbolTable() const { return symbolTable; }
     Cm::Ast::Writer& GetAstWriter() { return astWriter; }
+    void PushExportMemberVariables(bool export_);
+    void PopExportMemberVariables();
+    bool ExportMemberVariables() const { return exportMemberVariables; }
 private:
     BinaryWriter binaryWriter;
     SymbolTable* symbolTable;
     Cm::Ast::Writer astWriter;
+    bool exportMemberVariables;
+    std::stack<bool> exportMemberVariablesStack;
 };
 
 } } // namespace Cm::Sym

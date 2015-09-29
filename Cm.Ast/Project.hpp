@@ -136,6 +136,7 @@ public:
     const std::vector<std::string>& CppSourceFilePaths() const { return cppSourceFilePaths; }
     const std::vector<std::string>& TextFilePaths() const { return textFilePaths; }
     const std::vector<std::string>& ReferenceFilePaths() const { return referenceFilePaths; }
+    void AddReferenceFilePath(const std::string& referenceFilePath) { referenceFilePaths.push_back(referenceFilePath); }
     const std::vector<std::string>& CLibraryFilePaths() const { return cLibraryFilePaths; }
     const std::string& AssemblyFilePath() const { return assemblyFilePath; }
     const std::string& LibraryFilePath() const { return libraryFilePath; }

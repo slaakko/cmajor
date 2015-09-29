@@ -21,6 +21,8 @@ class InlineFunctionRepository
 public:
     virtual ~InlineFunctionRepository();
     virtual void Instantiate(Cm::Sym::ContainerScope* containerScope, Cm::Sym::FunctionSymbol* functionSymbol) = 0;
+    virtual void Write(Cm::Sym::BcuWriter& writer) = 0;
+    virtual void Read(Cm::Sym::BcuReader& reader) = 0;
 };
 
 } } // namespace Cm::Core

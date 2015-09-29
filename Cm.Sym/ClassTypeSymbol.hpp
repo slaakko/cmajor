@@ -42,7 +42,8 @@ enum class ClassTypeSymbolFlags : uint32_t
     generateCopyAssignment = 1 << 19,
     generateMoveAssignment = 1 << 20,
     generateDestructor = 1 << 21,
-    debugInfoGenerated = 1 << 22
+    debugInfoGenerated = 1 << 22,
+    nonLeaf = 1 << 23
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -72,13 +73,13 @@ struct PersistentClassData
     std::unique_ptr<Cm::Ast::ClassNode> classNode;
 };
 
-const uint32_t noCid = -1;
+const uint64_t noCid = -1;
 
 class ClassTypeSymbol : public TypeSymbol
 {
 public:
     ClassTypeSymbol(const Span& span_, const std::string& name_);
-    ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId, uint32_t cid_);
+    ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId, uint64_t cid_);
     ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
     std::string TypeString() const override { return "class"; };
@@ -92,8 +93,6 @@ public:
     bool IsClassTemplateSymbol() const { return !typeParameters.empty(); }
     ClassTypeSymbol* BaseClass() const { return baseClass; }
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
-    const std::unordered_set<ClassTypeSymbol*>& DerivedClasses() const { return derivedClasses; }
-    void AddDerivedClass(ClassTypeSymbol* derivedClass);
     void SetType(TypeSymbol* type, int index);
     bool HasBaseClass(ClassTypeSymbol* cls) const;
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
@@ -284,6 +283,14 @@ public:
     {
         SetFlag(ClassTypeSymbolFlags::debugInfoGenerated);
     }
+    bool IsNonLeaf() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::nonLeaf);
+    }
+    void SetNonLeaf()
+    {
+        SetFlag(ClassTypeSymbolFlags::nonLeaf);
+    }
     FunctionSymbol* Destructor() const { return destructor; }
     FunctionSymbol* StaticConstructor() const { return staticConstructor; }
     const std::unordered_set<FunctionSymbol*> Conversions() const { return conversions; }
@@ -304,14 +311,22 @@ public:
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
     std::string FullClassTemplateId() const;
-    uint32_t Cid() const { return cid; }
-    void SetCid(uint32_t cid_) { cid = cid_; }
     void ReplaceReplicaTypes() override;
+    uint64_t Cid() const { return cid; }
+    void SetCid(uint64_t cid_) { cid = cid_; }
+    uint64_t Key() const { return key; }
+    void SetKey(uint64_t key_) { key = key_; }
+    int Level() const { return level; }
+    void SetLevel(int level_) { level = level_; }
+    int Priority() const { return priority; }
+    void SetPriority(int priority_) { priority = priority_; }
 private:
-    uint32_t cid;
+    uint64_t cid;
+    uint64_t key;
+    int level;
+    int priority;
     ClassTypeSymbolFlags flags;
     ClassTypeSymbol* baseClass;
-    std::unordered_set<ClassTypeSymbol*> derivedClasses;
     std::vector<MemberVariableSymbol*> memberVariables;
     std::vector<MemberVariableSymbol*> staticMemberVariables;
     std::vector<TypeParameterSymbol*> typeParameters;

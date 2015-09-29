@@ -26,12 +26,17 @@ public:
     void InstantiateVirtualFunctionsFor(Cm::Sym::ContainerScope* containerScope, Cm::Sym::ClassTypeSymbol* templateTypeSymbol) override;
     void ResolveDefaultTypeArguments(std::vector<Cm::Sym::TypeSymbol*>& typeArguments, Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol, Cm::Sym::ContainerScope* containerScope,
         const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, const Cm::Parsing::Span& span) override;
+    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     typedef std::unordered_set<Cm::Sym::ClassTypeSymbol*> ClassTemplateSet;
     typedef ClassTemplateSet::const_iterator ClassTemplateSetIt;
     ClassTemplateSet classTemplates;
     ClassTemplateSet virtualFunctionsInstantiated;
+    std::vector<Cm::Sym::FunctionSymbol*> memberFunctionSymbols;
+    std::vector<std::unique_ptr<Cm::Sym::FunctionSymbol>> ownedMemberFunctionSymbols;
+    std::unordered_set<Cm::Sym::TemplateTypeSymbol*> templateTypeSymbols;
 };
 
 } } // namespace Cm::Bind

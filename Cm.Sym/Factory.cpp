@@ -191,6 +191,8 @@ void InitFactory()
     ValueFactory::Instance().Register(ValueType::ulongValue, new ConcreteValueCreator<ULongValue>());
     ValueFactory::Instance().Register(ValueType::floatValue, new ConcreteValueCreator<FloatValue>());
     ValueFactory::Instance().Register(ValueType::doubleValue, new ConcreteValueCreator<DoubleValue>());
+    ValueFactory::Instance().Register(ValueType::nullValue, new ConcreteValueCreator<NullValue>());
+    ValueFactory::Instance().Register(ValueType::stringValue, new ConcreteValueCreator<StringValue>());
     SymbolFactory::Init();
     SymbolFactory::Instance().Register(SymbolType::boolSymbol, new ConcreteBasicTypeSymbolCreator<BoolTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::charSymbol, new ConcreteBasicTypeSymbolCreator<CharTypeSymbol>());

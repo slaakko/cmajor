@@ -329,11 +329,17 @@ bool FunctionSymbol::IsDestructor() const
 
 void FunctionSymbol::Write(Writer& writer)
 {
+    bool justSymbol = false;
+    if (IsFunctionTemplateSpecialization() || IsMemberOfTemplateType())
+    {
+        justSymbol = true;
+        SetJustSymbol();
+    }
     ContainerSymbol::Write(writer);
     writer.GetBinaryWriter().Write(uint32_t(flags));
     writer.GetBinaryWriter().Write(groupName);
     writer.GetBinaryWriter().Write(vtblIndex);
-    if (IsFunctionTemplate())
+    if (IsFunctionTemplate() && !justSymbol)
     {
         SymbolTable* symbolTable = writer.GetSymbolTable();
         Cm::Ast::Node* node = symbolTable->GetNode(this);
@@ -386,7 +392,7 @@ void FunctionSymbol::Write(Writer& writer)
             throw std::runtime_error("write: not function node");
         }
     }
-    else if (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate())
+    else if (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate() && !justSymbol)
     {
         if (persistentFunctionData)
         {
@@ -444,7 +450,8 @@ void FunctionSymbol::Read(Reader& reader)
     flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUInt());
     groupName = reader.GetBinaryReader().ReadString();
     vtblIndex = reader.GetBinaryReader().ReadShort();
-    if (IsFunctionTemplate())
+    bool justSymbol = JustSymbol();
+    if (IsFunctionTemplate() && !justSymbol)
     {
         persistentFunctionData.reset(new PersistentFunctionData());
         bool hasReturnType = reader.GetBinaryReader().ReadBool();
@@ -469,7 +476,7 @@ void FunctionSymbol::Read(Reader& reader)
         persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
         reader.GetBinaryReader().Skip(persistentFunctionData->bodySize);
     }
-    else if (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate())
+    else if (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate() && !justSymbol)
     {
         persistentFunctionData.reset(new PersistentFunctionData());
         bool hasUsingNodes = reader.GetBinaryReader().ReadBool();

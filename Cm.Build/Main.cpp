@@ -36,7 +36,8 @@
 
 namespace Cm { namespace Build {
 
-bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profDataFilePath, std::vector<std::string>& objectFilePaths, bool changed)
+bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profDataFilePath, std::vector<std::string>& objectFilePaths, int numClassHierarchyTableEntries, 
+    bool changed)
 {
     Cm::Sym::FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
     if (!userMainFunction)
@@ -160,6 +161,22 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 		mutexTblInitArguments.Add(numMutexes);
 		Cm::BoundTree::BoundFunctionCallStatement* callMutexTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(mutexTableInit, std::move(mutexTblInitArguments));
 		mainBody->AddStatement(callMutexTblInitStatement);
+
+        if (Cm::Core::GetGlobalSettings()->Config() != "full")
+        {
+            Cm::Sym::FunctionSymbol* initClassHierarchy = symbolTable.GetOverload("init_class_hierarchy");
+            Cm::BoundTree::BoundExpressionList initClassHierarchyArguments;
+            Cm::BoundTree::BoundClassHierarchyTableConstant* classHierarchyTableConstant = new Cm::BoundTree::BoundClassHierarchyTableConstant();
+            classHierarchyTableConstant->SetType(symbolTable.GetTypeRepository().MakePointerType(symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)), 
+                userMainFunction->GetSpan()));
+            initClassHierarchyArguments.Add(classHierarchyTableConstant);
+            Cm::BoundTree::BoundLiteral* numEntries = new Cm::BoundTree::BoundLiteral(nullptr);
+            numEntries->SetValue(new Cm::Sym::IntValue(numClassHierarchyTableEntries));
+            numEntries->SetType(intType);
+            initClassHierarchyArguments.Add(numEntries);
+            Cm::BoundTree::BoundFunctionCallStatement* callInitClassHierarchyStatement = new Cm::BoundTree::BoundFunctionCallStatement(initClassHierarchy, std::move(initClassHierarchyArguments));
+            mainBody->AddStatement(callInitClassHierarchyStatement);
+        }
 
         if (Cm::Core::GetGlobalSettings()->Config() == "profile")
         {
@@ -301,6 +318,22 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 		mutexTblInitArguments.Add(numMutexes);
 		Cm::BoundTree::BoundFunctionCallStatement* callMutexTblInitStatement = new Cm::BoundTree::BoundFunctionCallStatement(mutexTableInit, std::move(mutexTblInitArguments));
 		mainBody->AddStatement(callMutexTblInitStatement);
+
+        if (Cm::Core::GetGlobalSettings()->Config() != "full")
+        {
+            Cm::Sym::FunctionSymbol* initClassHierarchy = symbolTable.GetOverload("init_class_hierarchy");
+            Cm::BoundTree::BoundExpressionList initClassHierarchyArguments;
+            Cm::BoundTree::BoundClassHierarchyTableConstant* classHierarchyTableConstant = new Cm::BoundTree::BoundClassHierarchyTableConstant();
+            classHierarchyTableConstant->SetType(symbolTable.GetTypeRepository().MakePointerType(symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)),
+                userMainFunction->GetSpan()));
+            initClassHierarchyArguments.Add(classHierarchyTableConstant);
+            Cm::BoundTree::BoundLiteral* numEntries = new Cm::BoundTree::BoundLiteral(nullptr);
+            numEntries->SetValue(new Cm::Sym::IntValue(numClassHierarchyTableEntries));
+            numEntries->SetType(intType);
+            initClassHierarchyArguments.Add(numEntries);
+            Cm::BoundTree::BoundFunctionCallStatement* callInitClassHierarchyStatement = new Cm::BoundTree::BoundFunctionCallStatement(initClassHierarchy, std::move(initClassHierarchyArguments));
+            mainBody->AddStatement(callInitClassHierarchyStatement);
+        }
 
         if (Cm::Core::GetGlobalSettings()->Config() == "profile")
         {

@@ -341,7 +341,9 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                     Cm::BoundTree::BoundMemberVariable* memberVar = static_cast<Cm::BoundTree::BoundMemberVariable*>(returnValue);
                     if (memberVar->Symbol()->IsStatic() && returnType->IsNonClassReferenceType() && !returnValue->GetType()->IsReferenceType())
                     {
-                        Cm::BoundTree::BoundLocalVariable* boundTemporary = new Cm::BoundTree::BoundLocalVariable(&returnStatementNode, CurrentFunction()->CreateTempLocalVariable(returnType));
+                        Cm::Sym::LocalVariableSymbol* temporary = CurrentFunction()->CreateTempLocalVariable(returnType);
+                        temporary->SetSid(BoundCompileUnit().SymbolTable().GetSid());
+                        Cm::BoundTree::BoundLocalVariable* boundTemporary = new Cm::BoundTree::BoundLocalVariable(&returnStatementNode, temporary);
                         boundTemporary->SetType(returnType);
                         boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
                         returnStatement->SetBoundTemporary(boundTemporary);
@@ -1406,6 +1408,7 @@ Cm::BoundTree::BoundConstructionStatement* CreateTracedFunConstructionStatement(
     AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
     Cm::Sym::TypeSymbol* tracedFunPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(tracedFunType, span);
     Cm::Sym::LocalVariableSymbol* tracedFunVar = boundFunction->CreateTempLocalVariable(tracedFunType);
+    tracedFunVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
     boundConstructionStatement->SetLocalVariable(tracedFunVar);
     Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);
     Cm::Sym::TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));

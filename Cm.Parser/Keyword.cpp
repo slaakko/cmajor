@@ -33,6 +33,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     SetOwner(0);
     keywords0.push_back("abstract");
     keywords0.push_back("and");
+    keywords0.push_back("as");
     keywords0.push_back("axiom");
     keywords0.push_back("base");
     keywords0.push_back("bool");
