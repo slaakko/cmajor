@@ -601,8 +601,11 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
     {
         Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
         std::string ext = backend == Cm::IrIntf::BackEnd::llvm ? ".ll" : backend == Cm::IrIntf::BackEnd::c ? ".c" : "";
-        std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(ext)).generic_string());
+        std::string fileName = boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension().generic_string();
+        std::string compileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path(fileName).replace_extension(ext)).generic_string());
         std::unique_ptr<Cm::BoundTree::BoundCompileUnit> boundCompileUnit(new Cm::BoundTree::BoundCompileUnit(compileUnit.get(), compileUnitIrFilePath, symbolTable));
+        boundCompileUnit->SetFileName(fileName);
+        boundCompileUnit->SetProjectName(project->Name());
         bcuPaths.push_back(boundCompileUnit->BcuPath());
         compileUnitMap.MapCompileUnit(compileUnit.get(), boundCompileUnit.get());
         boundCompileUnits.push_back(std::move(boundCompileUnit));

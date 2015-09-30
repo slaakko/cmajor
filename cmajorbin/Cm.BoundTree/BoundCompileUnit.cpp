@@ -68,19 +68,27 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
     }
 }
 
+void BoundCompileUnit::SetProjectName(const std::string& projectName_)
+{
+    projectName = projectName_;
+}
+
+void BoundCompileUnit::SetFileName(const std::string& fileName_)
+{
+    fileName = fileName_;
+}
+
 void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
 {
     writer.GetBinaryWriter().Write(irFilePath);
-    if (irFilePath == "C:/Programming/cmajorbin/system/full/llvm/mt.ll")
-    {
-        int x = 0;
-    }
     writer.GetBinaryWriter().Write(objectFilePath);
     writer.GetBinaryWriter().Write(optIrFilePath);
     writer.GetBinaryWriter().Write(dependencyFilePath);
     writer.GetBinaryWriter().Write(changedFilePath);
     writer.GetBinaryWriter().Write(cDebugInfoFilePath);
     writer.GetBinaryWriter().Write(bcuPath);
+    writer.GetBinaryWriter().Write(fileName);
+    writer.GetBinaryWriter().Write(projectName);
     stringRepository->Write(writer);
     irClassTypeRepository->Write(writer);
     functionTemplateRepository.Write(writer);
@@ -100,16 +108,14 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
 {
     reader.SetBoundCompileUnit(this);
     irFilePath = reader.GetBinaryReader().ReadString();
-    if (irFilePath == "C:/Programming/cmajorbin/system/full/llvm/mt.ll")
-    {
-        int x = 0;
-    }
     objectFilePath = reader.GetBinaryReader().ReadString();
     optIrFilePath = reader.GetBinaryReader().ReadString();
     dependencyFilePath = reader.GetBinaryReader().ReadString();
     changedFilePath = reader.GetBinaryReader().ReadString();
     cDebugInfoFilePath = reader.GetBinaryReader().ReadString();
     bcuPath = reader.GetBinaryReader().ReadString();
+    fileName = reader.GetBinaryReader().ReadString();
+    projectName = reader.GetBinaryReader().ReadString();
     if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
     {
         stringRepository.reset(new Cm::Core::LlvmStringRepository());
