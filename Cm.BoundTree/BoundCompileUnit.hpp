@@ -48,6 +48,10 @@ class BoundCompileUnit : public Cm::Sym::BoundCompileUnit
 public:
     BoundCompileUnit(Cm::Sym::SymbolTable& symbolTable_);
     BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_);
+    void SetProjectName(const std::string& projectName_);
+    const std::string& ProjectName() const { return projectName; }
+    void SetFileName(const std::string& fileName_);
+    const std::string& FileName() const { return fileName; }
     void Write(Cm::Sym::BcuWriter& writer);
     void Read(Cm::Sym::BcuReader& reader);
     Cm::Ast::CompileUnitNode* SyntaxUnit() const { return syntaxUnit; }
@@ -111,6 +115,8 @@ private:
     std::string changedFilePath;
     std::string cDebugInfoFilePath;
     std::string bcuPath;
+    std::string fileName;
+    std::string projectName;
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;
