@@ -682,12 +682,12 @@ void BoundCast::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundIsExpression::BoundIsExpression() : BoundExpression(nullptr)
+BoundIsExpression::BoundIsExpression() : BoundExpression(nullptr), leftClassType(nullptr), rightClassType(nullptr)
 {
-
 }
 
-BoundIsExpression::BoundIsExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* expr_, Cm::Sym::ClassTypeSymbol* classTypeSymbol_) : BoundExpression(syntaxNode_), expr(expr_), classTypeSymbol(classTypeSymbol_)
+BoundIsExpression::BoundIsExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* expr_, Cm::Sym::ClassTypeSymbol* leftClassType_, Cm::Sym::ClassTypeSymbol* rightClassType_) : 
+    BoundExpression(syntaxNode_), expr(expr_), leftClassType(leftClassType_), rightClassType(rightClassType_)
 {
 }
 
@@ -695,7 +695,8 @@ void BoundIsExpression::Write(Cm::Sym::BcuWriter& writer)
 {
     BoundExpression::Write(writer);
     writer.Write(expr.get());
-    writer.Write(classTypeSymbol);
+    writer.Write(leftClassType);
+    writer.Write(rightClassType);
 }
 
 void BoundIsExpression::Read(Cm::Sym::BcuReader& reader)
@@ -704,16 +705,69 @@ void BoundIsExpression::Read(Cm::Sym::BcuReader& reader)
     Cm::Sym::BcuItem* exprItem = reader.ReadItem();
     if (exprItem->IsBoundExpression())
     {
-        expr.reset(static_cast<Cm::BoundTree::BoundExpression*>(exprItem));
+        expr.reset(static_cast<BoundExpression*>(exprItem));
     }
     else
     {
         throw std::runtime_error("bound expression expected");
     }
-    classTypeSymbol = reader.ReadClassTypeSymbol();
+    leftClassType = reader.ReadClassTypeSymbol();
+    rightClassType = reader.ReadClassTypeSymbol();
 }
 
 void BoundIsExpression::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundAsExpression::BoundAsExpression() : BoundExpression(nullptr), leftClassType(nullptr), rightClassType(nullptr)
+{
+}
+
+BoundAsExpression::BoundAsExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* expr_, Cm::Sym::ClassTypeSymbol* leftClassType_, Cm::Sym::ClassTypeSymbol* rightClassType_) :
+    BoundExpression(syntaxNode_), expr(expr_), leftClassType(leftClassType_), rightClassType(rightClassType_)
+{
+}
+
+void BoundAsExpression::Write(Cm::Sym::BcuWriter& writer)
+{
+    BoundExpression::Write(writer);
+    writer.Write(expr.get());
+    writer.Write(leftClassType);
+    writer.Write(rightClassType);
+    writer.Write(boundTemporary.get());
+}
+
+void BoundAsExpression::Read(Cm::Sym::BcuReader& reader)
+{
+    Cm::Sym::BcuItem* exprItem = reader.ReadItem();
+    if (exprItem->IsBoundExpression())
+    {
+        expr.reset(static_cast<BoundExpression*>(exprItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+    leftClassType = reader.ReadClassTypeSymbol();
+    rightClassType = reader.ReadClassTypeSymbol();
+    Cm::Sym::BcuItem* boundTemporaryItem = reader.ReadItem();
+    if (boundTemporaryItem->IsBoundExpression())
+    {
+        boundTemporary.reset(static_cast<BoundExpression*>(boundTemporaryItem));
+    }
+    else
+    {
+        throw std::runtime_error("bound expression expected");
+    }
+}
+
+void BoundAsExpression::SetBoundTemporary(BoundExpression* boundTemporary_)
+{
+    boundTemporary.reset(boundTemporary_);
+}
+
+void BoundAsExpression::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }

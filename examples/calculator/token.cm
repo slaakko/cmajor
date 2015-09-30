@@ -4,35 +4,30 @@ namespace Calculator
 {
     public abstract class Token
     {
-        public virtual nothrow bool IsNumber() const { return false; }
-        public virtual nothrow bool IsAddOp() const { return false; }
-        public virtual nothrow bool IsMulOp() const { return false; }
-        public virtual nothrow bool IsLeftParen() const { return false; }
-        public virtual nothrow bool IsRightParen() const { return false; }
-        public virtual nothrow bool IsEnd() const { return false; }
+        public virtual ~Token()
+        {
+        }
     }
 
     public class Number: Token
     {
         public nothrow Number(double value_): value(value_) {}
-        public override nothrow bool IsNumber() const { return true; }
-        public nothrow double Value() const { return value; }
+        public nothrow inline double Value() const { return value; }
         private double value;
     }
 
     public class Operator: Token
     {
         public nothrow Operator(char ch_): ch(ch_) {}
-        public override nothrow bool IsAddOp() const { return ch == '+' || ch == '-'; }
-        public override nothrow bool IsMulOp() const { return ch == '*' || ch == '/'; }
-        public override nothrow bool IsLeftParen() const { return ch == '('; }
-        public override nothrow bool IsRightParen() const { return ch == ')'; }
-        public nothrow char Ch() const { return ch; }
+        public nothrow inline bool IsAddOp() const { return ch == '+' || ch == '-'; }
+        public nothrow inline bool IsMulOp() const { return ch == '*' || ch == '/'; }
+        public nothrow inline bool IsLeftParen() const { return ch == '('; }
+        public nothrow inline bool IsRightParen() const { return ch == ')'; }
+        public nothrow inline char Ch() const { return ch; }
         private char ch;
     }
 
     public class End: Token
     {
-        public override nothrow bool IsEnd() const { return true; }
     }
 }

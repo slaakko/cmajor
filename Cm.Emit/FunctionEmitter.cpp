@@ -677,18 +677,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCast& boundCast)
     resultStack.Push(result);
 }
 
-void FunctionEmitter::Visit(Cm::BoundTree::BoundIsExpression& boundIsExpression)
-{
-    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
-    resultStack.Push(result);
-}
-
-void FunctionEmitter::Visit(Cm::BoundTree::BoundAsExpression& boundAsExpression)
-{
-    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
-    resultStack.Push(result);
-}
-
 void FunctionEmitter::Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExpr)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
