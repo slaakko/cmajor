@@ -127,8 +127,6 @@ public:
     void Visit(Cm::BoundTree::BoundFunctionId& boundFunctionId) override;
     void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
     void Visit(Cm::BoundTree::BoundCast& boundCast) override;
-    void Visit(Cm::BoundTree::BoundIsExpression& boundIsExpression) override;
-    void Visit(Cm::BoundTree::BoundAsExpression& boundAsExpression) override;
     void Visit(Cm::BoundTree::BoundSizeOfExpression& boundSizeOfExpr) override;
     void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
     void Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp) override;
@@ -191,6 +189,9 @@ protected:
     void PopGenDebugInfo();
     bool GenerateDebugInfo() const { return generateDebugInfo; }
     virtual Cm::Core::CFunctionDebugInfo* GetFunctionDebugInfo() const { return nullptr; }
+    Cm::Sym::SymbolTable* GetSymbolTable() const { return symbolTable; }
+    void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
+    void GenJumpingBoolCode(Cm::Core::GenResult& result);
 private:
     bool generateDebugInfo;
     std::stack<bool> generateDebugInfoStack;
@@ -253,9 +254,7 @@ private:
     void PopContinueTargetStatement();
     void MakePlainValueResult(Cm::Sym::TypeSymbol* plainType, Cm::Core::GenResult& result);
     void ExecutePostfixIncDecStatements(Cm::Core::GenResult& result);
-    void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
     void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
-    void GenJumpingBoolCode(Cm::Core::GenResult& result);
     void CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
     void CallLeaveFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
     void GenerateTestExceptionResult();

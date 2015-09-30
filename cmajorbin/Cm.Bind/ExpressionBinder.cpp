@@ -2181,19 +2181,19 @@ void ExpressionBinder::Visit(Cm::Ast::IsNode& isNode)
                         Cm::Sym::ClassTypeSymbol* rightClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(baseType);
                         if (rightClassType->IsVirtual())
                         {
-                            Cm::BoundTree::BoundExpression* boundIsExpression = new Cm::BoundTree::BoundIsExpression(&isNode, boundExpr.release(), rightClassType);
+                            Cm::BoundTree::BoundIsExpression* boundIsExpression = new Cm::BoundTree::BoundIsExpression(&isNode, boundExpr.release(), exprClassType, rightClassType);
                             Cm::Sym::TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
                             boundIsExpression->SetType(boolType);
                             boundExpressionStack.Push(boundIsExpression);
                         }
                         else
                         {
-                            throw Cm::Core::Exception("right operand of is-expression must be virtual class type", typeExpr->GetSpan());
+                            throw Cm::Core::Exception("right operand of is-expression must be pointer to virtual class type", typeExpr->GetSpan());
                         }
                     }
                     else
                     {
-                        throw Cm::Core::Exception("right operand of is-expression must be virtual class type", typeExpr->GetSpan());
+                        throw Cm::Core::Exception("right operand of is-expression must be pointer to virtual class type", typeExpr->GetSpan());
                     }
                 }
                 else
@@ -2219,7 +2219,66 @@ void ExpressionBinder::Visit(Cm::Ast::IsNode& isNode)
 
 void ExpressionBinder::Visit(Cm::Ast::AsNode& asNode)
 {
-
+    Cm::Ast::Node* expr = asNode.Expr();
+    expr->Accept(*this);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> boundExpr(Pop());
+    if (boundExpr->GetType()->IsPointerToClassType())
+    {
+        Cm::Sym::TypeSymbol* exprBaseType = boundExpr->GetType()->GetBaseType();
+        if (exprBaseType->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* exprClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(exprBaseType);
+            if (exprClassType->IsVirtual())
+            {
+                Cm::Ast::Node* typeExpr = asNode.TypeExpr();
+                Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), typeExpr);
+                if (type->IsPointerToClassType())
+                {
+                    Cm::Sym::TypeSymbol* baseType = type->GetBaseType();
+                    if (baseType->IsClassTypeSymbol())
+                    {
+                        Cm::Sym::ClassTypeSymbol* rightClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(baseType);
+                        if (rightClassType->IsVirtual())
+                        {
+                            Cm::BoundTree::BoundAsExpression* boundAsExpression = new Cm::BoundTree::BoundAsExpression(&asNode, boundExpr.release(), exprClassType, rightClassType);
+                            boundAsExpression->SetType(type);
+                            Cm::Sym::LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(type);
+                            temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
+                            Cm::BoundTree::BoundExpression* boundTemporary = new Cm::BoundTree::BoundLocalVariable(&asNode, temporary);
+                            boundTemporary->SetType(type);
+                            boundTemporary->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+                            boundAsExpression->SetBoundTemporary(boundTemporary);
+                            boundExpressionStack.Push(boundAsExpression);
+                        }
+                        else
+                        {
+                            throw Cm::Core::Exception("right operand of as-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                        }
+                    }
+                    else
+                    {
+                        throw Cm::Core::Exception("right operand of as-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                    }
+                }
+                else
+                {
+                    throw Cm::Core::Exception("right operand of as-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm::Core::Exception("type of left operand of as-expression must be pointer to virtual class type", expr->GetSpan());
+            }
+        }
+        else
+        {
+            throw std::runtime_error("not class type");
+        }
+    }
+    else
+    {
+        throw Cm::Core::Exception("type of left operand of as-expression must be pointer to virtual class type", expr->GetSpan());
+    }
 }
 
 void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes, Cm::BoundTree::BoundExpression* allocationArg)

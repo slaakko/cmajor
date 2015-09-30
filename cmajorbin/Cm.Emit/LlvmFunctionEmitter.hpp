@@ -24,7 +24,9 @@ public:
         Cm::Sym::FunctionSymbol* leaveTracedCallFun_, bool profile_);
     void EmitDummyVar(Cm::Core::Emitter* emitter) override;
     void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) override;
-    void Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamiceTypeNameExpression) override;
+    void Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamicTypeNameExpression) override;
+    void Visit(Cm::BoundTree::BoundIsExpression& boundIsExpression) override;
+    void Visit(Cm::BoundTree::BoundAsExpression& boundAsExpression) override;
     void DoNothing(Cm::Core::GenResult& genResult) override;
     void Visit(Cm::BoundTree::BoundInitVPtrStatement& boundInitVPtrStatement) override;
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) override;

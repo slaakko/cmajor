@@ -28,7 +28,9 @@ public:
     void SetFunctionMap(std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap_) { functionMap = functionMap_; }
     void EmitDummyVar(Cm::Core::Emitter* emitter) override;
     void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) override;
-    void Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamiceTypeNameExpression) override;
+    void Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamicTypeNameExpression) override;
+    void Visit(Cm::BoundTree::BoundIsExpression& boundIsExpression) override;
+    void Visit(Cm::BoundTree::BoundAsExpression& boundAsExpression) override;
     void DoNothing(Cm::Core::GenResult& genResult) override;
     void Visit(Cm::BoundTree::BoundInitVPtrStatement& boundInitVPtrStatement) override;
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) override;

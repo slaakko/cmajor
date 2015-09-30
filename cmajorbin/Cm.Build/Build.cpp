@@ -1262,9 +1262,27 @@ struct PriorityGreater
         {
             return false;
         }
+        else if (left->Priority() > right->Priority())
+        {
+            return true;
+        }
+        else if (right->Priority() > left->Priority())
+        {
+            return false;
+        }
         else
         {
-            return left->Priority() > right->Priority();
+            uint64_t leftCid = 0;
+            uint64_t rightCid = 0;
+            if (left->BaseClass())
+            {
+                leftCid = left->BaseClass()->Cid();
+            }
+            if (right->BaseClass())
+            {
+                rightCid = right->BaseClass()->Cid();
+            }
+            return leftCid < rightCid;
         }
     }
 };

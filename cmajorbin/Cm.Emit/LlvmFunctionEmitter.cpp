@@ -9,6 +9,8 @@
 
 #include <Cm.Emit/LlvmFunctionEmitter.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -37,18 +39,18 @@ void LlvmFunctionEmitter::SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir:
     emitter->Emit(Cm::IrIntf::GetElementPtr(s, resultObject, stringObject, zero, zero));
 }
 
-void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamiceTypeNameExpression)
+void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamicTypeNameExpression)
 {
     Cm::Core::Emitter* emitter = Emitter();
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter, GenFlags()));
-    boundDynamiceTypeNameExpression.Subject()->Accept(*this);
+    boundDynamicTypeNameExpression.Subject()->Accept(*this);
     std::shared_ptr<Cm::Core::GenResult> subjectResult = ResultStack().Pop();
     Ir::Intf::LabelObject* resultLabel = subjectResult->GetLabel();
     if (resultLabel)
     {
         result->SetLabel(resultLabel);
     }
-    Cm::Sym::ClassTypeSymbol* classType = boundDynamiceTypeNameExpression.ClassType();
+    Cm::Sym::ClassTypeSymbol* classType = boundDynamicTypeNameExpression.ClassType();
     Ir::Intf::Type* classTypePtrType = Cm::IrIntf::Pointer(classType->GetIrType(), 1);
     emitter->Own(classTypePtrType);
     Ir::Intf::Object* objectPtr = subjectResult->MainObject();
@@ -74,16 +76,248 @@ void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& b
     Ir::Intf::RegVar* loadedVptr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
     emitter->Own(loadedVptr);
     Cm::IrIntf::Assign(*emitter, i8PtrPtr, vptr, loadedVptr);
+    Ir::Intf::RegVar* i8rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(i8rttiPtr);
+    Cm::IrIntf::Assign(*emitter, i8Ptr, loadedVptr, i8rttiPtr);
+    std::vector<Ir::Intf::Type*> rttiElementTypes;
+    rttiElementTypes.push_back(i8Ptr->Clone());
+    rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    std::vector<std::string> rttiElementNames;
+    rttiElementNames.push_back("class_name");
+    rttiElementNames.push_back("class_id");
+    Ir::Intf::Type* rttiPtrIrType(Cm::IrIntf::Pointer(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames), 1));
+    emitter->Own(rttiPtrIrType);
+    Ir::Intf::RegVar* rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(rttiPtrIrType);
+    emitter->Own(rttiPtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, rttiPtr, i8rttiPtr, rttiPtrIrType));
     Ir::Intf::RegVar* typenameI8PtrPtr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
     emitter->Own(typenameI8PtrPtr);
-    Ir::Intf::Object* zero = Ir::Intf::GetFactory()->GetI16()->CreateDefaultValue();
+    Ir::Intf::Object* zero = Ir::Intf::GetFactory()->GetI32()->CreateDefaultValue();
     emitter->Own(zero);
-    emitter->Emit(Cm::IrIntf::GetElementPtr(i8PtrPtr, typenameI8PtrPtr, loadedVptr, zero));
+    emitter->Emit(Cm::IrIntf::GetElementPtr(rttiPtrIrType, typenameI8PtrPtr, rttiPtr, zero, zero));
     Ir::Intf::RegVar* loadedTypenameI8Ptr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
     emitter->Own(loadedTypenameI8Ptr);
     Cm::IrIntf::Assign(*emitter, i8Ptr, typenameI8PtrPtr, loadedTypenameI8Ptr);
     result->SetMainObject(loadedTypenameI8Ptr);
     result->Merge(subjectResult);
+    ResultStack().Push(result);
+}
+
+void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundIsExpression& boundIsExpression)
+{
+    Cm::Core::Emitter* emitter = Emitter();
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter, GenFlags()));
+    boundIsExpression.Expr()->Accept(*this);
+    std::shared_ptr<Cm::Core::GenResult> exprResult = ResultStack().Pop();
+    Ir::Intf::LabelObject* resultLabel = exprResult->GetLabel();
+    if (resultLabel)
+    {
+        result->SetLabel(resultLabel);
+    }
+    Cm::Sym::ClassTypeSymbol* leftClassType = boundIsExpression.LeftClassType();
+    Ir::Intf::Type* classTypePtrType = Cm::IrIntf::Pointer(leftClassType->GetIrType(), 1);
+    emitter->Own(classTypePtrType);
+    Ir::Intf::Object* objectPtr = exprResult->MainObject();
+    Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1);
+    emitter->Own(i8Ptr);
+    Ir::Intf::Type* i8PtrPtr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 2);
+    emitter->Own(i8PtrPtr);
+    Ir::Intf::Object* vtblPtrContainerPtr = objectPtr;
+    int vptrIndex = leftClassType->VPtrIndex();
+    if (vptrIndex == -1)
+    {
+        Cm::Sym::ClassTypeSymbol* vptrContainerClass = leftClassType->VPtrContainerClass();
+        vptrIndex = vptrContainerClass->VPtrIndex();
+        Ir::Intf::Type* containerPtrType = Cm::IrIntf::Pointer(vptrContainerClass->GetIrType(), 1);
+        emitter->Own(containerPtrType);
+        Ir::Intf::RegVar* containerPtr = Cm::IrIntf::CreateTemporaryRegVar(containerPtrType);
+        emitter->Own(containerPtr);
+        emitter->Emit(Cm::IrIntf::Bitcast(classTypePtrType, containerPtr, objectPtr, containerPtrType));
+        vtblPtrContainerPtr = containerPtr;
+    }
+    Ir::Intf::MemberVar* vptr = Cm::IrIntf::CreateMemberVar(Cm::IrIntf::GetVPtrVarName(), vtblPtrContainerPtr, vptrIndex, i8PtrPtr);
+    emitter->Own(vptr);
+    Ir::Intf::RegVar* loadedVptr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(loadedVptr);
+    Cm::IrIntf::Assign(*emitter, i8PtrPtr, vptr, loadedVptr);
+    Ir::Intf::RegVar* i8rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(i8rttiPtr);
+    Cm::IrIntf::Assign(*emitter, i8Ptr, loadedVptr, i8rttiPtr);
+    std::vector<Ir::Intf::Type*> rttiElementTypes;
+    rttiElementTypes.push_back(i8Ptr->Clone());
+    rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    std::vector<std::string> rttiElementNames;
+    rttiElementNames.push_back("class_name");
+    rttiElementNames.push_back("class_id");
+    Ir::Intf::Type* rttiPtrIrType(Cm::IrIntf::Pointer(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames), 1));
+    emitter->Own(rttiPtrIrType);
+    Ir::Intf::RegVar* rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(rttiPtrIrType);
+    emitter->Own(rttiPtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, rttiPtr, i8rttiPtr, rttiPtrIrType));
+    Ir::Intf::Type* cidPtrType = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetUI64(), 1);
+    emitter->Own(cidPtrType);
+    Ir::Intf::RegVar* cidPtr = Cm::IrIntf::CreateTemporaryRegVar(cidPtrType);
+    emitter->Own(cidPtr);
+    Ir::Intf::Object* zero = Ir::Intf::GetFactory()->GetI32()->CreateDefaultValue();
+    emitter->Own(zero);
+    Ir::Intf::Object* one = Ir::Intf::GetFactory()->GetI32()->CreatePlusOne();
+    emitter->Own(one);
+    emitter->Emit(Cm::IrIntf::GetElementPtr(rttiPtrIrType, cidPtr, rttiPtr, zero, one));
+    Ir::Intf::RegVar* leftCid = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetUI64());
+    emitter->Own(leftCid);
+    Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetUI64(), cidPtr, leftCid);
+    Cm::Sym::ClassTypeSymbol* rightClassType = boundIsExpression.RightClassType();
+    Cm::BoundTree::BoundLiteral rightCidLiteral(boundIsExpression.SyntaxNode());
+    rightCidLiteral.SetValue(new Cm::Sym::ULongValue(rightClassType->Cid()));
+    Cm::Sym::TypeSymbol* ulongType = GetSymbolTable()->GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+    rightCidLiteral.SetType(ulongType);
+    rightCidLiteral.Accept(*this);
+    std::shared_ptr<Cm::Core::GenResult> rightCidResult = ResultStack().Pop();
+    Ir::Intf::Object* rightCid = rightCidResult->MainObject();
+    Ir::Intf::RegVar* resultRegVar = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI1());
+    emitter->Own(resultRegVar);
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
+    {
+        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI64());
+        emitter->Emit(Cm::IrIntf::URem(Ir::Intf::GetFactory()->GetUI64(), remainderResult, leftCid, rightCid));
+        Ir::Intf::Object* ui64Zero = Ir::Intf::GetFactory()->GetUI64()->CreateDefaultValue();
+        emitter->Own(ui64Zero);
+        emitter->Emit(Cm::IrIntf::ICmp(Ir::Intf::GetFactory()->GetUI64(), resultRegVar, Ir::Intf::IConditionCode::eq, remainderResult, ui64Zero));
+    }
+    else
+    {
+        Cm::Sym::FunctionSymbol* fun = GetSymbolTable()->GetOverload("is_class_same_or_derived_from");
+        std::shared_ptr<Cm::Core::GenResult> funCallResult(new Cm::Core::GenResult(emitter, GenFlags()));
+        funCallResult->SetMainObject(resultRegVar);
+        funCallResult->AddObject(leftCid);
+        funCallResult->AddObject(rightCid);
+        GenerateCall(fun, nullptr, *funCallResult);
+    }
+    result->SetMainObject(resultRegVar);
+    result->Merge(exprResult);
+    result->Merge(rightCidResult);
+    if (boundIsExpression.GetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode))
+    {
+        GenJumpingBoolCode(*result);
+    }
+    ResultStack().Push(result);
+}
+
+void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundAsExpression& boundAsExpression)
+{
+    Cm::Core::Emitter* emitter = Emitter();
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter, GenFlags()));
+    boundAsExpression.Expr()->Accept(*this);
+    std::shared_ptr<Cm::Core::GenResult> exprResult = ResultStack().Pop();
+    Ir::Intf::LabelObject* resultLabel = exprResult->GetLabel();
+    if (resultLabel)
+    {
+        result->SetLabel(resultLabel);
+    }
+    Cm::Sym::ClassTypeSymbol* leftClassType = boundAsExpression.LeftClassType();
+    Ir::Intf::Type* classTypePtrType = Cm::IrIntf::Pointer(leftClassType->GetIrType(), 1);
+    emitter->Own(classTypePtrType);
+    Ir::Intf::Object* objectPtr = exprResult->MainObject();
+    Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 1);
+    emitter->Own(i8Ptr);
+    Ir::Intf::Type* i8PtrPtr = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI8(), 2);
+    emitter->Own(i8PtrPtr);
+    Ir::Intf::Object* vtblPtrContainerPtr = objectPtr;
+    int vptrIndex = leftClassType->VPtrIndex();
+    if (vptrIndex == -1)
+    {
+        Cm::Sym::ClassTypeSymbol* vptrContainerClass = leftClassType->VPtrContainerClass();
+        vptrIndex = vptrContainerClass->VPtrIndex();
+        Ir::Intf::Type* containerPtrType = Cm::IrIntf::Pointer(vptrContainerClass->GetIrType(), 1);
+        emitter->Own(containerPtrType);
+        Ir::Intf::RegVar* containerPtr = Cm::IrIntf::CreateTemporaryRegVar(containerPtrType);
+        emitter->Own(containerPtr);
+        emitter->Emit(Cm::IrIntf::Bitcast(classTypePtrType, containerPtr, objectPtr, containerPtrType));
+        vtblPtrContainerPtr = containerPtr;
+    }
+    Ir::Intf::MemberVar* vptr = Cm::IrIntf::CreateMemberVar(Cm::IrIntf::GetVPtrVarName(), vtblPtrContainerPtr, vptrIndex, i8PtrPtr);
+    emitter->Own(vptr);
+    Ir::Intf::RegVar* loadedVptr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(loadedVptr);
+    Cm::IrIntf::Assign(*emitter, i8PtrPtr, vptr, loadedVptr);
+    Ir::Intf::RegVar* i8rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(i8rttiPtr);
+    Cm::IrIntf::Assign(*emitter, i8Ptr, loadedVptr, i8rttiPtr);
+    std::vector<Ir::Intf::Type*> rttiElementTypes;
+    rttiElementTypes.push_back(i8Ptr->Clone());
+    rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    std::vector<std::string> rttiElementNames;
+    rttiElementNames.push_back("class_name");
+    rttiElementNames.push_back("class_id");
+    Ir::Intf::Type* rttiPtrIrType(Cm::IrIntf::Pointer(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames), 1));
+    emitter->Own(rttiPtrIrType);
+    Ir::Intf::RegVar* rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(rttiPtrIrType);
+    emitter->Own(rttiPtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, rttiPtr, i8rttiPtr, rttiPtrIrType));
+    Ir::Intf::Type* cidPtrType = Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetUI64(), 1);
+    emitter->Own(cidPtrType);
+    Ir::Intf::RegVar* cidPtr = Cm::IrIntf::CreateTemporaryRegVar(cidPtrType);
+    emitter->Own(cidPtr);
+    Ir::Intf::Object* zero = Ir::Intf::GetFactory()->GetI32()->CreateDefaultValue();
+    emitter->Own(zero);
+    Ir::Intf::Object* one = Ir::Intf::GetFactory()->GetI32()->CreatePlusOne();
+    emitter->Own(one);
+    emitter->Emit(Cm::IrIntf::GetElementPtr(rttiPtrIrType, cidPtr, rttiPtr, zero, one));
+    Ir::Intf::RegVar* leftCid = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetUI64());
+    emitter->Own(leftCid);
+    Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetUI64(), cidPtr, leftCid);
+    Cm::Sym::ClassTypeSymbol* rightClassType = boundAsExpression.RightClassType();
+    Cm::BoundTree::BoundLiteral rightCidLiteral(boundAsExpression.SyntaxNode());
+    rightCidLiteral.SetValue(new Cm::Sym::ULongValue(rightClassType->Cid()));
+    Cm::Sym::TypeSymbol* ulongType = GetSymbolTable()->GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+    rightCidLiteral.SetType(ulongType);
+    rightCidLiteral.Accept(*this);
+    std::shared_ptr<Cm::Core::GenResult> rightCidResult = ResultStack().Pop();
+    Ir::Intf::Object* rightCid = rightCidResult->MainObject();
+    Ir::Intf::RegVar* resultRegVar = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI1());
+    emitter->Own(resultRegVar);
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
+    {
+        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI64());
+        emitter->Emit(Cm::IrIntf::URem(Ir::Intf::GetFactory()->GetUI64(), remainderResult, leftCid, rightCid));
+        Ir::Intf::Object* ui64Zero = Ir::Intf::GetFactory()->GetUI64()->CreateDefaultValue();
+        emitter->Own(ui64Zero);
+        emitter->Emit(Cm::IrIntf::ICmp(Ir::Intf::GetFactory()->GetUI64(), resultRegVar, Ir::Intf::IConditionCode::eq, remainderResult, ui64Zero));
+    }
+    else
+    {
+        Cm::Sym::FunctionSymbol* fun = GetSymbolTable()->GetOverload("is_class_same_or_derived_from");
+        std::shared_ptr<Cm::Core::GenResult> funCallResult(new Cm::Core::GenResult(emitter, GenFlags()));
+        funCallResult->SetMainObject(resultRegVar);
+        funCallResult->AddObject(leftCid);
+        funCallResult->AddObject(rightCid);
+        GenerateCall(fun, nullptr, *funCallResult);
+    }
+    Ir::Intf::LabelObject* trueLabel = Cm::IrIntf::CreateNextLocalLabel();
+    emitter->Own(trueLabel);
+    Ir::Intf::LabelObject* falseLabel = Cm::IrIntf::CreateNextLocalLabel();
+    emitter->Own(falseLabel);
+    Ir::Intf::LabelObject* exitLabel = Cm::IrIntf::CreateNextLocalLabel();
+    emitter->Own(exitLabel);
+    emitter->Emit(Cm::IrIntf::Br(resultRegVar, trueLabel, falseLabel));
+    Cm::BoundTree::BoundExpression* temporary = boundAsExpression.BoundTemporary();
+    temporary->Accept(*this);
+    std::shared_ptr<Cm::Core::GenResult> temporaryResult = ResultStack().Pop();
+    emitter->AddNextInstructionLabel(trueLabel);
+    Ir::Intf::Object* exprAsRightOperand = Cm::IrIntf::CreateTemporaryRegVar(boundAsExpression.GetType()->GetIrType());
+    emitter->Emit(Cm::IrIntf::Bitcast(exprResult->MainObject()->GetType(), exprAsRightOperand, exprResult->MainObject(), boundAsExpression.GetType()->GetIrType()));
+    emitter->Emit(Cm::IrIntf::Store(boundAsExpression.GetType()->GetIrType(), exprAsRightOperand, temporaryResult->MainObject()));
+    emitter->Emit(Cm::IrIntf::Br(exitLabel));
+    Ir::Intf::Object* null = boundAsExpression.GetType()->GetIrType()->CreateDefaultValue();
+    emitter->AddNextInstructionLabel(falseLabel);
+    emitter->Emit(Cm::IrIntf::Store(boundAsExpression.GetType()->GetIrType(), null, temporaryResult->MainObject()));
+    emitter->AddNextInstructionLabel(exitLabel);
+    result->SetMainObject(GetSymbolTable()->GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), GetSymbolTable()->GetTypeRepository());
+    DoNothing(*result);
+    result->SetMainObject(temporaryResult->MainObject());
+    result->Merge(exprResult);
+    result->Merge(rightCidResult);
+    result->Merge(temporaryResult);
     ResultStack().Push(result);
 }
 

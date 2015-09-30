@@ -354,14 +354,39 @@ class BoundIsExpression : public BoundExpression
 {
 public:
     BoundIsExpression();
-    BoundIsExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* expr_, Cm::Sym::ClassTypeSymbol* classTypeSymbol_);
+    BoundIsExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* expr_, Cm::Sym::ClassTypeSymbol* leftClassType_, Cm::Sym::ClassTypeSymbol* rightClassType_);
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuIsExpr; }
     void Write(Cm::Sym::BcuWriter& writer) override;
     void Read(Cm::Sym::BcuReader& reader) override;
     void Accept(Visitor& visitor) override;
+    BoundExpression* Expr() const { return expr.get(); }
+    Cm::Sym::ClassTypeSymbol* LeftClassType() const { return leftClassType; }
+    Cm::Sym::ClassTypeSymbol* RightClassType() const { return rightClassType;  }
 private:
     std::unique_ptr<BoundExpression> expr;
-    Cm::Sym::ClassTypeSymbol* classTypeSymbol;
+    Cm::Sym::ClassTypeSymbol* leftClassType;
+    Cm::Sym::ClassTypeSymbol* rightClassType;
+};
+
+class BoundAsExpression : public BoundExpression
+{
+public:
+    BoundAsExpression();
+    BoundAsExpression(Cm::Ast::Node* syntaxNode_, BoundExpression* expr_, Cm::Sym::ClassTypeSymbol* leftClassType_, Cm::Sym::ClassTypeSymbol* rightClassType_);
+    Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuAsExpr; }
+    void Write(Cm::Sym::BcuWriter& writer) override;
+    void Read(Cm::Sym::BcuReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    BoundExpression* Expr() const { return expr.get(); }
+    Cm::Sym::ClassTypeSymbol* LeftClassType() const { return leftClassType; }
+    Cm::Sym::ClassTypeSymbol* RightClassType() const { return rightClassType; }
+    void SetBoundTemporary(BoundExpression* boundTemporary_);
+    BoundExpression* BoundTemporary() const { return boundTemporary.get(); }
+private:
+    std::unique_ptr<BoundExpression> expr;
+    Cm::Sym::ClassTypeSymbol* leftClassType;
+    Cm::Sym::ClassTypeSymbol* rightClassType;
+    std::unique_ptr<BoundExpression> boundTemporary;
 };
 
 class BoundSizeOfExpression : public BoundExpression

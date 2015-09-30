@@ -171,7 +171,7 @@ void LlvmIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, C
         line.append(i8ptrType->Name()).append(" ");
         if (first)
         {
-            line.append("getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0)");
+            line.append("bitcast (%rtti* " + rttiIrObject->Name() + " to i8*)");
             first = false;
         }
         else
@@ -412,7 +412,7 @@ void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::
         std::string line;
         if (first)
         {
-            line.append("\"").append(Cm::Util::StringStr(classType->FullName())).append("\""); 
+            line.append("&").append(rttiIrObject->Name());
             first = false;
         }
         else

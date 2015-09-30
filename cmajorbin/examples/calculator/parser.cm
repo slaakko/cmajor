@@ -25,7 +25,7 @@ namespace Calculator
                 scanner.NextToken();
                 double value = Expr(scanner);
                 Token* next = scanner.GetToken();
-                if (next->IsEnd())
+                if (next is End*)
                 {
                     return value;
                 }
@@ -52,9 +52,9 @@ namespace Calculator
         {
             double value = Term(scanner);
             Token* next = scanner.GetToken();
-            while (next->IsAddOp())
+            Operator* op = next as Operator*;
+            while (op != null && op->IsAddOp())
             {
-                Operator* op = cast<Operator*>(next);
                 char opChar = op->Ch();
                 scanner.NextToken();
                 double right = Term(scanner);
@@ -68,6 +68,7 @@ namespace Calculator
                     value = value - right;
                 }
                 next = scanner.GetToken();
+                op = next as Operator*;
             }
             return value;
         }
@@ -75,9 +76,9 @@ namespace Calculator
         {
             double value = Factor(scanner);
             Token* next = scanner.GetToken();
-            while (next->IsMulOp())
+            Operator* op = next as Operator*;
+            while (op != null && op->IsMulOp())
             {
-                Operator* op = cast<Operator*>(next);
                 char opChar = op->Ch();
                 scanner.NextToken();
                 double right = Factor(scanner);
@@ -95,16 +96,17 @@ namespace Calculator
                     value = value / right;
                 }
                 next = scanner.GetToken();
+                op = next as Operator*;
             }
             return value;
         }
         private static double Factor(Scanner& scanner)
         {
             Token* next = scanner.GetToken();
+            Operator* op = next as Operator*;
             bool neg = false;
-            if (next->IsAddOp())
+            if (op != null && op->IsAddOp())
             {
-                Operator* op = cast<Operator*>(next);
                 if (op->Ch() == '-')
                 {
                     neg = true;
@@ -121,32 +123,37 @@ namespace Calculator
         private static double Primary(Scanner& scanner)
         {
             Token* next = scanner.GetToken();
-            if (next->IsNumber())
+            Number* number = next as Number*;
+            if (number != null)
             {
-                Number* number = cast<Number*>(next);
                 double value = number->Value();
                 scanner.NextToken();
                 return value;
             }
-            else if (next->IsLeftParen())
+            else 
             {
-                scanner.NextToken();
-                double value = Expr(scanner);
-                next = scanner.GetToken();
-                if (next->IsRightParen())
+                Operator* op = next as Operator*;
+                if (op != null && op->IsLeftParen())
                 {
                     scanner.NextToken();
-                    return value;
+                    double value = Expr(scanner);
+                    next = scanner.GetToken();
+                    op = next as Operator*;
+                    if (op != null && op->IsRightParen())
+                    {
+                        scanner.NextToken();
+                        return value;
+                    }
+                    else
+                    {
+                        throw ParsingError("')' expected");
+                    }
                 }
                 else
                 {
-                    throw ParsingError("')' expected");
+                    throw ParsingError("number or subexpression expected");
                 }
-            }
-            else
-            {
-                throw ParsingError("number or subexpression expected");
-            }
+            }            
         }
     }
 }
