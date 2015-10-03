@@ -543,6 +543,7 @@ public:
     std::string ToString() const override;
     Node* TypeExpr() const { return typeExpr.get(); }
     void Accept(Visitor& visitor) override;
+    bool IsNewNode() const override { return true; }
 private:
     std::unique_ptr<Node> typeExpr;
     NodeList arguments;

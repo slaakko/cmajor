@@ -740,6 +740,7 @@ void BoundAsExpression::Write(Cm::Sym::BcuWriter& writer)
 
 void BoundAsExpression::Read(Cm::Sym::BcuReader& reader)
 {
+    BoundExpression::Read(reader);
     Cm::Sym::BcuItem* exprItem = reader.ReadItem();
     if (exprItem->IsBoundExpression())
     {

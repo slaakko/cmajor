@@ -2364,6 +2364,10 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
     functionCall->SetFunction(ctor);
     functionCall->SetType(returnType);
     boundExpressionStack.Push(functionCall);
+    if (node->IsNewNode())
+    {
+        functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::newCall);
+    }
 }
 
 void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes)

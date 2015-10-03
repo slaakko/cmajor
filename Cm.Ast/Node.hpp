@@ -87,6 +87,8 @@ public:
     virtual bool IsTryStatementNode() const { return false; }
     virtual bool IsCatchNode() const { return false; }
     virtual bool IsFunctionNode() const { return false; }
+    virtual bool IsNewNode() const { return false; }
+    virtual bool IsVoidNode() const { return false; }
     virtual bool IsCondCompExprNode() const { return false; }
     virtual bool IsCondCompSymbolNode() const { return false; }
     virtual bool IsCondCompPartNode() const { return false; }

@@ -186,7 +186,7 @@ Symbol* BcuReader::ReadSymbol()
         }
         case BcuItemType::bcuClassSymbol:
         {
-            uint32_t cid = reader.GetBinaryReader().ReadUInt();
+            uint64_t cid = reader.GetBinaryReader().ReadULong();
             Symbol* classSymbol = reader.GetSymbolTable().GetClass(cid);
             if (!classSymbol)
             {
@@ -374,13 +374,20 @@ Symbol* BcuReader::ReadSymbol()
 ClassTypeSymbol* BcuReader::ReadClassTypeSymbol()
 {
     Symbol* symbol = ReadSymbol();
-    if (symbol->IsClassTypeSymbol())
+    if (symbol)
     {
-        return static_cast<ClassTypeSymbol*>(symbol);
+        if (symbol->IsClassTypeSymbol())
+        {
+            return static_cast<ClassTypeSymbol*>(symbol);
+        }
+        else
+        {
+            throw std::runtime_error("class type symbol expected");
+        }
     }
     else
     {
-        throw std::runtime_error("class type symbol expected");
+        throw std::runtime_error("null class type symbol read");
     }
 }
 

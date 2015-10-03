@@ -429,7 +429,10 @@ void ClassTemplateRepository::Read(Cm::Sym::BcuReader& reader)
         if (symbol->IsTemplateTypeSymbol())
         {
             Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(symbol);
-            reader.GetSymbolReader().GetSymbolTable().GetTypeRepository().Own(templateTypeSymbol);
+            if (!templateTypeSymbol->Owned())
+            {
+                reader.GetSymbolReader().GetSymbolTable().GetTypeRepository().Own(templateTypeSymbol);
+            }
         }
     }
 }

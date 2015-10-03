@@ -218,6 +218,7 @@ void InitFactory()
     SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::entrySymbol, new ConcreteSymbolCreator<EntrySymbol>());
     SymbolFactory::Instance().Register(SymbolType::returnValueSymbol, new ConcreteSymbolCreator<ReturnValueSymbol>());
     SymbolFactory::Instance().Register(SymbolType::namespaceSymbol, new ConcreteSymbolCreator<NamespaceSymbol>());
     SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());

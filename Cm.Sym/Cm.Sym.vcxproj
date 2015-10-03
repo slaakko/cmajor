@@ -33,6 +33,7 @@
     <ClInclude Include="DeclarationVisitor.hpp" />
     <ClInclude Include="DelegateSymbol.hpp" />
     <ClInclude Include="DerivedTypeSymbol.hpp" />
+    <ClInclude Include="EntrySymbol.hpp" />
     <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="Exception.hpp" />
     <ClInclude Include="ExceptionTable.hpp" />
@@ -81,6 +82,7 @@
     <ClCompile Include="DeclarationVisitor.cpp" />
     <ClCompile Include="DelegateSymbol.cpp" />
     <ClCompile Include="DerivedTypeSymbol.cpp" />
+    <ClCompile Include="EntrySymbol.cpp" />
     <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionTable.cpp" />

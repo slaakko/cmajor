@@ -24,9 +24,11 @@ OpAddPtrInt::OpAddPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(Type());
+    leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(leftParam);
     Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
     rightParam->SetType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
+    rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
 }
@@ -64,9 +66,11 @@ OpAddIntPtr::OpAddIntPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
+    leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(leftParam);
     Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
     rightParam->SetType(Type());
+    rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
 }
@@ -104,9 +108,11 @@ OpSubPtrInt::OpSubPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(Type());
+    leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(leftParam);
     Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
     rightParam->SetType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
+    rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
 }
@@ -149,9 +155,11 @@ OpSubPtrPtr::OpSubPtrPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     SetReturnType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(Type());
+    leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(leftParam);
     Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
     rightParam->SetType(Type());
+    rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
 }
@@ -195,6 +203,7 @@ OpDeref::OpDeref(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* 
     SetReturnType(typeRepository.MakePlainTypeWithOnePointerRemoved(Type()));
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
     operandParam->SetType(Type());
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
 }
@@ -251,6 +260,7 @@ OpIncPtr::OpIncPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
     operandParam->SetType(Type());
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
 }
@@ -292,6 +302,7 @@ OpDecPtr::OpDecPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
     operandParam->SetType(Type());
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
 }
@@ -334,6 +345,7 @@ OpAddrOf::OpAddrOf(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol*
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
     Cm::Sym::TypeSymbol* operandType = typeRepository.MakePlainTypeWithOnePointerRemoved(Type());
     operandParam->SetType(operandType);
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
 }
@@ -363,6 +375,7 @@ OpArrow::OpArrow(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* t
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
     operandParam->SetType(Type());
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
 }

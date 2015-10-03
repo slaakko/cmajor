@@ -113,9 +113,13 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionN
         thisParam->SetBound();
         symbolTable.AddParameter(thisParam);
     }
+    else
+    {
+        symbolTable.AddEntrySymbol();
+    }
     if (memberFunctionNode.ReturnTypeExpr())
     {
-        symbolTable.AddReturnTypeSymbol(memberFunctionNode.ReturnTypeExpr());
+        symbolTable.AddReturnValueSymbol(memberFunctionNode.ReturnTypeExpr());
     }
 }
 
@@ -143,7 +147,7 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::ConversionFunctionNode& conversionF
     symbolTable.AddParameter(thisParam);
     if (conversionFunctionNode.ReturnTypeExpr())
     {
-        symbolTable.AddReturnTypeSymbol(conversionFunctionNode.ReturnTypeExpr());
+        symbolTable.AddReturnValueSymbol(conversionFunctionNode.ReturnTypeExpr());
     }
 }
 
@@ -155,6 +159,7 @@ void DeclarationVisitor::EndVisit(Cm::Ast::ConversionFunctionNode& conversionFun
 void DeclarationVisitor::BeginVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
 {
     symbolTable.BeginFunctionScope(&staticConstructorNode, FunctionSymbolFlags::constructorOrDestructorSymbol | FunctionSymbolFlags::memberFunctionSymbol);
+    symbolTable.AddEntrySymbol();
 }
 
 void DeclarationVisitor::EndVisit(Cm::Ast::StaticConstructorNode& staticConstructorNode)
@@ -191,9 +196,10 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::FunctionNode& functionNode)
     }
     symbolTable.BeginFunctionScope(&functionNode, flags);
     parameterIndex = 0;
+    symbolTable.AddEntrySymbol();
     if (functionNode.ReturnTypeExpr())
     {
-        symbolTable.AddReturnTypeSymbol(functionNode.ReturnTypeExpr());
+        symbolTable.AddReturnValueSymbol(functionNode.ReturnTypeExpr());
     }
 }
 

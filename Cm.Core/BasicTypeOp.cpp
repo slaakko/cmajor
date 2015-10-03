@@ -78,6 +78,7 @@ DefaultCtor::DefaultCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
     thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+    thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thisParam);
     ComputeName();
 }
@@ -92,9 +93,11 @@ CopyCtor::CopyCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol*
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
     thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+    thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(Type());
+    thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
 }
@@ -111,9 +114,11 @@ CopyAssignment::CopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     SetReturnType(voidType);
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
     thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+    thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(Type());
+    thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
 }
@@ -128,9 +133,11 @@ MoveCtor::MoveCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol*
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
     thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+    thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span()));
+    thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
 }
@@ -147,9 +154,11 @@ MoveAssignment::MoveAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     SetReturnType(voidType);
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
     thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+    thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span()));
+    thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
 }
@@ -165,10 +174,12 @@ OpEqual::OpEqual(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* t
     Cm::Sym::TypeSymbol* boolType = typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     SetReturnType(boolType);
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
+    leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     leftParam->SetType(Type());
     AddSymbol(leftParam);
     Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
     rightParam->SetType(Type());
+    rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
 }
@@ -218,9 +229,11 @@ OpLess::OpLess(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* typ
     SetReturnType(boolType);
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(Type());
+    leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(leftParam);
     Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
     rightParam->SetType(Type());
+    rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
 }
@@ -270,9 +283,11 @@ BinOp::BinOp(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(Type());
+    leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(leftParam);
     Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
     rightParam->SetType(Type());
+    rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
 }
@@ -448,6 +463,7 @@ OpNot::OpNot(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_
     Cm::Sym::TypeSymbol* boolType = typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     SetReturnType(boolType);
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
@@ -487,6 +503,7 @@ OpUnaryPlus::OpUnaryPlus(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     SetGroupName("operator+");
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
@@ -502,6 +519,7 @@ OpUnaryMinus::OpUnaryMinus(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::Typ
     SetGroupName("operator-");
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
@@ -533,6 +551,7 @@ OpComplement::OpComplement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::Typ
     SetGroupName("operator~");
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
@@ -560,6 +579,7 @@ OpIncrement::OpIncrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     SetGroupName("operator++");
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
@@ -581,6 +601,7 @@ OpDecrement::OpDecrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     SetGroupName("operator--");
     SetReturnType(Type());
     Cm::Sym::ParameterSymbol* operandParam(new Cm::Sym::ParameterSymbol(Span(), "operand"));
+    operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
@@ -603,9 +624,11 @@ ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
     thisParam->SetType(typeRepository.MakePointerType(targetType, Span()));
+    thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(sourceType);
+    thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
 }

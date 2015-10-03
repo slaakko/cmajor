@@ -61,7 +61,8 @@ public:
     void EndDeclarationcope();
     void AddLocalVariable(Cm::Ast::ConstructionStatementNode* constructionStatementNode);
     void AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableNode);
-    void AddReturnTypeSymbol(Cm::Ast::Node* returnTypeExpr);
+    void AddEntrySymbol();
+    void AddReturnValueSymbol(Cm::Ast::Node* returnTypeExpr);
     ConceptSymbol* BeginConceptScope(Cm::Ast::ConceptNode* conceptNode);
     void EndConceptScope();
     ContainerScope* GlobalScope() { return globalNs.GetContainerScope(); }

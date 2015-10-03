@@ -1420,7 +1420,8 @@ void ProcessProgram(Cm::Ast::Project* project)
     std::vector<uint64_t> classHierarchyTable;
     ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
     symbolTable.InitVirtualFunctionTables();
-    ProcessClasses(symbolTable.Classes());
+    Cm::Opt::TpGraph tpGraph;
+    Cm::Opt::TpGraphBuilderVisitor tpGraphBuilderVisitor(tpGraph);
     for (const std::string& bcuPath : allBcuPaths)
     {
         Cm::Core::BasicTypeOpFactory basicTypeOpFactory;
@@ -1434,7 +1435,14 @@ void ProcessProgram(Cm::Ast::Project* project)
         compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));
         compileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(compileUnit));
         compileUnit.Read(reader);
+        compileUnit.Accept(tpGraphBuilderVisitor);
     }
+    tpGraph.Process();
+    std::ofstream graphFile("C:\\temp\\graph.txt");
+    Cm::Util::CodeFormatter formatter(graphFile);
+    tpGraph.Print(formatter);
+    tpGraphBuilderVisitor.PrintVirtualCalls(formatter);
+    ProcessClasses(symbolTable.Classes());
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)

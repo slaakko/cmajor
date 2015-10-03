@@ -318,10 +318,6 @@ BoundInitMemberVariableStatement::BoundInitMemberVariableStatement(Cm::Sym::Func
 
 void BoundInitMemberVariableStatement::Write(Cm::Sym::BcuWriter& writer)
 {
-    if (memberVarSymbol->Name() == "mt")
-    {
-        int x = 0;
-    }
     BoundStatement::Write(writer);
     writer.Write(memberVarSymbol);
     writer.Write(ctor);

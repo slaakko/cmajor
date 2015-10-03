@@ -7,15 +7,15 @@
 
 ========================================================================*/
 
-#include <Cm.Sym/ReturnValueSymbol.hpp>
+#include <Cm.Sym/EntrySymbol.hpp>
 
 namespace Cm { namespace Sym {
 
-ReturnValueSymbol::ReturnValueSymbol(const Span& span_) : VariableSymbol(span_, "@returns")
+EntrySymbol::EntrySymbol(const Span& span_) : VariableSymbol(span_, "@entry")
 {
 }
 
-ReturnValueSymbol::ReturnValueSymbol(const Span& span_, const std::string& name_) : VariableSymbol(span_, name_)
+EntrySymbol::EntrySymbol(const Span& span_, const std::string& name_) : VariableSymbol(span_, name_)
 {
 }
 
