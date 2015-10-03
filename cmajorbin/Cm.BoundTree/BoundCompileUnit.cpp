@@ -171,7 +171,11 @@ void BoundCompileUnit::AddBoundNode(BoundNode* boundNode)
 
 void BoundCompileUnit::Own(Cm::Sym::FunctionSymbol* functionSymbol)
 {
-    ownedFunctionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
+    if (!functionSymbol->Owned())
+    {
+        functionSymbol->SetOwned();
+        ownedFunctionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
+    }
 }
 
 bool BoundCompileUnit::Instantiated(Cm::Sym::FunctionSymbol* functionSymbol) const

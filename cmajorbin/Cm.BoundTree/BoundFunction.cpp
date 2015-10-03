@@ -38,10 +38,6 @@ void BoundFunction::Write(Cm::Sym::BcuWriter& writer)
 {
     BoundNode::Write(writer);
     writer.Write(functionSymbol);
-    if (functionSymbol->Name() == "@static_constructor()")
-    {
-        int x = 0;
-    }
     int n = int(localVariables.size());
     writer.GetBinaryWriter().Write(n);
     for (Cm::Sym::LocalVariableSymbol* localVariable : localVariables)
@@ -81,10 +77,6 @@ void BoundFunction::Read(Cm::Sym::BcuReader& reader)
     else
     {
         throw std::runtime_error("function symbol expected");
-    }
-    if (functionSymbol->Name() == "@static_constructor()")
-    {
-        int x = 0;
     }
     int n = reader.GetBinaryReader().ReadInt();
     for (int i = 0; i < n; ++i)
@@ -161,7 +153,10 @@ void BoundFunction::Accept(Visitor& visitor)
     visitor.BeginVisit(*this);
     if (visitor.VisitFunctionBody())
     {
-        body->Accept(visitor);
+        if (body)
+        {
+            body->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }

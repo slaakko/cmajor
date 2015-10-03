@@ -11,6 +11,7 @@
 #define CM_SYM_FUNCTION_SYMBOL_INCLUDED
 #include <Cm.Sym/ContainerSymbol.hpp>
 #include <Cm.Sym/ParameterSymbol.hpp>
+#include <Cm.Sym/EntrySymbol.hpp>
 #include <Cm.Sym/ReturnValueSymbol.hpp>
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
@@ -224,6 +225,7 @@ public:
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     void SetParameter(ParameterSymbol* parameter, int index) { parameters[index] = parameter; }
     ParameterSymbol* ThisParameter() const;
+    EntrySymbol* Entry() const;
     ReturnValueSymbol* ReturnValue() const;
     void ComputeName();
     virtual TypeSymbol* GetTargetType() const;
@@ -260,6 +262,7 @@ private:
     std::string groupName;
     int16_t vtblIndex;
     TypeSymbol* returnType;
+    EntrySymbol* entrySymbol;
     ReturnValueSymbol* returnValueSymbol;
     std::vector<ParameterSymbol*> parameters;
     std::vector<TypeParameterSymbol*> typeParameters;

@@ -154,6 +154,7 @@ class VoidNode: public Node
 public:
     VoidNode(const Span& span_);
     NodeType GetNodeType() const override { return NodeType::voidNode; }
+    bool IsVoidNode() const override { return true; }
     Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override { return "void"; }
     std::string DocId() const override { return "void"; }

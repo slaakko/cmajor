@@ -24,19 +24,17 @@ class TpGraphNode
 {
 public:
     TpGraphNode(Cm::Sym::VariableSymbol* variableSymbol_);
-    Cm::Sym::VariableSymbol* Symbol() const { return variableSymbol; }
+    uint32_t VariableSymbolSid() const { return variableSymbolSid; }
     std::unordered_set<Cm::Sym::ClassTypeSymbol*>& ReachingClasses() { return reachingClasses; }
     void AddTarget(TpGraphNode* target);
     void Print(Cm::Util::CodeFormatter& formatter);
     void PrintReachingSet(Cm::Util::CodeFormatter& formatter);
-    bool IsTarget() const { return isTarget; }
-    void SetTarget() { isTarget = true; }
     void Propagate(std::queue<TpGraphNode*>& workList);
 private:
-    Cm::Sym::VariableSymbol* variableSymbol;
+    uint32_t variableSymbolSid;
+    std::string variableSymbolFullName;
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> reachingClasses;
     std::unordered_set<TpGraphNode*> targets;
-    bool isTarget;
     bool visited;
 };
 
@@ -45,12 +43,14 @@ private:
 class TpGraph
 {
 public:
-    TpGraphNode* GetNode(Cm::Sym::VariableSymbol* symbol);
+    TpGraphNode* GetNode(Cm::Sym::VariableSymbol* variableSymbol);
     void Print(Cm::Util::CodeFormatter& formatter);
+    void AddRoot(TpGraphNode* root);
     void Process();
 private:
     std::vector<std::unique_ptr<TpGraphNode>> nodes;
-    std::unordered_map<Cm::Sym::VariableSymbol*, TpGraphNode*> nodeMap;
+    std::unordered_map<uint32_t, TpGraphNode*> nodeMap;
+    std::unordered_set<TpGraphNode*> roots;
 };
 
 class TpGraphBuilderVisitor : public Cm::BoundTree::Visitor
@@ -59,6 +59,7 @@ public:
     TpGraphBuilderVisitor(TpGraph& graph_);
     void BeginVisit(Cm::BoundTree::BoundClass& boundClass) override;
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
+    void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssignmentStatement) override;
     void Visit(Cm::BoundTree::BoundInitMemberVariableStatement& boundInitMemberVariableStatement) override;
@@ -69,8 +70,16 @@ public:
     void PrintVirtualCalls(Cm::Util::CodeFormatter& formatter);
 private:
     TpGraph& graph;
+    Cm::BoundTree::BoundClass* currentClass;
+    std::string currentFunction;
     void AddEdgesFromArgumentsToParameters(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::BoundExpressionList& arguments);
-    std::unordered_set<Cm::BoundTree::BoundFunctionCall*> virtualCalls;
+    bool inMain;
+    TpGraphNode* sourceNode;
+    TpGraphNode* entryNode;
+    std::stack<TpGraphNode*> sourceNodeStack;
+    std::vector<std::pair<std::string, TpGraphNode*>> virtualCalls;
+    void PushSourceNode(TpGraphNode* sourceNode_);
+    void PopSourceNode();
 };
 
 } } // namespace Cm::Opt

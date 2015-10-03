@@ -570,6 +570,7 @@ void TypeRepository::ReplaceReplicaTypes()
 
 void TypeRepository::Own(TypeSymbol* type)
 {
+    type->SetOwned();
     types.push_back(std::unique_ptr<TypeSymbol>(type));
 }
 

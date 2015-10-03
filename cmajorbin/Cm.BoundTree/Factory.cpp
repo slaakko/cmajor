@@ -35,6 +35,8 @@ Cm::Sym::BcuItem* Factory::CreateItem(Cm::Sym::BcuItemType itemType) const
         case Cm::Sym::BcuItemType::bcuNamespaceExpression: return new BoundNamespaceExpression();
         case Cm::Sym::BcuItemType::bcuConversion: return new BoundConversion();
         case Cm::Sym::BcuItemType::bcuCast: return new BoundCast();
+        case Cm::Sym::BcuItemType::bcuIsExpr: return new BoundIsExpression();
+        case Cm::Sym::BcuItemType::bcuAsExpr: return new BoundAsExpression();
         case Cm::Sym::BcuItemType::bcuSizeOfExpression: return new BoundSizeOfExpression();
         case Cm::Sym::BcuItemType::bcuDynamicTypeNameExpression: return new BoundDynamicTypeNameExpression();
         case Cm::Sym::BcuItemType::bcuUnaryOp: return new BoundUnaryOp();

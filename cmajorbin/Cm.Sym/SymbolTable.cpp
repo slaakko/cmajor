@@ -19,6 +19,7 @@
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Sym/TypeParameterSymbol.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
+#include <Cm.Sym/EntrySymbol.hpp>
 #include <Cm.Sym/ReturnValueSymbol.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
@@ -381,9 +382,17 @@ void SymbolTable::AddMemberVariable(Cm::Ast::MemberVariableNode* memberVariableN
     symbolNodeMap[memberVariableSymbol] = memberVariableNode;
 }
 
-void SymbolTable::AddReturnTypeSymbol(Cm::Ast::Node* returnTypeExprNode)
+void SymbolTable::AddEntrySymbol()
 {
-    ReturnValueSymbol* returnValueSymbol = new ReturnValueSymbol(returnTypeExprNode->GetSpan(), "return");
+    EntrySymbol* entrySymbol = new EntrySymbol(Cm::Parsing::Span());
+    SetSidAndAddSymbol(entrySymbol);
+    container->AddSymbol(entrySymbol);
+}
+
+void SymbolTable::AddReturnValueSymbol(Cm::Ast::Node* returnTypeExprNode)
+{
+    if (returnTypeExprNode->IsVoidNode()) return;
+    ReturnValueSymbol* returnValueSymbol = new ReturnValueSymbol(returnTypeExprNode->GetSpan());
     SetSidAndAddSymbol(returnValueSymbol);
     container->AddSymbol(returnValueSymbol);
     symbolNodeMap[returnValueSymbol] = returnTypeExprNode;

@@ -7,23 +7,23 @@
 
 ========================================================================*/
 
-#ifndef CM_SYM_RETURN_VALUE_SYMBOL_INCLUDED
-#define CM_SYM_RETURN_VALUE_SYMBOL_INCLUDED
+#ifndef CM_SYM_ENTRY_SYMBOL_INCLUDED
+#define CM_SYM_ENTRY_SYMBOL_INCLUDED
 #include <Cm.Sym/VariableSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
-class ReturnValueSymbol : public VariableSymbol
+class EntrySymbol : public VariableSymbol
 {
 public:
-    ReturnValueSymbol(const Span& span_);
-    ReturnValueSymbol(const Span& span_, const std::string& name_);
-    SymbolType GetSymbolType() const override { return SymbolType::returnValueSymbol; }
-    std::string TypeString() const override { return "return value"; };
+    EntrySymbol(const Span& span_);
+    EntrySymbol(const Span& span_, const std::string& name_);
+    SymbolType GetSymbolType() const override { return SymbolType::entrySymbol; }
+    std::string TypeString() const override { return "entry"; };
     bool IsExportSymbol() const override { return true; }
-    bool IsReturnValueSymbol() const override { return true; }
+    bool IsEntrySymbol() const override { return true; }
 };
 
 } } // namespace Cm::Sym
 
-#endif // CM_SYM_RETURN_VALUE_SYMBOL_INCLUDED
+#endif // CM_SYM_ENTRY_SYMBOL_INCLUDED

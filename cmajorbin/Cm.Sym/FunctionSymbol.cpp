@@ -118,7 +118,7 @@ PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), speci
 }
 
 FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
-    classObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr), functionTemplate(nullptr), returnValueSymbol(nullptr)
+    classObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr), functionTemplate(nullptr), entrySymbol(nullptr), returnValueSymbol(nullptr)
 {
 }
 
@@ -156,6 +156,10 @@ void FunctionSymbol::AddSymbol(Symbol* symbol)
         typeParameterSymbol->SetIndex(int(typeParameters.size()));
         typeParameters.push_back(typeParameterSymbol);
     }
+    else if (symbol->IsEntrySymbol())
+    {
+        entrySymbol = static_cast<EntrySymbol*>(symbol);
+    }
     else if (symbol->IsReturnValueSymbol())
     {
         returnValueSymbol = static_cast<ReturnValueSymbol*>(symbol);
@@ -175,6 +179,11 @@ bool FunctionSymbol::ReturnsClassObjectByValue() const
 ParameterSymbol* FunctionSymbol::ThisParameter() const
 {
     return parameters[0];
+}
+
+EntrySymbol* FunctionSymbol::Entry() const
+{
+    return entrySymbol;
 }
 
 ReturnValueSymbol* FunctionSymbol::ReturnValue() const
