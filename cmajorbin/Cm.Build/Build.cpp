@@ -1399,7 +1399,6 @@ void ProcessClasses(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classes
         {
             baseClassName = cls->BaseClass()->FullName();
         }
-        std::cout << cls->FullName() << " : " << baseClassName << " level=" << cls->Level() << ", priority=" << cls->Priority() << ", key=" << cls->Key() << ", cid=" << cls->Cid() << std::endl;
     }
 }
 
@@ -1438,11 +1437,10 @@ void ProcessProgram(Cm::Ast::Project* project)
         compileUnit.Accept(tpGraphBuilderVisitor);
     }
     tpGraph.Process();
+    ProcessClasses(symbolTable.Classes());
     std::ofstream graphFile("C:\\temp\\graph.txt");
     Cm::Util::CodeFormatter formatter(graphFile);
-    tpGraph.Print(formatter);
     tpGraphBuilderVisitor.PrintVirtualCalls(formatter);
-    ProcessClasses(symbolTable.Classes());
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)

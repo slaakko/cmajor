@@ -1804,6 +1804,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement)
 {
+    if (CurrentFunction()->GetFunctionSymbol()->FullName() == "main()")
+    {
+        int x = 0;
+    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     if (generateDebugInfo)
     {
