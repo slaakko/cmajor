@@ -1440,6 +1440,7 @@ void ProcessProgram(Cm::Ast::Project* project)
     ProcessClasses(symbolTable.Classes());
     std::ofstream graphFile("C:\\temp\\graph.txt");
     Cm::Util::CodeFormatter formatter(graphFile);
+    tpGraph.Print(formatter);
     tpGraphBuilderVisitor.PrintVirtualCalls(formatter);
 }
 

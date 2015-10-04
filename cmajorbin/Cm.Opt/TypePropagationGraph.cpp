@@ -393,6 +393,7 @@ void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariab
     {
         TpGraphNode* localVariableNode = parent.Graph().GetNode(boundLocalVariable.Symbol());
         localVariableNode->AddTarget(target);
+        target->AddTarget(localVariableNode);
     }
 }
 
@@ -402,6 +403,7 @@ void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVari
     {
         TpGraphNode* memberVariableNode = parent.Graph().GetNode(boundMemberVariable.Symbol());
         memberVariableNode->AddTarget(target);
+        target->AddTarget(memberVariableNode);
     }
 }
 
@@ -411,6 +413,7 @@ void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundParameter& boundParameter)
     {
         TpGraphNode* parameterNode = parent.Graph().GetNode(boundParameter.Symbol());
         parameterNode->AddTarget(target);
+        target->AddTarget(parameterNode);
     }
 }
 
@@ -420,6 +423,7 @@ void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundReturnValue& boundReturnValue)
     {
         TpGraphNode* returnValueNode = parent.Graph().GetNode(boundReturnValue.Symbol());
         returnValueNode->AddTarget(target);
+        target->AddTarget(returnValueNode);
     }
 }
 
@@ -442,6 +446,7 @@ void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall
         {
             TpGraphNode* thisParameterNode = parent.Graph().GetNode(boundFunctionCall.GetFunction()->ThisParameter());
             thisParameterNode->AddTarget(target);
+            target->AddTarget(thisParameterNode);
         }
     }
     else if (boundFunctionCall.GetFunction()->GetReturnType())
@@ -450,6 +455,7 @@ void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall
         {
             TpGraphNode* returnValueNode = parent.Graph().GetNode(boundFunctionCall.GetFunction()->ReturnValue());
             returnValueNode->AddTarget(target);
+            target->AddTarget(returnValueNode);
         }
     }
 }
@@ -460,6 +466,7 @@ void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
     {
         TpGraphNode* returnValueNode = parent.Graph().GetNode(boundUnaryOp.GetFunction()->ReturnValue());
         returnValueNode->AddTarget(target);
+        target->AddTarget(returnValueNode);
     }
 }
 
