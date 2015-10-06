@@ -201,6 +201,8 @@ int main(int argc, const char** argv)
                 "-trace          : instrument program/library with tracing enabled\n" <<
                 "-debug_heap     : instrument program/library with debug heap enabled\n" <<
                 "-no_call_stacks : do not generate call stack information for exceptions\n" <<
+                "-class_dot=FILE : generate class hierarchy graph to FILE.dot (only full config)\n" <<
+                "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
                 std::endl;
             std::cout << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
                 "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << std::endl;
@@ -259,6 +261,16 @@ int main(int argc, const char** argv)
                                     {
                                         throw std::runtime_error("unknown backend '" + backendStr + "'");
                                     }
+                                }
+                                else if (v[0] == "-class_dot")
+                                {
+                                    std::string dotFileName = v[1];
+                                    Cm::Core::GetGlobalSettings()->SetClassHierarchyDotFileName(dotFileName);
+                                }
+                                else if (v[0] == "-tpg_dot")
+                                {
+                                    std::string dotFileName = v[1];
+                                    Cm::Core::GetGlobalSettings()->SetTpgDotFileName(dotFileName);
                                 }
                                 else
                                 {

@@ -43,7 +43,8 @@ enum class ClassTypeSymbolFlags : uint32_t
     generateMoveAssignment = 1 << 20,
     generateDestructor = 1 << 21,
     debugInfoGenerated = 1 << 22,
-    nonLeaf = 1 << 23
+    nonLeaf = 1 << 23,
+    live = 1 << 24
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -290,6 +291,14 @@ public:
     void SetNonLeaf()
     {
         SetFlag(ClassTypeSymbolFlags::nonLeaf);
+    }
+    bool IsLive() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::live);
+    }
+    void SetLive()
+    {
+        SetFlag(ClassTypeSymbolFlags::live);
     }
     FunctionSymbol* Destructor() const { return destructor; }
     FunctionSymbol* StaticConstructor() const { return staticConstructor; }

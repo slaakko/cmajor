@@ -39,4 +39,9 @@ void LocalVariableSymbol::ReplaceReplicaTypes()
     }
 }
 
+std::string LocalVariableSymbol::UniqueName() const
+{
+    return "@local" + std::to_string(Sid()) + "." + Name();
+}
+
 } } // namespace Cm::Sym

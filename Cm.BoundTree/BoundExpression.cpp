@@ -14,6 +14,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
+#include <Cm.Sym/SymbolTable.hpp>
 #include <algorithm>
 #include <stdexcept>
 
@@ -1104,12 +1105,12 @@ void BoundFunctionGroup::SetType(Cm::Sym::TypeSymbol* type_)
     ownedTypeSymbol.reset(type_);
 }
 
-BoundFunctionCall::BoundFunctionCall() : BoundExpression(nullptr), arguments(), fun(nullptr), classObjectResultVar(nullptr)
+BoundFunctionCall::BoundFunctionCall() : BoundExpression(nullptr), arguments(), fun(nullptr), classObjectResultVar(nullptr), functionCallSid(Cm::Sym::noSid)
 {
 }
 
 BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_)), fun(nullptr), 
-    classObjectResultVar(nullptr)
+    classObjectResultVar(nullptr), functionCallSid(Cm::Sym::noSid)
 {
 }
 
@@ -1121,6 +1122,8 @@ void BoundFunctionCall::Write(Cm::Sym::BcuWriter& writer)
     writer.Write(classObjectResultVar);
     writer.Write(temporary.get());
     writer.Write(traceCallInfo.get());
+    functionCallSid = writer.GetSymbolWriter().GetSymbolTable()->GetSid();
+    writer.GetBinaryWriter().Write(functionCallSid);
 }
 
 void BoundFunctionCall::Read(Cm::Sym::BcuReader& reader)
@@ -1172,6 +1175,7 @@ void BoundFunctionCall::Read(Cm::Sym::BcuReader& reader)
             throw std::runtime_error("trace call info expected");
         }
     }
+    functionCallSid = reader.GetBinaryReader().ReadUInt();
 }
 
 void BoundFunctionCall::Accept(Visitor& visitor)

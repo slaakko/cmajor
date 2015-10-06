@@ -23,10 +23,14 @@ namespace Cm { namespace Opt {
 class TpGraphNode
 {
 public:
-    TpGraphNode(Cm::Sym::VariableSymbol* variableSymbol_);
+    TpGraphNode(Cm::Sym::VariableSymbol* variableSymbol_, uint32_t variableSymbolSid_);
     uint32_t VariableSymbolSid() const { return variableSymbolSid; }
+    const std::string& VariableSymbolFullName() const { return variableSymbolFullName; }
+    std::string ReachingClassSetStr() const;
     std::unordered_set<Cm::Sym::ClassTypeSymbol*>& ReachingClasses() { return reachingClasses; }
     void AddTarget(TpGraphNode* target);
+    const std::unordered_set<TpGraphNode*>& Targets() const { return targets; }
+    bool Visited() const { return visited; }
     void Print(Cm::Util::CodeFormatter& formatter);
     void PrintReachingSet(Cm::Util::CodeFormatter& formatter);
     void Propagate(std::queue<TpGraphNode*>& workList);
@@ -43,11 +47,14 @@ private:
 class TpGraph
 {
 public:
+    TpGraph(Cm::Sym::SymbolTable& symbolTable_);
     TpGraphNode* GetNode(Cm::Sym::VariableSymbol* variableSymbol);
-    void Print(Cm::Util::CodeFormatter& formatter);
+    void Print(const std::string& dotFileName);
     void AddRoot(TpGraphNode* root);
     void Process();
+
 private:
+    Cm::Sym::SymbolTable& symbolTable;
     std::vector<std::unique_ptr<TpGraphNode>> nodes;
     std::unordered_map<uint32_t, TpGraphNode*> nodeMap;
     std::unordered_set<TpGraphNode*> roots;
@@ -65,6 +72,8 @@ public:
     void Visit(Cm::BoundTree::BoundInitMemberVariableStatement& boundInitMemberVariableStatement) override;
     void Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStatement) override;
     void Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement) override;
+    void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
+    void Visit(Cm::BoundTree::BoundCast& boundCast) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall) override;
     TpGraph& Graph() { return graph; }
     void PrintVirtualCalls(Cm::Util::CodeFormatter& formatter);

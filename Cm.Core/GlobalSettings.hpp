@@ -27,12 +27,18 @@ public:
     const std::string& TargetTriple() const { return targetTriple; }
     void SetDatalayout(const std::string& datalayout_);
     const std::string& Datalayout() const { return datalayout; }
+    void SetClassHierarchyDotFileName(const std::string& classHierarchyDotFileName_);
+    const std::string& ClassHierarchyDotFileName() const { return classHierarchyDotFileName; }
+    void SetTpgDotFileName(const std::string& tpgDotFileName_);
+    const std::string& TpgDotFileName() const { return tpgDotFileName; }
 private:
     std::string config;
     int optimizationLevel;
     std::string currentProjectName;
     std::string targetTriple;
     std::string datalayout;
+    std::string classHierarchyDotFileName;
+    std::string tpgDotFileName;
 };
 
 GlobalSettings* GetGlobalSettings();
