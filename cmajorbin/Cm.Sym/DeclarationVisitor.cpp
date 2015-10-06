@@ -113,10 +113,7 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionN
         thisParam->SetBound();
         symbolTable.AddParameter(thisParam);
     }
-    else
-    {
-        symbolTable.AddEntrySymbol();
-    }
+    symbolTable.AddEntrySymbol();
     if (memberFunctionNode.ReturnTypeExpr())
     {
         symbolTable.AddReturnValueSymbol(memberFunctionNode.ReturnTypeExpr());

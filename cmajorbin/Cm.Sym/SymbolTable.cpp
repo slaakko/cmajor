@@ -705,4 +705,16 @@ const std::unordered_set<ClassTypeSymbol*>& SymbolTable::ProjectClasses() const
     return projectClasses;
 }
 
+uint32_t SymbolTable::GetVariableSymbolSid(const std::string& variableSymbolFullName)
+{
+    std::unordered_map<std::string, uint32_t>::const_iterator i = variableSymbolNameSidMap.find(variableSymbolFullName);
+    if (i != variableSymbolNameSidMap.cend())
+    {
+        return i->second;
+    }
+    uint32_t sid = GetSid();
+    variableSymbolNameSidMap[variableSymbolFullName] = sid;
+    return sid;
+}
+
 } } // namespace Cm::Sym

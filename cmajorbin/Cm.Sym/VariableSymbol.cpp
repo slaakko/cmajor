@@ -49,4 +49,16 @@ void VariableSymbol::SetType(TypeSymbol* type_, int index)
     SetType(type_);
 }
 
+std::string VariableSymbol::UniqueFullName() const
+{
+    if (Parent())
+    {
+        return Parent()->FullName() + "." + UniqueName();
+    }
+    else
+    {
+        return UniqueName();
+    }
+}
+
 } } // namespace Cm::Sym

@@ -84,8 +84,13 @@ void BoundFunction::Read(Cm::Sym::BcuReader& reader)
         Cm::Sym::Symbol* l = reader.GetSymbolReader().ReadSymbol();
         if (l->IsLocalVariableSymbol())
         {
-            localVariables.push_back(static_cast<Cm::Sym::LocalVariableSymbol*>(l));
-            reader.GetSymbolReader().GetSymbolTable().Own(static_cast<Cm::Sym::LocalVariableSymbol*>(l));
+            Cm::Sym::LocalVariableSymbol* localVariableSymbol = static_cast<Cm::Sym::LocalVariableSymbol*>(l);
+            if (localVariableSymbol->Parent() == nullptr)
+            {
+                localVariableSymbol->SetParent(functionSymbol);
+            }
+            localVariables.push_back(localVariableSymbol);
+            reader.GetSymbolReader().GetSymbolTable().Own(localVariableSymbol);
         }
         else
         {
@@ -98,7 +103,12 @@ void BoundFunction::Read(Cm::Sym::BcuReader& reader)
         Cm::Sym::Symbol* t = reader.GetSymbolReader().ReadSymbol();
         if (t->IsLocalVariableSymbol())
         {
-            reader.GetSymbolReader().GetSymbolTable().Own(static_cast<Cm::Sym::LocalVariableSymbol*>(t));
+            Cm::Sym::LocalVariableSymbol* localVariableSymbol = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
+            if (localVariableSymbol->Parent() == nullptr)
+            {
+                localVariableSymbol->SetParent(functionSymbol);
+            }
+            reader.GetSymbolReader().GetSymbolTable().Own(localVariableSymbol);
         }
         else
         {

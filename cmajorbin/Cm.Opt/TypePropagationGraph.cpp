@@ -10,7 +10,10 @@
 #include <Cm.Opt/TypePropagationGraph.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.BoundTree/BoundFunction.hpp>
-#include <iostream>
+#include <Cm.Core/GlobalSettings.hpp>
+#include <Cm.Util/CodeFormatter.hpp>
+#include <boost/filesystem.hpp>
+#include <fstream>
 
 namespace Cm { namespace Opt {
 
@@ -95,7 +98,104 @@ void NodeResolverVisitor::Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionC
     }
 }
 
-TpGraphNode::TpGraphNode(Cm::Sym::VariableSymbol* variableSymbol_) : variableSymbolSid(variableSymbol_->Sid()), variableSymbolFullName(variableSymbol_->FullName()), visited(false)
+class EdgeAdderVisitor : public Cm::BoundTree::Visitor
+{
+public:
+    EdgeAdderVisitor(TpGraphBuilderVisitor& parent_, TpGraphNode* target_);
+    void Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable) override;
+    void Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable) override;
+    void Visit(Cm::BoundTree::BoundParameter& boundParameter) override;
+    void Visit(Cm::BoundTree::BoundReturnValue& boundReturnValue) override;
+    void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
+    void Visit(Cm::BoundTree::BoundCast& boundCast) override;
+    void Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall) override;
+    void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
+private:
+    TpGraphBuilderVisitor& parent;
+    TpGraphNode* target;
+};
+
+EdgeAdderVisitor::EdgeAdderVisitor(TpGraphBuilderVisitor& parent_, TpGraphNode* target_) : Cm::BoundTree::Visitor(false), parent(parent_), target(target_)
+{
+}
+
+void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable)
+{
+    if (boundLocalVariable.Symbol() && boundLocalVariable.Symbol()->GetType()->GetBaseType()->IsClassTypeSymbol())
+    {
+        TpGraphNode* localVariableNode = parent.Graph().GetNode(boundLocalVariable.Symbol());
+        localVariableNode->AddTarget(target);
+    }
+}
+
+void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable)
+{
+    if (boundMemberVariable.Symbol()->GetType()->GetBaseType()->IsClassTypeSymbol())
+    {
+        TpGraphNode* memberVariableNode = parent.Graph().GetNode(boundMemberVariable.Symbol());
+        memberVariableNode->AddTarget(target);
+    }
+}
+
+void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundParameter& boundParameter)
+{
+    if (boundParameter.Symbol()->GetType()->GetBaseType()->IsClassTypeSymbol())
+    {
+        TpGraphNode* parameterNode = parent.Graph().GetNode(boundParameter.Symbol());
+        parameterNode->AddTarget(target);
+    }
+}
+
+void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundReturnValue& boundReturnValue)
+{
+    if (boundReturnValue.Symbol()->GetType()->GetBaseType()->IsClassTypeSymbol())
+    {
+        TpGraphNode* returnValueNode = parent.Graph().GetNode(boundReturnValue.Symbol());
+        returnValueNode->AddTarget(target);
+    }
+}
+
+void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundConversion& boundConversion)
+{
+    boundConversion.Operand()->Accept(*this);
+}
+
+void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundCast& boundCast)
+{
+    boundCast.Operand()->Accept(*this);
+}
+
+void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall)
+{
+    parent.Visit(boundFunctionCall);
+    if (boundFunctionCall.GetFunction()->IsConstructor())
+    {
+        if (boundFunctionCall.GetFunction()->ThisParameter()->GetType()->GetBaseType()->IsClassTypeSymbol())
+        {
+            TpGraphNode* thisParameterNode = parent.Graph().GetNode(boundFunctionCall.GetFunction()->ThisParameter());
+            thisParameterNode->AddTarget(target);
+        }
+    }
+    else if (boundFunctionCall.GetFunction()->GetReturnType())
+    {
+        if (boundFunctionCall.GetFunction()->GetReturnType()->GetBaseType()->IsClassTypeSymbol())
+        {
+            TpGraphNode* returnValueNode = parent.Graph().GetNode(boundFunctionCall.GetFunction()->ReturnValue());
+            returnValueNode->AddTarget(target);
+        }
+    }
+}
+
+void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
+{
+    if (boundUnaryOp.GetFunction()->GroupName() == "operator->")
+    {
+        TpGraphNode* returnValueNode = parent.Graph().GetNode(boundUnaryOp.GetFunction()->ReturnValue());
+        returnValueNode->AddTarget(target);
+    }
+}
+
+TpGraphNode::TpGraphNode(Cm::Sym::VariableSymbol* variableSymbol_, uint32_t variableSymbolSid_) : variableSymbolSid(variableSymbolSid_), variableSymbolFullName(variableSymbol_->UniqueFullName()), visited(false)
 {
 }
 
@@ -104,9 +204,9 @@ void TpGraphNode::AddTarget(TpGraphNode* target)
     targets.insert(target);
 }
 
-void TpGraphNode::Print(Cm::Util::CodeFormatter& formatter)
+std::string TpGraphNode::ReachingClassSetStr() const
 {
-    std::string reaching;
+    std::string reaching = "{";
     bool first = true;
     for (Cm::Sym::ClassTypeSymbol* r : reachingClasses)
     {
@@ -120,7 +220,14 @@ void TpGraphNode::Print(Cm::Util::CodeFormatter& formatter)
         }
         reaching.append(r->FullName());
     }
-    formatter.WriteLine(variableSymbolFullName + " : {" + reaching + "}");
+    reaching.append("}");
+    return reaching;
+}
+
+
+void TpGraphNode::Print(Cm::Util::CodeFormatter& formatter)
+{
+    formatter.WriteLine(variableSymbolFullName + " : " + ReachingClassSetStr());
     formatter.IncIndent();
     for (TpGraphNode* target : targets)
     {
@@ -131,26 +238,16 @@ void TpGraphNode::Print(Cm::Util::CodeFormatter& formatter)
 
 void TpGraphNode::PrintReachingSet(Cm::Util::CodeFormatter& formatter)
 {
-    std::string reaching;
-    bool first = true;
-    for (Cm::Sym::ClassTypeSymbol* r : reachingClasses)
-    {
-        if (first)
-        {
-            first = false;
-        }
-        else
-        {
-            reaching.append(", ");
-        }
-        reaching.append(r->FullName());
-    }
-    formatter.WriteLine("{" + reaching + "}");
+    formatter.WriteLine(ReachingClassSetStr());
 }
 
 void TpGraphNode::Propagate(std::queue<TpGraphNode*>& workList)
 {
     visited = true;
+    for (Cm::Sym::ClassTypeSymbol* cls : reachingClasses)
+    {
+        cls->SetLive();
+    }
     for (TpGraphNode* target : targets)
     {
         int n = int(target->ReachingClasses().size());
@@ -162,27 +259,81 @@ void TpGraphNode::Propagate(std::queue<TpGraphNode*>& workList)
     }
 }
 
+TpGraph::TpGraph(Cm::Sym::SymbolTable& symbolTable_) : symbolTable(symbolTable_)
+{
+}
+
 TpGraphNode* TpGraph::GetNode(Cm::Sym::VariableSymbol* variableSymbol)
 {
-    std::unordered_map<uint32_t, TpGraphNode*>::const_iterator i = nodeMap.find(variableSymbol->Sid());
+    uint32_t sid = symbolTable.GetVariableSymbolSid(variableSymbol->UniqueFullName());
+    std::unordered_map<uint32_t, TpGraphNode*>::const_iterator i = nodeMap.find(sid);
     if (i != nodeMap.end())
     {
         return i->second;
     }
-    TpGraphNode* node = new TpGraphNode(variableSymbol);
+    TpGraphNode* node = new TpGraphNode(variableSymbol, sid);
     nodes.push_back(std::unique_ptr<TpGraphNode>(node));
     nodeMap[node->VariableSymbolSid()] = node;
     return node;
 }
 
-void TpGraph::Print(Cm::Util::CodeFormatter& formatter)
+std::string ToNodeLabel(const std::string& s)
 {
-    for (const std::unique_ptr<TpGraphNode>& node : nodes)
-    {
-        if (!node->ReachingClasses().empty())
+    std::string nodeLabel;
+    for (char c : s)
+    { 
+        if (c == '<')
         {
-            node->Print(formatter);
+            nodeLabel.append("\\<");
         }
+        else if (c == '>')
+        {
+            nodeLabel.append("\\>");
+        }
+        else
+        {
+            nodeLabel.append(1, c);
+        }
+    }
+    return nodeLabel;
+}
+
+void TpGraph::Print(const std::string& dotFileName)
+{
+    std::string tpgDotFileName = dotFileName;
+    if (!tpgDotFileName.empty())
+    {
+        if (boost::filesystem::path(tpgDotFileName).extension().empty())
+        {
+            tpgDotFileName.append(".dot");
+        }
+        std::ofstream tpgDotFile(tpgDotFileName);
+        if (!tpgDotFile)
+        {
+            throw std::runtime_error("could not create file '" + tpgDotFileName + "'");
+        }
+        Cm::Util::CodeFormatter formatter(tpgDotFile);
+        formatter.WriteLine("digraph tpg");
+        formatter.WriteLine("{");
+        formatter.IncIndent();
+        formatter.WriteLine("graph [rankdir=LR];");
+        formatter.WriteLine("node [shape=record];");
+        for (const std::unique_ptr<TpGraphNode>& node : nodes)
+        {
+            if (node->Visited() && !node->ReachingClasses().empty())
+            {
+                std::string nodeName = "node" + std::to_string(node->VariableSymbolSid());
+                std::string nodeLabel = ToNodeLabel(node->VariableSymbolFullName());
+                formatter.WriteLine(nodeName + " [label=\"" + nodeLabel + "|" + node->ReachingClassSetStr() + "\"];");
+                for (TpGraphNode* target : node->Targets())
+                {
+                    std::string targetName = "node" + std::to_string(target->VariableSymbolSid());
+                    formatter.WriteLine(nodeName + " -> " + targetName);
+                }
+            }
+        }
+        formatter.DecIndent();
+        formatter.WriteLine("}");
     }
 }
 
@@ -213,14 +364,6 @@ TpGraphBuilderVisitor::TpGraphBuilderVisitor(TpGraph& graph_) : Cm::BoundTree::V
 void TpGraphBuilderVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 {
     currentClass = &boundClass;
-    Cm::Sym::ClassTypeSymbol* cls = boundClass.Symbol();
-    for (Cm::Sym::MemberVariableSymbol* memberVariableSymbol : cls->MemberVariables())
-    {
-        if (memberVariableSymbol->GetType()->GetBaseType()->IsClassTypeSymbol())
-        {
-            graph.GetNode(memberVariableSymbol);
-        }
-    }
 }
 
 void TpGraphBuilderVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
@@ -235,6 +378,22 @@ void TpGraphBuilderVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFuncti
             if (inMain)
             {
                 graph.AddRoot(entryNode);
+            }
+        }
+        for (Cm::Sym::LocalVariableSymbol* localVariable : boundFunction.LocalVariables())
+        {
+            TpGraphNode* localVariableNode = graph.GetNode(localVariable);
+            if (entryNode)
+            {
+                entryNode->AddTarget(localVariableNode);
+            }
+        }
+        for (Cm::Sym::ParameterSymbol* parameterSymbol : fun->Parameters())
+        {
+            TpGraphNode* parameterNode = graph.GetNode(parameterSymbol);
+            if (entryNode)
+            {
+                entryNode->AddTarget(parameterNode);
             }
         }
         if (fun->IsStaticConstructor())
@@ -269,18 +428,6 @@ void TpGraphBuilderVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFuncti
                 }
             }
         }
-        currentFunction = fun->FullName();
-        for (Cm::Sym::LocalVariableSymbol* localVariableSymbol : boundFunction.LocalVariables())
-        {
-            if (localVariableSymbol->GetType()->GetBaseType()->IsClassTypeSymbol())
-            {
-                TpGraphNode* node = graph.GetNode(localVariableSymbol);
-                if (inMain)
-                {
-                    graph.AddRoot(node);
-                }
-            }
-        }
         SetVisitFunctionBody(true);
     }
     else
@@ -299,13 +446,17 @@ void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundConstructionStatement& bou
     Cm::Sym::LocalVariableSymbol* localVariable = boundConstructionStatement.LocalVariable();
     if (localVariable->GetType()->GetBaseType()->IsClassTypeSymbol())
     {
-        TpGraphNode* node = graph.GetNode(localVariable);
+        TpGraphNode* localVariableNode = graph.GetNode(localVariable);
+        if (entryNode)
+        {
+            entryNode->AddTarget(localVariableNode);
+        }
         Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(localVariable->GetType()->GetBaseType());
-        PushSourceNode(node);
+        PushSourceNode(localVariableNode);
         AddEdgesFromArgumentsToParameters(boundConstructionStatement.Constructor(), boundConstructionStatement.Arguments());
         PopSourceNode();
         TpGraphNode* thisParamNode = graph.GetNode(boundConstructionStatement.Constructor()->ThisParameter());
-        thisParamNode->AddTarget(node);
+        thisParamNode->AddTarget(localVariableNode);
     }
 }
 
@@ -315,7 +466,7 @@ void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundAssignmentStatement& bound
     if (left->GetType() && left->GetType()->GetBaseType()->IsClassTypeSymbol())
     {
         Cm::BoundTree::BoundExpression* right = boundAssignmentStatement.Right();
-        if (right->GetType() && right->GetType()->IsPointerToClassType())
+        if (right->GetType() && right->GetType()->GetBaseType()->IsClassTypeSymbol())
         {
             Cm::BoundTree::BoundExpressionList arguments;
             arguments.Add(left);
@@ -323,6 +474,15 @@ void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundAssignmentStatement& bound
             AddEdgesFromArgumentsToParameters(boundAssignmentStatement.Assignment(), arguments);
             arguments.GetLast();
             arguments.GetLast();
+            NodeResolverVisitor leftResolver(graph);
+            left->Accept(leftResolver);
+            TpGraphNode* leftNode = leftResolver.GetNode();
+            if (leftNode)
+            {
+                PushSourceNode(leftNode);
+                right->Accept(*this);
+                PopSourceNode();
+            }
         }
     }
 }
@@ -343,7 +503,11 @@ void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundReturnStatement& boundRetu
         Cm::Sym::VariableSymbol* returnValue = boundReturnStatement.ReturnValue()->Symbol();
         if (returnValue->GetType()->GetBaseType()->IsClassTypeSymbol())
         {
-            TpGraphNode* target = graph.GetNode(returnValue);
+            TpGraphNode* returnValueNode = graph.GetNode(returnValue);
+            if (entryNode)
+            {
+                entryNode->AddTarget(returnValueNode);
+            }
             if (boundReturnStatement.Constructor()->ThisParameter()->GetType()->GetBaseType()->IsClassTypeSymbol())
             {
                 NodeResolverVisitor resolver(graph);
@@ -351,7 +515,10 @@ void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundReturnStatement& boundRetu
                 TpGraphNode* source = resolver.GetNode();
                 if (source)
                 {
-                    source->AddTarget(target);
+                    source->AddTarget(returnValueNode);
+                    PushSourceNode(returnValueNode);
+                    boundReturnStatement.Expression()->Accept(*this);
+                    PopSourceNode();
                 }
             }
         }
@@ -363,110 +530,6 @@ void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimp
     if (boundSimpleStatement.GetExpression())
     {
         boundSimpleStatement.GetExpression()->Accept(*this);
-    }
-}
-
-class EdgeAdderVisitor : public Cm::BoundTree::Visitor
-{
-public:
-    EdgeAdderVisitor(TpGraphBuilderVisitor& parent_, TpGraphNode* target_);
-    void Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable) override;
-    void Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable) override;
-    void Visit(Cm::BoundTree::BoundParameter& boundParameter) override;
-    void Visit(Cm::BoundTree::BoundReturnValue& boundReturnValue) override;
-    void Visit(Cm::BoundTree::BoundConversion& boundConversion) override;
-    void Visit(Cm::BoundTree::BoundCast& boundCast) override;
-    void Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall) override;
-    void Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp) override;
-private:
-    TpGraphBuilderVisitor& parent;
-    TpGraphNode* target;
-};
-
-EdgeAdderVisitor::EdgeAdderVisitor(TpGraphBuilderVisitor& parent_, TpGraphNode* target_) : Cm::BoundTree::Visitor(false), parent(parent_), target(target_)
-{
-}
-
-void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariable)
-{
-    if (boundLocalVariable.Symbol() && boundLocalVariable.Symbol()->GetType()->GetBaseType()->IsClassTypeSymbol())
-    {
-        TpGraphNode* localVariableNode = parent.Graph().GetNode(boundLocalVariable.Symbol());
-        localVariableNode->AddTarget(target);
-        target->AddTarget(localVariableNode);
-    }
-}
-
-void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVariable)
-{
-    if (boundMemberVariable.Symbol()->GetType()->GetBaseType()->IsClassTypeSymbol())
-    {
-        TpGraphNode* memberVariableNode = parent.Graph().GetNode(boundMemberVariable.Symbol());
-        memberVariableNode->AddTarget(target);
-        target->AddTarget(memberVariableNode);
-    }
-}
-
-void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundParameter& boundParameter)
-{
-    if (boundParameter.Symbol()->GetType()->GetBaseType()->IsClassTypeSymbol())
-    {
-        TpGraphNode* parameterNode = parent.Graph().GetNode(boundParameter.Symbol());
-        parameterNode->AddTarget(target);
-        target->AddTarget(parameterNode);
-    }
-}
-
-void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundReturnValue& boundReturnValue)
-{
-    if (boundReturnValue.Symbol()->GetType()->GetBaseType()->IsClassTypeSymbol())
-    {
-        TpGraphNode* returnValueNode = parent.Graph().GetNode(boundReturnValue.Symbol());
-        returnValueNode->AddTarget(target);
-        target->AddTarget(returnValueNode);
-    }
-}
-
-void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundConversion& boundConversion)
-{
-    boundConversion.Operand()->Accept(*this);
-}
-
-void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundCast& boundCast)
-{
-    boundCast.Operand()->Accept(*this);
-}
-
-void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall)
-{
-    parent.Visit(boundFunctionCall);
-    if (boundFunctionCall.GetFunction()->IsConstructor())
-    {
-        if (boundFunctionCall.GetFunction()->ThisParameter()->GetType()->GetBaseType()->IsClassTypeSymbol())
-        {
-            TpGraphNode* thisParameterNode = parent.Graph().GetNode(boundFunctionCall.GetFunction()->ThisParameter());
-            thisParameterNode->AddTarget(target);
-            target->AddTarget(thisParameterNode);
-        }
-    }
-    else if (boundFunctionCall.GetFunction()->GetReturnType())
-    {
-        if (boundFunctionCall.GetFunction()->GetReturnType()->GetBaseType()->IsClassTypeSymbol())
-        {
-            TpGraphNode* returnValueNode = parent.Graph().GetNode(boundFunctionCall.GetFunction()->ReturnValue());
-            returnValueNode->AddTarget(target);
-            target->AddTarget(returnValueNode);
-        }
-    }
-}
-
-void EdgeAdderVisitor::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
-{
-    if (boundUnaryOp.GetFunction()->GroupName() == "operator->")
-    {
-        TpGraphNode* returnValueNode = parent.Graph().GetNode(boundUnaryOp.GetFunction()->ReturnValue());
-        returnValueNode->AddTarget(target);
-        target->AddTarget(returnValueNode);
     }
 }
 
@@ -506,13 +569,26 @@ void TpGraphBuilderVisitor::AddEdgesFromArgumentsToParameters(Cm::Sym::FunctionS
         if (thisArgNode && thatArgNode)
         {
             thatArgNode->AddTarget(thisArgNode);
-            thisArgNode->AddTarget(thatArgNode);
+            if (entryNode)
+            {
+                entryNode->AddTarget(thatArgNode);
+            }
         }
     }
     for (Cm::Sym::FunctionSymbol* overrider : fun->OverrideSet())
     {
         AddEdgesFromArgumentsToParameters(overrider, arguments);
     }
+}
+
+void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundConversion& boundConversion)
+{
+    boundConversion.Operand()->Accept(*this);
+}
+
+void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundCast& boundCast)
+{
+    boundCast.Operand()->Accept(*this);
 }
 
 void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall)
@@ -523,27 +599,9 @@ void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundFunctionCall& boundFunctio
         TpGraphNode* funEntry = graph.GetNode(fun->Entry());
         entryNode->AddTarget(funEntry);
     }
-    if (inMain)
+    if (boundFunctionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::newCall))
     {
-        int n = int(fun->Parameters().size());
-        int start = 0;
-        if (fun->IsMemberFunctionSymbol() && !fun->IsStatic())
-        {
-            ++start;
-        }
-        for (int i = start; i < n; ++i)
-        {
-            Cm::Sym::ParameterSymbol* parameterSymbol = fun->Parameters()[i];
-            if (parameterSymbol->GetType()->GetBaseType()->IsClassTypeSymbol())
-            {
-                TpGraphNode* node = graph.GetNode(parameterSymbol);
-                graph.AddRoot(node);
-            }
-        }
-    }
-    if (boundFunctionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::newCall) && sourceNode)
-    {
-        if (fun->IsConstructor())
+        if (fun->IsConstructor() && sourceNode)
         {
             Cm::Sym::ParameterSymbol* thisParam = fun->ThisParameter();
             Cm::Sym::TypeSymbol* type = thisParam->GetType()->GetBaseType();

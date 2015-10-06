@@ -99,6 +99,7 @@ public:
     void Own(LocalVariableSymbol* localVariable);
     const std::unordered_set<ClassTypeSymbol*>& Classes() const;
     const std::unordered_set<ClassTypeSymbol*>& ProjectClasses() const;
+    uint32_t GetVariableSymbolSid(const std::string& variableSymbolFullName);
 private:
     uint32_t nextSid;
     NamespaceSymbol globalNs;
@@ -126,6 +127,7 @@ private:
     std::unordered_set<ClassTypeSymbol*> projectClasses;
     std::vector<std::unique_ptr<LocalVariableSymbol>> ownedLocalVariables;
     std::vector<uint64_t> classHierarchyTable;
+    std::unordered_map<std::string, uint32_t> variableSymbolNameSidMap;
 };
 
 } } // namespace Cm::Sym

@@ -30,6 +30,7 @@ public:
     void SetUseSpan(const Cm::Parsing::Span& useSpan_);
     const Cm::Parsing::Span& GetUseSpan() const { return useSpan; }
     void ReplaceReplicaTypes() override;
+    std::string UniqueName() const override;
 private:
     bool used;
     Cm::Parsing::Span useSpan;

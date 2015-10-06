@@ -530,12 +530,14 @@ public:
     BoundLocalVariable* GetTemporary() const { return temporary.get(); }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
     TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
+    uint32_t FunctionCallSid() const { return functionCallSid; }
 private:
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* fun;
     Cm::Sym::LocalVariableSymbol* classObjectResultVar;
     std::unique_ptr<BoundLocalVariable> temporary;
     std::unique_ptr<TraceCallInfo> traceCallInfo;
+    uint32_t functionCallSid;
 };
 
 class BoundDelegateCall : public BoundExpression

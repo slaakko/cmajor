@@ -70,6 +70,16 @@ void GlobalSettings::SetDatalayout(const std::string& datalayout_)
     datalayout = datalayout_;
 }
 
+void GlobalSettings::SetClassHierarchyDotFileName(const std::string& classHierarchyDotFileName_)
+{
+    classHierarchyDotFileName = classHierarchyDotFileName_;
+}
+
+void GlobalSettings::SetTpgDotFileName(const std::string& tpgDotFileName_)
+{
+    tpgDotFileName = tpgDotFileName_;
+}
+
 GlobalSettings* globalSettings = nullptr;
 
 GlobalSettings* GetGlobalSettings()

@@ -1392,13 +1392,30 @@ void ProcessClasses(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classes
     std::sort(classesByPriority.begin(), classesByPriority.end(), PriorityGreater());
     AssignKeys(classesByPriority);
     AssignCids(classesByPriority);
-    for (Cm::Sym::ClassTypeSymbol* cls : classesByPriority)
+    std::string classHierarchyDotFileName = Cm::Core::GetGlobalSettings()->ClassHierarchyDotFileName();
+    if (!classHierarchyDotFileName.empty())
     {
-        std::string baseClassName;
-        if (cls->BaseClass())
+        if (boost::filesystem::path(classHierarchyDotFileName).extension().empty())
         {
-            baseClassName = cls->BaseClass()->FullName();
+            classHierarchyDotFileName.append(".dot");
         }
+        std::ofstream classHierarchyDotFile(classHierarchyDotFileName);
+        Cm::Util::CodeFormatter formatter(classHierarchyDotFile);
+        formatter.WriteLine("digraph class_hierarchy");
+        formatter.WriteLine("{");
+        formatter.IncIndent();
+        formatter.WriteLine("graph [rankdir=RL];");
+        formatter.WriteLine("node [shape=record];");
+        for (Cm::Sym::ClassTypeSymbol* cls : classesByPriority)
+        {
+            formatter.WriteLine("node" + std::to_string(cls->Cid()) + " [label=\"" + cls->FullName() + "|" + std::to_string(cls->Key()) + "|" + std::to_string(cls->Cid()) + "|" + (cls->IsLive() ? "+" : "-") + "\"];");
+            if (cls->BaseClass())
+            {
+                formatter.WriteLine("node" + std::to_string(cls->Cid()) + " -> node" + std::to_string(cls->BaseClass()->Cid()));
+            }
+        }
+        formatter.DecIndent();
+        formatter.WriteLine("}");
     }
 }
 
@@ -1419,7 +1436,7 @@ void ProcessProgram(Cm::Ast::Project* project)
     std::vector<uint64_t> classHierarchyTable;
     ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
     symbolTable.InitVirtualFunctionTables();
-    Cm::Opt::TpGraph tpGraph;
+    Cm::Opt::TpGraph tpGraph(symbolTable);
     Cm::Opt::TpGraphBuilderVisitor tpGraphBuilderVisitor(tpGraph);
     for (const std::string& bcuPath : allBcuPaths)
     {
@@ -1437,11 +1454,15 @@ void ProcessProgram(Cm::Ast::Project* project)
         compileUnit.Accept(tpGraphBuilderVisitor);
     }
     tpGraph.Process();
-    ProcessClasses(symbolTable.Classes());
-    std::ofstream graphFile("C:\\temp\\graph.txt");
+    std::string tpgDotFileName = Cm::Core::GetGlobalSettings()->TpgDotFileName();
+    if (!tpgDotFileName.empty())
+    {
+        tpGraph.Print(tpgDotFileName);
+    }
+    std::ofstream graphFile("C:\\temp\\calls.txt");
     Cm::Util::CodeFormatter formatter(graphFile);
-    tpGraph.Print(formatter);
     tpGraphBuilderVisitor.PrintVirtualCalls(formatter);
+    ProcessClasses(symbolTable.Classes());
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)

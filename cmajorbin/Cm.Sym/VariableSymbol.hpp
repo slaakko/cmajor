@@ -24,6 +24,8 @@ public:
     void SetType(TypeSymbol* type_) { type = type_; }
     void SetType(TypeSymbol* type_, int index) override;
     bool HasType() const { return hasType; }
+    std::string UniqueFullName() const;
+    virtual std::string UniqueName() const { return Name(); }
 private:
     TypeSymbol* type;
     bool hasType;
