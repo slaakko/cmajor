@@ -474,7 +474,7 @@ TypeSymbol* TypeRepository::MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
     }
 }
 
-void TypeRepository::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
+void TypeRepository::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes)
 {
     for (const std::unique_ptr<TypeSymbol>& type : types)
     {
@@ -534,6 +534,27 @@ void TypeRepository::Import(Reader& reader, SymbolTable& symbolTable)
         else
         {
             throw std::runtime_error("type symbol expected");
+        }
+    }
+    if (GetGlobalFlag(GlobalFlags::fullConfig))
+    {
+        int n = reader.GetBinaryReader().ReadInt();
+        for (int i = 0; i < n; ++i)
+        {
+            int m = reader.GetBinaryReader().ReadInt();
+            uint64_t firstCid = 0;
+            for (int j = 0; j < m; ++j)
+            {
+                uint64_t cid = reader.GetBinaryReader().ReadULong();
+                if (j == 0)
+                {
+                    firstCid = cid;
+                }
+                else
+                {
+                    symbolTable.CidMap()[cid] = firstCid;
+                }
+            }
         }
     }
     reader.MakeIrTypes();

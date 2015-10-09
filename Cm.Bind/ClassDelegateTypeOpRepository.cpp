@@ -38,11 +38,19 @@ ClassDelegateFromFunCtor::ClassDelegateFromFunCtor(Cm::Sym::TypeRepository& type
     dlgParam->SetType(delegateType);
     AddSymbol(dlgParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    AddSymbol(entry);
 }
 
 void ClassDelegateFromFunCtor::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)
 {
     // implementation is provided by FunctionEmitter
+}
+
+void ClassDelegateFromFunCtor::Write(Cm::Sym::BcuWriter& writer)
+{
+    BasicTypeOp::Write(writer);
+    writer.Write(functionSymbol);
 }
 
 ClassDelegateFromFunAssignment::ClassDelegateFromFunAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_,
@@ -69,6 +77,8 @@ ClassDelegateFromFunAssignment::ClassDelegateFromFunAssignment(Cm::Sym::TypeRepo
     dlgParam->SetType(delegateType);
     AddSymbol(dlgParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    AddSymbol(entry);
 }
 
 void ClassDelegateFromFunAssignment::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)
@@ -76,15 +86,17 @@ void ClassDelegateFromFunAssignment::Generate(Cm::Core::Emitter& emitter, Cm::Co
     // implementation is provided by FunctionEmitter
 }
 
-ClassDelegateEqualOp::ClassDelegateEqualOp() : Cm::Sym::FunctionSymbol(Cm::Parsing::Span(), "*class_delegate_equal*"), classDelegateType(nullptr), ns()
+void ClassDelegateFromFunAssignment::Write(Cm::Sym::BcuWriter& writer)
 {
+    BasicTypeOp::Write(writer);
+    writer.Write(functionSymbol);
 }
 
-ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_) : 
-    Cm::Sym::FunctionSymbol(classDelegateType_->GetSpan(), "*class_delegate_equal*"), classDelegateType(classDelegateType_), ns(containerScope->Ns()->FullName())
+ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateType_) : 
+    Cm::Sym::FunctionSymbol(classDelegateType_->GetSpan(), "*class_delegate_equal_op*"), classDelegateType(classDelegateType_)
 {
     SetGroupName("operator==");
-    Cm::Sym::TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+    Cm::Sym::TypeSymbol* boolType = typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     SetReturnType(boolType);
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(classDelegateType);
@@ -97,6 +109,18 @@ ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerSco
     SetReplicated();
     SetNothrow();
     SetParent(classDelegateType->Ns());
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    AddSymbol(entry);
+}
+
+void ClassDelegateEqualOp::Write(Cm::Sym::BcuWriter& writer)
+{
+    writer.Write(classDelegateType);
+}
+
+void ClassDelegateEqualOp::CreateBoundNode(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
+{
+    Cm::Sym::TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
     std::unique_ptr<Cm::BoundTree::BoundFunction> opEqual(new Cm::BoundTree::BoundFunction(nullptr, this));
     opEqual->SetBody(new Cm::BoundTree::BoundCompoundStatement(nullptr));
     GenerateReceives(containerScope, boundCompileUnit, opEqual.get());
@@ -114,16 +138,16 @@ ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerSco
     {
         Cm::Sym::TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
         std::vector<Cm::Core::Argument> resolutionArguments;
-        Cm::BoundTree::BoundParameter* boundLeftParam = new Cm::BoundTree::BoundParameter(nullptr, leftParam);
+        Cm::BoundTree::BoundParameter* boundLeftParam = new Cm::BoundTree::BoundParameter(nullptr, Parameters()[0]);
         boundLeftParam->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
-        boundLeftParam->SetType(leftParam->GetType());
+        boundLeftParam->SetType(Parameters()[0]->GetType());
         Cm::BoundTree::BoundMemberVariable* boundLeftMemberVar = new Cm::BoundTree::BoundMemberVariable(nullptr, memberVariableSymbol);
         boundLeftMemberVar->SetType(memberVariableType);
         boundLeftMemberVar->SetClassObject(boundLeftParam);
         resolutionArguments.push_back(Cm::Core::Argument(boundLeftMemberVar->GetArgumentCategory(), boundLeftMemberVar->GetType()));
 
-        Cm::BoundTree::BoundParameter* boundRightParam = new Cm::BoundTree::BoundParameter(nullptr, rightParam);
-        boundRightParam->SetType(rightParam->GetType());
+        Cm::BoundTree::BoundParameter* boundRightParam = new Cm::BoundTree::BoundParameter(nullptr, Parameters()[1]);
+        boundRightParam->SetType(Parameters()[1]->GetType());
         boundRightParam->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
         Cm::BoundTree::BoundMemberVariable* boundRightMemberVar = new Cm::BoundTree::BoundMemberVariable(nullptr, memberVariableSymbol);
         boundRightMemberVar->SetType(memberVariableType);
@@ -177,33 +201,6 @@ ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::ContainerScope* containerSco
     returnTrue->SetConstructor(boolCopyCtor);
     opEqual->Body()->AddStatement(returnTrue);
     boundCompileUnit.AddBoundNode(opEqual.release());
-}
-
-void ClassDelegateEqualOp::Write(Cm::Sym::BcuWriter& writer)
-{
-    writer.GetBinaryWriter().Write(ns);
-    writer.Write(classDelegateType);
-}
-
-void ClassDelegateEqualOp::Read(Cm::Sym::BcuReader& reader)
-{
-    ns = reader.GetBinaryReader().ReadString();
-    Cm::Sym::BoundCompileUnit* symbolUnit = reader.GetBoundCompileUnit();
-    Cm::BoundTree::BoundCompileUnit* boundCompileUnit = static_cast<Cm::BoundTree::BoundCompileUnit*>(symbolUnit);
-    Cm::Sym::SymbolTable& symbolTable = boundCompileUnit->SymbolTable();
-    Cm::Sym::Symbol* nsSymbol = symbolTable.GlobalScope()->Lookup(ns);
-    Cm::Sym::ContainerScope* containerScope = nsSymbol->GetContainerScope();
-    Cm::Sym::Symbol* classDelegateSymbol = reader.ReadSymbol();
-    if (classDelegateSymbol->IsClassDelegateTypeSymbol())
-    {
-        Cm::Sym::ClassDelegateTypeSymbol* classDelegateType = static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(classDelegateSymbol);
-        ClassDelegateEqualOp* replacement = new ClassDelegateEqualOp(containerScope, *boundCompileUnit, classDelegateType);
-        reader.SetClassDelegateEqualOp(replacement);
-    }
-    else
-    {
-        throw std::runtime_error("class delegate type symbol expected");
-    }
 }
 
 Cm::Sym::FunctionSymbol* ResolveClassDelegateOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
@@ -264,7 +261,9 @@ Cm::Sym::FunctionSymbol* ClassDelegateTypeOpCache::GetClassDelegateEqualOp(Cm::S
 {
     if (!classDelegateEqualOp)
     {
-        classDelegateEqualOp.reset(new ClassDelegateEqualOp(containerScope, boundCompileUnit, classDelegateType));
+        ClassDelegateEqualOp* classDelegateEqualOpSymbol = new ClassDelegateEqualOp(boundCompileUnit.SymbolTable().GetTypeRepository(), classDelegateType);
+        classDelegateEqualOpSymbol->CreateBoundNode(containerScope, boundCompileUnit);
+        classDelegateEqualOp.reset(classDelegateEqualOpSymbol);
     }
     return classDelegateEqualOp.get();
 }
@@ -414,9 +413,9 @@ Cm::Sym::FunctionSymbol* ClassDelegateTypeOpFactory::CreateClassDelegateOp(Cm::S
     throw std::runtime_error("unknown item type " + std::to_string(uint8_t(itemType)));
 }
 
-Cm::Sym::FunctionSymbol* ClassDelegateTypeOpFactory::CreateClassDelegateOpEqual() const
+Cm::Sym::FunctionSymbol* ClassDelegateTypeOpFactory::CreateClassDelegateOpEqual(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol) const
 {
-    return new ClassDelegateEqualOp();
+    return new ClassDelegateEqualOp(typeRepository, classDelegateTypeSymbol);
 }
 
 } } // namespace Cm::Bind

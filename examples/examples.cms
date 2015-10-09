@@ -11,7 +11,7 @@ project <hexdump/hexdump.cmp>;
 project <jsonschemagen/jsonschemagen.cmp>;
 project <print_args/print_args.cmp>;
 project <simplegrep/simplegrep.cmp>;
-activeProject Hello;
+activeProject Downloads;
 dependency Calculator();
 dependency CmXmlSerGen();
 dependency CopyFile();

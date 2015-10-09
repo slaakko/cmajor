@@ -289,6 +289,7 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         throw std::runtime_error("not template type symbol");
     }
     Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(parent);
+    templateTypeSymbols.insert(templateTypeSymbol);
     if (templateTypeSymbol->GetConstraint())    // if has unchecked constraint, check it now...
     {
         Cm::Sym::TypeSymbol* subjectTypeSymbol = templateTypeSymbol->GetSubjectType();
@@ -402,12 +403,12 @@ void ClassTemplateRepository::Write(Cm::Sym::BcuWriter& writer)
     }
     int32_t nt = int32_t(templateTypeSymbols.size());
     writer.GetBinaryWriter().Write(nt);
-    writer.GetSymbolWriter().PushExportMemberVariables(true);
+    writer.GetSymbolWriter().PushExportMemberVariablesAndFunctionSymbols(true);
     for (Cm::Sym::TemplateTypeSymbol* templateTypeSymbol : templateTypeSymbols)
     {
         writer.GetSymbolWriter().Write(templateTypeSymbol);
     }
-    writer.GetSymbolWriter().PopExportMemberVariables();
+    writer.GetSymbolWriter().PopExportMemberVariablesAndFunctionSymbols();
 }
 
 void ClassTemplateRepository::Read(Cm::Sym::BcuReader& reader)
@@ -420,6 +421,11 @@ void ClassTemplateRepository::Read(Cm::Sym::BcuReader& reader)
         {
             Cm::Sym::FunctionSymbol* memberFunctionSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
             ownedMemberFunctionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(memberFunctionSymbol));
+            memberFunctionSymbols.push_back(memberFunctionSymbol);
+        }
+        else
+        {
+            throw std::runtime_error("function symbol expected");
         }
     }
     int32_t nt = reader.GetBinaryReader().ReadInt();
@@ -433,6 +439,11 @@ void ClassTemplateRepository::Read(Cm::Sym::BcuReader& reader)
             {
                 reader.GetSymbolReader().GetSymbolTable().GetTypeRepository().Own(templateTypeSymbol);
             }
+            templateTypeSymbols.insert(templateTypeSymbol);
+        }
+        else
+        {
+            throw std::runtime_error("template type symbol expected");
         }
     }
 }

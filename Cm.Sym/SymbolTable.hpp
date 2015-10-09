@@ -100,6 +100,7 @@ public:
     const std::unordered_set<ClassTypeSymbol*>& Classes() const;
     const std::unordered_set<ClassTypeSymbol*>& ProjectClasses() const;
     uint32_t GetVariableSymbolSid(const std::string& variableSymbolFullName);
+    std::unordered_map<uint64_t, uint64_t>& CidMap() { return cidMap; }
 private:
     uint32_t nextSid;
     NamespaceSymbol globalNs;
@@ -123,6 +124,7 @@ private:
     std::vector<TemplateTypeSymbol*> importedTemplateTypes;
     std::unordered_map<uint32_t, Symbol*> symbolMap;
     std::unordered_map<uint64_t, ClassTypeSymbol*> classMap;
+    std::unordered_map<uint64_t, uint64_t> cidMap;
     std::unordered_set<ClassTypeSymbol*> classes;
     std::unordered_set<ClassTypeSymbol*> projectClasses;
     std::vector<std::unique_ptr<LocalVariableSymbol>> ownedLocalVariables;

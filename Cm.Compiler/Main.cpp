@@ -105,7 +105,6 @@ std::string GetTargetTriple()
 #endif
 
     }
-
     return targetTriple;
 }
 
@@ -143,7 +142,6 @@ std::string GetDataLayout()
 #endif
 
     }
-
     return dataLayout;
 }
 
@@ -203,6 +201,7 @@ int main(int argc, const char** argv)
                 "-no_call_stacks : do not generate call stack information for exceptions\n" <<
                 "-class_dot=FILE : generate class hierarchy graph to FILE.dot (only full config)\n" <<
                 "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
+                "-vcall_txt=FILE : print virtual calls to FILE.txt\n" << 
                 std::endl;
             std::cout << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
                 "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << std::endl;
@@ -271,6 +270,11 @@ int main(int argc, const char** argv)
                                 {
                                     std::string dotFileName = v[1];
                                     Cm::Core::GetGlobalSettings()->SetTpgDotFileName(dotFileName);
+                                }
+                                else if (v[0] == "-vcall_txt")
+                                {
+                                    std::string vCallFileName = v[1];
+                                    Cm::Core::GetGlobalSettings()->SetVirtualCallFileName(vCallFileName);
                                 }
                                 else
                                 {

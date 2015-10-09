@@ -9,6 +9,8 @@
 
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.BoundTree/Visitor.hpp>
+#include <Cm.BoundTree/BoundFunction.hpp>
+#include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Util/Path.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
@@ -80,6 +82,10 @@ void BoundCompileUnit::SetFileName(const std::string& fileName_)
 
 void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
 {
+    if (irFilePath == "C:/Programming/cmajorbin/system/ext/System.Text.Parsing/full/llvm/ParsingDomain.ll")
+    {
+        int x = 0;
+    }
     writer.GetBinaryWriter().Write(irFilePath);
     writer.GetBinaryWriter().Write(objectFilePath);
     writer.GetBinaryWriter().Write(optIrFilePath);
@@ -96,11 +102,9 @@ void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
     synthesizedClassFunRepository->Write(writer);
     inlineFunctionRepository->Write(writer);
     writer.GetBinaryWriter().Write(int(boundNodes.size()));
-    int i = 0;
     for (const std::unique_ptr<BoundNode>& boundNode : boundNodes)
     {
         writer.Write(boundNode.get());
-        ++i;
     }
 }
 
@@ -139,18 +143,40 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
     synthesizedClassFunRepository->Read(reader);
     inlineFunctionRepository->Read(reader);
     int n = reader.GetBinaryReader().ReadInt();
+    std::vector<Cm::Bind::ClassDelegateEqualOp*> classDelegateEqualOps;
     for (int i = 0; i < n; ++i)
     {
         Cm::Sym::BcuItem* item = reader.ReadItem();
         if (item->IsBoundNode())
         {
             BoundNode* node = static_cast<BoundNode*>(item);
-            boundNodes.push_back(std::unique_ptr<BoundNode>(node));
+            if (node->IsBoundFunctionNode())
+            {
+                BoundFunction* boundFunction = static_cast<BoundFunction*>(node);
+                Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
+                if (functionSymbol->IsClassDelegateEqualOp())
+                {
+                    classDelegateEqualOps.push_back(static_cast<Cm::Bind::ClassDelegateEqualOp*>(functionSymbol));
+                    delete node;
+                }
+                else
+                {
+                    boundNodes.push_back(std::unique_ptr<BoundNode>(node));
+                }
+            }
+            else
+            {
+                boundNodes.push_back(std::unique_ptr<BoundNode>(node));
+            }
         }
         else
         {
             throw std::runtime_error("bound node expected");
         }
+    }
+    for (Cm::Bind::ClassDelegateEqualOp* equalOp : classDelegateEqualOps)
+    {
+        equalOp->CreateBoundNode(equalOp->Ns()->GetContainerScope(), *this);
     }
 }
 

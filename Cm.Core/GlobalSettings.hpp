@@ -31,6 +31,8 @@ public:
     const std::string& ClassHierarchyDotFileName() const { return classHierarchyDotFileName; }
     void SetTpgDotFileName(const std::string& tpgDotFileName_);
     const std::string& TpgDotFileName() const { return tpgDotFileName; }
+    void SetVirtualCallFileName(const std::string& virtualCallFileName_);
+    const std::string& VirtualCallFileName() const { return virtualCallFileName; }
 private:
     std::string config;
     int optimizationLevel;
@@ -39,6 +41,7 @@ private:
     std::string datalayout;
     std::string classHierarchyDotFileName;
     std::string tpgDotFileName;
+    std::string virtualCallFileName;
 };
 
 GlobalSettings* GetGlobalSettings();

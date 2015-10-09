@@ -14,6 +14,7 @@
 #include <Cm.Util/TextUtils.hpp>
 #include <Llvm.Ir/Type.hpp>
 #include <stdexcept>
+#include <algorithm>
 
 namespace Cm { namespace Core {
 
@@ -21,11 +22,27 @@ IrClassTypeRepository::~IrClassTypeRepository()
 {
 }
 
+struct CidLess
+{
+    bool operator()(Cm::Sym::ClassTypeSymbol* left, Cm::Sym::ClassTypeSymbol* right) const
+    {
+        return left->Cid() < right->Cid();
+    }
+};
+
 void IrClassTypeRepository::Write(Cm::Sym::BcuWriter& writer)
 {
-    writer.GetBinaryWriter().Write(int(classTypes.size()));
+    std::vector<Cm::Sym::ClassTypeSymbol*> classTypeVec;
     for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
     {
+        classTypeVec.push_back(classType);
+    }
+    std::sort(classTypeVec.begin(), classTypeVec.end(), CidLess());
+    int n = int(classTypeVec.size());
+    writer.GetBinaryWriter().Write(int(n));
+    for (int i = 0; i < n; ++i)
+    {
+        Cm::Sym::ClassTypeSymbol* classType = classTypeVec[i];
         writer.Write(classType);
     }
 }

@@ -12,6 +12,7 @@
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <algorithm>
 #include <stdexcept>
@@ -215,7 +216,7 @@ void TemplateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>
     }
 }
 
-void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
+void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes)
 {
     if (!IsExportSymbol()) return;
     ClassTypeSymbol::CollectExportedTemplateTypes(collected, exportedTemplateTypes);
@@ -235,7 +236,7 @@ void TemplateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*
             }
         }
         collected.insert(this);
-        exportedTemplateTypes[Id()] = this;
+        exportedTemplateTypes[Id()].insert(this);
         SetSource(SymbolSource::library);
     }
 }

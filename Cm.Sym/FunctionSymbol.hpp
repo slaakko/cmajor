@@ -143,6 +143,7 @@ public:
     virtual bool IsClassDelegateFromFunCtor() const { return false; }
     virtual bool IsDelegateFromFunAssignment() const { return false; }
     virtual bool IsClassDelegateFromFunAssignment() const { return false; }
+    virtual bool IsClassDelegateEqualOp() const { return false; }
     virtual bool IsConvertingConstructor() const;
     virtual bool IsConversionFunction() const;
     bool IsExportSymbol() const override;
@@ -233,7 +234,7 @@ public:
     Cm::Ast::CompileUnitNode* CompileUnit() const { return compileUnit; }
     void SetCompileUnit(Cm::Ast::CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes) override;
     int16_t VtblIndex() const { return vtblIndex; }
     void SetVtblIndex(int16_t vtblIndex_) { vtblIndex = vtblIndex_; }
     Ir::Intf::Parameter* ClassObjectResultIrParam() const { return classObjectResultIrParam; }

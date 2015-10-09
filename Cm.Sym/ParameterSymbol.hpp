@@ -28,7 +28,7 @@ public:
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes) override;
     Cm::Ast::ParameterNode* ParameterNode() const { return ownedParameterNode.get(); }
     void ReplaceReplicaTypes() override;
 private:

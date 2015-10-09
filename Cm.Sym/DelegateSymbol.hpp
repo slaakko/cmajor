@@ -68,7 +68,7 @@ public:
     }
     void MakeIrType() override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes) override;
     bool IsValueTypeSymbol() const override { return true; }
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
@@ -108,6 +108,7 @@ class ClassDelegateTypeSymbol : public ClassTypeSymbol
 {
 public:
     ClassDelegateTypeSymbol(const Span& span_, const std::string& name_);
+    ClassDelegateTypeSymbol(const Span& span_, const std::string& name_, bool getNextId, uint64_t cid_);
     SymbolType GetSymbolType() const override { return SymbolType::classDelegateSymbol; }
     std::string TypeString() const override { return "class delegate"; };
     std::string GetMangleId() const override;
@@ -137,7 +138,7 @@ public:
         SetFlag(ClassDelegateTypeSymbolFlags::throw_);
     }
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes) override;
     void Dump(CodeFormatter& formatter) override;
     std::string Syntax() const override;
     void ReplaceReplicaTypes() override;

@@ -60,7 +60,10 @@ void BoundFunction::Write(Cm::Sym::BcuWriter& writer)
             writer.GetSymbolWriter().Write(temporary.get());
         }
     }
-    writer.Write(body.get());
+    if (!functionSymbol->IsClassDelegateEqualOp())
+    {
+        writer.Write(body.get());
+    }
     writer.GetBinaryWriter().Write(isRealMain);
     isUserMain = functionSymbol == writer.GetSymbolWriter().GetSymbolTable()->UserMainFunction();
     writer.GetBinaryWriter().Write(isUserMain);
@@ -115,16 +118,19 @@ void BoundFunction::Read(Cm::Sym::BcuReader& reader)
             throw std::runtime_error("local variable symbol expected");
         }
     }
-    Cm::Sym::BcuItem* bodyItem = reader.ReadItem();
-    if (bodyItem)
+    if (!functionSymbol->IsClassDelegateEqualOp())
     {
-        if (bodyItem->IsBoundCompoundStatement())
+        Cm::Sym::BcuItem* bodyItem = reader.ReadItem();
+        if (bodyItem)
         {
-            body.reset(static_cast<BoundCompoundStatement*>(bodyItem));
-        }
-        else
-        {
-            throw std::runtime_error("bound compound statement expected");
+            if (bodyItem->IsBoundCompoundStatement())
+            {
+                body.reset(static_cast<BoundCompoundStatement*>(bodyItem));
+            }
+            else
+            {
+                throw std::runtime_error("bound compound statement expected");
+            }
         }
     }
     isRealMain = reader.GetBinaryReader().ReadBool();

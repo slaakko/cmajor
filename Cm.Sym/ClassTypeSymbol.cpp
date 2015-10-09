@@ -485,7 +485,7 @@ void ClassTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& c
     }
 }
 
-void ClassTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
+void ClassTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes)
 {
     ContainerSymbol::CollectExportedTemplateTypes(collected, exportedTemplateTypes);
     if (baseClass)

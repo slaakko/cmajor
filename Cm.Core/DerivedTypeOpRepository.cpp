@@ -31,6 +31,8 @@ OpAddPtrInt::OpAddPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpAddPtrInt::Generate(Emitter& emitter, GenResult& result)
@@ -73,6 +75,8 @@ OpAddIntPtr::OpAddIntPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpAddIntPtr::Generate(Emitter& emitter, GenResult& result)
@@ -115,6 +119,8 @@ OpSubPtrInt::OpSubPtrInt(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpSubPtrInt::Generate(Emitter& emitter, GenResult& result)
@@ -162,6 +168,8 @@ OpSubPtrPtr::OpSubPtrPtr(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpSubPtrPtr::Generate(Emitter& emitter, GenResult& result)
@@ -206,6 +214,8 @@ OpDeref::OpDeref(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol* 
     operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpDeref::Generate(Emitter& emitter, GenResult& result)
@@ -263,6 +273,8 @@ OpIncPtr::OpIncPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol
     operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpIncPtr::Generate(Emitter& emitter, GenResult& result)
@@ -305,6 +317,8 @@ OpDecPtr::OpDecPtr(Cm::Sym::TypeRepository& typeRepository_, Cm::Sym::TypeSymbol
     operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpDecPtr::Generate(Emitter& emitter, GenResult& result)
@@ -348,6 +362,8 @@ OpAddrOf::OpAddrOf(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol*
     operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpAddrOf::Generate(Emitter& emitter, GenResult& result)
@@ -378,6 +394,8 @@ OpArrow::OpArrow(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* t
     operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpArrow::Generate(Emitter& emitter, GenResult& result)

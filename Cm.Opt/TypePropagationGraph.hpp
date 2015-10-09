@@ -18,6 +18,8 @@
 
 namespace Cm { namespace Opt {
 
+std::string ToNodeLabel(const std::string& s);
+
 // Type Propagation Graph Node:
 
 class TpGraphNode
@@ -37,6 +39,7 @@ public:
 private:
     uint32_t variableSymbolSid;
     std::string variableSymbolFullName;
+    std::unordered_set<Cm::Sym::ClassTypeSymbol*> initClasses;
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> reachingClasses;
     std::unordered_set<TpGraphNode*> targets;
     bool visited;
@@ -52,12 +55,13 @@ public:
     void Print(const std::string& dotFileName);
     void AddRoot(TpGraphNode* root);
     void Process();
-
+    std::unordered_map<uint32_t, TpGraphNode*>& VirtualCallMap() { return virtualCallMap; }
 private:
     Cm::Sym::SymbolTable& symbolTable;
     std::vector<std::unique_ptr<TpGraphNode>> nodes;
     std::unordered_map<uint32_t, TpGraphNode*> nodeMap;
     std::unordered_set<TpGraphNode*> roots;
+    std::unordered_map<uint32_t, TpGraphNode*> virtualCallMap;
 };
 
 class TpGraphBuilderVisitor : public Cm::BoundTree::Visitor
@@ -76,7 +80,7 @@ public:
     void Visit(Cm::BoundTree::BoundCast& boundCast) override;
     void Visit(Cm::BoundTree::BoundFunctionCall& boundFunctionCall) override;
     TpGraph& Graph() { return graph; }
-    void PrintVirtualCalls(Cm::Util::CodeFormatter& formatter);
+    void PrintVirtualCalls();
 private:
     TpGraph& graph;
     Cm::BoundTree::BoundClass* currentClass;
@@ -89,6 +93,7 @@ private:
     std::vector<std::pair<std::string, TpGraphNode*>> virtualCalls;
     void PushSourceNode(TpGraphNode* sourceNode_);
     void PopSourceNode();
+    bool inThrow;
 };
 
 } } // namespace Cm::Opt

@@ -59,6 +59,7 @@ public:
     bool GetFlag(BoundNodeFlags flag) const { return (flags & flag) != BoundNodeFlags::none; }
     void ResetFlag(BoundNodeFlags flag) { flags = flags & ~flag; }
     bool IsBoundNode() const override { return true; }
+    virtual bool IsBoundFunctionNode() const { return false; }
     void Write(Cm::Sym::BcuWriter& writer) override;
     void Read(Cm::Sym::BcuReader& reader) override;
 private:

@@ -13,7 +13,7 @@
 
 namespace Cm {  namespace Sym {
 
-Writer::Writer(const std::string& fileName, SymbolTable* symbolTable_): binaryWriter(fileName), symbolTable(symbolTable_), astWriter(binaryWriter), exportMemberVariables(false)
+Writer::Writer(const std::string& fileName, SymbolTable* symbolTable_): binaryWriter(fileName), symbolTable(symbolTable_), astWriter(binaryWriter), exportMemberVariablesAndFunctionSymbols(false)
 {
 }
 
@@ -61,16 +61,16 @@ void Writer::Write(Value* value)
     value->Write(*this);
 }
 
-void Writer::PushExportMemberVariables(bool export_)
+void Writer::PushExportMemberVariablesAndFunctionSymbols(bool export_)
 {
-    exportMemberVariablesStack.push(exportMemberVariables);
-    exportMemberVariables = export_;
+    exportMemberVariablesAndFunctionSymbolsStack.push(exportMemberVariablesAndFunctionSymbols);
+    exportMemberVariablesAndFunctionSymbols = export_;
 }
 
-void Writer::PopExportMemberVariables()
+void Writer::PopExportMemberVariablesAndFunctionSymbols()
 {
-    exportMemberVariables = exportMemberVariablesStack.top();
-    exportMemberVariablesStack.pop();
+    exportMemberVariablesAndFunctionSymbols = exportMemberVariablesAndFunctionSymbolsStack.top();
+    exportMemberVariablesAndFunctionSymbolsStack.pop();
 }
 
 } } // namespace Cm::Sym

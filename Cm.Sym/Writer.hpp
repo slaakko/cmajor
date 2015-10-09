@@ -35,15 +35,15 @@ public:
     BinaryWriter& GetBinaryWriter() { return binaryWriter; }
     SymbolTable* GetSymbolTable() const { return symbolTable; }
     Cm::Ast::Writer& GetAstWriter() { return astWriter; }
-    void PushExportMemberVariables(bool export_);
-    void PopExportMemberVariables();
-    bool ExportMemberVariables() const { return exportMemberVariables; }
+    void PushExportMemberVariablesAndFunctionSymbols(bool export_);
+    void PopExportMemberVariablesAndFunctionSymbols();
+    bool ExportMemberVariablesAndFunctionSymbols() const { return exportMemberVariablesAndFunctionSymbols; }
 private:
     BinaryWriter binaryWriter;
     SymbolTable* symbolTable;
     Cm::Ast::Writer astWriter;
-    bool exportMemberVariables;
-    std::stack<bool> exportMemberVariablesStack;
+    bool exportMemberVariablesAndFunctionSymbols;
+    std::stack<bool> exportMemberVariablesAndFunctionSymbolsStack;
 };
 
 } } // namespace Cm::Sym

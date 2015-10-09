@@ -39,6 +39,8 @@ PrimitiveArrayTypeDefaultConstructor::PrimitiveArrayTypeDefaultConstructor(Cm::S
     thisParam->SetType(typeRepository.MakePointerType(Type(), Cm::Parsing::Span()));
     AddSymbol(thisParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    AddSymbol(entry);
 }
 
 void PrimitiveArrayTypeDefaultConstructor::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)
@@ -97,6 +99,8 @@ PrimitiveArrayTypeCopyConstructor::PrimitiveArrayTypeCopyConstructor(Cm::Sym::Ty
     thatParam->SetType(typeRepository.MakeConstReferenceType(Type(), Cm::Parsing::Span()));
     AddSymbol(thatParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    AddSymbol(entry);
 }
 
 void PrimitiveArrayTypeCopyConstructor::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)
@@ -166,6 +170,8 @@ PrimitiveArrayTypeCopyAssignment::PrimitiveArrayTypeCopyAssignment(Cm::Sym::Type
     thatParam->SetType(typeRepository.MakeConstReferenceType(Type(), Cm::Parsing::Span()));
     AddSymbol(thatParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    AddSymbol(entry);
 }
 
 void PrimitiveArrayTypeCopyAssignment::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)
@@ -236,6 +242,8 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeDefaultConstructor(Cm::Sym::TypeSymbol
     defaultConstructorSymbol->SetArrayConstructor();
     defaultConstructorSymbol->AddSymbol(thisParam);
     defaultConstructorSymbol->ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    defaultConstructorSymbol->AddSymbol(entry);
     std::unique_ptr<Cm::BoundTree::BoundFunction> defaultConstructor(new Cm::BoundTree::BoundFunction(nullptr, defaultConstructorSymbol));
     Cm::Ast::CompoundStatementNode* body = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
     defaultConstructor->Own(body);
@@ -279,6 +287,8 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeCopyConstructor(Cm::Sym::TypeSymbol* a
     copyConstructorSymbol->SetAccess(Cm::Sym::SymbolAccess::public_);
     copyConstructorSymbol->SetReplicated();
     copyConstructorSymbol->SetArrayConstructor();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    copyConstructorSymbol->AddSymbol(entry);
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyConstructor(new Cm::BoundTree::BoundFunction(nullptr, copyConstructorSymbol));
     Cm::Ast::CompoundStatementNode* body = new Cm::Ast::CompoundStatementNode(Cm::Parsing::Span());
     copyConstructor->Own(body);
@@ -405,6 +415,8 @@ ArrayIndexing::ArrayIndexing(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::T
     indexParam->SetType(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId)));
     AddSymbol(indexParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    AddSymbol(entry);
 }
 
 void ArrayIndexing::Generate(Cm::Core::Emitter& emitter, Cm::Core::GenResult& result)

@@ -38,7 +38,7 @@ public:
     TypeSymbol* MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
     TypeSymbol* MakePlainType(TypeSymbol* type);
     TypeSymbol* MakePlainTypeWithOnePointerRemoved(TypeSymbol* type);
-    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes);
+    void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes);
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes);
     void Import(Reader& reader, SymbolTable& symbolTable);
     void ReplaceReplicaTypes();
