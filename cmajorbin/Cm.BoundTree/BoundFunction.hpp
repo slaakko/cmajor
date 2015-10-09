@@ -36,6 +36,7 @@ public:
     Cm::Sym::BcuItemType GetBcuItemType() const override { return Cm::Sym::BcuItemType::bcuFunction; }
     void Write(Cm::Sym::BcuWriter& writer) override;
     void Read(Cm::Sym::BcuReader& reader) override;
+    bool IsBoundFunctionNode() const override { return true; }
     Cm::Sym::FunctionSymbol* GetFunctionSymbol() const { return functionSymbol; }
     void SetBody(BoundCompoundStatement* body_);
     BoundCompoundStatement* Body() const { return body.get(); }

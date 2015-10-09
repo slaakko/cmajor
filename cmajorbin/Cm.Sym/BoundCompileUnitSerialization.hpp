@@ -111,7 +111,7 @@ class BcuClassDelegateTypeOpFactory
 public:
     virtual ~BcuClassDelegateTypeOpFactory();
     virtual FunctionSymbol* CreateClassDelegateOp(BcuItemType itemType, TypeRepository& typeRepository, ClassDelegateTypeSymbol* classDelegateTypeSymbol, FunctionSymbol* functionSymbol) const = 0;
-    virtual FunctionSymbol* CreateClassDelegateOpEqual() const = 0;
+    virtual FunctionSymbol* CreateClassDelegateOpEqual(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol) const = 0;
 };
 
 class FunctionSymbol;

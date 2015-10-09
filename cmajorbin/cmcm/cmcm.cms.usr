@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <DevEnv.SolutionConfig>
-    <activeConfig>release.llvm</activeConfig>
+    <activeConfig>full.llvm</activeConfig>
     <configurations>
         <configuration>
             <name>debug.llvm</name>
@@ -18,13 +18,23 @@
             <buildOptions>
                 <quiet>false</quiet>
                 <emitOptIrCodeFile>true</emitOptIrCodeFile>
-                <wpo>true</wpo>
             </buildOptions>
         </configuration>
         <configuration>
             <name>release.c</name>
             <conditionalCompilationSymbols />
             <buildOptions />
+        </configuration>
+        <configuration>
+            <name>full.llvm</name>
+            <conditionalCompilationSymbols />
+            <buildOptions>
+                <quiet>false</quiet>
+                <emitOptIrCodeFile>false</emitOptIrCodeFile>
+                <classHierarchyDotFilePath>C:\Temp\ch.dot</classHierarchyDotFilePath>
+                <tpgDotFilePath>C:\Temp\tpg.dot</tpgDotFilePath>
+                <virtualCallTextFilePath>C:\Temp\vcalls.txt</virtualCallTextFilePath>
+            </buildOptions>
         </configuration>
     </configurations>
 </DevEnv.SolutionConfig>

@@ -256,6 +256,7 @@ void SymbolTable::BeginFunctionScope(Cm::Ast::FunctionNode* functionNode, Functi
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
     BeginContainer(functionSymbol);
+    AddEntrySymbol();
 }
 
 void SymbolTable::EndFunctionScope()
@@ -293,7 +294,8 @@ void SymbolTable::EndDelegateScope()
 void SymbolTable::BeginClassDelegateScope(Cm::Ast::ClassDelegateNode* classDelegateNode)
 {
     Cm::Ast::IdentifierNode* classDelegateId = classDelegateNode->Id();
-    ClassDelegateTypeSymbol* classDelegateSymbol = new ClassDelegateTypeSymbol(classDelegateId->GetSpan(), classDelegateId->Str());
+    uint64_t nextClassNumber = GetClassCounter()->GetCid();
+    ClassDelegateTypeSymbol* classDelegateSymbol = new ClassDelegateTypeSymbol(classDelegateId->GetSpan(), classDelegateId->Str(), true, nextClassNumber);
     SetSidAndAddSymbol(classDelegateSymbol);
     typeRepository.AddType(classDelegateSymbol);
     ContainerScope* classDelegateScope = classDelegateSymbol->GetContainerScope();
@@ -505,7 +507,7 @@ FunctionSymbol* SymbolTable::GetFunctionSymbol(Cm::Ast::Node* functionNode) cons
 
 void SymbolTable::Export(Writer& writer)
 {
-    std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash> exportedTemplateTypes;
+    std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash> exportedTemplateTypes;
     std::unordered_set<Symbol*> collectedTemplateTypes;
     globalNs.CollectExportedTemplateTypes(collectedTemplateTypes, exportedTemplateTypes);
     if (GetGlobalFlag(GlobalFlags::fullConfig))
@@ -514,11 +516,14 @@ void SymbolTable::Export(Writer& writer)
     }
     std::unordered_set<Symbol*> collectedDerivedTypes;
     std::unordered_set<TypeSymbol*> exportedDerivedTypes;
-    std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>::const_iterator e = exportedTemplateTypes.cend();
-    for (std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>::const_iterator i = exportedTemplateTypes.cbegin(); i != e; ++i)
+    std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>::const_iterator e = exportedTemplateTypes.cend();
+    for (std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>::const_iterator i = exportedTemplateTypes.cbegin(); i != e; ++i)
     {
-        TemplateTypeSymbol* exportedTemplateType = i->second;
-        exportedTemplateType->CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
+        const std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes = i->second;
+        for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
+        {
+            exportedTemplateType->CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
+        }
     }
     globalNs.CollectExportedDerivedTypes(collectedDerivedTypes, exportedDerivedTypes);
     if (GetGlobalFlag(GlobalFlags::fullConfig))
@@ -527,15 +532,28 @@ void SymbolTable::Export(Writer& writer)
     }
     writer.Write(&globalNs);
     writer.GetBinaryWriter().Write(int(exportedTemplateTypes.size()));
-    for (std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>::const_iterator i = exportedTemplateTypes.cbegin(); i != e; ++i)
+    for (std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>::const_iterator i = exportedTemplateTypes.cbegin(); i != e; ++i)
     {
-        TemplateTypeSymbol* exportedTemplateType = i->second;
+        TemplateTypeSymbol* exportedTemplateType = *i->second.begin();
         writer.Write(exportedTemplateType);
     }
     writer.GetBinaryWriter().Write(int(exportedDerivedTypes.size()));
     for (TypeSymbol* exportedDerivedType : exportedDerivedTypes)
     {
         writer.Write(exportedDerivedType);
+    }
+    if (GetGlobalFlag(GlobalFlags::fullConfig))
+    {
+        writer.GetBinaryWriter().Write(int(exportedTemplateTypes.size()));
+        for (std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>::const_iterator i = exportedTemplateTypes.cbegin(); i != e; ++i)
+        {
+            const std::unordered_set<TemplateTypeSymbol*>& exportedTemplateTypes = i->second;
+            writer.GetBinaryWriter().Write(int(exportedTemplateTypes.size()));
+            for (TemplateTypeSymbol* exportedTemplateType : exportedTemplateTypes)
+            {
+                writer.GetBinaryWriter().Write(exportedTemplateType->Cid());
+            }
+        }
     }
 }
 
@@ -641,7 +659,7 @@ void SymbolTable::AddSymbol(Symbol* symbol)
     if (symbol->Sid() != noSid)
     {
         symbolMap[symbol->Sid()] = symbol;
-        if (symbol->IsClassTypeSymbol() && !symbol->IsClassDelegateTypeSymbol())
+        if (symbol->IsClassTypeSymbol())
         {
             ClassTypeSymbol* cls = static_cast<ClassTypeSymbol*>(symbol);
             classes.insert(cls);
@@ -657,7 +675,7 @@ void SymbolTable::AddSymbol(Symbol* symbol)
     }
     else
     {
-        if (!symbol->IsNamespaceSymbol())
+        if (!symbol->IsNamespaceSymbol() && !symbol->IsEntrySymbol())
         {
             int x = 0;
         }

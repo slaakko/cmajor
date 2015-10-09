@@ -265,6 +265,8 @@ Cm::Sym::FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation,
     defaultConstructorSymbol->AddSymbol(thisParam);
     defaultConstructorSymbol->ComputeName();
     defaultConstructorSymbol->SetNothrow();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    defaultConstructorSymbol->AddSymbol(entry);
     if (!generateImplementation) return defaultConstructorSymbol;
     AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> defaultConstructor(new Cm::BoundTree::BoundFunction(nullptr, defaultConstructorSymbol));
@@ -352,6 +354,8 @@ Cm::Sym::FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bo
     copyConstructorSymbol->AddSymbol(thisParam);
     copyConstructorSymbol->AddSymbol(thatParam);
     copyConstructorSymbol->ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    copyConstructorSymbol->AddSymbol(entry);
     if (!generateImplementation) return copyConstructorSymbol;
     AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyConstructor(new Cm::BoundTree::BoundFunction(nullptr, copyConstructorSymbol));
@@ -452,6 +456,8 @@ Cm::Sym::FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bo
     moveConstructorSymbol->AddSymbol(thisParam);
     moveConstructorSymbol->AddSymbol(thatParam);
     moveConstructorSymbol->ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    moveConstructorSymbol->AddSymbol(entry);
     if (!generateImplementation) return moveConstructorSymbol;
     AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> moveConstructor(new Cm::BoundTree::BoundFunction(nullptr, moveConstructorSymbol));
@@ -565,6 +571,8 @@ Cm::Sym::FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, boo
     Cm::Sym::TypeSymbol* voidType = compileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
     copyAssignmentSymbol->SetReturnType(voidType);
     copyAssignmentSymbol->ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    copyAssignmentSymbol->AddSymbol(entry);
     if (!generateImplementation) return copyAssignmentSymbol;
     AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> copyAssignment(new Cm::BoundTree::BoundFunction(nullptr, copyAssignmentSymbol));
@@ -652,6 +660,8 @@ Cm::Sym::FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, boo
     moveAssignmentSymbol->AddSymbol(thisParam);
     moveAssignmentSymbol->AddSymbol(thatParam);
     moveAssignmentSymbol->ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    moveAssignmentSymbol->AddSymbol(entry);
     if (!generateImplementation) return moveAssignmentSymbol;
     AddClassTypeToIrClassTypeRepository(classTypeSymbol, compileUnit, containerScope);
     std::unique_ptr<Cm::BoundTree::BoundFunction> moveAssignment(new Cm::BoundTree::BoundFunction(nullptr, moveAssignmentSymbol));
@@ -744,7 +754,11 @@ Cm::Sym::FunctionSymbol* GenerateDestructorSymbol(Cm::Sym::SymbolTable& symbolTa
     destructorSymbol->ComputeName();
     destructorSymbol->SetNothrow();
     destructorSymbol->SetPublic();
-    return destructorSymbol; 
+    if (classTypeSymbol->IsTemplateTypeSymbol())
+    {
+        destructorSymbol->SetMemberOfTemplateType();
+    }
+    return destructorSymbol;
 }
 
 Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& symbolTable, const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Ast::CompileUnitNode* compileUnit)
@@ -761,6 +775,8 @@ Cm::Sym::FunctionSymbol* GenerateStaticConstructorSymbol(Cm::Sym::SymbolTable& s
     staticConstructorSymbol->SetNothrow();
     staticConstructorSymbol->SetPublic();
     staticConstructorSymbol->SetMutexId(Cm::Sym::GetMutexTable()->GetNextMutexId());
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Cm::Parsing::Span());
+    staticConstructorSymbol->AddSymbol(entry);
     return staticConstructorSymbol;
 }
 

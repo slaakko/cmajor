@@ -198,7 +198,7 @@ public:
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
     virtual void Dump(CodeFormatter& formatter);
     virtual void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes);
-    virtual void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes);
+    virtual void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes);
     virtual void InitVirtualFunctionTables();
     virtual void MakeIrType();
     virtual std::string DocId() const { return name; }

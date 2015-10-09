@@ -1408,7 +1408,7 @@ void ProcessClasses(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classes
         formatter.WriteLine("node [shape=record];");
         for (Cm::Sym::ClassTypeSymbol* cls : classesByPriority)
         {
-            formatter.WriteLine("node" + std::to_string(cls->Cid()) + " [label=\"" + cls->FullName() + "|" + std::to_string(cls->Key()) + "|" + std::to_string(cls->Cid()) + "|" + (cls->IsLive() ? "+" : "-") + "\"];");
+            formatter.WriteLine("node" + std::to_string(cls->Cid()) + " [label=\"" + Cm::Opt::ToNodeLabel(cls->FullName()) + "|" + std::to_string(cls->Key()) + "|" + std::to_string(cls->Cid()) + "|" + (cls->IsLive() ? "+" : "-") + "\"];");
             if (cls->BaseClass())
             {
                 formatter.WriteLine("node" + std::to_string(cls->Cid()) + " -> node" + std::to_string(cls->BaseClass()->Cid()));
@@ -1436,6 +1436,11 @@ void ProcessProgram(Cm::Ast::Project* project)
     std::vector<uint64_t> classHierarchyTable;
     ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
     symbolTable.InitVirtualFunctionTables();
+    bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+    if (!quiet)
+    {
+        std::cout << "Building type propagation graph..." << std::endl;
+    }
     Cm::Opt::TpGraph tpGraph(symbolTable);
     Cm::Opt::TpGraphBuilderVisitor tpGraphBuilderVisitor(tpGraph);
     for (const std::string& bcuPath : allBcuPaths)
@@ -1450,6 +1455,13 @@ void ProcessProgram(Cm::Ast::Project* project)
         compileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(compileUnit));
         compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));
         compileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(compileUnit));
+        compileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(compileUnit));
+        compileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(compileUnit));
+        compileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(compileUnit));
+        if (!quiet)
+        {
+            std::cout << "> " << bcuPath << std::endl;
+        }
         compileUnit.Read(reader);
         compileUnit.Accept(tpGraphBuilderVisitor);
     }
@@ -1459,10 +1471,12 @@ void ProcessProgram(Cm::Ast::Project* project)
     {
         tpGraph.Print(tpgDotFileName);
     }
-    std::ofstream graphFile("C:\\temp\\calls.txt");
-    Cm::Util::CodeFormatter formatter(graphFile);
-    tpGraphBuilderVisitor.PrintVirtualCalls(formatter);
+    tpGraphBuilderVisitor.PrintVirtualCalls();
     ProcessClasses(symbolTable.Classes());
+    if (!quiet)
+    {
+        std::cout << "Generating code..." << std::endl;
+    }
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)

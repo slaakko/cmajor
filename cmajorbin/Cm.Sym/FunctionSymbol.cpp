@@ -19,6 +19,7 @@
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Clone.hpp>
+#include <iostream>
 #include <stdexcept>
 
 namespace Cm { namespace Sym {
@@ -338,6 +339,10 @@ bool FunctionSymbol::IsDestructor() const
 
 void FunctionSymbol::Write(Writer& writer)
 {
+    if (Sid() == noSid)
+    {
+        std::cout << FullName() << " has no sid" << std::endl;
+    }
     bool justSymbol = false;
     if (IsFunctionTemplateSpecialization() || IsMemberOfTemplateType())
     {
@@ -840,7 +845,7 @@ void FunctionSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>& co
     }
 }
 
-void FunctionSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
+void FunctionSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes)
 {
     if (returnType)
     {

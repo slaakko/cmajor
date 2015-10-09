@@ -27,7 +27,7 @@ public:
     int LayoutIndex() const { return layoutIndex; }
     void SetLayoutIndex(int layoutIndex_) { layoutIndex = layoutIndex_; }
 	void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
-	void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes) override;
+	void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes) override;
     void Dump(CodeFormatter& formatter) override;
     void ReplaceReplicaTypes() override;
 private:

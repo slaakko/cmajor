@@ -80,6 +80,11 @@ void GlobalSettings::SetTpgDotFileName(const std::string& tpgDotFileName_)
     tpgDotFileName = tpgDotFileName_;
 }
 
+void GlobalSettings::SetVirtualCallFileName(const std::string& virtualCallFileName_)
+{
+    virtualCallFileName = virtualCallFileName_;
+}
+
 GlobalSettings* globalSettings = nullptr;
 
 GlobalSettings* GetGlobalSettings()

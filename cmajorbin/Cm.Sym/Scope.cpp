@@ -12,6 +12,7 @@
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <algorithm>

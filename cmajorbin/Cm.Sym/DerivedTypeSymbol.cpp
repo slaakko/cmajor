@@ -365,7 +365,7 @@ void DerivedTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>&
     }
 }
 
-void DerivedTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
+void DerivedTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes)
 {
     if (!IsExportSymbol()) return;
     if (Source() == SymbolSource::project)

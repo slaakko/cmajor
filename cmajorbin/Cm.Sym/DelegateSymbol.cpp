@@ -112,7 +112,7 @@ void DelegateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Symbol*>
     }
 }
 
-void DelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash>& exportedTemplateTypes)
+void DelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes)
 {
     if (returnType)
     {
@@ -217,6 +217,10 @@ ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::s
 {
 }
 
+ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, const std::string& name_, bool getNextId, uint64_t cid_) : ClassTypeSymbol(span_, name_, getNextId, cid_), flags(ClassDelegateTypeSymbolFlags::none), returnType(nullptr)
+{
+}
+
 std::string ClassDelegateTypeSymbol::GetMangleId() const
 {
     return MakeAssemblyName(FullName());
@@ -284,7 +288,7 @@ void ClassDelegateTypeSymbol::CollectExportedDerivedTypes(std::unordered_set<Sym
     }
 }
 
-void ClassDelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, TemplateTypeSymbol*, TypeIdHash >& exportedTemplateTypes)
+void ClassDelegateTypeSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash >& exportedTemplateTypes)
 {
     if (returnType)
     {

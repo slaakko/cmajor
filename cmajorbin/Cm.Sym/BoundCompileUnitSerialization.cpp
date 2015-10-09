@@ -13,6 +13,7 @@
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/DelegateSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <iostream>
 
 namespace Cm { namespace Sym {
 
@@ -60,10 +61,20 @@ void BcuWriter::Write(Symbol* symbol)
                 writer.GetBinaryWriter().Write(itemType);
                 static_cast<BcuItem*>(functionSymbol)->Write(*this);
             }
+            else if (functionSymbol->IsClassDelegateEqualOp())
+            {
+                uint8_t itemType = uint8_t(functionSymbol->GetBcuItemType());
+                writer.GetBinaryWriter().Write(itemType);
+                static_cast<BcuItem*>(functionSymbol)->Write(*this);
+            }
             else
             {
                 uint8_t itemType = uint8_t(BcuItemType::bcuFunctionSymbol);
                 writer.GetBinaryWriter().Write(itemType);
+                if (symbol->Sid() == noSid)
+                {
+                    std::cout << symbol->FullName() << " has no sid" << std::endl;
+                }
                 writer.GetBinaryWriter().Write(symbol->Sid());
                 symbol->DoSerialize();
             }
@@ -312,6 +323,10 @@ Symbol* BcuReader::ReadSymbol()
             {
                 ClassDelegateTypeSymbol* classDelegateType = static_cast<ClassDelegateTypeSymbol*>(typeSymbol);
                 Symbol* functionSymbol = ReadSymbol();
+                if (!functionSymbol)
+                {
+                    throw std::runtime_error("got no function symbol");
+                }
                 if (functionSymbol->IsFunctionSymbol())
                 {
                     FunctionSymbol* fun = static_cast<FunctionSymbol*>(functionSymbol);
@@ -329,21 +344,20 @@ Symbol* BcuReader::ReadSymbol()
             {
                 throw std::runtime_error("class delegate type symbol expected");
             }
-
         }
         case BcuItemType::bcuClassDelegateEqualOp:
         {
-            FunctionSymbol* createdClassDelegateEqualOp = classDelegateTypeOpFactory.CreateClassDelegateOpEqual();
-            static_cast<BcuItem*>(createdClassDelegateEqualOp)->Read(*this);
-            delete createdClassDelegateEqualOp;
-            if (classDelegateEqualOp)
+            Symbol* typeSymbol = ReadSymbol();
+            if (typeSymbol->IsClassDelegateTypeSymbol())
             {
+                ClassDelegateTypeSymbol* classDelegateType = static_cast<ClassDelegateTypeSymbol*>(typeSymbol);
+                FunctionSymbol* classDelegateEqualOp = classDelegateTypeOpFactory.CreateClassDelegateOpEqual(reader.GetSymbolTable().GetTypeRepository(), classDelegateType);
                 boundCompileUnit->Own(classDelegateEqualOp);
                 return classDelegateEqualOp;
             }
             else
             {
-                throw std::runtime_error("class delegate equal op not set");
+                throw std::runtime_error("class delegate type symbol expected");
             }
         }
         case BcuItemType::bcuOtherSymbol:

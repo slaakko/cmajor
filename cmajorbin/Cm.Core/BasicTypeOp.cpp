@@ -81,6 +81,8 @@ DefaultCtor::DefaultCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thisParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void DefaultCtor::Generate(Emitter& emitter, GenResult& result)
@@ -100,6 +102,8 @@ CopyCtor::CopyCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol*
     thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void CopyCtor::Generate(Emitter& emitter, GenResult& result)
@@ -121,6 +125,8 @@ CopyAssignment::CopyAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void CopyAssignment::Generate(Emitter& emitter, GenResult& result)
@@ -140,6 +146,8 @@ MoveCtor::MoveCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol*
     thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void MoveCtor::Generate(Emitter& emitter, GenResult& result)
@@ -161,6 +169,8 @@ MoveAssignment::MoveAssignment(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void MoveAssignment::Generate(Emitter& emitter, GenResult& result)
@@ -182,6 +192,8 @@ OpEqual::OpEqual(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* t
     rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpEqual::Generate(Emitter& emitter, GenResult& result)
@@ -236,6 +248,8 @@ OpLess::OpLess(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* typ
     rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpLess::Generate(Emitter& emitter, GenResult& result)
@@ -290,6 +304,8 @@ BinOp::BinOp(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_
     rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(rightParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void BinOp::Generate(Emitter& emitter, GenResult& result)
@@ -467,6 +483,8 @@ OpNot::OpNot(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpNot::Generate(Emitter& emitter, GenResult& result)
@@ -507,6 +525,8 @@ OpUnaryPlus::OpUnaryPlus(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpUnaryPlus::Generate(Emitter& emitter, GenResult& result)
@@ -523,6 +543,8 @@ OpUnaryMinus::OpUnaryMinus(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::Typ
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpUnaryMinus::Generate(Emitter& emitter, GenResult& result)
@@ -555,6 +577,8 @@ OpComplement::OpComplement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::Typ
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpComplement::Generate(Emitter& emitter, GenResult& result)
@@ -571,7 +595,6 @@ void OpComplement::Generate(Emitter& emitter, GenResult& result)
     Ir::Intf::Object* minus1 = GetIrType()->CreateMinusOne();
     emitter.Own(minus1);
     emitter.Emit(Cm::IrIntf::Xor(GetIrType(), result.MainObject(), arg1, minus1));
-
 }
 
 OpIncrement::OpIncrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* type_) : BasicTypeOp(type_)
@@ -583,6 +606,8 @@ OpIncrement::OpIncrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpIncrement::Generate(Emitter& emitter, GenResult& result)
@@ -605,6 +630,8 @@ OpDecrement::OpDecrement(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeS
     operandParam->SetType(Type());
     AddSymbol(operandParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 void OpDecrement::Generate(Emitter& emitter, GenResult& result)
@@ -631,6 +658,8 @@ ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
+    Cm::Sym::EntrySymbol* entry = new Cm::Sym::EntrySymbol(Span());
+    AddSymbol(entry);
 }
 
 ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::TypeSymbol* targetType_, Cm::Sym::TypeSymbol* sourceType_, Cm::Sym::ConversionType conversionType_, ConversionInst conversionInst_,
