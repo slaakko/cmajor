@@ -24,6 +24,7 @@ public:
     void EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
     void BeginVisit(Cm::BoundTree::BoundClass& boundClass) override;
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
+    Cm::Core::StaticMemberVariableRepository& GetStaticMemberVariableRepository() override { return staticMemberVariableRepository; }
 private:
     Cm::Core::CStaticMemberVariableRepository staticMemberVariableRepository;
     std::string funFilePath;

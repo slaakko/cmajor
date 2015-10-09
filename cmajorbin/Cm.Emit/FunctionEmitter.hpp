@@ -34,7 +34,7 @@ public:
     std::string MakeUniqueAssemblyName(const std::string& name);
 private:
     Cm::Core::IrFunctionRepository* irFunctionRepository;
-    typedef std::unordered_map<Cm::Sym::Symbol*, Ir::Intf::Object*>  LocalVariableObjectMap;
+    typedef std::unordered_map<uint32_t, Ir::Intf::Object*>  LocalVariableObjectMap;
     typedef LocalVariableObjectMap::const_iterator LocalVariableObjectMapIt;
     LocalVariableObjectMap localVariableObjectMap;
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedIrObjects;

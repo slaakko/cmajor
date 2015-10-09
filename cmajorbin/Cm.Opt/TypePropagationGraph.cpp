@@ -404,7 +404,7 @@ void TpGraphBuilderVisitor::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 
 void TpGraphBuilderVisitor::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
-    inMain = boundFunction.IsUserMain();
+    inMain = boundFunction.GetFunctionSymbol()->GroupName() == "main";
     Cm::Sym::FunctionSymbol* fun = boundFunction.GetFunctionSymbol();
     if (!fun->IsDestructor())
     {
@@ -480,10 +480,6 @@ void TpGraphBuilderVisitor::EndVisit(Cm::BoundTree::BoundFunction& boundFunction
 
 void TpGraphBuilderVisitor::Visit(Cm::BoundTree::BoundConstructionStatement& boundConstructionStatement)
 {
-    if (boundConstructionStatement.Constructor()->IsDelegateFromFunCtor())
-    {
-        int x = 0;
-    }
     Cm::Sym::LocalVariableSymbol* localVariable = boundConstructionStatement.LocalVariable();
     if (localVariable->GetType()->GetBaseType()->IsClassTypeSymbol())
     {

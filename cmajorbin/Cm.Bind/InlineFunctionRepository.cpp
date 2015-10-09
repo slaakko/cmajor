@@ -102,6 +102,7 @@ void InlineFunctionRepository::Write(Cm::Sym::BcuWriter& writer)
     writer.GetBinaryWriter().Write(n);
     for (Cm::Sym::FunctionSymbol* functionInstanceSymbol : functionIntanceSymbols)
     {
+        writer.GetBinaryWriter().Write(functionInstanceSymbol->Parent()->FullName());
         writer.GetSymbolWriter().Write(functionInstanceSymbol);
     }
 }
@@ -111,11 +112,22 @@ void InlineFunctionRepository::Read(Cm::Sym::BcuReader& reader)
     int32_t n = reader.GetBinaryReader().ReadInt();
     for (int32_t i = 0; i < n; ++i)
     {
+        std::string parentFullName = reader.GetBinaryReader().ReadString();
+        Cm::Sym::Symbol* parent = boundCompileUnit.SymbolTable().GlobalScope()->Lookup(parentFullName);
+        if (!parent)
+        {
+            throw std::runtime_error("got no parent");
+        }
         Cm::Sym::Symbol* symbol = reader.GetSymbolReader().ReadSymbol();
         if (symbol->IsFunctionSymbol())
         {
+            symbol->SetParent(parent);
             Cm::Sym::FunctionSymbol* functionInstanceSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
             ownedFunctionInstanceSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionInstanceSymbol));
+        }
+        else
+        {
+            throw std::runtime_error("function symbol expected");
         }
     }
 }

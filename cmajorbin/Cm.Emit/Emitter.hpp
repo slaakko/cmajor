@@ -26,6 +26,7 @@ public:
         Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_);
     void BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
     virtual void WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter) = 0;
+    virtual Cm::Core::StaticMemberVariableRepository& GetStaticMemberVariableRepository() = 0;
 protected:
     const std::unordered_set<Ir::Intf::Function*>& ExternalFunctions() const { return externalFunctions; }
     std::unordered_set<Ir::Intf::Function*>& ExternalFunctions() { return externalFunctions; }

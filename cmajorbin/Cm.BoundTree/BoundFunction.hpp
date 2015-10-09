@@ -45,6 +45,7 @@ public:
     std::string GetNextTempVariableName();
     Cm::Sym::LocalVariableSymbol* CreateTempLocalVariable(Cm::Sym::TypeSymbol* type);
     const std::vector<Cm::Sym::LocalVariableSymbol*>& LocalVariables() const { return localVariables; }
+    const std::vector<std::unique_ptr<Cm::Sym::LocalVariableSymbol>>& Temporaries() const { return temporaries; }
     void SetClassObjectLayoutFunIndex(int classObjectLayoutFunIndex_) { classObjectLayoutFunIndex = classObjectLayoutFunIndex_; }
     int GetClassObjectLayoutFunIndex() const { return classObjectLayoutFunIndex; }
     void Accept(Visitor& visitor) override;
@@ -66,8 +67,6 @@ public:
     BoundCompoundStatement* GetTryCompound(Cm::Ast::TryStatementNode* tryNode);
     void SetMainFunction() { isRealMain = true; };
     bool IsMainFunction() const { return isRealMain; }
-    bool IsUserMain() const { return isUserMain; }
-    void SetUserMain() { isUserMain = true; }
 private:
     std::unique_ptr<BoundCompoundStatement> body;
     Cm::Sym::FunctionSymbol* functionSymbol;
@@ -86,7 +85,6 @@ private:
     bool inHandler;
     std::stack<bool> inHandlerStack;
     bool isRealMain;
-    bool isUserMain;
 };
 
 } } // namespace Cm::BoundTree

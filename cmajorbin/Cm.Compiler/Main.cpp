@@ -184,8 +184,8 @@ int main(int argc, const char** argv)
                 "-c FILENAME     : compile only FILENAME, do not link\n" <<
                 "-config=debug   : use debug configuration (default)\n" <<
                 "-config=release : use release configuration\n" <<
-                "-config=profile : instrument program/library with profiling enabled\n" <<
-                "-config=full    : do full optimizations (whole program optimization) (experimental)\n"
+                "-config=profile : instrument program/library for profiling\n" <<
+                "-config=full    : do full optimizations (whole-program analysis) (experimental)\n"
                 "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" << 
                 "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, others:3)\n" <<
                 "-backend=llvm   : use LLVM backend (default)\n" <<

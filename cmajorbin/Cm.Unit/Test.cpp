@@ -142,11 +142,11 @@ Cm::Ast::FunctionNode* CreateDriverFunction(const std::string& unitTestName)
 
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* project, 
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, 
-    std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allBcuPaths, const std::string& unitTestName)
+    std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, std::vector<std::string>& allBcuPaths, const std::string& unitTestName)
 {
     std::vector<uint64_t> classHierarchyTable;
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
-    Cm::Build::ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
+    Cm::Build::ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
     testUnit->GlobalNs()->AddMember(CreateDriverFunction(unitTestName));
     symbolTable.InitVirtualFunctionTables();
     Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
@@ -219,6 +219,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     Cm::Build::GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
     std::vector<std::string> allDebugInfoFilePaths;
+    std::vector<std::string> allNativeObjectFilePaths;
     std::vector<std::string> allBcuPaths;
     std::vector<std::string> assemblyFilePaths;
     std::vector<std::string> cLibs;
@@ -226,7 +227,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     std::unordered_set<std::string> allDefines = defines;
     Cm::Build::AddPlatformAndConfigDefines(allDefines);
     Cm::Sym::Define(allDefines);
-    BuildSymbolTable(symbolTable, globalConceptData, testUnit, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, unitTestName);
+    BuildSymbolTable(symbolTable, globalConceptData, testUnit, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, unitTestName);
     boost::filesystem::create_directories(project->OutputBasePath());
     std::string ext;
     Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();

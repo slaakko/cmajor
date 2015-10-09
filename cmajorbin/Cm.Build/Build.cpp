@@ -155,8 +155,8 @@ Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const s
 }
 
 void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths,
-    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allBcuPaths, 
-    std::vector<uint64_t>& classHierarchyTable)
+    std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, 
+    std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable)
 {
     boost::filesystem::path projectBase = project->BasePath();
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
@@ -177,7 +177,7 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
         {
             importedModules.insert(libraryReferencePath);
             Cm::Sym::Module module(libraryReferencePath);
-            module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
+            module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
             module.CheckUpToDate();
         }
     }
@@ -188,11 +188,11 @@ void ReadNextSid(Cm::Sym::SymbolTable& symbolTable);
 
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths,
-    std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable)
+    std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable)
 {
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
     ReadNextSid(symbolTable);
-    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
+    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
     symbolTable.InitVirtualFunctionTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
@@ -1422,6 +1422,7 @@ void ProcessClasses(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classes
 void ProcessProgram(Cm::Ast::Project* project)
 {
     std::vector<std::string> assemblyFilePaths;
+    std::vector<std::string> afps;
     assemblyFilePaths.push_back(project->AssemblyFilePath());
     std::vector<std::string> cLibs;
     cLibs.insert(cLibs.end(), project->CLibraryFilePaths().begin(), project->CLibraryFilePaths().end());
@@ -1432,9 +1433,10 @@ void ProcessProgram(Cm::Ast::Project* project)
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
     std::vector<std::string> allReferenceFilePaths;
     std::vector<std::string> allDebugInfoFilePaths;
+    std::vector<std::string> allNativeObjectFilePaths;
     std::vector<std::string> allBcuPaths;
     std::vector<uint64_t> classHierarchyTable;
-    ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
+    ImportModules(symbolTable, project, libraryDirs, afps, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
     symbolTable.InitVirtualFunctionTables();
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
@@ -1477,6 +1479,43 @@ void ProcessProgram(Cm::Ast::Project* project)
     {
         std::cout << "Generating code..." << std::endl;
     }
+    std::vector<std::string> objectFilePaths = allNativeObjectFilePaths;
+    for (const std::string& bcuPath : allBcuPaths)
+    {
+        Cm::Core::BasicTypeOpFactory basicTypeOpFactory;
+        Cm::BoundTree::Factory itemFactory;
+        Cm::Bind::ArrayTypeOpFactory arrayTypeOpFactory;
+        Cm::Bind::DelegateTypeOpFactory delegateTypeOpFactory;
+        Cm::Bind::ClassDelegateTypeOpFactory classDelegateTypeOpFactory;
+        Cm::Sym::BcuReader reader(bcuPath, symbolTable, basicTypeOpFactory, itemFactory, arrayTypeOpFactory, delegateTypeOpFactory, classDelegateTypeOpFactory);
+        Cm::BoundTree::BoundCompileUnit compileUnit(symbolTable);
+        compileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(compileUnit));
+        compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));
+        compileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(compileUnit));
+        compileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(compileUnit));
+        compileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(compileUnit));
+        compileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(compileUnit));
+        if (!quiet)
+        {
+            std::cout << "> " << bcuPath << std::endl;
+        }
+        compileUnit.Read(reader);
+        boost::filesystem::path cuFilePath = boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(compileUnit.ProjectName() + "." + compileUnit.FileName());
+        compileUnit.SetPaths(cuFilePath.generic_string());
+        Emit(symbolTable.GetTypeRepository(), compileUnit);
+        GenerateObjectCode(compileUnit);
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+        {
+            GenerateOptimizedLlvmCodeFile(compileUnit);
+        }
+        objectFilePaths.push_back(compileUnit.ObjectFilePath());
+    }
+    GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, true);
+    GenerateClassHierarchyUnit(symbolTable, classHierarchyTable, project->OutputBasePath().generic_string(), objectFilePaths, true);
+    GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, 
+        int(classHierarchyTable.size()), true);
+    Archive(objectFilePaths, project->AssemblyFilePath());
+    Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
@@ -1488,7 +1527,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     }
     bool changed = false;
     bool full = Cm::Core::GetGlobalSettings()->Config() == "full";
-    if (Cm::Core::GetGlobalSettings()->Config() == "profile")
+    if (Cm::Core::GetGlobalSettings()->Config() == "profile" || full && project->GetTarget() == Cm::Ast::Target::program)
     {
         rebuild = true;
     }
@@ -1529,6 +1568,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
     std::vector<std::string> allDebugInfoFilePaths;
+    std::vector<std::string> allNativeObjectFilePaths;
     std::vector<std::string> allBcuPaths;
     std::vector<uint64_t> classHierarchyTable;
     boost::filesystem::path outputBasePath = project->OutputBasePath();
@@ -1538,7 +1578,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         Cm::Sym::Module module(cmlFilePath);
         module.CheckFileVersion();
     }
-    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
+    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
     {
         ImportFunctionTables(allReferenceFilePaths);
@@ -1560,6 +1600,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     {
         changed = asmSourcesChanged;
     }
+    std::vector<std::string> nativeObjectFilePaths = objectFilePaths;
     std::vector<std::string> debugInfoFilePaths;
     std::vector<std::string> bcuPaths;
     if (Compile(project, symbolTable, syntaxTree, project->OutputBasePath().generic_string(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths, bcuPaths))
@@ -1614,6 +1655,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         projectModule.SetReferenceFilePaths(allReferenceFilePaths);
         projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
         projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
+        projectModule.SetNativeObjectFilePaths(nativeObjectFilePaths);
         projectModule.SetBcuPaths(bcuPaths);
         projectModule.Export(symbolTable);
         if (Cm::Core::GetGlobalSettings()->Config() == "profile")

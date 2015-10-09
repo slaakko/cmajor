@@ -66,6 +66,11 @@ void Module::SetDebugInfoFilePaths(const std::vector<std::string>& debugInfoFile
     debugInfoFilePaths = debugInfoFilePaths_;
 }
 
+void Module::SetNativeObjectFilePaths(const std::vector<std::string>& nativeObjectFilePaths_)
+{
+    nativeObjectFilePaths = nativeObjectFilePaths_;
+}
+
 void Module::SetBcuPaths(const std::vector<std::string>& bcuPaths_)
 {
     bcuPaths = bcuPaths_;
@@ -124,6 +129,16 @@ void Module::WriteDebugInfoFilePaths(Writer& writer)
     }
 }
 
+void Module::WriteNativeObjectFilePaths(Writer& writer)
+{
+    int32_t n = int32_t(nativeObjectFilePaths.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        writer.GetBinaryWriter().Write(nativeObjectFilePaths[i]);
+    }
+}
+
 void Module::WriteBcuPaths(Writer& writer)
 {
     int32_t n = int32_t(bcuPaths.size());
@@ -143,6 +158,7 @@ void Module::Export(SymbolTable& symbolTable)
     WriteReferenceFilePaths(writer);
     WriteCLibraryFilePaths(writer);
     WriteDebugInfoFilePaths(writer);
+    WriteNativeObjectFilePaths(writer);
     WriteBcuPaths(writer);
     symbolTable.Export(writer);
     ExportExceptionTable(writer);
@@ -244,6 +260,16 @@ void Module::ReadDebugInfoFilePaths(Reader& reader)
     }
 }
 
+void Module::ReadNativeObjectFilePaths(Reader& reader)
+{
+    int32_t n = reader.GetBinaryReader().ReadInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        std::string nativeObjectFilePath = reader.GetBinaryReader().ReadString();
+        nativeObjectFilePaths.push_back(nativeObjectFilePath);
+    }
+}
+
 void Module::ReadBcuPaths(Reader& reader)
 {
     int32_t n = reader.GetBinaryReader().ReadInt();
@@ -255,7 +281,8 @@ void Module::ReadBcuPaths(Reader& reader)
 }
 
 void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& importedModules, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, 
-    std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable)
+    std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, std::vector<std::string>& allBcuPaths, 
+    std::vector<uint64_t>& classHierarchyTable)
 {
     boost::filesystem::path afp = filePath;
     afp.replace_extension(".cma");
@@ -269,8 +296,10 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
     ReadReferenceFilePaths(reader);
     ReadCLibraryFilePaths(reader);
     ReadDebugInfoFilePaths(reader);
+    ReadNativeObjectFilePaths(reader);
     ReadBcuPaths(reader);
     allDebugInfoFilePaths.insert(allDebugInfoFilePaths.end(), debugInfoFilePaths.begin(), debugInfoFilePaths.end());
+    allNativeObjectFilePaths.insert(allNativeObjectFilePaths.end(), nativeObjectFilePaths.begin(), nativeObjectFilePaths.end());
     allBcuPaths.insert(allBcuPaths.end(), bcuPaths.begin(), bcuPaths.end());
     cLibs.insert(cLibs.end(), cLibraryFilePaths.begin(), cLibraryFilePaths.end());
     for (const std::string& referenceFilePath : referenceFilePaths)
@@ -279,7 +308,7 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
         {
             importedModules.insert(referenceFilePath);
             Module referencedModule(referenceFilePath);
-            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
+            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
             referencedModule.CheckUpToDate();
         }
     }
@@ -384,6 +413,7 @@ void Module::Dump()
     std::vector<std::string> cLibs;
     std::vector<std::string> allReferenceFilePaths;
     std::vector<std::string> allDebugInfoFilePaths;
+    std::vector<std::string> allNativeObjectFilePaths;
     std::vector<std::string> allBcuPaths;
     std::vector<uint64_t> classHierarchyTable;
     for (const std::string& referenceFilePath : referenceFilePaths)
@@ -392,7 +422,7 @@ void Module::Dump()
         {
             importedModules.insert(referenceFilePath);
             Module referencedModule(referenceFilePath);
-            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allBcuPaths, classHierarchyTable);
+            referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
         }
     }
     reader.MarkSymbolsProject();

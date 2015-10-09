@@ -136,7 +136,7 @@ void ClassTypeSymbol::Read(Reader& reader)
         {
             MemberVariableSymbol* memberVarSymbol = static_cast<MemberVariableSymbol*>(symbol);
             initializedVar.reset(memberVarSymbol);
-            reader.GetSymbolTable().AddSymbol(memberVarSymbol);
+            initializedVar->SetParent(this);
         }
     }
     if (IsClassTemplateSymbol())
