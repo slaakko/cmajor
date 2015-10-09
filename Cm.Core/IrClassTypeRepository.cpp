@@ -65,27 +65,22 @@ bool IrClassTypeRepository::Added(Cm::Sym::ClassTypeSymbol* classType) const
 void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
     classTypes.insert(classTypeSymbol);
+    classTypeMap[classTypeSymbol->FullName()] = classTypeSymbol;
 }
 
-void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
-    IrFunctionRepository& irFunctionRepository)
+void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
 {
-    bool exitDeclarationsGenerated = false;
+    WriteDestructionNodeDef(codeFormatter);
     for (Cm::Sym::ClassTypeSymbol* classType : ClassTypes())
     {
+        if (!classType->IrTypeMade())
+        {
+            classType->MakeIrType();
+        }
         WriteIrLayout(classType, codeFormatter);
         if (classType->IsVirtual())
         {
             WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
-        }
-        for (Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol : classType->StaticMemberVariables())
-        {
-            if (staticMemberVariableSymbol->GetType()->IsClassTypeSymbol() && static_cast<Cm::Sym::ClassTypeSymbol*>(staticMemberVariableSymbol->GetType())->Destructor() && 
-                !exitDeclarationsGenerated)
-            {
-                exitDeclarationsGenerated = true;
-                WriteDestructionNodeDef(codeFormatter);
-            }
         }
     }
 }
@@ -223,81 +218,103 @@ void LlvmIrClassTypeRepository::WriteDestructionNodeDef(Cm::Util::CodeFormatter&
     codeFormatter.WriteLine("declare void @register$destructor(%destruction$node*)");
 }
 
-void Visit(std::vector<Cm::Sym::ClassTypeSymbol*>& classOrder, Cm::Sym::ClassTypeSymbol* classType, std::unordered_set<Cm::Sym::ClassTypeSymbol*>& visited,
-    std::unordered_set<Cm::Sym::ClassTypeSymbol*>& tempVisit, std::unordered_map<Cm::Sym::ClassTypeSymbol*, std::vector<Cm::Sym::ClassTypeSymbol*>>& dependencyMap)
+void Visit(std::vector<std::string>& classOrder, const std::string& classTypeName, std::unordered_set<std::string>& visited,
+    std::unordered_set<std::string>& tempVisit, std::unordered_map<std::string, std::vector<std::string>>& dependencyMap)
 {
-    if (tempVisit.find(classType) == tempVisit.end())
+    if (tempVisit.find(classTypeName) == tempVisit.end())
     {
-        if (visited.find(classType) == visited.end())
+        if (visited.find(classTypeName) == visited.end())
         {
-            tempVisit.insert(classType);
-            std::unordered_map<Cm::Sym::ClassTypeSymbol*, std::vector<Cm::Sym::ClassTypeSymbol*>>::const_iterator i = dependencyMap.find(classType);
+            tempVisit.insert(classTypeName);
+            std::unordered_map<std::string, std::vector<std::string>>::const_iterator i = dependencyMap.find(classTypeName);
             if (i != dependencyMap.end())
             {
-                const std::vector<Cm::Sym::ClassTypeSymbol*>& dependents = i->second;
-                for (Cm::Sym::ClassTypeSymbol* dependent : dependents)
+                const std::vector<std::string>& dependents = i->second;
+                for (const std::string& dependent : dependents)
                 {
                     Visit(classOrder, dependent, visited, tempVisit, dependencyMap);
                 }
-                tempVisit.erase(classType);
-                visited.insert(classType);
-                classOrder.push_back(classType);
+                tempVisit.erase(classTypeName);
+                visited.insert(classTypeName);
+                classOrder.push_back(classTypeName);
             }
             else
             {
-                throw std::runtime_error("class type '" + classType->FullName() + "' not found in dependencies");
+                throw std::runtime_error("class type '" + classTypeName + "' not found in dependencies");
             }
         }
     }
     else
     {
-        throw std::runtime_error("circular class dependency for class '" + classType->FullName() + "' detected");
+        throw std::runtime_error("circular class dependency for class '" + classTypeName + "' detected");
     }
 }
 
-std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(std::unordered_map<Cm::Sym::ClassTypeSymbol*, std::vector<Cm::Sym::ClassTypeSymbol*>>& dependencyMap)
+std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*> classMap, std::unordered_map<std::string, std::vector<std::string>>& dependencyMap)
 {
-    std::vector<Cm::Sym::ClassTypeSymbol*> classOrder;
-    std::unordered_set<Cm::Sym::ClassTypeSymbol*> visited;
-    std::unordered_set<Cm::Sym::ClassTypeSymbol*> tempVisit;
-    for (const std::pair<Cm::Sym::ClassTypeSymbol*, std::vector<Cm::Sym::ClassTypeSymbol*>> p : dependencyMap)
+    std::vector<std::string> classNameOrder;
+    std::unordered_set<std::string> visited;
+    std::unordered_set<std::string> tempVisit;
+    for (const std::pair<std::string, std::vector<std::string>>& p : dependencyMap)
     {
-        Cm::Sym::ClassTypeSymbol* classType = p.first;
-        if (visited.find(classType) == visited.end())
+        std::string classTypeName = p.first;
+        if (visited.find(classTypeName) == visited.end())
         {
-            Visit(classOrder, classType, visited, tempVisit, dependencyMap);
+            Visit(classNameOrder, classTypeName, visited, tempVisit, dependencyMap);
+        }
+    }
+    std::vector<Cm::Sym::ClassTypeSymbol*> classOrder;
+    for (const std::string& className : classNameOrder)
+    {
+        std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>::const_iterator i = classMap.find(className);
+        if (i != classMap.cend())
+        {
+            classOrder.push_back(i->second);
+        }
+        else
+        {
+            throw std::runtime_error("class name '" + className + "' not found in the class map");
         }
     }
     return classOrder;
 }
 
-void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
-    IrFunctionRepository& irFunctionRepository)
+void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
 {
-    std::unordered_map<Cm::Sym::ClassTypeSymbol*, std::vector<Cm::Sym::ClassTypeSymbol*>> dependencyMap;
+    WriteDestructionNodeDef(codeFormatter);
+    std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*> classMap;
     for (Cm::Sym::ClassTypeSymbol* classType : ClassTypes())
     {
-        std::unordered_set<Cm::Sym::ClassTypeSymbol*> added;
-        std::vector<Cm::Sym::ClassTypeSymbol*>& dependencies = dependencyMap[classType];
+        if (!classType->IrTypeMade())
+        {
+            classType->MakeIrType();
+        }
+        classMap[classType->FullName()] = classType;
+    }
+    std::unordered_map<std::string, std::vector<std::string>> dependencyMap;
+    for (Cm::Sym::ClassTypeSymbol* classType : ClassTypes())
+    {
+        std::unordered_set<std::string> added;
+        std::vector<std::string>& dependencies = dependencyMap[classType->FullName()];
         if (classType->BaseClass())
         {
-            dependencies.push_back(classType->BaseClass());
-            added.insert(classType->BaseClass());
+            dependencies.push_back(classType->BaseClass()->FullName());
+            added.insert(classType->BaseClass()->FullName());
         }
         for (Cm::Sym::MemberVariableSymbol* memberVariable : classType->MemberVariables())
         {
             if (memberVariable->GetType()->IsClassTypeSymbol())
             {
                 Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariable->GetType());
-                if (added.find(memberVarClassType) == added.end())
+                if (added.find(memberVarClassType->FullName()) == added.end())
                 {
-                    added.insert(memberVarClassType);
-                    dependencies.push_back(memberVarClassType);
+                    added.insert(memberVarClassType->FullName());
+                    dependencies.push_back(memberVarClassType->FullName());
                 }
             }
         }
     }
-    std::vector<Cm::Sym::ClassTypeSymbol*> classOrder = CreateClassOrder(dependencyMap);
+    std::vector<Cm::Sym::ClassTypeSymbol*> classOrder = CreateClassOrder(classMap, dependencyMap);
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
     {
         std::unique_ptr<Ir::Intf::Type> typeName(Cm::IrIntf::CreateClassTypeName(classType->FullName()));
@@ -311,27 +328,10 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::
     {
         WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
     }
-    bool exitDeclarationsGenerated = false;
-    for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
-    {
-        for (Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol : classType->StaticMemberVariables())
-        {
-            if (staticMemberVariableSymbol->GetType()->IsClassTypeSymbol() && static_cast<Cm::Sym::ClassTypeSymbol*>(staticMemberVariableSymbol->GetType())->Destructor() &&
-                !exitDeclarationsGenerated)
-            {
-                exitDeclarationsGenerated = true;
-                WriteDestructionNodeDef(codeFormatter);
-            }
-        }
-    }
 }
 
 void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter)
 {
-    if (!classType->Bound())
-    {
-        throw std::runtime_error("class type '" + classType->FullName() + "' not bound");
-    }
     std::vector<Ir::Intf::Type*> memberTypes;
     std::vector<std::string> memberNames;
     std::string tagName = classType->GetMangleId() + "_";

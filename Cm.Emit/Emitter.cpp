@@ -12,6 +12,7 @@
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -28,6 +29,12 @@ void Emitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     WriteCompileUnitHeader(codeFormatter);
     stringRepository.Write(codeFormatter);
     irClassTypeRepository.Write(codeFormatter, externalFunctions, irFunctionRepository);
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
+    {
+        compileUnit.ClassTemplateRepository().RetrieveMemberVariableLayoutIndecesFrom(irClassTypeRepository.ClassTypes());
+        Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository = GetStaticMemberVariableRepository();
+        staticMemberVariableRepository.SetClassTypeMap(irClassTypeRepository.ClassTypeMap());
+    }
     currentCompileUnit = compileUnit.SyntaxUnit();
     enterFrameFun = compileUnit.SymbolTable().GetOverload("enter_frame");
     leaveFrameFun = compileUnit.SymbolTable().GetOverload("leave_frame");

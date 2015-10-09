@@ -1,0 +1,4 @@
+project Vehicles;
+target=program;
+assembly <vehicles.cma>;
+source <vehicles.cm>;

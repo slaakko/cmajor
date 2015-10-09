@@ -24,13 +24,12 @@ void LandingPad::AddDestructionStatement(BoundDestructionStatement* destructionS
     destructionStatements.push_back(std::unique_ptr<BoundDestructionStatement>(destructionStatement));
 }
 
-BoundFunction::BoundFunction() : BoundNode(nullptr), functionSymbol(), classObjectLayoutFunIndex(0), hasGotos(false), nextCatchId(0), currentTry(nullptr), inHandler(false), isRealMain(false), 
-    isUserMain(false)
+BoundFunction::BoundFunction() : BoundNode(nullptr), functionSymbol(), classObjectLayoutFunIndex(0), hasGotos(false), nextCatchId(0), currentTry(nullptr), inHandler(false), isRealMain(false)
 {
 }
 
 BoundFunction::BoundFunction(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionSymbol* functionSymbol_) :
-    BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0), hasGotos(false), nextCatchId(0), currentTry(nullptr), inHandler(false), isRealMain(false), isUserMain(false)
+    BoundNode(syntaxNode_), functionSymbol(functionSymbol_), classObjectLayoutFunIndex(0), hasGotos(false), nextCatchId(0), currentTry(nullptr), inHandler(false), isRealMain(false)
 {
 }
 
@@ -65,8 +64,6 @@ void BoundFunction::Write(Cm::Sym::BcuWriter& writer)
         writer.Write(body.get());
     }
     writer.GetBinaryWriter().Write(isRealMain);
-    isUserMain = functionSymbol == writer.GetSymbolWriter().GetSymbolTable()->UserMainFunction();
-    writer.GetBinaryWriter().Write(isUserMain);
 }
 
 void BoundFunction::Read(Cm::Sym::BcuReader& reader)
@@ -134,7 +131,6 @@ void BoundFunction::Read(Cm::Sym::BcuReader& reader)
         }
     }
     isRealMain = reader.GetBinaryReader().ReadBool();
-    isUserMain = reader.GetBinaryReader().ReadBool();
 }
 
 void BoundFunction::SetBody(BoundCompoundStatement* body_)

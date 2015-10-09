@@ -28,6 +28,7 @@ public:
         const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, const Cm::Parsing::Span& span) override;
     void Write(Cm::Sym::BcuWriter& writer) override;
     void Read(Cm::Sym::BcuReader& reader) override;
+    void RetrieveMemberVariableLayoutIndecesFrom(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classTypes) override;
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     typedef std::unordered_set<Cm::Sym::ClassTypeSymbol*> ClassTemplateSet;

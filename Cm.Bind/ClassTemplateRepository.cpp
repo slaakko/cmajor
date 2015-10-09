@@ -448,4 +448,36 @@ void ClassTemplateRepository::Read(Cm::Sym::BcuReader& reader)
     }
 }
 
+void ClassTemplateRepository::RetrieveMemberVariableLayoutIndecesFrom(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classTypes)
+{
+    if (templateTypeSymbols.empty()) return;
+    std::unordered_map<std::string, Cm::Sym::TemplateTypeSymbol*> templateTypeSymbolMap;
+    for (Cm::Sym::TemplateTypeSymbol* templateTypeSymbol : templateTypeSymbols)
+    {
+        templateTypeSymbolMap[templateTypeSymbol->FullName()] = templateTypeSymbol;
+    }
+    for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
+    {
+        std::unordered_map<std::string, Cm::Sym::TemplateTypeSymbol*>::const_iterator i = templateTypeSymbolMap.find(classType->FullName());
+        if (i != templateTypeSymbolMap.cend())
+        {
+            Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = i->second;
+            std::unordered_map<std::string, Cm::Sym::MemberVariableSymbol*> memberVariableMap;
+            for (Cm::Sym::MemberVariableSymbol* memberVariable : templateTypeSymbol->MemberVariables())
+            {
+                memberVariableMap[memberVariable->FullName()] = memberVariable;
+            }
+            for (Cm::Sym::MemberVariableSymbol* classTypeMemberVariable : classType->MemberVariables())
+            {
+                std::unordered_map<std::string, Cm::Sym::MemberVariableSymbol*>::const_iterator j = memberVariableMap.find(classTypeMemberVariable->FullName());
+                if (j != memberVariableMap.cend())
+                {
+                    Cm::Sym::MemberVariableSymbol* memberVariable = j->second;
+                    memberVariable->SetLayoutIndex(classTypeMemberVariable->LayoutIndex());
+                }
+            }
+        }
+    }
+}
+
 } } // namespace Cm::Bind

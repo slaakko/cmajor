@@ -456,11 +456,22 @@ void FunctionSymbol::Write(Writer& writer)
             writer.Write(returnType->Id());
         }
     }
+    int32_t n = int32_t(typeArguments.size());
+    writer.GetBinaryWriter().Write(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        TypeSymbol* typeArgument = typeArguments[i];
+        writer.Write(typeArgument->Id());
+    }
 }
 
 void FunctionSymbol::Read(Reader& reader)
 {
     ContainerSymbol::Read(reader);
+    if (Name() == "operator==<char, char&, char*>(const System.RandomAccessIter<char, char&, char*>&, const System.RandomAccessIter<char, char&, char*>&)")
+    {
+        int x = 0;
+    }
     flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUInt());
     groupName = reader.GetBinaryReader().ReadString();
     vtblIndex = reader.GetBinaryReader().ReadShort();
@@ -505,7 +516,7 @@ void FunctionSymbol::Read(Reader& reader)
         bool hasReturnType = reader.GetBinaryReader().ReadBool();
         if (hasReturnType)
         {
-            reader.FetchTypeFor(this, 0);
+            reader.FetchTypeFor(this, -1);
         }
     }
     else
@@ -513,8 +524,14 @@ void FunctionSymbol::Read(Reader& reader)
         bool hasReturnType = reader.GetBinaryReader().ReadBool();
         if (hasReturnType)
         {
-            reader.FetchTypeFor(this, 0);
+            reader.FetchTypeFor(this, -1);
         }
+    }
+    int n = reader.GetBinaryReader().ReadInt();
+    typeArguments.resize(n);
+    for (int i = 0; i < n; ++i)
+    {
+        reader.FetchTypeFor(this, i);
     }
 }
 
@@ -556,7 +573,18 @@ void FunctionSymbol::FreeFunctionNode(Cm::Sym::SymbolTable& symbolTable)
 
 void FunctionSymbol::SetType(TypeSymbol* type_, int index)
 {
-    SetReturnType(type_);
+    if (index == -1)
+    {
+        SetReturnType(type_);
+    }
+    else
+    {
+        if (index >= int(typeArguments.size()))
+        {
+            throw std::runtime_error("invalid type index");
+        }
+        typeArguments[index] = type_;
+    }
 }
 
 void FunctionSymbol::ComputeName()

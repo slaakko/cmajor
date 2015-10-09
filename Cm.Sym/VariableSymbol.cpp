@@ -37,6 +37,10 @@ void VariableSymbol::Write(Writer& writer)
 void VariableSymbol::Read(Reader& reader)
 {
     Symbol::Read(reader);
+    if (Name() == "$initialized")
+    {
+        int x = 0;
+    }
     hasType = reader.GetBinaryReader().ReadBool();
     if (hasType)
     {

@@ -39,6 +39,14 @@ BoundCompileUnit::BoundCompileUnit(Cm::Sym::SymbolTable& symbolTable_) : syntaxU
     classConversionTable(symbolTable.GetTypeRepository()), derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()),
     irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false), isMainUnit(false), functionTemplateRepository(symbolTable)
 {
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
+    {
+        externalConstantRepository.reset(new Cm::Core::LlvmExternalConstantRepository());
+    }
+    else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
+    {
+        externalConstantRepository.reset(new Cm::Core::CExternalConstantRepository());
+    }
 }
 
 BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(syntaxUnit_),
@@ -70,6 +78,20 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
     }
 }
 
+void BoundCompileUnit::SetPaths(const std::string& basePath)
+{
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
+    {
+        irFilePath = Cm::Util::GetFullPath(basePath + ".ll");
+    }
+    else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
+    {
+        irFilePath = Cm::Util::GetFullPath(basePath + ".c");
+    }
+    objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
+    optIrFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".opt.ll").generic_string());
+}
+
 void BoundCompileUnit::SetProjectName(const std::string& projectName_)
 {
     projectName = projectName_;
@@ -82,10 +104,6 @@ void BoundCompileUnit::SetFileName(const std::string& fileName_)
 
 void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
 {
-    if (irFilePath == "C:/Programming/cmajorbin/system/ext/System.Text.Parsing/full/llvm/ParsingDomain.ll")
-    {
-        int x = 0;
-    }
     writer.GetBinaryWriter().Write(irFilePath);
     writer.GetBinaryWriter().Write(objectFilePath);
     writer.GetBinaryWriter().Write(optIrFilePath);
@@ -96,9 +114,9 @@ void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
     writer.GetBinaryWriter().Write(fileName);
     writer.GetBinaryWriter().Write(projectName);
     stringRepository->Write(writer);
-    irClassTypeRepository->Write(writer);
-    functionTemplateRepository.Write(writer);
     classTemplateRepository->Write(writer);
+    functionTemplateRepository.Write(writer);
+    irClassTypeRepository->Write(writer);
     synthesizedClassFunRepository->Write(writer);
     inlineFunctionRepository->Write(writer);
     writer.GetBinaryWriter().Write(int(boundNodes.size()));
@@ -137,9 +155,9 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
     {
         irClassTypeRepository.reset(new Cm::Core::CIrClassTypeRepository());
     }
-    irClassTypeRepository->Read(reader);
-    functionTemplateRepository.Read(reader);
     classTemplateRepository->Read(reader);
+    functionTemplateRepository.Read(reader);
+    irClassTypeRepository->Read(reader);
     synthesizedClassFunRepository->Read(reader);
     inlineFunctionRepository->Read(reader);
     int n = reader.GetBinaryReader().ReadInt();
@@ -154,6 +172,10 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
             {
                 BoundFunction* boundFunction = static_cast<BoundFunction*>(node);
                 Cm::Sym::FunctionSymbol* functionSymbol = boundFunction->GetFunctionSymbol();
+                if (functionSymbol->GroupName() == "main")
+                {
+                    symbolTable.SetUserMainFunction(functionSymbol);
+                }
                 if (functionSymbol->IsClassDelegateEqualOp())
                 {
                     classDelegateEqualOps.push_back(static_cast<Cm::Bind::ClassDelegateEqualOp*>(functionSymbol));

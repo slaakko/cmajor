@@ -48,6 +48,7 @@ class BoundCompileUnit : public Cm::Sym::BoundCompileUnit
 public:
     BoundCompileUnit(Cm::Sym::SymbolTable& symbolTable_);
     BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_);
+    void SetPaths(const std::string& basePath);
     void SetProjectName(const std::string& projectName_);
     const std::string& ProjectName() const { return projectName; }
     void SetFileName(const std::string& fileName_);

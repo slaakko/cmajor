@@ -27,6 +27,10 @@ Ir::Intf::Parameter* IrFunctionRepository::CreateIrParameter(Cm::Sym::ParameterS
     Ir::Intf::Type* irParameterType = nullptr;
     if (parameter->GetType()->IsClassTypeSymbol())
     {
+        if (!parameter->GetType()->IrTypeMade())
+        {
+            parameter->GetType()->MakeIrType();
+        }
         irParameterType = Cm::IrIntf::Pointer(parameter->GetType()->GetIrType(), 1);
     }
     else
@@ -75,6 +79,10 @@ Ir::Intf::Function* IrFunctionRepository::GetMemCopyFunction()
 
 Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymbol* function)
 {
+    if (!function->Parent())
+    {
+        int x = 0;
+    }
     IrFunctionMapIt i = irFunctionMap.find(function);
     if (i != irFunctionMap.end())
     {
@@ -126,6 +134,10 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
         }
         if (returnsClassObjectByValue)
         {
+            if (!function->GetReturnType()->IrTypeMade())
+            {
+                function->GetReturnType()->MakeIrType();
+            }
             Ir::Intf::Type* classObjectResultParamType = Cm::IrIntf::Pointer(function->GetReturnType()->GetIrType(), 1);
             Own(classObjectResultParamType);
             Ir::Intf::Parameter* irClassObjectParameter = Cm::IrIntf::CreateParameter(Cm::IrIntf::GetClassObjectResultParamName(), classObjectResultParamType);
@@ -161,7 +173,7 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     {
         if (function->IsConversionFunction())
         {
-            functionName = Cm::Sym::MangleName(function->Ns()->FullName(), "cv_" + Cm::Sym::MakeAssemblyName(function->GetReturnType()->FullName()), function->TypeArguments(),  function->Parameters());
+            functionName = Cm::Sym::MangleName(function->Ns()->FullName(), "cv_" + Cm::Sym::MakeAssemblyName(function->GetReturnType()->FullName()), function->TypeArguments(), function->Parameters());
         }
         else if (function->IsStatic())
         {

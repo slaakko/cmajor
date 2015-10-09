@@ -22,6 +22,7 @@ public:
     void BeginVisit(Cm::BoundTree::BoundClass& boundClass) override;
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter) override;
+    Cm::Core::StaticMemberVariableRepository& GetStaticMemberVariableRepository() override { return staticMemberVariableRepository; }
 private:
     Cm::Core::LlvmStaticMemberVariableRepository staticMemberVariableRepository;
 };

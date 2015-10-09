@@ -86,6 +86,7 @@ public:
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
     Cm::Sym::FunctionSymbol* UserMainFunction() const { return userMainFunction; }
+    void SetUserMainFunction(Cm::Sym::FunctionSymbol* userMainFunction_) { userMainFunction = userMainFunction_; }
     NamespaceSymbol& GlobalNs() { return globalNs; }
     void AddImportedTemplateType(TemplateTypeSymbol* importedTemplateType) { importedTemplateTypes.push_back(importedTemplateType); }
     void ProcessImportedTemplateTypes();

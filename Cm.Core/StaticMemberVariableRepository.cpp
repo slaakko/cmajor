@@ -15,12 +15,20 @@
 
 namespace Cm { namespace Core {
 
+StaticMemberVariableRepository::StaticMemberVariableRepository() : classTypeMap(nullptr)
+{
+}
+
 StaticMemberVariableRepository::~StaticMemberVariableRepository()
 {
 }
 
 void StaticMemberVariableRepository::Add(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol)
 {
+    if (staticMemberVariableSymbol->Name() == "table")
+    {
+        int x = 0;
+    }
     std::string assemblyName = Cm::Sym::MakeAssemblyName(staticMemberVariableSymbol->Class()->FullName() + "." + staticMemberVariableSymbol->Name());
     Ir::Intf::Object* irObject = Cm::IrIntf::CreateGlobal(assemblyName, Cm::IrIntf::Pointer(staticMemberVariableSymbol->GetType()->GetIrType(), 1));
     StaticMemberVariableMapIt i = staticMemberVariableMap.find(staticMemberVariableSymbol);
@@ -28,20 +36,50 @@ void StaticMemberVariableRepository::Add(Cm::Sym::MemberVariableSymbol* staticMe
     {
         throw Cm::Core::Exception("static member variable '" + staticMemberVariableSymbol->FullName() + "' already added to repository", staticMemberVariableSymbol->GetSpan());
     }
+    nameMap[staticMemberVariableSymbol->FullName()] = staticMemberVariableSymbol;
     staticMemberVariableMap[staticMemberVariableSymbol] = irObject;
     ownedIrObjects.push_back(std::unique_ptr<Ir::Intf::Object>(irObject));
-    if (staticMemberVariableSymbol->GetType()->IsClassTypeSymbol() && static_cast<Cm::Sym::ClassTypeSymbol*>(staticMemberVariableSymbol->GetType())->Destructor())
+    if (staticMemberVariableSymbol->GetType()->IsClassTypeSymbol())
     {
-        Ir::Intf::Object* destructionNode = Cm::IrIntf::CreateGlobal(Cm::IrIntf::MakeDestructionNodeName(assemblyName),
-            Cm::IrIntf::Pointer(Cm::IrIntf::CreateTypeName(Cm::IrIntf::GetDestructionNodeTypeName(), false), 1));
-        ownedIrObjects.push_back(std::unique_ptr<Ir::Intf::Object>(destructionNode));
-        destructionNodeMap[staticMemberVariableSymbol] = destructionNode;
+        Cm::Sym::ClassTypeSymbol* classTypeSymbol = nullptr;
+        if (classTypeMap)
+        {
+            std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>::const_iterator i = classTypeMap->find(staticMemberVariableSymbol->GetType()->FullName());
+            if (i != classTypeMap->cend())
+            {
+                classTypeSymbol = i->second;
+            }
+        }
+        if (!classTypeSymbol)
+        {
+            classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(staticMemberVariableSymbol->GetType());
+        }
+        if (classTypeSymbol->Destructor())
+        {
+            Ir::Intf::Object* destructionNode = Cm::IrIntf::CreateGlobal(Cm::IrIntf::MakeDestructionNodeName(assemblyName),
+                Cm::IrIntf::Pointer(Cm::IrIntf::CreateTypeName(Cm::IrIntf::GetDestructionNodeTypeName(), false), 1));
+            ownedIrObjects.push_back(std::unique_ptr<Ir::Intf::Object>(destructionNode));
+            destructionNodeMap[staticMemberVariableSymbol] = destructionNode;
+        }
     }
 }
 
 Ir::Intf::Object* StaticMemberVariableRepository::GetStaticMemberVariableIrObject(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) const
 {
+    if (staticMemberVariableSymbol->Name() == "table")
+    {
+        int x = 0;
+    }
     StaticMemberVariableMapIt i = staticMemberVariableMap.find(staticMemberVariableSymbol);
+    if (i != staticMemberVariableMap.end())
+    {
+        return i->second;
+    }
+    std::unordered_map<std::string, Cm::Sym::MemberVariableSymbol*>::const_iterator j = nameMap.find(staticMemberVariableSymbol->FullName());
+    if (j != nameMap.cend())
+    {
+        i = staticMemberVariableMap.find(j->second);
+    }
     if (i != staticMemberVariableMap.end())
     {
         return i->second;
@@ -51,12 +89,30 @@ Ir::Intf::Object* StaticMemberVariableRepository::GetStaticMemberVariableIrObjec
 
 Ir::Intf::Object* StaticMemberVariableRepository::GetDestructionNode(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) const
 {
+    if (staticMemberVariableSymbol->Name() == "table")
+    {
+        int x = 0;
+    }
     StaticMemberVariableMapIt i = destructionNodeMap.find(staticMemberVariableSymbol);
     if (i != destructionNodeMap.end())
     {
         return i->second;
     }
+    std::unordered_map<std::string, Cm::Sym::MemberVariableSymbol*>::const_iterator j = nameMap.find(staticMemberVariableSymbol->FullName());
+    if (j != nameMap.cend())
+    {
+        i = destructionNodeMap.find(j->second);
+    }
+    if (i != destructionNodeMap.end())
+    {
+        return i->second;
+    }
     throw Cm::Core::Exception("destruction node for '" + staticMemberVariableSymbol->FullName() + "' not found in repository", staticMemberVariableSymbol->GetSpan());
+}
+
+void StaticMemberVariableRepository::SetClassTypeMap(std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& classTypeMap_)
+{
+    classTypeMap = &classTypeMap_;
 }
 
 void StaticMemberVariableRepository::Own(Ir::Intf::Type* type)

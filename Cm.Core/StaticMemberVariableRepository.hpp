@@ -18,17 +18,21 @@ namespace Cm { namespace Core {
 class StaticMemberVariableRepository
 {
 public:
+    StaticMemberVariableRepository();
     virtual ~StaticMemberVariableRepository();
     void Add(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol);
     Ir::Intf::Object* GetStaticMemberVariableIrObject(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) const;
     Ir::Intf::Object* GetDestructionNode(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) const;
     virtual void Write(Cm::Util::CodeFormatter& codeFormatter) = 0;
+    void SetClassTypeMap(std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& classTypeMap_);
 protected:
     typedef std::unordered_map<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*> StaticMemberVariableMap;
+    std::unordered_map<std::string, Cm::Sym::MemberVariableSymbol*> nameMap;
     const StaticMemberVariableMap& GetStaticMemberVariableMap() const { return staticMemberVariableMap; }
     const StaticMemberVariableMap& GetDestructionNodeMap() const { return destructionNodeMap; }
     void Own(Ir::Intf::Type* type);
 private:
+    std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>* classTypeMap;
     typedef StaticMemberVariableMap::const_iterator StaticMemberVariableMapIt;
     StaticMemberVariableMap staticMemberVariableMap;
     StaticMemberVariableMap destructionNodeMap;

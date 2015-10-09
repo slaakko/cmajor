@@ -61,6 +61,10 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
         Cm::Sym::ParameterSymbol* parameterSymbol = static_cast<Cm::Sym::ParameterSymbol*>(localVariableOrParameter);
         type = parameterSymbol->GetType();
     }
+    if (!type->IrTypeMade())
+    {
+        type->MakeIrType();
+    }
     std::string assemblyName = MakeUniqueAssemblyName(localVariableOrParameter->Name());
     Ir::Intf::Object* localVariableObject = nullptr;
     Ir::Intf::Type* baseTypeIrType = type->GetBaseType()->GetIrType();
@@ -149,14 +153,14 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
             }
         }
     }
-    localVariableObjectMap[localVariableOrParameter] = localVariableObject;
+    localVariableObjectMap[localVariableOrParameter->Sid()] = localVariableObject;
     ownedIrObjects.push_back(std::unique_ptr<Ir::Intf::Object>(localVariableObject));
     return localVariableObject;
 }
 
 Ir::Intf::Object* LocalVariableIrObjectRepository::GetLocalVariableIrObject(Cm::Sym::Symbol* localVariableOrParameter)
 {
-    LocalVariableObjectMapIt i = localVariableObjectMap.find(localVariableOrParameter);
+    LocalVariableObjectMapIt i = localVariableObjectMap.find(localVariableOrParameter->Sid());
     if (i != localVariableObjectMap.end())
     {
         return i->second;
@@ -170,6 +174,10 @@ IrObjectRepository::IrObjectRepository()
 
 Ir::Intf::MemberVar* IrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr)
 {
+    if (boundMemberVariable->Symbol()->LayoutIndex() == -1)
+    {
+        int x = 0;
+    }
     Ir::Intf::MemberVar* memberVar = Cm::IrIntf::CreateMemberVar(boundMemberVariable->Symbol()->Name(), ptr, boundMemberVariable->Symbol()->LayoutIndex(),
         boundMemberVariable->Symbol()->GetType()->GetIrType());
     ownedIrObjects.push_back(std::unique_ptr<Ir::Intf::Object>(memberVar));
@@ -270,6 +278,11 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
             thisParam = parameter;
         }
         ++parameterIndex;
+    }
+
+    if (boundFunction.GetFunctionSymbol()->FullName() == "main()")
+    {
+        int x = 0;
     }
 
     for (Cm::Sym::LocalVariableSymbol* localVariable : boundFunction.LocalVariables())
@@ -2234,19 +2247,24 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     PushBreakTargetStatement(&boundForStatement);
     PushContinueTargetStatement(&boundForStatement);
-    Cm::Ast::Node* node = boundForStatement.SyntaxNode();
-    if (!node->IsStatementNode())
+    Cm::Ast::Node* node = nullptr;
+    Cm::Ast::ForStatementNode* forStatementNode = nullptr;
+    if (GenerateDebugInfo())
     {
-        throw std::runtime_error("not statement node");
+        node = boundForStatement.SyntaxNode();
+        if (!node->IsStatementNode())
+        {
+            throw std::runtime_error("not statement node");
+        }
+        Cm::Ast::StatementNode* statementNode = static_cast<Cm::Ast::StatementNode*>(node);
+        if (!statementNode->IsForStatementNode())
+        {
+            throw std::runtime_error("not for statement node");
+        }
+        forStatementNode = static_cast<Cm::Ast::ForStatementNode*>(statementNode);
     }
-    Cm::Ast::StatementNode* statementNode = static_cast<Cm::Ast::StatementNode*>(node);
-    if (!statementNode->IsForStatementNode())
-    {
-        throw std::runtime_error("not for statement node");
-    }
-    Cm::Ast::ForStatementNode* forStatementNode = static_cast<Cm::Ast::ForStatementNode*>(statementNode);
     bool debugInfoDisabled = false;
-    if (GenerateDebugInfo() && forStatementNode->IsRangeForStatement())
+    if (GenerateDebugInfo() && forStatementNode && forStatementNode->IsRangeForStatement())
     {
         PushGenDebugInfo(false);
         debugInfoDisabled = true;
@@ -2449,7 +2467,12 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundCaseStatement& boundCaseStatemen
             emitter->Own(caseConstant);
             if (currentSwitchCaseConstantMap->find(caseConstant->Name()) != currentSwitchCaseConstantMap->end())
             {
-                throw Cm::Core::Exception("duplicate case constant '" + caseConstant->Name() + "'", boundCaseStatement.SyntaxNode()->GetSpan());
+                Cm::Parsing::Span span(0, 0, 0, 0);
+                if (boundCaseStatement.SyntaxNode())
+                {
+                    span = boundCaseStatement.SyntaxNode()->GetSpan();
+                }
+                throw Cm::Core::Exception("duplicate case constant '" + caseConstant->Name() + "'", span);
             }
             currentSwitchCaseConstantMap->insert(std::make_pair(caseConstant->Name(), std::make_pair(label, &boundCaseStatement)));
             switchCaseConstants.push_back(caseConstant);
@@ -2555,7 +2578,12 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoCaseStatement& boundGotoCase
     }
     else
     {
-        throw Cm::Core::Exception("goto case statement target not found", boundGotoCaseStatement.SyntaxNode()->GetSpan());
+        Cm::Parsing::Span span(0, 0, 0, 0);
+        if (boundGotoCaseStatement.SyntaxNode())
+        {
+            span = boundGotoCaseStatement.SyntaxNode()->GetSpan();
+        }
+        throw Cm::Core::Exception("goto case statement target not found", span);
     }
     resultStack.Push(result);
 }
@@ -2589,7 +2617,12 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundGotoDefaultStatement& boundGotoD
     }
     else
     {
-        throw Cm::Core::Exception("goto default statement target not found", boundGotoDefaultStatement.SyntaxNode()->GetSpan());
+        Cm::Parsing::Span span(0, 0, 0, 0);
+        if (boundGotoDefaultStatement.SyntaxNode())
+        {
+            span = boundGotoDefaultStatement.SyntaxNode()->GetSpan();
+        }
+        throw Cm::Core::Exception("goto default statement target not found", span);
     }
     resultStack.Push(result);
 }

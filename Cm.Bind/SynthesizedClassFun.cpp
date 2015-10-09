@@ -1350,6 +1350,7 @@ void SynthesizedClassFunRepository::Write(Cm::Sym::BcuWriter& writer)
     for (int32_t i = 0; i < n; ++i)
     {
         Cm::Sym::FunctionSymbol* functionSymbol = collectedFunctionSymbols[i];
+        writer.GetBinaryWriter().Write(functionSymbol->Parent()->FullName());
         writer.GetSymbolWriter().Write(functionSymbol);
     }
 }
@@ -1359,9 +1360,16 @@ void SynthesizedClassFunRepository::Read(Cm::Sym::BcuReader& reader)
     int32_t n = reader.GetBinaryReader().ReadInt();
     for (int32_t i = 0; i < n; ++i)
     {
+        std::string parentName = reader.GetBinaryReader().ReadString();
+        Cm::Sym::Symbol* parent = reader.GetSymbolReader().GetSymbolTable().GlobalScope()->Lookup(parentName);
+        if (!parent)
+        {
+            throw std::runtime_error("got no parent");
+        }
         Cm::Sym::Symbol* symbol = reader.GetSymbolReader().ReadSymbol();
         if (symbol->IsFunctionSymbol())
         {
+            symbol->SetParent(parent);
             Cm::Sym::FunctionSymbol* functionSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
             ownedFunctionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
         }
