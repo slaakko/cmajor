@@ -110,9 +110,11 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         }
         argcParam = new Cm::Sym::ParameterSymbol(userMainFunction->GetSpan(), "argc");
         argcParam->SetType(intType);
+        symbolTable.SetSidAndAddSymbol(argcParam);
         mainFunctionSymbol->AddSymbol(argcParam);
         argvParam = new Cm::Sym::ParameterSymbol(userMainFunction->GetSpan(), "argv");
         argvParam->SetType(constCharPtrPtrType);
+        symbolTable.SetSidAndAddSymbol(argvParam);
         mainFunctionSymbol->AddSymbol(argvParam);
     }
     if (!userMainFunction->GetReturnType() || !userMainFunction->GetReturnType()->IsVoidTypeSymbol() && !Cm::Sym::TypesEqual(userMainFunction->GetReturnType(), intType))

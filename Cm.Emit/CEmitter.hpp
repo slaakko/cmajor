@@ -35,6 +35,7 @@ private:
     int funLine;
     std::string cFilePath;
     void GenerateDebugInfo(Cm::Sym::ClassTypeSymbol* classTypeSymbol);
+    std::unordered_set<std::string> generatedFunctions;
 };
 
 } } // namespace Cm::Emit

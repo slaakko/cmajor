@@ -108,6 +108,11 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
+    {
+        if (generatedFunctions.find(boundFunction.GetFunctionSymbol()->FullName()) != generatedFunctions.cend()) return;
+        generatedFunctions.insert(boundFunction.GetFunctionSymbol()->FullName());
+    }
     Cm::Util::CodeFormatter funFormatter(funFile);
     funFormatter.SetLine(funLine);
     const char* start = nullptr;

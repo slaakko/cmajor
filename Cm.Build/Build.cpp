@@ -745,43 +745,58 @@ bool Archive(const std::vector<std::string>& objectFilePaths, const std::string&
         std::cout << "Archiving..." << std::endl;
     }
     std::string arErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(assemblyFilePath).replace_extension(".ar.error").generic_string());
-    std::string command = "ar";
-    command.append(" q ").append(Cm::Util::QuotedPath(assemblyFilePath));
-    for (const std::string& objectFilePath : objectFilePaths)
+    int i = 0;
+    int n = int(objectFilePaths.size());
+    while (i < n)
     {
-        if (!quiet)
+        std::string command = "ar";
+        command.append(" q ").append(Cm::Util::QuotedPath(assemblyFilePath));
+        bool stop = false;
+        while (i < n && !stop)
         {
-            std::cout << "> " << Cm::Util::GetFullPath(objectFilePath) << std::endl;
+            std::string objectFilePath = Cm::Util::QuotedPath(objectFilePaths[i]);
+            if (command.length() + objectFilePath.length() + 1 < 2047)
+            {
+                if (!quiet)
+                {
+                    std::cout << "> " << Cm::Util::GetFullPath(objectFilePaths[i]) << std::endl;
+                }
+                command.append(1, ' ').append(objectFilePath);
+                ++i;
+            }
+            else
+            {
+                stop = true;
+            }
         }
-        command.append(1, ' ').append(objectFilePath);
-    }
-    try
-    {
-        Cm::Util::System(command, 2, arErrorFilePath);
-        if (!quiet && !objectFilePaths.empty())
-        {
-            std::cout << "=> " << Cm::Util::GetFullPath(assemblyFilePath) << std::endl;
-        }
-    }
-    catch (const std::exception&)
-    {
-        Cm::Util::MappedInputFile file(arErrorFilePath);
         try
         {
-            if (!toolErrorGrammar)
-            {
-                toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
-            }
-            Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, arErrorFilePath);
-            throw Cm::Core::ToolErrorExcecption(toolError);
+            Cm::Util::System(command, 2, arErrorFilePath);
         }
         catch (const std::exception&)
         {
-            std::string errorText(file.Begin(), file.End());
-            throw std::runtime_error(errorText);
+            Cm::Util::MappedInputFile file(arErrorFilePath);
+            try
+            {
+                if (!toolErrorGrammar)
+                {
+                    toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+                }
+                Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, arErrorFilePath);
+                throw Cm::Core::ToolErrorExcecption(toolError);
+            }
+            catch (const std::exception&)
+            {
+                std::string errorText(file.Begin(), file.End());
+                throw std::runtime_error(errorText);
+            }
         }
+        boost::filesystem::remove(arErrorFilePath);
     }
-    boost::filesystem::remove(arErrorFilePath);
+    if (!quiet && !objectFilePaths.empty())
+    {
+        std::cout << "=> " << Cm::Util::GetFullPath(assemblyFilePath) << std::endl;
+    }
     return true;
 }
 
