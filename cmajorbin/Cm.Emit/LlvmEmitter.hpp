@@ -25,6 +25,7 @@ public:
     Cm::Core::StaticMemberVariableRepository& GetStaticMemberVariableRepository() override { return staticMemberVariableRepository; }
 private:
     Cm::Core::LlvmStaticMemberVariableRepository staticMemberVariableRepository;
+    std::unordered_set<std::string> generatedFunctions;
 };
 
 } } // namespace Cm::Emit

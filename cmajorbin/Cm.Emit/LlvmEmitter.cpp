@@ -12,6 +12,7 @@
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Emit/LlvmFunctionEmitter.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -81,6 +82,11 @@ void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
+    {
+        if (generatedFunctions.find(boundFunction.GetFunctionSymbol()->FullName()) != generatedFunctions.cend()) return;
+        generatedFunctions.insert(boundFunction.GetFunctionSymbol()->FullName());
+    }
     LlvmFunctionEmitter functionEmitter(CodeFormatter(), TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(), 
         ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), Profile());
     functionEmitter.SetSymbolTable(SymbolTable());

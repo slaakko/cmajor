@@ -93,6 +93,10 @@ void LlvmIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classTyp
     int index = 0;
     if (classType->BaseClass())
     {
+        if (!classType->BaseClass()->IrTypeMade())
+        {
+            classType->BaseClass()->MakeIrType();
+        }
         memberTypes.push_back(classType->BaseClass()->GetIrType()->Clone());
         memberNames.push_back("__base");
         ++index;
@@ -121,6 +125,14 @@ void LlvmIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classTyp
                 ++index;
             }
             Cm::Sym::TypeSymbol* memberVarType = memberVariable->GetType();
+            if (!memberVarType->IrTypeMade())
+            {
+                memberVarType->MakeIrType();
+            }
+            if (!memberVarType->GetBaseType()->IrTypeMade())
+            {
+                memberVarType->GetBaseType()->MakeIrType();
+            }
             if (memberVarType->IsPureArrayType())
             {
                 Ir::Intf::Type* memberVarArrayType = Cm::IrIntf::Array(memberVarType->GetBaseType()->GetIrType(), memberVarType->GetLastArrayDimension());
@@ -338,6 +350,10 @@ void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, 
     int index = 0;
     if (classType->BaseClass())
     {
+        if (!classType->BaseClass()->IrTypeMade())
+        {
+            classType->BaseClass()->MakeIrType();
+        }
         memberTypes.push_back(classType->BaseClass()->GetIrType()->Clone());
         memberNames.push_back("__base");
         ++index;
@@ -360,6 +376,14 @@ void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, 
         for (Cm::Sym::MemberVariableSymbol* memberVariable : classType->MemberVariables())
         {
             Cm::Sym::TypeSymbol* memberVarType = memberVariable->GetType();
+            if (!memberVarType->IrTypeMade())
+            {
+                memberVarType->MakeIrType();
+            }
+            if (!memberVarType->GetBaseType()->IrTypeMade())
+            {
+                memberVarType->GetBaseType()->MakeIrType();
+            }
             if (index == classType->VPtrIndex())
             {
                 memberTypes.push_back(Cm::IrIntf::Pointer(Cm::IrIntf::Void(), 2));
