@@ -16,6 +16,7 @@
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
+#include <iostream>
 
 namespace Cm { namespace BoundTree {
 
@@ -200,6 +201,12 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
     {
         equalOp->CreateBoundNode(equalOp->Ns()->GetContainerScope(), *this);
     }
+    if (!reader.GetSymbolReader().AllTypesFetched())
+    {
+        std::cout << bcuPath << ": not all types fetched!" << std::endl;
+    }
+    reader.GetSymbolReader().MakeIrTypes();
+    reader.GetSymbolReader().InitVTables();
 }
 
 void BoundCompileUnit::AddFileScope(Cm::Sym::FileScope* fileScope_)

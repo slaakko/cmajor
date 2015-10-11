@@ -1468,6 +1468,8 @@ void ProcessProgram(Cm::Ast::Project* project)
         Cm::Bind::DelegateTypeOpFactory delegateTypeOpFactory;
         Cm::Bind::ClassDelegateTypeOpFactory classDelegateTypeOpFactory;
         Cm::Sym::BcuReader reader(bcuPath, symbolTable, basicTypeOpFactory, itemFactory, arrayTypeOpFactory, delegateTypeOpFactory, classDelegateTypeOpFactory);
+        reader.GetSymbolReader().MarkSymbolsBound();
+        reader.GetSymbolReader().MarkTemplateTypeSymbolsBound();
         Cm::BoundTree::BoundCompileUnit compileUnit(symbolTable);
         compileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(compileUnit));
         compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));
@@ -1503,6 +1505,8 @@ void ProcessProgram(Cm::Ast::Project* project)
         Cm::Bind::DelegateTypeOpFactory delegateTypeOpFactory;
         Cm::Bind::ClassDelegateTypeOpFactory classDelegateTypeOpFactory;
         Cm::Sym::BcuReader reader(bcuPath, symbolTable, basicTypeOpFactory, itemFactory, arrayTypeOpFactory, delegateTypeOpFactory, classDelegateTypeOpFactory);
+        reader.GetSymbolReader().MarkSymbolsBound();
+        reader.GetSymbolReader().MarkTemplateTypeSymbolsBound();
         Cm::BoundTree::BoundCompileUnit compileUnit(symbolTable);
         compileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(compileUnit));
         compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));

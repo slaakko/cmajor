@@ -25,10 +25,6 @@ StaticMemberVariableRepository::~StaticMemberVariableRepository()
 
 void StaticMemberVariableRepository::Add(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol)
 {
-    if (staticMemberVariableSymbol->Name() == "table")
-    {
-        int x = 0;
-    }
     std::string assemblyName = Cm::Sym::MakeAssemblyName(staticMemberVariableSymbol->Class()->FullName() + "." + staticMemberVariableSymbol->Name());
     Ir::Intf::Object* irObject = Cm::IrIntf::CreateGlobal(assemblyName, Cm::IrIntf::Pointer(staticMemberVariableSymbol->GetType()->GetIrType(), 1));
     StaticMemberVariableMapIt i = staticMemberVariableMap.find(staticMemberVariableSymbol);
@@ -66,10 +62,6 @@ void StaticMemberVariableRepository::Add(Cm::Sym::MemberVariableSymbol* staticMe
 
 Ir::Intf::Object* StaticMemberVariableRepository::GetStaticMemberVariableIrObject(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) const
 {
-    if (staticMemberVariableSymbol->Name() == "table")
-    {
-        int x = 0;
-    }
     StaticMemberVariableMapIt i = staticMemberVariableMap.find(staticMemberVariableSymbol);
     if (i != staticMemberVariableMap.end())
     {
@@ -89,10 +81,6 @@ Ir::Intf::Object* StaticMemberVariableRepository::GetStaticMemberVariableIrObjec
 
 Ir::Intf::Object* StaticMemberVariableRepository::GetDestructionNode(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) const
 {
-    if (staticMemberVariableSymbol->Name() == "table")
-    {
-        int x = 0;
-    }
     StaticMemberVariableMapIt i = destructionNodeMap.find(staticMemberVariableSymbol);
     if (i != destructionNodeMap.end())
     {

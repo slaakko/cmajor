@@ -35,9 +35,19 @@ void IrClassTypeRepository::Write(Cm::Sym::BcuWriter& writer)
     std::vector<Cm::Sym::ClassTypeSymbol*> classTypeVec;
     for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
     {
+        Cm::Sym::ClassTypeSymbol* baseClass = classType->BaseClass();
+        while (baseClass)
+        {
+            if (baseClass->IsTemplateTypeSymbol() && baseClass->IsVirtual())
+            {
+                classTypeVec.push_back(baseClass);
+            }
+            baseClass = baseClass->BaseClass();
+        }
         classTypeVec.push_back(classType);
     }
     std::sort(classTypeVec.begin(), classTypeVec.end(), CidLess());
+    writer.GetSymbolWriter().PushExportMemberVariablesAndFunctionSymbols(true);
     int n = int(classTypeVec.size());
     writer.GetBinaryWriter().Write(int(n));
     for (int i = 0; i < n; ++i)
@@ -45,6 +55,7 @@ void IrClassTypeRepository::Write(Cm::Sym::BcuWriter& writer)
         Cm::Sym::ClassTypeSymbol* classType = classTypeVec[i];
         writer.Write(classType);
     }
+    writer.GetSymbolWriter().PopExportMemberVariablesAndFunctionSymbols();
 }
 
 void IrClassTypeRepository::Read(Cm::Sym::BcuReader& reader)

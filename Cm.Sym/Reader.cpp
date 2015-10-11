@@ -12,11 +12,12 @@
 #include <Cm.Sym/Factory.hpp>
 #include <Cm.Sym/TypeId.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/ClassTypeSymbol.hpp>
 
 namespace Cm { namespace Sym {
 
 Reader::Reader(const std::string& fileName, SymbolTable& symbolTable_) : binaryReader(fileName), astReader(binaryReader), symbolTable(symbolTable_), spanFileIndexOffset(0), markSymbolsBound(false),
-    markSymbolsProject(false)
+    markSymbolsProject(false), markTemplateTypeSymbolsBound(false)
 {
 }
 
@@ -28,6 +29,11 @@ void Reader::SetSpanFileIndexOffset(int spanFileIndexOffset_)
 void Reader::MarkSymbolsBound()
 {
     markSymbolsBound = true;
+}
+
+void Reader::MarkTemplateTypeSymbolsBound()
+{
+    markTemplateTypeSymbolsBound = true;
 }
 
 void Reader::MarkSymbolsProject()
@@ -149,11 +155,19 @@ Symbol* Reader::ReadSymbol()
         {
             symbol->SetProject();
         }
-        if (symbol->IsTemplateTypeSymbol() && !symbol->IsReplica())
+        if (symbol->IsTemplateTypeSymbol() && !symbol->IsReplica() && !markTemplateTypeSymbolsBound)
         {
             symbol->ResetFlag(SymbolFlags::bound);
         }
         symbolTable.AddSymbol(symbol);
+        if (symbol->IsClassTypeSymbol())
+        {
+            ClassTypeSymbol* classTypeSymbol = static_cast<ClassTypeSymbol*>(symbol);
+            if (classTypeSymbol->IsVirtual())
+            {
+                initVTableSet.insert(classTypeSymbol);
+            }
+        }
         return symbol;
     }
 }
@@ -168,6 +182,14 @@ void Reader::MakeIrTypes()
     for (Symbol* symbol : makeIrTypeSet)
     {
         symbol->MakeIrType();
+    }
+}
+
+void Reader::InitVTables()
+{
+    for (ClassTypeSymbol* classType : initVTableSet)
+    {
+        classType->InitVtbl();
     }
 }
 

@@ -401,10 +401,24 @@ void ClassTemplateRepository::Write(Cm::Sym::BcuWriter& writer)
     {
         writer.GetSymbolWriter().Write(memberFunctionSymbool);
     }
-    int32_t nt = int32_t(templateTypeSymbols.size());
+    std::vector<Cm::Sym::TemplateTypeSymbol*> exportedTemplateTypeSymbols;
+    for (Cm::Sym::TemplateTypeSymbol* templateTypeSymbol : templateTypeSymbols)
+    {
+        Cm::Sym::ClassTypeSymbol* baseClass = templateTypeSymbol->BaseClass();
+        while (baseClass)
+        {
+            if (baseClass->IsTemplateTypeSymbol() && baseClass->IsVirtual())
+            {
+                exportedTemplateTypeSymbols.push_back(static_cast<Cm::Sym::TemplateTypeSymbol*>(baseClass));
+            }
+            baseClass = baseClass->BaseClass();
+        }
+        exportedTemplateTypeSymbols.push_back(templateTypeSymbol);
+    }
+    int32_t nt = int32_t(exportedTemplateTypeSymbols.size());
     writer.GetBinaryWriter().Write(nt);
     writer.GetSymbolWriter().PushExportMemberVariablesAndFunctionSymbols(true);
-    for (Cm::Sym::TemplateTypeSymbol* templateTypeSymbol : templateTypeSymbols)
+    for (Cm::Sym::TemplateTypeSymbol* templateTypeSymbol : exportedTemplateTypeSymbols)
     {
         writer.GetSymbolWriter().Write(templateTypeSymbol);
     }
