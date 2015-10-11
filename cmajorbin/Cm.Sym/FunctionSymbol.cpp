@@ -468,10 +468,6 @@ void FunctionSymbol::Write(Writer& writer)
 void FunctionSymbol::Read(Reader& reader)
 {
     ContainerSymbol::Read(reader);
-    if (Name() == "operator==<char, char&, char*>(const System.RandomAccessIter<char, char&, char*>&, const System.RandomAccessIter<char, char&, char*>&)")
-    {
-        int x = 0;
-    }
     flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUInt());
     groupName = reader.GetBinaryReader().ReadString();
     vtblIndex = reader.GetBinaryReader().ReadShort();

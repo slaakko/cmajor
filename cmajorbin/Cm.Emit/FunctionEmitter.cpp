@@ -174,10 +174,6 @@ IrObjectRepository::IrObjectRepository()
 
 Ir::Intf::MemberVar* IrObjectRepository::MakeMemberVariableIrObject(Cm::BoundTree::BoundMemberVariable* boundMemberVariable, Ir::Intf::Object* ptr)
 {
-    if (boundMemberVariable->Symbol()->LayoutIndex() == -1)
-    {
-        int x = 0;
-    }
     Ir::Intf::MemberVar* memberVar = Cm::IrIntf::CreateMemberVar(boundMemberVariable->Symbol()->Name(), ptr, boundMemberVariable->Symbol()->LayoutIndex(),
         boundMemberVariable->Symbol()->GetType()->GetIrType());
     ownedIrObjects.push_back(std::unique_ptr<Ir::Intf::Object>(memberVar));
@@ -278,11 +274,6 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
             thisParam = parameter;
         }
         ++parameterIndex;
-    }
-
-    if (boundFunction.GetFunctionSymbol()->FullName() == "main()")
-    {
-        int x = 0;
     }
 
     for (Cm::Sym::LocalVariableSymbol* localVariable : boundFunction.LocalVariables())
@@ -1817,10 +1808,6 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundAssignmentStatement& boundAssign
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundSimpleStatement& boundSimpleStatement)
 {
-    if (CurrentFunction()->GetFunctionSymbol()->FullName() == "main()")
-    {
-        int x = 0;
-    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     if (generateDebugInfo)
     {

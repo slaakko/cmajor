@@ -363,10 +363,6 @@ Symbol* BcuReader::ReadSymbol()
         case BcuItemType::bcuOtherSymbol:
         {
             uint32_t sid = reader.GetBinaryReader().ReadUInt();
-            if (sid == noSid)
-            {
-                int x = 0;
-            }
             Symbol* symbol = reader.GetSymbolTable().GetSymbol(sid);
             if (!symbol)
             {

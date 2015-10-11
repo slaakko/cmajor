@@ -79,10 +79,6 @@ Ir::Intf::Function* IrFunctionRepository::GetMemCopyFunction()
 
 Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymbol* function)
 {
-    if (!function->Parent())
-    {
-        int x = 0;
-    }
     IrFunctionMapIt i = irFunctionMap.find(function);
     if (i != irFunctionMap.end())
     {

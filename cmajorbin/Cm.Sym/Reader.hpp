@@ -23,6 +23,7 @@ namespace Cm { namespace Sym {
 using Cm::Ser::BinaryReader;
 using Cm::Parsing::Span;
 class Symbol;
+class ClassTypeSymbol;
 class SymbolTable;
 class TypeSymbol;
 class Value;
@@ -48,10 +49,12 @@ public:
     void BackpatchType(TypeSymbol* type);
     void SetSpanFileIndexOffset(int spanFileIndexOffset_);
     void MarkSymbolsBound();
+    void MarkTemplateTypeSymbolsBound();
     void MarkSymbolsProject();
     bool AllTypesFetched();
     void EnqueueMakeIrTypeFor(Symbol* symbol);
     void MakeIrTypes();
+    void InitVTables();
 private:
     BinaryReader binaryReader;
     SymbolTable& symbolTable;
@@ -63,7 +66,9 @@ private:
     int spanFileIndexOffset;
     bool markSymbolsBound;
     bool markSymbolsProject;
+    bool markTemplateTypeSymbolsBound;
     std::unordered_set<Symbol*> makeIrTypeSet;
+    std::unordered_set<ClassTypeSymbol*> initVTableSet;
 };
 
 } } // namespace Cm::Sym
