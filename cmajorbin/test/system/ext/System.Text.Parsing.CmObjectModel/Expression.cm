@@ -59,12 +59,12 @@ namespace Test
         #assert(s.GetStr() == "!foo");
         s.SetStr(string());
 
-        PostfixExpression postfixExpr(new Identifier("foo"));
+        Invoke* invoke = new Invoke(new Identifier("foo"));
         List<CmObject*> invokeArgs;
         invokeArgs.Add(new Identifier("bar"));
-        postfixExpr.AddOp(new Invoke(invokeArgs));
-        postfixExpr.AddOp(new Indexing(new IntLiteral(0u, ' ')));
-        postfixExpr.Print(f);
+        invoke->SetArguments(invokeArgs);
+        Indexing indexing(invoke, new IntLiteral(0u, ' '));
+        indexing.Print(f);
         #assert(s.GetStr() == "foo(bar)[0]");
         s.SetStr(string());
 

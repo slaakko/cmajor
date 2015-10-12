@@ -10,15 +10,18 @@ namespace Test
 
         KeywordParser keywordParser("class");
         #assert(keywordParser.Keyword() == "class");
-        Scanner s0("class", 0, "", null);
+        string cls = "class";
+        Scanner s0(cls.Chars(), cls.Chars() + cls.Length(), 0, "", null);
         Match m0 = keywordParser.Parse(s0, s);
         #assert(m0.Hit());
         #assert(m0.Length() == 5);
-        Scanner s1("classified", 0, "", null);
+        string classified = "classified";
+        Scanner s1(classified.Chars(), classified.Chars() + classified.Length(), 0, "", null);
         Match m1 = keywordParser.Parse(s1, s);
         #assert(!m1.Hit());
         #assert(m1.Length() == -1);
-        Scanner s2("foo", 0, "", null);
+        string foo = "foo";
+        Scanner s2(foo.Chars(), foo.Chars() + foo.Length(), 0, "", null);
         Match m2 = keywordParser.Parse(s2, s);
         #assert(!m2.Hit());
         #assert(m2.Length() == -1);
