@@ -12,7 +12,8 @@ namespace Test
         Rule rule("rule", parsingDomain->GetNamespaceScope(""), new CharParser('x'));
         Stack<UniquePtr<Object>> s;
 
-        Scanner s0("x", 0, "", null);
+        string x = "x";
+        Scanner s0(x.Chars(), x.Chars() + x.Length(), 0, "", null);
         Match m0 = rule.Parse(s0, s);
         #assert(m0.Hit());
         #assert(m0.Length() == 1);

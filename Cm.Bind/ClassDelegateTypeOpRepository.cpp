@@ -100,9 +100,11 @@ ClassDelegateEqualOp::ClassDelegateEqualOp(Cm::Sym::TypeRepository& typeReposito
     SetReturnType(boolType);
     Cm::Sym::ParameterSymbol* leftParam(new Cm::Sym::ParameterSymbol(Span(), "left"));
     leftParam->SetType(classDelegateType);
+    typeRepository.GetSymbolTable().SetSidAndAddSymbol(leftParam);
     AddSymbol(leftParam);
     Cm::Sym::ParameterSymbol* rightParam(new Cm::Sym::ParameterSymbol(Span(), "right"));
     rightParam->SetType(classDelegateType);
+    typeRepository.GetSymbolTable().SetSidAndAddSymbol(rightParam);
     AddSymbol(rightParam);
     ComputeName();
     SetAccess(Cm::Sym::SymbolAccess::public_);
