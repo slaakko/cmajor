@@ -2661,31 +2661,31 @@ namespace Cm
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.ExpressionGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.TypeExprGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.ExpressionGrammar.Create(parsingDomain);
+                grammar0 = Cm.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.ExpressionGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.IdentifierGrammar.Create(parsingDomain);
+                grammar1 = Cm.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.TypeExprGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.TypeExprGrammar.Create(parsingDomain);
+                grammar2 = Cm.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
-            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
             AddRule(new StatementRule("Statement", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(

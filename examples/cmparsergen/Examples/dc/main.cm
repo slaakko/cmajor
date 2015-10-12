@@ -15,7 +15,7 @@ void main()
             }
             try
             {
-                double value = grammar->Parse(line, 0, "");
+                double value = grammar->Parse(line.Chars(), line.Chars() + line.Length(), 0, "");
                 Console.Out() << "= " << value << endl();
             }
             catch (const Exception& ex)

@@ -53,7 +53,7 @@ namespace Syntax
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -290,25 +290,25 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.RuleGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Syntax.RuleGrammar.Create(parsingDomain);
+                grammar0 = Syntax.ElementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.RuleGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Syntax.ElementGrammar.Create(parsingDomain);
+                grammar1 = Syntax.RuleGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Rule", this, "RuleGrammar.Rule"));
-            AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("Rule", this, "RuleGrammar.Rule"));
+            AddRuleLink(new RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
             AddRule(new GrammarRule("Grammar", GetScope(),
                 new SequenceParser(
                     new SequenceParser(
