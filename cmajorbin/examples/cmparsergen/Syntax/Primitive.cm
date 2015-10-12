@@ -50,7 +50,7 @@ namespace Syntax
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -1035,16 +1035,16 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
             if (grammar0 == null)
             {
-                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar0 = Syntax.ElementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar1 == null)
             {
-                grammar1 = Syntax.ElementGrammar.Create(parsingDomain);
+                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }

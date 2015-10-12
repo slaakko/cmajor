@@ -21,9 +21,9 @@ public class DcGrammar: System.Text.Parsing.Grammar
     {
         SetOwner(0);
     }
-    public double Parse(const string& content, int fileIndex, const string& fileName)
+    public double Parse(const char* start, const char* end, int fileIndex, const string& fileName)
     {
-        Scanner scanner(content, fileIndex, fileName, Skip());
+        Scanner scanner(start, end, fileIndex, fileName, SkipRule());
         System.IO.OutputStream* log = Log();
         UniquePtr<XmlLog> xmlLog;
         if (log != null)
@@ -34,21 +34,21 @@ public class DcGrammar: System.Text.Parsing.Grammar
         }
         Stack<UniquePtr<Object>> stack;
         Match match = Parse(scanner, stack);
-        Position stop = scanner.GetPosition();
+        Span stop = scanner.GetSpan();
         if (log != null)
         {
             xmlLog->WriteEndRule("parse");
         }
-        if (!match.Hit() || stop.Index() != content.Length())
+        if (!match.Hit() || stop.Start() != int(end - start))
         {
-            Rule* start = Start();
-            if (start != null)
+            Rule* startRule = StartRule();
+            if (startRule != null)
             {
-                throw ExpectationFailure(start->Info(), content, scanner.GetPosition(), fileName);
+                throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
             }
             else
             {
-                throw ParsingException("grammar '" + Name() + "' has no start rule", content, scanner.GetPosition(), fileName);
+                throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
             }
         }
         UniquePtr<Object> value = stack.Pop();
@@ -90,15 +90,15 @@ public class DcGrammar: System.Text.Parsing.Grammar
             NonterminalParser* mtNonterminalParser = GetNonterminal("mt");
             mtNonterminalParser->SetPostCall(PostCall(Postmt));
         }
-        public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.fromt;
         }
-        public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.value + context.frompt;
         }
-        public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.value - context.frommt;
         }
@@ -171,15 +171,15 @@ public class DcGrammar: System.Text.Parsing.Grammar
             NonterminalParser* dfNonterminalParser = GetNonterminal("df");
             dfNonterminalParser->SetPostCall(PostCall(Postdf));
         }
-        public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.fromf;
         }
-        public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.value * context.fromtf;
         }
-        public throw void A2Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.value / context.fromdf;
         }
@@ -248,11 +248,11 @@ public class DcGrammar: System.Text.Parsing.Grammar
             NonterminalParser* pNonterminalParser = GetNonterminal("p");
             pNonterminalParser->SetPostCall(PostCall(Postp));
         }
-        public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = -context.frommp;
         }
-        public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.fromp;
         }
@@ -312,11 +312,11 @@ public class DcGrammar: System.Text.Parsing.Grammar
             NonterminalParser* nNonterminalParser = GetNonterminal("n");
             nNonterminalParser->SetPostCall(PostCall(Postn));
         }
-        public throw void A0Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.frome;
         }
-        public throw void A1Action(const string& match, const string& content, const Position& position, const string& fileName, bool& pass)
+        public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
         {
             context.value = context.fromn;
         }

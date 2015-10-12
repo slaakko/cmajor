@@ -54,7 +54,7 @@ namespace Syntax
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -668,44 +668,44 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.ExpressionGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.StatementGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.ExpressionGrammar.Create(parsingDomain);
+                grammar0 = Cm.StatementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.PrimitiveGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Syntax.PrimitiveGrammar.Create(parsingDomain);
+                grammar1 = Syntax.ElementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Syntax.CompositeGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.ExpressionGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Syntax.CompositeGrammar.Create(parsingDomain);
+                grammar2 = Cm.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Syntax.CompositeGrammar");
             if (grammar3 == null)
             {
-                grammar3 = Syntax.ElementGrammar.Create(parsingDomain);
+                grammar3 = Syntax.CompositeGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.StatementGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Syntax.PrimitiveGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.StatementGrammar.Create(parsingDomain);
+                grammar4 = Syntax.PrimitiveGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
+            AddRuleLink(new RuleLink("ExpressionList", this, "Cm.ExpressionGrammar.ExpressionList"));
+            AddRuleLink(new RuleLink("CompoundStatement", this, "Cm.StatementGrammar.CompoundStatement"));
             AddRuleLink(new RuleLink("Primitive", this, "PrimitiveGrammar.Primitive"));
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
-            AddRuleLink(new RuleLink("ExpressionList", this, "Cm.ExpressionGrammar.ExpressionList"));
-            AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
-            AddRuleLink(new RuleLink("CompoundStatement", this, "Cm.StatementGrammar.CompoundStatement"));
             AddRule(new PrimaryRule("Primary", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

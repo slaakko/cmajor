@@ -53,7 +53,7 @@ namespace Syntax
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
             UniquePtr<Object> value = stack.Pop();
@@ -344,33 +344,33 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.GrammarGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = Syntax.GrammarGrammar.Create(parsingDomain);
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.NamespaceGrammar");
             if (grammar1 == null)
             {
-                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar1 = Cm.NamespaceGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.NamespaceGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Syntax.GrammarGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.NamespaceGrammar.Create(parsingDomain);
+                grammar2 = Syntax.GrammarGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
+            AddRuleLink(new RuleLink("newline", this, "System.Text.Parsing.stdlib.newline"));
             AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRuleLink(new RuleLink("NamespaceImport", this, "Cm.NamespaceGrammar.NamespaceImport"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("Alias", this, "Cm.NamespaceGrammar.Alias"));
-            AddRuleLink(new RuleLink("newline", this, "System.Text.Parsing.stdlib.newline"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
             AddRule(new ParserFileRule("ParserFile", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

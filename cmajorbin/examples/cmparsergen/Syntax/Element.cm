@@ -68,7 +68,7 @@ namespace Syntax
                 }
                 else
                 {
-                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
                 }
             }
         }
@@ -602,11 +602,11 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Declarator", this, "Cm.IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRuleLink(new RuleLink("TypeExpr", this, "Cm.TypeExprGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("Declarator", this, "Cm.IdentifierGrammar.Identifier"));
             AddRule(new RuleLinkRule("RuleLink", GetScope(),
                 new AlternativeParser(
                     new ActionParser("A0",
