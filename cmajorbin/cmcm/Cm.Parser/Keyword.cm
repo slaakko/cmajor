@@ -24,6 +24,7 @@ namespace Cm.Parser
             SetOwner(0);
             keywords0.Add("abstract");
             keywords0.Add("and");
+            keywords0.Add("as");
             keywords0.Add("axiom");
             keywords0.Add("base");
             keywords0.Add("bool");

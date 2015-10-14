@@ -1803,40 +1803,40 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
+                grammar0 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
+                grammar1 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
+                grammar2 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
             if (grammar3 == null)
             {
-                grammar3 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar3 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
+                grammar4 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
-            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
             if (grammar5 == null)
             {
-                grammar5 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+                grammar5 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
             Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.ConstantGrammar");
@@ -1845,46 +1845,46 @@ namespace Cm.Parser
                 grammar6 = Cm.Parser.ConstantGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar6);
-            Grammar* grammar7 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
+            Grammar* grammar7 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
             if (grammar7 == null)
             {
-                grammar7 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
+                grammar7 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar7);
-            Grammar* grammar8 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
+            Grammar* grammar8 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar8 == null)
             {
-                grammar8 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
+                grammar8 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar8);
-            Grammar* grammar9 = parsingDomain->GetGrammar("Cm.Parser.TypedefGrammar");
+            Grammar* grammar9 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
             if (grammar9 == null)
             {
-                grammar9 = Cm.Parser.TypedefGrammar.Create(parsingDomain);
+                grammar9 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar9);
-            Grammar* grammar10 = parsingDomain->GetGrammar("Cm.Parser.TemplateGrammar");
+            Grammar* grammar10 = parsingDomain->GetGrammar("Cm.Parser.StatementGrammar");
             if (grammar10 == null)
             {
-                grammar10 = Cm.Parser.TemplateGrammar.Create(parsingDomain);
+                grammar10 = Cm.Parser.StatementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar10);
-            Grammar* grammar11 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
+            Grammar* grammar11 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
             if (grammar11 == null)
             {
-                grammar11 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
+                grammar11 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar11);
-            Grammar* grammar12 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            Grammar* grammar12 = parsingDomain->GetGrammar("Cm.Parser.TemplateGrammar");
             if (grammar12 == null)
             {
-                grammar12 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+                grammar12 = Cm.Parser.TemplateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar12);
-            Grammar* grammar13 = parsingDomain->GetGrammar("Cm.Parser.StatementGrammar");
+            Grammar* grammar13 = parsingDomain->GetGrammar("Cm.Parser.TypedefGrammar");
             if (grammar13 == null)
             {
-                grammar13 = Cm.Parser.StatementGrammar.Create(parsingDomain);
+                grammar13 = Cm.Parser.TypedefGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar13);
         }
@@ -1893,20 +1893,20 @@ namespace Cm.Parser
             AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
-            AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
             AddRuleLink(new RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
+            AddRuleLink(new RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
+            AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
+            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
             AddRuleLink(new RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
             AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-            AddRuleLink(new RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
-            AddRuleLink(new RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
-            AddRuleLink(new RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
             AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
             AddRuleLink(new RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
+            AddRuleLink(new RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRule(new ClassRule("Class", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

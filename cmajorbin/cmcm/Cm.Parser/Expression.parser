@@ -132,17 +132,22 @@ namespace Cm.Parser
             }
             ;
 
-        Relational(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s, var Operator op) : Node*
+        Relational(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s, var Operator op, var UniquePtr<Node> typeExpr) : Node*
             ::= 
             (   Shift(ctx):left{ expr.Reset(left); s = span; }
                 (   
-                    (   ("<=" - "<=>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator.lessOrEq; }
-                    |   ">="{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator.greaterOrEq; }
-                    |   ('<' - ("<<" | "<=>")){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator.less; }
-                    |   ('>' - ">>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else op = Operator.greater; }
+                    (   ("<=" - "<=>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator.lessOrEq; ctx->PushParsingIsOrAs(false); } }
+                    |   ">="{ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator.greaterOrEq; ctx->PushParsingIsOrAs(false); } }
+                    |   ('<' - ("<<" | "<=>")){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator.less; ctx->PushParsingIsOrAs(false); } }
+                    |   ('>' - ">>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator.greater; ctx->PushParsingIsOrAs(false); } }
+                    |   (keyword("is"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator.is_; ctx->PushParsingIsOrAs(true); } }
+                        TypeExpr(ctx):isType{ typeExpr.Reset(isType); })
+                    |   (keyword("as"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator.as_; ctx->PushParsingIsOrAs(true); } }
+                        TypeExpr(ctx):asType{ typeExpr.Reset(asType); })
                     )
-                    Shift(ctx):right!
+                    (Shift(ctx):right | empty{ if (!ctx->ParsingIsOrAs()) pass = false; })
                     { 
+                        ctx->PopParsingIsOrAs();
                         s.SetEnd(span.End()); 
                         switch (op)
                         {
@@ -150,6 +155,8 @@ namespace Cm.Parser
                             case Operator.greater: expr.Reset(new GreaterNode(s, expr.Release(), right)); break;
                             case Operator.lessOrEq: expr.Reset(new LessOrEqualNode(s, expr.Release(), right)); break;
                             case Operator.greaterOrEq: expr.Reset(new GreaterOrEqualNode(s, expr.Release(), right)); break;
+                            case Operator.is_: expr.Reset(new IsNode(s, expr.Release(), typeExpr.Release())); break;
+                            case Operator.as_: expr.Reset(new AsNode(s, expr.Release(), typeExpr.Release())); break;
                         }
                     }
                 )*

@@ -21,7 +21,7 @@ namespace Cm.Parser
                     "public", "protected", "private", "internal", "virtual", "abstract", "override", "suppress", 
                     "operator", "class", "return", "if", "else", "switch", "case", "default", "while", "do", "for", "break", "continue", "goto",
                     "typedef", "typename", "const", "null", "this", "base", "construct", "destroy", "new", "delete", "sizeof", "try", "catch", "throw",
-                    "concept", "where", "is", "axiom", "and", "or", "not"
+                    "concept", "where", "is", "as", "axiom", "and", "or", "not"
                 ])
             ;
     }

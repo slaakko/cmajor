@@ -1121,8 +1121,8 @@ namespace Cm.Parser
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRule(new ProjectRule("Project", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

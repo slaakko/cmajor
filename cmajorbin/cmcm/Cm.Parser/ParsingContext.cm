@@ -79,7 +79,7 @@ namespace Cm.Parser
         {
             parsingLvalue = parsingLvalueStack.Pop();
         }
-        public nothrow bool ParsingArguments() const
+        public nothrow inline bool ParsingArguments() const
         {
             return parsingArguments;
         }
@@ -91,6 +91,19 @@ namespace Cm.Parser
         public void EndParsingArguments()
         {
             parsingArguments = parsingArgumentsStack.Pop();
+        }
+        public nothrow inline bool ParsingIsOrAs() const
+        {
+            return parsingIsOrAs;
+        }
+        public void PushParsingIsOrAs(bool enable)
+        {
+            parsingIsOrAsStack.Push(parsingIsOrAs);
+            parsingIsOrAs = enable;
+        }
+        public void PopParsingIsOrAs()
+        {
+            parsingIsOrAs = parsingIsOrAsStack.Pop();
         }
         private bool parsingTypeExpr;
         private Stack<bool> parsingTypeExprStack;
@@ -104,5 +117,7 @@ namespace Cm.Parser
         private Stack<bool> parsingLvalueStack;
         private bool parsingArguments;
         private Stack<bool> parsingArgumentsStack;
+        private bool parsingIsOrAs;
+        private Stack<bool> parsingIsOrAsStack;
     }
 }

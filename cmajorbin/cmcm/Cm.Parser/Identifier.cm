@@ -155,16 +155,16 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.KeywordGrammar");
             if (grammar0 == null)
             {
-                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar0 = Cm.Parser.KeywordGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.KeywordGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar1 == null)
             {
-                grammar1 = Cm.Parser.KeywordGrammar.Create(parsingDomain);
+                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }
