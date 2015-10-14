@@ -292,9 +292,9 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRule(new TemplateIdRule("TemplateId", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

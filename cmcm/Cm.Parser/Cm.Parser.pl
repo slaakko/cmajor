@@ -96,7 +96,7 @@ namespace Cm.Parser
         BitXor(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s): Node*;
         BitAnd(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s): Node*;
         Equality(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s, var Operator op): Node*;
-        Relational(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s, var Operator op): Node*;
+        Relational(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s, var Operator op, var UniquePtr<Node> typeExpr): Node*;
         Shift(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s, var Operator op): Node*;
         Additive(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s, var Operator op): Node*;
         Multiplicative(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s, var Operator op): Node*;

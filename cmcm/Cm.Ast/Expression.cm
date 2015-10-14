@@ -1346,6 +1346,106 @@ namespace Cm.Ast
         private UniquePtr<Node> targetTypeExpr;
         private UniquePtr<Node> sourceExpr;
     }
+    
+    public class IsNode : Node
+    {
+        public nothrow IsNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow IsNode(const Span& span_, Node* expr_, Node* typeExpr_) : base(span_), expr(expr_), typeExpr(typeExpr_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.isNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new IsNode(GetSpan(), expr->Clone(cloneContext), typeExpr->Clone(cloneContext));
+        }
+        public override void Read(Reader& reader)
+        {
+            expr.Reset(reader.ReadNode());
+            expr->SetParent(this);
+            typeExpr.Reset(reader.ReadNode());
+            typeExpr->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(expr.GetPtr());
+            writer.Write(typeExpr.GetPtr());
+        }
+        public nothrow override string ToString() const
+        {
+            string s = expr->ToString();
+            s.Append(" is ").Append(typeExpr->ToString());
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public inline nothrow Node* Expr() const
+        {
+            return expr.GetPtr();
+        }
+        public inline nothrow Node* TypeExpr() const
+        {
+            return typeExpr.GetPtr();
+        }
+        private UniquePtr<Node> expr;
+        private UniquePtr<Node> typeExpr;
+    }
+
+    public class AsNode : Node
+    {
+        public nothrow AsNode(const Span& span_) : base(span_)
+        {
+        }
+        public nothrow AsNode(const Span& span_, Node* expr_, Node* typeExpr_) : base(span_), expr(expr_), typeExpr(typeExpr_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.asNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new AsNode(GetSpan(), expr->Clone(cloneContext), typeExpr->Clone(cloneContext));
+        }
+        public override void Read(Reader& reader)
+        {
+            expr.Reset(reader.ReadNode());
+            expr->SetParent(this);
+            typeExpr.Reset(reader.ReadNode());
+            typeExpr->SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(expr.GetPtr());
+            writer.Write(typeExpr.GetPtr());
+        }
+        public nothrow override string ToString() const
+        {
+            string s = expr->ToString();
+            s.Append(" as ").Append(typeExpr->ToString());
+            return s;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public inline nothrow Node* Expr() const
+        {
+            return expr.GetPtr();
+        }
+        public inline nothrow Node* TypeExpr() const
+        {
+            return typeExpr.GetPtr();
+        }
+        private UniquePtr<Node> expr;
+        private UniquePtr<Node> typeExpr;
+    }
 
     public class NewNode : Node
     {

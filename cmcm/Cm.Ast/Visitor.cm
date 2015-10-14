@@ -359,6 +359,12 @@ namespace Cm.Ast
         public virtual void Visit(CastNode& castNode)
         {
         }
+        public virtual void Visit(IsNode& isNode)
+        {
+        }
+        public virtual void Visit(AsNode& asNode)
+        {
+        }
         public virtual void Visit(NewNode& newNode)
         {
         }

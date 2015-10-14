@@ -915,6 +915,7 @@ namespace Cm.Parser
                 AddLocalVariable(AttrOrVariable("UniquePtr<Node>", "expr"));
                 AddLocalVariable(AttrOrVariable("Span", "s"));
                 AddLocalVariable(AttrOrVariable("Operator", "op"));
+                AddLocalVariable(AttrOrVariable("UniquePtr<Node>", "typeExpr"));
             }
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
@@ -947,9 +948,25 @@ namespace Cm.Parser
                 a5ActionParser->SetAction(ParsingAction(A5Action));
                 ActionParser* a6ActionParser = GetAction("A6");
                 a6ActionParser->SetAction(ParsingAction(A6Action));
+                ActionParser* a7ActionParser = GetAction("A7");
+                a7ActionParser->SetAction(ParsingAction(A7Action));
+                ActionParser* a8ActionParser = GetAction("A8");
+                a8ActionParser->SetAction(ParsingAction(A8Action));
+                ActionParser* a9ActionParser = GetAction("A9");
+                a9ActionParser->SetAction(ParsingAction(A9Action));
+                ActionParser* a10ActionParser = GetAction("A10");
+                a10ActionParser->SetAction(ParsingAction(A10Action));
+                ActionParser* a11ActionParser = GetAction("A11");
+                a11ActionParser->SetAction(ParsingAction(A11Action));
                 NonterminalParser* leftNonterminalParser = GetNonterminal("left");
                 leftNonterminalParser->SetPreCall(PreCall(Preleft));
                 leftNonterminalParser->SetPostCall(PostCall(Postleft));
+                NonterminalParser* isTypeNonterminalParser = GetNonterminal("isType");
+                isTypeNonterminalParser->SetPreCall(PreCall(PreisType));
+                isTypeNonterminalParser->SetPostCall(PostCall(PostisType));
+                NonterminalParser* asTypeNonterminalParser = GetNonterminal("asType");
+                asTypeNonterminalParser->SetPreCall(PreCall(PreasType));
+                asTypeNonterminalParser->SetPostCall(PostCall(PostasType));
                 NonterminalParser* rightNonterminalParser = GetNonterminal("right");
                 rightNonterminalParser->SetPreCall(PreCall(Preright));
                 rightNonterminalParser->SetPostCall(PostCall(Postright));
@@ -966,25 +983,68 @@ namespace Cm.Parser
             public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
-                else context.op = Operator.lessOrEq;
+                else
+                {
+                    context.op = Operator.lessOrEq;
+                    context.ctx->PushParsingIsOrAs(false);
+                }
             }
             public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
-                else context.op = Operator.greaterOrEq;
+                else
+                {
+                    context.op = Operator.greaterOrEq;
+                    context.ctx->PushParsingIsOrAs(false);
+                }
             }
             public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
-                else context.op = Operator.less;
+                else
+                {
+                    context.op = Operator.less;
+                    context.ctx->PushParsingIsOrAs(false);
+                }
             }
             public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
-                else context.op = Operator.greater;
+                else
+                {
+                    context.op = Operator.greater;
+                    context.ctx->PushParsingIsOrAs(false);
+                }
             }
             public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
+                else
+                {
+                    context.op = Operator.is_;
+                    context.ctx->PushParsingIsOrAs(true);
+                }
+            }
+            public throw void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.typeExpr.Reset(context.fromisType);
+            }
+            public throw void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                if (context.ctx->ParsingLvalue() || context.ctx->ParsingSimpleStatement() && !context.ctx->ParsingArguments()) pass = false;
+                else
+                {
+                    context.op = Operator.as_;
+                    context.ctx->PushParsingIsOrAs(true);
+                }
+            }
+            public throw void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.typeExpr.Reset(context.fromasType);
+            }
+            public throw void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.ctx->PopParsingIsOrAs();
                 context.s.SetEnd(span.End());
                 switch (context.op)
                 {
@@ -1008,7 +1068,21 @@ namespace Cm.Parser
                         context.expr.Reset(new GreaterOrEqualNode(context.s, context.expr.Release(), context.fromright));
                         break;
                     }
+                    case Operator.is_:
+                    {
+                        context.expr.Reset(new IsNode(context.s, context.expr.Release(), context.typeExpr.Release()));
+                        break;
+                    }
+                    case Operator.as_:
+                    {
+                        context.expr.Reset(new AsNode(context.s, context.expr.Release(), context.typeExpr.Release()));
+                        break;
+                    }
                 }
+            }
+            public throw void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                if (!context.ctx->ParsingIsOrAs()) pass = false;
             }
             public throw void Preleft(Stack<UniquePtr<Object>>& stack)
             {
@@ -1020,6 +1094,30 @@ namespace Cm.Parser
                 {
                     UniquePtr<Object> fromleft_value = stack.Pop();
                     context.fromleft = *cast<ValueObject<Node*>*>(fromleft_value.GetPtr());
+                }
+            }
+            public throw void PreisType(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostisType(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromisType_value = stack.Pop();
+                    context.fromisType = *cast<ValueObject<Node*>*>(fromisType_value.GetPtr());
+                }
+            }
+            public throw void PreasType(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostasType(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromasType_value = stack.Pop();
+                    context.fromasType = *cast<ValueObject<Node*>*>(fromasType_value.GetPtr());
                 }
             }
             public throw void Preright(Stack<UniquePtr<Object>>& stack)
@@ -1041,7 +1139,10 @@ namespace Cm.Parser
                 public UniquePtr<Node> expr;
                 public Span s;
                 public Operator op;
+                public UniquePtr<Node> typeExpr;
                 public Node* fromleft;
+                public Node* fromisType;
+                public Node* fromasType;
                 public Node* fromright;
             }
             private Stack<Context> contextStack;
@@ -2449,12 +2550,12 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("Literal", this, "LiteralGrammar.Literal"));
             AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
+            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("Literal", this, "LiteralGrammar.Literal"));
-            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
             AddRule(new ExpressionRule("Expression", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("Equivalence", "Equivalence", 1))));
@@ -2573,28 +2674,42 @@ namespace Cm.Parser
                                 new AlternativeParser(
                                     new AlternativeParser(
                                         new AlternativeParser(
-                                            new ActionParser("A2",
-                                                new DifferenceParser(
-                                                    new StringParser("<="),
-                                                    new StringParser("<=>"))
-                                                ),
-                                            new ActionParser("A3",
-                                                new StringParser(">="))),
-                                        new ActionParser("A4",
-                                            new DifferenceParser(
-                                                new CharParser('<'),
+                                            new AlternativeParser(
                                                 new AlternativeParser(
-                                                    new StringParser("<<"),
-                                                    new StringParser("<=>")))
-                                            )),
-                                    new ActionParser("A5",
-                                        new DifferenceParser(
-                                            new CharParser('>'),
-                                            new StringParser(">>"))
-                                        )),
-                                new ActionParser("A6",
-                                    new ExpectationParser(
-                                        new NonterminalParser("right", "Shift", 1)))))))));
+                                                    new ActionParser("A2",
+                                                        new DifferenceParser(
+                                                            new StringParser("<="),
+                                                            new StringParser("<=>"))
+                                                        ),
+                                                    new ActionParser("A3",
+                                                        new StringParser(">="))),
+                                                new ActionParser("A4",
+                                                    new DifferenceParser(
+                                                        new CharParser('<'),
+                                                        new AlternativeParser(
+                                                            new StringParser("<<"),
+                                                            new StringParser("<=>")))
+                                                    )),
+                                            new ActionParser("A5",
+                                                new DifferenceParser(
+                                                    new CharParser('>'),
+                                                    new StringParser(">>"))
+                                                )),
+                                        new SequenceParser(
+                                            new ActionParser("A6",
+                                                new KeywordParser("is")),
+                                            new ActionParser("A7",
+                                                new NonterminalParser("isType", "TypeExpr", 1)))),
+                                    new SequenceParser(
+                                        new ActionParser("A8",
+                                            new KeywordParser("as")),
+                                        new ActionParser("A9",
+                                            new NonterminalParser("asType", "TypeExpr", 1)))),
+                                new ActionParser("A10",
+                                    new AlternativeParser(
+                                        new NonterminalParser("right", "Shift", 1),
+                                        new ActionParser("A11",
+                                            new EmptyParser())))))))));
             AddRule(new ShiftRule("Shift", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(
