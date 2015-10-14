@@ -26,10 +26,6 @@ namespace Cm.Sym
         {
             return "parameter";
         }
-        public nothrow override bool IsParameterSymbol() const
-        {
-            return true;
-        }
         public nothrow override bool IsExportSymbol() const
         {
             return true;
@@ -85,7 +81,7 @@ namespace Cm.Sym
         public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
         {
             if (type == null) return;
-            if (type->IsDerivedTypeSymbol())
+            if (type is DerivedTypeSymbol*)
             {
                 if (collected.CFind(type) == collected.CEnd())
                 {
@@ -97,7 +93,7 @@ namespace Cm.Sym
         public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
             if (type == null) return;
-            if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())
+            if (type is TemplateTypeSymbol* || type is DerivedTypeSymbol*)
             {
                 if (collected.CFind(type) == collected.CEnd())
                 {
@@ -108,7 +104,7 @@ namespace Cm.Sym
         }
         public nothrow override void ReplaceReplicaTypes()
         {
-            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            if (type->IsReplica() && type is TemplateTypeSymbol*)
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
                 type = replica->GetPrimaryTemplateTypeSymbol();

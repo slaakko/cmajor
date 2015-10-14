@@ -24,10 +24,6 @@ namespace System.Text.Parsing
         {
             SetScope(new Scope(Name(), EnclosingScope()));
         }
-        public override bool IsNamespace() const
-        {
-            return true;
-        }
         public override void Accept(Visitor& visitor)
         {
             visitor.BeginVisit(*this);

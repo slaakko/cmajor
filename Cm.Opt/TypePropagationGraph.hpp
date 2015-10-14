@@ -56,12 +56,15 @@ public:
     void AddRoot(TpGraphNode* root);
     void Process();
     std::unordered_map<uint32_t, TpGraphNode*>& VirtualCallMap() { return virtualCallMap; }
+    void IncDevirtualizedFunctionCalls() { ++devirtualizedFunctionCalls; }
+    int DevirtulizedFunctionCalls() const { return devirtualizedFunctionCalls; }
 private:
     Cm::Sym::SymbolTable& symbolTable;
     std::vector<std::unique_ptr<TpGraphNode>> nodes;
     std::unordered_map<uint32_t, TpGraphNode*> nodeMap;
     std::unordered_set<TpGraphNode*> roots;
     std::unordered_map<uint32_t, TpGraphNode*> virtualCallMap;
+    int devirtualizedFunctionCalls;
 };
 
 class TpGraphBuilderVisitor : public Cm::BoundTree::Visitor

@@ -29,10 +29,6 @@ namespace System.Text.Parsing
         public virtual ~ParsingObject()
         {
         }
-        public virtual bool IsGrammar() const
-        {
-            return false;
-        }
         public nothrow inline bool IsExternal() const
         {
             return owner == external;
@@ -103,26 +99,6 @@ namespace System.Text.Parsing
         {
             scope = scope_;
             Own(scope);
-        }
-        public virtual bool IsActionParser() const
-        {
-            return false;
-        }
-        public virtual bool IsNonterminalParser() const
-        {
-            return false;
-        }
-        public virtual bool IsRule() const
-        {
-            return false;
-        }
-        public virtual bool IsRuleLink() const
-        {
-            return false;
-        }
-        public virtual bool IsNamespace() const
-        {
-            return false;
         }
         public nothrow inline void SetOwner(int owner_)
         {

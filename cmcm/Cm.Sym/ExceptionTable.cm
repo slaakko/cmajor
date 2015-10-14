@@ -124,7 +124,7 @@ namespace Cm.Sym
                     {
                         throw Exception("exception symbol '" + exceptionTypeFullName + "' not found");
                     }
-                    if (!exceptionSymbol->IsTypeSymbol())
+                    if (!(exceptionSymbol is TypeSymbol*))
                     {
                         throw Exception("exception symbol '" + exceptionTypeFullName + "' is not type symbol");
                     }

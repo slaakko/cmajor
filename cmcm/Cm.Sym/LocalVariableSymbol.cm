@@ -21,10 +21,6 @@ namespace Cm.Sym
         {
             return SymbolType.localVariableSymbol;
         }
-        public nothrow override bool IsLocalVariableSymbol() const
-        {
-            return true;
-        }
         public nothrow override SymbolAccess DeclaredAccess() const
         {
             return SymbolAccess.public_;
@@ -63,7 +59,7 @@ namespace Cm.Sym
         }
         public nothrow override void ReplaceReplicaTypes()
         {
-            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            if (type->IsReplica() && (type is TemplateTypeSymbol*))
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
                 type = replica->GetPrimaryTemplateTypeSymbol();

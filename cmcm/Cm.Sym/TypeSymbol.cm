@@ -104,10 +104,6 @@ namespace Cm.Sym
         {
             return id;
         }
-        public nothrow override bool IsTypeSymbol() const
-        {
-            return true;
-        }
         public nothrow virtual bool IsValueTypeSymbol() const
         {
             return false;

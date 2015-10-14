@@ -17,10 +17,6 @@ namespace Cm.Ast
         public nothrow ConstraintNode(const Span& span_) : base(span_)
         {
         }
-        public override nothrow bool IsConstraintNode() const 
-        {
-            return true;
-        }
     }
     
     public abstract class BinaryConstraintNode : ConstraintNode
@@ -753,10 +749,6 @@ namespace Cm.Ast
         {
             return NodeType.conceptNode;
         }
-        public nothrow override bool IsConceptNode() const
-        {
-            return true;
-        }
         public nothrow inline string FirstTypeParameter() const
         {
             return typeParameters[0]->ToString();
@@ -884,10 +876,6 @@ namespace Cm.Ast
         public inline NodeList<AxiomNode>& Axioms()
         {
             return axioms;
-        }
-        public virtual nothrow bool IsCommonConceptNode() const
-        {
-            return false;
         }
         private Specifiers specifiers;
         private UniquePtr<IdentifierNode> id;

@@ -30,6 +30,30 @@ struct CidLess
     }
 };
 
+void IrClassTypeRepository::SetLayoutIndeces()
+{
+    for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
+    {
+        int index = 0;
+        if (classType->BaseClass())
+        {
+            ++index;
+        }
+        if (!classType->MemberVariables().empty())
+        {
+            for (Cm::Sym::MemberVariableSymbol* memberVariable : classType->MemberVariables())
+            {
+                if (index == classType->VPtrIndex())
+                {
+                    ++index;
+                }
+                memberVariable->SetLayoutIndex(index);
+                ++index;
+            }
+        }
+    }
+}
+
 void IrClassTypeRepository::Write(Cm::Sym::BcuWriter& writer)
 {
     std::vector<Cm::Sym::ClassTypeSymbol*> classTypeVec;

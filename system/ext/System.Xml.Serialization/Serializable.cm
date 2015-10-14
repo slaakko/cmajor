@@ -47,14 +47,6 @@ namespace System.Xml.Serialization
         }
         public abstract string Getter() const;
         public abstract string Setter() const;
-        public virtual bool IsScalarFieldType() const
-        {
-            return false;
-        }
-        public virtual bool IsArrayField() const
-        {
-            return false;
-        }
         public virtual string Initializer() const
         {
             return "(\"" + Name() + "\")";

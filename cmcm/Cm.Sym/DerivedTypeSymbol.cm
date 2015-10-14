@@ -58,10 +58,6 @@ namespace Cm.Sym
             }
             return parent;
         }
-        public nothrow override bool IsDerivedTypeSymbol() const
-        {
-            return true;
-        }
         public nothrow override TypeSymbol* GetBaseType() const
         {
             return baseType;
@@ -72,15 +68,15 @@ namespace Cm.Sym
         }
         public nothrow override bool IsPointerTypeClassType() const
         {
-            return GetPointerCount() == 1 && baseType->IsClassTypeSymbol();
+            return GetPointerCount() == 1 && (baseType is ClassTypeSymbol*);
         }
         public nothrow override bool IsPointerToTemplateType() const
         {
-            return GetPointerCount() == 1 && baseType->IsTemplateTypeSymbol();
+            return GetPointerCount() == 1 && (baseType is TemplateTypeSymbol*);
         }
         public nothrow override bool IsVoidPtrType() const
         {
-            return GetPointerCount() == 1 && baseType->IsVoidTypeSymbol();
+            return GetPointerCount() == 1 && (baseType is VoidTypeSymbol*);
         }
         public nothrow override int GetPointerCount() const
         {
@@ -128,7 +124,7 @@ namespace Cm.Sym
                 else if (derivation == Cm.Ast.Derivation.rvalueRef) return false;
                 else if (derivation == Cm.Ast.Derivation.pointer) isPointerType = true;
             }
-            return isReferenceType && (isPointerType || !baseType->IsClassTypeSymbol());
+            return isReferenceType && (isPointerType || !(baseType is ClassTypeSymbol*));
         }
         public nothrow override bool IsNonReferencePointerType() const
         {
@@ -159,7 +155,7 @@ namespace Cm.Sym
         }
         public nothrow override bool IsPrimitiveSingleDimensionArrayType() const
         {
-            return arrayDimensions.Count() == 1 && (!baseType->IsClassTypeSymbol() || baseType->IsClassTypeSymbol() && IsPointerType());
+            return arrayDimensions.Count() == 1 && (!(baseType is ClassTypeSymbol*) || (baseType is ClassTypeSymbol*) && IsPointerType());
         }
         public nothrow override int GetLastArrayDimension() const
         {
@@ -243,7 +239,7 @@ namespace Cm.Sym
         public nothrow override void ReplaceReplicaTypes()
         {
             base->ReplaceReplicaTypes();
-            if (baseType->IsReplica() && baseType->IsTemplateTypeSymbol())
+            if (baseType->IsReplica() && (baseType is TemplateTypeSymbol*))
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(baseType);
                 baseType = replica->GetPrimaryTemplateTypeSymbol();

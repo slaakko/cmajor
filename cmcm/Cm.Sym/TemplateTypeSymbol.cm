@@ -26,10 +26,6 @@ namespace Cm.Sym
         {
             return SymbolType.templateTypeSymbol;
         }
-        public nothrow override bool IsTemplateTypeSymbol() const
-        {
-            return true;
-        }
         public nothrow override const char* TypeString() const
         {
             return "template type";
@@ -113,7 +109,7 @@ namespace Cm.Sym
             Symbol* parent = reader.GetSymbolTable().GlobalScope()->Lookup(parentName);
             if (parent != null)
             {
-                if (parent->IsContainerSymbol())
+                if (parent is ContainerSymbol*)
                 {
                     ContainerSymbol* containerParent = cast<ContainerSymbol*>(parent);
                     containerParent->AddSymbol(this);
@@ -211,7 +207,7 @@ namespace Cm.Sym
             for (int i = 0; i < n; ++i)
             {
                 TypeSymbol* typeArgument = typeArguments[i];
-                if (typeArgument->IsReplica() && typeArgument->IsTemplateTypeSymbol())
+                if (typeArgument->IsReplica() && typeArgument is TemplateTypeSymbol*)
                 {
                     TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(typeArgument);
                     typeArguments[i] = replica->GetPrimaryTemplateTypeSymbol();

@@ -57,6 +57,7 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 
 void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
+    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository());
     for (Ir::Intf::Function* function : ExternalFunctions())
     {
         std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>::iterator i = functionMap.find(function);
@@ -132,6 +133,7 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     functionEmitter.SetFunctionMap(&functionMap);
     functionEmitter.SetCFilePath(cFilePath);
     functionEmitter.SetSymbolTable(SymbolTable());
+    functionEmitter.SetTpGraph(TpGraph());
     boundFunction.Accept(functionEmitter);
     funLine = funFormatter.Line();
     if (debugInfoFile)

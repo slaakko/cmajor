@@ -22,10 +22,6 @@ namespace Cm.Sym
         {
             return false;
         }
-        public nothrow override bool IsFunctionGroupSymbol() const
-        {
-            return true;
-        }
         public nothrow override const char* TypeString() const
         {
             return "function group";
@@ -98,10 +94,6 @@ namespace Cm.Sym
         public nothrow inline FunctionGroupSymbol* GetFunctionGroupSymbol() const
         {
             return functionGroupSymbol;
-        }
-        public nothrow override bool IsFunctionGroupTypeSymbol() const
-        {
-            return true;
         }
         private FunctionGroupSymbol* functionGroupSymbol;
     }

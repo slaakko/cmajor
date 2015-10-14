@@ -60,30 +60,6 @@ namespace Ir.Intf
         {
             throw Exception("CreateAddr() not supported by this object type");
         }
-        public virtual nothrow bool IsNull() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsConstant() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsRegVar() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsStackVar() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsGlobal() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsParameter() const
-        {
-            return false;
-        }
         public inline nothrow bool Owned() const
         {
             return owned;

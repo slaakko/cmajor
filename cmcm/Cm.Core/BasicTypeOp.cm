@@ -19,10 +19,6 @@ namespace Cm.Core
             SetAccess(Cm.Sym.SymbolAccess.public_);
             SetNothrow();
         }
-        public nothrow override bool IsBasicTypeOp() const
-        {
-            return true;
-        }
         public nothrow inline Cm.Sym.TypeSymbol* Type() const
         {
             return type;
@@ -429,10 +425,6 @@ namespace Cm.Core
         {
             // todo
         } 
-        public nothrow override bool IsConvertingConstructor() const
-        {
-            return true;
-        }
         public nothrow override Cm.Sym.ConversionType GetConversionType() const
         {
             return conversionType;

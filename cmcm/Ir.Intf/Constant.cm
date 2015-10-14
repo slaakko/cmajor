@@ -16,9 +16,5 @@ namespace Ir.Intf
         public nothrow Constant(const string& valueName_, Type* type_) : base(valueName_, type_)
         {
         }
-        public nothrow override bool IsConstant() const
-        {
-            return true;
-        }
     }
 }

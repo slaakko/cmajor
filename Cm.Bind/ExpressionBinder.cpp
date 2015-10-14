@@ -1525,6 +1525,8 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
             boundCompileUnit.IrClassTypeRepository(), fun->IsBasicTypeOp());
     }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
+    uint32_t functionCallSid = boundCompileUnit.SymbolTable().GetSid();
+    functionCall->SetFunctionCallSid(functionCallSid);
     functionCall->SetFunction(fun);
     functionCall->SetType(type);
     if (fun->ReturnsClassObjectByValue())
@@ -1535,6 +1537,14 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     }
     if (generateVirtualCall)
     {
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debugVCalls))
+        {
+            int id = boundCompileUnit.StringRepository().Install(std::to_string(functionCall->FunctionCallSid()) + "\n");
+            Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(node->GetSpan());
+            Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(node, id);
+            literalNode->SetType(type);
+            functionCall->SetSidLiteral(literalNode);
+        }
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
     }
     if (returnClassObjectByValue)

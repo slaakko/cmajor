@@ -33,10 +33,6 @@ namespace Cm.Sym
         {
             return "delegate";
         }
-        public nothrow override bool IsDelegateTypeSymbol() const
-        {
-            return true;
-        }
         public nothrow override bool IsValueTypeSymbol() const
         {
             return true;
@@ -44,8 +40,8 @@ namespace Cm.Sym
         public nothrow override bool IsExportSymbol() const
         {
             if (Parent()->IsClassTemplateSymbol()) return false;
-            if (Parent()->IsTemplateTypeSymbol()) return false;
-            if (Parent()->IsClassDelegateTypeSymbol()) return true;
+            if (Parent() is TemplateTypeSymbol*) return false;
+            if (Parent() is ClassDelegateTypeSymbol*) return true;
             return base->IsExportSymbol();
         }
         public inline nothrow bool IsNothrow() const
@@ -75,7 +71,7 @@ namespace Cm.Sym
         public override void AddSymbol(Symbol* symbol)
         {
             base->AddSymbol(symbol);
-            if (symbol->IsParameterSymbol())
+            if (symbol is ParameterSymbol*)
             {
                 ParameterSymbol* parameterSymbol = cast<ParameterSymbol*>(symbol);
                 parameters.Add(parameterSymbol);
@@ -107,7 +103,7 @@ namespace Cm.Sym
         {
             if (returnType != null)
             {
-                if (returnType->IsDerivedTypeSymbol())
+                if (returnType is DerivedTypeSymbol*)
                 {
                     if (collected.CFind(returnType) == collected.CEnd())
                     {
@@ -139,7 +135,7 @@ namespace Cm.Sym
         public nothrow override void ReplaceReplicaTypes()
         {
             base->ReplaceReplicaTypes();
-            if (returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+            if (returnType->IsReplica() && (returnType is TemplateTypeSymbol*))
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(returnType);
                 returnType = replica->GetPrimaryTemplateTypeSymbol();
@@ -178,14 +174,10 @@ namespace Cm.Sym
         {
             return "class delegate";
         }
-        public nothrow override bool IsClassDelegateTypeSymbol() const
-        {
-            return true;
-        }
         public nothrow override bool IsExportSymbol() const
         {
             if (Parent()->IsClassTemplateSymbol()) return false;
-            if (Parent()->IsTemplateTypeSymbol()) return false;
+            if (Parent() is TemplateTypeSymbol*) return false;
             return base->IsExportSymbol();
         }
         public inline nothrow bool IsNothrow() const
@@ -215,7 +207,7 @@ namespace Cm.Sym
         public override void AddSymbol(Symbol* symbol)
         {
             base->AddSymbol(symbol);
-            if (symbol->IsParameterSymbol())
+            if (symbol is ParameterSymbol*)
             {
                 ParameterSymbol* parameterSymbol = cast<ParameterSymbol*>(symbol);
                 parameters.Add(parameterSymbol);
@@ -247,7 +239,7 @@ namespace Cm.Sym
         {
             if (returnType != null)
             {
-                if (returnType->IsDerivedTypeSymbol())
+                if (returnType is DerivedTypeSymbol*)
                 {
                     if (collected.CFind(returnType) == collected.CEnd())
                     {
@@ -279,7 +271,7 @@ namespace Cm.Sym
         public nothrow override void ReplaceReplicaTypes()
         {
             base->ReplaceReplicaTypes();
-            if (returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+            if (returnType->IsReplica() && (returnType is TemplateTypeSymbol*))
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(returnType);
                 returnType = replica->GetPrimaryTemplateTypeSymbol();

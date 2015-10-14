@@ -65,10 +65,6 @@ namespace Cm.Ast
             members.Accept(visitor);
             visitor.EndVisit(*this);
         }
-        public override nothrow bool IsNamespaceNode() const
-        {
-            return true;
-        }
         public nothrow bool IsGlobalNamespaceNode() const
         {
             return Parent() == null;
@@ -79,7 +75,7 @@ namespace Cm.Ast
             List<string> components = fullNamespaceName.Split('.');
             for (const UniquePtr<Node>& member : members)
             {
-                if (member->IsNamespaceNode())
+                if (member.GetPtr() is NamespaceNode*)
                 {
                     List<string> memberComponents = member->Name().Split('.');
                     int n = Min(components.Count(), memberComponents.Count());

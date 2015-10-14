@@ -16,12 +16,15 @@
 #include <Cm.BoundTree/BoundClass.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Core/CompileUnitMap.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Sym/TypeRepository.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.Sym/FunctionTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Llvm.Ir/Type.hpp>
+#include <boost/filesystem.hpp>
+#include <fstream>
 
 namespace Cm { namespace Emit {
 
@@ -217,7 +220,7 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     staticMemberVariableRepository(staticMemberVariableRepository_), externalConstantRepository(externalConstantRepository_),
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), 
     currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_),
-    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr), endProfiledFunLabel(nullptr)
+    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr), endProfiledFunLabel(nullptr), tpGraph(nullptr)
 {
 }
 
@@ -798,6 +801,63 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
     resultStack.Push(result);
 }
 
+Cm::Sym::FunctionSymbol* ResolveVirtualCall(Cm::Sym::TypeRepository& typeRepository, Cm::Sym::FunctionSymbol* fun, const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& reachingClasses)
+{
+    Cm::Sym::FunctionSymbol* devirtualizedFun = nullptr;
+    for (Cm::Sym::ClassTypeSymbol* classType : reachingClasses)
+    {
+        bool found = false;
+        while (!found && classType)
+        {
+            Cm::Sym::TypeSymbol* thisPointerType = nullptr;
+            if (fun->IsConst())
+            {
+                thisPointerType = typeRepository.MakeConstPointerType(classType, Cm::Parsing::Span());
+            }
+            else
+            {
+                thisPointerType = typeRepository.MakePointerType(classType, Cm::Parsing::Span());
+            }
+            if (fun->ThisParameter()->GetType()->FullName() == thisPointerType->FullName())
+            {
+                if (devirtualizedFun == nullptr)
+                {
+                    devirtualizedFun = fun;
+                }
+                else if (devirtualizedFun->FullName() != fun->FullName())
+                {
+                    return nullptr;
+                }
+            }
+            for (Cm::Sym::FunctionSymbol* inheritedFun : fun->OverrideSet())
+            {
+                if (inheritedFun->ThisParameter()->GetType()->FullName() == thisPointerType->FullName())
+                {
+                    if (devirtualizedFun == nullptr)
+                    {
+                        devirtualizedFun = inheritedFun;
+                        break;
+                    }
+                    else if (devirtualizedFun->FullName() != inheritedFun->FullName())
+                    {
+                        return nullptr;
+                    }
+                    else
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found)
+            {
+                classType = classType->BaseClass();
+            }
+        }
+    }
+    return devirtualizedFun;
+}
+
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
@@ -840,7 +900,65 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
         result->Merge(argResult);
     }
     Cm::Sym::FunctionSymbol* fun = functionCall.GetFunction();
-    if (functionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall))
+    bool generateVirtualCall = functionCall.GetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig) && generateVirtualCall && tpGraph)
+    {
+        uint32_t functionCallSid = functionCall.FunctionCallSid();
+        std::unordered_map<uint32_t, Cm::Opt::TpGraphNode*>::const_iterator i = tpGraph->VirtualCallMap().find(functionCallSid);
+        if (i != tpGraph->VirtualCallMap().cend())
+        {
+            Cm::Opt::TpGraphNode* node = i->second;
+            Cm::Sym::FunctionSymbol* devirtualizedFun = ResolveVirtualCall(typeRepository, fun, node->ReachingClasses());
+            if (devirtualizedFun != nullptr)
+            {
+                irClassTypeRepository.AddClassType(static_cast<Cm::Sym::ClassTypeSymbol*>(devirtualizedFun->ThisParameter()->GetType()->GetBaseType()));
+                Ir::Intf::Type* thisPtrType = devirtualizedFun->ThisParameter()->GetType()->GetIrType();
+                Ir::Intf::Object* thisArg = result->Arg1();
+                Ir::Intf::Type* thisArgType = thisArg->GetType();
+                if (thisPtrType->Name() != thisArgType->Name())
+                {
+                    Ir::Intf::Object* devirtualizedFunThisArg = Cm::IrIntf::CreateTemporaryRegVar(thisPtrType);
+                    emitter->Own(devirtualizedFunThisArg);
+                    emitter->Emit(Cm::IrIntf::Bitcast(thisArgType, devirtualizedFunThisArg, thisArg, thisPtrType));
+                    result->Objects()[1] = devirtualizedFunThisArg;
+                }
+                std::string vCallFileName = Cm::Core::GetGlobalSettings()->VirtualCallFileName();
+                if (!vCallFileName.empty())
+                {
+                    if (boost::filesystem::path(vCallFileName).extension().empty())
+                    {
+                        vCallFileName.append(".txt");
+                    }
+                    std::ofstream vCallFile(vCallFileName, std::ios_base::app);
+                    vCallFile << "virtual function call " << functionCall.FunctionCallSid() << " '" << currentFunction->GetFunctionSymbol()->FullName() << "$" << fun->FullName() << "' devirtualized to '" << devirtualizedFun->FullName() << "' : " << 
+                        node->ReachingClassSetStr() << std::endl;
+                }
+                fun = devirtualizedFun;
+                generateVirtualCall = false;
+                tpGraph->IncDevirtualizedFunctionCalls();
+                if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debugVCalls) && functionCall.SidLiteral())
+                {
+                    functionCall.SidLiteral()->Accept(*this);
+                    std::shared_ptr<Cm::Core::GenResult> sidLiteralResult = resultStack.Pop();
+                    std::shared_ptr<Cm::Core::GenResult> writeResult(new Cm::Core::GenResult(emitter.get(), genFlags));
+                    Ir::Intf::Object* mainObject = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI32());
+                    emitter->Own(mainObject);
+                    writeResult->SetMainObject(mainObject);
+                    Ir::Intf::Object* two = Cm::IrIntf::CreateI32Constant(2);
+                    emitter->Own(two);
+                    writeResult->AddObject(two);
+                    writeResult->AddObject(sidLiteralResult->MainObject());
+                    Cm::Sym::FunctionSymbol* write = symbolTable->GetOverload("System.Support.Write");
+                    if (!write)
+                    {
+                        throw std::runtime_error("could not get System.Support.Write function from symbol table");
+                    }
+                    GenerateCall(write, nullptr, *writeResult);
+                }
+            }
+        }
+    }
+    if (generateVirtualCall)
     {
         result->SetGenVirtualCall();
     }

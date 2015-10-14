@@ -76,7 +76,7 @@ namespace Cm.Sym
                 {
                     throw Exception("expected 1 conversion function parameters");
                 }
-                if (conversion->GetReturnType() == null || conversion->GetReturnType()->IsVoidTypeSymbol())
+                if (conversion->GetReturnType() == null || (conversion->GetReturnType() is VoidTypeSymbol*))
                 {
                     throw Exception("expected valid conversion function return type");
                 }

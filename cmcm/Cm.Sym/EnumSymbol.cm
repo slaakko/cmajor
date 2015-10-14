@@ -34,12 +34,8 @@ namespace Cm.Sym
         public nothrow override bool IsExportSymbol() const
         {
             if (Parent()->IsClassTemplateSymbol()) return false;
-            if (Parent()->IsTemplateTypeSymbol()) return false;
+            if (Parent() is TemplateTypeSymbol*) return false;
             return base->IsExportSymbol();
-        }
-        public nothrow override bool IsEnumTypeSymbol() const
-        {
-            return true;
         }
         public nothrow inline TypeSymbol* GetUnderlyingType() const
         {
@@ -87,10 +83,6 @@ namespace Cm.Sym
         public nothrow override const char* TypeString() const
         {
             return "enum constant";
-        }
-        public nothrow override bool IsEnumConstantSymbol() const
-        {
-            return true;
         }
         public nothrow override bool IsExportSymbol() const
         {

@@ -24,10 +24,6 @@ namespace System.Text.Parsing.CmObjectModel
         public Statement(): base("statement")
         {
         }
-        public virtual bool IsCompoundStatement() const
-        {
-            return false;
-        }
         public virtual void ResetNewLine()
         {
         }
@@ -109,7 +105,7 @@ namespace System.Text.Parsing.CmObjectModel
         {
             formatter.Write("if (");
             expression->Print(formatter);
-            if (thenStatement->IsCompoundStatement())
+            if (thenStatement is CompoundStatement*)
             {
                 formatter.WriteLine(")");
             }
@@ -120,7 +116,7 @@ namespace System.Text.Parsing.CmObjectModel
             thenStatement->Print(formatter);
             if (elseStatement != null)
             {
-                if (elseStatement->IsCompoundStatement())
+                if (elseStatement is CompoundStatement*)
                 {
                     formatter.WriteLine("else");
                 }
@@ -153,10 +149,6 @@ namespace System.Text.Parsing.CmObjectModel
     {
         public CompoundStatement(): base() 
         {
-        }
-        public override bool IsCompoundStatement() const
-        {
-            return true;
         }
         public void AddStatement(Statement* statement)
         {
@@ -314,7 +306,7 @@ namespace System.Text.Parsing.CmObjectModel
         {
             formatter.Write("while (");
             expression->Print(formatter);
-            if (statement->IsCompoundStatement())
+            if (statement is CompoundStatement*)
             {
                 formatter.WriteLine(")");
             }
@@ -343,7 +335,7 @@ namespace System.Text.Parsing.CmObjectModel
         }    
         public override void Print(CodeFormatter& formatter)
         {
-            if (statement->IsCompoundStatement())
+            if (statement is CompoundStatement*)
             {
                 formatter.WriteLine("do");
             }
@@ -390,7 +382,7 @@ namespace System.Text.Parsing.CmObjectModel
             varTypeExpr->Print(formatter);
             formatter.Write(" " + varName + " : ");
             container->Print(formatter);
-            if (action->IsCompoundStatement())
+            if (action is CompoundStatement*)
             {
                 formatter.WriteLine(")");
             }            
@@ -454,7 +446,7 @@ namespace System.Text.Parsing.CmObjectModel
             {
                 increment->Print(formatter);
             }
-            if (action->IsCompoundStatement())
+            if (action is CompoundStatement*)
             {
                 formatter.WriteLine(")");
             }

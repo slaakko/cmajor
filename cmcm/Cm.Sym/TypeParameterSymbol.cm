@@ -21,10 +21,6 @@ namespace Cm.Sym
         {
             return SymbolType.typeParameterSymbol;
         }
-        public nothrow override bool IsTypeParameterSymbol() const
-        {
-            return true;
-        }
         public nothrow override const char* TypeString() const
         {
             return "type parameter";
@@ -70,10 +66,6 @@ namespace Cm.Sym
         public nothrow override SymbolType GetSymbolType() const
         {
             return SymbolType.boundTypeParameterSymbol;
-        }
-        public nothrow override bool IsBoundTypeParameterSymbol() const
-        {
-            return true;
         }
         public nothrow override const char* TypeString() const
         {

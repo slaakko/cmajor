@@ -22,10 +22,6 @@ namespace Cm.Sym
         public nothrow BasicTypeSymbol(const string& name_, ShortBasicTypeId id_) : base(Span(), name_, TypeId(id_))
         {
         }
-        public nothrow override bool IsBasicTypeSymbol() const
-        {
-            return true;
-        }
         public nothrow override const char* TypeString() const
         {
             return "basic type";
@@ -49,10 +45,6 @@ namespace Cm.Sym
         {
             return SymbolType.boolSymbol;
         }
-        public nothrow override bool IsBoolTypeSymbol() const
-        {
-            return true;
-        }
         public nothrow override string GetMangleId() const
         {
             return "bo";
@@ -68,10 +60,6 @@ namespace Cm.Sym
         {
             return SymbolType.charSymbol;
         }
-        public nothrow override bool IsCharTypeSymbol() const
-        {
-            return true;
-        }
         public nothrow override string GetMangleId() const
         {
             return "ch";
@@ -86,10 +74,6 @@ namespace Cm.Sym
         public nothrow override SymbolType GetSymbolType() const
         {
             return SymbolType.voidSymbol;
-        }
-        public nothrow override bool IsVoidTypeSymbol() const
-        {
-            return true;
         }
         public nothrow override string GetMangleId() const
         {
@@ -311,10 +295,6 @@ namespace Cm.Sym
         public nothrow override SymbolType GetSymbolType() const
         {
             return SymbolType.nullptrSymbol;
-        }
-        public nothrow override bool IsNullPtrType() const
-        {
-            return true;
         }
         public nothrow override string GetMangleId() const
         {

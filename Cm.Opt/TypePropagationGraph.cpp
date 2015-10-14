@@ -261,7 +261,7 @@ void TpGraphNode::Propagate(std::queue<TpGraphNode*>& workList)
     }
 }
 
-TpGraph::TpGraph(Cm::Sym::SymbolTable& symbolTable_) : symbolTable(symbolTable_)
+TpGraph::TpGraph(Cm::Sym::SymbolTable& symbolTable_) : symbolTable(symbolTable_), devirtualizedFunctionCalls(0)
 {
 }
 
@@ -361,35 +361,6 @@ void TpGraph::Process()
         TpGraphNode* node = workList.front();
         workList.pop();
         node->Propagate(workList);
-    }
-    int numVirtualClasses = 0;
-    int numLiveClasses = 0;
-    for (Cm::Sym::ClassTypeSymbol* cls : symbolTable.Classes())
-    {
-        if (cls->IsVirtual())
-        {
-            ++numVirtualClasses;
-            if (cls->IsLive())
-            {
-                ++numLiveClasses;
-            }
-        }
-    }
-    int numVirtualCalls = int(virtualCallMap.size());
-    int numDevirtualizedCalls = 0;
-    std::unordered_map<uint32_t, TpGraphNode*>::const_iterator e = virtualCallMap.cend();
-    for (std::unordered_map<uint32_t, TpGraphNode*>::const_iterator i = virtualCallMap.cbegin(); i != e; ++i)
-    {
-        TpGraphNode* node = i->second;
-        if (node->ReachingClasses().size() == 1)
-        {
-            ++numDevirtualizedCalls;
-        }
-    }
-    if (!quiet)
-    {
-        std::cout << numLiveClasses << " of " << numVirtualClasses << " virtual classes are live" << std::endl;
-        std::cout << numDevirtualizedCalls << " of " << numVirtualCalls << " virtual function calls devirtualized" << std::endl;
     }
 }
 

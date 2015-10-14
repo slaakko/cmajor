@@ -99,11 +99,11 @@ namespace System.Xml.Serialization
             for (int i = 0; i < n; ++i)
             {
                 Serializable* field  = fields[i];
-                if (field->IsArrayField())
+                if (field is Array*)
                 {
                     Array* a = cast<Array*>(field);
                     Serializable* itemType = a->GetItemType();
-                    if (itemType->IsScalarFieldType())
+                    if (itemType is Field*)
                     {
                         string itemTypeName = itemType->ArrayItemTypeName();
                         formatter.WriteLine("public const ScalarArrayField<" + itemTypeName + ">& get_" + field->Name() + "() const { return *" + field->Name() + "; }");

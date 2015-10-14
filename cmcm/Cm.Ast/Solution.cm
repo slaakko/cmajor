@@ -19,24 +19,12 @@ namespace Cm.Ast
         public nothrow virtual ~SolutionDeclaration()
         {
         }
-        public nothrow virtual bool IsProjectFileDeclaration() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsProjectDependencyDeclaration() const
-        {
-            return false;
-        }
     }
     
     public class ProjectFileDeclaration : SolutionDeclaration
     {
         public ProjectFileDeclaration(const Span& span_, const string& filePath_, const string& basePath_) : span(span_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
         {
-        }
-        public nothrow override bool IsProjectFileDeclaration() const
-        {
-            return true;
         }
         public nothrow inline const Span& GetSpan() const
         {
@@ -62,10 +50,6 @@ namespace Cm.Ast
     {
         public nothrow ProjectDependencyDeclaration(const string& projectName_) : projectName(projectName_)
         {
-        }
-        public nothrow override bool IsProjectDependencyDeclaration() const
-        {
-            return true;
         }
         public void AddDependency(const string& dependsOn)
         {
@@ -116,7 +100,7 @@ namespace Cm.Ast
         {
             for (const UniquePtr<SolutionDeclaration>& declaration : declarations)
             {
-                if (declaration->IsProjectFileDeclaration())
+                if (declaration.GetPtr() is ProjectFileDeclaration*)
                 {
                     ProjectFileDeclaration* pfd = cast<ProjectFileDeclaration*>(declaration.GetPtr());
                     for (const string& prev : projectFilePaths)
@@ -128,7 +112,7 @@ namespace Cm.Ast
                     }
                     projectFilePaths.Add(pfd->FilePath());
                 }
-                else if (declaration->IsProjectDependencyDeclaration())
+                else if (declaration.GetPtr() is ProjectDependencyDeclaration*)
                 {
                     ProjectDependencyDeclaration* dependencyDeclaration = cast<ProjectDependencyDeclaration*>(declaration.GetPtr());
                     dependencyMap[dependencyDeclaration->ProjectName()] = dependencyDeclaration;

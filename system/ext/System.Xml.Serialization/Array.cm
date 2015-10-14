@@ -17,7 +17,7 @@ namespace System.Xml.Serialization
         public override string TypeName() const
         {
             string typeName;
-            if (itemType->IsScalarFieldType())
+            if (itemType.GetPtr() is Field*)
             {
                 typeName.Append("ScalarArrayField<");
             }
@@ -81,10 +81,6 @@ namespace System.Xml.Serialization
             }
             formatter.DecIndent();
             formatter.WriteLine("</" + Name() + ">");
-        }
-        public override bool IsArrayField() const
-        {
-            return true;
         }
         public override string Initializer() const
         {

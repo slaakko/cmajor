@@ -54,10 +54,6 @@ namespace System.Xml.Serialization
         public nothrow Field(const string& name_): base(name_)
         {
         }
-        public override bool IsScalarFieldType() const
-        {
-            return true;
-        }
         public override string Getter() const
         {
             return "return " + Name() + "->GetValue();";

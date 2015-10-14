@@ -83,39 +83,11 @@ namespace Cm.Sym
         {
             return "function";
         }
-        public nothrow override bool IsFunctionSymbol() const
-        {
-            return true;
-        }
-        public nothrow virtual bool IsBasicTypeOp() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsBasicTypeCopyCtor() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsDelegateFromFunCtor() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsClassDelegateFromFunCtor() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsDelegateFromFunAssignment() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsClassDelegateFromFunAssignment() const
-        {
-            return false;
-        }
         public nothrow override bool IsExportSymbol() const
         {
             if (IsFunctionTemplateSpecialization()) return false;
             if (Parent()->IsClassTemplateSymbol()) return false;
-            if (Parent()->IsTemplateTypeSymbol()) return false;
+            if (Parent() is TemplateTypeSymbol*) return false;
             if (IsReplica()) return false;
             if (Source() == SymbolSource.project && GetGlobalFlag(GlobalFlags.optimize) && IsInline()) return true;
             return base->IsExportSymbol(); 
@@ -456,7 +428,7 @@ namespace Cm.Sym
             {
                 SymbolTable& symbolTable = writer.GetSymbolTable();
                 Cm.Ast.Node* node = symbolTable.GetNode(this);
-                if (!node->IsFunctionNode())
+                if (!(node is Cm.Ast.FunctionNode*))
                 {
                     throw Exception("function node expected");
                 }                
@@ -513,7 +485,7 @@ namespace Cm.Sym
                 }
                 SymbolTable& symbolTable = writer.GetSymbolTable();
                 Cm.Ast.Node* node = symbolTable.GetNode(this);
-                if (!node->IsFunctionNode())
+                if (!(node is Cm.Ast.FunctionNode*))
                 {
                     throw Exception("function node expected");
                 }
@@ -547,12 +519,12 @@ namespace Cm.Sym
         public override void AddSymbol(Symbol* symbol)
         {
             base->AddSymbol(symbol);
-            if (symbol->IsParameterSymbol())
+            if (symbol is ParameterSymbol*)
             {
                 ParameterSymbol* parameterSymbol = cast<ParameterSymbol*>(symbol);
                 parameters.Add(parameterSymbol);
             }
-            else if (symbol->IsTypeParameterSymbol())
+            else if (symbol is TypeParameterSymbol*)
             {
                 TypeParameterSymbol* typeParameterSymbol = cast<TypeParameterSymbol*>(symbol);
                 typeParameterSymbol->SetIndex(typeParameters.Count());
@@ -810,7 +782,7 @@ namespace Cm.Sym
         {
             if (IsFunctionTemplate()) return;
             base->ReplaceReplicaTypes();
-            if (returnType != null && returnType->IsReplica() && returnType->IsTemplateTypeSymbol())
+            if (returnType != null && returnType->IsReplica() && (returnType is TemplateTypeSymbol*))
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(returnType);
                 returnType = replica->GetPrimaryTemplateTypeSymbol();
@@ -819,7 +791,7 @@ namespace Cm.Sym
             for (int i = 0; i < n; ++i)
             {
                 TypeSymbol* typeArgument = typeArguments[i];
-                if (typeArgument->IsReplica() && typeArgument->IsTemplateTypeSymbol())
+                if (typeArgument->IsReplica() && (typeArgument is TemplateTypeSymbol*))
                 {
                     TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(typeArgument);
                     typeArguments[i] = replica->GetPrimaryTemplateTypeSymbol();

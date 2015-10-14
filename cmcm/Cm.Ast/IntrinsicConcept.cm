@@ -80,77 +80,60 @@ namespace Cm.Ast
         }
     }
     
-    public class SameConceptNode : ConceptNode
+    public abstract class IntrinsicConceptNode : ConceptNode
     {
-        public SameConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "Same"))
+        public IntrinsicConceptNode(IdentifierNode* id_) : base(Span(), Specifiers.public_, id_)
+        {
+        }
+    }
+    
+    public class SameConceptNode : IntrinsicConceptNode 
+    {
+        public SameConceptNode() : base(new IdentifierNode(Span(), "Same"))
         {
             AddTypeParameter(new IdentifierNode(Span(), "T"));
             AddTypeParameter(new IdentifierNode(Span(), "U"));
             AddConstraint(new SameConstraintNode());
         }
-        public nothrow override bool IsIntrinsicConceptNode() const
-        {
-            return true;
-        }
     }
 
-    public class DerivedConceptNode : ConceptNode
+    public class DerivedConceptNode : IntrinsicConceptNode 
     {
-        public DerivedConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "Derived"))
+        public DerivedConceptNode() : base(new IdentifierNode(Span(), "Derived"))
         {
             AddTypeParameter(new IdentifierNode(Span(), "T"));
             AddTypeParameter(new IdentifierNode(Span(), "U"));
             AddConstraint(new DerivedConstraintNode());
         }
-        public nothrow override bool IsIntrinsicConceptNode() const
-        {
-            return true;
-        }
     }
 
-    public class ConvertibleConceptNode : ConceptNode
+    public class ConvertibleConceptNode : IntrinsicConceptNode 
     {
-        public ConvertibleConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "Convertible"))
+        public ConvertibleConceptNode() : base(new IdentifierNode(Span(), "Convertible"))
         {
             AddTypeParameter(new IdentifierNode(Span(), "T"));
             AddTypeParameter(new IdentifierNode(Span(), "U"));
             AddConstraint(new ConvertibleConstraintNode());
         }
-        public nothrow override bool IsIntrinsicConceptNode() const
-        {
-            return true;
-        }
     }
 
-    public class ExplicitlyConvertibleConceptNode: ConceptNode
+    public class ExplicitlyConvertibleConceptNode: IntrinsicConceptNode 
     {
-        public ExplicitlyConvertibleConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "ExplicitlyConvertible"))
+        public ExplicitlyConvertibleConceptNode() : base(new IdentifierNode(Span(), "ExplicitlyConvertible"))
         {
             AddTypeParameter(new IdentifierNode(Span(), "T"));
             AddTypeParameter(new IdentifierNode(Span(), "U"));
             AddConstraint(new ExplicitlyConvertibleConstraintNode());
         }
-        public nothrow override bool IsIntrinsicConceptNode() const
-        {
-            return true;
-        }
     }
 
-    public class CommonConceptNode: ConceptNode
+    public class CommonConceptNode: IntrinsicConceptNode 
     {
-        public CommonConceptNode() : base(Span(), Specifiers.public_, new IdentifierNode(Span(), "Common"))
+        public CommonConceptNode() : base(new IdentifierNode(Span(), "Common"))
         {
             AddTypeParameter(new IdentifierNode(Span(), "T"));
             AddTypeParameter(new IdentifierNode(Span(), "U"));
             AddConstraint(new CommonConstraintNode());
-        }
-        public nothrow override bool IsIntrinsicConceptNode() const
-        {
-            return true;
-        }
-        public nothrow override bool IsCommonConceptNode() const
-        {
-            return true;
         }
     }
 }

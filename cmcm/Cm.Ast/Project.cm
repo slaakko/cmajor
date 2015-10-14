@@ -60,30 +60,6 @@ namespace Cm.Ast
         public virtual nothrow ~ProjectDeclaration()
         {
         }
-        public nothrow virtual bool IsSourceFileDeclaration() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsTargetDeclaration() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsAssemblyFileDeclaration() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsExecutableFileDeclaration() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsReferenceFileDeclaration() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsCLibraryDeclaration() const
-        {
-            return false;
-        }
         public nothrow const Span& GetSpan() const
         {
             return span;
@@ -110,10 +86,6 @@ namespace Cm.Ast
         {
             return filePath;
         }
-        public nothrow override bool IsSourceFileDeclaration() const
-        {
-            return true;
-        }
         private SourceFileType fileType;
         private string filePath;
     }
@@ -128,10 +100,6 @@ namespace Cm.Ast
         {
             return filePath;
         }
-        public nothrow override bool IsReferenceFileDeclaration() const
-        {
-            return true;
-        }
         private string filePath;
     }
     
@@ -144,10 +112,6 @@ namespace Cm.Ast
         public nothrow inline const string& FilePath() const
         {
             return filePath;
-        }
-        public nothrow override bool IsAssemblyFileDeclaration() const
-        {
-            return true;
         }
         private string filePath;
     }
@@ -162,10 +126,6 @@ namespace Cm.Ast
         {
             return filePath;
         }
-        public nothrow override bool IsExecutableFileDeclaration() const
-        {
-            return true;
-        }
         private string filePath;
     }
 
@@ -178,10 +138,6 @@ namespace Cm.Ast
         {
             return filePath;
         }
-        public nothrow override bool IsCLibraryDeclaration() const
-        {
-            return true;
-        }
         private string filePath;
     }
     
@@ -189,10 +145,6 @@ namespace Cm.Ast
     {
         public TargetDeclaration(const Span& span_, Target target_) : base(span_, Properties()), target(target_)
         {
-        }
-        public nothrow override bool IsTargetDeclaration() const
-        {
-            return true;
         }
         public nothrow inline Target GetTarget() const
         {
@@ -293,7 +245,7 @@ namespace Cm.Ast
                         continue;
                     }
                 }
-                if (declaration->IsSourceFileDeclaration())
+                if (declaration.GetPtr() is SourceFileDeclaration*)
                 {
                     SourceFileDeclaration* sfd = cast<SourceFileDeclaration*>(declaration.GetPtr());
                     switch (sfd->FileType())
@@ -360,7 +312,7 @@ namespace Cm.Ast
                         }
                     }
                 }
-                else if (declaration->IsReferenceFileDeclaration())
+                else if (declaration.GetPtr() is ReferenceFileDeclaration*)
                 {
                     ReferenceFileDeclaration* rfd = cast<ReferenceFileDeclaration*>(declaration.GetPtr());
                     for (const string& prev : referenceFilePaths)
@@ -372,7 +324,7 @@ namespace Cm.Ast
                     }
                     referenceFilePaths.Add(rfd->FilePath());
                 }
-                else if (declaration->IsCLibraryDeclaration())
+                else if (declaration.GetPtr() is CLibraryDeclaration*)
                 {
                     CLibraryDeclaration* clib = cast<CLibraryDeclaration*>(declaration.GetPtr());
                     for (const string& prev : cLibraryFilePaths)
@@ -384,7 +336,7 @@ namespace Cm.Ast
                     }
                     cLibraryFilePaths.Add(clib->FilePath());
                 }
-                else if (declaration->IsTargetDeclaration())
+                else if (declaration.GetPtr() is TargetDeclaration*)
                 {
                     TargetDeclaration* td = cast<TargetDeclaration*>(declaration.GetPtr());
                     if (target == Target.none)
@@ -396,7 +348,7 @@ namespace Cm.Ast
                         throw Exception("target '" + TargetStr(td->GetTarget()) + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(declaration->GetSpan().LineNumber()) + ")");
                     }
                 }
-                else if (declaration->IsAssemblyFileDeclaration())
+                else if (declaration.GetPtr() is AssemblyFileDeclaration*)
                 {
                     if (assemblyFilePath.IsEmpty())
                     {
@@ -407,7 +359,7 @@ namespace Cm.Ast
                         throw Exception("assembly '" + assemblyFilePath + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(declaration->GetSpan().LineNumber()) + ")");
                     }
                 }
-                else if (declaration->IsExecutableFileDeclaration())
+                else if (declaration.GetPtr() is ExecutableFileDeclaration*)
                 {
                     if (executableFilePath.IsEmpty())
                     {

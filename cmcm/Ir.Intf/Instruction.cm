@@ -43,6 +43,10 @@ namespace Ir.Intf
         public virtual ~Instruction()
         {
         }
+        public nothrow virtual bool IsRet() const
+        {
+            return false;
+        }
         public inline nothrow const string& Name() const
         {
             return name;
@@ -82,14 +86,6 @@ namespace Ir.Intf
             return false;
         }
         public virtual nothrow bool IsUnconditionalBr() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsRet() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsCall() const
         {
             return false;
         }

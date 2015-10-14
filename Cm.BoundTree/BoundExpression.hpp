@@ -112,6 +112,7 @@ public:
     void Read(Cm::Sym::BcuReader& reader) override;
     int Id() const { return id; }
     void Accept(Visitor& visitor) override;
+    bool IsBoundStringLiteral() const override { return true; }
 private:
     int id;
 };
@@ -530,7 +531,10 @@ public:
     BoundLocalVariable* GetTemporary() const { return temporary.get(); }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
     TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
+    void SetFunctionCallSid(uint32_t functionCallSid_);
     uint32_t FunctionCallSid() const { return functionCallSid; }
+    void SetSidLiteral(BoundStringLiteral* sidLiteral_);
+    BoundStringLiteral* SidLiteral() const { return sidLiteral.get(); }
 private:
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* fun;
@@ -538,6 +542,7 @@ private:
     std::unique_ptr<BoundLocalVariable> temporary;
     std::unique_ptr<TraceCallInfo> traceCallInfo;
     uint32_t functionCallSid;
+    std::unique_ptr<BoundStringLiteral> sidLiteral;
 };
 
 class BoundDelegateCall : public BoundExpression

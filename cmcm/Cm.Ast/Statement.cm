@@ -52,10 +52,6 @@ namespace Cm.Ast
         public nothrow StatementNode(const Span& span_) : base(span_)
         {
         }
-        public nothrow override bool IsStatementNode() const
-        {
-            return true;
-        }
         public override void Read(Reader& reader)
         {
             bool hasLabel = reader.GetBinaryReader().ReadBool();
@@ -64,6 +60,18 @@ namespace Cm.Ast
                 labelNode.Reset(reader.ReadLabelNode());
                 labelNode->SetParent(this);
             }            
+        }
+        public nothrow virtual bool IsCaseTerminatingNode() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsBreakEnclosingStatementNode() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsContinueEnclosingStatementNode() const
+        {
+            return false;
         }
         public override void Write(Writer& writer)
         {
@@ -92,30 +100,6 @@ namespace Cm.Ast
         public nothrow inline LabelNode* Label() const
         {
             return labelNode.GetPtr();
-        }
-        public nothrow virtual bool IsConditionalStatementNode() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsSwitchStatementNode() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsCaseTerminatingNode() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsWhileStatementNode() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsDoStatementNode() const
-        {
-            return false;
-        }
-        public nothrow virtual bool IsForStatementNode() const
-        {
-            return false;
         }
         public nothrow virtual bool IsFunctionTerminatingNode() const
         {
@@ -363,10 +347,6 @@ namespace Cm.Ast
             }
             return clone;
         }
-        public nothrow override bool IsSwitchStatementNode() const
-        {
-            return true;
-        }
         public nothrow override bool IsBreakEnclosingStatementNode() const
         {
             return true;
@@ -454,10 +434,6 @@ namespace Cm.Ast
         {
             return NodeType.caseStatementNode;
         }
-        public nothrow override bool IsCaseStatementNode() const
-        {
-            return true;
-        }
         public override Node* Clone(CloneContext& cloneContext) const
         {
             CaseStatementNode* clone = new CaseStatementNode(GetSpan());
@@ -536,10 +512,6 @@ namespace Cm.Ast
         public override nothrow NodeType GetNodeType() const
         {
             return NodeType.defaultStatementNode;
-        }
-        public override nothrow bool IsDefaultStatementNode() const
-        {
-            return true;
         }
         public override Node* Clone(CloneContext& cloneContext) const
         {
@@ -791,10 +763,6 @@ namespace Cm.Ast
             }
             return clone;
         }
-        public nothrow override bool IsForStatementNode() const
-        {
-            return true;
-        }
         public nothrow override bool IsBreakEnclosingStatementNode() const
         {
             return true;
@@ -994,10 +962,6 @@ namespace Cm.Ast
         {
             return NodeType.compoundStatementNode;
         }
-        public override nothrow bool IsCompoundStatementNode() const
-        {
-            return true;
-        }
         public override Node* Clone(CloneContext& cloneContext) const
         {
             CompoundStatementNode* clone = new CompoundStatementNode(GetSpan());
@@ -1163,10 +1127,6 @@ namespace Cm.Ast
         {
             return true;
         }
-        public nothrow override bool IsGotoStatementNode() const
-        {
-            return true;
-        }
         public nothrow inline bool IsExceptionHandlingGoto() const
         {
             return isExceptionHandlingGoto;
@@ -1198,10 +1158,6 @@ namespace Cm.Ast
             TypedefStatementNode* clone = new TypedefStatementNode(GetSpan(), typeExpr->Clone(cloneContext), cast<IdentifierNode*>(id->Clone(cloneContext)));
             CloneLabelTo(clone, cloneContext);
             return clone;
-        }
-        public override nothrow bool IsTypedefStatementNode() const
-        {
-            return true;
         }
         public override void Read(Reader& reader)
         {
@@ -1294,10 +1250,6 @@ namespace Cm.Ast
         public nothrow override NodeType GetNodeType() const 
         {
             return NodeType.constructionStatementNode;
-        }
-        public nothrow override bool IsConstructionStatementNode() const
-        {
-            return true;
         }
         public override Node* Clone(CloneContext& cloneContext) const
         {
@@ -1504,10 +1456,6 @@ namespace Cm.Ast
         {
             return NodeType.tryStatementNode;
         }
-        public nothrow override bool IsTryStatementNode() const
-        {
-            return true;
-        }
         public void AddHandler(CatchNode* handler)
         {
             handler->SetParent(this);
@@ -1620,10 +1568,6 @@ namespace Cm.Ast
         public nothrow override NodeType GetNodeType() const
         {
             return NodeType.catchNode;
-        }
-        public nothrow override bool IsCatchNode() const
-        {
-            return true;
         }
         public nothrow inline int CatchId() const
         {
@@ -1809,10 +1753,6 @@ namespace Cm.Ast
         {
             return symbol;
         }
-        public override nothrow bool IsCondCompSymbolNode() const
-        {
-            return true;
-        }
         public inline nothrow const string& Str() const
         {
             return symbol;
@@ -1824,18 +1764,6 @@ namespace Cm.Ast
     {
         public nothrow CondCompExprNode(const Span& span_) : base(span_)
         {
-        }
-        public nothrow override bool IsCondCompExprNode() const
-        {
-            return true;
-        }
-        public virtual nothrow bool IsCondCompDisjunctionNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsCondCompBinExprNode() const
-        {
-            return false;
         }
     }
     
@@ -1869,10 +1797,6 @@ namespace Cm.Ast
             writer.Write(left.GetPtr());
             writer.Write(right.GetPtr());
         }
-        public nothrow override bool IsCondCompBinExprNode() const
-        {
-            return true;
-        }
         private UniquePtr<CondCompExprNode> left;
         private UniquePtr<CondCompExprNode> right;
     }
@@ -1892,10 +1816,6 @@ namespace Cm.Ast
         public override Node* Clone(CloneContext& cloneContext) const
         {
             return new CondCompDisjunctionNode(GetSpan(), cast<CondCompExprNode*>(Left()->Clone(cloneContext)), cast<CondCompExprNode*>(Right()->Clone(cloneContext)));
-        }
-        public override nothrow bool IsCondCompDisjunctionNode() const
-        {
-            return true;
         }
         public override nothrow string ToString() const
         {
@@ -1925,10 +1845,6 @@ namespace Cm.Ast
         public override Node* Clone(CloneContext& cloneContext) const
         {
             return new CondCompConjunctionNode(GetSpan(), cast<CondCompExprNode*>(Left()->Clone(cloneContext)), cast<CondCompExprNode*>(Right()->Clone(cloneContext)));
-        }
-        public override nothrow bool IsCondCompDisjunctionNode() const
-        {
-            return true;
         }
         public override nothrow string ToString() const
         {
@@ -1972,7 +1888,7 @@ namespace Cm.Ast
         public override nothrow string ToString() const
         {
             string s('!');
-            if (subject->IsCondCompBinExprNode())
+            if (subject.GetPtr() is CondCompBinExprNode*)
             {
                 s.Append('(').Append(subject->ToString()).Append(')');
             }

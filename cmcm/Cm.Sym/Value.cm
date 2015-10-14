@@ -59,10 +59,6 @@ namespace Cm.Sym
         {
             return false;
         }
-        public virtual nothrow bool IsNull() const
-        {
-            return false;
-        }
         public virtual nothrow string ToString() const
         {
             return "";
@@ -1918,10 +1914,6 @@ namespace Cm.Sym
         {
             throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span_);
         }
-        public override nothrow bool IsNull() const
-        {
-            return true;
-        }    
         // create ir object
         public nothrow inline void SetType(TypeSymbol* type_)
         {

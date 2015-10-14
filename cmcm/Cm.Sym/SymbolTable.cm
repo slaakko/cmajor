@@ -104,7 +104,7 @@ namespace Cm.Sym
             symbol->SetSource(SymbolSource.library);
             symbol->SetPublic();
             globalNs.AddSymbol(symbol);
-            if (symbol->IsTypeSymbol())
+            if (symbol is TypeSymbol*)
             {
                 TypeSymbol* typeSymbol = cast<TypeSymbol*>(symbol);
                 typeRepository.AddType(typeSymbol);
@@ -117,7 +117,7 @@ namespace Cm.Sym
         public void Import(Reader& reader, bool importTypeRepository)
         {
             UniquePtr<Symbol> symbol(reader.ReadSymbol());
-            if (symbol->IsNamespaceSymbol())
+            if (symbol.GetPtr() is NamespaceSymbol*)
             {
                 NamespaceSymbol* ns = cast<NamespaceSymbol*>(symbol.GetPtr());
                 globalNs.Import(ns, *this);
@@ -174,7 +174,7 @@ namespace Cm.Sym
                 Symbol* symbol = container->GetContainerScope()->Lookup(namespaceNode->Id()->Str(), SymbolTypeSetId.lookupNamespace);
                 if (symbol != null)
                 {
-                    if (symbol->IsNamespaceSymbol())
+                    if (symbol is NamespaceSymbol*)
                     {
                         BeginContainer(cast<ContainerSymbol*>(symbol));
                         nodeScopeMap[namespaceNode] = symbol->GetContainerScope();
@@ -209,7 +209,7 @@ namespace Cm.Sym
                 Symbol* symbol = container->GetContainerScope()->Lookup(namespaceName, SymbolTypeSetId.lookupNamespace);
                 if (symbol != null)
                 {
-                    if (symbol->IsNamespaceSymbol())
+                    if (symbol is NamespaceSymbol*)
                     {
                         BeginContainer(cast<ContainerSymbol*>(symbol));
                     }

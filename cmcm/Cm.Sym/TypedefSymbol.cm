@@ -26,14 +26,10 @@ namespace Cm.Sym
         {
             return "typedef";
         }
-        public nothrow override bool IsTypedefSymbol() const
-        {
-            return true;
-        }
         public nothrow override bool IsExportSymbol() const
         {
             if (Parent()->IsClassTemplateSymbol()) return false;
-            if (Parent()->IsTemplateTypeSymbol()) return false;
+            if (Parent() is TemplateTypeSymbol*) return false;
             return base->IsExportSymbol();
         }
         public nothrow inline TypeSymbol* GetType() const
@@ -88,7 +84,7 @@ namespace Cm.Sym
         }
         public nothrow override void ReplaceReplicaTypes()
         {
-            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            if (type->IsReplica() && type is TemplateTypeSymbol*)
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
                 type = replica->GetPrimaryTemplateTypeSymbol();
