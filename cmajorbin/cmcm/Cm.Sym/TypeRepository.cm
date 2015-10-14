@@ -45,7 +45,7 @@ namespace Cm.Sym
             Cm.Ast.DerivationList finalDerivations = derivations;
             TypeSymbol* finalBaseType = baseType;
             List<int> finalArrayDimensions = arrayDimensions;
-            if (baseType->IsDerivedTypeSymbol())
+            if (baseType is DerivedTypeSymbol*)
             {
                 DerivedTypeSymbol* baseDerivedType = cast<DerivedTypeSymbol*>(baseType);
                 finalDerivations = baseDerivedType->Derivations();
@@ -67,7 +67,7 @@ namespace Cm.Sym
             UniquePtr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType, finalArrayDimensions), finalBaseType, finalDerivations, 
                 finalArrayDimensions, typeId));
             derivedTypeSymbol->SetAccess(SymbolAccess.public_);
-            if (!baseType->IsTypeParameterSymbol() && !baseType->IsFunctionGroupTypeSymbol())
+            if (!(baseType is TypeParameterSymbol*) && !(baseType is FunctionGroupTypeSymbol*))
             {
                 // todo
             }
@@ -77,7 +77,7 @@ namespace Cm.Sym
         }
         public TypeSymbol* MakePointerType(TypeSymbol* baseType, const Span& span)
         {
-            if (baseType->IsDerivedTypeSymbol())
+            if (baseType is DerivedTypeSymbol*)
             {
                 DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(baseType);
                 Cm.Ast.DerivationList derivations = derivedType->Derivations();
@@ -94,7 +94,7 @@ namespace Cm.Sym
             {
                 return baseType;
             }
-            if (baseType->IsDerivedTypeSymbol())
+            if (baseType is DerivedTypeSymbol*)
             {
                 DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(baseType);
                 Cm.Ast.DerivationList derivations = derivedType->Derivations();
@@ -111,7 +111,7 @@ namespace Cm.Sym
             {
                 return baseType;
             }
-            if (baseType->IsDerivedTypeSymbol())
+            if (baseType is DerivedTypeSymbol*)
             {
                 DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(baseType);
                 Cm.Ast.DerivationList derivations = derivedType->Derivations();
@@ -131,7 +131,7 @@ namespace Cm.Sym
             {
                 return baseType;
             }
-            if (baseType->IsDerivedTypeSymbol())
+            if (baseType is DerivedTypeSymbol*)
             {
                 DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(baseType);
                 Cm.Ast.DerivationList derivations = derivedType->Derivations();
@@ -203,7 +203,7 @@ namespace Cm.Sym
         }
         public TypeSymbol* MakePlainType(TypeSymbol* type)
         {
-            if (type->IsDerivedTypeSymbol())
+            if (type is DerivedTypeSymbol*)
             {
                 DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(type);
                 Cm.Ast.DerivationList derivations = derivedType->Derivations();
@@ -224,7 +224,7 @@ namespace Cm.Sym
         }
         public TypeSymbol* MakePlainTypeWithOnePointerRemoved(TypeSymbol* type)
         {
-            if (type->IsDerivedTypeSymbol())
+            if (type is DerivedTypeSymbol*)
             {
                 DerivedTypeSymbol* derivedType = cast<DerivedTypeSymbol*>(type);
                 Cm.Ast.DerivationList derivations = derivedType->Derivations();
@@ -249,7 +249,7 @@ namespace Cm.Sym
             for (int i = 0; i < nt; ++i)
             {
                 Symbol* symbol = reader.ReadSymbol();
-                if (symbol->IsTemplateTypeSymbol())
+                if (symbol is TemplateTypeSymbol*)
                 {
                     TemplateTypeSymbol* templateTypeSymbol = cast<TemplateTypeSymbol*>(symbol);
                     if (!templateTypeSymbol->Owned())
@@ -268,7 +268,7 @@ namespace Cm.Sym
             for (int i = 0; i < n; ++i)
             {
                 Symbol* symbol = reader.ReadSymbol();
-                if (symbol->IsTypeSymbol())
+                if (symbol is TypeSymbol*)
                 {
                     TypeSymbol* typeSymbol = cast<TypeSymbol*>(symbol);
                     types.Add(UniquePtr<TypeSymbol>(typeSymbol));
@@ -297,7 +297,7 @@ namespace Cm.Sym
             for (HashMap<TypeId, TypeSymbol*>.Iterator i = typeSymbolMap.Begin(); i != e; ++i)
             {
                 TypeSymbol* typeSymbol = i->second;
-                if (typeSymbol->IsReplica() && typeSymbol->IsTemplateTypeSymbol())
+                if (typeSymbol->IsReplica() && typeSymbol is TemplateTypeSymbol*)
                 {
                     TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(typeSymbol);
                     i->second = replica->GetPrimaryTemplateTypeSymbol();

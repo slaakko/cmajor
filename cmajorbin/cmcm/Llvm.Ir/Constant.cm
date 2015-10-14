@@ -161,10 +161,6 @@ namespace Llvm
         public nothrow NullConstant(Ir.Intf.Type* ptrType_) : base("null", ptrType_)
         {
         }
-        public nothrow override bool IsNull() const
-        {
-            return true;
-        }
     }
     
     public nothrow inline Ir.Intf.Object* MakeNull(Ir.Intf.Type* ptrType)

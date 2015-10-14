@@ -89,7 +89,7 @@ namespace Cm.Sym
         public nothrow override bool IsExportSymbol() const
         {
             if (Parent()->IsClassTemplateSymbol()) return false;
-            if (Parent()->IsTemplateTypeSymbol()) return false;
+            if (Parent() is TemplateTypeSymbol*) return false;
             return base->IsExportSymbol();
         }
         public nothrow bool IsVirtual() const
@@ -313,7 +313,7 @@ namespace Cm.Sym
                 }
                 persistentClassData->usingNodes.Write(writer.GetAstWriter());
                 Cm.Ast.Node* node = writer.GetSymbolTable().GetNode(this);
-                if (node->IsClassNode())
+                if (node is Cm.Ast.ClassNode*)
                 {
                     ulong sizePos = writer.GetBinaryWriter().Pos();
                     writer.GetBinaryWriter().Write(ulong(0u));
@@ -330,7 +330,7 @@ namespace Cm.Sym
                     throw Exception("not class node");
                 }
             }
-            if (!IsTemplateTypeSymbol() && !IsClassDelegateTypeSymbol() && sourceFilePath.IsEmpty())
+            if (!(this is TemplateTypeSymbol*) && !(this is ClassDelegateTypeSymbol*) && sourceFilePath.IsEmpty())
             {
                 throw Exception("source file path not set");
             }
@@ -352,7 +352,7 @@ namespace Cm.Sym
                 SetFlag(ClassTypeSymbolFlags.vtblInitialized);
                 return;
             }            
-            if (!IsBound() && IsTemplateTypeSymbol())
+            if (!IsBound() && (this is TemplateTypeSymbol*))
             {
                 return;
             }
@@ -420,7 +420,7 @@ namespace Cm.Sym
             }
             for (Symbol* symbol : Symbols())
             {
-                if (symbol->IsFunctionSymbol())
+                if (symbol is FunctionSymbol*)
                 {
                     FunctionSymbol* functionSymbol = cast<FunctionSymbol*>(symbol);
                     if (functionSymbol->IsDestructor()) continue;
@@ -480,7 +480,7 @@ namespace Cm.Sym
         {
             if (IsClassTemplateSymbol()) return;
             base->ReplaceReplicaTypes();
-            if (baseClass != null && baseClass->IsReplica() && baseClass->IsTemplateTypeSymbol())
+            if (baseClass != null && baseClass->IsReplica() && (baseClass is TemplateTypeSymbol*))
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(baseClass);
                 baseClass = replica->GetPrimaryTemplateTypeSymbol();

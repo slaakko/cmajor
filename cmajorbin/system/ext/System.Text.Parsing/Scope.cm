@@ -121,7 +121,7 @@ namespace System.Text.Parsing
                 ParsingObject* object = enclosingScope->Get(namespaceName);
                 if (object != null)
                 {
-                    if (object->IsNamespace())
+                    if (object is Namespace*)
                     {
                         parent = cast<Namespace*>(object);
                     }
@@ -151,7 +151,7 @@ namespace System.Text.Parsing
             ParsingObject* object = GetQualifiedObject(fullNamespaceName);
             if (object != null)
             {
-                if (object->IsNamespace())
+                if (object is Namespace*)
                 {
                     return cast<Namespace*>(object);
                 }

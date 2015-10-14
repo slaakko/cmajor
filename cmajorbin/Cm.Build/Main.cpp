@@ -438,7 +438,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 
     mainCompileUnit.AddBoundNode(mainFunction);
     mainFunctionSymbol->SetParent(userMainFunction->Parent());
-    Emit(symbolTable.GetTypeRepository(), mainCompileUnit);
+    Emit(symbolTable.GetTypeRepository(), mainCompileUnit, nullptr);
     GenerateObjectCode(mainCompileUnit);
     return true;
 }

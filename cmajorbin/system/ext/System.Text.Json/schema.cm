@@ -96,7 +96,7 @@ namespace System.Text.Json.Schema
         }
         public override void FetchData(System.Text.Json.Data.JsonValue* jsonValue)
         {
-            if (jsonValue->IsString())
+            if (jsonValue is System.Text.Json.Data.JsonString*)
             {
                 System.Text.Json.Data.JsonString* s = cast<System.Text.Json.Data.JsonString*>(jsonValue);
                 value = s->Value();
@@ -124,7 +124,7 @@ namespace System.Text.Json.Schema
         }
         public override void FetchData(System.Text.Json.Data.JsonValue* jsonValue)
         {
-            if (jsonValue->IsNumber())
+            if (jsonValue is System.Text.Json.Data.JsonNumber*)
             {
                 System.Text.Json.Data.JsonNumber* n = cast<System.Text.Json.Data.JsonNumber*>(jsonValue);
                 value = n->Value();
@@ -152,7 +152,7 @@ namespace System.Text.Json.Schema
         }
         public override void FetchData(System.Text.Json.Data.JsonValue* jsonValue)
         {
-            if (jsonValue->IsBool())
+            if (jsonValue is System.Text.Json.Data.JsonBool*)
             {
                 System.Text.Json.Data.JsonBool* b = cast<System.Text.Json.Data.JsonBool*>(jsonValue);
                 value = b->Value();
@@ -348,7 +348,7 @@ namespace System.Text.Json.Schema
         }
         public override void FetchData(System.Text.Json.Data.JsonValue* value)
         {
-            if (value->IsArray())
+            if (value is System.Text.Json.Data.JsonArray*)
             {
                 System.Text.Json.Data.JsonArray* a = cast<System.Text.Json.Data.JsonArray*>(value);
                 int n = Fields().Count();
@@ -429,7 +429,7 @@ namespace System.Text.Json.Schema
         }
         public override void FetchData(System.Text.Json.Data.JsonValue* value)
         {
-            if (value->IsObject())
+            if (value is System.Text.Json.Data.JsonObject*)
             {
                 System.Text.Json.Data.JsonObject* o = cast<System.Text.Json.Data.JsonObject*>(value);
                 for (Field* field : Fields())

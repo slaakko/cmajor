@@ -42,7 +42,7 @@ namespace Cm.Ast
         public ConstraintNode* ReadConstraintNode() 
         {
             Node* node = ReadNode();
-            if (node->IsConstraintNode())
+            if (node is ConstraintNode*)
             {
                 return cast<ConstraintNode*>(node);
             }
@@ -75,7 +75,7 @@ namespace Cm.Ast
         public StatementNode* ReadStatementNode()
         {
             Node* node = ReadNode();
-            if (node->IsStatementNode())
+            if (node is StatementNode*)
             {
                 return cast<StatementNode*>(node);
             }
@@ -99,7 +99,7 @@ namespace Cm.Ast
         public CondCompExprNode* ReadCondCompExprNode() 
         {
             Node* node = ReadNode();
-            if (node->IsCondCompExprNode())
+            if (node is CondCompExprNode*)
             {
                 return cast<CondCompExprNode*>(node);
             }
@@ -111,7 +111,7 @@ namespace Cm.Ast
         public CondCompPartNode* ReadCondCompPartNode() 
         {
             Node* n = ReadNode();
-            if (n->IsCondCompPartNode())
+            if (n is CondCompPartNode*)
             {
                 return cast<CondCompPartNode*>(n);
             }
@@ -147,7 +147,7 @@ namespace Cm.Ast
         public CompoundStatementNode* ReadCompoundStatementNode()
         {
             Node* n = ReadNode();
-            if (n->IsCompoundStatementNode())
+            if (n is CompoundStatementNode*)
             {
                 return cast<CompoundStatementNode*>(n);
             }
@@ -267,7 +267,7 @@ namespace Cm.Ast
         public void Read(InitializerNode*& node)
         {
             Node* n = ReadNode();
-            if (n->IsInitializerNode())
+            if (n is InitializerNode*)
             {
                 node = cast<InitializerNode*>(n);
             }

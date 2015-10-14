@@ -85,7 +85,7 @@ namespace Cm.Sym
         public void Install(Symbol* symbol)
         {
             HashMap<string, Symbol*>.ConstIterator i = symbolMap.CFind(symbol->Name());
-            if (i != symbolMap.CEnd() && !symbol->IsTemplateTypeSymbol())
+            if (i != symbolMap.CEnd() && !(symbol is TemplateTypeSymbol*))
             {
                 Symbol* prev = i->second;
                 if (prev != symbol)
@@ -96,7 +96,7 @@ namespace Cm.Sym
             else
             {
                 symbolMap[symbol->Name()] = symbol;
-                if (symbol->IsContainerSymbol())
+                if (symbol is ContainerSymbol*)
                 {
                     ContainerSymbol* containerSymbol = cast<ContainerSymbol*>(symbol);
                     containerSymbol->GetContainerScope()->SetParent(this);
@@ -164,7 +164,7 @@ namespace Cm.Sym
             if ((lookup & ScopeLookup.this_) != ScopeLookup.none)
             {
                 Symbol* symbol = Lookup(groupName, SymbolTypeSetId.lookupFunctionGroup);
-                if (symbol != null && symbol->IsFunctionGroupSymbol())
+                if (symbol != null && symbol is FunctionGroupSymbol*)
                 {
                     FunctionGroupSymbol* functionGroupSymbol = cast<FunctionGroupSymbol*>(symbol);
                     functionGroupSymbol->CollectViableFunctions(arity, viableFunctions);
@@ -195,7 +195,7 @@ namespace Cm.Sym
                 Symbol* s = scope->Lookup(component, SymbolTypeSetId.lookupNamespace);
                 if (s != null)
                 {
-                    if (s->IsNamespaceSymbol())
+                    if (s is NamespaceSymbol*)
                     {
                         scope = s->GetContainerScope();
                         parentNs = scope->Ns();
@@ -296,7 +296,7 @@ namespace Cm.Sym
                 Symbol* symbol = currentContainerScope->Lookup(namespaceImportNode->Ns()->Str(), ScopeLookup.this_and_parent, SymbolTypeSetId.lookupNamespace);
                 if (symbol != null)
                 {
-                    if (symbol->IsNamespaceSymbol())
+                    if (symbol is NamespaceSymbol*)
                     {
                         ContainerScope* containerScope = symbol->GetContainerScope();
                         if (Find(containerScopes.CBegin(), containerScopes.CEnd(), containerScope) == containerScopes.CEnd())

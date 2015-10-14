@@ -15,7 +15,7 @@ const uint64_t noCid = -1;
 
 extern "C" void init_class_hierarchy(uint64_t* classHierarchyTable, int32_t numEntries)
 {
-    for (int32_t i = 0; i < numEntries / 2; i += 2)
+    for (int32_t i = 0; i < numEntries / 2; ++i)
     {
         uint64_t derivedCid = classHierarchyTable[2 * i];
         uint64_t baseCid = classHierarchyTable[2 * i + 1];

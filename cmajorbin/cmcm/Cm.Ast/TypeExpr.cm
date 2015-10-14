@@ -284,10 +284,6 @@ namespace Cm.Ast
             }
             return clone;
         }
-        public nothrow override bool IsDerivedTypeExprNode() const
-        {
-            return true;
-        }
         public nothrow inline const DerivationList& Derivations() const
         {
             return derivations;

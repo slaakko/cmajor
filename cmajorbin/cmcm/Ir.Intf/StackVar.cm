@@ -16,10 +16,6 @@ namespace Ir.Intf
         public nothrow StackVar(const string& name_, Type* type_) : base(name_, type_)
         {
         }
-        public nothrow override bool IsStackVar() const
-        {
-            return true;
-        }
         public nothrow virtual void SetTemporary()
         {
         }

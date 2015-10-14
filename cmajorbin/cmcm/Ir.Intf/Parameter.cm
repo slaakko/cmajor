@@ -16,9 +16,5 @@ namespace Ir.Intf
         public nothrow Parameter(const string& name_, Type* type_) : base(name_, type_)
         {
         }
-        public nothrow override bool IsParameter() const
-        {
-            return true;
-        }
     }
 }

@@ -121,130 +121,6 @@ namespace Cm.Ast
         {
             ThrowMemFunNotImplemented();    
         }
-        public virtual nothrow bool IsNamespaceNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsClassNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsCompoundStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsCaseStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsDefaultStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsConstructionStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsBreakEnclosingStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsContinueEnclosingStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsGotoStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsTryStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsTypedefStatementNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsCatchNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsFunctionNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsCondCompExprNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsCondCompSymbolNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsCondCompPartNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsConceptNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsIntrinsicConceptNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsConstraintNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsAxiomNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsInitializerNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsConstantNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsMemberVariableNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsEnumTypeNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsEnumConstantNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsTypedefNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsThisNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsUnsignedTypeNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsIdentifierNode() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsDerivedTypeExprNode() const
-        {
-            return false;
-        }
         public virtual nothrow Rank GetRank() const
         {
             return Rank.primary;
@@ -257,9 +133,13 @@ namespace Cm.Ast
         {
             return string();
         }
+        public virtual nothrow bool IsUnsignedTypeNode() const
+        {
+            return false;
+        }        
         public virtual FunctionNode* GetFunction() const
         {
-            if (IsFunctionNode())
+            if (this is FunctionNode*)
             {
                 return cast<FunctionNode*>(this);
             }

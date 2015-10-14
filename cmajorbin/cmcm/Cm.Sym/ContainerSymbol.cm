@@ -46,10 +46,6 @@ namespace Cm.Sym
         {
             return nonOwnedSymbols;
         }
-        public override nothrow bool IsContainerSymbol() const
-        {
-            return true;
-        }
         public override void Read(Reader& reader)
         {
             base->Read(reader);
@@ -66,7 +62,7 @@ namespace Cm.Sym
             List<Symbol*> exportSymbols;
             for (Symbol* symbol : symbols)
             {
-                if (symbol->IsExportSymbol() && !symbol->IsTemplateTypeSymbol())
+                if (symbol->IsExportSymbol() && !(symbol is TemplateTypeSymbol*))
                 {
                     exportSymbols.Add(symbol);
                 }
@@ -80,11 +76,11 @@ namespace Cm.Sym
         }
         public virtual void AddSymbol(Symbol* symbol)
         {
-            if (!symbol->Name().IsEmpty() && !symbol->IsFunctionSymbol() && !symbol->IsConceptSymbol())
+            if (!symbol->Name().IsEmpty() && !(symbol is FunctionSymbol*) && !(symbol is ConceptSymbol*))
             {
                 containerScope.Install(symbol);
             }
-            if (symbol->IsFunctionSymbol())
+            if (symbol is FunctionSymbol*)
             {
                 FunctionSymbol* functionSymbol = cast<FunctionSymbol*>(symbol);
                 if (!functionSymbol->IsFunctionTemplateSpecialization())
@@ -93,7 +89,7 @@ namespace Cm.Sym
                     functionGroupSymbol->AddFunction(functionSymbol);
                 }
             }
-            else if (symbol->IsConceptSymbol())
+            else if (symbol is ConceptSymbol*)
             {
                 ConceptSymbol* conceptSymbol = cast<ConceptSymbol*>(symbol);
                 ConceptGroupSymbol* conceptGroupSymbol = MakeConceptGroupSymbol(conceptSymbol->GroupName(), conceptSymbol->GetSpan());
@@ -149,7 +145,7 @@ namespace Cm.Sym
                 AddSymbol(functionGroupSymbol);
                 return functionGroupSymbol;
             }
-            if (symbol->IsFunctionGroupSymbol())
+            if (symbol is FunctionGroupSymbol*)
             {
                 FunctionGroupSymbol* functionGroupSymbol = cast<FunctionGroupSymbol*>(symbol);
                 return functionGroupSymbol;
@@ -169,7 +165,7 @@ namespace Cm.Sym
                 AddSymbol(conceptGroupSymbol);
                 return conceptGroupSymbol;
             }
-            if (symbol->IsConceptGroupSymbol())
+            if (symbol is ConceptGroupSymbol*)
             {
                 ConceptGroupSymbol* conceptGroupSymbol = cast<ConceptGroupSymbol*>(symbol);
                 return conceptGroupSymbol;

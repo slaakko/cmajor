@@ -48,7 +48,7 @@ namespace System.Text.Parsing
                 ParsingObject* object = currentGrammar->GetScope()->Get(link.LinkedRuleName());
                 if (object != null)
                 {
-                    if (object->IsRule())
+                    if (object is Rule*)
                     {
                         Rule* rule = cast<Rule*>(object);
                         link.SetRule(rule);

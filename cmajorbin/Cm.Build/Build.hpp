@@ -11,12 +11,13 @@
 #define CM_BUILD_BUILD_INCLUDED
 #include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Ast/Project.hpp>
+#include <Cm.Opt/TypePropagationGraph.hpp>
 
 namespace Cm { namespace Build {
 
 void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines);
 void BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines);
-void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
+void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Opt::TpGraph* tpGraph);
 void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GetLibraryDirectories(std::vector<std::string>& libraryDirectories);
 void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project, const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths,

@@ -11,9 +11,7 @@ namespace Test
         OutputStringStream s;
         CodeFormatter f(s);
 
-        PostfixExpression* p0 = new PostfixExpression(new Identifier("foo"));
-        List<CmObject*> invokeArgs;
-        p0->AddOp(new Invoke(invokeArgs));
+        Invoke* p0 = new Invoke(new Identifier("foo"));
         SimpleStatement s0(p0);
         s0.Print(f);
         #assert(s.GetStr() == "foo();\n");
@@ -39,8 +37,8 @@ namespace Test
         #assert(s.GetStr() == "if (alpha == beta) return;\n");
         s.SetStr(string());
 
-        ConditionalStatement c1(new BinaryExpression(Operator.less, new Identifier("alpha"), new Identifier("beta")), 
-            new ReturnStatement(new BooleanLiteral(true)), 
+        ConditionalStatement c1(new BinaryExpression(Operator.less, new Identifier("alpha"), new Identifier("beta")),
+            new ReturnStatement(new BooleanLiteral(true)),
             new ReturnStatement(new BooleanLiteral(false)));
         c1.Print(f);
         #assert(s.GetStr() == "if (alpha < beta) return true;\nelse return false;\n");
@@ -51,9 +49,7 @@ namespace Test
         #assert(s.GetStr() == "{\n}\n");
         s.SetStr(string());
 
-        PostfixExpression* p1 = new PostfixExpression(new Identifier("foo"));
-        List<CmObject*> invokeArgs2;
-        p1->AddOp(new Invoke(invokeArgs2));
+        Invoke* p1 = new Invoke(new Identifier("foo"));
         SimpleStatement* s1 = new SimpleStatement(p1);
         CompoundStatement cm1;
         cm1.AddStatement(s1);
@@ -93,7 +89,7 @@ namespace Test
         ForStatement fs0;
         ExpressionList csArgs;
         csArgs.Add(new IntLiteral(0u, ' '));
-        fs0.SetContent(new ConstructionStatement(new IntType(), "i", csArgs), new BinaryExpression(Operator.less, new Identifier("i"), new IntLiteral(10u, ' ')), 
+        fs0.SetContent(new ConstructionStatement(new IntType(), "i", csArgs), new BinaryExpression(Operator.less, new Identifier("i"), new IntLiteral(10u, ' ')),
             new PrefixExpression(Operator.preInc, new Identifier("i")), new BreakStatement());
         fs0.Print(f);
         #assert(s.GetStr() == "for (int i = 0; i < 10; ++i) break;\n");
@@ -114,8 +110,8 @@ namespace Test
         #assert(s.GetStr() == "typedef int i16;\n");
         s.SetStr(string());
 
-        AssignmentStatement as(new Identifier("foo"), new Identifier("bar"));
-        as.Print(f);
+        AssignmentStatement asf(new Identifier("foo"), new Identifier("bar"));
+        asf.Print(f);
         #assert(s.GetStr() == "foo = bar;\n");
         s.SetStr(string());
 
@@ -136,26 +132,25 @@ namespace Test
         #assert(s.GetStr() == "delete p;\n");
         s.SetStr(string());
 
-        PostfixExpression* pf0 = new PostfixExpression(new Identifier("Exception"));
+        Invoke* invoke = new Invoke(new Identifier("Exception"));
         ExpressionList ia;
         ia.Add(new StringLiteral("foo"));
-        pf0->AddOp(new Invoke(ia));
-        ThrowStatement ts1(pf0);
+        invoke->SetArguments(ia);
+        ThrowStatement ts1(invoke);
         ts1.Print(f);
         #assert(s.GetStr() == "throw Exception(\"foo\");\n");
         s.SetStr(string());
 
         CompoundStatement* tryBlock = new CompoundStatement();
-        PostfixExpression* pf1 = new PostfixExpression(new Identifier("foo"));
-        ExpressionList ia2;
-        pf1->AddOp(new Invoke(ia2));
-        tryBlock->AddStatement(new SimpleStatement(pf1));
+        PostfixInc* pfInc = new PostfixInc(new Identifier("foo"));
+        SimpleStatement* simple = new SimpleStatement(pfInc);
+        tryBlock->AddStatement(simple);
         List<ExceptionHandler*> handlers;
         CompoundStatement* catchBlock = new CompoundStatement();
         handlers.Add(new ExceptionHandler(new Identifier("Exception"), "ex", catchBlock));
         TryStatement ts2(tryBlock, handlers);
         ts2.Print(f);
-        #assert(s.GetStr() == "try\n{\n    foo();\n}\ncatch (Exception ex)\n{\n}\n");
+        #assert(s.GetStr() == "try\n{\n    foo++;\n}\ncatch (Exception ex)\n{\n}\n");
         s.SetStr(string());
 
         AssertStatement as3(new BooleanLiteral(true));

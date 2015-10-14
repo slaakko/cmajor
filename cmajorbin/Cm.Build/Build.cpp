@@ -229,18 +229,20 @@ void AnalyzeControlFlow(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
     boundCompileUnit.Accept(controlFlowAnalyzer);
 }
 
-void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
+void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Opt::TpGraph* tpGraph)
 {
     if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
     {
         Cm::Emit::LlvmEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(),
             boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
+        emitter.SetTpGraph(tpGraph);
         boundCompileUnit.Accept(emitter);
     }
     else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
     {
         Cm::Emit::CEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(),
             boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
+        emitter.SetTpGraph(tpGraph);
         boundCompileUnit.Accept(emitter);
     }
     else
@@ -694,7 +696,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
             }
             else
             {
-                Emit(symbolTable.GetTypeRepository(), *boundCompileUnit);
+                Emit(symbolTable.GetTypeRepository(), *boundCompileUnit, nullptr);
                 GenerateObjectCode(*boundCompileUnit);
                 if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
                 {
@@ -1496,6 +1498,18 @@ void ProcessProgram(Cm::Ast::Project* project)
     {
         std::cout << "Generating code..." << std::endl;
     }
+    std::string vCallFileName = Cm::Core::GetGlobalSettings()->VirtualCallFileName();
+    if (!vCallFileName.empty())
+    {
+        if (boost::filesystem::path(vCallFileName).extension().empty())
+        {
+            vCallFileName.append(".txt");
+        }
+        if (boost::filesystem::exists(vCallFileName))
+        {
+            boost::filesystem::remove(vCallFileName);
+        }
+    }
     std::vector<std::string> objectFilePaths = allNativeObjectFilePaths;
     for (const std::string& bcuPath : allBcuPaths)
     {
@@ -1521,13 +1535,17 @@ void ProcessProgram(Cm::Ast::Project* project)
         compileUnit.Read(reader);
         boost::filesystem::path cuFilePath = boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(compileUnit.ProjectName() + "." + compileUnit.FileName());
         compileUnit.SetPaths(cuFilePath.generic_string());
-        Emit(symbolTable.GetTypeRepository(), compileUnit);
+        Emit(symbolTable.GetTypeRepository(), compileUnit, &tpGraph);
         GenerateObjectCode(compileUnit);
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
         {
             GenerateOptimizedLlvmCodeFile(compileUnit);
         }
         objectFilePaths.push_back(compileUnit.ObjectFilePath());
+    }
+    if (!quiet)
+    {
+        std::cout << tpGraph.DevirtulizedFunctionCalls() << " of " << tpGraph.VirtualCallMap().size() << " virtual calls devirtualized" << std::endl;
     }
     GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, true);
     GenerateClassHierarchyUnit(symbolTable, classHierarchyTable, project->OutputBasePath().generic_string(), objectFilePaths, true);

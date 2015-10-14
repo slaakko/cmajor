@@ -20,6 +20,7 @@
 #include <Cm.Core/StringRepository.hpp>
 #include <Cm.Core/ExternalConstantRepository.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
+#include <Cm.Opt/TypePropagationGraph.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -113,6 +114,7 @@ public:
     virtual void SetCfgNode(Cm::BoundTree::BoundStatement& fromStatement, Cm::BoundTree::BoundStatement& toStatement) = 0;
     virtual void PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode) = 0;
     virtual void SetCallDebugInfoInfo(Ir::Intf::Instruction* callInst, Ir::Intf::Function* fun) = 0;
+    void SetTpGraph(Cm::Opt::TpGraph* tpGraph_) { tpGraph = tpGraph_; }
 
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
@@ -242,6 +244,7 @@ private:
     Cm::Sym::FunctionSymbol* enterTracedCallFun;
     Cm::Sym::FunctionSymbol* leaveTracedCallFun;
     Cm::Sym::SymbolTable* symbolTable;
+    Cm::Opt::TpGraph* tpGraph;
     std::stack<std::vector<Ir::Intf::LabelObject*>> nextTargetsStack;
     Ir::Intf::LabelObject* endProfiledFunLabel;
     void ClearCompoundDestructionStack(Cm::Core::GenResult& result);

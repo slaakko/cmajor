@@ -22,12 +22,6 @@ namespace System.Text.Json.Data
         public default nothrow void operator=(const JsonValue&);
         public default nothrow void operator=(JsonValue&&);
         public abstract string ToString() const;
-        public virtual bool IsObject() const { return false; }
-        public virtual bool IsArray() const { return false; }
-        public virtual bool IsString() const { return false; }
-        public virtual bool IsNumber() const { return false; }
-        public virtual bool IsBool() const { return false; }
-        public virtual bool IsNull() const { return false; }
     }
     
     public class JsonObject: JsonValue
@@ -39,7 +33,6 @@ namespace System.Text.Json.Data
         suppress void operator=(const JsonObject&);
         suppress JsonObject(JsonObject&&);
         suppress void operator=(JsonObject&&);
-        public override bool IsObject() const { return true; }
         public void AddField(JsonString&& name, JsonValue* value)
         {
             values.Add(UniquePtr<JsonValue>(value));
@@ -90,7 +83,6 @@ namespace System.Text.Json.Data
         suppress void operator=(const JsonArray&);
         suppress JsonArray(JsonArray&&);
         suppress void operator=(JsonArray&&);
-        public override bool IsArray() const { return true; }
         public void AddItem(JsonValue* item)
         {
             items.Add(item);
@@ -133,7 +125,6 @@ namespace System.Text.Json.Data
     
     public class JsonString: JsonValue
     {
-        public override bool IsString() const { return true; }
         public JsonString()
         {
         }
@@ -196,7 +187,6 @@ namespace System.Text.Json.Data
         public nothrow JsonNumber(double value_): value(value_)
         {
         }
-        public override bool IsNumber() const { return true; }
         public override string ToString() const
         {
             return ToString(value); 
@@ -220,7 +210,6 @@ namespace System.Text.Json.Data
         public nothrow JsonBool(bool value_): value(value_)
         {
         }
-        public override bool IsBool() const { return true; }
         public override string ToString() const
         {
             return ToString(value);
@@ -238,7 +227,6 @@ namespace System.Text.Json.Data
     
     public class JsonNull: JsonValue
     {
-        public override bool IsNull() const { return true; }
         public override string ToString() const
         {
             return "null";

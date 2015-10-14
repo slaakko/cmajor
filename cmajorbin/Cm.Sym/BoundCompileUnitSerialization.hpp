@@ -47,6 +47,7 @@ public:
     virtual bool IsBoundNode() const { return false; }
     virtual bool IsBoundExpression() const { return false; }
     virtual bool IsBoundLiteral() const { return false; }
+    virtual bool IsBoundStringLiteral() const { return false; }
     virtual bool IsTraceCall() const { return false; }
     virtual bool IsBoundStatement() const { return false; }
     virtual bool IsBoundCompoundStatement() const { return false; }

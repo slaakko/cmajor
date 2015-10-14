@@ -13,6 +13,8 @@
 #include <Cm.Emit/LlvmFunctionEmitter.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Util/Path.hpp>
+#include <boost/filesystem.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -35,6 +37,13 @@ LlvmEmitter::LlvmEmitter(const std::string& irFilePath, Cm::Sym::TypeRepository&
 {
 }
 
+void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
+{
+    Emitter::BeginVisit(compileUnit);
+    funFilePath = Cm::Util::GetFullPath(boost::filesystem::path(compileUnit.IrFilePath()).replace_extension(".fun").generic_string());
+    funFile.open(funFilePath.c_str());
+}
+
 void LlvmEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
 {
     std::string targetTriple = Unquote(Cm::Core::GetGlobalSettings()->TargetTriple());
@@ -52,6 +61,7 @@ void LlvmEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
 
 void LlvmEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
+    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository());
     for (Ir::Intf::Function* function : ExternalFunctions())
     {
         if (InternalFunctionNames().find(function->Name()) == InternalFunctionNames().end())
@@ -61,6 +71,10 @@ void LlvmEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     }
     staticMemberVariableRepository.Write(CodeFormatter());
     ExternalConstantRepository().Write(CodeFormatter());
+    funFile.close();
+    std::string funFileContent(Cm::Util::ReadFile(funFilePath));
+    CodeFormatter().WriteLine(funFileContent);
+    boost::filesystem::remove(funFilePath);
 }
 
 void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
@@ -82,14 +96,16 @@ void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundClass& boundClass)
 void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (boundFunction.GetFunctionSymbol()->IsExternal()) return;
+    Cm::Util::CodeFormatter funFormatter(funFile);
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
     {
         if (generatedFunctions.find(boundFunction.GetFunctionSymbol()->FullName()) != generatedFunctions.cend()) return;
         generatedFunctions.insert(boundFunction.GetFunctionSymbol()->FullName());
     }
-    LlvmFunctionEmitter functionEmitter(CodeFormatter(), TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(), 
+    LlvmFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(),
         ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), Profile());
     functionEmitter.SetSymbolTable(SymbolTable());
+    functionEmitter.SetTpGraph(TpGraph());
     boundFunction.Accept(functionEmitter);
 }
 

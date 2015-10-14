@@ -65,10 +65,6 @@ namespace System.Text.Parsing
                 delete failureCode;
             }
         }
-        public override bool IsActionParser() const
-        {
-            return true;
-        }
         public nothrow string MethodName() const
         {
             return Name() + "Action";

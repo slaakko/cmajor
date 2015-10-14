@@ -1468,10 +1468,6 @@ namespace Cm.Ast
         {
             return NodeType.thisNode;
         }
-        public nothrow override bool IsThisNode() const
-        {
-            return true;
-        }
         public override Node* Clone(CloneContext& cloneContext) const
         {
             return new ThisNode(GetSpan());

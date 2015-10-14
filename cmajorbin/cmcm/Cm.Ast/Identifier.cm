@@ -28,10 +28,6 @@ namespace Cm.Ast
         {
             return new IdentifierNode(GetSpan(), identifier);
         }
-        public nothrow override bool IsIdentifierNode() const
-        {
-            return true;
-        }
         public override void Read(Reader& reader)
         {
             identifier = reader.GetBinaryReader().ReadString();

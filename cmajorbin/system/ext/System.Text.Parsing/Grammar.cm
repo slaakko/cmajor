@@ -35,10 +35,6 @@ namespace System.Text.Parsing
         public override ~Grammar()
         {
         }
-        public override bool IsGrammar() const 
-        { 
-            return true; 
-        }
         public virtual void GetReferencedGrammars()
         {
             // derived grammar overrides...
@@ -164,11 +160,11 @@ namespace System.Text.Parsing
             {
                 ThrowException("rule '" + ruleName + "' not found in grammar '" + FullName() + "'", GetSpan());
             }
-            if (object->IsRule())
+            if (object is Rule*)
             {
                 return cast<Rule*>(object);
             }
-            else if (object->IsRuleLink())
+            else if (object is RuleLink*)
             {
                 RuleLink* ruleLink = cast<RuleLink*>(object);
                 Rule* rule = ruleLink->GetRule();
@@ -180,7 +176,7 @@ namespace System.Text.Parsing
             }
             else
             {
-                ThrowException("object '" + ruleName + "' is not rule or rule link", GetSpan());
+                ThrowException("object '" + ruleName + "' (" + object->FullName() + ") is not rule or rule link", GetSpan());
             }
             return null;
         }

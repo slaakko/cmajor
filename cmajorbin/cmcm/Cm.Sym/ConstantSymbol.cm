@@ -49,10 +49,6 @@ namespace Cm.Sym
         {
             SetType(type_);
         }
-        public nothrow override bool IsConstantSymbol() const
-        {
-            return true;
-        }
         public nothrow override bool IsExportSymbol() const
         {
             if (Parent()->IsClassTemplateSymbol()) return false;
@@ -80,7 +76,7 @@ namespace Cm.Sym
         }
         public nothrow override void ReplaceReplicaTypes()
         {
-            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            if (type->IsReplica() && (type is TemplateTypeSymbol*))
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
                 type = replica->GetPrimaryTemplateTypeSymbol();

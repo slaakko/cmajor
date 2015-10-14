@@ -129,10 +129,6 @@ namespace Cm.Ast
         {
             return NodeType.enumConstantNode;
         }
-        public nothrow override bool IsEnumConstantNode() const
-        {
-            return true;
-        }
         public override Node* Clone(CloneContext& cloneContext) const
         {
             return new EnumConstantNode(GetSpan(), cast<IdentifierNode*>(id->Clone(cloneContext)), value->Clone(cloneContext));

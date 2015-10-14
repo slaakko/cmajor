@@ -22,10 +22,6 @@ namespace Cm.Sym
         {
             return SymbolType.conceptSymbol;
         }
-        public nothrow override bool IsConceptSymbol() const
-        {
-            return true;
-        }
         public nothrow inline const string& GroupName() const
         {
             return groupName;
@@ -58,7 +54,7 @@ namespace Cm.Sym
         public override void AddSymbol(Symbol* symbol)
         {
             base->AddSymbol(symbol);
-            if (symbol->IsTypeParameterSymbol())
+            if (symbol is TypeParameterSymbol*)
             {
                 TypeParameterSymbol* typeParameterSymbol = cast<TypeParameterSymbol*>(symbol);
                 typeParameterSymbol->SetIndex(typeParameters.Count());
@@ -79,7 +75,7 @@ namespace Cm.Sym
             writer.Write(id);
             writer.GetBinaryWriter().Write(groupName);
             Cm.Ast.Node* node = writer.GetSymbolTable().GetNode(this);
-            if (node->IsConceptNode())
+            if (node is Cm.Ast.ConceptNode*)
             {
                 writer.GetAstWriter().Write(node);
             }

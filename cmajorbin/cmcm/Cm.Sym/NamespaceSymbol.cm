@@ -25,10 +25,6 @@ namespace Cm.Sym
         {
             return "namespace";
         }
-        public nothrow override bool IsNamespaceSymbol() const
-        {
-            return true;
-        }
         public nothrow inline bool IsGlobalNamespace() const
         {
             return Name().IsEmpty();
@@ -46,19 +42,19 @@ namespace Cm.Sym
             symbolTable.BeginNamespaceScope(that->Name(), that->GetSpan());
             for (UniquePtr<Symbol>& ownedSymbol : that->OwnedSymbols())
             {
-                if (ownedSymbol->IsNamespaceSymbol())
+                if (ownedSymbol.GetPtr() is NamespaceSymbol*)
                 {
                     NamespaceSymbol* thatNs = cast<NamespaceSymbol*>(ownedSymbol.GetPtr());
                     Import(thatNs, symbolTable);
                 }
                 else
                 {
-                    if (!ownedSymbol->IsFunctionGroupSymbol() && !ownedSymbol->IsConceptGroupSymbol())
+                    if (!(ownedSymbol.GetPtr() is FunctionGroupSymbol*) && !(ownedSymbol.GetPtr() is ConceptGroupSymbol*))
                     {
                         Symbol* symbol = ownedSymbol.Release();
                         symbol->ResetOwned();
                         symbolTable.Container()->AddSymbol(symbol);
-                        if (symbol->IsTemplateTypeSymbol())
+                        if (symbol is TemplateTypeSymbol*)
                         {
                             symbolTable.AddImportedTemplateType(cast<TemplateTypeSymbol*>(symbol));
                         }
@@ -68,7 +64,7 @@ namespace Cm.Sym
             for (Symbol* symbol : that->NonOwnedSymbols())
             {
                 symbolTable.Container()->AddSymbol(symbol);
-                if (symbol->IsTemplateTypeSymbol())
+                if (symbol is TemplateTypeSymbol*)
                 {
                     symbolTable.AddImportedTemplateType(cast<TemplateTypeSymbol*>(symbol));
                 }

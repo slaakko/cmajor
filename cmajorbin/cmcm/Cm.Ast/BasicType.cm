@@ -79,6 +79,10 @@ namespace Cm.Ast
         {
             visitor.Visit(*this);
         }
+        public override nothrow bool IsUnsignedTypeNode() const 
+        { 
+            return true; 
+        }
     }
 
     public class ShortNode : Node
@@ -124,6 +128,10 @@ namespace Cm.Ast
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+        }
+        public override nothrow bool IsUnsignedTypeNode() const 
+        { 
+            return true; 
         }
     }
        
@@ -171,6 +179,10 @@ namespace Cm.Ast
         {
             visitor.Visit(*this);
         }
+        public override nothrow bool IsUnsignedTypeNode() const 
+        { 
+            return true; 
+        }
     }
 
     public class LongNode : Node
@@ -216,6 +228,10 @@ namespace Cm.Ast
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+        }
+        public override nothrow bool IsUnsignedTypeNode() const 
+        { 
+            return true; 
         }
     }
     

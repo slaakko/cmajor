@@ -26,10 +26,6 @@ namespace Cm.Sym
         {
             return false;
         }
-        public nothrow override bool IsConceptGroupSymbol() const
-        {
-            return true;
-        }
         public nothrow override const char* TypeString() const
         {
             return "concept group";

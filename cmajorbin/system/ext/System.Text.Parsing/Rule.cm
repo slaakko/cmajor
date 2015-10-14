@@ -57,10 +57,6 @@ namespace System.Text.Parsing
             SetScope(new Scope(Name(), EnclosingScope()));
             Own(definition);
         }
-        public override bool IsRule() const
-        {
-            return true;
-        }
         public virtual void Link()
         {
             // derived class overrides...
@@ -182,7 +178,7 @@ namespace System.Text.Parsing
             {
                 ThrowException("action '" + actionName + "' not found in rule '" + FullName() + "'", GetSpan());
             }
-            else if (object->IsActionParser())
+            else if (object is ActionParser*)
             {
                 return cast<ActionParser*>(object);
             }
@@ -210,7 +206,7 @@ namespace System.Text.Parsing
             {
                 ThrowException("nonterminal '" + nonterminalName + "' not found", GetSpan());
             }
-            else if (object->IsNonterminalParser())
+            else if (object is NonterminalParser*)
             {
                 return cast<NonterminalParser*>(object);
             }
@@ -322,10 +318,6 @@ namespace System.Text.Parsing
             {
                 linkedRuleName = "System.Text.Parsing.stdlib." + GetCommonName(linkedRuleName);
             }
-        }
-        public override bool IsRuleLink() const
-        {
-            return true;
         }
         public override void Accept(Visitor& visitor)
         {

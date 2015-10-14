@@ -69,10 +69,6 @@ namespace Cm.Ast
         {
             return NodeType.functionNode;
         }
-        public nothrow override bool IsFunctionNode() const
-        {
-            return true;
-        }
         public override void AddTemplateParameter(TemplateParameterNode* templateParameter)
         {
             templateParameter->SetParent(this);
@@ -204,7 +200,7 @@ namespace Cm.Ast
         }
         public string FullGroupName() const
         {
-            if (Parent()->IsNamespaceNode())
+            if (Parent() is NamespaceNode*)
             {
                 return cast<NamespaceNode*>(Parent())->FullName() + "." + groupId->Str();
             }

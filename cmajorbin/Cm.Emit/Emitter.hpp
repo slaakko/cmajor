@@ -15,6 +15,7 @@
 #include <Cm.Core/StaticMemberVariableRepository.hpp>
 #include <Cm.Core/ExternalConstantRepository.hpp>
 #include <Cm.Core/GenData.hpp>
+#include <Cm.Opt/TypePropagationGraph.hpp>
 #include <fstream>
 
 namespace Cm { namespace Emit {
@@ -27,6 +28,7 @@ public:
     void BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
     virtual void WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter) = 0;
     virtual Cm::Core::StaticMemberVariableRepository& GetStaticMemberVariableRepository() = 0;
+    void SetTpGraph(Cm::Opt::TpGraph* tpGraph_) { tpGraph = tpGraph_; }
 protected:
     const std::unordered_set<Ir::Intf::Function*>& ExternalFunctions() const { return externalFunctions; }
     std::unordered_set<Ir::Intf::Function*>& ExternalFunctions() { return externalFunctions; }
@@ -49,6 +51,7 @@ protected:
     Cm::Sym::FunctionSymbol* LeaveTracedCallFun() {return leaveTracedCallFun; }
     Cm::Sym::SymbolTable* SymbolTable() const { return symbolTable; }
     bool Profile() const { return profile; }
+    Cm::Opt::TpGraph* TpGraph() const { return tpGraph; }
 private:
 	Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
@@ -67,6 +70,7 @@ private:
     Cm::Sym::FunctionSymbol* leaveTracedCallFun;
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> processedClasses;
     Cm::Sym::SymbolTable* symbolTable;
+    Cm::Opt::TpGraph* tpGraph;
     bool profile;
 };
 

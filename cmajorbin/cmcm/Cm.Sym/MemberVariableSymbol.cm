@@ -26,14 +26,10 @@ namespace Cm.Sym
         {
             return "member variable";
         }
-        public nothrow override bool IsMemberVariableSymbol() const
-        {
-            return true;
-        }
         public nothrow override bool IsExportSymbol() const
         {
             if (Parent()->IsClassTemplateSymbol()) return false;
-            if (Parent()->IsTemplateTypeSymbol()) return false;
+            if (Parent() is TemplateTypeSymbol*) return false;
             return true; 
         }
         public nothrow inline TypeSymbol* GetType() const
@@ -68,7 +64,7 @@ namespace Cm.Sym
         }
 	 public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes) 
         {
-            if (type->IsDerivedTypeSymbol())
+            if (type is DerivedTypeSymbol*)
             {
                 if (collected.CFind(type) == collected.CEnd())
                 {
@@ -79,7 +75,7 @@ namespace Cm.Sym
         }
         public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
-            if (type->IsTemplateTypeSymbol() || type->IsDerivedTypeSymbol())
+            if (type is TemplateTypeSymbol* || type is DerivedTypeSymbol*)
             {
                 if (collected.CFind(type) == collected.CEnd())
                 {
@@ -90,7 +86,7 @@ namespace Cm.Sym
         }
         public nothrow override void ReplaceReplicaTypes()
         {
-            if (type->IsReplica() && type->IsTemplateTypeSymbol())
+            if (type->IsReplica() && type is TemplateTypeSymbol*)
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
                 type = replica->GetPrimaryTemplateTypeSymbol();

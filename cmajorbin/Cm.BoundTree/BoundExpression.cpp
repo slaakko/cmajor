@@ -1122,7 +1122,7 @@ void BoundFunctionCall::Write(Cm::Sym::BcuWriter& writer)
     writer.Write(classObjectResultVar);
     writer.Write(temporary.get());
     writer.Write(traceCallInfo.get());
-    functionCallSid = writer.GetSymbolWriter().GetSymbolTable()->GetSid();
+    writer.Write(sidLiteral.get());
     writer.GetBinaryWriter().Write(functionCallSid);
 }
 
@@ -1175,6 +1175,18 @@ void BoundFunctionCall::Read(Cm::Sym::BcuReader& reader)
             throw std::runtime_error("trace call info expected");
         }
     }
+    Cm::Sym::BcuItem* sidItem = reader.ReadItem();
+    if (sidItem)
+    {
+        if (sidItem->IsBoundStringLiteral())
+        {
+            sidLiteral.reset(static_cast<BoundStringLiteral*>(sidItem));
+        }
+        else
+        {
+            throw std::runtime_error("bound string literal expected");
+        }
+    }
     functionCallSid = reader.GetBinaryReader().ReadUInt();
 }
 
@@ -1186,6 +1198,16 @@ void BoundFunctionCall::Accept(Visitor& visitor)
 void BoundFunctionCall::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
 {
     traceCallInfo.reset(traceCallInfo_);
+}
+
+void BoundFunctionCall::SetFunctionCallSid(uint32_t functionCallSid_)
+{
+    functionCallSid = functionCallSid_;
+}
+
+void BoundFunctionCall::SetSidLiteral(BoundStringLiteral* sidLiteral_)
+{
+    sidLiteral.reset(sidLiteral_);
 }
 
 BoundDelegateCall::BoundDelegateCall() : BoundExpression(nullptr), delegateType(nullptr), subject(nullptr), arguments()
