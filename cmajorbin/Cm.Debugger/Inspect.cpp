@@ -547,7 +547,7 @@ std::string Inspector::GetActualClassName(Cm::Core::ClassDebugInfo* classDebugIn
 {
     if (classDebugInfo->HasVptr())
     {
-        std::string printClassNameExpr = "*(char**)" + printExpr.Text() + ".__vptr";
+        std::string printClassNameExpr = "(*(struct rtti_**)" + printExpr.Text() + ".__vptr)->class_name";
         std::shared_ptr<GdbCommand> command = gdb.Print(printClassNameExpr);
         if (command->ReplyMessage().empty())
         {

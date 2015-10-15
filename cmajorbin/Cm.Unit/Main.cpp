@@ -111,14 +111,18 @@ int main(int argc, const char** argv)
                                 if (v[0] == "-config")
                                 {
                                     const std::string& config = v[1];
-                                    if (config != "debug" && config != "release")
+                                    if (config != "debug" && config != "release" && config != "profile" && config != "full")
                                     {
                                         throw std::runtime_error("unknown configuration '" + config + "'");
                                     }
                                     Cm::Core::GetGlobalSettings()->SetConfig(config);
-                                    if (config == "release")
+                                    if (config == "release" || config == "profile" || config == "full")
                                     {
                                         Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::optimize);
+                                        if (config == "full")
+                                        {
+                                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig);
+                                        }
                                     }
                                 }
                                 else if (v[0] == "-backend")

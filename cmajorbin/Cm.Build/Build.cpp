@@ -1494,6 +1494,13 @@ void ProcessProgram(Cm::Ast::Project* project)
     }
     tpGraphBuilderVisitor.PrintVirtualCalls();
     ProcessClasses(symbolTable.Classes());
+    for (Cm::Sym::ClassTypeSymbol* classTypeSymbol : symbolTable.Classes())
+    {
+        if (classTypeSymbol->IsVirtual())
+        {
+            symbolTable.SetVirtualClassCid(classTypeSymbol->FullName(), classTypeSymbol->Cid());
+        }
+    }
     if (!quiet)
     {
         std::cout << "Generating code..." << std::endl;
@@ -1521,6 +1528,7 @@ void ProcessProgram(Cm::Ast::Project* project)
         Cm::Sym::BcuReader reader(bcuPath, symbolTable, basicTypeOpFactory, itemFactory, arrayTypeOpFactory, delegateTypeOpFactory, classDelegateTypeOpFactory);
         reader.GetSymbolReader().MarkSymbolsBound();
         reader.GetSymbolReader().MarkTemplateTypeSymbolsBound();
+        reader.GetSymbolReader().SetFetchCidForVirtualClasses();
         Cm::BoundTree::BoundCompileUnit compileUnit(symbolTable);
         compileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(compileUnit));
         compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));
@@ -1545,7 +1553,7 @@ void ProcessProgram(Cm::Ast::Project* project)
     }
     if (!quiet)
     {
-        std::cout << tpGraph.DevirtulizedFunctionCalls() << " of " << tpGraph.VirtualCallMap().size() << " virtual calls devirtualized" << std::endl;
+        std::cout << tpGraph.DevirtualizedFunctionCalls() << " of " << tpGraph.VirtualCallMap().size() << " virtual calls devirtualized" << std::endl;
     }
     GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, true);
     GenerateClassHierarchyUnit(symbolTable, classHierarchyTable, project->OutputBasePath().generic_string(), objectFilePaths, true);

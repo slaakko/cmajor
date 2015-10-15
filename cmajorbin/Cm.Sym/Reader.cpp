@@ -17,7 +17,7 @@
 namespace Cm { namespace Sym {
 
 Reader::Reader(const std::string& fileName, SymbolTable& symbolTable_) : binaryReader(fileName), astReader(binaryReader), symbolTable(symbolTable_), spanFileIndexOffset(0), markSymbolsBound(false),
-    markSymbolsProject(false), markTemplateTypeSymbolsBound(false)
+    markSymbolsProject(false), markTemplateTypeSymbolsBound(false), fetchCidForVirtualClasses(false)
 {
 }
 
@@ -166,6 +166,11 @@ Symbol* Reader::ReadSymbol()
             if (classTypeSymbol->IsVirtual())
             {
                 initVTableSet.insert(classTypeSymbol);
+                if (fetchCidForVirtualClasses)
+                {
+                    uint64_t cid = symbolTable.GetVirtualClassCid(classTypeSymbol->FullName());
+                    classTypeSymbol->SetCid(cid);
+                }
             }
         }
         return symbol;

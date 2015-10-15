@@ -205,7 +205,7 @@ namespace System.Text.Json.Schema
         public typedef List<ItemType>.ConstIterator ConstIterator;
         public override void FetchData(System.Text.Json.Data.JsonValue* value)
         {
-            if (value->IsArray())
+            if (value is System.Text.Json.Data.JsonArray*)
             {
                 System.Text.Json.Data.JsonArray* a = cast<System.Text.Json.Data.JsonArray*>(value);
                 int n = a->Count();
