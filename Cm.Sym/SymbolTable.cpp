@@ -735,4 +735,22 @@ uint32_t SymbolTable::GetVariableSymbolSid(const std::string& variableSymbolFull
     return sid;
 }
 
+void SymbolTable::SetVirtualClassCid(const std::string& className, uint64_t cid)
+{
+    classNameCidMap[className] = cid;
+}
+
+uint64_t SymbolTable::GetVirtualClassCid(const std::string& className) const
+{
+    std::unordered_map<std::string, uint64_t>::const_iterator i = classNameCidMap.find(className);
+    if (i != classNameCidMap.cend())
+    {
+        return i->second;
+    }
+    else
+    {
+        throw std::runtime_error("cid for class '" + className + "' not found in symbol table");
+    }
+}
+
 } } // namespace Cm::Sym

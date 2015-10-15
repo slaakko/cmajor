@@ -3,7 +3,7 @@
 
 \begin{document}
 
-\title{Cmajor Programming Language Specification\\Version 3.2}
+\title{Cmajor Programming Language Specification\\Version 3.3}
 \author{Seppo Laakko}
 \date{\today}
 \maketitle
@@ -84,18 +84,18 @@ Keywords have reserved context-dependent meaning in a program and they cannot be
 \caption{Keywords}\label{tab:keywords}
 \begin{tabular}{llllll}
 \\
-\bf{abstract} & \bf{and} & \bf{axiom} & \bf{base} & \bf{bool} & \bf{break}\\
-\bf{byte} & \bf{case} & \bf{cast} & \bf{catch} & \bf{cdecl} & \bf{char}\\
-\bf{class} & \bf{concept} & \bf{const} & \bf{construct} & \bf{continue} & \bf{default}\\
-\bf{delegate} & \bf{delete} & \bf{destroy} & \bf{do} & \bf{double} & \bf{else}\\
-\bf{enum} & \bf{explicit} & \bf{extern} & \bf{false} & \bf{float} & \bf{for}\\
-\bf{goto} & \bf{if} & \bf{inline} & \bf{int}& \bf{internal} & \bf{is}\\
-\bf{long} & \bf{namespace} & \bf{new} & \bf{not} & \bf{nothrow} & \bf{null}\\
-\bf{operator} & \bf{or} & \bf{override} & \bf{private} & \bf{protected} & \bf{public}\\
-\bf{return} & \bf{sbyte} & \bf{short} & \bf{sizeof} & \bf{static} & \bf{suppress}\\
-\bf{switch} & \bf{this} & \bf{throw} & \bf{true} & \bf{try} & \bf{typedef}\\
-\bf{typename} & \bf{uint} & \bf{ulong} & \bf{unit\_test} & \bf{ushort} & \bf{using}\\
-\bf{virtual} & \bf{void} & \bf{where} & \bf{while}
+\bf{abstract} & \bf{and} & \bf{as} & \bf{axiom} & \bf{base} & \bf{bool}\\
+\bf{break} & \bf{byte} & \bf{case} & \bf{cast} & \bf{catch} & \bf{cdecl}\\
+\bf{char} & \bf{class} & \bf{concept} & \bf{const} & \bf{construct} & \bf{continue}\\
+\bf{default} & \bf{delegate} & \bf{delete} & \bf{destroy} & \bf{do} & \bf{double}\\
+\bf{else} & \bf{enum} & \bf{explicit} & \bf{extern} & \bf{false} & \bf{float}\\
+\bf{for} & \bf{goto} & \bf{if} & \bf{inline} & \bf{int}& \bf{internal}\\
+\bf{is} & \bf{long} & \bf{namespace} & \bf{new} & \bf{not} & \bf{nothrow}\\
+\bf{null} & \bf{operator} & \bf{or} & \bf{override} & \bf{private} & \bf{protected}\\
+\bf{public} & \bf{return} & \bf{sbyte} & \bf{short} & \bf{sizeof} & \bf{static}\\
+\bf{suppress} & \bf{switch} & \bf{this} & \bf{throw} & \bf{true} & \bf{try}\\
+\bf{typedef} & \bf{typename} & \bf{uint} & \bf{ulong} & \bf{unit\_test} & \bf{ushort}\\
+\bf{using} & \bf{virtual} & \bf{void} & \bf{where} & \bf{while}
 \end{tabular}
 \end{table}
 
@@ -440,6 +440,7 @@ A user-defined class can overload the == and != operators by implementing the \b
 
 \begin{grammar}
 \label{relational-expr}<relational-expr> ::= <shift-expr>\ref{shift-expr} (("<" | ">" | "<=" | ">=") <shift-expr>)*
+\alt <shift-expr> ((\lit*{is} | \lit*{as}) <type-expr>\ref{type-expression})*
 \end{grammar}
 
 The $<$ operator compares less-than relationship. It groups operands from left to right.
@@ -450,6 +451,66 @@ expression $a <= b$ as \bf{operator!(operator$<$(b,a))},
 expression $a >= b$ as \bf{operator!(operator$<$(a,b))}.
 
 A user-defined class can overload the $<$ and $>$, $<=$ and $>=$ operators by implementing the \bf{operator$<$} function.
+
+\subsubsection{\bf{Is} and \bf{As} Operators}
+
+Consider following code:
+
+\begin{lstlisting}[frame=trBL]
+public class Base
+{
+    public virtual ~Base()
+    {
+    }
+    //  ...
+}
+
+public class Derived : Base
+{
+    // ...
+}
+
+public Base* GetBasePtrFromSomewhere()
+{
+    return new Derived();
+}
+
+void main()
+{
+    Base* b1 = GetBasePtrFromSomewhere();
+    if (b1 is Derived*)
+    {
+        // do something with b1
+    }
+
+    Base* b2 = GetBasePtrFromSomewhere();
+    Derived* d = b2 as Derived*;
+    if (d != null)
+    {
+        // do something with d
+    }
+}
+
+\end{lstlisting}
+
+The \bf{is} operator tests if the left operand can be legally casted to a pointer type on the right-hand side.
+That is: if the pointer \emph{b1} in fact points to a \emph{Derived} class object or an object of class derived from \emph{Derived}.
+The left operand of the \bf{is} operator must be a pointer to a virtual class object
+\footnote{to a class object containing virtual, abstract or overridden member functions}
+and the right operand must be a pointer to virtual class type. The \bf{is} operator yields a Boolean result.
+
+The \bf{as} operator tries to convert the left operand to a pointer type on the right-hand side.
+If the conversion succeeds you got a non-null pointer to \emph{Derived} class, otherwise the result is \bf{null}.
+In the case of previous example the conversion succeeds if pointer \emph{b2} in fact points to \emph{Derived} class object or an object of class derived
+from \emph{Derived}.
+The left operand of the \bf{as} operator must be pointer to a virtual class object and the right operand must be a pointer to virtual class type.
+The \bf{as} operator yields \bf{null} or non-null pointer result. It performs an operation similar to C++ \bf{dynamic\_cast}.
+
+Note: in the \bf{debug}, \bf{release} and \bf{profile} configurations the \bf{is} and \bf{as} operators generate a call to a function
+that traverses the class hierarchy, but in \bf{full} configuration the class identifiers are chosen so that the \bf{is} and \bf{as} generate only
+a single modulo operation in addition to retrieving the class identifier from the run-time type information table.
+In the \bf{full} configuration the compiler does a whole-program analysis and implements a scheme described in
+\url {http://www.stroustrup.com/fast_dynamic_casting.pdf}.
 
 \subsection{Shift Expression}
 
@@ -1906,6 +1967,10 @@ Compilers: Principles, Techniques, \& Tools. Second Edition. Addison-Wesley, 200
 
 \bibitem{ANNCPPREFMAN} \textsc{Ellis, M. A., and B. Stroustrup}:
 The Annotated C++ Reference Manual. Addison-Wesley, 1990.
+
+\bibitem{GIBBS} \textsc{Gibbs, M., and B. Stroustrup}:
+Fast dynamic casting, 2005,
+\textit{\url{http://www.stroustrup.com/fast_dynamic_casting.pdf}}
 
 \bibitem{PDFTEX} \textsc{Han The Thanh}:
 pdf\TeX, \textit{\url{http://www.tug.org/applications/pdftex/}}

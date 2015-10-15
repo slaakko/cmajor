@@ -55,6 +55,7 @@ public:
     void EnqueueMakeIrTypeFor(Symbol* symbol);
     void MakeIrTypes();
     void InitVTables();
+    void SetFetchCidForVirtualClasses() { fetchCidForVirtualClasses = true; }
 private:
     BinaryReader binaryReader;
     SymbolTable& symbolTable;
@@ -67,6 +68,7 @@ private:
     bool markSymbolsBound;
     bool markSymbolsProject;
     bool markTemplateTypeSymbolsBound;
+    bool fetchCidForVirtualClasses;
     std::unordered_set<Symbol*> makeIrTypeSet;
     std::unordered_set<ClassTypeSymbol*> initVTableSet;
 };
