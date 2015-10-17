@@ -7,7 +7,7 @@
 
 \begin{document}
 
-\title{Getting Started Guide for Cmajor 1.1.0}
+\title{Getting Started Guide for Cmajor 1.2.0}
 \author{Seppo Laakko}
 \maketitle
 
@@ -17,7 +17,7 @@
 
 Note:
 You must uninstall any previous Cmajor version before installing
-this version (1.1.0).
+this version (1.2.0).
 
 It is also recommended that you delete the
 \verb|%APPDATA%\Cmajor| directory before installing
@@ -65,8 +65,8 @@ In my system this is\\
 
 \item
 Download and install Visual C++ Redistributable for Visual Studio 2015:\\
-64-bit: \url{http://sourceforge.net/projects/cmajor/files/1.1.0/vcredist_x64.exe/download}\\
-32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.1.0/vcredist_x86.exe/download}
+64-bit: \url{http://sourceforge.net/projects/cmajor/files/1.2.0/vcredist_x64.exe/download}\\
+32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.2.0/vcredist_x86.exe/download}
 \end{itemize}
 
 \subsection{Cmajor Installation}
@@ -74,8 +74,8 @@ Download and install Visual C++ Redistributable for Visual Studio 2015:\\
 \begin{itemize}
 
 \item
-Download and run \textbf{cmajor-1.1.0-win-x86-setup.exe} (for 32-bit Windows) or
-\textbf{cmajor-1.1.0-win-x64-setup.exe} (for 64-bit Windows).
+Download and run \textbf{cmajor-1.2.0-win-x86-setup.exe} (for 32-bit Windows) or
+\textbf{cmajor-1.2.0-win-x64-setup.exe} (for 64-bit Windows).
 
 \item
 Cmajor is installed by default to \verb|C:\Program Files\Cmajor| directory (under 32-bit Windows) or
@@ -115,7 +115,31 @@ After installation you have to build the Cmajor System Library.
 \begin{itemize}
 
 \item
-Option 1: using batch file:
+Option 1: using IDE:\\
+
+Start \textbf{Cmajor Development Environment}.
+
+\begin{itemize}
+
+\item
+Open the \verb!File|Built-in Projects|System Library! project.
+
+\item
+Choose \verb!Build|Batch build...! command
+
+\item
+Click the \verb|Select All| button or
+select the configurations you plan to use.
+
+\item
+Click the Rebuild... button.
+
+\item
+Now the Cmajor system is ready for building user projects.
+
+\end{itemize}
+
+Option 2: using batch file:
 
 \begin{itemize}
 
@@ -126,49 +150,12 @@ Open command prompt and change to Cmajor system directory by issuing command
 \item
 Run \textbf{build.bat}.
 This builds the Cmajor System Libary for each backend (LLVM/C) and
-configuration (debug/release).
+configuration (debug/release/profile/full).
 
 \item
 Now the Cmajor system is ready for building user projects.
 
 \end{itemize}
-
-\item
-Option 2: using IDE:
-
-\begin{itemize}
-
-\item
-Start \textbf{Cmajor Development Environment}.
-
-\item
-Open the \verb!File|Built-in Projects|System Library! project.
-
-\item
-Run \verb!Build|Rebuild Solution! command for the \verb|debug| configuration.
-
-\item
-Select \verb|release| configuration from the configuration combo box
-and run\\
-\verb!Build|Rebuild Solution! command for the \verb|release| configuration.
-
-\item
-Select \verb|debug| configuration from the configuration combo box and
-\verb|C| backend from the backend combo box
-and run \verb!Build|Rebuild Solution! command for the \verb|C| backend and the \verb|debug| configuration.
-
-\item
-Select \verb|release| configuration from the configuration combo box
-and run\\
-\verb!Build|Rebuild Solution! command for the \verb|C| backend and for the \verb|release| configuration.
-
-\item
-Now the Cmajor system is ready for building user projects.
-
-\end{itemize}
-
-Note: If you are updating from previous Cmajor version, it is important to issue the \textbf{rebuild} command
-(not just build command), because System Library directories are not cleared when uninstalling Cmajor.
 
 \end{itemize}
 
@@ -179,7 +166,7 @@ Note: If you are updating from previous Cmajor version, it is important to issue
 \item
 \textbf{library reference 'system.cml' not found.}
 
-You have to build the System Library for the used configuration (debug/release) and backend (LLVM/C) first.
+You have to build the System Library for the used configuration (debug/release/profile/full) and backend (LLVM/C) first.
 
 \item
 
@@ -243,7 +230,7 @@ Installation instructions can be found in \url{http://llvm.org/docs/GettingStart
 \begin{itemize}
 
 \item
-Download and extract \textbf{cmajor-1.1.0-src.tar.gz} to some directory here called \verb|<cmajor>|.
+Download and extract \textbf{cmajor-1.2.0-src.tar.gz} to some directory here called \verb|<cmajor>|.
 
 \item
 Change to \verb|<cmajor>| directory and run \verb|make| and then \verb|[sudo] make install|.
@@ -275,7 +262,7 @@ Now the Cmajor system is ready for building user projects.
 \item
 library reference 'system.cml' not found
 
-You have to build the System Library for the used configuration (debug/release) and backend (LLVM/C) first.
+You have to build the System Library for the used configuration (debug/release/profile/full) and backend (LLVM/C) first.
 
 \item
 sh: 1: llc: not found
