@@ -18,11 +18,13 @@ build:
 	$(MAKE) -C Cm.Sym
 	$(MAKE) -C Cm.Core
 	$(MAKE) -C Cm.BoundTree
+	$(MAKE) -C Cm.Opt
 	$(MAKE) -C Cm.Bind
 	$(MAKE) -C Cm.Emit
 	$(MAKE) -C Cm.Build
 	$(MAKE) -C Cm.Compiler
 	$(MAKE) -C Cm.Debugger
+	$(MAKE) -C Cm.Profiler
 	$(MAKE) -C Cm.Unit
 	$(MAKE) -C cdidump
 	$(MAKE) -C cmldump
@@ -37,8 +39,12 @@ install:
 sys:
 	cmc -backend=llvm -config=debug system/system.cms
 	cmc -backend=llvm -config=release system/system.cms
+	cmc -backend=llvm -config=profile system/system.cms
+	cmc -backend=llvm -config=full system/system.cms
 	cmc -backend=c -config=debug system/system.cms
 	cmc -backend=c -config=release system/system.cms
+	cmc -backend=c -config=profile system/system.cms
+	cmc -backend=c -config=full system/system.cms
 
 clean:
 	$(MAKE) -C Cm.Util clean
@@ -58,11 +64,13 @@ clean:
 	$(MAKE) -C Cm.Sym clean
 	$(MAKE) -C Cm.Core clean
 	$(MAKE) -C Cm.BoundTree clean
+	$(MAKE) -C Cm.Opt clean
 	$(MAKE) -C Cm.Bind clean
 	$(MAKE) -C Cm.Emit clean
 	$(MAKE) -C Cm.Build clean
 	$(MAKE) -C Cm.Compiler clean
 	$(MAKE) -C Cm.Debugger clean
+	$(MAKE) -C Cm.Profiler clean
 	$(MAKE) -C Cm.Unit clean
 	$(MAKE) -C cdidump clean
 	$(MAKE) -C cmldump clean

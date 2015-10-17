@@ -1,6 +1,6 @@
 include ../Makefile.common
 
-OBJECTS = BoundClass.o BoundCompileUnit.o BoundConcept.o BoundExpression.o BoundFunction.o BoundNode.o BoundStatement.o Visitor.o
+OBJECTS = BoundClass.o BoundCompileUnit.o BoundConcept.o BoundExpression.o BoundFunction.o BoundNode.o BoundStatement.o Factory.o Visitor.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
