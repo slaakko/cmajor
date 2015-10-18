@@ -675,7 +675,7 @@ void SymbolTable::AddSymbol(Symbol* symbol)
     }
     else
     {
-        if (!symbol->IsNamespaceSymbol() && !symbol->IsEntrySymbol())
+        if (!symbol->IsNamespaceSymbol())
         {
             int x = 0;
         }
