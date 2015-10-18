@@ -1448,6 +1448,7 @@ void ProcessProgram(Cm::Ast::Project* project)
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
+    ReadNextSid(symbolTable);
     std::vector<std::string> allReferenceFilePaths;
     std::vector<std::string> allDebugInfoFilePaths;
     std::vector<std::string> allNativeObjectFilePaths;
@@ -1561,6 +1562,7 @@ void ProcessProgram(Cm::Ast::Project* project)
         int(classHierarchyTable.size()), true);
     Archive(objectFilePaths, project->AssemblyFilePath());
     Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
+    WriteNextSid(symbolTable);
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
@@ -1721,6 +1723,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     {
         CreateCmProfFile(cmlFilePath, allReferenceFilePaths);
     }
+    WriteNextSid(symbolTable);
     if (project->GetTarget() == Cm::Ast::Target::program && full)
     {
         project->AddReferenceFilePath(boost::filesystem::path(cmlFilePath).filename().generic_string());
@@ -1748,7 +1751,6 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     {
         WriteNextFid(functionTable);
     }
-    WriteNextSid(symbolTable);
     return changed;
 }
 
