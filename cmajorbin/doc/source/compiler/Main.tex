@@ -257,8 +257,27 @@ The LLVM datalayout to use can be given using compiler option (-d) or an environ
 If no datalayout is given the Cmajor compiler emits the default datalayout for the given system unless
 -emit-no-layout compiler option is given.
 
-To determine what is the correct LLVM target triple and datalayout for your system
-create a minimal C program \textbf{target.c} and compile it using \emph{clang}.
+The default target triples and datalayouts are:
+
+\begin{tabular}{lll}
+\textbf{Platform} & \textbf{Target triple} & \textbf{Datalayout}\\
+\hline
+64-bit Windows & x86\_64-w64-windows-gnu & e-m:e-i64:64-f80:128-n8:16:32:64-S128\\
+32-bit Windows & i686-pc-windows-gnu & e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32\\
+64-bit Linux PC & x86\_64-pc-linux-gnu & e-m:e-i64:64-f80:128-n8:16:32:64-S128\\
+32-bit Linux PC & i686-pc-linux-gnu & e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32\\
+\end{tabular}
+
+To determine what is the correct LLVM target triple and datalayout for other platforms you must obtain \emph{clang}:
+
+Clang for Windows (Cmajor uses mingw-version) can be obtained from:\\
+\url{http://sourceforge.net/projects/clangonwin/files/MingwBuild/3.6/llvm-win64-r222867-x86_64-w64-mingw32.zip/download}
+(64-bit) or from:\\
+\url{http://sourceforge.net/projects/clangonwin/files/MingwBuild/3.6/LLVM-3.6.0svn-r218657-win32.exe/download} (32-bit).
+
+Clang for Unix-like systems can be obtained from \url{http://llvm.org/releases/download.html#3.7.0}.
+
+For determining the LLVM target triple and datalayout, create a minimal C program \textbf{target.c} and compile it using clang:
 
 \begin{itemize}
 \item \textbf{target.c}:
@@ -286,7 +305,8 @@ set CM_TARGET_TRIPLE=x86_64-w64-windows-gnu
 set CM_TARGET_DATALAYOUT=e-m:e-i64:64-f80:128-n8:16:32:64-S128
 \end{verbatim}
 
-To make them persistent edit environment variables in the Advanced System Settings pane in the System Control Panel (Windows) or
+To make the environment variables persistent edit environment variables
+in the Advanced System Settings pane in the System Control Panel (Windows) or
 edit your shell script (Unix-like systems).
 
 \end{itemize}
@@ -341,10 +361,18 @@ In addition every class of the program and in the library the program uses is gi
 for each class. The class identifier is the product of the key of the class and keys of each of its base class.
 The class identifiers computed this way enable to optimize \textbf{is} and \textbf{as} expressions.
 Normally \textbf{is} and \textbf{as} expression must traverse the class hierarchy,
-but in this configuration determining if a class derives from another reduces to a simple modulo operation
-(see \url{http://www.stroustrup.com/fast_dynamic_casting.pdf}).
+but in 'full' configuration determining if a class derives from another reduces to a simple modulo operation
+(see \url{http://www.stroustrup.com/fast_dynamic_casting.pdf} by Michael Gibbs and Bjarne Stroustrup.)
 
-Due to whole-program analysis compiles take considerably longer than in other configurations.
+Due to whole-program analysis compiles take considerably longer than in other configurations and the compile process is different:
+First each compile unit is processed the same way as in other configurations.
+But instead emitting low-level intermediate code using emitter, the high-level intermediate representation $<$unitname$>$.bcu
+(.bcu stands for Bound Compile Unit) is saved. If compiling a library the compilation stops here.
+When compiling a program these .bcu files contained in the program and all the libraries it uses are read in turn
+and type propagation graph is built. Then the type propagation graph is processed (variable-type analysis) and class identifiers are computed for each
+virtual class. Finally each .bcu file is read again, low-level intermediate code is generated (.ll or .c file) and
+compiled to object code using LLVM compiler or C compiler. Then object files are feeded to archiver (ar).
+Finally that archive file (.cma) is linked using \textbf{gcc} to form an executable.
 
 \subsection{full $|$ C Configuration}
 

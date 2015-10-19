@@ -509,8 +509,8 @@ The \bf{as} operator yields \bf{null} or non-null pointer result. It performs an
 Note: in the \bf{debug}, \bf{release} and \bf{profile} configurations the \bf{is} and \bf{as} operators generate a call to a function
 that traverses the class hierarchy, but in \bf{full} configuration the class identifiers are chosen so that the \bf{is} and \bf{as} generate only
 a single modulo operation in addition to retrieving the class identifier from the run-time type information table.
-In the \bf{full} configuration the compiler does a whole-program analysis and implements a scheme described in
-\url {http://www.stroustrup.com/fast_dynamic_casting.pdf}.
+In the \bf{full} configuration the compiler does whole-program analysis and implements a scheme described in
+\url {http://www.stroustrup.com/fast_dynamic_casting.pdf} by Michael Gibbs and Bjarne Stroustrup.
 
 \subsection{Shift Expression}
 
