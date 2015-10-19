@@ -1,0 +1,244 @@
+\documentclass[oneside, a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{a4wide}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+
+\begin{document}
+
+\title{Profiling Cmajor Applications}
+\author{Seppo Laakko}
+\maketitle
+
+\section{Profiling in Windows}
+
+\subsection{Creating a profile report}
+
+The steps for creating a profile report
+for the \emph{Downloads} example application are as follows.
+
+(This example profiles the LLVM backend
+but the steps are the same for profiling the C backend.)
+
+\begin{itemize}
+
+\item
+If you haven't build the system library using profile configuration
+in installation time, now is the time to do it:
+
+\begin{itemize}
+
+\item
+Open Cmajor Development Environment.
+
+\item
+Open Built-in Projects $|$ System Library project.
+
+\item
+Select profile configuration from Configuration combo box.
+
+\item
+Select Build $|$ Build Solution.
+This builds the projects in the System solution and instruments
+the functions in its projects with calls to collect timing information.
+
+\end{itemize}
+
+\item
+Open Built-in Projects $|$ Examples project.
+
+\item
+Select profile configuration from Configuration combo box.
+
+\item
+Right click the Downloads project and choose Build.
+This builds the Downloads project and instruments the functions in it
+with calls to collect timing information.
+Also a \textbf{downloads.cmprof} file is created that contains
+a unique function identifier for each function in the program.
+
+\item
+Open command prompt and change to
+\%APPDATA\%$\backslash$Cmajor$\backslash$examples$\backslash$downloads$\backslash$profile$\backslash$llvm
+directory:
+\begin{verbatim}
+cd %APPDATA%\Cmajor\examples\downloads\profile\llvm
+\end{verbatim}
+
+\item
+Run downloads program:
+\begin{verbatim}
+downloads
+\end{verbatim}
+
+This creates a binary file \textbf{downloads.profdata} that contains the
+timing information.
+
+\item
+Run \textbf{cmprof downloads.cmprof}:
+\begin{verbatim}
+cmprof downloads.cmprof
+\end{verbatim}
+
+This scans the profile data and creates a  profile report (\textbf{downloads.cmprofreport}).
+
+\end{itemize}
+
+\subsection{Inspecting the profile report}
+
+Run profile report viewer \textbf{cmprofview} by issuing command:
+\begin{verbatim}
+cmprofview downloads.cmprofreport
+\end{verbatim}
+
+Alternatively you can double click the \textbf{downloads.cmprofreport} file in the file explorer
+to open it in the profile report viewer.
+
+The columns in the report are as follows:
+
+\begin{itemize}
+
+\item Function:
+Full name of the function.
+
+\item Called:
+The number of times the function is called.
+
+\item Elapsed Inclusive ms:
+Time spent in executing this function and the functions it calls in milliseconds.
+
+\item Elapsed Inclusive \%:
+Percentage of time spent is executing this function and the functions it calls
+compared to total execution time.
+
+\item Elapsed Exclusive ms:
+Time spent in executing this function excluding the time spent in executing
+the functions it calls in milliseconds.
+
+\item Elapsed Exclusive \%:
+Percentage of time spent is executing this function excluding the time spent in executing
+the functions it calls compared to total execution time.
+
+\end{itemize}
+
+You can click the column headers in the report to sort the rows in ascending or descending
+order based on the clicked column.
+
+\clearpage
+
+\section{Profiling in Linux}
+
+\subsection{Creating a profile report}
+
+The steps for creating a profile report
+for the \emph{Downloads} example application are as follows.
+
+(This example profiles the LLVM backend
+but the steps are the same for profiling the C backend.)
+
+\begin{itemize}
+
+\item
+If you haven't build the system library using profile configuration
+in installation time, now is the time to do it:
+
+\begin{itemize}
+
+\item
+Open a terminal window and change to \verb|<major>/system| directory:
+\begin{verbatim}
+seppo@raid:~$ cd Programming/cmajor-1.2.0/system
+\end{verbatim}
+
+\item
+Build system library using profile configuration:
+\begin{verbatim}
+seppo@raid:~/Programming/cmajor-1.2.0/system$
+cmc -config=profile system.cms
+\end{verbatim}
+
+\end{itemize}
+
+\item
+Change to \verb|<major>/examples/downloads| directory:
+\begin{verbatim}
+seppo@raid:~/Programming/cmajor-1.2.0/system$
+cd ../examples/downloads
+\end{verbatim}
+
+\item
+Build the downloads project using profile configuration:
+\begin{verbatim}
+seppo@raid:~/Programming/cmajor-1.2.0/examples/downloads$
+cmc -config=profile downloads.cmp
+\end{verbatim}
+
+\item
+Change to the profile/llvm subdirectory:
+\begin{verbatim}
+seppo@raid:~/Programming/cmajor-1.2.0/examples/downloads$
+cd profile/llvm
+\end{verbatim}
+
+\item
+Run downloads program:
+\begin{verbatim}
+seppo@raid:~/Programming/cmajor-1.2.0/examples/downloads/profile/llvm$
+./downloads
+\end{verbatim}
+
+This creates a binary file \textbf{downloads.profdata} that contains the
+timing information.
+
+\item
+Run \textbf{cmprof downloads.cmprof}:
+\begin{verbatim}
+seppo@raid:~/Programming/cmajor-1.2.0/examples/downloads/profile/llvm$
+cmprof downloads.cmprof
+\end{verbatim}
+
+This scans the profile data and creates a  profile report (\textbf{downloads.cmprofreport}) and
+three additional text files:
+\textbf{downloads.count.txt}, \textbf{downloads.inclusive.txt} and \textbf{downloads.exclusive.txt}.
+
+\end{itemize}
+
+\subsection{Inspecting profile report files}
+
+The \textbf{downloads.cmprofreport} file contains data in random order.
+The \textbf{downloads.count.txt} file contains the data sorted by call count.
+The \textbf{downloads.inclusive.txt} file contains the data sorted by elapsed inclusive milliseconds.
+The \textbf{downloads.exclusive.txt} file contains the data sorted by elapsed exclusive milliseconds.
+
+The columns in the report are as follows:
+
+\begin{itemize}
+
+\item Function identifier.
+Unique integer of the function.
+
+\item Function:
+Full name of the function.
+
+\item Called:
+The number of times the function is called.
+
+\item Elapsed Inclusive ms:
+Time spent in executing this function and the functions it calls in milliseconds.
+
+\item Elapsed Inclusive \%:
+Percentage of time spent is executing this function and the functions it calls
+compared to total execution time.
+
+\item Elapsed Exclusive ms:
+Time spent in executing this function excluding the time spent in executing
+the functions it calls in milliseconds.
+
+\item Elapsed Exclusive \%:
+Percentage of time spent is executing this function excluding the time spent in executing
+the functions it calls compared to total execution time.
+
+\end{itemize}
+
+\end{document}

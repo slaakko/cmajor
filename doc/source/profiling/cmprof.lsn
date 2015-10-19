@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<latexSolution>
+    <solutionName>Profiling</solutionName>
+    <activeProject>cmprof</activeProject>
+    <projectFiles>
+        <projectFile>
+            <projectName>cmprof</projectName>
+            <projectPath>.\cmprof.lpr</projectPath>
+        </projectFile>
+    </projectFiles>
+</latexSolution>
