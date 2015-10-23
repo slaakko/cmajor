@@ -35,7 +35,7 @@ namespace Cm.Sym
         {
             return baseType->IsPublic() && !baseType->IsReplica();
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             string mangleId = MakeMangleId(derivations, arrayDimensions);
             mangleId.Append(baseType->GetMangleId());
@@ -209,11 +209,34 @@ namespace Cm.Sym
         }
         public override void MakeIrType()
         {
-            // todo
+            if (IrTypeMade()) return;
+            if (baseType == null)
+            {
+                throw Cm.Sym.Error("base type not set for derived type", GetSpan());
+            }
+            baseType->MakeIrType();
+            byte n = cast<byte>(arrayDimensions.Count());
+            if (n > 0)
+            {
+                if (n != 1)
+                {
+                    throw Cm.Sym.Error("arrays of arrays not supported", GetSpan());
+                }
+                SetIrType(Cm.Sym.MakeIrType(baseType, derivations, Span(), GetLastArrayDimension()));
+            }
+            else
+            {
+                SetIrType(Cm.Sym.MakeIrType(baseType, derivations, Span(), 0));
+            }
+            if (IsPointerType())
+            {
+                SetDefaultIrValue(IrType()->CreateDefaultValue());
+            }
         }
         public override void RecomputeIrType()
         {
-            // todo
+            ResetIrTypeMade();
+            MakeIrType();
         }
         public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
         {

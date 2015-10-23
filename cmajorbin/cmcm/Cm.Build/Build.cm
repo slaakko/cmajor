@@ -79,7 +79,7 @@ namespace Cm.Build
             }
             Cm.Parser.ProjectGrammar* projectGrammar = Grammars.Instance().GetProjectGrammar();
             FileMapping projectFile(projectFilePath);
-            string backend = "llvm"; // todo
+            string backend = Cm.IrIntf.GetBackendStr();
             string os = GetOs();
             UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os));
             project->ResolveDeclarations();
@@ -138,7 +138,7 @@ namespace Cm.Build
         }
         Cm.Parser.ProjectGrammar* projectGrammar = Grammars.Instance().GetProjectGrammar();
         FileMapping projectFile(projectFilePath);
-        string backend = "llvm"; // todo
+        string backend = Cm.IrIntf.GetBackendStr();
         string os = GetOs();
         UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os));
         project->ResolveDeclarations();

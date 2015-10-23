@@ -92,12 +92,30 @@ namespace Cm.Sym
         }
         public override void MakeIrType()
         {
-            // todo
+            if (IrTypeMade()) return;
+            returnType->MakeIrType();
+            Ir.Intf.Type* irReturnType = returnType->IrType()->Clone();
+            List<Ir.Intf.Type*> irParameterTypes;
+            for (ParameterSymbol* parameter : parameters)
+            {
+                TypeSymbol* parameterType = parameter->GetType();
+                parameterType->MakeIrType();
+                Ir.Intf.Type* irParameterType = parameterType->IrType()->Clone();
+                irParameterTypes.Add(irParameterType);
+            }
+            if (!IsNothrow())
+            {
+                Ir.Intf.Type* exceptionCodeParamType = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI32(), 1u);
+                irParameterTypes.Add(exceptionCodeParamType);
+            }
+            Ir.Intf.Type* irFunctionType = Cm.IrIntf.MakeFunctionType(irReturnType, irParameterTypes);
+            Ir.Intf.Type* irDelegateType = Cm.IrIntf.Pointer(irFunctionType, 1u);
+            SetIrType(irDelegateType);
+            SetDefaultIrValue(Cm.IrIntf.MakeNull(irDelegateType));
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
-            return FullName();
-            // todo: return MakeAssemblyName(FullName());
+            return Cm.IrIntf.MakeAssemblyName(FullName());
         }
         public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
         {
@@ -230,10 +248,9 @@ namespace Cm.Sym
         {
             // todo
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
-            return FullName();
-            // todo: return MakeAssemblyName(FullName());
+            return Cm.IrIntf.MakeAssemblyName(FullName());
         }
         public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
         {

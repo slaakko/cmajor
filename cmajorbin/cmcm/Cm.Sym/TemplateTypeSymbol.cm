@@ -30,10 +30,15 @@ namespace Cm.Sym
         {
             return "template type";
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
-            // todo
-            return string();
+            string mangleId = Cm.IrIntf.MakeAssemblyName(subjectType->FullName());
+            mangleId.Append(Cm.IrIntf.GetPrivateSeparator());
+            for (TypeSymbol* typeArgument : typeArguments)
+            {
+                mangleId.Append(Cm.IrIntf.MakeAssemblyName(typeArgument->FullName()));
+            }
+            return mangleId;
         }
         public nothrow override bool IsExportSymbol() const
         {
@@ -80,11 +85,17 @@ namespace Cm.Sym
         }
         public override void MakeIrType()
         {
-            // todo
+            if (IrTypeMade()) return;
+            SetIrType(Cm.IrIntf.CreateClassTypeName(FullName()));
         }    
         public override void RecomputeIrType()
         {
-            // todo
+            ResetIrTypeMade();
+            MakeIrType();
+            for (TypeSymbol* dependentType : DependentTypes())
+            {
+                dependentType->RecomputeIrType();
+            }
         }
         public nothrow void SetFileScope(FileScope* fileScope_)
         {

@@ -19,9 +19,11 @@ namespace Cm.IrIntf
     
     public static class BackendHolder
     {
-        static nothrow BackendHolder() : backend(Backend.llvm), backendImpl(&llvmBackend), nextDelegateTypeNumber(0)
+        static nothrow BackendHolder() : 
+            backend(Backend.llvm), llvmBackend(new LlvmBackend()), cBackend(new CBackend()), backendImpl(llvmBackend.GetPtr()), llvmFactory(new Llvm.Factory()), cFactory(new C.Factory()), 
+            nextDelegateTypeNumber(0)
         {
-            Ir.Intf.Factory.SetInstance(&llvmFactory);
+            Ir.Intf.Factory.SetInstance(llvmFactory.GetPtr());
         }
         public static nothrow void SetBackend(Backend backend_)
         {
@@ -30,14 +32,14 @@ namespace Cm.IrIntf
             {
                 case Backend.llvm: 
                 {
-                    backendImpl = &llvmBackend; 
-                    Ir.Intf.Factory.SetInstance(&llvmFactory);
+                    backendImpl = llvmBackend.GetPtr(); 
+                    Ir.Intf.Factory.SetInstance(llvmFactory.GetPtr());
                     break;
                 }                
                 case Backend.c:
                 {
-                    backendImpl = &cBackend; 
-                    Ir.Intf.Factory.SetInstance(&cFactory);
+                    backendImpl = cBackend.GetPtr(); 
+                    Ir.Intf.Factory.SetInstance(cFactory.GetPtr());
                     break;
                 }
             }
@@ -55,11 +57,11 @@ namespace Cm.IrIntf
             return nextDelegateTypeNumber++;
         }
         private static Backend backend;
-        private static LlvmBackend llvmBackend;
-        private static CBackend cBackend;
+        private static UniquePtr<LlvmBackend> llvmBackend;
+        private static UniquePtr<CBackend> cBackend;
         private static BackendIntf* backendImpl;
-        private static Llvm.Factory llvmFactory;
-        private static C.Factory cFactory;
+        private static UniquePtr<Llvm.Factory> llvmFactory;
+        private static UniquePtr<C.Factory> cFactory;
         private static int nextDelegateTypeNumber;
     }
     

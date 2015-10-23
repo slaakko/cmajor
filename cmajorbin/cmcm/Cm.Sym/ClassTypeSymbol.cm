@@ -81,10 +81,9 @@ namespace Cm.Sym
         {
             return "class";
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
-            return FullName();
-            //return MakeAssemblyName(FullName());
+            return Cm.IrIntf.MakeAssemblyName(FullName());
         }
         public nothrow override bool IsExportSymbol() const
         {

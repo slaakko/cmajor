@@ -78,7 +78,7 @@ namespace Cm.Ast
         {
             return ConstIterator(&derivations[numDerivations]);
         }
-        public nothrow inline int Count() const
+        public nothrow inline byte Count() const
         {
             return numDerivations;
         }
