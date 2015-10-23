@@ -19,9 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ClassId.hpp" />
     <ClInclude Include="TypePropagationGraph.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ClassId.cpp" />
     <ClCompile Include="TypePropagationGraph.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

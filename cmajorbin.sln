@@ -377,6 +377,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cm.Profiler", "Cm.Profiler\
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cm.Opt", "Cm.Opt\Cm.Opt.vcxproj", "{162B6786-147B-4BB6-A393-3A4A61ACC71F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD} = {F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD}
+		{A12C2C5B-D12E-457A-8D1C-69A9E6759064} = {A12C2C5B-D12E-457A-8D1C-69A9E6759064}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(Performance) = preSolution
