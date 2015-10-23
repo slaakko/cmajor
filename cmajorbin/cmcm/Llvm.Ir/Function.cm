@@ -154,4 +154,35 @@ namespace Llvm
         private bool isDoNothingFunction;
         private bool isMemSetFunction;
     }
+    
+    public Ir.Intf.Function* CreateDoNothingFunction()
+    {
+        Function* doNothingFun(new Function("llvm.donothing", Ir.Intf.Factory.Instance()->GetVoid(), List<Ir.Intf.Parameter*>()));
+        doNothingFun->SetDoNothingFunction();
+        return doNothingFun;
+    }
+
+    public Ir.Intf.Function* CreateMemSetFunction(Ir.Intf.Type* i8Ptr)
+    {
+        List<Ir.Intf.Parameter*> parameters;
+        parameters.Add(new Parameter("dest", i8Ptr));
+        parameters.Add(new Parameter("value", Ir.Intf.Factory.Instance()->GetI8()));
+        parameters.Add(new Parameter("len", Ir.Intf.Factory.Instance()->GetI64()));
+        parameters.Add(new Parameter("align", Ir.Intf.Factory.Instance()->GetI32()));
+        parameters.Add(new Parameter("isVolatile", Ir.Intf.Factory.Instance()->GetI1()));
+        Function* memSetFun(new Function("llvm.memset.p0i8.i64", Ir.Intf.Factory.Instance()->GetVoid(), parameters));
+        return memSetFun;
+    }
+    
+    public Ir.Intf.Function* CreateMemCopyFunction(Ir.Intf.Type* i8Ptr)
+    {
+        List<Ir.Intf.Parameter*> parameters;
+        parameters.Add(new Parameter("dest", i8Ptr));
+        parameters.Add(new Parameter("value", Ir.Intf.Factory.Instance()->GetI8()));
+        parameters.Add(new Parameter("len", Ir.Intf.Factory.Instance()->GetI64()));
+        parameters.Add(new Parameter("align", Ir.Intf.Factory.Instance()->GetI32()));
+        parameters.Add(new Parameter("isVolatile", Ir.Intf.Factory.Instance()->GetI1()));
+        Function* memCopyFun(new Function("llvm.memcpy.p0i8.i64", Ir.Intf.Factory.Instance()->GetVoid(), parameters));
+        return memCopyFun;
+    }
 }

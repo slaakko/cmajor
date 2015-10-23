@@ -19,60 +19,66 @@ namespace Cm.IrIntf
     
     public static class BackendHolder
     {
-        static nothrow BackendHolder() : backend(Backend.llvm), currentBackend(&llvmBackend)
+        static nothrow BackendHolder() : backend(Backend.llvm), backendImpl(&llvmBackend), nextDelegateTypeNumber(0)
         {
+            Ir.Intf.Factory.SetInstance(&llvmFactory);
         }
-        public static nothrow void SetCurrentBackend(Backend backend_)
+        public static nothrow void SetBackend(Backend backend_)
         {
             backend = backend_;
             switch (backend)
             {
                 case Backend.llvm: 
                 {
-                    currentBackend = &llvmBackend; 
+                    backendImpl = &llvmBackend; 
                     Ir.Intf.Factory.SetInstance(&llvmFactory);
                     break;
                 }                
                 case Backend.c:
                 {
-                    currentBackend = &cBackend; 
+                    backendImpl = &cBackend; 
                     Ir.Intf.Factory.SetInstance(&cFactory);
                     break;
                 }
             }
         }
-        public static nothrow Backend GetCurrentBackend()
+        public static nothrow Backend GetBackend()
         {
             return backend;
         }
-        public static nothrow BackendIntf* GetCurrentBackendImpl() 
+        public static nothrow BackendIntf* GetBackendImpl() 
         {
-            return currentBackend;
+            return backendImpl;
+        }
+        public static nothrow int GetNextDelegateTypeNumber()
+        {
+            return nextDelegateTypeNumber++;
         }
         private static Backend backend;
         private static LlvmBackend llvmBackend;
         private static CBackend cBackend;
-        private static BackendIntf* currentBackend;
+        private static BackendIntf* backendImpl;
         private static Llvm.Factory llvmFactory;
         private static C.Factory cFactory;
+        private static int nextDelegateTypeNumber;
     }
     
     public nothrow void SetBackend(Backend backend)
     {
-        BackendHolder.SetCurrentBackend(backend);
+        BackendHolder.SetBackend(backend);
     }
     
     public nothrow Backend GetBackend()
     {
-        return BackendHolder.GetCurrentBackend();
+        return BackendHolder.GetBackend();
     }
     
     public nothrow BackendIntf* GetBackendImpl()
     {
-        return BackendHolder.GetCurrentBackendImpl();
+        return BackendHolder.GetBackendImpl();
     }
     
-    public const char* GetBackendStr()
+    public nothrow const char* GetBackendStr()
     {
         switch (GetBackend())
         {
@@ -80,6 +86,11 @@ namespace Cm.IrIntf
             case Backend.c: return "c";
         }
         return "";
+    }
+    
+    public nothrow int GetNextDelegateTypeNumber()
+    {
+        return BackendHolder.GetNextDelegateTypeNumber();
     }
     
     public abstract class BackendIntf
@@ -94,7 +105,7 @@ namespace Cm.IrIntf
         public abstract Ir.Intf.LabelObject* CreateLabel();
         public abstract Ir.Intf.LabelObject* CreateLabel(const string& label);
         public abstract Ir.Intf.LabelObject* CreateLandingPadLabel(int index);
-        public abstract Ir.Intf.RegVar* CreateTemporaryRegVar(Ir.Intf.Type* type);
+        public abstract Ir.Intf.RegVar* MakeTemporaryRegVar(Ir.Intf.Type* type);
         public abstract Ir.Intf.Type* I1();
         public abstract Ir.Intf.Type* I8();
         public abstract Ir.Intf.Type* I16();
@@ -109,14 +120,13 @@ namespace Cm.IrIntf
         public abstract Ir.Intf.Type* Void();
         public abstract Ir.Intf.Type* Char();
         public abstract Ir.Intf.Type* RvalueRef(Ir.Intf.Type* baseType);
-        public abstract Ir.Intf.Type* Pointer(Ir.Intf.Type* baseType, int numPointers);
+        public abstract Ir.Intf.Type* Pointer(Ir.Intf.Type* baseType, byte numPointers);
         public abstract Ir.Intf.Type* Structure(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames);
         public abstract Ir.Intf.Type* Array(Ir.Intf.Type* itemType, int size);
-        public abstract Ir.Intf.Type* CreateFunctionType(Ir.Intf.Type* returnType, const List<Ir.Intf.Type*>& parameterTypes);
-        public abstract Ir.Intf.Type* CreateTypedef(const string& name, Ir.Intf.Type* type);
+        public abstract Ir.Intf.Type* MakeFunctionType(Ir.Intf.Type* returnType, const List<Ir.Intf.Type*>& parameterTypes);
+        public abstract Ir.Intf.Type* MakeTypedef(const string& name, Ir.Intf.Type* type);
         public abstract Ir.Intf.Function* CreateFunction(const string& name, Ir.Intf.Type* returnType, const List<Ir.Intf.Parameter*>& parameters);
         public abstract Ir.Intf.Function* CreateDoNothingFunction();
-        public abstract Ir.Intf.Function* CreateDbgDeclareFunction();
         public abstract Ir.Intf.Function* CreateMemSetFunction(Ir.Intf.Type* i8Ptr);
         public abstract Ir.Intf.Function* CreateMemCopyFunction(Ir.Intf.Type* i8Ptr);
         public abstract Ir.Intf.Instruction* MemSet(Ir.Intf.Object* dest, Ir.Intf.Object* value, Ir.Intf.Object* len, int align, bool isVolatile);
@@ -128,67 +138,41 @@ namespace Cm.IrIntf
         public abstract bool TypesEqual(Ir.Intf.Type* left, Ir.Intf.Type* right);
         public abstract Ir.Intf.Object* True();
         public abstract Ir.Intf.Object* False();
-        public abstract Ir.Intf.Object* CreateConstant(const string& name, Ir.Intf.Type* type);
-        public abstract Ir.Intf.Object* CreateBooleanConstant(bool value);
-        public abstract Ir.Intf.Object* CreateCharConstant(char value);
+        public abstract Ir.Intf.Object* MakeConstant(const string& name, Ir.Intf.Type* type);
+        public abstract Ir.Intf.Object* MakeBooleanConstant(bool value);
+        public abstract Ir.Intf.Object* MakeCharConstant(char value);
         public abstract string GetSeparator();
         public abstract string GetPrivateSeparator();
         public abstract string GetStringValuePrefix();
-        public abstract Ir.Intf.Object* CreateStringConstant(const string& value);
-        public abstract Ir.Intf.Object* Null(Ir.Intf.Type* ptrType);
-        public abstract Ir.Intf.Object* CreateI8Constant(sbyte value);
-        public abstract Ir.Intf.Object* CreateUI8Constant(byte value);
-        public abstract Ir.Intf.Object* CreateI16Constant(short value);
-        public abstract Ir.Intf.Object* CreateUI16Constant(ushort value);
-        public abstract Ir.Intf.Object* CreateI32Constant(int value);
-        public abstract Ir.Intf.Object* CreateUI32Constant(uint value);
-        public abstract Ir.Intf.Object* CreateI64Constant(long value);
-        public abstract Ir.Intf.Object* CreateUI64Constant(ulong  value);
-        public abstract Ir.Intf.Object* CreateFloatConstant(float value);
-        public abstract Ir.Intf.Object* CreateDoubleConstant(double value);
+        public abstract Ir.Intf.Object* MakeStringConstant(const string& value);
+        public abstract Ir.Intf.Object* MakeNull(Ir.Intf.Type* ptrType);
+        public abstract Ir.Intf.Object* MakeI8Constant(sbyte value);
+        public abstract Ir.Intf.Object* MakeUI8Constant(byte value);
+        public abstract Ir.Intf.Object* MakeI16Constant(short value);
+        public abstract Ir.Intf.Object* MakeUI16Constant(ushort value);
+        public abstract Ir.Intf.Object* MakeI32Constant(int value);
+        public abstract Ir.Intf.Object* MakeUI32Constant(uint value);
+        public abstract Ir.Intf.Object* MakeI64Constant(long value);
+        public abstract Ir.Intf.Object* MakeUI64Constant(ulong  value);
+        public abstract Ir.Intf.Object* MakeFloatConstant(float value);
+        public abstract Ir.Intf.Object* MakeDoubleConstant(double value);
         public abstract string MakeStringConstantName(const string& s);
-        public abstract string MakeStringConstantName(const string& s, bool metadataSyntax);
         public abstract string MakeDestructionNodeName(const string& assemblyName);
         public abstract string GetDestructionNodeTypeName();
         public abstract string GetRegisterDestructorFunctionName();
-        public abstract Ir.Intf.Type* CreateTypeName(const string& name, bool global);
-        public abstract Ir.Intf.MemberVar* CreateMemberVar(const string& memberVarName, Ir.Intf.Object* ptr, int index, Ir.Intf.Type* type);
-        public abstract Ir.Intf.Object* CreateStackVar(const string& assemblyName, Ir.Intf.Type* type);
-        public abstract Ir.Intf.Object* CreateRefVar(const string& assemblyName, Ir.Intf.Type* type);
+        public abstract Ir.Intf.Type* MakeTypeNameType(const string& name, bool global);
+        public abstract Ir.Intf.MemberVar* MakeMemberVar(const string& memberVarName, Ir.Intf.Object* ptr, int index, Ir.Intf.Type* type);
+        public abstract Ir.Intf.Object* MakeStackVar(const string& assemblyName, Ir.Intf.Type* type);
+        public abstract Ir.Intf.Object* MakeRefVar(const string& assemblyName, Ir.Intf.Type* type);
         public abstract string GetVPtrVarName();
         public abstract string GetStackFrameIdentifier();
-        public abstract int GetDebugTagLexicalBlock();
-        public abstract int GetDebugTagCompileUnit();
-        public abstract int GetDebugTagSubprogram();
-        public abstract int GetDebugTagFileType();
-        public abstract int GetDebugTagSubroutineType();
-        public abstract int GetDebugTagBaseType();
-        public abstract int GetDebugTagClassType();
-        public abstract int GetDebugTagEnumerationType();
-        public abstract int GetDebugTagEnumerator();
-        public abstract int GetDebugTagInheritance();
-        public abstract int GetDebugTagPointerType();
-        public abstract int GetDebugTagConstType();
-        public abstract int GetDebugTagReferenceType();
-        public abstract int GetDebugTagRvalueRefType();
-        public abstract int GetDebugTagNamespace();
-        public abstract int GetDebugTagAutoVariable();
-        public abstract int GetDebugTagArgVariable();
-        public abstract int GetDebugTagMember();
-        public abstract int GetDebugLangCmajor();
-        public abstract Ir.Intf.Global* CreateGlobal(const string& name, Ir.Intf.Type* type);
-        public abstract Ir.Intf.Parameter* CreatePointerParameter(const string& name, Ir.Intf.Type* type);
-        public abstract Ir.Intf.Parameter* CreateParameter(const string& parameterName, Ir.Intf.Type* parameterType);
+        public abstract Ir.Intf.Global* MakeGlobal(const string& name, Ir.Intf.Type* type);
+        public abstract Ir.Intf.Parameter* MakePointerParameter(const string& name, Ir.Intf.Type* type);
+        public abstract Ir.Intf.Parameter* MakeParameter(const string& parameterName, Ir.Intf.Type* parameterType);
         public abstract string GetClassObjectResultParamName();
         public abstract string GetExceptionCodeParamName();
         public abstract string GetExceptionBaseIdTableName();
         public abstract string GetClassHierarchyTableName();
-        public abstract int GetDebugAttrEncodingBoolean();
-        public abstract int GetDebugAttrEncodingUnsigned();
-        public abstract int GetDebugAttrEncodingSigned();
-        public abstract int GetDebugAttrEncodingSignedChar();
-        public abstract int GetDebugAttrEncodingUnsignedChar();
-        public abstract int GetDebugAttrEncodingFloat();
         public abstract Ir.Intf.Instruction* Add(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
         public abstract Ir.Intf.Instruction* Sub(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
         public abstract Ir.Intf.Instruction* Mul(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);

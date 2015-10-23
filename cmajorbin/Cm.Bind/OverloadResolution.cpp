@@ -913,6 +913,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                         equalMatches.push_back(std::move(match));
                     }
                 }
+                std::vector<Cm::Parsing::Span> references;
                 for (const FunctionMatch& match : equalMatches)
                 {
                     if (first)
@@ -924,6 +925,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                         matchedFunctionNames.append(" or ");
                     }
                     matchedFunctionNames.append(match.function->FullName());
+                    references.push_back(match.function->GetSpan());
                 }
                 if (GetFlag(OverloadResolutionFlags::nothrow, flags))
                 {
@@ -932,7 +934,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 }
                 else
                 {
-                    throw Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span);
+                    throw Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span, references);
                 }
             }
         }

@@ -1,0 +1,531 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.IrIntf
+{
+    public inline string GetExCodeVarName()
+    {
+        return GetBackendImpl()->GetExCodeVarName();
+    }
+    public inline Ir.Intf.LabelObject* CreateTempLabel(int tempLabelCounter)
+    {
+        return GetBackendImpl()->CreateTempLabel(tempLabelCounter);
+    }
+    public inline string CreateTempVarName(int tempVarCounter)
+    {
+        return GetBackendImpl()->CreateTempVarName(tempVarCounter);
+    }
+    public inline Ir.Intf.LabelObject* CreateNextLocalLabel()
+    {
+        return GetBackendImpl()->CreateNextLocalLabel();
+    }
+    public inline Ir.Intf.LabelObject* CreateLabel()
+    {
+        return GetBackendImpl()->CreateLabel();
+    }
+    public inline Ir.Intf.LabelObject* CreateLabel(const string& label)
+    {
+        return GetBackendImpl()->CreateLabel(label);
+    }
+    public inline Ir.Intf.LabelObject* CreateLandingPadLabel(int index)
+    {
+        return GetBackendImpl()->CreateLandingPadLabel(index);
+    }
+    public inline Ir.Intf.RegVar* MakeTemporaryRegVar(Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->MakeTemporaryRegVar(type);
+    }
+    public inline Ir.Intf.Type* I1()
+    {
+        return GetBackendImpl()->I1();
+    }
+    public inline Ir.Intf.Type* I8()
+    {
+        return GetBackendImpl()->I8();
+    }
+    public inline Ir.Intf.Type* I16()
+    {
+        return GetBackendImpl()->I16();
+    }
+    public inline Ir.Intf.Type* I32()
+    {
+        return GetBackendImpl()->I32();
+    }
+    public inline Ir.Intf.Type* I64()
+    {
+        return GetBackendImpl()->I64();
+    }
+    public inline Ir.Intf.Type* UI8()
+    {
+        return GetBackendImpl()->UI8();
+    }
+    public inline Ir.Intf.Type* UI16()
+    {
+        return GetBackendImpl()->UI16();
+    }
+    public inline Ir.Intf.Type* UI32()
+    {
+        return GetBackendImpl()->UI32();
+    }
+    public inline Ir.Intf.Type* UI64()
+    {
+        return GetBackendImpl()->UI64();
+    }
+    public inline Ir.Intf.Type* Float()
+    {
+        return GetBackendImpl()->Float();
+    }
+    public inline Ir.Intf.Type* Double()
+    {
+        return GetBackendImpl()->Double();
+    }
+    public inline Ir.Intf.Type* Void()
+    {
+        return GetBackendImpl()->Void();
+    }
+    public inline Ir.Intf.Type* Char()
+    {
+        return GetBackendImpl()->Char();
+    }
+    public inline Ir.Intf.Type* RvalueRef(Ir.Intf.Type* baseType)
+    {
+        return GetBackendImpl()->RvalueRef(baseType);
+    }
+    public inline Ir.Intf.Type* Pointer(Ir.Intf.Type* baseType, byte numPointers)
+    {
+        return GetBackendImpl()->Pointer(baseType, numPointers);
+    }
+    public inline Ir.Intf.Type* Structure(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames)
+    {
+        return GetBackendImpl()->Structure(tagName, elementTypes, elementNames);
+    }
+    public inline Ir.Intf.Type* Array(Ir.Intf.Type* itemType, int size)
+    {
+        return GetBackendImpl()->Array(itemType, size);
+    }
+    public inline Ir.Intf.Type* MakeFunctionType(Ir.Intf.Type* returnType, const List<Ir.Intf.Type*>& parameterTypes)
+    {
+        return GetBackendImpl()->MakeFunctionType(returnType, parameterTypes);
+    }
+    public inline string CreateDelegateTypeName()
+    {
+        return "__delegate_type_" + ToString(GetNextDelegateTypeNumber());
+    }
+    public inline Ir.Intf.Type* MakeTypedef(const string& name, Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->MakeTypedef(name, type);
+    }
+    public inline Ir.Intf.Function* CreateFunction(const string& name, Ir.Intf.Type* returnType, const List<Ir.Intf.Parameter*>& parameters)
+    {
+        return GetBackendImpl()->CreateFunction(name, returnType, parameters);
+    }
+    public inline Ir.Intf.Function* CreateDoNothingFunction()
+    {
+        return GetBackendImpl()->CreateDoNothingFunction();
+    }
+    public inline Ir.Intf.Function* CreateMemSetFunction(Ir.Intf.Type* i8Ptr)
+    {
+        return GetBackendImpl()->CreateMemSetFunction(i8Ptr);
+    }
+    public inline Ir.Intf.Function* CreateMemCopyFunction(Ir.Intf.Type* i8Ptr)
+    {
+        return GetBackendImpl()->CreateMemCopyFunction(i8Ptr);
+    }
+    public inline Ir.Intf.Instruction* MemSet(Ir.Intf.Object* dest, Ir.Intf.Object* value, Ir.Intf.Object* len, int align, bool isVolatile)
+    {
+        return GetBackendImpl()->MemSet(dest, value, len, align, isVolatile);
+    }
+    public inline Ir.Intf.Instruction* MemCopy(Ir.Intf.Object* dest, Ir.Intf.Object* source, Ir.Intf.Object* len, int align, bool isVolatile)
+    {
+        return GetBackendImpl()->MemCopy(dest, source, len, align, isVolatile);
+    }
+    public inline void ResetLocalLabelCounter()
+    {
+        GetBackendImpl()->ResetLocalLabelCounter();
+    }
+    public inline bool TypesEqual(Ir.Intf.Type* left, Ir.Intf.Type* right)
+    {
+        return GetBackendImpl()->TypesEqual(left, right);
+    }
+    public inline string MakeAssemblyName(const string& name)
+    {
+        return GetBackendImpl()->MakeAssemblyName(name);
+    }
+    public inline string MakeClassNameAssemblyName(const string& fullClassName)
+    {
+        return GetBackendImpl()->MakeClassNameAssemblyName(fullClassName);
+    }
+    public inline Ir.Intf.Type* CreateClassTypeName(const string& fullClassName)
+    {
+        return GetBackendImpl()->CreateClassTypeName(fullClassName);
+    }
+    public inline Ir.Intf.Object* True()
+    {
+        return GetBackendImpl()->True();
+    }
+    public inline Ir.Intf.Object* False()
+    {
+        return GetBackendImpl()->False();
+    }
+    public inline Ir.Intf.Object* MakeConstant(const string& name, Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->MakeConstant(name, type);
+    }
+    public inline Ir.Intf.Object* MakeBooleanConstant(bool value)
+    {
+        return GetBackendImpl()->MakeBooleanConstant(value);
+    }
+    public inline Ir.Intf.Object* MakeCharConstant(char value)
+    {
+        return GetBackendImpl()->MakeCharConstant(value);
+    }
+    public inline string GetStringValuePrefix()
+    {
+        return GetBackendImpl()->GetStringValuePrefix();
+    }
+    public inline string GetSeparator()
+    {
+        return GetBackendImpl()->GetSeparator();
+    }
+    public inline string GetPrivateSeparator()
+    {
+        return GetBackendImpl()->GetPrivateSeparator();
+    }
+    public inline Ir.Intf.Object* MakeStringConstant(const string& value)
+    {
+        return GetBackendImpl()->MakeStringConstant(value);
+    }
+    public inline Ir.Intf.Object* MakeNull(Ir.Intf.Type* ptrType)
+    {
+        return GetBackendImpl()->MakeNull(ptrType);
+    }
+    public inline Ir.Intf.Object* MakeI8Constant(sbyte value)
+    {
+        return GetBackendImpl()->MakeI8Constant(value);
+    }
+    public inline Ir.Intf.Object* MakeI16Constant(short value)
+    {
+        return GetBackendImpl()->MakeI16Constant(value);
+    }
+    public inline Ir.Intf.Object* MakeI32Constant(int value)
+    {
+        return GetBackendImpl()->MakeI32Constant(value);
+    }
+    public inline Ir.Intf.Object* MakeI64Constant(long value)
+    {
+        return GetBackendImpl()->MakeI64Constant(value);
+    }
+    public inline Ir.Intf.Object* MakeUI8Constant(byte value)
+    {
+        return GetBackendImpl()->MakeUI8Constant(value);
+    }
+    public inline Ir.Intf.Object* MakeUI16Constant(ushort value)
+    {
+        return GetBackendImpl()->MakeUI16Constant(value);
+    }
+    public inline Ir.Intf.Object* MakeUI32Constant(uint value)
+    {
+        return GetBackendImpl()->MakeUI32Constant(value);
+    }
+    public inline Ir.Intf.Object* MakeUI64Constant(ulong value)
+    {
+        return GetBackendImpl()->MakeUI64Constant(value);
+    }
+    public inline Ir.Intf.Object* MakeFloatConstant(float value)
+    {
+        return GetBackendImpl()->MakeFloatConstant(value);
+    }
+    public inline Ir.Intf.Object* MakeDoubleConstant(double value)
+    {
+        return GetBackendImpl()->MakeDoubleConstant(value);
+    }
+    public inline string MakeStringConstantName(const string& s)
+    {
+        return GetBackendImpl()->MakeStringConstantName(s);
+    }
+    public inline string MakeDestructionNodeName(const string& assemblyName)
+    {
+        return GetBackendImpl()->MakeDestructionNodeName(assemblyName);
+    }
+    public inline string GetDestructionNodeTypeName()
+    {
+        return GetBackendImpl()->GetDestructionNodeTypeName();
+    }
+    public inline string GetRegisterDestructorFunctionName()
+    {
+        return GetBackendImpl()->GetRegisterDestructorFunctionName();
+    }
+    public inline Ir.Intf.Type* MakeTypeNameType(const string& name, bool global)
+    {
+        return GetBackendImpl()->MakeTypeNameType(name, global);
+    }
+    public inline Ir.Intf.MemberVar* MakeMemberVar(const string& memberVarName, Ir.Intf.Object* ptr, int index, Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->MakeMemberVar(memberVarName, ptr, index, type);
+    }
+    public inline Ir.Intf.Object* MakeStackVar(const string& assemblyName, Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->MakeStackVar(assemblyName, type);
+    }
+    public inline Ir.Intf.Object* MakeRefVar(const string& assemblyName, Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->MakeRefVar(assemblyName, type);
+    }
+    public inline string GetVPtrVarName()
+    {
+        return GetBackendImpl()->GetVPtrVarName();
+    }
+    public inline Ir.Intf.Global* MakeGlobal(const string& name, Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->MakeGlobal(name, type);
+    }
+    public inline Ir.Intf.Parameter* MakePointerParameter(const string& name, Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->MakePointerParameter(name, type);
+    }
+    public inline Ir.Intf.Parameter* MakeParameter(const string& parameterName, Ir.Intf.Type* parameterType)
+    {
+        return GetBackendImpl()->MakeParameter(parameterName, parameterType);
+    }
+    public inline string GetStackFrameIdentifier()
+    {
+        return GetBackendImpl()->GetStackFrameIdentifier();
+    }
+    public inline string GetClassObjectResultParamName()
+    {
+        return GetBackendImpl()->GetClassObjectResultParamName();
+    }
+    public inline string GetExceptionCodeParamName()
+    {
+        return GetBackendImpl()->GetExceptionCodeParamName();
+    }
+    public inline string GetExceptionBaseIdTableName()
+    {
+        return GetBackendImpl()->GetExceptionBaseIdTableName();
+    }
+    public inline string GetClassHierarchyTableName()
+    {
+        return GetBackendImpl()->GetClassHierarchyTableName();
+    }
+    public inline Ir.Intf.Instruction* Add(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->Add(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* Sub(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->Sub(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* Mul(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->Mul(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* UDiv(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->UDiv(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* SDiv(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->SDiv(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* URem(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->URem(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* SRem(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->SRem(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* Shl(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->Shl(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* LShr(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->LShr(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* AShr(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->AShr(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* And(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->And(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* Or(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->Or(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* Xor(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->Xor(integerType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* FAdd(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->FAdd(floatingPointType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* FSub(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->FSub(floatingPointType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* FMul(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->FMul(floatingPointType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* FDiv(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->FDiv(floatingPointType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* FRem(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->FRem(floatingPointType, result, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* Index(Ir.Intf.Object* result, Ir.Intf.Object* array, Ir.Intf.Object* index)
+    {
+        return GetBackendImpl()->Index(result, array, index);
+    }
+    public inline Ir.Intf.Instruction* Ret()
+    {
+        return GetBackendImpl()->Ret();
+    }
+    public inline Ir.Intf.Instruction* Ret(Ir.Intf.Object* value)
+    {
+        return GetBackendImpl()->Ret(value);
+    }
+    public inline Ir.Intf.Instruction* Br(Ir.Intf.LabelObject* dest)
+    {
+        return GetBackendImpl()->Br(dest);
+    }
+    public inline Ir.Intf.Instruction* Br(Ir.Intf.Object* cond, Ir.Intf.LabelObject* trueLabel, Ir.Intf.LabelObject* falseLabel)
+    {
+        return GetBackendImpl()->Br(cond, trueLabel, falseLabel);
+    }
+    public inline Ir.Intf.Instruction* Switch(Ir.Intf.Type* integerType, Ir.Intf.Object* value, Ir.Intf.LabelObject* defaultDest, const List<Pair<Ir.Intf.Object*, Ir.Intf.LabelObject*>>& destinations)
+    {
+        return GetBackendImpl()->Switch(integerType, value, defaultDest, destinations);
+    }
+    public inline Ir.Intf.Instruction* Alloca(Ir.Intf.Type* type, Ir.Intf.Object* result)
+    {
+        return GetBackendImpl()->Alloca(type, result);
+    }
+    public inline Ir.Intf.Instruction* Alloca(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Type* numElementsType, int numElements)
+    {
+        return GetBackendImpl()->Alloca(type, result, numElementsType, numElements);
+    }
+    public inline Ir.Intf.Instruction* Load(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* ptr)
+    {
+        return GetBackendImpl()->Load(type, result, ptr);
+    }
+    public inline Ir.Intf.Instruction* Load(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Indirection leftIndirection, Ir.Intf.Indirection rightIndirection)
+    {
+        return GetBackendImpl()->Load(type, result, ptr, leftIndirection, rightIndirection);
+    }
+    public inline Ir.Intf.Instruction* Store(Ir.Intf.Type* type, Ir.Intf.Object* value, Ir.Intf.Object* ptr)
+    {
+        return GetBackendImpl()->Store(type, value, ptr);
+    }
+    public inline Ir.Intf.Instruction* Store(Ir.Intf.Type* type, Ir.Intf.Object* value, Ir.Intf.Object* ptr, Ir.Intf.Indirection leftIndirection, Ir.Intf.Indirection rightIndirection)
+    {
+        return GetBackendImpl()->Store(type, value, ptr, leftIndirection, rightIndirection);
+    }
+    public inline Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index)
+    {
+        return GetBackendImpl()->GetElementPtr(ptrType, result, ptr, index);
+    }
+    public inline Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index, Ir.Intf.Object* index1)
+    {
+        return GetBackendImpl()->GetElementPtr(ptrType, result, ptr, index, index1);
+    }
+    public inline Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index, const List<Ir.Intf.Object*>& indeces)
+    {
+        return GetBackendImpl()->GetElementPtr(ptrType, result, ptr, index, indeces);
+    }
+    public inline Ir.Intf.Instruction* Call(Ir.Intf.Object* result, Ir.Intf.Function* fun, const List<Ir.Intf.Object*>& args)
+    {
+        return GetBackendImpl()->Call(result, fun, args);
+    }
+    public inline Ir.Intf.Instruction* IndirectCall(Ir.Intf.Object* result, Ir.Intf.Object* funPtr, const List<Ir.Intf.Object*>& args)
+    {
+        return GetBackendImpl()->IndirectCall(result, funPtr, args);
+    }
+    public inline Ir.Intf.Instruction* ICmp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.IConditionCode cond, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->ICmp(type, result, cond, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* FCmp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.FConditionCode cond, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+    {
+        return GetBackendImpl()->FCmp(type, result, cond, operand1, operand2);
+    }
+    public inline Ir.Intf.Instruction* DoNothing()
+    {
+        return GetBackendImpl()->DoNothing();
+    }
+    public inline Ir.Intf.Instruction* Trunc(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Trunc(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Zext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Zext(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Sext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Sext(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Fptrunc(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Fptrunc(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Fpext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Fpext(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Fptoui(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Fptoui(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Fptosi(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Fptosi(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Uitofp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Uitofp(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Sitofp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Sitofp(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Ptrtoint(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Ptrtoint(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Inttoptr(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Inttoptr(type, result, value, toType);
+    }
+    public inline Ir.Intf.Instruction* Bitcast(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    {
+        return GetBackendImpl()->Bitcast(type, result, value, toType);
+    }
+    public inline void Init(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* from, Ir.Intf.Object* to)
+    {
+        GetBackendImpl()->Init(emitter, type, from, to);
+    }
+    public inline void Assign(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* from, Ir.Intf.Object* to)
+    {
+        GetBackendImpl()->Assign(emitter, type, from, to);
+    }
+    public inline Ir.Intf.Object* SizeOf(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type)
+    {
+        return GetBackendImpl()->SizeOf(emitter, type);
+    }
+}

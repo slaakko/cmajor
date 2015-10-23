@@ -64,7 +64,7 @@ void ClassInitializerHandler::GenerateBaseInitializer(Cm::BoundTree::BoundExpres
     }
     catch (const Cm::Core::Exception& ex)
     {
-        throw Cm::Core::Exception("base class constructor not found: " + ex.Message(), ex.Defined(), ex.Referenced());
+        throw Cm::Core::Exception("base class constructor not found: " + ex.Message(), ex.Defined(), ex.References());
     }
     Cm::Sym::ParameterSymbol* thisParam = CurrentFunction()->GetFunctionSymbol()->Parameters()[0];
     Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
@@ -151,7 +151,7 @@ void ClassInitializerHandler::Visit(Cm::Ast::ThisInitializerNode& thisInitialize
     }
     catch (const Cm::Core::Exception& ex)
     {
-        throw Cm::Core::Exception("class constructor not found: " + ex.Message(), ex.Defined(), ex.Referenced());
+        throw Cm::Core::Exception("class constructor not found: " + ex.Message(), ex.Defined(), ex.References());
     }
     Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
     boundThisParam->SetType(thisParam->GetType());
@@ -285,7 +285,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* MemberVariableInitializerHandle
     }
     catch (const Cm::Core::Exception& ex)
     {
-        throw Cm::Core::Exception("constructor for member variable '" + memberVariableSymbol->Name() + "' not found: " + ex.Message(), ex.Defined(), ex.Referenced());
+        throw Cm::Core::Exception("constructor for member variable '" + memberVariableSymbol->Name() + "' not found: " + ex.Message(), ex.Defined(), ex.References());
     }
     Cm::BoundTree::BoundMemberVariable* boundMemberVariable = new Cm::BoundTree::BoundMemberVariable(node, memberVariableSymbol);
     boundMemberVariable->SetType(memberVariableSymbol->GetType());
@@ -603,7 +603,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* StaticMemberVariableInitializer
     }
     catch (const Cm::Core::Exception& ex)
     {
-        throw Cm::Core::Exception("constructor for member variable '" + memberVariableSymbol->Name() + "' not found: " + ex.Message(), ex.Defined(), ex.Referenced());
+        throw Cm::Core::Exception("constructor for member variable '" + memberVariableSymbol->Name() + "' not found: " + ex.Message(), ex.Defined(), ex.References());
     }
     Cm::BoundTree::BoundMemberVariable* boundMemberVariable = new Cm::BoundTree::BoundMemberVariable(node, memberVariableSymbol);
     boundMemberVariable->SetType(memberVariableSymbol->GetType());

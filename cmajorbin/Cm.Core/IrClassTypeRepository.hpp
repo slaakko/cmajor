@@ -30,10 +30,8 @@ public:
         std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository) = 0;
     void SetLayoutIndeces();
     virtual void WriteDestructionNodeDef(Cm::Util::CodeFormatter& codeFormatter) = 0;
-    const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& ClassTypes() const { return classTypes; }
     std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& ClassTypeMap() { return classTypeMap; }
 private:
-    std::unordered_set<Cm::Sym::ClassTypeSymbol*> classTypes;
     std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*> classTypeMap;
 };
 

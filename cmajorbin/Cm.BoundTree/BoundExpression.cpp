@@ -1035,11 +1035,11 @@ void BoundPostfixIncDecExpr::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundFunctionGroup::BoundFunctionGroup() : BoundExpression(nullptr), functionGroupSymbol(nullptr), ns(nullptr)
+BoundFunctionGroup::BoundFunctionGroup() : BoundExpression(nullptr), functionGroupSymbol(nullptr), qualifiedScope(nullptr)
 {
 }
 
-BoundFunctionGroup::BoundFunctionGroup(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_) : BoundExpression(syntaxNode_), functionGroupSymbol(functionGroupSymbol_), ns(nullptr)
+BoundFunctionGroup::BoundFunctionGroup(Cm::Ast::Node* syntaxNode_, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_) : BoundExpression(syntaxNode_), functionGroupSymbol(functionGroupSymbol_), qualifiedScope(nullptr)
 {
 }
 

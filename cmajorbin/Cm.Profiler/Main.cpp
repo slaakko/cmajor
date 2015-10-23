@@ -20,7 +20,7 @@
 
 const char* Version()
 {
-    return "1.2.0";
+    return "1.3.0";
 }
 
 const uint32_t startFunEvent = 0;

@@ -205,7 +205,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
                 exception);
             if (!constraintSatisfied)
             {
-                throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.Referenced());
+                throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.References());
             }
         }
     }
@@ -303,7 +303,7 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
             subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(), exception);
         if (!constraintSatisfied)
         {
-            throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.Referenced());
+            throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.References());
         }
         templateTypeSymbol->SetConstraint(nullptr);
     }
@@ -462,7 +462,7 @@ void ClassTemplateRepository::Read(Cm::Sym::BcuReader& reader)
     }
 }
 
-void ClassTemplateRepository::RetrieveMemberVariableLayoutIndecesFrom(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classTypes)
+void ClassTemplateRepository::RetrieveMemberVariableLayoutIndecesFrom(const std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& classTypeMap)
 {
     if (templateTypeSymbols.empty()) return;
     std::unordered_map<std::string, Cm::Sym::TemplateTypeSymbol*> templateTypeSymbolMap;
@@ -470,8 +470,9 @@ void ClassTemplateRepository::RetrieveMemberVariableLayoutIndecesFrom(const std:
     {
         templateTypeSymbolMap[templateTypeSymbol->FullName()] = templateTypeSymbol;
     }
-    for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
+    for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : classTypeMap)
     {
+        Cm::Sym::ClassTypeSymbol* classType = p.second;
         std::unordered_map<std::string, Cm::Sym::TemplateTypeSymbol*>::const_iterator i = templateTypeSymbolMap.find(classType->FullName());
         if (i != templateTypeSymbolMap.cend())
         {

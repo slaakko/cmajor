@@ -30,7 +30,7 @@ public:
         const Cm::Parsing::Span& span) = 0;
     virtual void Write(Cm::Sym::BcuWriter& writer) = 0;
     virtual void Read(Cm::Sym::BcuReader& reader) = 0;
-    virtual void RetrieveMemberVariableLayoutIndecesFrom(const std::unordered_set<Cm::Sym::ClassTypeSymbol*>& classTypes) = 0;
+    virtual void RetrieveMemberVariableLayoutIndecesFrom(const std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& classTypeMap) = 0;
 };
 
 } } // namespace Cm::Core

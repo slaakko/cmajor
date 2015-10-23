@@ -31,7 +31,7 @@ void Emitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     irClassTypeRepository.SetLayoutIndeces();
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
     {
-        compileUnit.ClassTemplateRepository().RetrieveMemberVariableLayoutIndecesFrom(irClassTypeRepository.ClassTypes());
+        compileUnit.ClassTemplateRepository().RetrieveMemberVariableLayoutIndecesFrom(irClassTypeRepository.ClassTypeMap());
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository = GetStaticMemberVariableRepository();
         staticMemberVariableRepository.SetClassTypeMap(irClassTypeRepository.ClassTypeMap());
     }
