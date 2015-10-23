@@ -216,15 +216,33 @@ namespace Cm.Sym
         {
             return Cm.Ast.DerivationList();
         }
-        public abstract nothrow string GetMangleId() const;
+        public abstract string GetMangleId() const;
+        public nothrow inline void SetIrType(Ir.Intf.Type* irType_)
+        {
+            irType.Reset(irType_);
+        }
+        public nothrow inline Ir.Intf.Type* IrType() const
+        {
+            return irType.GetPtr();
+        }
         public virtual void RecomputeIrType() const
         {
+        }
+        public nothrow inline void SetDefaultIrValue(Ir.Intf.Object* defaultIrValue_)
+        {
+            defaultIrValue.Reset(defaultIrValue_);
+        }
+        public nothrow inline Ir.Intf.Object* DefaultIrValue() const
+        {
+            return defaultIrValue.GetPtr();
         }
         public nothrow inline ulong GetHashCode() const
         {
             return id.GetHashCode();
         }
         private TypeId id;
+        private UniquePtr<Ir.Intf.Type> irType;
+        private UniquePtr<Ir.Intf.Object> defaultIrValue;
         private ForwardList<TypeSymbol*> dependentTypes;
     }
     

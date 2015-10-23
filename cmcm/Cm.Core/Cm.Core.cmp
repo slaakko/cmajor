@@ -2,6 +2,7 @@ project Cm.Core;
 target=library;
 assembly <Cm.Core.cma>;
 reference <../Cm.Sym/Cm.Sym.cml>;
+source <Argument.cm>;
 source <BasicTypeOp.cm>;
 source <ConceptRepository.cm>;
 source <Error.cm>;

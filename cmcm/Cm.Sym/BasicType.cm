@@ -45,7 +45,7 @@ namespace Cm.Sym
         {
             return SymbolType.boolSymbol;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "bo";
         }
@@ -60,7 +60,7 @@ namespace Cm.Sym
         {
             return SymbolType.charSymbol;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "ch";
         }
@@ -75,7 +75,7 @@ namespace Cm.Sym
         {
             return SymbolType.voidSymbol;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "vo";
         }
@@ -98,7 +98,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "sb";
         }
@@ -117,7 +117,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "by";
         }
@@ -140,7 +140,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "sh";
         }
@@ -159,7 +159,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "us";
         }
@@ -182,7 +182,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "in";
         }
@@ -201,7 +201,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "ui";
         }
@@ -224,7 +224,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "lo";
         }
@@ -243,7 +243,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "ul";
         }
@@ -262,7 +262,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "fl";
         }
@@ -281,7 +281,7 @@ namespace Cm.Sym
         {
             return true;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "do";
         }
@@ -296,7 +296,7 @@ namespace Cm.Sym
         {
             return SymbolType.nullptrSymbol;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return "np";
         }

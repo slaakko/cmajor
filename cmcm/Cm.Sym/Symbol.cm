@@ -219,7 +219,7 @@ namespace Cm.Sym
                 ResetFlag(SymbolFlags.project);
             }
         }
-        public nothrow inline bool IsIrTypeMade() const
+        public nothrow inline bool IrTypeMade() const
         {
             return GetFlag(SymbolFlags.irTypeMade);
         }
@@ -230,6 +230,10 @@ namespace Cm.Sym
         public nothrow inline bool IsReplica() const 
         {
             return GetFlag(SymbolFlags.replica);
+        }
+        public nothrow inline void ResetIrTypeMade()
+        {
+            ResetFlag(SymbolFlags.irTypeMade);
         }
         public nothrow inline void SetReplica()
         {

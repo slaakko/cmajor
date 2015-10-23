@@ -3,6 +3,8 @@ target=library;
 assembly <Cm.Sym.cma>;
 reference <../Cm.Ast/Cm.Ast.cml>;
 reference <../Cm.Parser/Cm.Parser.cml>;
+reference <../Ir.Intf/Ir.Intf.cml>;
+reference <../Cm.IrIntf/Cm.IrIntf.cml>;
 source <BasicType.cm>;
 source <ClassCounter.cm>;
 source <ClassTypeSymbol.cm>;

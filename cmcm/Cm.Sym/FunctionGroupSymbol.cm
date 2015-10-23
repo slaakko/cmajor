@@ -87,7 +87,7 @@ namespace Cm.Sym
         {
             return SymbolType.functionGroupTypeSymbol;
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
             return Name();
         }

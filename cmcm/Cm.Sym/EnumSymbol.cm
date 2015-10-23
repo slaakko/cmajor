@@ -26,10 +26,9 @@ namespace Cm.Sym
         {
             return "enum type";
         }
-        public nothrow override string GetMangleId() const
+        public override string GetMangleId() const
         {
-            return FullName();
-            // todo: return MakeAssemblyName(FullName());
+            return Cm.IrIntf.MakeAssemblyName(FullName());
         }
         public nothrow override bool IsExportSymbol() const
         {

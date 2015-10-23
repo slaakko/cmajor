@@ -1,0 +1,44 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Cm.Core
+{
+    public enum ArgumentCategory : byte
+    {
+        rvalue, lvalue
+    }
+    
+    public class Argument
+    {
+        public nothrow Argument(ArgumentCategory category_, Cm.Sym.TypeSymbol* type_) : category(category_), type(type_), bindToRvalueRef(false)
+        {
+        }
+        public nothrow inline ArgumentCategory Category() const
+        {
+            return category;
+        }
+        public nothrow inline Cm.Sym.TypeSymbol* Type() const
+        {
+            return type;
+        }
+        public nothrow inline bool BindToRvalueRef() const
+        {
+            return bindToRvalueRef;
+        }
+        public nothrow inline void SetBindToRvalueRef()
+        {
+            bindToRvalueRef = true;
+        }
+        private ArgumentCategory category;
+        private Cm.Sym.TypeSymbol* type;
+        private bool bindToRvalueRef;
+    }
+}

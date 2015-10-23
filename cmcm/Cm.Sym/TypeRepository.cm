@@ -13,6 +13,80 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
+    public DerivationCounts CountDerivations(const Cm.Ast.DerivationList& derivations)
+    {
+        DerivationCounts counts;
+        byte n = derivations.Count();
+        for (byte i = 0u; i < n; ++i)
+        {
+            switch (derivations[i])
+            {
+                case Cm.Ast.Derivation.const_: counts.AddConst(); break;
+                case Cm.Ast.Derivation.reference: counts.AddRef(); break;
+                case Cm.Ast.Derivation.rvalueRef: counts.AddRvalueRef(); break;
+                case Cm.Ast.Derivation.pointer: counts.AddPointer(); break;
+            }
+        }
+        return counts;
+    }
+
+    public Ir.Intf.Type* MakeIrType(TypeSymbol* baseType, const Cm.Ast.DerivationList& derivations, const Span& span, int lastArrayDimension)
+    {
+        Ir.Intf.Type* baseIrType = null;
+        if (baseType is EnumTypeSymbol*)
+        {
+            EnumTypeSymbol* enumType = cast<EnumTypeSymbol*>(baseType);
+            baseType = enumType->GetUnderlyingType();
+        }
+        Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+        if (baseType is VoidTypeSymbol*)
+        {
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                baseIrType = Ir.Intf.Factory.Instance()->GetI8();
+            }
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                baseIrType = Ir.Intf.Factory.Instance()->GetVoid();
+            }
+        }
+        else
+        {
+            baseIrType = baseType->IrType();
+        }
+        if (lastArrayDimension != 0)
+        {
+            baseIrType = Cm.IrIntf.Array(baseIrType, lastArrayDimension);
+        }
+        byte numPointers = 0u;
+        bool ref = false;
+        bool rvalueRef = false;
+        CountDerivations(derivations, numPointers, ref, rvalueRef, span);
+        if (ref)
+        {
+            ++numPointers;
+        }
+        else if (rvalueRef)
+        {
+            if (numPointers == 0u)
+            {
+                return Cm.IrIntf.RvalueRef(baseIrType);
+            }
+            else
+            {
+                return Cm.IrIntf.RvalueRef(Cm.IrIntf.Pointer(baseIrType, numPointers));
+            }
+        }
+        if (numPointers == 0u)
+        {
+            return baseIrType;
+        }
+        else
+        {
+            return Cm.IrIntf.Pointer(baseIrType, numPointers);
+        }
+    }
+    
     public class TypeRepository
     {
         public void AddType(TypeSymbol* type)
@@ -480,5 +554,33 @@ namespace Cm.Sym
         }
         s.Append('>');
         return s;
+    }
+    
+    public void CountDerivations(const Cm.Ast.DerivationList& derivations, byte& numPointers, bool& ref, bool& rvalueRef, const Span& span)
+    {
+        numPointers = 0u;
+        ref = false;
+        rvalueRef = false;
+        for (Cm.Ast.Derivation derivation : derivations)
+        {
+            switch (derivation)
+            {
+                case Cm.Ast.Derivation.pointer: 
+                {
+                    numPointers = numPointers + 1u;
+                    break;
+                }
+                case Cm.Ast.Derivation.reference: 
+                {
+                    ref = true;
+                    break;
+                }
+                case Cm.Ast.Derivation.rvalueRef:
+                {
+                    rvalueRef = true;
+                    break;
+                }
+            }
+        }
     }
 }
