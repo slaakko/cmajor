@@ -10,7 +10,7 @@
 using System;
 using System.Collections;
 
-namespace Llvm
+namespace C
 {
     public class VoidType : Ir.Intf.Type
     {
@@ -23,7 +23,7 @@ namespace Llvm
         }
     }
     
-    public nothrow inline Ir.Intf.Type* MakeVoidType() 
+    public nothrow inline Ir.Intf.Type* MakeVoidType()
     {
         return new VoidType();
     }
@@ -70,7 +70,7 @@ namespace Llvm
     {
         return new I1Type();
     }
-
+    
     public class I8Type : IntegerType
     {
         public nothrow I8Type() : base("i8")
@@ -98,7 +98,35 @@ namespace Llvm
     {
         return new I8Type();
     }
+
+    public class UI8Type : IntegerType
+    {
+        public nothrow UI8Type() : base("ui8")
+        {
+        }
+        public override Ir.Intf.Type* Clone() const
+        {
+            return new UI8Type();
+        }
+        public override Ir.Intf.Object* CreateDefaultValue() const
+        {
+            return MakeUI8Constant(0u);
+        }
+        public override Ir.Intf.Object* CreateMinusOne() const
+        {
+            return MakeUI8Constant(cast<byte>(-1));
+        }
+        public override Ir.Intf.Object* CreatePlusOne() const
+        {
+            return MakeUI8Constant(1u);
+        }
+    }
     
+    public nothrow inline Ir.Intf.Type* MakeUI8Type()
+    {
+        return new UI8Type();
+    }
+
     public class I16Type : IntegerType
     {
         public nothrow I16Type() : base("i16")
@@ -126,7 +154,35 @@ namespace Llvm
     {
         return new I16Type();
     }
+
+    public class UI16Type : IntegerType
+    {
+        public nothrow UI16Type() : base("ui16")
+        {
+        }
+        public override Ir.Intf.Type* Clone() const
+        {
+            return new UI16Type();
+        }
+        public override Ir.Intf.Object* CreateDefaultValue() const
+        {
+            return MakeUI16Constant(0u);
+        }
+        public override Ir.Intf.Object* CreateMinusOne() const
+        {
+            return MakeUI16Constant(cast<ushort>(-1));
+        }
+        public override Ir.Intf.Object* CreatePlusOne() const
+        {
+            return MakeUI16Constant(1u);
+        }
+    }
     
+    public nothrow inline Ir.Intf.Type* MakeUI16Type()
+    {
+        return new UI16Type();
+    }
+
     public class I32Type : IntegerType
     {
         public nothrow I32Type() : base("i32")
@@ -153,6 +209,34 @@ namespace Llvm
     public nothrow inline Ir.Intf.Type* MakeI32Type()
     {
         return new I32Type();
+    }
+
+    public class UI32Type : IntegerType
+    {
+        public nothrow UI32Type() : base("ui32")
+        {
+        }
+        public override Ir.Intf.Type* Clone() const
+        {
+            return new UI32Type();
+        }
+        public override Ir.Intf.Object* CreateDefaultValue() const
+        {
+            return MakeUI32Constant(0u);
+        }
+        public override Ir.Intf.Object* CreateMinusOne() const
+        {
+            return MakeUI32Constant(cast<uint>(-1));
+        }
+        public override Ir.Intf.Object* CreatePlusOne() const
+        {
+            return MakeUI32Constant(1u);
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Type* MakeUI32Type()
+    {
+        return new UI32Type();
     }
     
     public class I64Type : IntegerType
@@ -181,6 +265,34 @@ namespace Llvm
     public nothrow inline Ir.Intf.Type* MakeI64Type()
     {
         return new I64Type();
+    }
+
+    public class UI64Type : IntegerType
+    {
+        public nothrow UI64Type() : base("ui64")
+        {
+        }
+        public override Ir.Intf.Type* Clone() const
+        {
+            return new UI64Type();
+        }
+        public override Ir.Intf.Object* CreateDefaultValue() const
+        {
+            return MakeUI64Constant(0u);
+        }
+        public override Ir.Intf.Object* CreateMinusOne() const
+        {
+            return MakeUI64Constant(cast<uint>(-1));
+        }
+        public override Ir.Intf.Object* CreatePlusOne() const
+        {
+            return MakeUI64Constant(1u);
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Type* MakeUI64Type()
+    {
+        return new UI64Type();
     }
     
     public abstract class FloatingPointType : Ir.Intf.Type
@@ -230,11 +342,29 @@ namespace Llvm
         return new DoubleType();
     }
     
+    public class CharType : Ir.Intf.Type
+    {
+        public nothrow CharType() : base("char")
+        {
+        }
+        public override Ir.Intf.Type* Clone() const
+        {
+            return new CharType();
+        }
+        public override Ir.Intf.Object* CreateDefaultValue() const
+        {
+            return MakeCharConstant('\0');
+        }
+    }
+    
+    public nothrow inline Ir.Intf.Type* MakeCharType() 
+    {
+        return new CharType();
+    }
+    
     public nothrow string MakeArrayTypeName(Ir.Intf.Type* itemType, int size)
     {
-        string s('[');
-        s.Append(ToString(size)).Append(" x ").Append(itemType->Name()).Append(']');
-        return s;
+        return itemType->Name();
     }
     
     public class ArrayType : Ir.Intf.Type
@@ -245,79 +375,81 @@ namespace Llvm
             {
                 itemType->SetOwned();
                 ownedItemType.Reset(itemType);
-            }        
+            }
         }
-        public nothrow inline Ir.Intf.Type* ItemType() const
+        public override Ir.Intf.Type* Clone() const
         {
-            return itemType;
+            if (!ownedItemType.IsNull())
+            {
+                return new ArrayType(itemType->Clone(), size);
+            }
+            else
+            {
+                return new ArrayType(itemType, size);
+            }
         }
         public nothrow inline int Size() const
         {
             return size;
-        }
-        public override Ir.Intf.Type* Clone() const
-        {
-            if (ownedItemType.IsNull())
-            {
-                return new ArrayType(itemType, size);
-            }
-            else
-            {
-                return new ArrayType(itemType->Clone(), size);
-            }
         }
         private Ir.Intf.Type* itemType;
         private UniquePtr<Ir.Intf.Type> ownedItemType;
         private int size;
     }
     
-    public nothrow inline Ir.Intf.Type* MakeArrayType(Ir.Intf.Type* itemType, int size)
+    public nothrow Ir.Intf.Type* MakeArrayType(Ir.Intf.Type* itemType, int size)
     {
         return new ArrayType(itemType, size);
     }
     
-    public class StringType : ArrayType
+    public class StringType : Ir.Intf.Type
     {
-        public nothrow StringType(int size_) : base(Ir.Intf.Factory.Instance()->GetI8(), size_)
+        public nothrow StringType() : base("char*")
         {
         }
         public override Ir.Intf.Type* Clone() const
         {
-            return new StringType(Size());
+            return new StringType();
         }
     }
     
-    public nothrow inline Ir.Intf.Type* MakeStringType(int size)
+    public nothrow Ir.Intf.Type* MakeStringType()
     {
-        return new StringType(size);
+        return new StringType();
     }
     
     public class StructureType : Ir.Intf.Type
     {
-        public StructureType(const List<Ir.Intf.Type*>& elementTypes_) : base("*structure*")
+        public StructureType(const string& tagName_, const List<Ir.Intf.Type*>& elementTypes_, const List<string>& elementNames_) : base("*structure*"), tagName(tagName_), elementNames(elementNames_)
         {
-            string s = "{ ";
-            bool first = true;
+            string name("struct " + tagName + " {");
+            int i = 0;
             for (Ir.Intf.Type* elementType : elementTypes_)
             {
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    s.Append(", ");
-                }
-                s.Append(elementType->Name());
                 if (elementType->Owned())
                 {
                     throw Exception("structure element type already owned");
                 }
-                elementTypes.Add(UniquePtr<Ir.Intf.Type>(elementType));
                 elementType->SetOwned();
+                elementTypes.Add(UniquePtr<Ir.Intf.Type>(elementType));
+                if (elementType->IsFunctionPointerType() || elementType->IsFunctionPtrPtrType())
+                {
+                    name.Append(elementType->Prefix()).Append(elementNames[i]).Append(elementType->Suffix()).Append(";");
+                }
+                else
+                {
+                    name.Append(elementType->Name()).Append(' ').Append(elementNames[i]);
+                    if (elementType is ArrayType*)
+                    {
+                        ArrayType* arrayType = cast<ArrayType*>(elementType);
+                        name.Append('[').Append(ToString(arrayType->Size())).Append(']');
+                    }
+                    name.Append(';');
+                }
+                ++i;
             }
-            s.Append(" }");
-            SetName(s);
+            name.Append('}');
+            SetName(name);
         }
         public nothrow inline int Size() const
         {
@@ -338,24 +470,30 @@ namespace Llvm
             {
                 clonedElementTypes.Add(elementType->Clone());
             }
-            return new StructureType(clonedElementTypes);
+            return new StructureType(tagName, clonedElementTypes, elementNames);
         }
+        private string tagName;
         private List<UniquePtr<Ir.Intf.Type>> elementTypes;
+        private List<string> elementNames;
     }
     
-    public inline Ir.Intf.Type* MakeStructureType(const List<Ir.Intf.Type*>& elementTypes)
+    public inline Ir.Intf.Type* MakeStructureType(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames)
     {
-        return new StructureType(elementTypes);
+        return new StructureType(tagName, elementTypes, elementNames);
     }
     
     public class PointerType : Ir.Intf.Type
     {
-        public nothrow PointerType(Ir.Intf.Type* baseType_, byte numPointers_) : base(baseType_->Name() + string('*', numPointers)), baseType(baseType_), numPointers(numPointers_)
+        public nothrow PointerType(Ir.Intf.Type* baseType_, byte numPointers_) : base(baseType_->Name() + string('*', numPointers_)), baseType(baseType_), numPointers(numPointers_)
         {
             if (!baseType->Owned())
             {
                 baseType->SetOwned();
                 ownedBaseType.Reset(baseType);
+            }
+            if (IsFunctionPointerType() || IsFunctionPtrPtrType())
+            {
+                SetName(Prefix() + Suffix());
             }
         }
         public nothrow inline Ir.Intf.Type* BaseType() const
@@ -382,12 +520,50 @@ namespace Llvm
         {
             return numPointers;
         }
+        public override nothrow string Prefix() const
+        {
+            if (IsFunctionPointerType())
+            {
+                FunctionType* funType = cast<FunctionType*>(baseType);
+                return funType->ReturnType()->Name() + " (*";
+            }
+            else if (IsFunctionPtrPtrType())
+            {
+                FunctionType* funType = cast<FunctionType*>(baseType);
+                return funType->ReturnType()->Name() + " (**";
+            }
+            return base->Prefix();
+        }
+        public override nothrow string Suffix() const
+        {
+            if (baseType is FunctionType*)
+            {
+                string parameterList = ")(";
+                FunctionType* funType = cast<FunctionType*>(baseType);
+                bool first = true;
+                for (const UniquePtr<Ir.Intf.Type>& paramType : funType->ParameterTypes())
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        parameterList.Append(", ");
+                    }
+                    parameterList.Append(paramType->Name());
+                }
+                parameterList.Append(')');
+                return parameterList;
+            }
+            return base->Suffix();
+        }
         private Ir.Intf.Type* baseType;
         private UniquePtr<Ir.Intf.Type> ownedBaseType;
         private byte numPointers;
     }
     
-    public PointerType* MakePointerType(Ir.Intf.Type* baseType)
+    public inline PointerType* MakePointerType(Ir.Intf.Type* baseType)
     {
         if (baseType is PointerType*)
         {
@@ -397,7 +573,7 @@ namespace Llvm
         return new PointerType(baseType, 1u);
     }
     
-    public PointerType* MakePointerType(Ir.Intf.Type* baseType, byte numPointers)
+    public inline PointerType* MakePointerType(Ir.Intf.Type* baseType, byte numPointers)
     {
         if (baseType is PointerType*)
         {
@@ -481,31 +657,20 @@ namespace Llvm
         private List<UniquePtr<Ir.Intf.Type>> parameterTypes;
     }
     
-    public Ir.Intf.Type* MakeFunctionType(Ir.Intf.Type* returnType, const List<Ir.Intf.Type*>& parameterTypes)
+    public inline Ir.Intf.Type* MakeFunctionType(Ir.Intf.Type* returnType, const List<Ir.Intf.Type*>& parameterTypes)
     {
         return new FunctionType(returnType, parameterTypes);
     }
     
-    internal nothrow string TypeNamePrefix(bool global)
-    {
-        if (global) return "@";
-        return "%";
-    }
-    
     public class TypeNameType : Ir.Intf.Type
     {
-        public nothrow TypeNameType(const string& name_) : base("@" + name_), baseName(name_), isGlobal(true)
-        {
-        }
-        public nothrow TypeNameType(const string& name_, bool global)  : base(TypeNamePrefix(global) + name_), baseName(name_), isGlobal(global)
+        public nothrow TypeNameType(const string& name_) : base(name_)
         {
         }
         public override Ir.Intf.Type* Clone() const
         {
-            return new TypeNameType(baseName, isGlobal);
+            return new TypeNameType(Name());
         }
-        private string baseName;
-        private bool isGlobal;
     }
     
     public inline nothrow Ir.Intf.Type* MakeTypeNameType(const string& name)
@@ -513,8 +678,21 @@ namespace Llvm
         return new TypeNameType(name);
     }
     
-    public inline nothrow Ir.Intf.Type* MakeTypeNameType(const string& name, bool global)
+    public class Typedef : Ir.Intf.Type
     {
-        return new TypeNameType(name, global);
+        public nothrow Typedef(const string& name_, Ir.Intf.Type* type_) : base("typedef " + type_->Prefix() + name_ + type_->Suffix()), baseName(name_), type(type_)
+        {
+        }
+        public override Ir.Intf.Type* Clone() const
+        {
+            return new Typedef(baseName, type);
+        }
+        private string baseName;
+        private Ir.Intf.Type* type;
+    }
+    
+    public inline nothrow Ir.Intf.Type* MakeTypedef(const string& name, Ir.Intf.Type* type)
+    {
+        return new Typedef(name, type);
     }
 }

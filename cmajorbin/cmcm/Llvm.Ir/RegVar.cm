@@ -18,71 +18,216 @@ namespace Llvm
         }
         public override void InitTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
         {
-            
+            to->InitFrom(emitter, type, *this);
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
         {
-            
+            if (GetType() is PointerType*)
+            {
+                emitter.Emit(Store(type, &constant, this));
+            }
+            else if (type is IntegerType*)
+            {
+                Ir.Intf.Object* defaultValue = type->CreateDefaultValue();
+                emitter.Own(defaultValue);
+                emitter.Emit(Or(type, this, &constant, defaultValue)); 
+            }
+            else if (type is FloatingPointType*)
+            {
+                Ir.Intf.Object* defaultValue = type->CreateDefaultValue();
+                emitter.Own(defaultValue);
+                emitter.Emit(FAdd(type, this, &constant, defaultValue));
+            }
+            else
+            {
+                throw Exception("can only init regvar from pointer, integer or floating point type");
+            }
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            emitter.Emit(Load(ptrType, this, &global));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            if ((regVar.GetType() is RvalueRefType*) && regVar.GetType()->Name() == ptrType->Name())
+            {
+                Ir.Intf.RegVar* value = MakeTemporaryRegVar(type);
+                emitter.Own(value);
+                emitter.Emit(Load(ptrType, value, &regVar));
+                emitter.Emit(Load(ptrType, value, &regVar));
+            }
+            else if (regVar.GetType()->Name() == ptrType->Name())
+            {
+                emitter.Emit(Load(ptrType, this, &regVar));
+            }
+            else if (GetType()->Name() == ptrType->Name())
+            {
+                emitter.Emit(Store(type, &regVar, this));
+            }
+            else
+            {
+                SetName(regVar.Name());
+            }
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            emitter.Emit(Load(ptrType, this, &stackVar));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
         {
-            
+            PointerType* ptrType = MakePointerType(memberVar.GetType());
+            emitter.Own(ptrType);
+            if (type->Name() == ptrType->Name())
+            {
+                Assign(emitter, type, memberVar.CreateAddr(emitter, memberVar.GetType()), this);
+            }
+            else
+            {
+                PointerType* ptrType = MakePointerType(type);
+                emitter.Own(ptrType);
+                Ir.Intf.RegVar* ptr = MakeTemporaryRegVar(ptrType);
+                emitter.Own(ptr);
+                Ir.Intf.Object* zero = MakeI32Constant(0);
+                emitter.Own(zero);
+                Ir.Intf.Object* index = MakeI32Constant(memberVar.Index());
+                emitter.Own(index);
+                emitter.Emit(GetElementPtr(memberVar.Ptr()->GetType(), ptr, memberVar.Ptr(), zero, index));
+                emitter.Emit(Load(ptrType, this, ptr));
+            }
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            if (ptrType->Name() == refVar.GetType()->Name())
+            {
+                emitter.Emit(Load(ptrType, this, &refVar));
+            }
+            else
+            {
+                Ir.Intf.RegVar* refReg = MakeTemporaryRegVar(ptrType);
+                emitter.Own(refReg);
+                emitter.Emit(Load(ptrType, refReg, &refVar));
+                emitter.Emit(Load(type, this, refReg));
+            }
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            emitter.Emit(Load(ptrType, this, &parameter));
         }
         public override void AssignTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
         {
-            
+            to->AssignFrom(emitter, type, *this);
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
         {
-            
+            if (GetType() is PointerType*)
+            {
+                emitter.Emit(Store(type, &constant, this));
+            }
+            else if (type is IntegerType*)
+            {
+                Ir.Intf.Object* defaultValue = type->CreateDefaultValue();
+                emitter.Own(defaultValue);
+                emitter.Emit(Or(type, this, &constant, defaultValue)); 
+            }
+            else if (type is FloatingPointType*)
+            {
+                Ir.Intf.Object* defaultValue = type->CreateDefaultValue();
+                emitter.Own(defaultValue);
+                emitter.Emit(FAdd(type, this, &constant, defaultValue));
+            }
+            else
+            {
+                throw Exception("can only assign regvar from pointer, integer or floating point type");
+            }
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            emitter.Emit(Load(ptrType, this, &global));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            if ((regVar.GetType() is RvalueRefType*) && regVar.GetType()->Name() == ptrType->Name())
+            {
+                Ir.Intf.RegVar* value = MakeTemporaryRegVar(type);
+                emitter.Own(value);
+                emitter.Emit(Load(ptrType, value, &regVar));
+                emitter.Emit(Load(ptrType, value, &regVar));
+            }
+            else if (regVar.GetType()->Name() == ptrType->Name())
+            {
+                emitter.Emit(Load(ptrType, this, &regVar));
+            }
+            else if (GetType()->Name() == ptrType->Name())
+            {
+                emitter.Emit(Store(type, &regVar, this));
+            }
+            else
+            {
+                SetName(regVar.Name());
+            }
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            emitter.Emit(Load(ptrType, this, &stackVar));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
         {
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptr = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptr);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(memberVar.Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(memberVar.Ptr()->GetType(), ptr, memberVar.Ptr(), zero, index));
+            emitter.Emit(Load(ptrType, this, ptr));
             
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* refReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(refReg);
+            emitter.Emit(Load(ptrType, refReg, &refVar));
+            emitter.Emit(Load(type, this, refReg));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            emitter.Emit(Load(ptrType, this, &parameter));
         }
         public override Ir.Intf.Object* CreateAddr(Ir.Intf.Emitter& emitter, Ir.Intf.Type* pointerType)
         {
-            return null;
+            return this;
         }
+    }
+    
+    public inline nothrow Ir.Intf.RegVar* MakeRegVar(const string& name, Ir.Intf.Type* type)
+    {
+        return new RegVar(name, type);
+    }
+    
+    public inline nothrow Ir.Intf.RegVar* MakeTemporaryRegVar(Ir.Intf.Type* type)
+    {
+        return new RegVar("%", type);
     }
 }

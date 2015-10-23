@@ -506,10 +506,13 @@ public:
     void SetBoundTemplateArguments(const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments_);
     const std::vector<Cm::Sym::TypeSymbol*>& BoundTemplateArguments() const { return boundTemplateArguments; }
     void SetType(Cm::Sym::TypeSymbol* type_) override;
+    void SetNs(Cm::Sym::NamespaceSymbol* ns_) { ns = ns_; }
+    Cm::Sym::NamespaceSymbol* Ns() const { return ns; }
 private:
     Cm::Sym::FunctionGroupSymbol* functionGroupSymbol;
     std::vector<Cm::Sym::TypeSymbol*> boundTemplateArguments;
     std::unique_ptr<Cm::Sym::TypeSymbol> ownedTypeSymbol;
+    Cm::Sym::NamespaceSymbol* ns;
 };
 
 class BoundFunctionCall : public BoundExpression

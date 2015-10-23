@@ -18,71 +18,282 @@ namespace Llvm
         }
         public override void InitTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
         {
-            
+            to->InitFrom(emitter, type, *this);
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            emitter.Emit(Store(type, &constant, ptrReg));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            if (global.GetType()->IsFunctionPtrPtrType())
+            {
+                emitter.Emit(Store(type, &global, ptrReg));
+            }
+            else
+            {
+                Ir.Intf.Object* value = MakeTemporaryRegVar(type);
+                emitter.Own(value);
+                emitter.Emit(Load(type, value, &global));
+                emitter.Emit(Store(type, value, ptrReg));
+            }
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            if ((regVar.GetType() is RvalueRefType*) && (regVar.GetType()->Name() == ptrType->Name()))
+            {
+                Ir.Intf.Object* value = MakeTemporaryRegVar(type);
+                emitter.Own(value);
+                emitter.Emit(Load(type, value, &regVar));
+                emitter.Emit(Store(type, value, ptrReg));
+            }
+            else
+            {
+                emitter.Emit(Store(type, &regVar, ptrReg));
+            }
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            Ir.Intf.Object* value = MakeTemporaryRegVar(type);
+            emitter.Own(value);
+            emitter.Emit(Load(type, value, &stackVar));
+            emitter.Emit(Store(type, value, ptrReg));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* memberVarIndex = MakeI32Constant(memberVar.Index());
+            emitter.Own(memberVarIndex);
+            Ir.Intf.RegVar* value = MakeTemporaryRegVar(type);
+            emitter.Own(value);
+            emitter.Emit(Load(ptrType, value, ptrReg));
+            Ir.Intf.RegVar* ptrThis = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrThis);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrThis, Ptr(), zero, index));
+            emitter.Emit(Store(type, value, ptrThis));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            Ir.Intf.RegVar* refReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(refReg);
+            emitter.Emit(Load(ptrType, refReg, &refVar)); 
+            if (GetType()->Name() == refVar.GetType()->Name())
+            {
+                emitter.Emit(Store(type, refReg, ptrReg));
+            }
+            else
+            {
+                Ir.Intf.RegVar* value = MakeTemporaryRegVar(type);
+                emitter.Own(value);
+                emitter.Emit(Load(type, value, refReg));
+                emitter.Emit(Store(type, value, ptrReg));
+            }
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            emitter.Emit(Store(type, &parameter, ptrReg));
         }
         public override void AssignTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
         {
-            
+            to->AssignFrom(emitter, type, *this);
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            emitter.Emit(Store(type, &constant, ptrReg));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            if (global.GetType()->IsFunctionPtrPtrType())
+            {
+                emitter.Emit(Store(type, &global, ptrReg));
+            }
+            else
+            {
+                Ir.Intf.Object* value = MakeTemporaryRegVar(type);
+                emitter.Own(value);
+                emitter.Emit(Load(type, value, &global));
+                emitter.Emit(Store(type, value, ptrReg));
+            }
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            if ((regVar.GetType() is RvalueRefType*) && (regVar.GetType()->Name() == ptrType->Name()))
+            {
+                Ir.Intf.Object* value = MakeTemporaryRegVar(type);
+                emitter.Own(value);
+                emitter.Emit(Load(type, value, &regVar));
+                emitter.Emit(Store(type, value, ptrReg));
+            }
+            else
+            {
+                emitter.Emit(Store(type, &regVar, ptrReg));
+            }
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            Ir.Intf.Object* value = MakeTemporaryRegVar(type);
+            emitter.Own(value);
+            emitter.Emit(Load(type, value, &stackVar));
+            emitter.Emit(Store(type, value, ptrReg));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* memberVarIndex = MakeI32Constant(memberVar.Index());
+            emitter.Own(memberVarIndex);
+            Ir.Intf.RegVar* value = MakeTemporaryRegVar(type);
+            emitter.Own(value);
+            emitter.Emit(Load(ptrType, value, ptrReg));
+            Ir.Intf.RegVar* ptrThis = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrThis);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrThis, Ptr(), zero, index));
+            emitter.Emit(Store(type, value, ptrThis));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            Ir.Intf.RegVar* refReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(refReg);
+            emitter.Emit(Load(ptrType, refReg, &refVar)); 
+            emitter.Emit(Store(type, refReg, ptrReg));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* ptrReg = MakeTemporaryRegVar(ptrType);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), ptrReg, Ptr(), zero, index));
+            emitter.Emit(Store(type, &parameter, ptrReg));
         }
-        public override Ir.Intf.Object* CreateAddr(Ir.Intf.Emitter& emitter, Ir.Intf.Type* pointerType)
+        public override Ir.Intf.Object* CreateAddr(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type)
         {
-            return null;
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            Ir.Intf.RegVar* addr = MakeTemporaryRegVar(ptrType);
+            emitter.Own(addr);
+            Ir.Intf.Object* zero = MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = MakeI32Constant(Index());
+            emitter.Own(index);
+            emitter.Emit(GetElementPtr(Ptr()->GetType(), addr, Ptr(), zero, index));
+            return addr;
         }
     }
 }

@@ -18,71 +18,89 @@ namespace C
         }
         public override void InitTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
         {
-            
+            to->InitFrom(emitter, type, *this);
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
         {
-            
+            ThrowNotImplemented();
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
         {
-            
+            emitter.Emit(Load(type, this, &global, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            if (GetType()->Name() == ptrType->Name())
+            {
+                emitter.Emit(Load(type, this, &regVar, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
+            }
+            else
+            {
+                emitter.Emit(Load(type, this, &regVar, Ir.Intf.Indirection.none, Ir.Intf.Indirection.none));
+            }
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
         {
-            
+            emitter.Emit(Load(type, this, &stackVar, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
         {
-            
+            emitter.Emit(Load(type, this, &memberVar, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
         {
-            
+            emitter.Emit(Load(type, this, &refVar, Ir.Intf.Indirection.none, Ir.Intf.Indirection.none));
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
         {
-            
+            PointerType* ptrType = MakePointerType(type);
+            emitter.Own(ptrType);
+            if (GetType()->Name() == ptrType->Name())
+            {
+                emitter.Emit(Load(type, this, &parameter, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
+            }
+            else
+            {
+                emitter.Emit(Load(type, this, &parameter, Ir.Intf.Indirection.none, Ir.Intf.Indirection.none));
+            }
         }
         public override void AssignTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
         {
-            
+            to->AssignFrom(emitter, type, *this);
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
         {
-            
+            emitter.Emit(Store(type, &constant, this, Ir.Intf.Indirection.none, Ir.Intf.Indirection.deref));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
         {
-            
+            emitter.Emit(Store(type, &global, this, Ir.Intf.Indirection.none, Ir.Intf.Indirection.deref));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
         {
-            
+            emitter.Emit(Store(type, &regVar, this, Ir.Intf.Indirection.none, Ir.Intf.Indirection.deref));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
         {
-            
+            emitter.Emit(Store(type, &stackVar, this, Ir.Intf.Indirection.none, Ir.Intf.Indirection.deref));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
         {
-            
+            emitter.Emit(Store(type, &memberVar, this, Ir.Intf.Indirection.none, Ir.Intf.Indirection.deref));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
         {
-            
+            emitter.Emit(Store(type, &refVar, this, Ir.Intf.Indirection.deref, Ir.Intf.Indirection.deref));
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
         {
-            
+            ThrowNotImplemented();
         }
         public override Ir.Intf.Object* CreateAddr(Ir.Intf.Emitter& emitter, Ir.Intf.Type* pointerType)
         {
-            return null;
+            return this;
         }
     }
 }
