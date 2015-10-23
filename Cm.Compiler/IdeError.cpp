@@ -102,9 +102,10 @@ IdeErrorCollection::IdeErrorCollection(const Cm::Sym::Exception& ex)
 IdeErrorCollection::IdeErrorCollection(const Cm::Core::Exception& ex)
 {
     errors.push_back(IdeError(ex));
-    if (ex.Referenced().Valid())
+    for (const Cm::Parsing::Span& reference : ex.References())
+    if (reference.Valid())
     {
-        errors.push_back(IdeError(ex.Referenced()));
+        errors.push_back(IdeError(reference));
     }
 }
 

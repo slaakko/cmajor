@@ -1056,14 +1056,14 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         if (symbol)
         {
             BindSymbol(&dotNode, symbol);
-            if (symbol->IsFunctionGroupSymbol() && containerSymbol->IsNamespaceSymbol())
+            if (symbol->IsFunctionGroupSymbol() && (containerSymbol->IsNamespaceSymbol() || containerSymbol->IsClassTypeSymbol()))
             {
                 std::unique_ptr<Cm::BoundTree::BoundExpression> expression(boundExpressionStack.Pop());
                 if (expression->IsBoundFunctionGroup())
                 {
                     Cm::BoundTree::BoundFunctionGroup* boundFunctionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(expression.get());
-                    boundFunctionGroup->SetFlag(Cm::BoundTree::BoundNodeFlags::nsQualified);
-                    boundFunctionGroup->SetNs(containerSymbol->Ns());
+                    boundFunctionGroup->SetFlag(Cm::BoundTree::BoundNodeFlags::scopeQualified);
+                    boundFunctionGroup->SetQualifiedScope(containerSymbol->GetContainerScope());
                     boundExpressionStack.Push(expression.release());
                 }
                 else
@@ -1370,14 +1370,14 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         functionGroupSymbol = functionGroup->GetFunctionGroupSymbol();
         functionGroupName = functionGroupSymbol->Name();
         std::unique_ptr<Cm::BoundTree::BoundExpression> firstArg;
-        Cm::Sym::NamespaceSymbol* qualifiedNs = nullptr;
-        bool nsQualified = subject->GetFlag(Cm::BoundTree::BoundNodeFlags::nsQualified);
-        if (nsQualified)
+        Cm::Sym::ContainerScope* qualifiedScope = nullptr;
+        bool scopeQualified = subject->GetFlag(Cm::BoundTree::BoundNodeFlags::scopeQualified);
+        if (scopeQualified)
         {
             Cm::BoundTree::BoundFunctionGroup* boundFunctionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
-            qualifiedNs = boundFunctionGroup->Ns();
+            qualifiedScope = boundFunctionGroup->QualifiedScope();
         }
-        if (!nsQualified && currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol() && !currentFunction->GetFunctionSymbol()->IsStatic())
+        if (!scopeQualified && currentFunction->GetFunctionSymbol()->IsMemberFunctionSymbol() && !currentFunction->GetFunctionSymbol()->IsStatic())
         {
             fun1 = BindInvokeMemFun(node, conversions1, arguments, firstArgByRef1, generateVirtualCall1, functionGroupName, numArgs, bestMatch1, resolutionArguments1, exception1);
             if (fun1)
@@ -1390,7 +1390,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
                 firstArg.reset(arguments.RemoveFirst());
             }
         }
-        fun2 = BindInvokeFun(node, conversions2, arguments, firstArgByRef2, generateVirtualCall2, functionGroupSymbol, functionGroup->BoundTemplateArguments(), bestMatch2, resolutionArguments2, exception2, qualifiedNs);
+        fun2 = BindInvokeFun(node, conversions2, arguments, firstArgByRef2, generateVirtualCall2, functionGroupSymbol, functionGroup->BoundTemplateArguments(), bestMatch2, resolutionArguments2, exception2, qualifiedScope);
         if (fun2)
         {
             type2 = fun2->GetReturnType();
@@ -1401,15 +1401,22 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         }
         if (fun1 && fun2)
         {
-            BetterFunctionMatch betterMatch;
-            if (betterMatch(bestMatch1, bestMatch2))
+            if (fun1 == fun2)
             {
                 fun2 = nullptr;
             }
-            else if (betterMatch(bestMatch2, bestMatch1))
+            else
             {
-                fun1 = nullptr;
-                --numArgs;
+                BetterFunctionMatch betterMatch;
+                if (betterMatch(bestMatch1, bestMatch2))
+                {
+                    fun2 = nullptr;
+                }
+                else if (betterMatch(bestMatch2, bestMatch1))
+                {
+                    fun1 = nullptr;
+                    --numArgs;
+                }
             }
         }
         if (fun1 && !fun2)
@@ -1448,8 +1455,9 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
                 std::string overloadName = MakeOverloadName(functionGroupName, resolutionArguments2);
                 std::string matchedFunctionNames;
                 matchedFunctionNames.append(bestMatch1.function->FullName());
-                matchedFunctionNames.append(" or ").append(bestMatch1.function->FullName());
-                throw Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, node->GetSpan());
+                matchedFunctionNames.append(" or ").append(bestMatch2.function->FullName());
+                throw Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, node->GetSpan(), 
+                    bestMatch1.function->GetSpan(), bestMatch2.function->GetSpan());
             }
         }
         else // !fun1 && !fun2
@@ -1687,7 +1695,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node,
 
 Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
     bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, FunctionMatch& bestMatch, 
-    std::vector<Cm::Core::Argument>& resolutionArguments, std::unique_ptr<Cm::Core::Exception>& exception, Cm::Sym::NamespaceSymbol* qualifiedNs)
+    std::vector<Cm::Core::Argument>& resolutionArguments, std::unique_ptr<Cm::Core::Exception>& exception, Cm::Sym::ContainerScope* qualifiedScope)
 {
     Cm::Sym::FunctionLookupSet functionLookups;
     bool first = true;
@@ -1699,7 +1707,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
     {
         Cm::Sym::TypeSymbol* argumentType = argument->GetType();
         Cm::Sym::TypeSymbol* plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(argumentType);
-        if (!qualifiedNs)
+        if (!qualifiedScope)
         {
             functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainArgumentType->GetContainerScope()->ClassOrNsScope()));
         }
@@ -1749,9 +1757,9 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
             }
         }
     }
-    if (qualifiedNs)
+    if (qualifiedScope)
     {
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, qualifiedNs->GetContainerScope()));
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, qualifiedScope));
     }
     else
     {

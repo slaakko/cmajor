@@ -32,8 +32,9 @@ struct CidLess
 
 void IrClassTypeRepository::SetLayoutIndeces()
 {
-    for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
+    for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
     {
+        Cm::Sym::ClassTypeSymbol* classType = p.second;
         int index = 0;
         if (classType->BaseClass())
         {
@@ -57,8 +58,9 @@ void IrClassTypeRepository::SetLayoutIndeces()
 void IrClassTypeRepository::Write(Cm::Sym::BcuWriter& writer)
 {
     std::vector<Cm::Sym::ClassTypeSymbol*> classTypeVec;
-    for (Cm::Sym::ClassTypeSymbol* classType : classTypes)
+    for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
     {
+        Cm::Sym::ClassTypeSymbol* classType = p.second;
         Cm::Sym::ClassTypeSymbol* baseClass = classType->BaseClass();
         while (baseClass)
         {
@@ -94,20 +96,20 @@ void IrClassTypeRepository::Read(Cm::Sym::BcuReader& reader)
 
 bool IrClassTypeRepository::Added(Cm::Sym::ClassTypeSymbol* classType) const
 {
-    return classTypes.find(classType) != classTypes.cend();
+    return classTypeMap.find(classType->FullName()) != classTypeMap.cend();
 }
 
 void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
-    classTypes.insert(classTypeSymbol);
     classTypeMap[classTypeSymbol->FullName()] = classTypeSymbol;
 }
 
 void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
 {
     WriteDestructionNodeDef(codeFormatter);
-    for (Cm::Sym::ClassTypeSymbol* classType : ClassTypes())
+    for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
     {
+        Cm::Sym::ClassTypeSymbol* classType = p.second;
         if (!classType->IrTypeMade())
         {
             classType->MakeIrType();
@@ -330,8 +332,9 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::
 {
     WriteDestructionNodeDef(codeFormatter);
     std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*> classMap;
-    for (Cm::Sym::ClassTypeSymbol* classType : ClassTypes())
+    for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
     {
+        Cm::Sym::ClassTypeSymbol* classType = p.second;
         if (!classType->IrTypeMade())
         {
             classType->MakeIrType();
@@ -339,8 +342,9 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::
         classMap[classType->FullName()] = classType;
     }
     std::unordered_map<std::string, std::vector<std::string>> dependencyMap;
-    for (Cm::Sym::ClassTypeSymbol* classType : ClassTypes())
+    for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
     {
+        Cm::Sym::ClassTypeSymbol* classType = p.second;
         std::unordered_set<std::string> added;
         std::vector<std::string>& dependencies = dependencyMap[classType->FullName()];
         if (classType->BaseClass())

@@ -14,160 +14,544 @@ namespace Cm.IrIntf
 {
     public class CBackend : BackendIntf
     {
-        public override string GetExCodeVarName();
-        public override Ir.Intf.LabelObject* CreateTempLabel(int tempLabelCounter);
-        public override string CreateTempVarName(int tempVarCounter);
-        public override Ir.Intf.LabelObject* CreateNextLocalLabel();
-        public override Ir.Intf.LabelObject* CreateLabel();
-        public override Ir.Intf.LabelObject* CreateLabel(const string& label);
-        public override Ir.Intf.LabelObject* CreateLandingPadLabel(int index);
-        public override Ir.Intf.RegVar* CreateTemporaryRegVar(Ir.Intf.Type* type);
-        public override Ir.Intf.Type* I1();
-        public override Ir.Intf.Type* I8();
-        public override Ir.Intf.Type* I16();
-        public override Ir.Intf.Type* I32();
-        public override Ir.Intf.Type* I64();
-        public override Ir.Intf.Type* UI8();
-        public override Ir.Intf.Type* UI16();
-        public override Ir.Intf.Type* UI32();
-        public override Ir.Intf.Type* UI64();
-        public override Ir.Intf.Type* Float();
-        public override Ir.Intf.Type* Double();
-        public override Ir.Intf.Type* Void();
-        public override Ir.Intf.Type* Char();
-        public override Ir.Intf.Type* RvalueRef(Ir.Intf.Type* baseType);
-        public override Ir.Intf.Type* Pointer(Ir.Intf.Type* baseType, int numPointers);
-        public override Ir.Intf.Type* Structure(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames);
-        public override Ir.Intf.Type* Array(Ir.Intf.Type* itemType, int size);
-        public override Ir.Intf.Type* CreateFunctionType(Ir.Intf.Type* returnType, const List<Ir.Intf.Type*>& parameterTypes);
-        public override Ir.Intf.Type* CreateTypedef(const string& name, Ir.Intf.Type* type);
-        public override Ir.Intf.Function* CreateFunction(const string& name, Ir.Intf.Type* returnType, const List<Ir.Intf.Parameter*>& parameters);
-        public override Ir.Intf.Function* CreateDoNothingFunction();
-        public override Ir.Intf.Function* CreateDbgDeclareFunction();
-        public override Ir.Intf.Function* CreateMemSetFunction(Ir.Intf.Type* i8Ptr);
-        public override Ir.Intf.Function* CreateMemCopyFunction(Ir.Intf.Type* i8Ptr);
-        public override Ir.Intf.Instruction* MemSet(Ir.Intf.Object* dest, Ir.Intf.Object* value, Ir.Intf.Object* len, int align, bool isVolatile);
-        public override Ir.Intf.Instruction* MemCopy(Ir.Intf.Object* dest, Ir.Intf.Object* source, Ir.Intf.Object* len, int align, bool isVolatile);
-        public override void ResetLocalLabelCounter();
-        public override string MakeAssemblyName(const string& name);
-        public override string MakeClassNameAssemblyName(const string& fullClassName);
-        public override Ir.Intf.Type* CreateClassTypeName(const string& fullClassName);
-        public override bool TypesEqual(Ir.Intf.Type* left, Ir.Intf.Type* right);
-        public override Ir.Intf.Object* True();
-        public override Ir.Intf.Object* False();
-        public override Ir.Intf.Object* CreateConstant(const string& name, Ir.Intf.Type* type);
-        public override Ir.Intf.Object* CreateBooleanConstant(bool value);
-        public override Ir.Intf.Object* CreateCharConstant(char value);
-        public override string GetSeparator();
-        public override string GetPrivateSeparator();
-        public override string GetStringValuePrefix();
-        public override Ir.Intf.Object* CreateStringConstant(const string& value);
-        public override Ir.Intf.Object* Null(Ir.Intf.Type* ptrType);
-        public override Ir.Intf.Object* CreateI8Constant(sbyte value);
-        public override Ir.Intf.Object* CreateUI8Constant(byte value);
-        public override Ir.Intf.Object* CreateI16Constant(short value);
-        public override Ir.Intf.Object* CreateUI16Constant(ushort value);
-        public override Ir.Intf.Object* CreateI32Constant(int value);
-        public override Ir.Intf.Object* CreateUI32Constant(uint value);
-        public override Ir.Intf.Object* CreateI64Constant(long value);
-        public override Ir.Intf.Object* CreateUI64Constant(ulong value);
-        public override Ir.Intf.Object* CreateFloatConstant(float value);
-        public override Ir.Intf.Object* CreateDoubleConstant(double value);
-        public override string MakeStringConstantName(const string& s);
-        public override string MakeStringConstantName(const string& s, bool metadataSyntax);
-        public override string MakeDestructionNodeName(const string& assemblyName);
-        public override string GetDestructionNodeTypeName();
-        public override string GetRegisterDestructorFunctionName();
-        public override Ir.Intf.Type* CreateTypeName(const string& name, bool global);
-        public override Ir.Intf.MemberVar* CreateMemberVar(const string& memberVarName, Ir.Intf.Object* ptr, int index, Ir.Intf.Type* type);
-        public override Ir.Intf.Object* CreateStackVar(const string& assemblyName, Ir.Intf.Type* type);
-        public override Ir.Intf.Object* CreateRefVar(const string& assemblyName, Ir.Intf.Type* type);
-        public override string GetVPtrVarName();
-        public override string GetStackFrameIdentifier();
-        public override int GetDebugTagLexicalBlock();
-        public override int GetDebugTagCompileUnit();
-        public override int GetDebugTagSubprogram();
-        public override int GetDebugTagFileType();
-        public override int GetDebugTagSubroutineType();
-        public override int GetDebugTagBaseType();
-        public override int GetDebugTagClassType();
-        public override int GetDebugTagEnumerationType();
-        public override int GetDebugTagEnumerator();
-        public override int GetDebugTagInheritance();
-        public override int GetDebugTagPointerType();
-        public override int GetDebugTagConstType();
-        public override int GetDebugTagReferenceType();
-        public override int GetDebugTagRvalueRefType();
-        public override int GetDebugTagNamespace();
-        public override int GetDebugTagAutoVariable();
-        public override int GetDebugTagArgVariable();
-        public override int GetDebugTagMember();
-        public override int GetDebugLangCmajor();
-        public override Ir.Intf.Global* CreateGlobal(const string& name, Ir.Intf.Type* type);
-        public override Ir.Intf.Parameter* CreatePointerParameter(const string& name, Ir.Intf.Type* type);
-        public override Ir.Intf.Parameter* CreateParameter(const string& parameterName, Ir.Intf.Type* parameterType);
-        public override string GetClassObjectResultParamName();
-        public override string GetExceptionCodeParamName();
-        public override string GetExceptionBaseIdTableName();
-        public override string GetClassHierarchyTableName();
-        public override int GetDebugAttrEncodingBoolean();
-        public override int GetDebugAttrEncodingUnsigned();
-        public override int GetDebugAttrEncodingSigned();
-        public override int GetDebugAttrEncodingSignedChar();
-        public override int GetDebugAttrEncodingUnsignedChar();
-        public override int GetDebugAttrEncodingFloat();
-        public override Ir.Intf.Instruction* Add(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* Sub(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* Mul(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* UDiv(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* SDiv(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* URem(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* SRem(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* Shl(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* LShr(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* AShr(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* And(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* Or(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* Xor(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* FAdd(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* FSub(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* FMul(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* FDiv(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* FRem(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* Index(Ir.Intf.Object* result, Ir.Intf.Object* array_, Ir.Intf.Object* index);
-        public override Ir.Intf.Instruction* Ret();
-        public override Ir.Intf.Instruction* Ret(Ir.Intf.Object* value);
-        public override Ir.Intf.Instruction* Br(Ir.Intf.LabelObject* dest);
-        public override Ir.Intf.Instruction* Br(Ir.Intf.Object* cond, Ir.Intf.LabelObject* trueLabel, Ir.Intf.LabelObject* falseLabel);
-        public override Ir.Intf.Instruction* Switch(Ir.Intf.Type* integerType, Ir.Intf.Object* value, Ir.Intf.LabelObject* defaultDest, const List<Pair<Ir.Intf.Object*, Ir.Intf.LabelObject*>>& destinations);
-        public override Ir.Intf.Instruction* Alloca(Ir.Intf.Type* type, Ir.Intf.Object* result);
-        public override Ir.Intf.Instruction* Alloca(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Type* numElementsType, int numElements);
-        public override Ir.Intf.Instruction* Load(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* ptr);
-        public override Ir.Intf.Instruction* Load(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Indirection leftIndirection, Ir.Intf.Indirection rightIndirection);
-        public override Ir.Intf.Instruction* Store(Ir.Intf.Type* type, Ir.Intf.Object* value, Ir.Intf.Object* ptr);
-        public override Ir.Intf.Instruction* Store(Ir.Intf.Type* type, Ir.Intf.Object* value, Ir.Intf.Object* ptr, Ir.Intf.Indirection leftIndirection, Ir.Intf.Indirection rightIndirection);
-        public override Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index);
-        public override Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index, Ir.Intf.Object* index1);
-        public override Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index, const List<Ir.Intf.Object*>& indeces);
-        public override Ir.Intf.Instruction* Call(Ir.Intf.Object* result, Ir.Intf.Function* fun, const List<Ir.Intf.Object*>& args);
-        public override Ir.Intf.Instruction* IndirectCall(Ir.Intf.Object* result, Ir.Intf.Object* funPtr, const List<Ir.Intf.Object*>& args);
-        public override Ir.Intf.Instruction* ICmp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.IConditionCode cond, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* FCmp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.FConditionCode cond, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2);
-        public override Ir.Intf.Instruction* DoNothing();
-        public override Ir.Intf.Instruction* Trunc(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Zext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Sext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Fptrunc(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Fpext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Fptoui(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Fptosi(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Uitofp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Sitofp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Ptrtoint(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Inttoptr(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override Ir.Intf.Instruction* Bitcast(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType);
-        public override void Init(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* from, Ir.Intf.Object* to);
-        public override void Assign(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* from, Ir.Intf.Object* to);
-        public override Ir.Intf.Object* SizeOf(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type);
+        public override string GetExCodeVarName()
+        {
+            return "_X_ex";
+        }
+        public override Ir.Intf.LabelObject* CreateTempLabel(int tempLabelCounter)
+        {
+            return C.CreateLabel(ToString(tempLabelCounter));
+        }
+        public override string CreateTempVarName(int tempVarCounter)
+        {
+            return ToString(tempVarCounter);
+        }
+        public override Ir.Intf.LabelObject* CreateNextLocalLabel()
+        {
+            return C.CreateNextLocalLabel();
+        }
+        public override Ir.Intf.LabelObject* CreateLabel()
+        {
+            return C.CreateLabel();
+        }
+        public override Ir.Intf.LabelObject* CreateLabel(const string& label)
+        {
+            return C.CreateLabel(label);
+        }
+        public override Ir.Intf.LabelObject* CreateLandingPadLabel(int index)
+        {
+            return this->CreateLabel("_LP_" + ToString(index));
+        }
+        public override Ir.Intf.RegVar* MakeTemporaryRegVar(Ir.Intf.Type* type)
+        {
+            return C.MakeTemporaryRegVar(type);
+        }
+        public override Ir.Intf.Type* I1()
+        {
+            return C.MakeI1Type();
+        }
+        public override Ir.Intf.Type* I8()
+        {
+            return C.MakeI8Type();
+        }
+        public override Ir.Intf.Type* I16()
+        {
+            return C.MakeI16Type();
+        }
+        public override Ir.Intf.Type* I32()
+        {
+            return C.MakeI32Type();
+        }
+        public override Ir.Intf.Type* I64()
+        {
+            return C.MakeI64Type();
+        }
+        public override Ir.Intf.Type* UI8()
+        {
+            return C.MakeUI8Type();
+        }
+        public override Ir.Intf.Type* UI16()
+        {
+            return C.MakeUI16Type();
+        }
+        public override Ir.Intf.Type* UI32()
+        {
+            return C.MakeUI32Type();
+        }
+        public override Ir.Intf.Type* UI64()
+        {
+            return C.MakeUI64Type();
+        }
+        public override Ir.Intf.Type* Float()
+        {
+            return C.MakeFloatType();
+        }
+        public override Ir.Intf.Type* Double()
+        {
+            return C.MakeDoubleType();
+        }
+        public override Ir.Intf.Type* Void()
+        {
+            return C.MakeVoidType();
+        }
+        public override Ir.Intf.Type* Char()
+        {
+            return C.MakeCharType();
+        }
+        public override Ir.Intf.Type* RvalueRef(Ir.Intf.Type* baseType)
+        {
+            return C.MakeRvalueRefType(baseType);
+        }
+        public override Ir.Intf.Type* Pointer(Ir.Intf.Type* baseType, byte numPointers)
+        {
+            return C.MakePointerType(baseType, numPointers);
+        }
+        public override Ir.Intf.Type* Structure(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames)
+        {
+            return C.MakeStructureType(tagName, elementTypes, elementNames);
+        }
+        public override Ir.Intf.Type* Array(Ir.Intf.Type* itemType, int size)
+        {
+            return C.MakeArrayType(itemType, size);
+        }
+        public override Ir.Intf.Type* MakeFunctionType(Ir.Intf.Type* returnType, const List<Ir.Intf.Type*>& parameterTypes)
+        {
+            return C.MakeFunctionType(returnType, parameterTypes);
+        }
+        public override Ir.Intf.Type* MakeTypedef(const string& name, Ir.Intf.Type* type)
+        {
+            return C.MakeTypedef(name, type);
+        }
+        public override Ir.Intf.Function* CreateFunction(const string& name, Ir.Intf.Type* returnType, const List<Ir.Intf.Parameter*>& parameters)
+        {
+            return new C.Function(name, returnType, parameters);
+        }
+        public override Ir.Intf.Function* CreateDoNothingFunction()
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override Ir.Intf.Function* CreateMemSetFunction(Ir.Intf.Type* i8Ptr)
+        {
+            return C.CreateMemSetFunction(i8Ptr);
+        }
+        public override Ir.Intf.Function* CreateMemCopyFunction(Ir.Intf.Type* i8Ptr)
+        {
+            return C.CreateMemCopyFunction(i8Ptr);
+        }
+        public override Ir.Intf.Instruction* MemSet(Ir.Intf.Object* dest, Ir.Intf.Object* value, Ir.Intf.Object* len, int align, bool isVolatile)
+        {
+            return C.MemSet(dest, value, len, align, isVolatile);
+        }
+        public override Ir.Intf.Instruction* MemCopy(Ir.Intf.Object* dest, Ir.Intf.Object* source, Ir.Intf.Object* len, int align, bool isVolatile)
+        {
+            return C.MemCopy(dest, source, len, align, isVolatile);
+        }
+        public override void ResetLocalLabelCounter()
+        {
+            C.ResetLocalLabelCounter();
+        }
+        public override string MakeAssemblyName(const string& name)
+        {
+            string assemblyName;
+            int n = name.Length();
+            assemblyName.Reserve(2 * n);
+            for (int i = 0; i < n; ++i)
+            {
+                char c = name[i];
+                switch (c)
+                {
+                    case '&': assemblyName.Append("_R"); break;
+                    case '*': assemblyName.Append("_P"); break;
+                    case '<': assemblyName.Append("_B"); break;
+                    case '>': assemblyName.Append("_E"); break;
+                    case ',': assemblyName.Append("_"); break;
+                    case '.': assemblyName.Append("_N_"); break;
+                    case '(': assemblyName.Append("_O_"); break;
+                    case ')': assemblyName.Append("_C_"); break;
+                    case '[': assemblyName.Append("_A"); break;
+                    case ']': assemblyName.Append("_A"); break;
+                    case ' ': break;
+                    default: assemblyName.Append(c); break;
+                }
+            }
+            return assemblyName;
+        }
+        public override string MakeClassNameAssemblyName(const string& fullClassName)
+        {
+            return this->MakeAssemblyName(fullClassName + "_classname");
+        }
+        public override Ir.Intf.Type* CreateClassTypeName(const string& fullClassName)
+        {
+            return C.MakeTypeNameType("class_" + this->MakeAssemblyName(fullClassName));
+        }
+        public override bool TypesEqual(Ir.Intf.Type* left, Ir.Intf.Type* right)
+        {
+            return left->Name() == right->Name();
+        }
+        public override Ir.Intf.Object* True()
+        {
+            return C.True();
+        }
+        public override Ir.Intf.Object* False()
+        {
+            return C.False();
+        }
+        public override Ir.Intf.Object* MakeConstant(const string& name, Ir.Intf.Type* type)
+        {
+            return C.MakeConstant(name, type);
+        }
+        public override Ir.Intf.Object* MakeBooleanConstant(bool value)
+        {
+            return C.MakeBooleanConstant(value);
+        }
+        public override Ir.Intf.Object* MakeCharConstant(char value)
+        {
+            return C.MakeCharConstant(value);
+        }
+        public override string GetSeparator()
+        {
+            return "_N_";
+        }
+        public override string GetPrivateSeparator()
+        {
+            return "_M_";
+        }
+        public override string GetStringValuePrefix()
+        {
+            return "_S_";
+        }
+        public override Ir.Intf.Object* MakeStringConstant(const string& value)
+        {
+            return C.MakeStringConstant(value);
+        }
+        public override Ir.Intf.Object* MakeNull(Ir.Intf.Type* ptrType)
+        {
+            return C.MakeNull(ptrType);
+        }
+        public override Ir.Intf.Object* MakeI8Constant(sbyte value)
+        {
+            return C.MakeI8Constant(value);
+        }
+        public override Ir.Intf.Object* MakeUI8Constant(byte value)
+        {
+            return C.MakeUI8Constant(value);
+        }
+        public override Ir.Intf.Object* MakeI16Constant(short value)
+        {
+            return C.MakeI16Constant(value);
+        }
+        public override Ir.Intf.Object* MakeUI16Constant(ushort value)
+        {
+            return C.MakeUI16Constant(value);
+        }
+        public override Ir.Intf.Object* MakeI32Constant(int value)
+        {
+            return C.MakeI32Constant(value);
+        }
+        public override Ir.Intf.Object* MakeUI32Constant(uint value)
+        {
+            return C.MakeUI32Constant(value);
+        }
+        public override Ir.Intf.Object* MakeI64Constant(long value)
+        {
+            return C.MakeI64Constant(value);
+        }
+        public override Ir.Intf.Object* MakeUI64Constant(ulong value)
+        {
+            return C.MakeUI64Constant(value);
+        }
+        public override Ir.Intf.Object* MakeFloatConstant(float value)
+        {
+            return C.MakeFloatConstant(value);
+        }
+        public override Ir.Intf.Object* MakeDoubleConstant(double value)
+        {
+            return C.MakeDoubleConstant(value);
+        }
+        public override string MakeStringConstantName(const string& s)
+        {
+            return C.MakeStringConstantName(s);
+        }
+        public override string MakeDestructionNodeName(const string& assemblyName)
+        {
+            return assemblyName + "_X_dnode";
+        }
+        public override string GetDestructionNodeTypeName()
+        {
+            return "destruction_X_node";
+        }
+        public override string GetRegisterDestructorFunctionName()
+        {
+            return "register_X_destructor";
+        }
+        public override Ir.Intf.Type* MakeTypeNameType(const string& name, bool global)
+        {
+            return C.MakeTypeNameType(name);
+        }
+        public override Ir.Intf.MemberVar* MakeMemberVar(const string& memberVarName, Ir.Intf.Object* ptr, int index, Ir.Intf.Type* type)
+        {
+            return new C.MemberVar(memberVarName, ptr, index, type);
+        }    
+        public override Ir.Intf.Object* MakeStackVar(const string& assemblyName, Ir.Intf.Type* type)
+        {
+            return new C.StackVar(assemblyName, type);
+        }
+        public override Ir.Intf.Object* MakeRefVar(const string& assemblyName, Ir.Intf.Type* type)
+        {
+            return new C.RefVar(assemblyName, type);
+        }
+        public override string GetVPtrVarName()
+        {
+            return "__vptr";
+        }
+        public override string GetStackFrameIdentifier()
+        {
+            return "_V_F_frame";
+        }
+        public override Ir.Intf.Global* MakeGlobal(const string& name, Ir.Intf.Type* type)
+        {
+            return C.MakeGlobal(name, type);
+        }
+        public override Ir.Intf.Parameter* MakePointerParameter(const string& name, Ir.Intf.Type* type)
+        {
+            return new C.Parameter(name, type);
+        }
+        public override Ir.Intf.Parameter* MakeParameter(const string& parameterName, Ir.Intf.Type* parameterType)
+        {
+            return new C.Parameter(parameterName, parameterType);
+        }
+        public override string GetClassObjectResultParamName()
+        {
+            return C.ClassObjectResultParamName();
+        }
+        public override string GetExceptionCodeParamName()
+        {
+            return C.ExceptionCodeParamName();
+        }
+        public override string GetExceptionBaseIdTableName()
+        {
+            return "_X_exception_X_base_X_id_X_table_X_addr";
+        }
+        public override string GetClassHierarchyTableName()
+        {
+            return "class_X_hierarchy_table_addr";
+        }
+        public override Ir.Intf.Instruction* Add(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.Add(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* Sub(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.Sub(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* Mul(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.Mul(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* UDiv(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.UDiv(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* SDiv(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.SDiv(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* URem(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.URem(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* SRem(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.SRem(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* Shl(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.Shl(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* LShr(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.LShr(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* AShr(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.AShr(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* And(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.And(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* Or(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.Or(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* Xor(Ir.Intf.Type* integerType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.Xor(integerType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* FAdd(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.FAdd(floatingPointType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* FSub(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.FSub(floatingPointType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* FMul(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.FMul(floatingPointType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* FDiv(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.FDiv(floatingPointType, result, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* FRem(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override Ir.Intf.Instruction* Index(Ir.Intf.Object* result, Ir.Intf.Object* array_, Ir.Intf.Object* index)
+        {
+            return C.Index(result, array_, index);
+        }
+        public override Ir.Intf.Instruction* Ret()
+        {
+            return C.Ret();
+        }
+        public override Ir.Intf.Instruction* Ret(Ir.Intf.Object* value)
+        {
+            return C.Ret(value);
+        }
+        public override Ir.Intf.Instruction* Br(Ir.Intf.LabelObject* dest)
+        {
+            return C.Br(dest);
+        }
+        public override Ir.Intf.Instruction* Br(Ir.Intf.Object* cond, Ir.Intf.LabelObject* trueLabel, Ir.Intf.LabelObject* falseLabel)
+        {
+            return C.Br(cond, trueLabel, falseLabel);
+        }
+        public override Ir.Intf.Instruction* Switch(Ir.Intf.Type* integerType, Ir.Intf.Object* value, Ir.Intf.LabelObject* defaultDest, const List<Pair<Ir.Intf.Object*, Ir.Intf.LabelObject*>>& destinations)
+        {
+            return C.Switch(integerType, value, defaultDest, destinations);
+        }
+        public override Ir.Intf.Instruction* Alloca(Ir.Intf.Type* type, Ir.Intf.Object* result)
+        {
+            return C.Alloca(type, result);
+        }
+        public override Ir.Intf.Instruction* Alloca(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Type* numElementsType, int numElements)
+        {
+            return C.Alloca(type, result, numElementsType, numElements);
+        }
+        public override Ir.Intf.Instruction* Load(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* ptr)
+        {
+            return C.Load(type, result, ptr, Ir.Intf.Indirection.none, Ir.Intf.Indirection.none);
+        }
+        public override Ir.Intf.Instruction* Load(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Indirection leftIndirection, Ir.Intf.Indirection rightIndirection)
+        {
+            return C.Load(type, result, ptr, leftIndirection, rightIndirection);
+        }
+        public override Ir.Intf.Instruction* Store(Ir.Intf.Type* type, Ir.Intf.Object* value, Ir.Intf.Object* ptr)
+        {
+            return C.Store(type, value, ptr, Ir.Intf.Indirection.none, Ir.Intf.Indirection.none);
+        }
+        public override Ir.Intf.Instruction* Store(Ir.Intf.Type* type, Ir.Intf.Object* value, Ir.Intf.Object* ptr, Ir.Intf.Indirection leftIndirection, Ir.Intf.Indirection rightIndirection)
+        {
+            return C.Store(type, value, ptr, leftIndirection, rightIndirection);
+        }
+        public override Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index)
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index, Ir.Intf.Object* index1)
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index, const List<Ir.Intf.Object*>& indeces)
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override Ir.Intf.Instruction* Call(Ir.Intf.Object* result, Ir.Intf.Function* fun, const List<Ir.Intf.Object*>& args)
+        {
+            return C.Call(result, fun, args);
+        }
+        public override Ir.Intf.Instruction* IndirectCall(Ir.Intf.Object* result, Ir.Intf.Object* funPtr, const List<Ir.Intf.Object*>& args)
+        {
+            return C.IndirectCall(result, funPtr, args);
+        }
+        public override Ir.Intf.Instruction* ICmp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.IConditionCode cond, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.ICmp(type, result, cond, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* FCmp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.FConditionCode cond, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
+        {
+            return C.FCmp(type, result, cond, operand1, operand2);
+        }
+        public override Ir.Intf.Instruction* DoNothing()
+        {
+            return C.DoNothing();
+        }
+        public override Ir.Intf.Instruction* Trunc(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Trunc(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Zext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Zext(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Sext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Sext(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Fptrunc(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Fptrunc(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Fpext(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Fpext(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Fptoui(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Fptoui(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Fptosi(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Fptosi(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Uitofp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Uitofp(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Sitofp(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Sitofp(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Ptrtoint(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Ptrtoint(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Inttoptr(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Inttoptr(type, result, value, toType);
+        }
+        public override Ir.Intf.Instruction* Bitcast(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+        {
+            return C.Bitcast(type, result, value, toType);
+        }
+        public override void Init(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* from, Ir.Intf.Object* to)
+        {
+            C.Init(emitter, type, from, to);
+        }
+        public override void Assign(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* from, Ir.Intf.Object* to)
+        {
+            C.Assign(emitter, type, from, to);
+        }
+        public override Ir.Intf.Object* SizeOf(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type)
+        {
+            return C.SizeOf(emitter, type);
+        }
    }
 }

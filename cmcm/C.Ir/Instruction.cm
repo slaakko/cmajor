@@ -266,6 +266,11 @@ namespace C
         private Ir.Intf.Object* index;
     }
 
+    public nothrow inline Ir.Intf.Instruction* Index(Ir.Intf.Object* result, Ir.Intf.Object* array, Ir.Intf.Object* index)
+    {
+        return new IndexInst(result, array, index);
+    }
+
     public class RetInst : Ir.Intf.Instruction
     {
         public nothrow RetInst() : base("return"), value(null)
@@ -977,7 +982,7 @@ namespace C
         }
     }
     
-    public nothrow inline Ir.Intf.Instruction* Intoptr(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
+    public nothrow inline Ir.Intf.Instruction* Inttoptr(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* value, Ir.Intf.Type* toType)
     {
         return new InttoptrInst(type, result, value, toType);
     }
@@ -1049,25 +1054,25 @@ namespace C
 
     public class MemCopyInst : Ir.Intf.Instruction
     {
-        public nothrow MemCopyInst(Ir.Intf.Object* dest_, Ir.Intf.Object* value_, Ir.Intf.Object* len_, int align_, bool isVolatile_) 
-            : base("memcopy"), dest(dest_), value(value_), len(len_), align(align_), isVolatile(isVolatile_)
+        public nothrow MemCopyInst(Ir.Intf.Object* dest_, Ir.Intf.Object* source_, Ir.Intf.Object* len_, int align_, bool isVolatile_) 
+            : base("memcopy"), dest(dest_), source(source_), len(len_), align(align_), isVolatile(isVolatile_)
         {
         }
         public nothrow override string ToString() const
         {
             string s("cmemcpy(");
-            s.Append(dest->Name()).Append(", ").Append(value->Name()).Append(", ").Append(len->Name()).Append(", ").Append(ToString(align)).Append(", ").Append(ToString(isVolatile)).Append(')');
+            s.Append(dest->Name()).Append(", ").Append(source->Name()).Append(", ").Append(len->Name()).Append(", ").Append(ToString(align)).Append(", ").Append(ToString(isVolatile)).Append(')');
             return s;
         }
         private Ir.Intf.Object* dest;
-        private Ir.Intf.Object* value;
+        private Ir.Intf.Object* source;
         private Ir.Intf.Object* len;
         private int align;
         private bool isVolatile;
     }
     
-    public nothrow inline Ir.Intf.Instruction* MemCopy(Ir.Intf.Object* dest, Ir.Intf.Object* value, Ir.Intf.Object* len, int align, bool isVolatile)
+    public nothrow inline Ir.Intf.Instruction* MemCopy(Ir.Intf.Object* dest, Ir.Intf.Object* source, Ir.Intf.Object* len, int align, bool isVolatile)
     {
-        return new MemCopyInst(dest, value, len, align, isVolatile);
+        return new MemCopyInst(dest, source, len, align, isVolatile);
     }
 }

@@ -23,13 +23,15 @@ public:
     Exception(const std::string& message_);
     Exception(const std::string& message_, const Span& defined_);
     Exception(const std::string& message_, const Span& defined_, const Span& referenced_);
+    Exception(const std::string& message_, const Span& defined_, const Span& referenced1_, const Span& referenced2_);
+    Exception(const std::string& message_, const Span& defined_, const std::vector<Span>& references);
     const Span& Defined() const { return defined; }
-    const Span& Referenced() const { return referenced; }
+    const std::vector<Span>& References() const { return references; }
     const std::string& Message() const { return message; }
 private:
     std::string message;
     Span defined;
-    Span referenced;
+    std::vector<Span> references;
 };
 
 class ToolErrorExcecption
