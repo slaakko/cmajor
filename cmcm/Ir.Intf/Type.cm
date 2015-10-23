@@ -28,47 +28,11 @@ namespace Ir.Intf
         {
             name = name_;
         }
-        public virtual nothrow bool IsIntegerType() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsFloatingPointType() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsPointerType() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsRvalueRefType() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsVoidType() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsFunctionType() const
-        {
-            return false;
-        }
         public virtual nothrow bool IsFunctionPointerType() const
         {
             return false;
         }
         public virtual nothrow bool IsFunctionPtrPtrType() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsLabelType() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsTypeNameType() const
-        {
-            return false;
-        }
-        public virtual nothrow bool IsArrayType() const
         {
             return false;
         }

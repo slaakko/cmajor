@@ -177,7 +177,7 @@ private:
         std::unique_ptr<Cm::Core::Exception>& exception);
     Cm::Sym::FunctionSymbol* BindInvokeFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
         bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, FunctionMatch& bestMatch,
-        std::vector<Cm::Core::Argument>& resolutionArguments, std::unique_ptr<Cm::Core::Exception>& exception);
+        std::vector<Cm::Core::Argument>& resolutionArguments, std::unique_ptr<Cm::Core::Exception>& exception, Cm::Sym::NamespaceSymbol* qualifiedNs);
     Cm::Sym::FunctionSymbol* BindInvokeOpApply(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
         Cm::Sym::TypeSymbol* plainSubjectType, Cm::BoundTree::BoundExpression* subject);
     void BindInvokeDelegate(Cm::Ast::Node* node, Cm::Sym::DelegateTypeSymbol* delegateType, Cm::BoundTree::BoundExpression* subject, Cm::BoundTree::BoundExpressionList& arguments);

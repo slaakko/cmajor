@@ -1,0 +1,91 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace C
+{
+    public class Factory : Ir.Intf.Factory
+    {
+        public nothrow Factory() : labelType(MakeLabelType()), i1Type(MakeI1Type()), i8Type(MakeI8Type()), i16Type(MakeI16Type()), i32Type(MakeI32Type()), i64Type(MakeI64Type()), 
+            floatType(MakeFloatType()), doubleType(MakeDoubleType()), voidType(MakeVoidType())
+        {
+            labelType->SetOwned();
+            i1Type->SetOwned();
+            i8Type->SetOwned();
+            i16Type->SetOwned();
+            i32Type->SetOwned();
+            i64Type->SetOwned();
+            floatType->SetOwned();
+            doubleType->SetOwned();
+            voidType->SetOwned();
+        }
+        public nothrow override Ir.Intf.Type* GetLabelType() const
+        {
+            return labelType.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetI1() const
+        {
+            return i1Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetI8() const
+        {
+            return i8Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetUI8() const
+        {
+            return i8Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetI16() const
+        {
+            return i16Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetUI16() const
+        {
+            return i16Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetI32() const
+        {
+            return i32Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetUI32() const
+        {
+            return i32Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetI64() const
+        {
+            return i64Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetUI64() const
+        {
+            return i64Type.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetFloat() const
+        {
+            return floatType.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetDouble() const
+        {
+            return doubleType.GetPtr();
+        }
+        public nothrow override Ir.Intf.Type* GetVoid() const
+        {
+            return voidType.GetPtr();
+        }
+        private UniquePtr<Ir.Intf.Type> labelType;
+        private UniquePtr<Ir.Intf.Type> i1Type;
+        private UniquePtr<Ir.Intf.Type> i8Type;
+        private UniquePtr<Ir.Intf.Type> i16Type;
+        private UniquePtr<Ir.Intf.Type> i32Type;
+        private UniquePtr<Ir.Intf.Type> i64Type;
+        private UniquePtr<Ir.Intf.Type> floatType;
+        private UniquePtr<Ir.Intf.Type> doubleType;
+        private UniquePtr<Ir.Intf.Type> voidType;
+    }
+}

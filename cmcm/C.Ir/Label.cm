@@ -30,67 +30,100 @@ namespace C
         }
         public override void InitTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
         {
-            
+            ThrowNotImplemented();
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
         {
-            
+            ThrowNotImplemented();
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
         {
-            
+            ThrowNotImplemented();
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
         {
-            
+            ThrowNotImplemented();
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
         {
-            
+            ThrowNotImplemented();
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
         {
-            
+            ThrowNotImplemented();
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
         {
-            
+            ThrowNotImplemented();
         }
         public override void InitFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
         {
-            
+            ThrowNotImplemented();
         }
         public override void AssignTo(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Object* to)
         {
-            
+            ThrowNotImplemented();
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Constant& constant)
         {
-            
+            ThrowNotImplemented();
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Global& global)
         {
-            
+            ThrowNotImplemented();
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RegVar& regVar)
         {
-            
+            ThrowNotImplemented();
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.StackVar& stackVar)
         {
-            
+            ThrowNotImplemented();
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.MemberVar& memberVar)
         {
-            
+            ThrowNotImplemented();
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.RefVar& refVar)
         {
-            
+            ThrowNotImplemented();
         }
         public override void AssignFrom(Ir.Intf.Emitter& emitter, Ir.Intf.Type* type, Ir.Intf.Parameter& parameter)
         {
-            
+            ThrowNotImplemented();
         }
+    }
+    
+    public nothrow Ir.Intf.LabelObject* CreateLabel()
+    {
+        return new LabelObject();
+    }
+
+    public nothrow Ir.Intf.LabelObject* CreateLabel(const string& label)
+    {
+        return new LabelObject(label);
+    }
+    
+    internal class LocalLabelCounter
+    {
+        public static nothrow int Next()
+        {
+            return counter++;
+        }
+        public static nothrow void Reset()
+        {
+            counter = 0;
+        }
+        private static int counter;
+    }
+    
+    public nothrow Ir.Intf.LabelObject* CreateNextLocalLabel()
+    {
+        return CreateLabel(ToString(LocalLabelCounter.Next()));
+    }
+    
+    public nothrow void ResetLocalLabelCounter()
+    {
+        LocalLabelCounter.Reset();
     }
 }

@@ -1,0 +1,8 @@
+project Cm.IrIntf;
+target=library;
+assembly <Cm.IrIntf.cma>;
+reference <../Llvm.Ir/Llvm.Ir.cml>;
+reference <../C.Ir/C.Ir.cml>;
+source <Backend.cm>;
+source <CBackend.cm>;
+source <LlvmBackend.cm>;

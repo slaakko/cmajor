@@ -10,7 +10,7 @@
 using System;
 using System.Collections;
 
-namespace Llvm
+namespace C
 {
     public class BinOpInstruction : Ir.Intf.Instruction
     {
@@ -28,8 +28,8 @@ namespace Llvm
         }
         public nothrow override string ToString() const
         {
-            string s(result->Name());
-            s.Append(" = ").Append(Name()).Append(' ').Append(type->Name()).Append(' ').Append(operand1->Name()).Append(", ").Append(operand2->Name());
+            string s = result->Name();
+            s.Append(" = ").Append(operand1->Name()).Append(' ').Append(Name()).Append(' ').Append(operand2->Name());
             return s;
         }
         private Ir.Intf.Type* type;
@@ -40,7 +40,7 @@ namespace Llvm
     
     public class AddInst : BinOpInstruction
     {
-        public nothrow AddInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "add", result_, operand1_, operand2_)
+        public nothrow AddInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "+", result_, operand1_, operand2_)
         {
         }
     }
@@ -49,10 +49,10 @@ namespace Llvm
     {
         return new AddInst(integerType, result, operand1, operand2);
     }
-    
+
     public class SubInst : BinOpInstruction
     {
-        public nothrow SubInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "sub", result_, operand1_, operand2_)
+        public nothrow SubInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "-", result_, operand1_, operand2_)
         {
         }
     }
@@ -61,10 +61,10 @@ namespace Llvm
     {
         return new SubInst(integerType, result, operand1, operand2);
     }
-    
+
     public class MulInst : BinOpInstruction
     {
-        public nothrow MulInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "mul", result_, operand1_, operand2_)
+        public nothrow MulInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "*", result_, operand1_, operand2_)
         {
         }
     }
@@ -76,7 +76,7 @@ namespace Llvm
 
     public class UDivInst : BinOpInstruction
     {
-        public nothrow UDivInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "udiv", result_, operand1_, operand2_)
+        public nothrow UDivInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "/", result_, operand1_, operand2_)
         {
         }
     }
@@ -88,7 +88,7 @@ namespace Llvm
 
     public class SDivInst : BinOpInstruction
     {
-        public nothrow SDivInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "sdiv", result_, operand1_, operand2_)
+        public nothrow SDivInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "/", result_, operand1_, operand2_)
         {
         }
     }
@@ -97,10 +97,10 @@ namespace Llvm
     {
         return new SDivInst(integerType, result, operand1, operand2);
     }
-    
+   
     public class URemInst : BinOpInstruction
     {
-        public nothrow URemInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "urem", result_, operand1_, operand2_)
+        public nothrow URemInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "%", result_, operand1_, operand2_)
         {
         }
     }
@@ -112,7 +112,7 @@ namespace Llvm
 
     public class SRemInst : BinOpInstruction
     {
-        public nothrow SRemInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "srem", result_, operand1_, operand2_)
+        public nothrow SRemInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "%", result_, operand1_, operand2_)
         {
         }
     }
@@ -121,10 +121,10 @@ namespace Llvm
     {
         return new SRemInst(integerType, result, operand1, operand2);
     }
-    
+
     public class ShlInst : BinOpInstruction
     {
-        public nothrow ShlInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "shl", result_, operand1_, operand2_)
+        public nothrow ShlInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "<<", result_, operand1_, operand2_)
         {
         }
     }
@@ -136,7 +136,7 @@ namespace Llvm
     
     public class LShrInst : BinOpInstruction
     {
-        public nothrow LShrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "lshr", result_, operand1_, operand2_)
+        public nothrow LShrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, ">>", result_, operand1_, operand2_)
         {
         }
     }
@@ -148,7 +148,7 @@ namespace Llvm
 
     public class AShrInst : BinOpInstruction
     {
-        public nothrow AShrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "ashr", result_, operand1_, operand2_)
+        public nothrow AShrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, ">>", result_, operand1_, operand2_)
         {
         }
     }
@@ -160,7 +160,7 @@ namespace Llvm
     
     public class AndInst : BinOpInstruction
     {
-        public nothrow AndInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "and", result_, operand1_, operand2_)
+        public nothrow AndInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "&", result_, operand1_, operand2_)
         {
         }
     }
@@ -172,7 +172,7 @@ namespace Llvm
     
     public class OrInst : BinOpInstruction
     {
-        public nothrow OrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "or", result_, operand1_, operand2_)
+        public nothrow OrInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "|", result_, operand1_, operand2_)
         {
         }
     }
@@ -184,7 +184,7 @@ namespace Llvm
 
     public class XorInst : BinOpInstruction
     {
-        public nothrow XorInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "xor", result_, operand1_, operand2_)
+        public nothrow XorInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(integerType_, "^", result_, operand1_, operand2_)
         {
         }
     }
@@ -196,7 +196,7 @@ namespace Llvm
     
     public class FAddInst : BinOpInstruction
     {
-        public nothrow FAddInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "fadd", result_, operand1_, operand2_)
+        public nothrow FAddInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "+", result_, operand1_, operand2_)
         {
         }
     }
@@ -208,7 +208,7 @@ namespace Llvm
 
     public class FSubInst : BinOpInstruction
     {
-        public nothrow FSubInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "fsub", result_, operand1_, operand2_)
+        public nothrow FSubInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "-", result_, operand1_, operand2_)
         {
         }
     }
@@ -220,7 +220,7 @@ namespace Llvm
 
     public class FMulInst : BinOpInstruction
     {
-        public nothrow FMulInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "fmul", result_, operand1_, operand2_)
+        public nothrow FMulInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "*", result_, operand1_, operand2_)
         {
         }
     }
@@ -232,7 +232,7 @@ namespace Llvm
 
     public class FDivInst : BinOpInstruction
     {
-        public nothrow FDivInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "fdiv", result_, operand1_, operand2_)
+        public nothrow FDivInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "/", result_, operand1_, operand2_)
         {
         }
     }
@@ -241,25 +241,37 @@ namespace Llvm
     {
         return new FDivInst(floatingPointType, result, operand1, operand2);
     }
-
-    public class FRemInst : BinOpInstruction
+    
+    public class IndexInst : Ir.Intf.Instruction
     {
-        public nothrow FRemInst(Ir.Intf.Type* floatingPointType_, Ir.Intf.Object* result_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : base(floatingPointType_, "frem", result_, operand1_, operand2_)
+        public nothrow IndexInst(Ir.Intf.Object* result_, Ir.Intf.Object* array_, Ir.Intf.Object* index_) : base("[]"), result(result_), array(array_), index(index_)
         {
         }
+        public nothrow override bool ReturnsResult() const
+        {
+            return true;
+        }
+        public nothrow override Ir.Intf.Object* GetResult() const
+        {
+            return result;
+        }
+        public nothrow override string ToString() const
+        {
+            string s = result->Name();
+            s.Append(" = &").Append(array->Name()).Append('[').Append(index->Name()).Append(']');
+            return s;
+        }
+        private Ir.Intf.Object* result;
+        private Ir.Intf.Object* array;
+        private Ir.Intf.Object* index;
     }
-    
-    public nothrow inline Ir.Intf.Instruction* FRem(Ir.Intf.Type* floatingPointType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2)
-    {
-        return new FRemInst(floatingPointType, result, operand1, operand2);
-    }
-    
+
     public class RetInst : Ir.Intf.Instruction
     {
-        public nothrow RetInst() : base("ret"), value(null)
+        public nothrow RetInst() : base("return"), value(null)
         {
         }
-        public nothrow RetInst(Ir.Intf.Object* value_) : base("ret"), value(value_)
+        public nothrow RetInst(Ir.Intf.Object* value_) : base("return"), value(value_)
         {
         }
         public nothrow override bool IsTerminator() const
@@ -275,11 +287,7 @@ namespace Llvm
             string ret(Name());
             if (value != null)
             {
-                ret.Append(' ').Append(value->GetType()->Name()).Append(' ').Append(value->Name());
-            }
-            else
-            {
-                ret.Append(' ').Append(Ir.Intf.Factory.Instance()->GetVoid()->Name());
+                ret.Append(' ').Append(value->Name());
             }
             return ret;
         }
@@ -298,24 +306,23 @@ namespace Llvm
     
     public class BrInst : Ir.Intf.Instruction
     {
-        public nothrow BrInst(Ir.Intf.LabelObject* dest_) : base("br"), dest(dest_), cond(null), trueLabel(null), falseLabel(null)
+        public nothrow BrInst(Ir.Intf.LabelObject* dest_) : base("goto"), dest(dest_), cond(null), trueLabel(null), falseLabel(null)
         {
         }
-        public nothrow BrInst(Ir.Intf.Object* cond_, Ir.Intf.LabelObject* trueLabel_, Ir.Intf.LabelObject* falseLabel_) : base("br"), dest(null), cond(cond_), trueLabel(trueLabel_), falseLabel(falseLabel_)
+        public nothrow BrInst(Ir.Intf.Object* cond_, Ir.Intf.LabelObject* trueLabel_, Ir.Intf.LabelObject* falseLabel_) : base("goto"), dest(null), cond(cond_), trueLabel(trueLabel_), falseLabel(falseLabel_)
         {
         }
         public nothrow override string ToString() const
         {
-            string br(Name());
+            string br;
             Ir.Intf.Type* labelType = Ir.Intf.Factory.Instance()->GetLabelType();
             if (cond != null)
             {
-                br.Append(' ').Append(Ir.Intf.Factory.Instance()->GetI1()->Name()).Append(' ').Append(cond->Name()).Append(", ").Append(labelType->Name()).Append(' ').Append(trueLabel->Name()).Append(", ").
-                    Append(labelType->Name()).Append(' ').Append(falseLabel->Name());
+                br.Append("if (").Append(cond->Name()).Append(") goto ").Append(trueLabel->Name()).Append("; else goto ").Append(falseLabel->Name());
             }
             else
             {
-                br.Append(' ').Append(labelType->Name()).Append(' ').Append(dest->Name());
+                br.Append("goto ").Append(dest->Name());
             }
             return br;
         }
@@ -364,7 +371,7 @@ namespace Llvm
     {
         return new BrInst(cond, trueLabel, falseLabel);
     }
-    
+
     public class SwitchInst : Ir.Intf.Instruction
     {
         public nothrow SwitchInst(Ir.Intf.Type* integerType_, Ir.Intf.Object* value_, Ir.Intf.LabelObject* defaultDest_, const List<Pair<Ir.Intf.Object*, Ir.Intf.LabelObject*>>& destinations_) : 
@@ -386,13 +393,12 @@ namespace Llvm
         public nothrow override string ToString() const
         {
             string s(Name());
-            Ir.Intf.Type* labelType = Ir.Intf.Factory.Instance()->GetLabelType();
-            s.Append(' ').Append(integerType->Name()).Append(' ').Append(value->Name()).Append(", ").Append(labelType->Name()).Append(' ').Append(defaultDest->Name()).Append(" [");
+            s.Append('(').Append(value->Name()).Append(") { ");
             for (const Pair<Ir.Intf.Object*, Ir.Intf.LabelObject*>& dest : destinations)
             {
-                s.Append(' ').Append(integerType->Name()).Append(' ').Append(dest.first->Name()).Append(", ").Append(labelType->Name()).Append(' ').Append(dest.second->Name());
+                s.Append("case ").Append(dest.first->Name()).Append(": goto ").Append(dest.second->Name()).Append("; break;");
             }
-            s.Append(" ]");
+            s.Append("default: goto ").Append(defaultDest->Name()).Append("; break; }");
             return s;
         }
         private Ir.Intf.Type* integerType;
@@ -405,7 +411,7 @@ namespace Llvm
     {
         return new SwitchInst(integerType, value, defaultDest, destinations);
     }
-    
+
     public class AllocaInst : Ir.Intf.Instruction
     {
         public nothrow AllocaInst(Ir.Intf.Type* type_, Ir.Intf.Object* result_) : 
@@ -422,16 +428,18 @@ namespace Llvm
         }
         public nothrow override string ToString() const
         {
-            string s = result->Name();
-            s.Append(" = ").Append(Name()).Append(' ').Append(type->Name());
-            if (numElements > 0)
+            string s;
+            if (type->IsFunctionPointerType() || type->IsFunctionPtrPtrType())
             {
-                #assert(numElementsType != null);
-                s.Append(", ").Append(numElementsType->Name()).Append(' ').Append(ToString(numElements));
+                s.Append(type->Prefix()).Append(result->Name()).Append(type->Suffix());
             }
-            if (alignment > 0)
+            else
             {
-                s.Append(", align ").Append(ToString(alignment));
+                s.Append(type->Name()).Append(' ').Append(result->Name());
+                if (numElements > 0)
+                {
+                    s.Append('[').Append(ToString(numElements)).Append(']');
+                }
             }
             return s;
         }
@@ -454,7 +462,8 @@ namespace Llvm
     
     public class LoadInst : Ir.Intf.Instruction
     {
-        public nothrow LoadInst(Ir.Intf.Type* type_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_) : base("load"), type(type_), result(result_), ptr(ptr_), alignment(0)
+        public nothrow LoadInst(Ir.Intf.Type* type_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_, Ir.Intf.Indirection leftIndirection_, Ir.Intf.Indirection rightIndirection_) :
+            base("load"), type(type_), result(result_), ptr(ptr_), alignment(0)
         {
         }
         public nothrow override void SetAlignment(int alignment_)
@@ -471,28 +480,44 @@ namespace Llvm
         }
         public nothrow override string ToString() const
         {
-            string s(result->Name());
-            s.Append(" = ").Append(Name()).Append(", ").Append(type->Name()).Append(' ').Append(ptr->Name());
-            if (alignment > 0)
+            string s;
+            if (leftIndirection == Ir.Intf.Indirection.deref)
             {
-                s.Append(", align ").Append(ToString(alignment));
+                s.Append('*');
             }
+            else if (leftIndirection == Ir.Intf.Indirection.addr)
+            {
+                s.Append('&');
+            }
+            s.Append(result->Name()).Append(" = ");
+            if (rightIndirection == Ir.Intf.Indirection.deref)
+            {
+                s.Append('*');
+            }
+            else if (rightIndirection == Ir.Intf.Indirection.addr)
+            {
+                s.Append('&');
+            }
+            s.Append(ptr->Name());
             return s;
         }
         private Ir.Intf.Type* type;
         private Ir.Intf.Object* result;
         private Ir.Intf.Object* ptr;
         private int alignment;
+        private Ir.Intf.Indirection leftIndirection;
+        private Ir.Intf.Indirection rightIndirection;
     }
     
-    public nothrow inline Ir.Intf.Instruction* Load(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* ptr)
+    public nothrow inline Ir.Intf.Instruction* Load(Ir.Intf.Type* type, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Indirection leftIndirection, Ir.Intf.Indirection rightIndirection)
     {
-        return new LoadInst(type, result, ptr);
+        return new LoadInst(type, result, ptr, leftIndirection, rightIndirection);
     }
-    
+
     public class StoreInst : Ir.Intf.Instruction
     {
-        public nothrow StoreInst(Ir.Intf.Type* type_, Ir.Intf.Object* value_, Ir.Intf.Object* ptr_) : base("store"), type(type_), value(value_), ptr(ptr_), alignment(0)
+        public nothrow StoreInst(Ir.Intf.Type* type_, Ir.Intf.Object* value_, Ir.Intf.Object* ptr_, Ir.Intf.Indirection leftIndirection_, Ir.Intf.Indirection rightIndirection_) :
+            base("store"), type(type_), value(value_), ptr(ptr_), alignment(0)
         {
         }
         public nothrow override void SetAlignment(int alignment_)
@@ -501,38 +526,43 @@ namespace Llvm
         }
         public nothrow override string ToString() const
         {
-            string s(Name());
-            s.Append(' ').Append(type->Name()).Append(' ').Append(value->Name()).Append(", ").Append(ptr->GetType()->Name()).Append(' ').Append(ptr->Name());
-            if (alignment > 0)
+            string s;
+            if (rightIndirection == Ir.Intf.Indirection.deref)
             {
-                s.Append(", align ").Append(ToString(alignment));
+                s.Append('*');
             }
+            else if (rightIndirection == Ir.Intf.Indirection.addr)
+            {
+                s.Append('&');
+            }
+            s.Append(ptr->Name()).Append(" = ");
+            if (leftIndirection == Ir.Intf.Indirection.deref)
+            {
+                s.Append('*');
+            }
+            else if (leftIndirection == Ir.Intf.Indirection.addr)
+            {
+                s.Append('&');
+            }
+            s.Append(value->Name());
             return s;
         }
         private Ir.Intf.Type* type;
         private Ir.Intf.Object* value;
         private Ir.Intf.Object* ptr;
         private int alignment;
+        private Ir.Intf.Indirection leftIndirection;
+        private Ir.Intf.Indirection rightIndirection;
     }
     
-    public nothrow inline Ir.Intf.Instruction* Store(Ir.Intf.Type* type, Ir.Intf.Object* value, Ir.Intf.Object* ptr)
+    public nothrow inline Ir.Intf.Instruction* Store(Ir.Intf.Type* type, Ir.Intf.Object* value, Ir.Intf.Object* ptr, Ir.Intf.Indirection leftIndirection, Ir.Intf.Indirection rightIndirection)
     {
-        return new StoreInst(type, value, ptr);
+        return new StoreInst(type, value, ptr, leftIndirection, rightIndirection);
     }
     
-    public class GetElementPtrInst : Ir.Intf.Instruction
+    public class SetInst : Ir.Intf.Instruction
     {
-        public nothrow GetElementPtrInst(Ir.Intf.Type* ptrType_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_, Ir.Intf.Object* index_) :
-            base("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
-        {
-        }
-        public GetElementPtrInst(Ir.Intf.Type* ptrType_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_, Ir.Intf.Object* index_, Ir.Intf.Object* index1_) : 
-            base("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
-        {
-            indeces.Add(index1_);
-        }
-        public nothrow GetElementPtrInst(Ir.Intf.Type* ptrType_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_, Ir.Intf.Object* index_, const List<Ir.Intf.Object*>& indeces_) : 
-            base("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(indeces_), inbounds(false)
+        public nothrow SetInst(Ir.Intf.Object* from_, Ir.Intf.Object* to_) : base("set"), from(from_), to(to_)
         {
         }
         public nothrow override bool ReturnsResult() const
@@ -541,48 +571,21 @@ namespace Llvm
         }
         public nothrow override Ir.Intf.Object* GetResult() const
         {
-            return result;
-        }
-        public nothrow override void SetInbounds() 
-        {
-            inbounds = true;
+            return to;
         }
         public nothrow override string ToString() const
         {
-            string s(result->Name());
-            s.Append(" = ").Append(Name()).Append(' ');
-            if (inbounds)
-            {
-                s.Append("inbounds ");
-            }
-            s.Append(ptrType->Name()).Append(' ').Append(ptr->Name()).Append(", ").Append(index->GetType()->Name()).Append(' ').Append(index->Name());
-            for (Ir.Intf.Object* idx : indeces)
-            {
-                s.Append(", ").Append(idx->GetType()->Name()).Append(' ').Append(idx->Name());
-            }
+            string s = to->Name();
+            s.Append(" = ").Append(from->Name());
             return s;
         }
-        private Ir.Intf.Type* ptrType;
-        private Ir.Intf.Object* result;
-        private Ir.Intf.Object* ptr;
-        private Ir.Intf.Object* index;
-        private List<Ir.Intf.Object*> indeces;
-        private bool inbounds;
+        private Ir.Intf.Object* from;
+        private Ir.Intf.Object* to;
     }
     
-    public nothrow inline Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index)
+    public nothrow inline Ir.Intf.Instruction* Set(Ir.Intf.Object* from, Ir.Intf.Object* to)
     {
-        return new GetElementPtrInst(ptrType, result, ptr, index);
-    }
-    
-    public inline Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index, Ir.Intf.Object* index1)
-    {
-        return new GetElementPtrInst(ptrType, result, ptr, index, index1);
-    }
-    
-    public nothrow inline Ir.Intf.Instruction* GetElementPtr(Ir.Intf.Type* ptrType, Ir.Intf.Object* result, Ir.Intf.Object* ptr, Ir.Intf.Object* index, const List<Ir.Intf.Object*>& indeces)
-    {
-        return new GetElementPtrInst(ptrType, result, ptr, index, indeces);
+        return new SetInst(from, to);
     }
     
     public class CallInst : Ir.Intf.Instruction
@@ -606,7 +609,7 @@ namespace Llvm
             {
                 s.Append(result->Name()).Append(" = ");
             }
-            s.Append(Name()).Append(' ').Append(fun->ReturnType()->Name()).Append(" @").Append(fun->Name()).Append('(');
+            s.Append(fun->Name()).Append('(');
             bool first = true;
             for (Ir.Intf.Object* arg : args)
             {
@@ -618,7 +621,11 @@ namespace Llvm
                 {
                     s.Append(", ");
                 }
-                s.Append(arg->GetType()->Name()).Append(' ').Append(arg->Name());
+                if ((arg is StackVar*) || (arg is Global*))
+                {
+                    s.Append('&');
+                }
+                s.Append(arg->Name());
             }
             s.Append(')');
             return s;
@@ -648,14 +655,12 @@ namespace Llvm
         }
         public nothrow override string ToString() const
         {
-            string returnTypeName = "void";
             string s;
             if (result != null && !(result->GetType() is VoidType*))
             {
                 s.Append(result->Name()).Append(" = ");
-                returnTypeName = result->GetType()->Name();
             }
-            s.Append(Name()).Append(' ').Append(returnTypeName).Append(' ').Append(funPtr->Name()).Append('(');
+            s.Append(funPtr->Name()).Append('(');
             bool first = true;
             for (Ir.Intf.Object* arg : args)
             {
@@ -667,7 +672,11 @@ namespace Llvm
                 {
                     s.Append(", ");
                 }
-                s.Append(arg->GetType()->Name()).Append(' ').Append(arg->Name());
+                if ((arg is StackVar*) || (arg is Global*))
+                {
+                    s.Append('&');
+                }
+                s.Append(arg->Name());
             }
             s.Append(')');
             return s;
@@ -686,20 +695,20 @@ namespace Llvm
     {
         switch (cond)
         {
-            case Ir.Intf.IConditionCode.eq: return "eq";
-            case Ir.Intf.IConditionCode.ne: return "ne";
-            case Ir.Intf.IConditionCode.ugt: return "ugt";
-            case Ir.Intf.IConditionCode.uge: return "uge";
-            case Ir.Intf.IConditionCode.ult: return "ult";
-            case Ir.Intf.IConditionCode.ule: return "ule";
-            case Ir.Intf.IConditionCode.sgt: return "sgt";
-            case Ir.Intf.IConditionCode.sge: return "sge";
-            case Ir.Intf.IConditionCode.slt: return "slt";
-            case Ir.Intf.IConditionCode.sle: return "sle";
+            case Ir.Intf.IConditionCode.eq: return "==";
+            case Ir.Intf.IConditionCode.ne: return "!=";
+            case Ir.Intf.IConditionCode.ugt: return ">";
+            case Ir.Intf.IConditionCode.uge: return ">=";
+            case Ir.Intf.IConditionCode.ult: return "<";
+            case Ir.Intf.IConditionCode.ule: return "<=";
+            case Ir.Intf.IConditionCode.sgt: return ">";
+            case Ir.Intf.IConditionCode.sge: return ">=";
+            case Ir.Intf.IConditionCode.slt: return "<";
+            case Ir.Intf.IConditionCode.sle: return "<=";
         }
         return "";
     }
-    
+
     public class ICmpInst : Ir.Intf.Instruction
     {
         public nothrow ICmpInst(Ir.Intf.Type* type_, Ir.Intf.Object* result_, Ir.Intf.IConditionCode cond_, Ir.Intf.Object* operand1_, Ir.Intf.Object* operand2_) : 
@@ -717,7 +726,7 @@ namespace Llvm
         public nothrow override string ToString() const
         {
             string s(result->Name());
-            s.Append(" = ").Append(Name()).Append(' ').Append(ConditionCodeStr(cond)).Append(' ').Append(type->Name()).Append(' ').Append(operand1->Name()).Append(", ").Append(operand2->Name());
+            s.Append(" = ").Append(operand1->Name()).Append(' ').Append(ConditionCodeStr(cond)).Append(' ').Append(operand2->Name());
             return s;
         }
         private Ir.Intf.Type* type;
@@ -731,26 +740,26 @@ namespace Llvm
     {
         return new ICmpInst(type, result, cond, operand1, operand2);
     }
-    
+
     public nothrow const char* ConditionCodeStr(Ir.Intf.FConditionCode cond)
     {
         switch (cond)
         {
             case Ir.Intf.FConditionCode.false_: return "false";
-            case Ir.Intf.FConditionCode.oeq: return "oeq";
-            case Ir.Intf.FConditionCode.ogt: return "ogt";
-            case Ir.Intf.FConditionCode.oge: return "oge";
-            case Ir.Intf.FConditionCode.olt: return "olt";
-            case Ir.Intf.FConditionCode.ole: return "ole";
-            case Ir.Intf.FConditionCode.one: return "one";
-            case Ir.Intf.FConditionCode.ord: return "ord";
-            case Ir.Intf.FConditionCode.ueq: return "ueq";
-            case Ir.Intf.FConditionCode.ugt: return "ugt";
-            case Ir.Intf.FConditionCode.uge: return "uge";
-            case Ir.Intf.FConditionCode.ult: return "ult";
-            case Ir.Intf.FConditionCode.ule: return "ule";
-            case Ir.Intf.FConditionCode.une: return "une";
-            case Ir.Intf.FConditionCode.uno: return "uno";
+            case Ir.Intf.FConditionCode.oeq: return "==";
+            case Ir.Intf.FConditionCode.ogt: return ">";
+            case Ir.Intf.FConditionCode.oge: return ">=";
+            case Ir.Intf.FConditionCode.olt: return "<";
+            case Ir.Intf.FConditionCode.ole: return "<=";
+            case Ir.Intf.FConditionCode.one: return "!=";
+            case Ir.Intf.FConditionCode.ord: return "?";
+            case Ir.Intf.FConditionCode.ueq: return "==";
+            case Ir.Intf.FConditionCode.ugt: return ">";
+            case Ir.Intf.FConditionCode.uge: return ">=";
+            case Ir.Intf.FConditionCode.ult: return "<";
+            case Ir.Intf.FConditionCode.ule: return "<=";
+            case Ir.Intf.FConditionCode.une: return "!=";
+            case Ir.Intf.FConditionCode.uno: return "?";
             case Ir.Intf.FConditionCode.true_: return "true";
         }        
         return "";
@@ -773,7 +782,7 @@ namespace Llvm
         public nothrow override string ToString() const
         {
             string s(result->Name());
-            s.Append(" = ").Append(Name()).Append(' ').Append(ConditionCodeStr(cond)).Append(' ').Append(type->Name()).Append(' ').Append(operand1->Name()).Append(", ").Append(operand2->Name());
+            s.Append(" = ").Append(operand1->Name()).Append(' ').Append(ConditionCodeStr(cond)).Append(' ').Append(operand2->Name());
             return s;
         }
         private Ir.Intf.Type* type;
@@ -787,10 +796,10 @@ namespace Llvm
     {
         return new FCmpInst(type, result, cond, operand1, operand2);
     }
-    
+
     public class DoNothingInst : Ir.Intf.Instruction
     {
-        public nothrow DoNothingInst() : base("call void @llvm.donothing()")
+        public nothrow DoNothingInst() : base("_V__X_dummy = true")
         {
         }
         public nothrow override string ToString() const
@@ -803,7 +812,7 @@ namespace Llvm
     {
         return new DoNothingInst();
     }
-    
+
     public abstract class ConversionInstruction : Ir.Intf.Instruction
     {
         public nothrow ConversionInstruction(const string& name_, Ir.Intf.Type* type_, Ir.Intf.Object* result_, Ir.Intf.Object* value_, Ir.Intf.Type* toType_) : 
@@ -821,7 +830,7 @@ namespace Llvm
         public nothrow override string ToString() const
         {
             string s(result->Name());
-            s.Append(" = ").Append(Name()).Append(' ').Append(type->Name()).Append(' ').Append(value->Name()).Append(" to ").Append(toType->Name());
+            s.Append(" = ").Append('(').Append(toType->Name()).Append(')').Append(value->Name());
             return s;
         }
         private Ir.Intf.Type* type;
@@ -829,7 +838,7 @@ namespace Llvm
         private Ir.Intf.Object* value;
         private Ir.Intf.Type* toType;
     }
-    
+        
     public class TruncInst : ConversionInstruction
     {
         public nothrow TruncInst(Ir.Intf.Type* type_, Ir.Intf.Object* result_, Ir.Intf.Object* value_, Ir.Intf.Type* toType_) :
@@ -986,6 +995,34 @@ namespace Llvm
         return new BitcastInst(type, result, value, toType);
     }
     
+    public class SizeOfInst : Ir.Intf.Instruction
+    {
+        public nothrow SizeOfInst(Ir.Intf.Object* result_, Ir.Intf.Type* type_) : base("sizeof"), result(result_), type(type_)
+        {
+        }
+        public nothrow override bool ReturnsResult() const
+        {
+            return true;
+        }
+        public nothrow override Ir.Intf.Object* GetResult() const
+        {
+            return result;
+        }
+        public nothrow override string ToString() const
+        {
+            string s = result->Name();
+            s.Append(" = ").Append(Name()).Append('(').Append(type->Name()).Append(')');
+            return s;
+        }
+        private Ir.Intf.Object* result;
+        private Ir.Intf.Type* type;
+    }
+    
+    public nothrow inline Ir.Intf.Instruction* CreateSizeOf(Ir.Intf.Object* result, Ir.Intf.Type* type)
+    {
+        return new SizeOfInst(result, type);
+    }
+
     public class MemSetInst : Ir.Intf.Instruction
     {
         public nothrow MemSetInst(Ir.Intf.Object* dest_, Ir.Intf.Object* value_, Ir.Intf.Object* len_, int align_, bool isVolatile_) 
@@ -994,17 +1031,8 @@ namespace Llvm
         }
         public nothrow override string ToString() const
         {
-            string s("call void @llvm.memset.p0i8.i64(i8* ");
-            s.Append(dest->Name()).Append(", i8 ").Append(value->Name()).Append(", i64 ").Append(len->Name()).Append(", i32 ").Append(ToString(align)).Append(", i1 ");
-            if (isVolatile)
-            {
-                s.Append("true");
-            }
-            else
-            {
-                s.Append("false");
-            }
-            s.Append(')');
+            string s("cmemset(");
+            s.Append(dest->Name()).Append(", ").Append(value->Name()).Append(", ").Append(len->Name()).Append(", ").Append(ToString(align)).Append(", ").Append(ToString(isVolatile)).Append(')');
             return s;
         }
         private Ir.Intf.Object* dest;
@@ -1027,17 +1055,8 @@ namespace Llvm
         }
         public nothrow override string ToString() const
         {
-            string s("call void @llvm.memcpy.p0i8.i64(i8* ");
-            s.Append(dest->Name()).Append(", i8 ").Append(value->Name()).Append(", i64 ").Append(len->Name()).Append(", i32 ").Append(ToString(align)).Append(", i1 ");
-            if (isVolatile)
-            {
-                s.Append("true");
-            }
-            else
-            {
-                s.Append("false");
-            }
-            s.Append(')');
+            string s("cmemcpy(");
+            s.Append(dest->Name()).Append(", ").Append(value->Name()).Append(", ").Append(len->Name()).Append(", ").Append(ToString(align)).Append(", ").Append(ToString(isVolatile)).Append(')');
             return s;
         }
         private Ir.Intf.Object* dest;

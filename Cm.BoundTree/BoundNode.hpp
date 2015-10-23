@@ -30,7 +30,8 @@ enum class BoundNodeFlags : uint16_t
     argIsTemporary = 1 << 8,
     addrArg = 1 << 9,
     indexArray = 1 << 10,
-    newCall = 1 << 11
+    newCall = 1 << 11,
+    nsQualified = 1 << 12
 };
 
 inline BoundNodeFlags operator|(BoundNodeFlags left, BoundNodeFlags right)
