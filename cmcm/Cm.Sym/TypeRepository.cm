@@ -89,6 +89,13 @@ namespace Cm.Sym
     
     public class TypeRepository
     {
+        public nothrow TypeRepository(SymbolTable& symbolTable_) : symbolTable(symbolTable_)
+        {
+        }
+        public inline nothrow SymbolTable& GetSymbolTable()
+        {
+            return symbolTable;
+        }
         public void AddType(TypeSymbol* type)
         {
             typeSymbolMap[type->Id()] = type;
@@ -382,6 +389,7 @@ namespace Cm.Sym
                 }
             }
         }
+        private SymbolTable& symbolTable;
         private HashMap<TypeId, TypeSymbol*> typeSymbolMap;
         private List<UniquePtr<TypeSymbol>> types;
     }

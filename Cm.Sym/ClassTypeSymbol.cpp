@@ -27,7 +27,7 @@ PersistentClassData::PersistentClassData() : classNodePos(0), classNodeSize(0)
 {
 }
 
-TypeId GetNextClassTypeId(uint32_t cid)
+TypeId GetNextClassTypeId(uint64_t cid)
 {
     TypeId id;
     uint8_t n = uint8_t(id.Rep().Tag().size());

@@ -8,9 +8,18 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 
 namespace Cm.Core
 {
+    public abstract class ProfilingHandler
+    {
+        public virtual ~ProfilingHandler()
+        {
+        }
+        public abstract void EmitEndProfiledFun(Ir.Intf.LabelObject* label);
+    }
+    
     public enum GenFlags : byte
     {
         none = 0u,
@@ -24,11 +33,526 @@ namespace Cm.Core
         memberVar = 1u << 7u
     }
     
-    public class Emitter 
+    public nothrow inline bool GetFlag(GenFlags flags, GenFlags flag)
     {
+        return (flags & flag) != GenFlags.none;
+    }
+    
+    public nothrow inline void SetFlag(GenFlags& flags, GenFlags flag)
+    {
+        flags = cast<GenFlags>(flags | flag);
+    }
+    
+    public class GenData
+    {
+        public nothrow GenData() : label(null)
+        {
+        }
+        suppress GenData(const GenData&);
+        suppress void operator=(const GenData&);
+        suppress GenData(GenData&&);
+        suppress void operator=(GenData&&);
+        public nothrow inline bool IsEmpty() const
+        {
+            return objects.IsEmpty();
+        }
+        public nothrow inline Ir.Intf.Object* MainObject() const
+        {
+            #assert(!IsEmpty());
+            return objects.Front();
+        }
+        public inline void SetMainObject(Ir.Intf.Object* mainObject)
+        {
+            if (objects.IsEmpty())
+            {
+                objects.Add(mainObject);
+            }
+            else
+            {
+                objects[0] = mainObject;
+            }
+        }
+        public inline void AddObject(Ir.Intf.Object* object)
+        {
+            objects.Add(object);
+        }
+        public nothrow inline Ir.Intf.Object* Arg1() const
+        {
+            #assert(objects.Count() > 1);
+            return objects[1];
+        }
+        public nothrow inline Ir.Intf.Object* Arg2() const
+        {
+            #assert(objects.Count() > 2);
+            return objects[2];
+        }
+        public List<Ir.Intf.Object*> Args() const
+        {
+            List<Ir.Intf.Object*> args;
+            int n = objects.Count();
+            for (int i = 1; i < n; ++i)
+            {
+                args.Add(objects[i]);
+            }
+            return args;
+        }
+        public nothrow inline const List<Ir.Intf.Object*>& Objects() const
+        {
+            return objects;
+        }
+        public nothrow inline List<Ir.Intf.Object*>& Objects()
+        {
+            return objects;
+        }
+        public inline void AddTrueTarget(Ir.Intf.LabelObject* trueTarget)
+        {
+            Ir.Intf.Add(trueTargets, trueTarget);
+        }
+        public inline void AddFalseTarget(Ir.Intf.LabelObject* falseTarget)
+        {
+            Ir.Intf.Add(falseTargets, falseTarget);
+        }
+        public inline void AddNextTarget(Ir.Intf.LabelObject* nextTarget)
+        {
+            Ir.Intf.Add(nextTargets, nextTarget);
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& NextTargets() 
+        {
+            return nextTargets;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& TrueTargets() 
+        {
+            return trueTargets;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& FalseTargets() 
+        {
+            return falseTargets;
+        }
+        public void MergeTargets(List<Ir.Intf.LabelObject*>& targets, List<Ir.Intf.LabelObject*>& fromTargets)
+        {
+            Ir.Intf.Merge(targets, fromTargets);
+            fromTargets.Clear();
+        }
+        public void MergeData(SharedPtr<GenData> childData)
+        {
+            if (!childData->IsEmpty())
+            {
+                objects.Add(childData->MainObject());
+            }
+            Ir.Intf.Merge(nextTargets, childData->NextTargets());
+            Ir.Intf.Merge(trueTargets, childData->TrueTargets());
+            Ir.Intf.Merge(falseTargets, childData->FalseTargets());
+        }
+        public nothrow inline Ir.Intf.LabelObject* GetLabel() const
+        {
+            return label;
+        }
+        public nothrow inline void SetLabel(Ir.Intf.LabelObject* label_)
+        {
+            label = label_;
+        }
+        public inline void BackpatchTrueTargets(Ir.Intf.LabelObject* label_)
+        {
+            #assert(label_ != null);
+            Ir.Intf.Backpatch(trueTargets, label_);
+            trueTargets.Clear();
+        }
+        public inline void BackpatchFalseTargets(Ir.Intf.LabelObject* label_)
+        {
+            #assert(label_ != null);
+            Ir.Intf.Backpatch(falseTargets, label_);
+            falseTargets.Clear();
+        }
+        public inline void BackpatchNextTargets(Ir.Intf.LabelObject* label_)
+        {
+            #assert(label_ != null);
+            Ir.Intf.Backpatch(nextTargets, label_);
+            nextTargets.Clear();
+        }
+        private Ir.Intf.LabelObject* label;
+        private List<Ir.Intf.Object*> objects;
+        private List<Ir.Intf.LabelObject*> nextTargets;
+        private List<Ir.Intf.LabelObject*> trueTargets;
+        private List<Ir.Intf.LabelObject*> falseTargets;
+    }
+    
+    public class GenDataHash : UnaryFun<SharedPtr<GenData>, ulong>
+    {
+        public nothrow inline ulong operator()(const SharedPtr<GenData>& genData) const
+        {
+            return GetHashCode(genData.GetPtr());
+        }
+    }
+    
+    public class Emitter : Ir.Intf.Emitter
+    {
+        public nothrow Emitter() : base(), irFunction(null), gotoTargetLabel(null), cDebugNode(null), activeCfgNode(null), profilingHandler(null)
+        {
+        }
+        public nothrow inline void SetIrFunction(Ir.Intf.Function* irFunction_)
+        {
+            irFunction = irFunction_;
+        }
+        public nothrow inline Ir.Intf.Function* IrFunction() const
+        {
+            return irFunction;
+        }
+        public inline void RequestLabelFor(SharedPtr<GenData> genData)
+        {
+            labelRequestSet.Insert(genData);
+        }
+        public nothrow inline void RemoveLabelRequestFor(SharedPtr<GenData> genData)
+        {
+            labelRequestSet.Remove(genData);
+        }
+        public inline void AddNextInstructionLabel(Ir.Intf.LabelObject* nextInstructionLabel)
+        {
+            nextInstructionLabels.Insert(nextInstructionLabel);
+        }
+        public nothrow inline void SetGotoTargetLabel(Ir.Intf.LabelObject* gotoTargetLabel_)
+        {
+            gotoTargetLabel = gotoTargetLabel_;
+        }
+        public override void Emit(Ir.Intf.Instruction* instruction)
+        {
+            Ir.Intf.LabelObject* label = null;
+            if ((!labelRequestSet.IsEmpty() || !nextInstructionLabels.IsEmpty()) && instruction->GetLabel() == null)
+            {
+                if (gotoTargetLabel != null)
+                {
+                    label = gotoTargetLabel;
+                }
+                else
+                {
+                    label = Cm.IrIntf.CreateNextLocalLabel();
+                    Own(label);
+                }
+                if (!nextInstructionLabels.IsEmpty())
+                {
+                    for (Ir.Intf.LabelObject* nextInstructionLabel : nextInstructionLabels)
+                    {
+                        nextInstructionLabel->Set(label);
+                    }
+                }
+                if (profilingHandler == null || !instruction->IsRet())
+                {
+                    instruction->SetLabel(label);
+                }
+                for (SharedPtr<GenData> genData : labelRequestSet)
+                {
+                    genData->SetLabel(label);
+                }
+                labelRequestSet.Clear();
+                nextInstructionLabels.Clear();
+                gotoTargetLabel = null;
+            }        
+            if (!nextInstructionComment.IsEmpty())
+            {
+                instruction->SetComment(nextInstructionComment);
+                nextInstructionComment.Clear();
+            }
+            if (cDebugNode != null)
+            {
+                instruction->SetCDebugNode(cDebugNode);
+                cDebugNode = null;
+            }
+            if (profilingHandler != null && instruction->IsRet())
+            {
+                profilingHandler->EmitEndProfiledFun(label);
+            }
+            irFunction->AddInstruction(instruction);
+            if (instruction->IsRet())
+            {
+                if (activeCfgNode != null && activeCfgNode->Kind() == CfgNodeKind.regularNode)
+                {
+                    activeCfgNode->SetKind(CfgNodeKind.exitNode);
+                }
+            }
+        }
+        public override void Own(Ir.Intf.Object* object)
+        {
+            if (object != null)
+            {
+                if (!object->Owned())
+                {
+                    object->SetOwned();
+                    ownedObjects.Add(UniquePtr<Ir.Intf.Object>(object));
+                }
+            }
+        }
+        public override void Own(Ir.Intf.Type* type)
+        {
+            if (type != null)
+            {
+                if (!type->Owned())
+                {
+                    type->SetOwned();
+                    ownedTypes.Add(UniquePtr<Ir.Intf.Type>(type));
+                }
+            }
+        }
+        public override void Own(Ir.Intf.Function* fun)
+        {
+            ownedFuns.Add(UniquePtr<Ir.Intf.Function>(fun));
+        }
+        public nothrow inline void UseCDebugNode(Ir.Intf.CDebugNode* cDebugNode_)
+        {
+            cDebugNode = cDebugNode_;
+        }
+        public nothrow inline void SetActiveCfgNode(CfgNode* activeCfgNode_)
+        {
+            activeCfgNode = activeCfgNode_;
+        }
+        public nothrow inline CfgNode* GetActiveCfgNode() const
+        {
+            return activeCfgNode;
+        }
+        public nothrow inline void SetProfilingHandler(ProfilingHandler* profilingHandler_)
+        {
+            profilingHandler = profilingHandler_;
+        }
+        private Ir.Intf.Function* irFunction;
+        private HashSet<SharedPtr<GenData>, GenDataHash> labelRequestSet;
+        private Ir.Intf.LabelObject* gotoTargetLabel;
+        private HashSet<Ir.Intf.LabelObject*> nextInstructionLabels;
+        private string nextInstructionComment;
+        private List<UniquePtr<Ir.Intf.Object>> ownedObjects;
+        private List<UniquePtr<Ir.Intf.Type>> ownedTypes;
+        private List<UniquePtr<Ir.Intf.Function>> ownedFuns;
+        private Ir.Intf.CDebugNode* cDebugNode;
+        private CfgNode* activeCfgNode;
+        private ProfilingHandler* profilingHandler;
     }
     
     public class GenResult
     {
+        public nothrow GenResult() : emitter(null), flags(), genData(new GenData())
+        {
+        }
+        public nothrow ~GenResult()
+        {
+            if (emitter != null)
+            {
+                emitter->RemoveLabelRequestFor(genData);
+            }
+        }
+        public GenResult(Emitter* emitter_, GenFlags flags_) : emitter(emitter_), flags(flags_), genData(new GenData())
+        {
+            emitter->RequestLabelFor(genData);
+        }
+        suppress GenResult(const GenResult&);
+        suppress void operator=(const GenResult&);
+        suppress GenResult(GenResult&&);
+        suppress void operator=(GenResult&&);
+        public nothrow inline GenFlags Flags() const
+        {
+            return flags;
+        }
+        public inline void AddChild(SharedPtr<GenData> child)
+        {
+            children.Add(child);
+        }
+        public nothrow inline Ir.Intf.Object* MainObject() const
+        {
+            return genData->MainObject();
+        }
+        public inline void SetMainObject(Ir.Intf.Object* mainObject)
+        {
+            genData->SetMainObject(mainObject);
+        }
+        public void SetMainObject(Cm.Sym.TypeSymbol* type, Cm.Sym.TypeRepository& typeRepository)
+        {
+            if (type->IsRvalueRefType())
+            {
+                Cm.Sym.TypeSymbol* plainType = typeRepository.MakePlainType(type);
+                if ((plainType is Cm.Sym.BasicTypeSymbol*) || (plainType is Cm.Sym.EnumTypeSymbol*) || plainType->IsPointerType() || (plainType is Cm.Sym.DelegateTypeSymbol*))
+                {
+                    Ir.Intf.Type* rvalueRefType = Cm.IrIntf.RvalueRef(plainType->IrType());
+                    emitter->Own(rvalueRefType);
+                    Ir.Intf.RegVar* temp = Cm.IrIntf.MakeTemporaryRegVar(rvalueRefType);
+                    emitter->Own(temp);
+                    genData->SetMainObject(temp);
+                    return;
+                }
+            }
+            Ir.Intf.RegVar* temp = Cm.IrIntf.MakeTemporaryRegVar(type->IrType()->Clone());
+            emitter->Own(temp);
+            genData->SetMainObject(temp);
+        }
+        public inline void AddObject(Ir.Intf.Object* object) 
+        {
+            genData->AddObject(object);
+        }
+        public nothrow inline Ir.Intf.Object* Arg1() const
+        {
+            return genData->Arg1();
+        }
+        public nothrow inline Ir.Intf.Object* Arg2() const
+        {
+            return genData->Arg2();
+        }
+        public inline List<Ir.Intf.Object*> Args() const
+        {
+            return genData->Args();
+        }
+        public nothrow inline const List<Ir.Intf.Object*>& Objects() const
+        {
+            return genData->Objects();
+        }
+        public nothrow inline List<Ir.Intf.Object*>& Objects()
+        {
+            return genData->Objects();
+        }
+        public inline void AddTrueTarget(Ir.Intf.LabelObject* trueTarget)
+        {
+            genData->AddTrueTarget(trueTarget);
+        }
+        public inline void AddFalseTarget(Ir.Intf.LabelObject* falseTarget)
+        {
+            genData->AddFalseTarget(falseTarget);
+        }
+        public inline void AddNextTarget(Ir.Intf.LabelObject* nextTarget)
+        {
+            genData->AddNextTarget(nextTarget);
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& NextTargets() 
+        {
+            return genData->NextTargets();
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& TrueTargets()
+        {
+            return genData->TrueTargets();
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& FalseTargets()
+        {
+            return genData->FalseTargets();
+        }
+        public inline void MergeTargets(List<Ir.Intf.LabelObject*>& targets, List<Ir.Intf.LabelObject*>& fromTargets)
+        {
+            genData->MergeTargets(targets, fromTargets);
+        }
+        public inline void BackpatchTrueTargets(Ir.Intf.LabelObject* label)
+        {
+            genData->BackpatchTrueTargets(label);
+        }
+        public inline void BackpatchFalseTargets(Ir.Intf.LabelObject* label)
+        {
+            genData->BackpatchFalseTargets(label);
+        }
+        public inline void BackpatchNextTargets(Ir.Intf.LabelObject* label)
+        {
+            genData->BackpatchNextTargets(label);
+        }
+        public nothrow inline bool GenJumpingBoolCode()
+        {
+            return GetFlag(flags, GenFlags.genJumpingBoolCode);
+        }
+        public nothrow inline void SetGenJumpingBoolCode()
+        {
+            SetFlag(flags, GenFlags.genJumpingBoolCode);
+        }
+        public nothrow inline void SetLvalue()
+        {
+            SetFlag(flags, GenFlags.lvalue);
+        }
+        public nothrow inline bool ArgByRef() const
+        {
+            return GetFlag(flags, GenFlags.argByRef);
+        }
+        public nothrow inline void SetArgByRef()
+        {
+            SetFlag(flags, GenFlags.argByRef);
+        }
+        public nothrow inline bool AddrArg() const
+        {
+            return GetFlag(flags, GenFlags.addrArg);
+        }
+        public nothrow inline void SetAddrArg()
+        {
+            SetFlag(flags, GenFlags.addrArg);
+        }
+        public nothrow inline bool MemberVar() const
+        {
+            return GetFlag(flags, GenFlags.memberVar);
+        }
+        public nothrow inline void SetMemberVar()
+        {
+            SetFlag(flags, GenFlags.memberVar);
+        }
+        public nothrow inline bool ClassTypeToPointerTypeConversion() const 
+        { 
+            return GetFlag(flags, GenFlags.classTypeToPointerTypeConversion); 
+        }
+        public nothrow inline void SetClassTypeToPointerTypeConversion()
+        {
+            SetFlag(flags, GenFlags.classTypeToPointerTypeConversion);
+        }
+        public nothrow inline bool GenerateVirtualCall() const
+        {
+            return GetFlag(flags, GenFlags.virtualCall);
+        }
+        public nothrow inline void SetGenerateVirtualCall()
+        {
+            SetFlag(flags, GenFlags.virtualCall);
+        }
+        public nothrow inline bool LabelSet() const
+        {
+            return GetFlag(flags, GenFlags.labelSet);
+        }
+        public nothrow inline void SetLabelSet()
+        {
+            SetFlag(flags, GenFlags.labelSet);
+        }
+        public nothrow inline SharedPtr<GenData> GetChild(int index)
+        {
+            #assert(index >= 0 && index < children.Count());
+            return children[index];
+        }
+        public inline void Merge(SharedPtr<GenResult> child)
+        {
+            genData->MergeData(child->genData);
+            AddChild(child->genData);
+        }
+        public inline void Merge(SharedPtr<GenResult> child, bool insertFirst)
+        {
+            genData->MergeData(child->genData);
+            if (insertFirst)
+            {
+                children.Insert(children.Begin(), child->genData);
+            }
+            else
+            {
+                AddChild(child->genData);
+            }
+        }
+        public nothrow inline Ir.Intf.LabelObject* GetLabel() const
+        {
+            Ir.Intf.LabelObject* label = genData->GetLabel();
+            if (label != null)
+            {
+                return label;
+            }
+            for (SharedPtr<GenData> child : children)
+            {
+                Ir.Intf.LabelObject* label = child->GetLabel();
+                if (label != null)
+                {
+                    return label;
+                }
+            }
+            return null;
+        }
+        public nothrow inline void SetLabel(Ir.Intf.LabelObject* label)
+        {
+            if (emitter != null)
+            {
+                emitter->RemoveLabelRequestFor(genData);
+            }
+            genData->SetLabel(label);
+        }
+        private Emitter* emitter;
+        private GenFlags flags;
+        private SharedPtr<GenData> genData;
+        private List<SharedPtr<GenData>> children;
     }
 }

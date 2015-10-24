@@ -15,7 +15,8 @@ namespace Cm.Sym
 {
     public class SymbolTable
     {
-        public nothrow SymbolTable() : globalNs(Span(), ""), container(&globalNs), typeRepository(), currentClass(null), currentFunction(null), userMainFunction(null), standardConversionTable(typeRepository)
+        public nothrow SymbolTable() : globalNs(Span(), ""), container(&globalNs), typeRepository(*this), currentClass(null), currentFunction(null), userMainFunction(null), standardConversionTable(typeRepository),
+            nextSid(0u)
         {
         }
         public Cm.Ast.Node* GetNode(Symbol* symbol) const
@@ -252,12 +253,10 @@ namespace Cm.Sym
             classScope->SetParent(containerScope);
             container->AddSymbol(classSymbol);
             BeginContainer(classSymbol);
-            /* todo:
             if (!classSymbol->IrTypeMade())
             {
                 classSymbol->SetIrType(Cm.IrIntf.CreateClassTypeName(classSymbol->FullName()));
             }
-            */
             currentClassStack.Push(currentClass);
             currentClass = classSymbol;
         }
@@ -533,6 +532,35 @@ namespace Cm.Sym
             globalNs.ReplaceReplicaTypes();
             typeRepository.ReplaceReplicaTypes();
         }
+        public nothrow inline uint GetSid() const
+        {
+            return nextSid++;
+        }
+        public nothrow inline void SetNextSid(uint nextSid_)
+        {
+            nextSid = nextSid_;
+        }
+        public void SetSidAndAddSymbol(Symbol* symbol)
+        {
+            symbol->SetSid(GetSid());
+            AddSymbol(symbol);
+        }
+        public void AddSymbol(Symbol* symbol)
+        {
+            if (symbol->Sid() != noSid)
+            {
+                symbolMap[symbol->Sid()] = symbol;
+                ClassTypeSymbol* classTypeSymbol = symbol as ClassTypeSymbol*;
+                if (classTypeSymbol != null)
+                {
+                    classes.Insert(classTypeSymbol);
+                    if (classTypeSymbol->Cid() != noCid)
+                    {
+                        classMap[classTypeSymbol->Cid()] = classTypeSymbol;
+                    }
+                }
+            }
+        }
         private NamespaceSymbol globalNs;
         private HashMap<Symbol*, Cm.Ast.Node*> symbolNodeMap;
         private HashMap<Cm.Ast.Node*, ContainerScope*> nodeScopeMap;
@@ -546,5 +574,10 @@ namespace Cm.Sym
         private FunctionSymbol* userMainFunction;
         private List<TemplateTypeSymbol*> importedTemplateTypes;
         private ConversionTable standardConversionTable;
+        private uint nextSid;
+        private HashMap<uint, Symbol*> symbolMap;
+        private HashMap<ulong, ClassTypeSymbol*> classMap;
+        private HashSet<ClassTypeSymbol*> classes;
+        private HashSet<ClassTypeSymbol*> projectClasses;
     }
 }

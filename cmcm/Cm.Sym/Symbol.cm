@@ -24,7 +24,7 @@ namespace Cm.Sym
         boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
         classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
         memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
-        conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol,
+        conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol, entrySymbol, returnValueSymbol,
         maxSymbol
     }
     
@@ -68,6 +68,8 @@ namespace Cm.Sym
             case SymbolType.conceptGroupSymbol: return "conceptGroupSymbol";
             case SymbolType.instantiatedConceptSymbol: return "instantiatedConceptSymbol";
             case SymbolType.functionGroupTypeSymbol: return "functionGroupTypeSymbol";
+            case SymbolType.entrySymbol: return "entrySymbol";
+            case SymbolType.returnValueSymbol : return "returnValueSymbol";
         }
         return "";
     }
@@ -92,12 +94,16 @@ namespace Cm.Sym
         project = 1u << 5u,
         irTypeMade = 1u << 6u,
         replica = 1u << 7u,
-        owned = 1u << 8u
+        owned = 1u << 8u,
+        serialize = 1u << 9u,
+        justSymbol = 1u << 10u
     }
+    
+    public const uint noSid = 0xFFFFFFFFu;
     
     public abstract class Symbol
     {
-        public nothrow Symbol(const Span& span_, const string& name_) : span(span_), name(name_), flags(SymbolFlags.none), parent(null)
+        public nothrow Symbol(const Span& span_, const string& name_) : span(span_), name(name_), flags(SymbolFlags.none), parent(null), sid(noSid)
         {
         }
         public virtual nothrow ~Symbol()
@@ -238,6 +244,22 @@ namespace Cm.Sym
         public nothrow inline void SetReplica()
         {
             SetFlag(SymbolFlags.replica);
+        }
+        public nothrow inline bool Serialize() const
+        {
+            return GetFlag(SymbolFlags.serialize);
+        }
+        public nothrow inline void DoSerialize()
+        {
+            SetFlag(SymbolFlags.serialize);
+        }
+        public nothrow inline bool JustSymbol() const
+        {
+            return GetFlag(SymbolFlags.justSymbol);
+        }
+        public nothrow inline void SetJustSymbol()
+        {
+            SetFlag(SymbolFlags.justSymbol);
         }
         public virtual nothrow bool IsExportSymbol() const
         {
@@ -426,9 +448,18 @@ namespace Cm.Sym
         {
             flags = cast<SymbolFlags>(flags & ~flag);
         }
+        public nothrow inline void SetSid(uint sid_)
+        {
+            sid = sid_;
+        }
+        public nothrow inline uint Sid() const
+        {
+            return sid;
+        }
         private Span span;
         private string name;
         private SymbolFlags flags;
         private Symbol* parent;
+        private uint sid;
     }
 }

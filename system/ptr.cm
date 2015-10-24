@@ -381,7 +381,6 @@ namespace System
         {
             ptr = that.GetPtr();
         }
-        public default ~SharedPtr();
         public nothrow void Reset()
         {
             Self().Swap(*this);

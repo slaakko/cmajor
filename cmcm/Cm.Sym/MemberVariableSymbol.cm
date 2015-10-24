@@ -13,9 +13,9 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
-    public class MemberVariableSymbol : Symbol
+    public class MemberVariableSymbol : VariableSymbol
     {
-        public nothrow MemberVariableSymbol(const Span& span_, const string& name_) : base(span_, name_), type(null), layoutIndex(-1)
+        public nothrow MemberVariableSymbol(const Span& span_, const string& name_) : base(span_, name_), layoutIndex(-1)
         {
         }
         public nothrow override SymbolType GetSymbolType() const
@@ -32,18 +32,6 @@ namespace Cm.Sym
             if (Parent() is TemplateTypeSymbol*) return false;
             return true; 
         }
-        public nothrow inline TypeSymbol* GetType() const
-        {
-            return type;
-        }
-        public nothrow inline void SetType(TypeSymbol* type_)
-        {
-            type = type_;
-        }
-        public override void SetType(TypeSymbol* type_, int index)
-        {
-            SetType(type_);
-        }
         public nothrow inline int LayoutIndex() const
         {
             return layoutIndex;
@@ -52,18 +40,9 @@ namespace Cm.Sym
         {
             layoutIndex = layoutIndex_;
         }
-        public override void Read(Reader& reader)
-        {
-            base->Read(reader);
-            reader.FetchTypeFor(this, 0);
-        }    
-        public override void Write(Writer& writer)
-        {
-            base->Write(writer);
-            writer.Write(type->Id());
-        }
 	 public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes) 
         {
+            TypeSymbol* type = GetType();
             if (type is DerivedTypeSymbol*)
             {
                 if (collected.CFind(type) == collected.CEnd())
@@ -75,6 +54,7 @@ namespace Cm.Sym
         }
         public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
+            TypeSymbol* type = GetType();
             if (type is TemplateTypeSymbol* || type is DerivedTypeSymbol*)
             {
                 if (collected.CFind(type) == collected.CEnd())
@@ -86,13 +66,13 @@ namespace Cm.Sym
         }
         public nothrow override void ReplaceReplicaTypes()
         {
+            TypeSymbol* type = GetType();
             if (type->IsReplica() && type is TemplateTypeSymbol*)
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
                 type = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
-        private TypeSymbol* type;
         private int layoutIndex;
     }
 }

@@ -12,9 +12,9 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
-    public class LocalVariableSymbol : Symbol
+    public class LocalVariableSymbol : VariableSymbol
     {
-        public nothrow LocalVariableSymbol(const Span& span_, const string& name_) : base(span_, name_), type(null), used(false)
+        public nothrow LocalVariableSymbol(const Span& span_, const string& name_) : base(span_, name_), used(false)
         {
         }
         public nothrow override SymbolType GetSymbolType() const
@@ -31,15 +31,7 @@ namespace Cm.Sym
         }
         public nothrow override bool IsExportSymbol() const
         {
-            return false;
-        }
-        public nothrow inline void SetType(TypeSymbol* type_)
-        {
-            type = type_;
-        }
-        public nothrow inline TypeSymbol* GetType() const
-        {
-            return type;
+            return Source() == SymbolSource.project && Serialize();
         }
         public nothrow inline bool Used() const
         {
@@ -59,13 +51,17 @@ namespace Cm.Sym
         }
         public nothrow override void ReplaceReplicaTypes()
         {
+            TypeSymbol* type = GetType();
             if (type->IsReplica() && (type is TemplateTypeSymbol*))
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
                 type = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
-        private TypeSymbol* type;
+        public nothrow override string UniqueName() const 
+        {
+            return "@local" + ToString(Sid()) + "." + Name();
+        }
         private bool used;
         private Span useSpan;
     }

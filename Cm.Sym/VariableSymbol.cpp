@@ -18,11 +18,6 @@ VariableSymbol::VariableSymbol(const Span& span_, const std::string& name_) : Sy
 {
 }
 
-VariableSymbol::~VariableSymbol()
-{
-    int x = 0;
-}
-
 void VariableSymbol::Write(Writer& writer)
 {
     Symbol::Write(writer);
