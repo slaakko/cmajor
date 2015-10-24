@@ -12,15 +12,15 @@
 
 namespace Cm { namespace Sym {
 
-Cm::Util::Uuid basicTypeIds[uint8_t(ShortBasicTypeId::max)] =
+const TypeId basicTypeIds[uint8_t(ShortBasicTypeId::max)] =
 {
-    uint8_t(0), uint8_t(ShortBasicTypeId::boolId), uint8_t(ShortBasicTypeId::charId), uint8_t(ShortBasicTypeId::voidId),
-    uint8_t(ShortBasicTypeId::sbyteId), uint8_t(ShortBasicTypeId::byteId), uint8_t(ShortBasicTypeId::shortId), uint8_t(ShortBasicTypeId::ushortId), 
-    uint8_t(ShortBasicTypeId::intId), uint8_t(ShortBasicTypeId::uintId), uint8_t(ShortBasicTypeId::longId), uint8_t(ShortBasicTypeId::ulongId), 
-    uint8_t(ShortBasicTypeId::floatId), uint8_t(ShortBasicTypeId::doubleId), uint8_t(ShortBasicTypeId::nullPtrId)
+    TypeId(uint8_t(0)), TypeId(uint8_t(ShortBasicTypeId::boolId)), TypeId(uint8_t(ShortBasicTypeId::charId)), TypeId(uint8_t(ShortBasicTypeId::voidId)), TypeId(uint8_t(ShortBasicTypeId::sbyteId)),
+    TypeId(uint8_t(ShortBasicTypeId::byteId)), TypeId(uint8_t(ShortBasicTypeId::shortId)), TypeId(uint8_t(ShortBasicTypeId::ushortId)), TypeId(uint8_t(ShortBasicTypeId::intId)),
+    TypeId(uint8_t(ShortBasicTypeId::uintId)), TypeId(uint8_t(ShortBasicTypeId::longId)), TypeId(uint8_t(ShortBasicTypeId::ulongId)), TypeId(uint8_t(ShortBasicTypeId::floatId)),
+    TypeId(uint8_t(ShortBasicTypeId::doubleId)), TypeId(uint8_t(ShortBasicTypeId::nullPtrId))
 };
 
-const Cm::Util::Uuid& GetBasicTypeId(ShortBasicTypeId shortId)
+const TypeId& GetBasicTypeId(ShortBasicTypeId shortId)
 {
     return basicTypeIds[uint8_t(shortId)];
 }

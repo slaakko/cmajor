@@ -120,17 +120,17 @@ TypeId ComputeInstantiatedConceptSymbolTypeId(ConceptSymbol* conceptSymbol, cons
 {
     TypeId id = conceptSymbol->Id();
     uint8_t n = uint8_t(typeArguments.size());
-    if (n >= id.Rep().Tag().size())
+    if (n >= typeIdRepSize)
     {
-        throw std::runtime_error("only " + std::to_string(id.Rep().Tag().size() - 1) + " supported");
+        throw std::runtime_error("only " + std::to_string(typeIdRepSize - 1) + " supported");
     }
     for (uint8_t i = 0; i < n; ++i)
     {
         TypeSymbol* typeArgument = typeArguments[i];
-        Cm::Util::Uuid argumentId = typeArgument->Id().Rep();
+        TypeId argumentId = typeArgument->Id();
         uint8_t positionCode = i;
-        std::rotate(argumentId.Tag().begin(), argumentId.Tag().begin() + positionCode, argumentId.Tag().end());
-        id.Rep() = id.Rep() ^ argumentId;
+        std::rotate(argumentId.Rep(), argumentId.Rep() + positionCode, argumentId.Rep() + typeIdRepSize);
+        id = id ^ argumentId;
     }
     id.InvalidateHashCode();
     return id;

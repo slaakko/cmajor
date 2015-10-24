@@ -23,6 +23,7 @@
     <ClInclude Include="CodeFormatter.hpp" />
     <ClInclude Include="Handle.hpp" />
     <ClInclude Include="MappedInputFile.hpp" />
+    <ClInclude Include="Mt.hpp" />
     <ClInclude Include="Path.hpp" />
     <ClInclude Include="Prime.hpp" />
     <ClInclude Include="System.hpp" />
@@ -33,6 +34,7 @@
   <ItemGroup>
     <ClCompile Include="CodeFormatter.cpp" />
     <ClCompile Include="MappedInputFile.cpp" />
+    <ClCompile Include="Mt.cpp" />
     <ClCompile Include="Path.cpp" />
     <ClCompile Include="Prime.cpp" />
     <ClCompile Include="System.cpp" />

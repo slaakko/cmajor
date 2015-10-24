@@ -27,27 +27,13 @@ PersistentClassData::PersistentClassData() : classNodePos(0), classNodeSize(0)
 {
 }
 
-TypeId GetNextClassTypeId(uint64_t cid)
-{
-    TypeId id;
-    uint8_t n = uint8_t(id.Rep().Tag().size());
-    for (uint8_t i = 0; i < sizeof(cid); ++i)
-    {
-        uint8_t b = *(reinterpret_cast<uint8_t*>(&cid) + i);
-        uint8_t p = (n - uint8_t(sizeof(cid))) + i;
-        id.Rep().Tag().data[p] = b;
-    }
-    id.InvalidateHashCode();
-    return id;
-}
-
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : TypeSymbol(span_, name_, TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), 
     vptrIndex(-1), destructor(nullptr), staticConstructor(nullptr), initializedVar(nullptr), cid(noCid), key(0), level(0), priority(0), compileUnit(nullptr)
 {
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_, uint64_t cid_) :
-    TypeSymbol(span_, name_, getNextId_ ? GetNextClassTypeId(cid_) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr),
+    TypeSymbol(span_, name_, getNextId_ ? TypeId(cid) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr),
     staticConstructor(nullptr), initializedVar(nullptr), cid(cid_), key(0), level(0), priority(0), compileUnit(nullptr)
 {
 }

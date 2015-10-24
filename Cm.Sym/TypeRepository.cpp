@@ -361,8 +361,7 @@ TypeSymbol* TypeRepository::MakeConstPointerType(TypeSymbol* baseType, const Spa
 
 TypeSymbol* TypeRepository::MakeConstCharPtrType(const Span& span)
 {
-    TypeId charTypeId = GetBasicTypeId(ShortBasicTypeId::charId);
-    TypeSymbol* charType = GetType(charTypeId);
+    TypeSymbol* charType = GetType(GetBasicTypeId(ShortBasicTypeId::charId));
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::pointer);
@@ -371,8 +370,7 @@ TypeSymbol* TypeRepository::MakeConstCharPtrType(const Span& span)
 
 TypeSymbol* TypeRepository::MakeConstCharPtrPtrType(const Span& span)
 {
-    TypeId charTypeId = GetBasicTypeId(ShortBasicTypeId::charId);
-    TypeSymbol* charType = GetType(charTypeId);
+    TypeSymbol* charType = GetType(GetBasicTypeId(ShortBasicTypeId::charId));
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::pointer);
@@ -382,8 +380,7 @@ TypeSymbol* TypeRepository::MakeConstCharPtrPtrType(const Span& span)
 
 TypeSymbol* TypeRepository::MakeGenericPtrType(const Span& span)
 {
-    TypeId voidTypeId = GetBasicTypeId(ShortBasicTypeId::voidId);
-    TypeSymbol* voidType = GetType(voidTypeId);
+    TypeSymbol* voidType = GetType(GetBasicTypeId(ShortBasicTypeId::voidId));
     Cm::Ast::DerivationList derivations;
     derivations.Add(Cm::Ast::Derivation::pointer);
     return MakeDerivedType(derivations, voidType, std::vector<int>(), span);

@@ -19,6 +19,7 @@ class SyntaxTree
 public:
     SyntaxTree();
     SyntaxTree(SyntaxTree&& that);
+    SyntaxTree& operator=(SyntaxTree&& that);
     void AddCompileUnit(CompileUnitNode* compileUnit);
     const std::vector<std::unique_ptr<CompileUnitNode>>& CompileUnits() const { return compileUnits; }
     void Write(Writer& writer);

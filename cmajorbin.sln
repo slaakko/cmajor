@@ -382,6 +382,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cm.Opt", "Cm.Opt\Cm.Opt.vcx
 		{A12C2C5B-D12E-457A-8D1C-69A9E6759064} = {A12C2C5B-D12E-457A-8D1C-69A9E6759064}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3EC8C5B8-09CD-4F87-A71F-7A7487CB70A9}"
+	ProjectSection(SolutionItems) = preProject
+		Performance1.psess = Performance1.psess
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

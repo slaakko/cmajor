@@ -8,15 +8,59 @@
 ========================================================================*/
 
 #include <Cm.Sym/TypeId.hpp>
+#include <Cm.Util/Mt.hpp>
+#include <stdexcept>
+#include <string>
 
 namespace Cm { namespace Sym {
 
-TypeId::TypeId() : rep(), hashCodeValid(false), hashCode(0)
+TypeId::TypeId() : hashCodeValid(false), hashCode(0)
 {
+    SetRep(0, Cm::Util::Rand());
+    SetRep(4, Cm::Util::Rand());
+    SetRep(8, Cm::Util::Rand());
+    SetRep(12, Cm::Util::Rand());
 }
 
-TypeId::TypeId(const Cm::Util::Uuid& rep_) : rep(rep_), hashCodeValid(false), hashCode(0)
+TypeId::TypeId(uint8_t leader) : hashCodeValid(false), hashCode(0)
 {
+    std::memset(rep, 0, typeIdRepSize);
+    rep[0] = leader;
+}
+
+TypeId::TypeId(uint64_t cid): hashCodeValid(false), hashCode(0)
+{
+    SetRep(0, Cm::Util::Rand());
+    SetRep(4, Cm::Util::Rand());
+    uint32_t high = static_cast<uint32_t>(cid >> 32);
+    uint32_t low = static_cast<uint32_t>(cid & 0xFFFFFFFFu);
+    SetRep(8, high);
+    SetRep(12, low);
+}
+
+TypeId::TypeId(uint8_t* data, int size) : hashCodeValid(false), hashCode(0)
+{
+#ifndef NDEBUG
+    if (size != typeIdRepSize)
+    {
+        throw std::runtime_error("invalid type id data length (not " + std::to_string(typeIdRepSize) + ")");
+    }
+#endif
+    std::memcpy(rep, data, size);
+}
+
+void TypeId::SetRep(int index, uint32_t r)
+{
+#ifndef NDEBUG
+    if (index < 0 || index >= typeIdRepSize)
+    {
+        throw std::runtime_error("invalid type id index");
+    }
+#endif
+    rep[index] = static_cast<uint8_t>(r >> 24u);
+    rep[index + 1] = static_cast<uint8_t>(r >> 16u);
+    rep[index + 2] = static_cast<uint8_t>(r >> 8u);
+    rep[index + 3] = static_cast<uint8_t>(r);
 }
 
 void TypeId::ComputeHashCode() const
@@ -31,10 +75,9 @@ void TypeId::ComputeHashCode() const
     const size_t prime = 16777619U;
 #endif /* defined(_WIN64) */
     size_t hashValue = offset_basis;
-    int n = int(rep.Tag().size());
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < typeIdRepSize; ++i)
     {
-        hashValue ^= static_cast<size_t>(rep.Tag().data[i]);
+        hashValue ^= static_cast<size_t>(rep[i]);
         hashValue *= prime;
     }
     hashCode = hashValue;
@@ -43,12 +86,12 @@ void TypeId::ComputeHashCode() const
 
 bool operator==(const TypeId& left, const TypeId& right)
 {
-    return left.Rep() == right.Rep();
+    return std::memcmp(left.Rep(), right.Rep(), typeIdRepSize) == 0;
 }
 
 bool operator<(const TypeId& left, const TypeId& right)
 {
-    return left.Rep() < right.Rep();
+    return std::memcmp(left.Rep(), right.Rep(), typeIdRepSize) < 0;
 }
 
 } } // namespace Cm::Sym
