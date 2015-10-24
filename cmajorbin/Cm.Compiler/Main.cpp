@@ -25,6 +25,7 @@
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <chrono>
 #include <iostream>
+#include <thread>
 
 #if defined(_MSC_VER) && !defined(NDEBUG)
     #define _CRTDBG_MAP_ALLOC
@@ -436,16 +437,22 @@ int main(int argc, const char** argv)
                     throw std::runtime_error("solution or project must be specified when compiling single files");
                 }
             }
+            Cm::Build::CompileUnitParserRepository compileUnitParsers;
+            int numCores = std::thread::hardware_concurrency();
+            if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean))
+            {
+                compileUnitParsers.Allocate(numCores);
+            }
             for (const std::string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
             {
                 std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
                 if (ext == ".cms")
                 {
-                    Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines);
+                    Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers);
                 }
                 else if (ext == ".cmp")
                 {
-                    Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines);
+                    Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers);
                 }
                 else
                 {

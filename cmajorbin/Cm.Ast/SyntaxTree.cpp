@@ -20,6 +20,12 @@ SyntaxTree::SyntaxTree(SyntaxTree&& that) : compileUnits(std::move(that.compileU
 {
 }
 
+SyntaxTree& SyntaxTree::operator=(SyntaxTree&& that)
+{
+    std::swap(compileUnits, that.compileUnits);
+    return *this;
+}
+
 void SyntaxTree::AddCompileUnit(CompileUnitNode* compileUnit)
 {
     compileUnits.push_back(std::unique_ptr<CompileUnitNode>(compileUnit));

@@ -92,7 +92,7 @@ void BcuWriter::Write(Symbol* symbol)
             BasicTypeSymbol* basicTypeSymbol = static_cast<BasicTypeSymbol*>(symbol);
             uint8_t itemType = uint8_t(BcuItemType::bcuBasicType);
             writer.GetBinaryWriter().Write(itemType);
-            uint8_t shortTypeId = basicTypeSymbol->Id().Rep().Tag().data[0];
+            uint8_t shortTypeId = basicTypeSymbol->Id()[0];
             writer.GetBinaryWriter().Write(shortTypeId);
         }
         else
@@ -180,9 +180,8 @@ Symbol* BcuReader::ReadSymbol()
     {
         case BcuItemType::bcuBasicType:
         {
-            ShortBasicTypeId shortBasicTypeId = static_cast<ShortBasicTypeId>(reader.GetBinaryReader().ReadByte());
-            TypeId typeId(GetBasicTypeId(shortBasicTypeId));
-            Symbol* typeSymbol = reader.GetSymbolTable().GetTypeRepository().GetType(typeId);
+            TypeId typeId(reader.GetBinaryReader().ReadByte());
+            Symbol* typeSymbol = reader.GetSymbolTable().GetTypeRepository().GetType(GetBasicTypeId(ShortBasicTypeId(reader.GetBinaryReader().ReadByte())));
             return typeSymbol;
         }
         case BcuItemType::bcuFunctionSymbol:

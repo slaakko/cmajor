@@ -20,7 +20,7 @@ namespace System.IO
 {
     public class OpenFileException: Exception
     {
-        public nothrow OpenFileException(const string& message_): base(message_) 
+        public nothrow OpenFileException(const string& message_): base(message_)
         {
         }
     }

@@ -18,7 +18,7 @@ enum class ShortBasicTypeId : uint8_t
     boolId = 1, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
 };
 
-const Cm::Util::Uuid& GetBasicTypeId(ShortBasicTypeId shortId);
+const TypeId& GetBasicTypeId(ShortBasicTypeId shortId);
 
 class BasicTypeSymbol : public TypeSymbol
 {

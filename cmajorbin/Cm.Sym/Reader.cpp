@@ -92,7 +92,7 @@ Value* Reader::ReadValue()
 TypeId Reader::ReadTypeId()
 {
     TypeId typeId;
-    binaryReader.Read(&typeId.Rep(), sizeof(Cm::Util::Uuid));
+    binaryReader.Read(typeId.Rep(), typeIdRepSize);
     return typeId;
 }
 

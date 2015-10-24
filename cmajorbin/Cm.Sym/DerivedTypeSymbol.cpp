@@ -24,7 +24,7 @@ TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList&
     for (int i = 0; i < m; ++i)
     {
         uint8_t derivationCode = 1 << uint8_t(derivations[i]);
-        id.Rep().Tag().data[i + 1] ^= derivationCode;
+        id.SetByte(i + 1,  id[i + 1] ^ derivationCode);
     }
     int b = 5;
     int n = int(arrayDimensions.size());
@@ -35,12 +35,11 @@ TypeId ComputeDerivedTypeId(TypeSymbol* baseType, const Cm::Ast::DerivationList&
         uint8_t d1 = (arrayDimension >> 16) & 0xFF;
         uint8_t d2 = (arrayDimension >> 8) & 0xFF;
         uint8_t d3 = arrayDimension & 0xFF;
-        id.Rep().Tag().data[b + i] ^= d0;
-        id.Rep().Tag().data[b + i + 1] ^= d1;
-        id.Rep().Tag().data[b + i + 2] ^= d2;
-        id.Rep().Tag().data[b + i + 3] ^= d3;
+        id.SetByte(b + i, id[b + i] ^ d0);
+        id.SetByte(b + i + 1, id[b + i + 1] ^ d1);
+        id.SetByte(b + i + 2, id[b + i + 2] ^ d2);
+        id.SetByte(b + i + 3, id[b + i + 3] ^ d3);
     }
-    id.InvalidateHashCode();
     return id;
 }
 

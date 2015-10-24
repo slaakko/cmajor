@@ -17,6 +17,7 @@
 #include <Cm.Parser/CompileUnit.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parser/ToolError.hpp>
+#include <Cm.Parsing/ParsingDomain.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
@@ -56,6 +57,9 @@
 #include <Llvm.Ir/Type.hpp>
 #include <chrono>
 #include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 namespace Cm { namespace Build {
 
@@ -139,9 +143,156 @@ std::string ResolveLibraryReference(const boost::filesystem::path& projectOutput
     throw std::runtime_error("library reference '" + libraryReferencePath + "' not found (seached: " + s + ")");
 }
 
-Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const std::vector<std::string>& sourceFilePaths)
+void CompileUnitParserRepository::Allocate(int numGrammars)
 {
-    Cm::Parser::CompileUnitGrammar* compileUnitGrammar = Cm::Parser::CompileUnitGrammar::Create();
+    for (int i = 0; i < numGrammars; ++i)
+    {
+        std::unique_ptr<Cm::Parsing::ParsingDomain> parsingDomain(new Cm::Parsing::ParsingDomain());
+        parsingDomain->SetOwned();
+        Cm::Parser::CompileUnitGrammar* compileUnitGrammar(Cm::Parser::CompileUnitGrammar::Create(parsingDomain.get()));
+        parsingDomains.push_back(std::move(parsingDomain));
+        compileUnitsGrammars.push_back(compileUnitGrammar);
+    }
+}
+
+Cm::Parser::CompileUnitGrammar* CompileUnitParserRepository::GetCompileUnitGrammar(int index) const
+{
+    if (index < 0 || index >= compileUnitsGrammars.size())
+    {
+        throw std::runtime_error("invalid compile unit grammar index");
+    }
+    return compileUnitsGrammars[index];
+}
+
+class ParsingContext
+{
+public:
+    ParsingContext(Cm::Parser::FileRegistry& fileRegistry, const std::vector<std::string>& sourceFilePaths) : stop(false)
+    {
+        int n = int(sourceFilePaths.size());
+        for (const std::string& sourceFilePath : sourceFilePaths)
+        {
+            int sourceFileIndex = fileRegistry.RegisterParsedFile(sourceFilePath);
+            sourceFilePathIndexVec.push_back(std::make_pair(sourceFilePath, sourceFileIndex));
+        }
+        parsedCompileUnits.resize(n);
+        for (int i = 0; i < n; ++i)
+        {
+            fileIndexQueue.push_back(i);
+        }
+        exceptions.resize(n);
+    }
+    int GetNextFileIndex()
+    {
+        std::lock_guard<std::mutex> lock(fileIndexQueueMutex);
+        if (fileIndexQueue.empty()) return -1;
+        int fileIndex = fileIndexQueue.front();
+        fileIndexQueue.pop_front();
+        return fileIndex;
+    }
+    const std::pair<std::string, int>& GetSourceFileAndSourceFileIndex(int fileIndex) const
+    {
+        return sourceFilePathIndexVec[fileIndex];
+    }
+    void PutParsedCompileUnit(int fileIndex, Cm::Ast::CompileUnitNode* parsedCompileUnit)
+    {
+        parsedCompileUnits[fileIndex] = parsedCompileUnit;
+    }
+    Cm::Ast::CompileUnitNode* GetParsedCompileUnit(int fileIndex) const
+    {
+        return parsedCompileUnits[fileIndex];
+    }
+    void SetException(int fileIndex, std::exception_ptr exception)
+    {
+        exceptions[fileIndex] = exception;
+    }
+    std::exception_ptr GetException(int fileIndex) const
+    {
+        return exceptions[fileIndex];
+    }
+    void Stop()
+    {
+        stop = true;
+    }
+    bool Stopping()
+    {
+        return stop;
+    }
+private:
+    std::vector<std::pair<std::string, int>> sourceFilePathIndexVec;
+    std::vector<Cm::Ast::CompileUnitNode*> parsedCompileUnits;
+    std::vector<std::exception_ptr> exceptions;
+    std::list<int> fileIndexQueue;
+    std::mutex fileIndexQueueMutex;
+    bool stop;
+};
+
+struct ParserData
+{
+    ParserData(ParsingContext* parsingContext_, Cm::Parser::CompileUnitGrammar* compileUnitGrammar_) : parsingContext(parsingContext_), compileUnitGrammar(compileUnitGrammar_) {}
+    ParsingContext* parsingContext;
+    Cm::Parser::CompileUnitGrammar* compileUnitGrammar;
+};
+
+void Parser(ParserData&& parserData)
+{
+    int fileIndex = -1;
+    try
+    {
+        fileIndex = parserData.parsingContext->GetNextFileIndex();
+        while (!parserData.parsingContext->Stopping() && fileIndex != -1)
+        {
+            const std::pair<std::string, int>& sourceFilePathIndex = parserData.parsingContext->GetSourceFileAndSourceFileIndex(fileIndex);
+            Cm::Util::MappedInputFile sourceFile(sourceFilePathIndex.first);
+            Cm::Parser::ParsingContext ctx;
+            Cm::Ast::CompileUnitNode* compileUnit = parserData.compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), sourceFilePathIndex.second, sourceFilePathIndex.first, &ctx);
+            parserData.parsingContext->PutParsedCompileUnit(fileIndex, compileUnit);
+            fileIndex = parserData.parsingContext->GetNextFileIndex();
+        }
+    }
+    catch (...)
+    {
+        if (fileIndex != -1)
+        {
+            parserData.parsingContext->SetException(fileIndex, std::current_exception());
+        }
+        parserData.parsingContext->Stop();
+    }
+}
+
+Cm::Ast::SyntaxTree ParseSourcesConcurrently(Cm::Parser::FileRegistry& fileRegistry, const std::vector<std::string>& sourceFilePaths, CompileUnitParserRepository& compileUnitParserRepository)
+{
+    int numFiles = int(sourceFilePaths.size());
+    ParsingContext parsingContext(fileRegistry, sourceFilePaths);
+    int numCores = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+    for (int i = 0; i < numCores; ++i)
+    {
+        threads.push_back(std::move(std::thread(Parser, ParserData(&parsingContext, compileUnitParserRepository.GetCompileUnitGrammar(i)))));
+    }
+    for (int i = 0; i < numCores; ++i)
+    {
+        threads[i].join();
+    }
+    for (int fileIndex = 0; fileIndex < numFiles; ++fileIndex)
+    {
+        std::exception_ptr exception = parsingContext.GetException(fileIndex);
+        if (exception)
+        {
+            std::rethrow_exception(exception);
+        }
+    }
+    Cm::Ast::SyntaxTree syntaxTree;
+    for (int fileIndex = 0; fileIndex < numFiles; ++fileIndex)
+    {
+        syntaxTree.AddCompileUnit(parsingContext.GetParsedCompileUnit(fileIndex));
+    }
+    return syntaxTree;
+}
+
+Cm::Ast::SyntaxTree ParseSources(Cm::Parser::FileRegistry& fileRegistry, const std::vector<std::string>& sourceFilePaths, CompileUnitParserRepository& compileUnitParserRepository)
+{
+    Cm::Parser::CompileUnitGrammar* compileUnitGrammar = compileUnitParserRepository.GetCompileUnitGrammar(0);
     Cm::Ast::SyntaxTree syntaxTree;
     for (const std::string& sourceFilePath : sourceFilePaths)
     {
@@ -1365,7 +1516,8 @@ void ProcessProgram(Cm::Ast::Project* project)
     WriteNextSid(symbolTable);
 }
 
-bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
+bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
+    CompileUnitParserRepository& compileUnitParserRepository)
 {
     Cm::Sym::FunctionTable functionTable;
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
@@ -1393,7 +1545,24 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     AddPlatformAndConfigDefines(allDefines);
     Cm::Sym::Define(allDefines);
     Cm::Parser::FileRegistry::Init();
-    Cm::Ast::SyntaxTree syntaxTree = ParseSources(*Cm::Parser::FileRegistry::Instance(), project->SourceFilePaths());
+    int numSourceFiles = int(project->SourceFilePaths().size());
+    Cm::Ast::SyntaxTree syntaxTree;
+    if (numSourceFiles <= 1)
+    {
+        if (!quiet)
+        {
+            std::cout << "Parsing 1 source file..." << std::endl;
+        }
+        syntaxTree = ParseSources(*Cm::Parser::FileRegistry::Instance(), project->SourceFilePaths(), compileUnitParserRepository);
+    }
+    else
+    {
+        if (!quiet)
+        {
+            std::cout << "Parsing " << numSourceFiles << " source files..." << std::endl;
+        }
+        syntaxTree = ParseSourcesConcurrently(*Cm::Parser::FileRegistry::Instance(), project->SourceFilePaths(), compileUnitParserRepository);
+    }
     std::vector<std::string> assemblyFilePaths;
     assemblyFilePaths.push_back(project->AssemblyFilePath());
     std::vector<std::string> cLibs;
@@ -1556,7 +1725,8 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
 
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;
 
-void BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
+void BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
+    CompileUnitParserRepository& compileUnitParserRepository)
 {
     if (!boost::filesystem::exists(projectFilePath))
     {
@@ -1576,13 +1746,14 @@ void BuildProject(const std::string& projectFilePath, bool rebuild, const std::v
     }
     else
     {
-        BuildProject(project.get(), rebuild, compileFileNames, defines);
+        BuildProject(project.get(), rebuild, compileFileNames, defines, compileUnitParserRepository);
     }
 }
 
 Cm::Parser::SolutionGrammar* solutionGrammar = nullptr;
 
-void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines)
+void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
+    CompileUnitParserRepository& compileUnitParserRepository)
 {
     int built = 0;
     int uptodate = 0;
@@ -1635,7 +1806,7 @@ void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std:
         }
         else
         {
-            bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines);
+            bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines, compileUnitParserRepository);
             if (projectChanged)
             {
                 rebuild = true;

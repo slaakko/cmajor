@@ -40,18 +40,18 @@ TypeId ComputeTemplateTypeId(TypeSymbol* subjectType, const std::vector<TypeSymb
 {
     TypeId id = subjectType->Id();
 	uint8_t n = uint8_t(typeArguments.size());
-    uint8_t m = uint8_t(id.Rep().Tag().size());
+    uint8_t m = uint8_t(typeIdRepSize);
 	if (n >= m)
 	{
-		throw std::runtime_error("only " + std::to_string(id.Rep().Tag().size() - 1) + " template arguments supported");
+		throw std::runtime_error("only " + std::to_string(typeIdRepSize - 1) + " template arguments supported");
 	}
 	for (uint8_t i = 0; i < n; ++i)
     {
 		TypeSymbol* typeArgument = typeArguments[i];
-		Cm::Util::Uuid argumentId = typeArgument->Id().Rep();
+        TypeId argumentId = typeArgument->Id();
 		uint8_t positionCode = (i + (m / 2)) % m;
-		std::rotate(argumentId.Tag().begin(), argumentId.Tag().begin() + positionCode, argumentId.Tag().end());
-		id.Rep() = id.Rep() ^ argumentId;
+        std::rotate(argumentId.Rep(), argumentId.Rep() + positionCode, argumentId.Rep() + typeIdRepSize);
+        id = id ^ argumentId;
     }
     id.InvalidateHashCode();
     return id;

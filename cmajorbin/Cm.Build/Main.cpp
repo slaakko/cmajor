@@ -169,7 +169,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
             Cm::Sym::FunctionSymbol* initClassHierarchy = symbolTable.GetOverload("init_class_hierarchy");
             Cm::BoundTree::BoundExpressionList initClassHierarchyArguments;
             Cm::BoundTree::BoundClassHierarchyTableConstant* classHierarchyTableConstant = new Cm::BoundTree::BoundClassHierarchyTableConstant();
-            classHierarchyTableConstant->SetType(symbolTable.GetTypeRepository().MakePointerType(symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)), 
+            classHierarchyTableConstant->SetType(symbolTable.GetTypeRepository().MakePointerType(symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)),
                 userMainFunction->GetSpan()));
             initClassHierarchyArguments.Add(classHierarchyTableConstant);
             Cm::BoundTree::BoundLiteral* numEntries = new Cm::BoundTree::BoundLiteral(nullptr);
