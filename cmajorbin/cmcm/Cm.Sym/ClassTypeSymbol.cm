@@ -13,6 +13,8 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
+    public const ulong noCid = 0xFFFFFFFFFFFFFFFFu;
+    
     public enum ClassTypeSymbolFlags : uint
     {
         none = 0u,
@@ -50,11 +52,11 @@ namespace Cm.Sym
         public UniquePtr<Cm.Ast.ClassNode> classNode;
     }
     
-    public nothrow TypeId GetClassTypeId(bool getNextId, uint classNumber)
+    public nothrow TypeId GetClassTypeId(bool getNextId, ulong cid)
     {
         if (getNextId)
         {
-            return TypeId(classNumber);
+            return TypeId(cid);
         }
         return TypeId();
     }
@@ -62,15 +64,15 @@ namespace Cm.Sym
     public class ClassTypeSymbol : TypeSymbol
     {
         public nothrow ClassTypeSymbol(const Span& span_, const string& name_) : 
-            base(span_, name_, TypeId()), classNumber(cast<uint>(-1)), flags(ClassTypeSymbolFlags.none), baseClass(null)
+            base(span_, name_, TypeId()), cid(noCid), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null)
         {
         }
-        public nothrow ClassTypeSymbol(const Span& span_, const string& name_, bool getNextId_, uint classNumber_) : 
-            base(span_, name_, GetClassTypeId(getNextId_, classNumber_)), classNumber(classNumber_), flags(ClassTypeSymbolFlags.none), baseClass(null)
+        public nothrow ClassTypeSymbol(const Span& span_, const string& name_, bool getNextId_, ulong cid_) : 
+            base(span_, name_, GetClassTypeId(getNextId_, cid_)), cid(cid_), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null)
         {
         }
         public nothrow ClassTypeSymbol(const Span& span_, const string& name_, const TypeId& id_) :
-            base(span_, name_, id_), classNumber(cast<uint>(-1)), flags(ClassTypeSymbolFlags.none), baseClass(null)
+            base(span_, name_, id_), cid(noCid), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null)
         {
         }
         public nothrow override SymbolType GetSymbolType() const
@@ -270,7 +272,7 @@ namespace Cm.Sym
         public override void Read(Reader& reader)
         {
             base->Read(reader);
-            classNumber = reader.GetBinaryReader().ReadUInt();
+            cid = reader.GetBinaryReader().ReadULong();
             flags = cast<ClassTypeSymbolFlags>(reader.GetBinaryReader().ReadUInt());
             bool hasBaseClass = reader.GetBinaryReader().ReadBool();
             if (hasBaseClass)
@@ -295,7 +297,7 @@ namespace Cm.Sym
         public override void Write(Writer& writer)
         {
             base->Write(writer);
-            writer.GetBinaryWriter().Write(classNumber);
+            writer.GetBinaryWriter().Write(cid);
             uint outputFlags = flags & ~ClassTypeSymbolFlags.vtblInitialized;
             writer.GetBinaryWriter().Write(outputFlags);
             bool hasBaseClass = baseClass != null;
@@ -467,9 +469,37 @@ namespace Cm.Sym
                 }
             }
         }
-        public inline uint ClassNumber() const
+        public inline nothrow ulong Cid() const
         {
-            return classNumber;
+            return cid;
+        }
+        public inline nothrow void SetCid(ulong cid_)
+        {
+            cid = cid_;
+        }
+        public inline nothrow ulong Key() const
+        {
+            return key;
+        }
+        public inline nothrow void SetKey(ulong key_)
+        {
+            key = key_;
+        }
+        public inline nothrow int Level() const
+        {
+            return level;
+        }
+        public inline nothrow void SetLevel(int level_)
+        {
+            level = level_;
+        }
+        public inline nothrow int Priority() const
+        {
+            return priority;
+        }
+        public inline nothrow void SetPriority(int priority_)
+        {
+            priority = priority_;
         }
         public inline void SetCompileUnit(Cm.Ast.CompileUnitNode* compileUnit_)
         {
@@ -485,7 +515,10 @@ namespace Cm.Sym
                 baseClass = replica->GetPrimaryTemplateTypeSymbol();
             }
         }    
-        private uint classNumber;
+        private ulong cid;
+        private ulong key;
+        private int level;
+        private int priority;
         private ClassTypeSymbolFlags flags;
         private ClassTypeSymbol* baseClass;
         private UniquePtr<PersistentClassData> persistentClassData;

@@ -110,7 +110,6 @@ class Emitter : public Ir::Intf::Emitter
 {
 public:
     Emitter();
-    ~Emitter();
 	void SetIrFunction(Ir::Intf::Function* irFunction_) { irFunction = irFunction_; }
     Ir::Intf::Function* GetIrFunction() const { return irFunction; }
     void RequestLabelFor(std::shared_ptr<GenData> genData);

@@ -147,10 +147,6 @@ Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr), cDebugNode(n
 {
 }
 
-Emitter::~Emitter()
-{
-}
-
 void Emitter::RequestLabelFor(std::shared_ptr<GenData> genData)
 {
     labelRequestSet.insert(genData);
@@ -186,7 +182,6 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
         {
             instruction->SetLabel(label);
         }
-
         for (std::shared_ptr<GenData> genData : labelRequestSet)
         {
             genData->SetLabel(label);

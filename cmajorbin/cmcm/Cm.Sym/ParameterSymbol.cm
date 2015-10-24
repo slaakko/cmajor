@@ -13,9 +13,9 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
-    public class ParameterSymbol : Symbol
+    public class ParameterSymbol : VariableSymbol
     {
-        public nothrow ParameterSymbol(const Span& span_, const string& name_) : base(span_, name_), type(null)
+        public nothrow ParameterSymbol(const Span& span_, const string& name_) : base(span_, name_)
         {
         }
         public nothrow override SymbolType GetSymbolType() const
@@ -34,27 +34,11 @@ namespace Cm.Sym
         {
             return SymbolAccess.public_;
         }
-        public nothrow inline TypeSymbol* GetType() const
-        {
-            return type;
-        }
-        public nothrow inline void SetType(TypeSymbol* type_)
-        {
-            type = type_;
-        }
-        public override void SetType(TypeSymbol* type_, int index)
-        {
-            SetType(type_);
-        }
         public override void Read(Reader& reader)
         {
             base->Read(reader);
             bool hasType = reader.GetBinaryReader().ReadBool();
-            if (hasType)
-            {
-                reader.FetchTypeFor(this, 0);
-            }
-            else
+            if (!hasType)
             {
                 Cm.Ast.ParameterNode* parameterNode = reader.GetAstReader().ReadParameterNode();
                 ownedParameterNode.Reset(parameterNode);
@@ -64,17 +48,12 @@ namespace Cm.Sym
         public override void Write(Writer& writer)
         {
             base->Write(writer);
-            bool hasType = type != null;
-            writer.GetBinaryWriter().Write(hasType);
+            bool hasType = GetType() != null;
             if (!hasType)
             {
                 SymbolTable& symbolTable = writer.GetSymbolTable();
                 Cm.Ast.Node* parameterNode = symbolTable.GetNode(this);
                 writer.GetAstWriter().Write(parameterNode);
-            }
-            else
-            {
-                writer.Write(type->Id());
             }
         }
         

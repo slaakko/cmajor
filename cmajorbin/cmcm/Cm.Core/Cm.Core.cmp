@@ -4,6 +4,7 @@ assembly <Cm.Core.cma>;
 reference <../Cm.Sym/Cm.Sym.cml>;
 source <Argument.cm>;
 source <BasicTypeOp.cm>;
+source <CDebugInfo.cm>;
 source <ConceptRepository.cm>;
 source <Error.cm>;
 source <GenData.cm>;

@@ -24,7 +24,14 @@ namespace Cm.Core
             return type;
         }
         public abstract void Generate(Emitter& emitter, GenResult& result);
-        // todo
+        public nothrow inline Ir.Intf.Type* IrType() const
+        {
+            return type->IrType();
+        }
+        public nothrow inline Ir.Intf.Object* DefaultIrValue() const
+        {
+            return type->DefaultIrValue();
+        }
         private Cm.Sym.TypeSymbol* type;
     }
     
@@ -35,12 +42,16 @@ namespace Cm.Core
             SetGroupName("@constructor");
             Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
             thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thisParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Cm.IrIntf.Init(emitter, IrType(), DefaultIrValue(), result.MainObject());
         } 
     }
     
@@ -51,15 +62,20 @@ namespace Cm.Core
             SetGroupName("@constructor");
             Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
             thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thisParam);
             Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
             thatParam->SetType(Type());
+            thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thatParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Cm.IrIntf.Init(emitter, IrType(), result.Arg1(), result.MainObject());
         } 
     }
     
@@ -72,15 +88,20 @@ namespace Cm.Core
             SetReturnType(voidType);
             Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
             thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thisParam);
             Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
             thatParam->SetType(Type());
+            thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thatParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), result.MainObject());
         } 
     }
 
@@ -91,15 +112,20 @@ namespace Cm.Core
             SetGroupName("@constructor");
             Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
             thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thisParam);
             Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
             thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span()));
+            thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thatParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Cm.IrIntf.Init(emitter, IrType(), result.Arg1(), result.MainObject());
         } 
     }
     
@@ -112,15 +138,20 @@ namespace Cm.Core
             SetReturnType(voidType);
             Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
             thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thisParam);
             Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
             thatParam->SetType(typeRepository.MakeRvalueRefType(Type(), Span()));
+            thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thatParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), result.MainObject());
         } 
     }
     
@@ -133,15 +164,53 @@ namespace Cm.Core
             SetReturnType(boolType);
             Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
             leftParam->SetType(Type());
+            leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(leftParam);
             Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
             rightParam->SetType(Type());
+            rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(rightParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Ir.Intf.Object* arg1 = result.Arg1();
+            Ir.Intf.Object* arg2 = result.Arg2();
+            Ir.Intf.Type* ptrType = Cm.IrIntf.Pointer(IrType(), 1u);
+            emitter.Own(ptrType);
+            if (Cm.IrIntf.TypesEqual(arg1->GetType(), ptrType))
+            {
+                arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+            }
+            if (Cm.IrIntf.TypesEqual(arg2->GetType(), ptrType))
+            {
+                arg2 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg2);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg2(), arg2);
+            }
+            if (Type()->IsFloatingPointTypeSymbol())
+            {
+                emitter.Emit(Cm.IrIntf.FCmp(IrType(), result.MainObject(), Ir.Intf.FConditionCode.oeq, arg1, arg2));
+            }
+            else
+            {
+                emitter.Emit(Cm.IrIntf.ICmp(IrType(), result.MainObject(), Ir.Intf.IConditionCode.eq, arg1, arg2));
+            }
+            if (result.GenJumpingBoolCode())
+            {
+                Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(trueLabel);
+                Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(falseLabel);
+                emitter.Emit(Cm.IrIntf.Br(result.MainObject(), trueLabel, falseLabel));
+                result.AddTrueTarget(trueLabel);
+                result.AddFalseTarget(falseLabel);
+            }
         } 
     }
 
@@ -154,15 +223,58 @@ namespace Cm.Core
             SetReturnType(boolType);
             Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
             leftParam->SetType(Type());
+            leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(leftParam);
             Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
             rightParam->SetType(Type());
+            rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(rightParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Ir.Intf.Object* arg1 = result.Arg1();
+            Ir.Intf.Object* arg2 = result.Arg2();
+            Ir.Intf.Type* ptrType = Cm.IrIntf.Pointer(IrType(), 1u);
+            emitter.Own(ptrType);
+            if (Cm.IrIntf.TypesEqual(arg1->GetType(), ptrType))
+            {
+                arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+            }
+            if (Cm.IrIntf.TypesEqual(arg2->GetType(), ptrType))
+            {
+                arg2 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg2);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg2(), arg2);
+            }
+            if (Type()->IsFloatingPointTypeSymbol())
+            {
+                emitter.Emit(Cm.IrIntf.FCmp(IrType(), result.MainObject(), Ir.Intf.FConditionCode.olt, arg1, arg2));
+            }
+            else 
+            {
+                Ir.Intf.IConditionCode condCode = Ir.Intf.IConditionCode.slt;
+                if (!Type()->IsSignedType())
+                {
+                    condCode = Ir.Intf.IConditionCode.ult;
+                    emitter.Emit(Cm.IrIntf.ICmp(IrType(), result.MainObject(), condCode, arg1, arg2));
+                }                
+            }
+            if (result.GenJumpingBoolCode())
+            {
+                Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(trueLabel);
+                Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(falseLabel);
+                emitter.Emit(Cm.IrIntf.Br(result.MainObject(), trueLabel, falseLabel));
+                result.AddTrueTarget(trueLabel);
+                result.AddFalseTarget(falseLabel);
+            }
         } 
     }
     
@@ -174,17 +286,43 @@ namespace Cm.Core
             SetReturnType(Type());
             Cm.Sym.ParameterSymbol* leftParam(new Cm.Sym.ParameterSymbol(Span(), "left"));
             leftParam->SetType(Type());
+            leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(leftParam);
             Cm.Sym.ParameterSymbol* rightParam(new Cm.Sym.ParameterSymbol(Span(), "right"));
             rightParam->SetType(Type());
+            rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(rightParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Ir.Intf.Object* arg1 = result.Arg1();
+            Ir.Intf.Object* arg2 = result.Arg2();
+            Ir.Intf.Type* ptrArg1 = Cm.IrIntf.Pointer(arg1->GetType(), arg1->GetType()->NumPointers() + 1u);
+            emitter.Own(ptrArg1);
+            if (Cm.IrIntf.TypesEqual(ptrArg1, arg2->GetType()))
+            {
+                arg2 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg2);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg2(), arg2);
+            }
+            else
+            {
+                Ir.Intf.Type* ptrArg2 = Cm.IrIntf.Pointer(arg2->GetType(), arg2->GetType()->NumPointers() + 1u);
+                emitter.Own(ptrArg2);
+                if (Cm.IrIntf.TypesEqual(arg1->GetType(), ptrArg2))
+                {
+                    arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                    emitter.Own(arg1);
+                    Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+                }
+            }
+            emitter.Emit(CreateInstruction(IrType(), result.MainObject(), arg1, arg2));
         } 
-        public abstract void CreateInstruction(); // todo : create instruction
+        public abstract Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const;
     }
     
     public class OpAdd : BinOp
@@ -192,9 +330,16 @@ namespace Cm.Core
         public OpAdd(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator+")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            if (Type()->IsFloatingPointTypeSymbol())
+            {
+                return Cm.IrIntf.FAdd(irType, result, operand1, operand2);
+            }
+            else
+            {
+                return Cm.IrIntf.Add(irType, result, operand1, operand2);
+            }
         }
     }
 
@@ -203,9 +348,16 @@ namespace Cm.Core
         public OpSub(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator-")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            if (Type()->IsFloatingPointTypeSymbol())
+            {
+                return Cm.IrIntf.FSub(irType, result, operand1, operand2);
+            }
+            else
+            {
+                return Cm.IrIntf.Sub(irType, result, operand1, operand2);
+            }
         }
     }
 
@@ -214,9 +366,16 @@ namespace Cm.Core
         public OpMul(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator*")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            if (Type()->IsFloatingPointTypeSymbol())
+            {
+                return Cm.IrIntf.FMul(irType, result, operand1, operand2);
+            }
+            else
+            {
+                return Cm.IrIntf.Mul(irType, result, operand1, operand2);
+            }
         }
     }
 
@@ -225,9 +384,23 @@ namespace Cm.Core
         public OpDiv(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator/")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            if (Type()->IsFloatingPointTypeSymbol())
+            {
+                return Cm.IrIntf.FDiv(irType, result, operand1, operand2);
+            }
+            else
+            {
+                if (Type()->IsSignedType())
+                {
+                    return Cm.IrIntf.SDiv(irType, result, operand1, operand2);
+                }                
+                else
+                {
+                    return Cm.IrIntf.UDiv(irType, result, operand1, operand2);   
+                }
+            }
         }
     }
 
@@ -236,9 +409,16 @@ namespace Cm.Core
         public OpRem(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator%")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            if (Type()->IsSignedType())
+            {
+                return Cm.IrIntf.SRem(irType, result, operand1, operand2);
+            }                
+            else
+            {
+                return Cm.IrIntf.URem(irType, result, operand1, operand2);   
+            }
         }
     }
 
@@ -247,9 +427,9 @@ namespace Cm.Core
         public OpShl(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator<<")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            return Cm.IrIntf.Shl(irType, result, operand1, operand2);
         }
     }
 
@@ -258,9 +438,16 @@ namespace Cm.Core
         public OpShr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator>>")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            if (Type()->IsSignedType())
+            {
+                return Cm.IrIntf.AShr(irType, result, operand1, operand2);
+            }
+            else
+            {
+                return Cm.IrIntf.LShr(irType, result, operand1, operand2);
+            }
         }
     }
 
@@ -269,20 +456,20 @@ namespace Cm.Core
         public OpBitAnd(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator&")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            return Cm.IrIntf.And(irType, result, operand1, operand2);
         }
-    }
+    }    
 
     public class OpBitOr : BinOp
     {
         public OpBitOr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator|")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            return Cm.IrIntf.Or(irType, result, operand1, operand2);
         }
     }
 
@@ -291,9 +478,9 @@ namespace Cm.Core
         public OpBitXor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(typeRepository, type_, "operator^")
         {
         }
-        public override void CreateInstruction()
+        public override Ir.Intf.Instruction* CreateInstruction(Ir.Intf.Type* irType, Ir.Intf.Object* result, Ir.Intf.Object* operand1, Ir.Intf.Object* operand2) const
         {
-            // todo
+            return Cm.IrIntf.Xor(irType, result, operand1, operand2);
         }
     }
     
@@ -306,12 +493,40 @@ namespace Cm.Core
             SetReturnType(boolType);
             Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
             operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(operandParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            if (result.GenJumpingBoolCode())
+            {
+                Ir.Intf.Object* true_ = Cm.IrIntf.True();
+                emitter.Own(true_);
+                Ir.Intf.Object* arg1 = Cm.IrIntf.MakeTemporaryRegVar(result.MainObject()->GetType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, result.MainObject()->GetType(), result.Arg1(), arg1);
+                emitter.Emit(Cm.IrIntf.Xor(result.MainObject()->GetType(), result.MainObject(), arg1, true_));
+                Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(trueLabel);
+                Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(falseLabel);
+                emitter.Emit(Cm.IrIntf.Br(result.MainObject(), trueLabel, falseLabel));
+                result.AddTrueTarget(trueLabel);
+                result.AddFalseTarget(falseLabel);
+            }
+            else
+            {
+                Ir.Intf.Object* true_ = Cm.IrIntf.True();
+                emitter.Own(true_);
+                Ir.Intf.Object* arg1 = Cm.IrIntf.MakeTemporaryRegVar(result.MainObject()->GetType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, result.MainObject()->GetType(), result.Arg1(), arg1);
+                emitter.Emit(Cm.IrIntf.Xor(result.MainObject()->GetType(), result.MainObject(), arg1, true_));
+            }
         } 
     }
     
@@ -323,12 +538,16 @@ namespace Cm.Core
             SetReturnType(Type());
             Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
             operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(operandParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            result.SetMainObject(result.Arg1());
         } 
     }
 
@@ -340,12 +559,32 @@ namespace Cm.Core
             SetReturnType(Type());
             Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
             operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(operandParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Ir.Intf.Object* arg1 = result.Arg1();
+            Ir.Intf.Type* ptrType = Cm.IrIntf.Pointer(IrType(), IrType()->NumPointers() + 1u);
+            emitter.Own(ptrType);
+            if (Cm.IrIntf.TypesEqual(arg1->GetType(), ptrType))
+            {
+                arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+            }
+            if (Type()->IsFloatingPointTypeSymbol())
+            {
+                emitter.Emit(Cm.IrIntf.FSub(IrType(), result.MainObject(), DefaultIrValue(), arg1));
+            }
+            else
+            {
+                emitter.Emit(Cm.IrIntf.Sub(IrType(), result.MainObject(), DefaultIrValue(), arg1));
+            }
         } 
     }
 
@@ -357,12 +596,27 @@ namespace Cm.Core
             SetReturnType(Type());
             Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
             operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(operandParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Ir.Intf.Object* arg1 = result.Arg1();
+            Ir.Intf.Type* ptrType = Cm.IrIntf.Pointer(IrType(), IrType()->NumPointers() + 1u);
+            emitter.Own(ptrType);
+            if (Cm.IrIntf.TypesEqual(arg1->GetType(), ptrType))
+            {
+                arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+            }
+            Ir.Intf.Object* minus1 = IrType()->CreateMinusOne();
+            emitter.Own(minus1);
+            emitter.Emit(Cm.IrIntf.Xor(IrType(), result.MainObject(), arg1, minus1));
         } 
     }
 
@@ -374,12 +628,22 @@ namespace Cm.Core
             SetReturnType(Type());
             Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
             operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(operandParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Ir.Intf.RegVar* arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+            emitter.Own(arg1);
+            Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+            Ir.Intf.Object* one = IrType()->CreatePlusOne();
+            emitter.Own(one);
+            emitter.Emit(Cm.IrIntf.Add(IrType(), result.MainObject(), arg1, one));
+            Cm.IrIntf.Assign(emitter, IrType(), result.MainObject(), result.Arg1());
         } 
     }
 
@@ -391,12 +655,22 @@ namespace Cm.Core
             SetReturnType(Type());
             Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
             operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(operandParam);
             ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            Ir.Intf.RegVar* arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+            emitter.Own(arg1);
+            Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+            Ir.Intf.Object* one = IrType()->CreatePlusOne();
+            emitter.Own(one);
+            emitter.Emit(Cm.IrIntf.Sub(IrType(), result.MainObject(), arg1, one));
+            Cm.IrIntf.Assign(emitter, IrType(), result.MainObject(), result.Arg1());
         } 
     }
     
@@ -414,16 +688,85 @@ namespace Cm.Core
             SetGroupName("@constructor");
             Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
             thisParam->SetType(typeRepository.MakePointerType(targetType, Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thisParam);
             Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
             thatParam->SetType(typeRepository.MakeRvalueRefType(sourceType, Span()));
+            thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thatParam);
             ComputeName();
-           
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            entry->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(entry);
         }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
-            // todo
+            if (conversionInst == ConversionInst.none || Cm.IrIntf.TypesEqual(sourceType->IrType(), targetType->IrType()) && !(result.MainObject() is Ir.Intf.StackVar*))
+            {
+                result.SetMainObject(result.Arg1());
+                return;
+            }
+            Ir.Intf.Object* from = result.Arg1();
+            Ir.Intf.Object* to = result.MainObject();
+            Ir.Intf.Object* origTo = null;
+            Ir.Intf.Type* ptrTarget = Cm.IrIntf.Pointer(targetType->IrType(), targetType->IrType()->NumPointers() + 1u);
+            emitter.Own(ptrTarget);
+            if (!(to is Ir.Intf.RegVar*) || (to is Ir.Intf.RegVar*) && Cm.IrIntf.TypesEqual(to->GetType(), ptrTarget))
+            {
+                origTo = to;
+                to = Cm.IrIntf.MakeTemporaryRegVar(targetType->IrType());
+                emitter.Own(to);
+            }
+            Ir.Intf.Type* ptrSource = Cm.IrIntf.Pointer(sourceType->IrType(), sourceType->IrType()->NumPointers() + 1u);
+            emitter.Own(ptrSource);
+            if (!result.ClassTypeToPointerTypeConversion() && !sourceType->IsFunctionType() &&
+                (!(from is Ir.Intf.Global*) || (from is Ir.Intf.Global*) && Cm.IrIntf.TypesEqual(from->GetType(), ptrSource)) &&
+                (!(from is Ir.Intf.RegVar*) || (from is Ir.Intf.RegVar*) && Cm.IrIntf.TypesEqual(from->GetType(), ptrSource)) &&
+                !(from is Ir.Intf.Constant*) && !result.AddrArg() && !result.ArgByRef())
+            {
+                Ir.Intf.Object* origFrom = from;
+                from = Cm.IrIntf.MakeTemporaryRegVar(sourceType->IrType());
+                emitter.Own(from);
+                Cm.IrIntf.Assign(emitter, sourceType->IrType(), origFrom, from);
+            }
+            switch (conversionInst)
+            {
+                case ConversionInst.sext: emitter.Emit(Cm.IrIntf.Sext(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.zext: emitter.Emit(Cm.IrIntf.Zext(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.trunc: emitter.Emit(Cm.IrIntf.Trunc(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.bitcast: 
+                {
+                    if (result.ArgByRef())
+                    {
+                        Ir.Intf.Type* pointerSourceType = Cm.IrIntf.Pointer(sourceType->IrType(), 1u);
+                        emitter.Own(pointerSourceType);
+                        if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+                        {
+                            Ir.Intf.Object* origFrom = from;
+                            from = Cm.IrIntf.MakeTemporaryRegVar(pointerSourceType);
+                            emitter.Own(from);
+                            emitter.Emit(Cm.IrIntf.Load(pointerSourceType, from, origFrom, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
+                        }
+                        emitter.Emit(Cm.IrIntf.Bitcast(pointerSourceType, to, from, targetType->IrType()));
+                    }
+                    else
+                    {
+                        emitter.Emit(Cm.IrIntf.Bitcast(sourceType->IrType(), to, from, targetType->IrType()));
+                    }
+                    break;
+                }
+                case ConversionInst.uitofp: emitter.Emit(Cm.IrIntf.Uitofp(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.sitofp: emitter.Emit(Cm.IrIntf.Sitofp(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.fptosi: emitter.Emit(Cm.IrIntf.Fptosi(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.fptoui: emitter.Emit(Cm.IrIntf.Fptoui(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.fpext: emitter.Emit(Cm.IrIntf.Fpext(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.fptrunc: emitter.Emit(Cm.IrIntf.Fptrunc(sourceType->IrType(), to, from, targetType->IrType())); break;
+                case ConversionInst.ptrtoint: emitter.Emit(Cm.IrIntf.Ptrtoint(sourceType->IrType(), to, from, targetType->IrType())); break;
+            }
+            if (origTo != null)
+            {
+                Cm.IrIntf.Assign(emitter, targetType->IrType(), to, origTo);
+            }
         } 
         public nothrow override Cm.Sym.ConversionType GetConversionType() const
         {

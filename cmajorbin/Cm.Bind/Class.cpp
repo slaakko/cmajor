@@ -173,6 +173,7 @@ void AddClassTypeToIrClassTypeRepository(Cm::Sym::ClassTypeSymbol* classType, Cm
         {
             Cm::Sym::TemplateTypeSymbol* templateTypeSymbol = static_cast<Cm::Sym::TemplateTypeSymbol*>(classType);
             boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, boundCompileUnit.GetFileScopes());
+            boundCompileUnit.ClassTemplateRepository().InstantiateVirtualFunctionsFor(containerScope, templateTypeSymbol);
         }
     }
     if (classType->BaseClass())

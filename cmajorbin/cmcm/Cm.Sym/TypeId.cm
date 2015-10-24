@@ -22,12 +22,14 @@ namespace Cm.Sym
             SetRep(8, Rand());
             SetRep(12, Rand());
         }
-        public nothrow TypeId(uint classNumber) : hashCode(0u), hashCodeValid(false)
+        public nothrow TypeId(ulong cid) : hashCode(0u), hashCodeValid(false)
         {
             SetRep(0, Rand());
             SetRep(4, Rand());
-            SetRep(8, Rand());
-            SetRep(12, classNumber);
+            uint high = cast<uint>(cid >> 32u);
+            uint low = cast<uint>(cid & 0xFFFFFFFFu);
+            SetRep(8, high);
+            SetRep(12, low);
         }
         public nothrow TypeId(byte leader) : hashCode(0u), hashCodeValid(false)
         {

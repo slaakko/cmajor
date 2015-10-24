@@ -17,7 +17,6 @@ class VariableSymbol : public Symbol
 {
 public:
     VariableSymbol(const Span& span_, const std::string& name_);
-    ~VariableSymbol();
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const override { return type; }

@@ -17,7 +17,7 @@ namespace Ir.Intf
         public virtual ~CDebugNode()
         {
         }
-        public abstract void SetCLine(int cLine);
+        public abstract nothrow void SetCLine(int cLine);
     }
     
     public enum Indirection : byte

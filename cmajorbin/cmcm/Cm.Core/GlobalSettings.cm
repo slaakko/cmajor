@@ -51,7 +51,7 @@ namespace Cm.Core
                 {
                     return 0;
                 }
-                else if (config == "release")
+                else if (config == "release" || config == "profile" || config == "full")
                 {
                     return 3;
                 }
@@ -62,10 +62,55 @@ namespace Cm.Core
             }
             return optimizationLevel;
         }
+        public nothrow void SetTargetTriple(const string& targetTriple_)
+        {
+            targetTriple = targetTriple_;
+        }
+        public nothrow const string& TargetTriple() const
+        {
+            return targetTriple;
+        }
+        public nothrow void SetDatalayout(const string& datalayout_)
+        {
+            datalayout = datalayout_;
+        }
+        public nothrow const string& DataLayout() const
+        {
+            return datalayout;
+        }
+        public nothrow void SetClassHierarchyDotFileName(const string& classHierarchyDotFileName_)
+        {
+            classHierarchyDotFileName = classHierarchyDotFileName_;
+        }
+        public nothrow const string& ClassHierarchyDotFileName() const
+        {
+            return classHierarchyDotFileName;
+        }
+        public nothrow void SetTpgDotFileName(const string& tpgDotFileName_)
+        {
+            tpgDotFileName = tpgDotFileName_;
+        }
+        public nothrow const string& TpgDotFileName() const
+        {
+            return tpgDotFileName;
+        }
+        public nothrow void SetVirtualCallFilename(const string& virtualCallFileName_)
+        {
+            virtualCallFileName = virtualCallFileName_;
+        }
+        public nothrow const string& VirtualCallFileName() const
+        {
+            return virtualCallFileName;
+        }
         private static UniquePtr<GlobalSettings> instance;
         private string currentProjectName;
         private string config;
         private int optimizationLevel;
+        private string targetTriple;
+        private string datalayout;
+        private string classHierarchyDotFileName;
+        private string tpgDotFileName;
+        private string virtualCallFileName;
     }
     
     public nothrow const string& GetConfig()

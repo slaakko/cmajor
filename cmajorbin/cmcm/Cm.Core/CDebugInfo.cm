@@ -1,0 +1,40 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Core
+{
+    public enum CfgNodeKind : byte
+    {
+        regularNode, exitNode, throwNode, catchNode
+    }
+    
+    public class CfgNode : Ir.Intf.CDebugNode
+    {
+        public nothrow CfgNode() : base(), kind(CfgNodeKind.regularNode)
+        {
+        }
+        public override nothrow void SetCLine(int cLine_)
+        {
+            cLine = cLine_;
+        }
+        public inline nothrow CfgNodeKind Kind() const
+        {
+            return kind;
+        }
+        public inline nothrow void SetKind(CfgNodeKind kind_)
+        {
+            kind = kind_;
+        }
+        private int cLine;
+        private CfgNodeKind kind;
+    }
+}
