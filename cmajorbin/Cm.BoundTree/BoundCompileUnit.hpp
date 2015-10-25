@@ -37,7 +37,7 @@ class CompileUnitMap
 {
 public:
     virtual ~CompileUnitMap();
-    virtual BoundCompileUnit* GetBoundCompileUnit(const std::string& compileUnitFilePath) const = 0;
+    virtual BoundCompileUnit* GetBoundCompileUnit(const std::string& compileUnitFilePath) = 0;
 };
 
 void SetCompileUnitMap(CompileUnitMap* compileUnitMap);

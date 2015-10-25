@@ -5,12 +5,24 @@
         <configuration>
             <name>debug.llvm</name>
             <conditionalCompilationSymbols />
-            <buildOptions />
+            <buildOptions>
+                <quiet>false</quiet>
+                <emitOptIrCodeFile>false</emitOptIrCodeFile>
+                <classHierarchyDotFilePath />
+                <tpgDotFilePath />
+                <virtualCallTextFilePath />
+            </buildOptions>
         </configuration>
         <configuration>
             <name>debug.c</name>
             <conditionalCompilationSymbols />
-            <buildOptions />
+            <buildOptions>
+                <quiet>false</quiet>
+                <emitOptIrCodeFile>false</emitOptIrCodeFile>
+                <classHierarchyDotFilePath />
+                <tpgDotFilePath />
+                <virtualCallTextFilePath />
+            </buildOptions>
         </configuration>
         <configuration>
             <name>release.llvm</name>

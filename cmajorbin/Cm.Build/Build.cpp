@@ -309,7 +309,6 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
     std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, 
     std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable)
 {
-    boost::filesystem::path projectBase = project->BasePath();
     std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet && !referenceFilePaths.empty())
@@ -1387,7 +1386,7 @@ void WriteNextSid(Cm::Sym::SymbolTable& symbolTable)
     nextSidFile << nextSid;
 }
 
-void ProcessProgram(Cm::Ast::Project* project)
+void BuildProgram(Cm::Ast::Project* project)
 {
     std::vector<std::string> assemblyFilePaths;
     std::vector<std::string> afps;
@@ -1696,7 +1695,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     if (project->GetTarget() == Cm::Ast::Target::program && full)
     {
         project->AddReferenceFilePath(boost::filesystem::path(cmlFilePath).filename().generic_string());
-        ProcessProgram(project);
+        BuildProgram(project);
     }
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);

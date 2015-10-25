@@ -29,8 +29,8 @@ class ExceptionTable
 public:
     void AddLibraryException(Cm::Sym::TypeSymbol* exceptionType);
     void AddProjectException(Cm::Sym::TypeSymbol* exceptionType);
-    std::vector<Cm::Sym::TypeSymbol*> GetProjectExceptions() const;
-    int GetExceptionId(Cm::Sym::TypeSymbol* exceptionType) const;
+    std::vector<Cm::Sym::TypeSymbol*> GetProjectExceptions();
+    int GetExceptionId(Cm::Sym::TypeSymbol* exceptionType);
     int GetNumberOfExceptions() const { return int(exceptions.size()); }
     void GenerateExceptionTableUnit(const std::string& exceptionTableFilePath);
 private:

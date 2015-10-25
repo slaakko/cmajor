@@ -22,29 +22,22 @@ namespace Cm.Sym
             #assert(instance != null);
             return instance;
         }
-        public nothrow ClassCounter() : numClasses(0u), numClassesInThisProject(0u)
+        public nothrow ClassCounter() : nextCid(0u)
         {
         }
-        public nothrow inline uint GetNextClassNumber()
+        public nothrow inline ulong GetCid()
         {
-            ++numClassesInThisProject;
-            ++numClasses;
-            return numClasses;
+            return nextCid++;
         }
-        public nothrow inline uint GetNumberOfClasses() const
+        public nothrow inline ulong GetNextCid()
         {
-            return numClasses;
+            return nextCid;
         }
-        public nothrow inline uint GetNumberOfClassesInThisProject() const
+        public nothrow inline void SetNextCid(ulong nextCid_)
         {
-            return numClassesInThisProject;
-        }
-        public nothrow inline void AddLibraryClasses(uint numLibraryClasses)
-        {
-            numClasses = numClasses + numLibraryClasses;
+            nextCid = nextCid_;
         }
         private static ClassCounter* instance;
-        private uint numClasses;
-        private uint numClassesInThisProject;
+        private ulong nextCid;
     }
 }

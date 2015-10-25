@@ -72,7 +72,8 @@ namespace Cm.Sym
     public class FunctionSymbol : ContainerSymbol
     {
         public nothrow FunctionSymbol(const Span& span_, const string& name_) : 
-            base(span_, name_), returnType(null), compileUnit(null), flags(FunctionSymbolFlags.none), vtblIndex(-1), mutexId(-1), overriddenFunction(null), functionTemplate(null)
+            base(span_, name_), returnType(null), entrySymbol(null), returnValueSymbol(null), compileUnit(null), flags(FunctionSymbolFlags.none), vtblIndex(-1), mutexId(-1), 
+            overriddenFunction(null), functionTemplate(null)
         {
         }
         public nothrow override SymbolType GetSymbolType() const 
@@ -530,6 +531,14 @@ namespace Cm.Sym
                 typeParameterSymbol->SetIndex(typeParameters.Count());
                 typeParameters.Add(typeParameterSymbol);
             }
+            else if (symbol is EntrySymbol*)
+            {
+                entrySymbol = cast<EntrySymbol*>(symbol);
+            }
+            else if (symbol is ReturnValueSymbol*)
+            {
+                returnValueSymbol = cast<ReturnValueSymbol*>(symbol);
+            }
         }
         public nothrow inline void SetReturnType(TypeSymbol* returnType_)
         {
@@ -538,6 +547,14 @@ namespace Cm.Sym
         public nothrow inline TypeSymbol* GetReturnType() const
         {
             return returnType;
+        }
+        public nothrow inline EntrySymbol* Entry() const
+        {
+            return entrySymbol;
+        }
+        public nothrow inline ReturnValueSymbol* ReturnValue()
+        {
+            return returnValueSymbol;
         }
         public override void SetType(TypeSymbol* type, int index) 
         {
@@ -813,6 +830,8 @@ namespace Cm.Sym
         private FunctionSymbolFlags flags;
         private string groupName;
         private TypeSymbol* returnType;
+        private EntrySymbol* entrySymbol;
+        private ReturnValueSymbol* returnValueSymbol;
         private List<ParameterSymbol*> parameters;
         private List<TypeParameterSymbol*> typeParameters;
         private List<TypeSymbol*> typeArguments;

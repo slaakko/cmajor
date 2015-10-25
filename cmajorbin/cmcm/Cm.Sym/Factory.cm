@@ -47,6 +47,8 @@ namespace Cm.Sym
             Register(SymbolType.functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
             Register(SymbolType.localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
             Register(SymbolType.memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());
+            Register(SymbolType.entrySymbol, new ConcreteSymbolCreator<EntrySymbol>());
+            Register(SymbolType.returnValueSymbol, new ConcreteSymbolCreator<ReturnValueSymbol>());
             Register(SymbolType.namespaceSymbol, new ConcreteSymbolCreator<NamespaceSymbol>());
             Register(SymbolType.parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
             Register(SymbolType.typeParameterSymbol, new ConcreteSymbolCreator<TypeParameterSymbol>());

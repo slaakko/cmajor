@@ -18,8 +18,8 @@ class CompileUnitMap : public Cm::BoundTree::CompileUnitMap
 {
 public:
     void MapCompileUnit(Cm::Ast::CompileUnitNode* compileUnitNode, Cm::BoundTree::BoundCompileUnit* boundCompileUnit);
-    Cm::BoundTree::BoundCompileUnit* GetBoundCompileUnit(Cm::Ast::CompileUnitNode* compileUnitNode) const;
-    Cm::BoundTree::BoundCompileUnit* GetBoundCompileUnit(const std::string& compileUnitFilePath) const override;
+    Cm::BoundTree::BoundCompileUnit* GetBoundCompileUnit(Cm::Ast::CompileUnitNode* compileUnitNode);
+    Cm::BoundTree::BoundCompileUnit* GetBoundCompileUnit(const std::string& compileUnitFilePath) override;
 private:
     typedef std::unordered_map<Cm::Ast::CompileUnitNode*, Cm::BoundTree::BoundCompileUnit*> BoundMap;
     typedef BoundMap::const_iterator BoundMapIt;

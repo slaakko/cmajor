@@ -10,6 +10,7 @@
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Util/CodeFormatter.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <boost/filesystem.hpp>
@@ -44,7 +45,7 @@ void ExceptionTable::AddProjectException(Cm::Sym::TypeSymbol* exceptionType)
     }
 }
 
-std::vector<Cm::Sym::TypeSymbol*> ExceptionTable::GetProjectExceptions() const
+std::vector<Cm::Sym::TypeSymbol*> ExceptionTable::GetProjectExceptions()
 {
     std::vector<Cm::Sym::TypeSymbol*> projectExceptions;
     for (const ExceptionRecord& exceptionRec : exceptions)
@@ -57,7 +58,7 @@ std::vector<Cm::Sym::TypeSymbol*> ExceptionTable::GetProjectExceptions() const
     return projectExceptions;
 }
 
-int ExceptionTable::GetExceptionId(Cm::Sym::TypeSymbol* exceptionType) const
+int ExceptionTable::GetExceptionId(Cm::Sym::TypeSymbol* exceptionType)
 {
     ExceptionMapIt i = exceptionMap.find(exceptionType);
     if (i != exceptionMap.end())

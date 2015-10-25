@@ -269,6 +269,14 @@ namespace Cm.Sym
         {
             SetFlag(ClassTypeSymbolFlags.debugInfoGenerated);
         }
+        public nothrow inline ClassTypeSymbol* BaseClass() const
+        {
+            return baseClass;
+        }
+        public nothrow inline void SetBaseClass(ClassTypeSymbol* baseClass_)
+        {
+            baseClass = baseClass_;
+        }
         public override void Read(Reader& reader)
         {
             base->Read(reader);
@@ -514,7 +522,12 @@ namespace Cm.Sym
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(baseClass);
                 baseClass = replica->GetPrimaryTemplateTypeSymbol();
             }
-        }    
+        }
+        public override void InitVirtualFunctionTables()
+        {
+            base->InitVirtualFunctionTables();
+            InitVtbl();
+        }  
         private ulong cid;
         private ulong key;
         private int level;
