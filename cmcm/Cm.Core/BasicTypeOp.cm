@@ -699,6 +699,10 @@ namespace Cm.Core
             entry->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(entry);
         }
+        public nothrow override bool IsConvertingConstructor() const
+        {
+            return true;
+        }
         public override void Generate(Emitter& emitter, GenResult& result)
         {
             if (conversionInst == ConversionInst.none || Cm.IrIntf.TypesEqual(sourceType->IrType(), targetType->IrType()) && !(result.MainObject() is Ir.Intf.StackVar*))

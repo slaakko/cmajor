@@ -24,8 +24,8 @@ public:
     TypeRepository(SymbolTable& symbolTable_);
     SymbolTable& GetSymbolTable() { return symbolTable; }
     void AddType(TypeSymbol* type);
-    TypeSymbol* GetTypeNothrow(const TypeId& typeId) const;
-    TypeSymbol* GetType(const TypeId& typeId) const;
+    TypeSymbol* GetTypeNothrow(const TypeId& typeId);
+    TypeSymbol* GetType(const TypeId& typeId);
     TypeSymbol* MakeDerivedType(const Cm::Ast::DerivationList& derivations, TypeSymbol* baseType, const std::vector<int>& arrayDimensions, const Span& span);
     TypeSymbol* MakePointerType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeRvalueRefType(TypeSymbol* baseType, const Span& span);

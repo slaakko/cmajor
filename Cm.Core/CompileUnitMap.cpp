@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Core/CompileUnitMap.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 
 namespace Cm { namespace Core {
 
@@ -17,7 +18,7 @@ void CompileUnitMap::MapCompileUnit(Cm::Ast::CompileUnitNode* compileUnitNode, C
     compileUnitNodeMap[compileUnitNode->FilePath()] = compileUnitNode;
 }
 
-Cm::BoundTree::BoundCompileUnit* CompileUnitMap::GetBoundCompileUnit(Cm::Ast::CompileUnitNode* compileUnitNode) const
+Cm::BoundTree::BoundCompileUnit* CompileUnitMap::GetBoundCompileUnit(Cm::Ast::CompileUnitNode* compileUnitNode)
 {
     BoundMapIt i = boundMap.find(compileUnitNode);
     if (i != boundMap.end())
@@ -27,7 +28,7 @@ Cm::BoundTree::BoundCompileUnit* CompileUnitMap::GetBoundCompileUnit(Cm::Ast::Co
     return nullptr;
 }
 
-Cm::BoundTree::BoundCompileUnit* CompileUnitMap::GetBoundCompileUnit(const std::string& compileUnitFilePath) const
+Cm::BoundTree::BoundCompileUnit* CompileUnitMap::GetBoundCompileUnit(const std::string& compileUnitFilePath)
 {
     CompileUnitNodeMapIt i = compileUnitNodeMap.find(compileUnitFilePath);
     if (i != compileUnitNodeMap.end())

@@ -667,28 +667,22 @@ void SymbolTable::AddSymbol(Symbol* symbol)
             {
                 classMap[cls->Cid()] = cls;
             }
-            else
-            {
-                int x = 0;
-            }
         }
     }
-    else
-    {
-        if (!symbol->IsNamespaceSymbol())
-        {
-            int x = 0;
-        }
-    }
+}
+
+uint32_t SymbolTable::GetSid()
+{
+    return nextSid++;
 }
 
 void SymbolTable::SetSidAndAddSymbol(Symbol* symbol)
 {
-    symbol->SetSid(nextSid++);
+    symbol->SetSid(GetSid());
     AddSymbol(symbol);
 }
 
-Symbol* SymbolTable::GetSymbol(uint32_t sid) const
+Symbol* SymbolTable::GetSymbol(uint32_t sid)
 {
     std::unordered_map<uint32_t, Symbol*>::const_iterator i = symbolMap.find(sid);
     if (i != symbolMap.cend())

@@ -135,6 +135,13 @@ namespace Cm.Sym
                 }
             }
         }
+        public override void InitVirtualFunctionTables()
+        {
+            for (Symbol* symbol : symbols)
+            {
+                symbol->InitVirtualFunctionTables();
+            }
+        }
         private FunctionGroupSymbol* MakeFunctionGroupSymbol(const string& groupName, const Span& span)
         {
             Symbol* symbol = containerScope.Lookup(groupName);

@@ -13,7 +13,7 @@ project <Cm.SourceReadS/Cm.SourceReadS.cmp>;
 project <Cm.Sym/Cm.Sym.cmp>;
 project <Ir.Intf/Ir.Intf.cmp>;
 project <Llvm.Ir/Llvm.Ir.cmp>;
-activeProject Cm.Core;
+activeProject Cm.Compiler;
 dependency Cm.Ast(Cm.Ser);
 dependency Cm.Parser(Cm.Ast, Cm.Ser);
 dependency Cm.Ser();

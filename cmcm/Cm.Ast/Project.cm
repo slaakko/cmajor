@@ -204,7 +204,7 @@ namespace Cm.Ast
         {
             return textFilePaths;
         }    
-        public nothrow inline const List<string>& ReferenceFielPaths() const
+        public nothrow inline const List<string>& ReferenceFilePaths() const
         {
             return referenceFilePaths;
         }

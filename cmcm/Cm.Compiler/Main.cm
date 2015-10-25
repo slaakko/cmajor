@@ -84,7 +84,7 @@ int main(int argc, const char** argv)
         List<string> solutionOrProjectFilePaths;
         List<string> compileFileNames;
         HashSet<string> defines;
-        // Cm.IrIntf.BackEnd backend = Cm.IrIntf.BackEnd.llvm;
+        Cm.IrIntf.Backend backend = Cm.IrIntf.Backend.llvm;
         bool rebuild = false;
         bool prevWasCompile = false;
         bool prevWasDefine = false;

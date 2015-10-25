@@ -32,7 +32,7 @@ void TypeRepository::AddType(TypeSymbol* type)
     typeSymbolMap[type->Id()] = type;
 }
 
-TypeSymbol* TypeRepository::GetTypeNothrow(const TypeId& typeId) const
+TypeSymbol* TypeRepository::GetTypeNothrow(const TypeId& typeId)
 {
     TypeSymbolMapIt i = typeSymbolMap.find(typeId);
     if (i != typeSymbolMap.end())
@@ -45,7 +45,7 @@ TypeSymbol* TypeRepository::GetTypeNothrow(const TypeId& typeId) const
     }
 }
 
-TypeSymbol* TypeRepository::GetType(const TypeId& typeId) const
+TypeSymbol* TypeRepository::GetType(const TypeId& typeId)
 {
     TypeSymbol* typeSymbol = GetTypeNothrow(typeId);
     if (typeSymbol)

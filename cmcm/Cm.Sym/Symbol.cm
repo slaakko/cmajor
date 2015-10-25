@@ -456,6 +456,9 @@ namespace Cm.Sym
         {
             return sid;
         }
+        public virtual void InitVirtualFunctionTables()
+        {
+        }
         private Span span;
         private string name;
         private SymbolFlags flags;

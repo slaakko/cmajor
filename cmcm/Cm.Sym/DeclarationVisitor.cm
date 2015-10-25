@@ -103,6 +103,10 @@ namespace Cm.Sym
                 thisParam->SetBound();
                 symbolTable.AddParameter(thisParam);
             }
+            if (memberFunctionNode.ReturnTypeExpr() != null)
+            {
+                symbolTable.AddReturnValueSymbol(memberFunctionNode.ReturnTypeExpr());
+            }
         }
         public override void EndVisit(Cm.Ast.MemberFunctionNode& memberFunctionNode)
         {
@@ -125,6 +129,10 @@ namespace Cm.Sym
             }
             thisParam->SetBound();
             symbolTable.AddParameter(thisParam);
+            if (conversionFunctionNode.ReturnTypeExpr() != null)
+            {
+                symbolTable.AddReturnValueSymbol(conversionFunctionNode.ReturnTypeExpr());
+            }
         }
         public override void EndVisit(Cm.Ast.ConversionFunctionNode& conversionFunctionNode)
         {
@@ -163,6 +171,10 @@ namespace Cm.Sym
             }
             symbolTable.BeginFunctionScope(&functionNode, flags);
             parameterIndex = 0;
+            if (functionNode.ReturnTypeExpr() != null)
+            {
+                symbolTable.AddReturnValueSymbol(functionNode.ReturnTypeExpr());
+            }
         }
         public override void EndVisit(Cm.Ast.FunctionNode& functionNode)
         {

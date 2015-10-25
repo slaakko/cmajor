@@ -147,6 +147,7 @@ namespace Cm.Sym
             }
             UniquePtr<DerivedTypeSymbol> derivedTypeSymbol(new DerivedTypeSymbol(span, MakeDerivedTypeName(finalDerivations, finalBaseType, finalArrayDimensions), finalBaseType, finalDerivations, 
                 finalArrayDimensions, typeId));
+            symbolTable.SetSidAndAddSymbol(derivedTypeSymbol.GetPtr());
             derivedTypeSymbol->SetAccess(SymbolAccess.public_);
             if (!(baseType is TypeParameterSymbol*) && !(baseType is FunctionGroupTypeSymbol*))
             {
@@ -274,6 +275,7 @@ namespace Cm.Sym
                 return typeSymbol;
             }
             UniquePtr<TemplateTypeSymbol> templateTypeSymbol(new TemplateTypeSymbol(subjectType->GetSpan(), MakeTemplateTypeSymbolName(subjectType, typeArguments), subjectType, typeArguments, typeId));
+            symbolTable.SetSidAndAddSymbol(templateTypeSymbol.GetPtr());
             templateTypeSymbol->SetParent(subjectType->Ns());
             templateTypeSymbol->MakeIrType();
             templateTypeSymbol->SetAccess(SymbolAccess.public_);

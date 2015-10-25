@@ -93,9 +93,9 @@ public:
     uint32_t GetNextSid() const { return nextSid; }
     void SetNextSid(uint32_t nextSid_) { nextSid = nextSid_; }
     void AddSymbol(Symbol* symbol);
-    uint32_t GetSid() { return nextSid++; }
+    uint32_t GetSid();
     void SetSidAndAddSymbol(Symbol* symbol);
-    Symbol* GetSymbol(uint32_t sid) const;
+    Symbol* GetSymbol(uint32_t sid);
     ClassTypeSymbol* GetClass(uint64_t cid) const;
     void Own(LocalVariableSymbol* localVariable);
     const std::unordered_set<ClassTypeSymbol*>& Classes() const;

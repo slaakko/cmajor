@@ -58,6 +58,14 @@ namespace Cm.Sym
         {
             debugInfoFilePaths = debugInfoFilePaths_;
         }
+        public void SetNativeObjectFilePaths(const List<string>& nativeObjectFilePaths_)
+        {
+            nativeObjectFilePaths = nativeObjectFilePaths_;
+        }
+        public void SetBcuPaths(const List<string>& bcuPaths_)
+        {
+            bcuPaths = bcuPaths_;
+        }
         public void CheckUpToDate()
         {
             bool changed = false;
@@ -102,7 +110,7 @@ namespace Cm.Sym
             CheckModuleFileId(reader);
         }
         public void Import(SymbolTable& symbolTable, HashSet<string>& importedModules, List<string>& assemblyFilePaths, List<string>& cLibs, 
-            List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths)
+            List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths, List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable)
         {
             string assemblyFilePath = Path.ChangeExtension(filePath, ".cma");
             assemblyFilePaths.Add(GetFullPath(assemblyFilePath));
@@ -115,9 +123,19 @@ namespace Cm.Sym
             ReadReferenceFilePaths(reader);
             ReadCLibraryFilePaths(reader);
             ReadDebugInfoFilePaths(reader);
+            ReadNativeObjectFilePaths(reader);
+            ReadBcuPaths(reader);
             for (const string& debugInfoFilePath : debugInfoFilePaths)
             {
                 allDebugInfoFilePaths.Add(debugInfoFilePath);
+            }
+            for (const string& nativeObjectFilePath : nativeObjectFilePaths)
+            {
+                allNativeObjectFilePaths.Add(nativeObjectFilePath);
+            }
+            for (const string& bcuPath : bcuPaths)
+            {
+                allBcuPaths.Add(bcuPath);
             }
             for (const string& cLibraryFilePath : cLibraryFilePaths)
             {
@@ -129,7 +147,8 @@ namespace Cm.Sym
                 {
                     importedModules.Insert(referenceFilePath);
                     Module referencedModule(referenceFilePath);
-                    referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths);
+                    referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
+                        classHierarchyTable);
                     referencedModule.CheckUpToDate();
                 }
             }
@@ -150,8 +169,12 @@ namespace Cm.Sym
             ImportExceptionTable(symbolTable, reader);
             int numLibraryMutexes = reader.GetBinaryReader().ReadInt();
             MutexTable.Instance()->AddLibraryMutexes(numLibraryMutexes);
-            uint numLibraryClasses = reader.GetBinaryReader().ReadUInt();
-            ClassCounter.Instance()->AddLibraryClasses(numLibraryClasses);
+            int numEntries = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < numEntries; ++i)
+            {
+                ulong cid = reader.GetBinaryReader().ReadULong();
+                classHierarchyTable.Add(cid);
+            }
             if (!quiet)
             {
                 Console.Out() << "> " << filePath << endl();
@@ -166,12 +189,34 @@ namespace Cm.Sym
             WriteReferenceFilePaths(writer);
             WriteCLibraryFilePaths(writer);
             WriteDebugInfoFilePaths(writer);
+            WriteNativeObjectFilePaths(writer);
+            WriteBcuPaths(writer);
             symbolTable.Export(writer);
             ExportExceptionTable(writer);
             int numMutexesInThisProject = MutexTable.Instance()->GetNumberOfMutexesInThisProject();
             writer.GetBinaryWriter().Write(numMutexesInThisProject);
-            uint numClassesInThisProject = ClassCounter.Instance()->GetNumberOfClassesInThisProject();
-            writer.GetBinaryWriter().Write(numClassesInThisProject);
+            List<ulong> classHierarchyTable;
+            for (ClassTypeSymbol* projectClass : symbolTable.ProjectClasses())
+            {
+                if (projectClass->IsVirtual())
+                {
+                    classHierarchyTable.Add(projectClass->Cid());
+                    if (projectClass->BaseClass() != null)
+                    {
+                        classHierarchyTable.Add(projectClass->BaseClass()->Cid());
+                    }
+                    else
+                    {
+                        classHierarchyTable.Add(noCid);
+                    }
+                }
+            }
+            int n = classHierarchyTable.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(classHierarchyTable[i]);
+            }
         }
         private void WriteModuleFileId(Writer& writer)
         {
@@ -219,6 +264,24 @@ namespace Cm.Sym
             for (int i = 0; i < n; ++i)
             {
                 writer.GetBinaryWriter().Write(debugInfoFilePaths[i]);
+            }
+        }
+        private void WriteNativeObjectFilePaths(Writer& writer)
+        {
+            int n = nativeObjectFilePaths.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(nativeObjectFilePaths[i]);
+            }
+        }
+        private void WriteBcuPaths(Writer& writer)
+        {
+            int n = bcuPaths.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(bcuPaths[i]);
             }
         }
         private void CheckModuleFileId(Reader& reader)
@@ -289,6 +352,24 @@ namespace Cm.Sym
                 debugInfoFilePaths.Add(debugInfoFilePath);
             }
         }
+        public void ReadNativeObjectFilePaths(Reader& reader)
+        {
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                string nativeObjectFilePath = reader.GetBinaryReader().ReadString();
+                nativeObjectFilePaths.Add(nativeObjectFilePath);
+            }
+        }
+        public void ReadBcuPaths(Reader& reader)
+        {
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                string bcuPath = reader.GetBinaryReader().ReadString();
+                bcuPaths.Add(bcuPath);
+            }
+        }
         private void ImportExceptionTable(SymbolTable& symbolTable, Reader& reader)
         {
             ExceptionTable* exceptionTable = ExceptionTable.Instance();
@@ -319,6 +400,7 @@ namespace Cm.Sym
         private List<string> referenceFilePaths;
         private List<string> cLibraryFilePaths;
         private List<string> debugInfoFilePaths;
-        
+        private List<string> nativeObjectFilePaths;
+        private List<string> bcuPaths;
     }
 }

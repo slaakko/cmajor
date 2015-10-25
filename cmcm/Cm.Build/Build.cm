@@ -185,6 +185,7 @@ namespace Cm.Build
         Cm.Sym.MutexTable.SetInstance(&mutexTable);
         Cm.Sym.ClassCounter classCounter;
         Cm.Sym.ClassCounter.SetInstance(&classCounter);
+        ReadNextCid();
         List<string> assemblyFilePaths;
         assemblyFilePaths.Add(project->AssemblyFilePath());
         List<string> cLibraryFilePaths = project->CLibraryFilePaths();
@@ -192,13 +193,17 @@ namespace Cm.Build
         GetLibraryDirectories(libraryDirectories);
         List<string> allReferenceFilePaths;
         List<string> allDebugInfoFilePaths;
+        List<string> allNativeObjectFilePaths;
+        List<string> allBcuPaths;
+        List<ulong> classHierarchyTable;
         string libraryFilePath = Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(project->FilePath()), ".cml"));
         if (!rebuild && FileExists(libraryFilePath))
         {
             Cm.Sym.Module module(libraryFilePath);
             module.CheckFileVersion();
         }
-        BuildSymbolTable(symbolTable, syntaxTree, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths);
+        BuildSymbolTable(symbolTable, syntaxTree, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
+            classHierarchyTable);
         CreateDirectories(project->OutputBasePath());
         List<string> objectFilePaths;
         bool cFilesChanged = CompileCFiles(project, objectFilePaths);
@@ -211,8 +216,10 @@ namespace Cm.Build
         {
             changed = asmSouresChanged;
         }
+        List<string> nativeObjectFilePaths = objectFilePaths;
         List<string> debugInfoFilePaths;
-        if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths))
+        List<string> bcuPaths;
+        if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths, bcuPaths))
         {
             changed = true;
         }
@@ -259,6 +266,8 @@ namespace Cm.Build
             projectModule.SetReferenceFilePaths(allReferenceFilePaths);
             projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
             projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
+            projectModule.SetNativeObjectFilePaths(nativeObjectFilePaths);
+            projectModule.SetBcuPaths(bcuPaths);
             projectModule.Export(symbolTable);
         }
         if (project->GetTarget() == Cm.Ast.Target.program && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_debug_info))
@@ -273,6 +282,7 @@ namespace Cm.Build
                 changed = debugInfoFileCreated;
             }
         }
+        WriteNextCid();
         Cm.Sym.ClassCounter.SetInstance(null);
         Cm.Sym.MutexTable.SetInstance(null);
         Cm.Sym.ExceptionTable.SetInstance(null);
@@ -306,14 +316,145 @@ namespace Cm.Build
         return syntaxTree;
     }
     
-    public void BuildSymbolTable(Cm.Sym.SymbolTable& symbolTable, const Cm.Ast.SyntaxTree& syntaxTree, Cm.Ast.Project* project, 
-        const List<string>& libraryDirectories, const List<string>& assemblyFilePaths, const List<string>& cLibraryFilePaths, List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths)
+    public void ReadNextSid(Cm.Sym.SymbolTable& symbolTable)
     {
-        TimePoint s = Now();
+        List<string> libraryDirectories;
+        GetLibraryDirectories(libraryDirectories);
+        uint nextSid = symbolTable.GetNextSid();
+        string nextSidFileName = Cm.IrIntf.GetBackendStr();
+        nextSidFileName.Append('.').Append(Cm.Core.GetConfig()).Append(".next.sid");
+        string nextSidPath = Path.Combine(libraryDirectories.Front(), nextSidFileName);
+        if (FileExists(nextSidPath))
+        {
+            InputFileStream nextSidFile(nextSidPath);
+            string nextSidStr = nextSidFile.ReadToEnd();
+            nextSid = ParseUInt(nextSidStr);
+        }
+        symbolTable.SetNextSid(nextSid);
+    }
+    
+    public void WriteNextSid(Cm.Sym.SymbolTable& symbolTable)
+    {
+        List<string> libraryDirectories;
+        GetLibraryDirectories(libraryDirectories);
+        uint nextSid = symbolTable.GetNextSid();
+        string nextSidFileName = Cm.IrIntf.GetBackendStr();
+        nextSidFileName.Append('.').Append(Cm.Core.GetConfig()).Append(".next.sid");
+        string nextSidPath = Path.Combine(libraryDirectories.Front(), nextSidFileName);
+        OutputFileStream nextSidFile(nextSidPath);
+        nextSidFile << nextSid;
+    }
+
+    public void ReadNextCid()
+    {
+        List<string> libraryDirectories;
+        GetLibraryDirectories(libraryDirectories);
+        ulong nextCid = 0u;
+        string nextCidFileName = Cm.IrIntf.GetBackendStr();
+        nextCidFileName.Append('.').Append(Cm.Core.GetConfig()).Append(".next.cid");
+        string nextCidPath = Path.Combine(libraryDirectories.Front(), nextCidFileName);
+        if (FileExists(nextCidPath))
+        {
+            InputFileStream nextCidFile(nextCidPath);
+            string nextCidStr = nextCidFile.ReadToEnd();
+            nextCid = ParseULong(nextCidStr);
+        }
+        Cm.Sym.ClassCounter.Instance()->SetNextCid(nextCid);
+    }
+
+    public void WriteNextCid()
+    {
+        List<string> libraryDirectories;
+        GetLibraryDirectories(libraryDirectories);
+        ulong nextCid = Cm.Sym.ClassCounter.Instance()->GetNextCid();
+        string nextCidFileName = Cm.IrIntf.GetBackendStr();
+        nextCidFileName.Append('.').Append(Cm.Core.GetConfig()).Append(".next.cid");
+        string nextCidPath = Path.Combine(libraryDirectories.Front(), nextCidFileName);
+        OutputFileStream nextCidFile(nextCidPath);
+        nextCidFile << nextCid;
+    }
+
+    public void BuildSymbolTable(Cm.Sym.SymbolTable& symbolTable, const Cm.Ast.SyntaxTree& syntaxTree, Cm.Ast.Project* project, 
+        const List<string>& libraryDirectories, List<string>& assemblyFilePaths, List<string>& cLibraryFilePaths, List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths,
+        List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable)
+    {
         Cm.Core.InitSymbolTable(symbolTable);
-        TimePoint e = Now();
-        Console.Out() << (e - s).Milliseconds() << endl();
-        // todo
+        ReadNextSid(symbolTable);
+        ImportModules(symbolTable, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
+        symbolTable.InitVirtualFunctionTables();
+        for (const UniquePtr<Cm.Ast.CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+        {
+            Cm.Sym.DeclarationVisitor declarationVisitor(symbolTable);
+            compileUnit->Accept(declarationVisitor);
+        }
+    }
+    
+    public void ImportModules(Cm.Sym.SymbolTable& symbolTable, Cm.Ast.Project* project, const List<string>& libraryDirectories, List<string>& assemblyFilePaths, List<string>& cLibraryFilePaths, 
+        List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths, List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable)
+    {
+        List<string> referenceFilePaths = project->ReferenceFilePaths();
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet && !referenceFilePaths.IsEmpty())
+        {
+            Console.Out() << "Importing libraries..." << endl();
+        }
+        HashSet<string> importedModules;
+        if (project->Name() != "system" && project->Name() != "support" && project->Name() != "os")
+        {
+            referenceFilePaths.Add("system.cml");
+        } 
+        for (const string& referenceFilePath : referenceFilePaths)
+        {
+            string libraryReferencePath = ResolveLibraryReference(project->OutputBasePath(), Cm.Core.GetConfig(), libraryDirectories, referenceFilePath);
+            if (importedModules.CFind(libraryReferencePath) == importedModules.CEnd())
+            {
+                importedModules.Insert(libraryReferencePath);
+                Cm.Sym.Module module(libraryReferencePath);
+                module.Import(symbolTable, importedModules, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
+                module.CheckUpToDate();
+            }
+        }
+        symbolTable.ProcessImportedTemplateTypes();
+    }
+    
+    public string ResolveLibraryReference(const string& projectOutputBase, const string& config, const List<string>& libraryDirectories, const string& libraryReferencePath)
+    {
+        List<string> searched;
+        string lrp = libraryReferencePath;
+        string libParent = Path.GetParent(lrp);
+        string projectBase = Path.GetParent(Path.GetParent(projectOutputBase));
+        string libDir = Path.Combine(Path.Combine(GetFullPath(Path.Combine(projectBase, libParent)), config), Cm.IrIntf.GetBackendStr());
+        string fp = GetFullPath(Path.Combine(libDir, Path.GetFileName(lrp)));
+        searched.Add(fp);
+        if (FileExists(fp))
+        {
+            return fp;
+        }
+        for (const string& libraryDir : libraryDirectories)
+        {
+            string ld = Path.Combine(Path.Combine(Path.Combine(libraryDir, libParent), config), Cm.IrIntf.GetBackendStr());
+            string fp = GetFullPath(Path.Combine(ld, Path.GetFileName(lrp)));
+            searched.Add(fp);
+            if (FileExists(fp))
+            {
+                return fp;
+            }
+        }
+        string s;
+        bool first = true;
+        for (const string& srch : searched)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                s.Append(";");
+            }
+            s.Append(srch);
+        }
+        throw Exception("library reference '" + libraryReferencePath + "' not found (seached: " + s + ")");
     }
     
     public bool CompileCFiles(Cm.Ast.Project* project, List<string>& objectFilePaths)
@@ -335,7 +476,7 @@ namespace Cm.Build
     }
     
     public bool Compile(const string& projectName, Cm.Sym.SymbolTable& symbolTable, const Cm.Ast.SyntaxTree& syntaxTree, const string& outputBasePath, List<string>& objectFilePaths, bool rebuild,
-        const List<string>& compileFileNames, List<string>& debugInfoFilePaths)
+        const List<string>& compileFileNames, List<string>& debugInfoFilePaths, List<string>& bcuPaths)
     {
         bool changed = false;
         // todo

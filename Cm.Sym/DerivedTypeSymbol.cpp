@@ -326,7 +326,7 @@ void DerivedTypeSymbol::MakeIrType()
     if (IrTypeMade()) return;
     if (!baseType)
     {
-        throw std::runtime_error("base type not set for derived type");
+        throw Cm::Sym::Exception("base type not set for derived type", GetSpan());
     }
     baseType->MakeIrType();
     uint8_t n = uint8_t(arrayDimensions.size());
