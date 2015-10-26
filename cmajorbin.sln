@@ -387,6 +387,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Performance1.psess = Performance1.psess
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StdHandleRedirector", "StdHandleRedirector\StdHandleRedirector.vcxproj", "{5FFCBD76-9315-4F90-9B35-C92124A4D434}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD} = {F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -748,6 +753,18 @@ Global
 		{162B6786-147B-4BB6-A393-3A4A61ACC71F}.Release|Win32.Build.0 = Release|Win32
 		{162B6786-147B-4BB6-A393-3A4A61ACC71F}.Release|x64.ActiveCfg = Release|x64
 		{162B6786-147B-4BB6-A393-3A4A61ACC71F}.Release|x64.Build.0 = Release|x64
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Debug|Win32.Build.0 = Debug|Win32
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Debug|x64.ActiveCfg = Debug|x64
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Debug|x64.Build.0 = Debug|x64
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|Win32.ActiveCfg = Release|Win32
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|Win32.Build.0 = Release|Win32
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|x64.ActiveCfg = Release|x64
+		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
