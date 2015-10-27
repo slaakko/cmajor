@@ -9,6 +9,7 @@
 
 #include <Cm.Util/System.hpp>
 #include <Cm.Util/Handle.hpp>
+#include <Cm.Util/TextUtils.hpp>
 #include <stdexcept>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -60,6 +61,65 @@ int get_default_pmode()
 #endif
 }
 
+std::vector<std::string> ParseCommand(const std::string& command)
+{
+    std::vector<std::string> args;
+    int state = 0;
+    std::string arg;
+    for (char c : command)
+    {
+        switch (state)
+        {
+            case 0:
+            {
+                if (c == '"')
+                {
+                    arg.append(1, '"');
+                    state = 1;
+                }
+                else if (c == ' ')
+                {
+                    args.push_back(arg);
+                    arg.clear();
+                    state = 2;
+                }
+                else
+                {
+                    arg.append(1, c);
+                }
+                break;
+            }
+            case 1:
+            {
+                if (c == '"')
+                {
+                    arg.append(1, '"');
+                    state = 0;
+                }
+                else
+                {
+                    arg.append(1, c);
+                }
+                break;
+            }
+            case 2:
+            {
+                if (c != ' ')
+                {
+                    arg.append(1, c);
+                    state = 0;
+                }
+                break;
+            }
+        }
+    }
+    if (!arg.empty())
+    {
+        args.push_back(arg);
+    }
+    return args;
+}
+
 void System(const std::string& command)
 {
     int retVal = system(command.c_str());
@@ -97,15 +157,60 @@ void System(const std::string& command, int redirectFd, const std::string& toFil
     }
 }
 
+void System(const std::string& command, const std::vector<std::pair<int, std::string>>& redirections)
+{
+    std::vector<std::pair<int, Handle>> toRestore;
+    for (const std::pair<int, std::string>& redirection : redirections)
+    {
+        int handle = redirection.first;
+        std::string toFile = redirection.second;
+        Handle oldHandle = dup(handle);
+        if (oldHandle == -1)
+        {
+            throw std::runtime_error("System redirect: could not duplicate handle " + std::to_string(handle));
+        }
+        toRestore.push_back(std::make_pair(handle, std::move(oldHandle)));
+        Handle fd = creat(toFile.c_str(), get_default_pmode());
+        if (fd == -1)
+        {
+            throw std::runtime_error("System: could not create file '" + toFile + "'");
+        }
+        if (dup2(fd, handle) == -1)
+        {
+            throw std::runtime_error("System redirect: dup2 failed");
+        }
+    }
+    try
+    {
+        System(command);
+        for (std::pair<int, Handle>& r : toRestore)
+        {
+            int handle = r.first;
+            Handle old = std::move(r.second);
+            dup2(old, handle);
+        }
+    }
+    catch (...)
+    {
+        for (std::pair<int, Handle>& r : toRestore)
+        {
+            int handle = r.first;
+            Handle old = std::move(r.second);
+            dup2(old, handle);
+        }
+        throw;
+    }
+}
+
 #ifdef _WIN32
 
 unsigned long long Spawn(const std::string& filename, const std::vector<std::string>& args)
 {
-    if (args.size() > 15)
+    if (args.size() > 1023)
     {
         throw std::runtime_error("spawn: too many args");
     }
-    const char* argList[16];
+    const char* argList[1024];
     int a = 0;
     argList[a++] = filename.c_str();
     for (int i = 0; i < args.size(); ++i)

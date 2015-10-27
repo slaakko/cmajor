@@ -43,6 +43,11 @@ SymbolTable::SymbolTable() : nextSid(0), globalNs(Span(), ""), container(&global
 {
 }
 
+SymbolTable::SymbolTable(const SymbolTable& that): globalNs(Span(), ""), typeRepository(*this), standardConversionTable(typeRepository)
+{
+    globalNs.Import(const_cast<NamespaceSymbol*>(&that.globalNs), *this);
+}
+
 void SymbolTable::BeginContainer(ContainerSymbol* container_)
 {
     containerStack.push(container);
