@@ -175,6 +175,16 @@ namespace Cm.Build
         AddPlatformAndConfigDefines(allDefines);
         Cm.Sym.Define(allDefines);
         Cm.Parser.FileRegistry.Init();
+        if (!quiet)
+        {
+            int n = project->SourceFilePaths().Count();
+            string sourceFiles = " source file";
+            if (n > 1)
+            {
+                sourceFiles.Append('s');
+            }
+            Console.Out() << "Parsing " << n << sourceFiles << "..." << endl();
+        }
         Cm.Ast.SyntaxTree syntaxTree = ParseSources(Cm.Parser.FileRegistry.Instance(), project->SourceFilePaths());
         Cm.Core.GlobalConceptData globalConceptData;
         Cm.Core.GlobalConceptData.SetInstance(&globalConceptData);
@@ -268,7 +278,7 @@ namespace Cm.Build
             projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
             projectModule.SetNativeObjectFilePaths(nativeObjectFilePaths);
             projectModule.SetBcuPaths(bcuPaths);
-            projectModule.Export(symbolTable);
+            //projectModule.Export(symbolTable);
         }
         if (project->GetTarget() == Cm.Ast.Target.program && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_debug_info))
         {
@@ -394,7 +404,7 @@ namespace Cm.Build
     {
         List<string> referenceFilePaths = project->ReferenceFilePaths();
         bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
-        if (!quiet && !referenceFilePaths.IsEmpty())
+        if (!quiet)
         {
             Console.Out() << "Importing libraries..." << endl();
         }

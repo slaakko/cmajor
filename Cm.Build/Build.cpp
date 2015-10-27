@@ -409,8 +409,53 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
     std::string llErrorFilePath = backend == Cm::IrIntf::BackEnd::llvm ? Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".ll.error").generic_string()) :
         backend == Cm::IrIntf::BackEnd::c ? Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".c.error").generic_string()) :
         "";
-    std::string command = "stdhandle_redirector ";
-    command.append("2 ");
+    std::string command = backend == Cm::IrIntf::BackEnd::llvm ? "llc" : backend == Cm::IrIntf::BackEnd::c ? "gcc" : "";
+    command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        command.append(" -filetype=obj");
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        command.append(" -c");
+        if (Cm::Core::GetGlobalSettings()->Config() == "debug")
+        {
+            command.append(" -g");
+        }
+    }
+    command.append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
+    try
+    {
+        Cm::Util::System(command, 2, llErrorFilePath);
+    }
+    catch (const std::exception&)
+    {
+        Cm::Util::MappedInputFile file(llErrorFilePath);
+        try
+        {
+            if (!toolErrorGrammar)
+            {
+                toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+            }
+            Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
+            throw Cm::Core::ToolErrorExcecption(toolError);
+        }
+        catch (...)
+        {
+            std::string errorText(file.Begin(), file.End());
+            throw std::runtime_error(errorText);
+        }
+    }
+    boost::filesystem::remove(llErrorFilePath);
+}
+
+void GenerateObjectCodeConcurrently(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
+{
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    std::string llErrorFilePath = backend == Cm::IrIntf::BackEnd::llvm ? Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".ll.error").generic_string()) :
+        backend == Cm::IrIntf::BackEnd::c ? Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".c.error").generic_string()) :
+        "";
+    std::string command = "stdhandle_redirector -2 ";
     command.append(llErrorFilePath).append(" ");
     command.append(backend == Cm::IrIntf::BackEnd::llvm ? "llc" : backend == Cm::IrIntf::BackEnd::c ? "gcc" : "");
     command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
@@ -461,6 +506,38 @@ void GenerateOptimizedLlvmCodeFile(Cm::BoundTree::BoundCompileUnit& boundCompile
     try
     {
         Cm::Util::System(command, 2, optllErrorFilePath);
+    }
+    catch (const std::exception&)
+    {
+        Cm::Util::MappedInputFile file(optllErrorFilePath);
+        try
+        {
+            if (!toolErrorGrammar)
+            {
+                toolErrorGrammar = Cm::Parser::ToolErrorGrammar::Create();
+            }
+            Cm::Util::ToolError toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, optllErrorFilePath);
+            throw Cm::Core::ToolErrorExcecption(toolError);
+        }
+        catch (const std::exception&)
+        {
+            std::string errorText(file.Begin(), file.End());
+            throw std::runtime_error(errorText);
+        }
+    }
+    boost::filesystem::remove(optllErrorFilePath);
+}
+
+void GenerateOptimizedLlvmCodeFileConcurrently(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
+{
+    std::string optllErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".opt.ll.error").generic_string());
+    std::string command = "stdhandle_redirect -2 ";
+    command.append(optllErrorFilePath).append(" ").append("opt");
+    command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
+    command.append(" -S").append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.OptIrFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
+    try
+    {
+        Cm::Util::System(command);
     }
     catch (const std::exception&)
     {

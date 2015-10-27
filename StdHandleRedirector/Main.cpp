@@ -12,30 +12,48 @@
 #include <iostream>
 #include <stdexcept>
 
-// Arguments to this program are:
-// 1: handle to redirect
-// 2: file name to redirect to handle to
-// 3: executable to launch
-// 4, 5, .. arguments to executable
-
 int main(int argc, const char** argv)
 {
     try
     {
         if (argc < 4)
         {
-            std::cout << "stdhandle_redirector <handle_to_redirect> <filename> <executable_to_launch> <arguments_to_executable...>" << std::endl;
+            std::cout << "stdhandle_redirector { -<handle_to_redirect> <filename_to_redirect_to> }... <executable_to_launch> { <argument_to_executable> }..." << std::endl;
         }
         else
         {
-            int handle = std::atoi(argv[1]);
-            std::string handleFileName = argv[2];
-            std::string command(Cm::Util::QuotedPath(argv[3]));
-            for (int i = 4; i < argc; ++i)
+            std::vector<std::pair<int, std::string>> redirections;
+            int handle = 1;
+            bool prevWasHandle = false;
+            bool first = true;
+            bool args = false;
+            std::string command;
+            for (int i = 1; i < argc; ++i)
             {
-                command.append(1, ' ').append(Cm::Util::QuotedPath(argv[i]));
+                std::string arg = argv[i];
+                if (!args && arg[0] == '-')
+                {
+                    std::string handleStr = arg.substr(1);
+                    handle = std::atoi(handleStr.c_str());
+                    prevWasHandle = true;
+                }
+                else if (prevWasHandle)
+                {
+                    redirections.push_back(std::make_pair(handle, arg));
+                    prevWasHandle = false;
+                }
+                else if (first)
+                {
+                    command.append(Cm::Util::QuotedPath(arg));
+                    first = false;
+                    args = true;
+                }
+                else
+                {
+                    command.append(" ").append(Cm::Util::QuotedPath(arg));
+                }
             }
-            Cm::Util::System(command, handle, handleFileName);
+            Cm::Util::System(command, redirections);
         }
     }
     catch (...)

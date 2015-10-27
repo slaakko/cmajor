@@ -35,6 +35,7 @@ class SymbolTable
 {
 public:
     SymbolTable();
+    SymbolTable(const SymbolTable& that);
     void BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode);
     void BeginNamespaceScope(const std::string& namespaceName, const Span& span);
     void EndNamespaceScope();
