@@ -24,13 +24,136 @@ typedef struct { const char* fun; const char* file; int line; } stack_frame;
 
 #define CALL_STACK_SIZE 1024
 
-typedef struct ThreadTblRec_ { thread_t tid; void* table; stack_frame* call_stack; stack_frame* fp; struct ThreadTblRec_* next; } ThreadTblRec;
+typedef struct ThreadTblRec_ 
+{ 
+    thread_t tid; 
+    int current_exception_captured; 
+    int current_exception_id; 
+    void* current_exception_addr; 
+    void* table; 
+    stack_frame* call_stack; 
+    stack_frame* fp; 
+    struct ThreadTblRec_* next; 
+} 
+ThreadTblRec;
 
 static ThreadTblRec** threadHashTbl = 0;
 
 static int thread_hash(thread_t tid)
 {
     return (int)(((unsigned long long)tid) % (unsigned long long)THREAD_HASH_TABLE_SIZE);
+}
+
+void set_current_exception_captured()
+{
+    thread_t tid = this_thread();
+    int index = thread_hash(tid);
+    ThreadTblRec* rec = threadHashTbl[index];
+    while (rec)
+    {
+        if (rec->tid == tid)
+        {
+            rec->current_exception_captured = 1;
+            return;
+        }
+        rec = rec->next;
+    }    
+}
+
+int current_exception_captured()
+{
+    thread_t tid = this_thread();
+    int index = thread_hash(tid);
+    ThreadTblRec* rec = threadHashTbl[index];
+    while (rec)
+    {
+        if (rec->tid == tid)
+        {
+            return rec->current_exception_captured;
+        }
+        rec = rec->next;
+    }    
+}
+
+int get_current_exception_id()
+{
+    thread_t tid = this_thread();
+    int index = thread_hash(tid);
+    ThreadTblRec* rec = threadHashTbl[index];
+    while (rec)
+    {
+        if (rec->tid == tid)
+        {
+            return rec->current_exception_id;
+        }
+        rec = rec->next;
+    }    
+    return 0;
+}
+
+void* get_current_exception_addr()
+{
+    thread_t tid = this_thread();
+    int index = thread_hash(tid);
+    ThreadTblRec* rec = threadHashTbl[index];
+    while (rec)
+    {
+        if (rec->tid == tid)
+        {
+            return rec->current_exception_addr;
+        }
+        rec = rec->next;
+    }
+    return 0;
+}
+
+void set_current_exception_id(int exception_id)
+{
+    thread_t tid = this_thread();
+    int index = thread_hash(tid);
+    ThreadTblRec* rec = threadHashTbl[index];
+    while (rec)
+    {
+        if (rec->tid == tid)
+        {
+            rec->current_exception_id = exception_id;
+            return;
+        }
+        rec = rec->next;
+    }    
+}
+
+void set_current_exception_addr(void* exception_addr)
+{
+    thread_t tid = this_thread();
+    int index = thread_hash(tid);
+    ThreadTblRec* rec = threadHashTbl[index];
+    while (rec)
+    {
+        if (rec->tid == tid)
+        {
+            rec->current_exception_addr = exception_addr;
+            return;
+        }
+        rec = rec->next;
+    }    
+}
+
+void reset_current_exception()
+{
+    thread_t tid = this_thread();
+    int index = thread_hash(tid);
+    ThreadTblRec* rec = threadHashTbl[index];
+    while (rec)
+    {
+        if (rec->tid == tid)
+        {
+            rec->current_exception_id = 0;
+            rec->current_exception_addr = 0;
+            return;
+        }
+        rec = rec->next;
+    }
 }
 
 void allocate_thread_data(thread_t tid);
@@ -216,6 +339,9 @@ void allocate_thread_data(thread_t tid)
     ThreadTblRec* next = threadHashTbl[index];
     ThreadTblRec* rec = (ThreadTblRec*)malloc(sizeof(ThreadTblRec));
     rec->tid = tid;
+    rec->current_exception_captured = 0;
+    rec->current_exception_id = 0;
+    rec->current_exception_addr = 0;
     rec->table = table;
     rec->call_stack = call_stack;
     rec->fp = rec->call_stack;

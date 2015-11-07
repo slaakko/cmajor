@@ -55,6 +55,7 @@ namespace Cm.Sym
             Register(SymbolType.templateTypeSymbol, new ConcreteSymbolCreator<TemplateTypeSymbol>());
             Register(SymbolType.derivedTypeSymbol, new ConcreteSymbolCreator<DerivedTypeSymbol>());
             Register(SymbolType.typedefSymbol, new ConcreteSymbolCreator<TypedefSymbol>());
+            Register(SymbolType.boundTypeParameterSymbol, new ConcreteSymbolCreator<BoundTypeParameterSymbol>());
             Register(SymbolType.conceptSymbol, new ConcreteSymbolCreator<ConceptSymbol>());
         }
         public static nothrow SymbolFactory& Instance()
@@ -91,9 +92,17 @@ namespace Cm.Sym
         public virtual nothrow ~ValueCreator()
         {
         }
-        public abstract Value* CreateValue();
+        public abstract nothrow Value* CreateValue();
     }
     
+    public class ConcreteValueCreator<T> : ValueCreator where T is ValueClass
+    {
+        public override nothrow Value* CreateValue()
+        {
+            return new T();
+        }
+    }
+
     public class ValueFactory
     {
         static ValueFactory() : instance(new ValueFactory())
@@ -102,6 +111,20 @@ namespace Cm.Sym
         private ValueFactory()
         {
             creators.Resize(int(ValueType.max));
+            Register(ValueType.boolValue, new ConcreteValueCreator<BoolValue>());
+            Register(ValueType.charValue, new ConcreteValueCreator<CharValue>());
+            Register(ValueType.sbyteValue, new ConcreteValueCreator<SByteValue>());
+            Register(ValueType.byteValue, new ConcreteValueCreator<ByteValue>());
+            Register(ValueType.shortValue, new ConcreteValueCreator<ShortValue>());
+            Register(ValueType.ushortValue, new ConcreteValueCreator<UShortValue>());
+            Register(ValueType.intValue, new ConcreteValueCreator<IntValue>());
+            Register(ValueType.uintValue, new ConcreteValueCreator<UIntValue>());
+            Register(ValueType.longValue, new ConcreteValueCreator<LongValue>());
+            Register(ValueType.ulongValue, new ConcreteValueCreator<ULongValue>());
+            Register(ValueType.floatValue, new ConcreteValueCreator<FloatValue>());
+            Register(ValueType.doubleValue, new ConcreteValueCreator<DoubleValue>());
+            Register(ValueType.nullValue, new ConcreteValueCreator<NullValue>());
+            Register(ValueType.stringValue, new ConcreteValueCreator<StringValue>());
         }
         public static ValueFactory& Instance()
         {
@@ -115,6 +138,10 @@ namespace Cm.Sym
                 throw Exception("no creator for value type '" + string(ValueTypeStr(valueType)) + "'");
             }
             return creator->CreateValue();
+        }
+        private void Register(ValueType valueType, ValueCreator* creator)
+        {
+            creators[int(valueType)] = UniquePtr<ValueCreator>(creator);
         }
         private static UniquePtr<ValueFactory> instance;
         private List<UniquePtr<ValueCreator>> creators;

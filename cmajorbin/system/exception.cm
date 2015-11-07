@@ -94,4 +94,74 @@ namespace System
         private int line;
         private string callStack;
     }
+    
+    public class ExceptionPtr
+    {
+        public nothrow ExceptionPtr() : exceptionId(0), exception(null)
+        {
+        }
+        suppress ExceptionPtr(const ExceptionPtr&);
+        suppress void operator=(const ExceptionPtr&);
+        public nothrow ExceptionPtr(ExceptionPtr&& that) : exceptionId(that.exceptionId), exception(that.exception)
+        {
+            that.exceptionId = 0;
+            that.exception = null;
+        }
+        public nothrow void operator=(ExceptionPtr&& that)
+        {
+            Swap(exceptionId, that.exceptionId);
+            Swap(exception, that.exception);
+        }
+        public nothrow ExceptionPtr(int exceptionId_, Exception* exception_) : exceptionId(exceptionId_), exception(exception_)
+        {
+        }
+        public nothrow ~ExceptionPtr()
+        {
+            if (exception != null)
+            {
+                delete exception;
+            }
+        }
+        public nothrow inline bool HasException() const
+        {
+            return exceptionId != 0 && exception != null;
+        }
+        public nothrow inline int ExceptionId() const
+        {
+            return exceptionId;
+        }
+        public nothrow Exception* Release() const
+        {
+            Exception* ex = exception;
+            exception = null;
+            exceptionId = 0;
+            return ex;
+        }
+        private int exceptionId;
+        private Exception* exception;
+    }
+    
+    public nothrow ExceptionPtr CaptureCurrentException()
+    {
+        int current_exception_id = get_current_exception_id();
+        if (current_exception_id != 0)
+        {
+            set_current_exception_captured();
+            set_current_exception_id(0);
+        }
+        return ExceptionPtr(current_exception_id, cast<Exception*>(get_current_exception_addr()));
+    }
+    
+    public void RethrowException(ExceptionPtr& capturedException)
+    {
+        if (capturedException.HasException())
+        {
+            set_current_exception_id(capturedException.ExceptionId());
+            set_current_exception_addr(capturedException.Release());
+        }
+        else
+        {
+            throw Exception("exception ptr has no exception");
+        }
+    }
 }

@@ -58,6 +58,10 @@ namespace Cm.Sym
         {
             baseIrType = Cm.IrIntf.Array(baseIrType, lastArrayDimension);
         }
+        if (baseIrType == null)
+        {
+            throw Error("base type '" + baseType->FullName() + "' has no IR type", baseType->GetSpan());
+        }
         byte numPointers = 0u;
         bool ref = false;
         bool rvalueRef = false;

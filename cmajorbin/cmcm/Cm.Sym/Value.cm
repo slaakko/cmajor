@@ -17,6 +17,12 @@ namespace Cm.Sym
         none, boolValue, charValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, max
     }
     
+    public concept ValueClass<T>
+    {
+        where Derived<T, Value>;
+        T();
+    }
+    
     public nothrow string ValueTypeStr(ValueType valueType)
     {
         switch (valueType)
@@ -54,7 +60,7 @@ namespace Cm.Sym
         {
         }
         public abstract Value* As(ValueType targetType, bool cast_, const Span& span_);
-        // create ir object
+        public abstract Ir.Intf.Object* CreateIrObject() const;
         public virtual nothrow bool IsScopedValue() const 
         {
             return false;
@@ -215,7 +221,14 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            if (value)
+            {
+                return Cm.IrIntf.True();
+            }
+            return Cm.IrIntf.False();
+        }
         public nothrow inline bool Value() const
         {
             return value;
@@ -389,7 +402,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeCharConstant(value);
+        }
         public nothrow inline char Value() const
         {
             return value;
@@ -527,7 +543,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeI8Constant(value);
+        }
         public nothrow inline sbyte Value() const
         {
             return value;
@@ -644,7 +663,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeUI8Constant(value);
+        }
         public nothrow inline byte Value() const
         {
             return value;
@@ -789,7 +811,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeI16Constant(value);
+        }
         public nothrow inline short Value() const
         {
             return value;
@@ -920,7 +945,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeUI16Constant(value);
+        }
         public nothrow inline ushort Value() const
         {
             return value;
@@ -1072,7 +1100,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeI32Constant(value);
+        }
         public nothrow inline int Value() const
         {
             return value;
@@ -1217,7 +1248,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeUI32Constant(value);
+        }
         public nothrow inline uint Value() const
         {
             return value;
@@ -1383,7 +1417,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeI64Constant(value);
+        }
         public nothrow inline long Value() const
         {
             return value;
@@ -1549,7 +1586,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeUI64Constant(value);
+        }
         public nothrow inline ulong Value() const
         {
             return value;
@@ -1715,7 +1755,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeFloatConstant(value);
+        }
         public nothrow inline float Value() const
         {
             return value;
@@ -1888,7 +1931,10 @@ namespace Cm.Sym
                 }
             }
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeDoubleConstant(value);
+        }
         public nothrow inline double Value() const
         {
             return value;
@@ -1914,7 +1960,19 @@ namespace Cm.Sym
         {
             throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span_);
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            Ir.Intf.Type* irType = null;
+            if (type != null)
+            {
+                irType = type->IrType();
+            }
+            else
+            {
+                irType = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI1(), 1u);
+            }
+            return Cm.IrIntf.MakeNull(irType);
+        }
         public nothrow inline void SetType(TypeSymbol* type_)
         {
             type = type_;
@@ -1954,7 +2012,10 @@ namespace Cm.Sym
         {
             throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span_);
         }
-        // create ir object
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeStringConstant(value);
+        }
         public nothrow inline const string& Value() const
         {
             return value;

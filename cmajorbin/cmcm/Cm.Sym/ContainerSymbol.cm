@@ -62,7 +62,7 @@ namespace Cm.Sym
             List<Symbol*> exportSymbols;
             for (Symbol* symbol : symbols)
             {
-                if (symbol->IsExportSymbol() && !(symbol is TemplateTypeSymbol*))
+                if (symbol->IsExportSymbol() && !(symbol is TemplateTypeSymbol*) || writer.ExportMemberVariablesAndFunctionSymbols() && ((symbol is MemberVariableSymbol*) || (symbol is FunctionSymbol*)))
                 {
                     exportSymbols.Add(symbol);
                 }

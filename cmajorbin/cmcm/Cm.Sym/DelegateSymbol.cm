@@ -244,10 +244,6 @@ namespace Cm.Sym
             writer.GetBinaryWriter().Write(cast<byte>(flags));
             writer.Write(returnType->Id());
         }
-        public override void MakeIrType()
-        {
-            // todo
-        }
         public override string GetMangleId() const
         {
             return Cm.IrIntf.MakeAssemblyName(FullName());

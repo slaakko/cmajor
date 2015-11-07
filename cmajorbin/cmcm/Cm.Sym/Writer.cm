@@ -8,6 +8,7 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 using BinaryWriter = Cm.Ser.BinaryWriter;
 using AstWriter = Cm.Ast.Writer;
 
@@ -48,8 +49,23 @@ namespace Cm.Sym
             binaryWriter.Write(cast<byte>(valueType));
             value->Write(binaryWriter);
         }
+        public void PushExportMemberVariablesAndFunctionSymbols(bool export_)
+        {
+            exportMemberVariablesAndFunctionSymbolsStack.Push(exportMemberVariablesAndFunctionSymbols);
+            exportMemberVariablesAndFunctionSymbols = export_;
+        }
+        public void PopExportMemberVariablesAndFunctionSymbols()
+        {
+            exportMemberVariablesAndFunctionSymbols = exportMemberVariablesAndFunctionSymbolsStack.Pop();
+        }
+        public nothrow inline bool ExportMemberVariablesAndFunctionSymbols() const
+        {
+            return exportMemberVariablesAndFunctionSymbols;
+        }
         private BinaryWriter binaryWriter;
         private AstWriter astWriter;
         private SymbolTable& symbolTable;
+        private bool exportMemberVariablesAndFunctionSymbols;
+        private Stack<bool> exportMemberVariablesAndFunctionSymbolsStack;
     }
 }

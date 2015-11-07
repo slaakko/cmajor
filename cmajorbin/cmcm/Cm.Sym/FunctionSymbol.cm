@@ -367,7 +367,8 @@ namespace Cm.Sym
             flags = cast<FunctionSymbolFlags>(reader.GetBinaryReader().ReadUInt());
             groupName = reader.GetBinaryReader().ReadString();
             vtblIndex = reader.GetBinaryReader().ReadShort();
-            if (IsFunctionTemplate())
+            bool justSymbol = JustSymbol();
+            if (IsFunctionTemplate() && !justSymbol)
             {
                 persistentFunctionData.Reset(new PersistentFunctionData());
                 bool hasReturnTypeExpr = reader.GetBinaryReader().ReadBool();
@@ -392,7 +393,7 @@ namespace Cm.Sym
                 persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
                 reader.GetBinaryReader().Skip(persistentFunctionData->bodySize);
             }
-            else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate())
+            else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate() && !justSymbol)
             {
                 persistentFunctionData.Reset(new PersistentFunctionData());
                 bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
@@ -418,14 +419,26 @@ namespace Cm.Sym
                     reader.FetchTypeFor(this, 0);
                 }
             }
+            int n = reader.GetBinaryReader().ReadInt();
+            typeArguments.Resize(n);
+            for (int i = 0; i < n; ++i)
+            {
+                reader.FetchTypeFor(this, i);
+            }
         }
         public override void Write(Writer& writer)
         {
+            bool justSymbol = false;
+            if (IsFunctionTemplateSpecialization() || IsMemberOfTemplateType())
+            {
+                justSymbol = true;
+                SetJustSymbol();
+            }
             base->Write(writer);
             writer.GetBinaryWriter().Write(uint(flags));
             writer.GetBinaryWriter().Write(groupName);
             writer.GetBinaryWriter().Write(vtblIndex);
-            if (IsFunctionTemplate())
+            if (IsFunctionTemplate() && !justSymbol)
             {
                 SymbolTable& symbolTable = writer.GetSymbolTable();
                 Cm.Ast.Node* node = symbolTable.GetNode(this);
@@ -472,7 +485,7 @@ namespace Cm.Sym
                 writer.GetBinaryWriter().Write(bodySize);
                 writer.GetBinaryWriter().Seek(bodyEndPos);
             }
-            else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate())
+            else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate() && !justSymbol)
             {
                 bool hasUsingNodes = true;
                 if (persistentFunctionData.IsNull())
@@ -515,6 +528,13 @@ namespace Cm.Sym
                 {
                     writer.Write(returnType->Id());
                 }
+            }
+            int n = typeArguments.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                TypeSymbol* typeArgument = typeArguments[i];
+                writer.Write(typeArgument->Id());
             }
         }
         public override void AddSymbol(Symbol* symbol)

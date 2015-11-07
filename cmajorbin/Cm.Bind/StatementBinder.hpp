@@ -50,12 +50,16 @@ public:
     void EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
 };
 
+class Binder;
+
 class SimpleStatementBinder : public StatementBinder
 {
 public:
     SimpleStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder& binder_);
     void EndVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode) override;
+private:
+    Binder& binder;
 };
 
 class ReturnStatementBinder : public StatementBinder
@@ -107,8 +111,6 @@ private:
 };
 
 Cm::Ast::Node* MakeTypeIdNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing::Span& span);
-
-class Binder;
 
 class RangeForStatementBinder : public StatementBinder
 {

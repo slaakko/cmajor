@@ -100,6 +100,17 @@ namespace Cm.Sym
         public nothrow TypeSymbol(const Span& span_, const string& name_, const TypeId& id_) : base(span_, name_), id(id_)
         {
         }
+        public override void Read(Reader& reader) 
+        {
+            base->Read(reader);
+            id = reader.ReadTypeId();
+            reader.BackpatchType(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.Write(id);
+        }
         public nothrow inline const TypeId& Id() const
         {
             return id;

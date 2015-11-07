@@ -46,7 +46,9 @@ namespace Cm.Sym
         }
         public override void MakeIrType()
         {
-            // todo
+            if (IrTypeMade()) return;
+            SetIrType(underlyingType->IrType()->Clone());
+            SetDefaultIrValue(underlyingType->IrType()->CreateDefaultValue());
         }
         public nothrow override bool IsValueTypeSymbol() const 
         {   
