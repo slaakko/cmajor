@@ -107,4 +107,60 @@ namespace Cm.Sym
         private List<TypeParameterSymbol*> typeParameters;
         private UniquePtr<Cm.Ast.ConceptNode> conceptNode;
     }
+    
+    public class InstantiatedConceptSymbol : Symbol
+    {
+        public nothrow InstantiatedConceptSymbol(ConceptSymbol* conceptSymbol_, const List<TypeSymbol*>& typeArguments_) : 
+            base(conceptSymbol_->GetSpan(), MakeInstantiatedConceptSymbolName(conceptSymbol_, typeArguments_)), conceptSymbol(conceptSymbol_), typeArguments(typeArguments_), commonType(null)
+        {
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.instantiatedConceptSymbol;
+        }
+        public nothrow override bool IsExportSymbol() const
+        {
+            return false;
+        }
+        public nothrow inline ConceptSymbol* Concept() const
+        {
+            return conceptSymbol;
+        }
+        public nothrow inline const List<TypeSymbol*>& TypeArguments() const
+        {
+            return typeArguments;
+        }
+        public nothrow inline void SetCommonType(TypeSymbol* commonType_)
+        {
+            commonType = commonType_;
+        }
+        public nothrow inline TypeSymbol* CommonType() const
+        {
+            return commonType;
+        }
+        private ConceptSymbol* conceptSymbol;
+        private List<TypeSymbol*> typeArguments;
+        private TypeSymbol* commonType;
+    }
+    
+    public nothrow string MakeInstantiatedConceptSymbolName(ConceptSymbol* conceptSymbol, const List<TypeSymbol*>& typeArguments)
+    {
+        string s = conceptSymbol->GroupName();
+        s.Append('<');
+        bool first = true;
+        for (TypeSymbol* typeArgument : typeArguments)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                s.Append(", ");
+            }
+            s.Append(typeArgument->FullName());
+        }
+        s.Append('>');
+        return s;
+    }
 }

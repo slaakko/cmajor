@@ -87,6 +87,11 @@ namespace Cm.Sym
         {
             return Cm.IrIntf.MakeAssemblyName(FullName());
         }
+        public override void MakeIrType()
+        {
+            if (IrTypeMade()) return;
+            SetIrType(Cm.IrIntf.CreateClassTypeName(FullName()));
+        }
         public nothrow override bool IsExportSymbol() const
         {
             if (Parent()->IsClassTemplateSymbol()) return false;
@@ -287,6 +292,21 @@ namespace Cm.Sym
             {
                 reader.FetchTypeFor(this, -2);
             }
+            bool hasInitializedVar = reader.GetBinaryReader().ReadBool();
+            if (hasInitializedVar)
+            {
+                Symbol* symbol = reader.ReadSymbol();
+                if (symbol is MemberVariableSymbol*)
+                {
+                    MemberVariableSymbol* memberVarSymbol = cast<MemberVariableSymbol*>(symbol);
+                    initializedVar.Reset(memberVarSymbol);
+                    initializedVar->SetParent(this);
+                }
+                else
+                {
+                    throw Exception("member variable symbol expected");
+                }
+            }
             if (IsClassTemplateSymbol())
             {
                 if (persistentClassData.IsNull())
@@ -313,6 +333,12 @@ namespace Cm.Sym
             if (hasBaseClass)
             {
                 writer.Write(baseClass->Id());
+            }
+            bool hasInitializedVar = !initializedVar.IsNull();
+            writer.GetBinaryWriter().Write(hasInitializedVar);
+            if (hasInitializedVar)
+            {
+                writer.Write(initializedVar.GetPtr());
             }
             if (IsClassTemplateSymbol())
             {

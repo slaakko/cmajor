@@ -722,9 +722,12 @@ void Binder::Visit(Cm::Ast::GotoStatementNode& gotoStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 {
-    SimpleStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
+    SimpleStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), *this);
     simpleStatementNode.Accept(binder);
-    currentParent->AddStatement(binder.Result());
+    if (binder.Result())
+    {
+        currentParent->AddStatement(binder.Result());
+    }
 }
 
 void Binder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)

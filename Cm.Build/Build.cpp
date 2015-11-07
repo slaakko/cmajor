@@ -531,7 +531,7 @@ void GenerateOptimizedLlvmCodeFile(Cm::BoundTree::BoundCompileUnit& boundCompile
 void GenerateOptimizedLlvmCodeFileConcurrently(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
     std::string optllErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".opt.ll.error").generic_string());
-    std::string command = "stdhandle_redirect -2 ";
+    std::string command = "stdhandle_redirector -2 ";
     command.append(optllErrorFilePath).append(" ").append("opt");
     command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
     command.append(" -S").append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.OptIrFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
@@ -766,6 +766,81 @@ bool CompileCppFiles(Cm::Ast::Project* project, std::vector<std::string>& object
     return true;
 }
 
+class CodeGenerationContext
+{
+public:
+    CodeGenerationContext(const std::vector<Cm::BoundTree::BoundCompileUnit*>& compileUnits_) : compileUnits(compileUnits_), stop(false)
+    {
+        int n = int(compileUnits.size());
+        for (int i = 0; i < n; ++i)
+        {
+            compileUnitIndexQueue.push_back(i);
+        }
+        exceptions.resize(n);
+    }
+    int GetNextCompileUnitIndex()
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (compileUnitIndexQueue.empty()) return -1;
+        int compileUnitIndex = compileUnitIndexQueue.front();
+        compileUnitIndexQueue.pop_front();
+        return compileUnitIndex;
+    }
+    Cm::BoundTree::BoundCompileUnit* GetCompileUnit(int compileUnitIndex) const
+    {
+        return compileUnits[compileUnitIndex];
+    }
+    void SetException(int compileUnitIndex, std::exception_ptr exception)
+    {
+        exceptions[compileUnitIndex] = exception;
+    }
+    std::exception_ptr GetException(int compileUnitIndex) const
+    {
+        return exceptions[compileUnitIndex];
+    }
+    void Stop()
+    {
+        stop = true;
+    }
+    bool Stopping()
+    {
+        return stop;
+    }
+private:
+    std::vector<Cm::BoundTree::BoundCompileUnit*> compileUnits;
+    std::vector<std::exception_ptr> exceptions;
+    std::list<int> compileUnitIndexQueue;
+    std::mutex mtx;
+    bool stop;
+};
+
+void CodeGenerator(CodeGenerationContext* context)
+{
+    int compileUnitIndex = -1;
+    try
+    {
+        compileUnitIndex = context->GetNextCompileUnitIndex();
+        while (!context->Stopping() && compileUnitIndex != -1)
+        {
+            Cm::BoundTree::BoundCompileUnit* compileUnit = context->GetCompileUnit(compileUnitIndex);
+            GenerateObjectCodeConcurrently(*compileUnit);
+            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+            {
+                GenerateOptimizedLlvmCodeFileConcurrently(*compileUnit);
+            }
+            compileUnitIndex = context->GetNextCompileUnitIndex();
+        }
+    }
+    catch (...)
+    {
+        if (compileUnitIndex != -1)
+        {
+            context->SetException(compileUnitIndex, std::current_exception());
+        }
+        context->Stop();
+    }
+}
+
 bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::Ast::SyntaxTree& syntaxTree, const std::string& outputBasePath, std::vector<std::string>& objectFilePaths, 
     bool rebuild, const std::vector<std::string>& compileFileNames, std::vector<std::string>& debugInfoFilePaths, std::vector<std::string>& bcuPaths)
 {
@@ -893,6 +968,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
     }
     int index = 0;
     bool first = true;
+    std::vector<Cm::BoundTree::BoundCompileUnit*> objectCodeCompileUnits;
     for (const std::unique_ptr<Cm::BoundTree::BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
     {
         if (rebuild || buildSet.find(boundCompileUnit.get()) != buildSet.end())
@@ -927,11 +1003,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
             else
             {
                 Emit(symbolTable.GetTypeRepository(), *boundCompileUnit, nullptr);
-                GenerateObjectCode(*boundCompileUnit);
-                if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
-                {
-                    GenerateOptimizedLlvmCodeFile(*boundCompileUnit);
-                }
+                objectCodeCompileUnits.push_back(boundCompileUnit.get());
             }
         }
         else
@@ -940,6 +1012,44 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
         }
         objectFilePaths.push_back(boundCompileUnit->ObjectFilePath());
         ++index;
+    }
+    if (!quiet && !objectCodeCompileUnits.empty())
+    {
+        std::cout << "Generating code..." << std::endl;
+    }
+    if (objectCodeCompileUnits.size() > 1)
+    {
+        CodeGenerationContext codeGenerationContext(objectCodeCompileUnits);
+        int numCompileUnits = int(objectCodeCompileUnits.size());
+        int numCores = std::thread::hardware_concurrency();
+        std::vector<std::thread> threads;
+        for (int i = 0; i < numCores; ++i)
+        {
+            threads.push_back(std::move(std::thread(CodeGenerator, &codeGenerationContext)));
+        }
+        for (int i = 0; i < numCores; ++i)
+        {
+            threads[i].join();
+        }
+        for (int compileUnitIndex = 0; compileUnitIndex < numCompileUnits; ++compileUnitIndex)
+        {
+            std::exception_ptr exception = codeGenerationContext.GetException(compileUnitIndex);
+            if (exception)
+            {
+                std::rethrow_exception(exception);
+            }
+        }
+    }
+    else
+    {
+        for (Cm::BoundTree::BoundCompileUnit* objectCodeCompileUnit : objectCodeCompileUnits)
+        {
+            GenerateObjectCode(*objectCodeCompileUnit);
+            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+            {
+                GenerateOptimizedLlvmCodeFile(*objectCodeCompileUnit);
+            }
+        }
     }
     for (const std::unique_ptr<Cm::BoundTree::BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
     {

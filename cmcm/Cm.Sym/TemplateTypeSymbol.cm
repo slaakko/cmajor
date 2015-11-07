@@ -118,21 +118,25 @@ namespace Cm.Sym
             base->Read(reader);
             string parentName = reader.GetBinaryReader().ReadString();
             Symbol* parent = reader.GetSymbolTable().GlobalScope()->Lookup(parentName);
-            if (parent != null)
+            bool beginNamespace = false;
+            if (parent == null)
             {
-                if (parent is ContainerSymbol*)
-                {
-                    ContainerSymbol* containerParent = cast<ContainerSymbol*>(parent);
-                    containerParent->AddSymbol(this);
-                }
-                else
-                {
-                    throw Exception("container parent expected");
-                }
+                reader.GetSymbolTable().BeginNamespaceScope(parentName, Span());
+                parent = reader.GetSymbolTable().Container();
+                beginNamespace = true;
+            }            
+            if (parent is ContainerSymbol*)
+            {
+                ContainerSymbol* containerParent = cast<ContainerSymbol*>(parent);
+                containerParent->AddSymbol(this);
             }
             else
             {
-                throw Exception("parent not found");
+                throw Exception("container parent expected");
+            }
+            if (beginNamespace)
+            {
+                reader.GetSymbolTable().EndNamespaceScope();
             }
             reader.FetchTypeFor(this, -1);
             byte n = reader.GetBinaryReader().ReadByte();

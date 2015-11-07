@@ -38,8 +38,10 @@ namespace Cm.Sym
     
     public class BoolTypeSymbol : BasicTypeSymbol
     {
-        public nothrow BoolTypeSymbol() : base("bool", ShortBasicTypeId.boolId)
+        public BoolTypeSymbol() : base("bool", ShortBasicTypeId.boolId)
         {
+            SetIrType(Cm.IrIntf.I1());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -53,8 +55,18 @@ namespace Cm.Sym
     
     public class CharTypeSymbol : BasicTypeSymbol
     {
-        public nothrow CharTypeSymbol() : base("char", ShortBasicTypeId.charId)
+        public CharTypeSymbol() : base("char", ShortBasicTypeId.charId)
         {
+            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                SetIrType(Cm.IrIntf.I8());
+            }            
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                SetIrType(Cm.IrIntf.Char());
+            }
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -68,8 +80,9 @@ namespace Cm.Sym
 
     public class VoidTypeSymbol : BasicTypeSymbol
     {
-        public nothrow VoidTypeSymbol() : base("void", ShortBasicTypeId.voidId)
+        public VoidTypeSymbol() : base("void", ShortBasicTypeId.voidId)
         {
+            SetIrType(Cm.IrIntf.Void());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -83,8 +96,10 @@ namespace Cm.Sym
 
     public class SByteTypeSymbol : BasicTypeSymbol
     {
-        public nothrow SByteTypeSymbol() : base("sbyte", ShortBasicTypeId.sbyteId)
+        public SByteTypeSymbol() : base("sbyte", ShortBasicTypeId.sbyteId)
         {
+            SetIrType(Cm.IrIntf.I8());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -106,8 +121,10 @@ namespace Cm.Sym
 
     public class ByteTypeSymbol : BasicTypeSymbol
     {
-        public nothrow ByteTypeSymbol() : base("byte", ShortBasicTypeId.byteId)
+        public ByteTypeSymbol() : base("byte", ShortBasicTypeId.byteId)
         {
+            SetIrType(Cm.IrIntf.UI8());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -125,8 +142,10 @@ namespace Cm.Sym
 
     public class ShortTypeSymbol : BasicTypeSymbol
     {
-        public nothrow ShortTypeSymbol() : base("short", ShortBasicTypeId.shortId)
+        public ShortTypeSymbol() : base("short", ShortBasicTypeId.shortId)
         {
+            SetIrType(Cm.IrIntf.I16());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -148,8 +167,10 @@ namespace Cm.Sym
 
     public class UShortTypeSymbol : BasicTypeSymbol
     {
-        public nothrow UShortTypeSymbol() : base("ushort", ShortBasicTypeId.ushortId)
+        public UShortTypeSymbol() : base("ushort", ShortBasicTypeId.ushortId)
         {
+            SetIrType(Cm.IrIntf.UI16());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -167,8 +188,10 @@ namespace Cm.Sym
 
     public class IntTypeSymbol : BasicTypeSymbol
     {
-        public nothrow IntTypeSymbol() : base("int", ShortBasicTypeId.intId)
+        public IntTypeSymbol() : base("int", ShortBasicTypeId.intId)
         {
+            SetIrType(Cm.IrIntf.I32());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -190,8 +213,10 @@ namespace Cm.Sym
 
     public class UIntTypeSymbol : BasicTypeSymbol
     {
-        public nothrow UIntTypeSymbol() : base("uint", ShortBasicTypeId.uintId)
+        public UIntTypeSymbol() : base("uint", ShortBasicTypeId.uintId)
         {
+            SetIrType(Cm.IrIntf.UI32());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -209,8 +234,10 @@ namespace Cm.Sym
     
     public class LongTypeSymbol : BasicTypeSymbol
     {
-        public nothrow LongTypeSymbol() : base("long", ShortBasicTypeId.longId)
+        public LongTypeSymbol() : base("long", ShortBasicTypeId.longId)
         {
+            SetIrType(Cm.IrIntf.I64());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -232,8 +259,10 @@ namespace Cm.Sym
 
     public class ULongTypeSymbol : BasicTypeSymbol
     {
-        public nothrow ULongTypeSymbol() : base("ulong", ShortBasicTypeId.ulongId)
+        public ULongTypeSymbol() : base("ulong", ShortBasicTypeId.ulongId)
         {
+            SetIrType(Cm.IrIntf.UI64());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -251,8 +280,10 @@ namespace Cm.Sym
 
     public class FloatTypeSymbol : BasicTypeSymbol
     {
-        public nothrow FloatTypeSymbol() : base("float", ShortBasicTypeId.floatId)
+        public FloatTypeSymbol() : base("float", ShortBasicTypeId.floatId)
         {
+            SetIrType(Cm.IrIntf.Float());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -270,8 +301,10 @@ namespace Cm.Sym
 
     public class DoubleTypeSymbol : BasicTypeSymbol
     {
-        public nothrow DoubleTypeSymbol() : base("double", ShortBasicTypeId.doubleId)
+        public DoubleTypeSymbol() : base("double", ShortBasicTypeId.doubleId)
         {
+            SetIrType(Cm.IrIntf.Double());
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {
@@ -289,8 +322,18 @@ namespace Cm.Sym
 
     public class NullPtrTypeSymbol : BasicTypeSymbol
     {
-        public nothrow NullPtrTypeSymbol() : base("@nullptrtype", ShortBasicTypeId.nullPtrId)
+        public NullPtrTypeSymbol() : base("@nullptrtype", ShortBasicTypeId.nullPtrId)
         {
+            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                SetIrType(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u));
+            }
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                SetIrType(Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u));
+            }
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
         }
         public nothrow override SymbolType GetSymbolType() const
         {

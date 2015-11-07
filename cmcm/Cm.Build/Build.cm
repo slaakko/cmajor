@@ -229,6 +229,7 @@ namespace Cm.Build
         List<string> nativeObjectFilePaths = objectFilePaths;
         List<string> debugInfoFilePaths;
         List<string> bcuPaths;
+        changed = true; // todo: remove this
         if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths, bcuPaths))
         {
             changed = true;

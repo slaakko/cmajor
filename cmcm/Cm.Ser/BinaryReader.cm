@@ -166,7 +166,7 @@ namespace Cm.Ser
             {
                 ThrowUnexpectedEnd("void*");
             }
-            cmemcpy(buf, pos, size, 0, false);
+            cmemcpy(buf, pos, size, 1, false);
             pos = pos + cast<int>(size);
         }
         private void ThrowUnexpectedEnd(const string& type)

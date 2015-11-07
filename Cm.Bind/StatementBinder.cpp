@@ -256,8 +256,8 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
 }
 
 SimpleStatementBinder::SimpleStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, 
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : 
-    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Binder& binder_) :
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
 {
 }
 
@@ -268,6 +268,115 @@ void SimpleStatementBinder::EndVisit(Cm::Ast::SimpleStatementNode& simpleStateme
     {
         Cm::BoundTree::BoundExpression* expression = Pop();
         simpleStatement->SetExpression(expression);
+        if (expression->IsBoundFunctionCall())
+        {
+            Cm::BoundTree::BoundFunctionCall* funCall = static_cast<Cm::BoundTree::BoundFunctionCall*>(expression);
+            if (funCall->GetFunction()->FullName() == "System.RethrowException(System.ExceptionPtr&)")
+            {
+                Cm::Ast::TryStatementNode* currentTry = CurrentFunction()->GetCurrentTry();
+                if (currentTry == nullptr && CurrentFunction()->GetFunctionSymbol()->IsNothrow())
+                {
+                    throw Cm::Core::Exception("nothrow function cannot throw", simpleStatementNode.GetSpan(), CurrentFunction()->GetFunctionSymbol()->GetSpan());
+                }
+                binder.AddBoundStatement(simpleStatement);
+                binder.AddBoundStatement(new Cm::BoundTree::BoundBeginThrowStatement(&simpleStatementNode));
+                Cm::Ast::InvokeNode* callThisThreadExpr = new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(),
+                    new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "this_thread"));
+                Cm::Ast::InvokeNode* callGetExceptionTableAddrExpr = new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(),
+                    new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_exception_table_addr"));
+                callGetExceptionTableAddrExpr->AddArgument(callThisThreadExpr);
+                Cm::Ast::InvokeNode* callSetExceptionAddrExpr = new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(),
+                    new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "System.Support.SetExceptionAddr"));
+                callSetExceptionAddrExpr->AddArgument(callGetExceptionTableAddrExpr);
+                callSetExceptionAddrExpr->AddArgument(new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_id")));;
+                callSetExceptionAddrExpr->AddArgument(new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_addr")));
+                Cm::Ast::SimpleStatementNode* setExceptionAddrStatement = new Cm::Ast::SimpleStatementNode(simpleStatementNode.GetSpan(), callSetExceptionAddrExpr);
+                Cm::Ast::AssignmentStatementNode* setExceptionCodeStatement = new Cm::Ast::AssignmentStatementNode(simpleStatementNode.GetSpan(),
+                    new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()),
+                    new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_id")));;
+                Cm::Ast::SimpleStatementNode* resetCurrentExceptionStatement = new Cm::Ast::SimpleStatementNode(simpleStatementNode.GetSpan(), new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(),
+                    new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "reset_current_exception")));
+                Cm::Ast::AssignmentStatementNode* setExceptionCodeParamStatement = nullptr;
+                Cm::Ast::StatementNode* endOfThrowStatement = nullptr;
+                Cm::Ast::FunctionNode* functionNode = simpleStatementNode.GetFunction();
+                Cm::Ast::ExitTryStatementNode* exitTryStatement = nullptr;
+                Cm::Ast::TryStatementNode* ownerTry = nullptr;
+                if (CurrentFunction()->InHandler())
+                {
+                    ownerTry = CurrentFunction()->GetParentTry();
+                }
+                else
+                {
+                    ownerTry = CurrentFunction()->GetCurrentTry();
+                }
+                if (ownerTry)
+                {
+                    int catchId = ownerTry->GetFirstHandler()->CatchId();
+                    if (catchId == -1)
+                    {
+                        catchId = CurrentFunction()->GetNextCatchId();
+                        ownerTry->SetFirstCatchId(catchId);
+                    }
+                    exitTryStatement = new Cm::Ast::ExitTryStatementNode(simpleStatementNode.GetSpan(), ownerTry);
+                    std::string continueLabelPrefix;
+                    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+                    if (backend == Cm::IrIntf::BackEnd::llvm)
+                    {
+                        continueLabelPrefix = "$C";
+                    }
+                    else if (backend == Cm::IrIntf::BackEnd::c)
+                    {
+                        continueLabelPrefix = "_C_";
+                    }
+                    Cm::Ast::GotoStatementNode* gotoCatch = new Cm::Ast::GotoStatementNode(simpleStatementNode.GetSpan(), new Cm::Ast::LabelNode(simpleStatementNode.GetSpan(), continueLabelPrefix + std::to_string(catchId)));
+                    gotoCatch->SetExceptionHandlingGoto();
+                    endOfThrowStatement = gotoCatch;
+                }
+                else
+                {
+                    setExceptionCodeParamStatement = new Cm::Ast::AssignmentStatementNode(simpleStatementNode.GetSpan(),
+                        new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), Cm::IrIntf::GetExceptionCodeParamName()),
+                        new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()));
+                    Cm::Ast::Node* returnTypeExpr = functionNode->ReturnTypeExpr();
+                    if (returnTypeExpr && returnTypeExpr->GetNodeType() != Cm::Ast::NodeType::voidNode)
+                    {
+                        Cm::Ast::CloneContext cloneContext;
+                        Cm::Ast::InvokeNode* defaultValue = new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), returnTypeExpr->Clone(cloneContext));
+                        endOfThrowStatement = new Cm::Ast::ReturnStatementNode(simpleStatementNode.GetSpan(), defaultValue);
+                    }
+                    else
+                    {
+                        endOfThrowStatement = new Cm::Ast::ReturnStatementNode(simpleStatementNode.GetSpan(), nullptr);
+                    }
+                }
+                Cm::Ast::CompoundStatementNode* throwActions = new Cm::Ast::CompoundStatementNode(simpleStatementNode.GetSpan());
+                CurrentFunction()->Own(throwActions);
+                throwActions->SetLabelNode(simpleStatementNode.Label());
+                throwActions->SetParent(functionNode);
+                throwActions->AddStatement(setExceptionAddrStatement);
+                throwActions->AddStatement(setExceptionCodeStatement);
+                throwActions->AddStatement(resetCurrentExceptionStatement);
+                if (setExceptionCodeParamStatement)
+                {
+                    throwActions->AddStatement(setExceptionCodeParamStatement);
+                }
+                if (exitTryStatement)
+                {
+                    throwActions->AddStatement(exitTryStatement);
+                }
+                throwActions->AddStatement(endOfThrowStatement);
+                Cm::Sym::DeclarationVisitor declarationVisitor(SymbolTable());
+                throwActions->Accept(declarationVisitor);
+                Cm::Sym::ContainerScope* containerScope = SymbolTable().GetContainerScope(throwActions);
+                containerScope->SetParent(ContainerScope());
+                binder.BeginContainerScope(containerScope);
+                throwActions->Accept(binder);
+                binder.EndContainerScope();
+                binder.AddBoundStatement(new Cm::BoundTree::BoundEndThrowStatement(&simpleStatementNode));
+                SetResult(nullptr);
+                return;
+            }
+        }
     }
     SetResult(simpleStatement);
 }
@@ -1301,6 +1410,14 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
                             new Cm::Ast::IdentifierNode(catchNode.GetSpan(), exPtrVarName));
                         constructExPtrStatement->AddArgument(new Cm::Ast::CastNode(catchNode.GetSpan(), exPtrType->Clone(cloneContext), callGetExceptionAddrExpr));
                         handlerBlock->AddStatement(constructExPtrStatement);
+                        Cm::Ast::InvokeNode* invokeSetCurrentExceptionIdFun = new Cm::Ast::InvokeNode(catchNode.GetSpan(), new Cm::Ast::IdentifierNode(catchNode.GetSpan(), "set_current_exception_id"));
+                        invokeSetCurrentExceptionIdFun->AddArgument(new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()));
+                        Cm::Ast::SimpleStatementNode* setCurrentExceptionIdStatement = new Cm::Ast::SimpleStatementNode(catchNode.GetSpan(), invokeSetCurrentExceptionIdFun);
+                        handlerBlock->AddStatement(setCurrentExceptionIdStatement);
+                        Cm::Ast::InvokeNode* invokeSetCurrentExceptionAddrFun = new Cm::Ast::InvokeNode(catchNode.GetSpan(), new Cm::Ast::IdentifierNode(catchNode.GetSpan(), "set_current_exception_addr"));
+                        invokeSetCurrentExceptionAddrFun->AddArgument(callGetExceptionAddrExpr->Clone(cloneContext));
+                        Cm::Ast::SimpleStatementNode* setCurrentExceptionAddrStatement = new Cm::Ast::SimpleStatementNode(catchNode.GetSpan(), invokeSetCurrentExceptionAddrFun);
+                        handlerBlock->AddStatement(setCurrentExceptionAddrStatement);
                         Cm::Ast::AssignmentStatementNode* resetExCodeStatement = new Cm::Ast::AssignmentStatementNode(catchNode.GetSpan(), 
                             new Cm::Ast::IdentifierNode(catchNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()),
                             new Cm::Ast::IntLiteralNode(catchNode.GetSpan(), 0));

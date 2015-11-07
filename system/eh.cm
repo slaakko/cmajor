@@ -68,7 +68,11 @@ namespace System.Support
         suppress void operator=(ExDeleter<T>&&);
         public nothrow ~ExDeleter()
         {
-            delete ex;
+            reset_current_exception();
+            if (current_exception_captured() == 0)
+            {
+                delete ex;
+            }            
         }
         private T* ex;
     }

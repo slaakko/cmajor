@@ -37,7 +37,7 @@ namespace Cm.Sym
         public override void Read(Reader& reader)
         {
             base->Read(reader);
-            bool hasType = reader.GetBinaryReader().ReadBool();
+            bool hasType = HasType();
             if (!hasType)
             {
                 Cm.Ast.ParameterNode* parameterNode = reader.GetAstReader().ReadParameterNode();

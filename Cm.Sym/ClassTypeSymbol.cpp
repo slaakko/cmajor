@@ -124,6 +124,10 @@ void ClassTypeSymbol::Read(Reader& reader)
             initializedVar.reset(memberVarSymbol);
             initializedVar->SetParent(this);
         }
+        else
+        {
+            throw std::runtime_error("member variable symbol expected");
+        }
     }
     if (IsClassTemplateSymbol())
     {

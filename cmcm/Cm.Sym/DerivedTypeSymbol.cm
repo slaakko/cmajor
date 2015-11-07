@@ -273,9 +273,24 @@ namespace Cm.Sym
         private List<int> arrayDimensions;
     }
     
-    internal nothrow string MakeMangleId(const Cm.Ast.DerivationList& derivations, const List<int>& arrayDiemnsions)
+    internal nothrow string MakeMangleId(const Cm.Ast.DerivationList& derivations, const List<int>& arrayDimensions)
     {
-        // todo;
-        return string();
+        string mangleId;
+        byte n = derivations.Count();
+        int arrayDimIndex = 0;
+        for (byte i = 0u; i < n; ++i)
+        {
+            switch (derivations[i])
+            {
+                case Cm.Ast.Derivation.const_: mangleId.Append('C'); break;
+                case Cm.Ast.Derivation.reference: mangleId.Append('R'); break;
+                case Cm.Ast.Derivation.rvalueRef : mangleId.Append("RR"); break;
+                case Cm.Ast.Derivation.pointer: mangleId.Append('P'); break;
+                case Cm.Ast.Derivation.leftParen: mangleId.Append('l'); break;
+                case Cm.Ast.Derivation.rightParen: mangleId.Append('r'); break;
+                case Cm.Ast.Derivation.array: mangleId.Append('a').Append(ToString(arrayDimensions[arrayDimIndex++])); break;
+            }
+        }
+        return mangleId;
     }
 }
