@@ -158,6 +158,7 @@ namespace Cm.Ast
             if (d == Derivation.const_)
             {
                 s.Append(DerivationStr(d));
+                ++derivationIndex;
             }
         }
         if (derivationIndex < n)
@@ -213,6 +214,7 @@ namespace Cm.Ast
             if (d == Derivation.const_)
             {
                 s.Append(DerivationStr(d));
+                ++derivationIndex;
             }
         }
         if (derivationIndex < n)

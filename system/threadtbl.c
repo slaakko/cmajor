@@ -295,6 +295,17 @@ const char* capture_call_stack()
     }
 }
 
+void crash(int signal)
+{
+    fprintf(stderr, "SIGSEGV received. Call stack:\n%s", capture_call_stack());
+    exit(255);
+}
+
+void install_signal_handler()
+{
+    signal(SIGSEGV, crash);
+}
+
 void threadtbl_init(int numExceptions)
 {
     int i;
@@ -306,6 +317,7 @@ void threadtbl_init(int numExceptions)
         threadHashTbl[i] = 0;
     }
     allocate_thread_data(this_thread());
+    install_signal_handler();
 }
 
 void threadtbl_done()
