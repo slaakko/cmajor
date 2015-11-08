@@ -1,6 +1,6 @@
 include ../Makefile.common
 
-OBJECTS = CodeFormatter.o MappedInputFile.o Path.o Prime.o System.o TextUtils.o ToolError.o Uuid.o
+OBJECTS = CodeFormatter.o MappedInputFile.o Mt.o Path.o Prime.o System.o TextUtils.o ToolError.o Uuid.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

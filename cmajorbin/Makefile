@@ -29,6 +29,7 @@ build:
 	$(MAKE) -C cdidump
 	$(MAKE) -C cmldump
 	$(MAKE) -C SourceLines
+	$(MAKE) -C StdHandleRedirector
 
 prefix := /usr
 
@@ -75,4 +76,6 @@ clean:
 	$(MAKE) -C cdidump clean
 	$(MAKE) -C cmldump clean
 	$(MAKE) -C SourceLines clean
+	$(MAKE) -C StdHandleRedirector clean
+
 

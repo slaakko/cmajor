@@ -9,8 +9,8 @@
 
 #include <Cm.Sym/TypeId.hpp>
 #include <Cm.Util/Mt.hpp>
-#include <stdexcept>
 #include <string>
+#include <cstring>
 
 namespace Cm { namespace Sym {
 
