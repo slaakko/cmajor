@@ -144,7 +144,7 @@ namespace System.Net.Sockets
                 numLeft = numLeft - numSent;
             } 
         }
-        public int Receive(const void* buf, int len)
+        public int Receive(void* buf, int len)
         {
             int result = receive_socket(socket, buf, len, 0);
             if (result == -1)

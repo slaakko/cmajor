@@ -392,6 +392,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StdHandleRedirector", "StdH
 		{F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD} = {F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sockets", "Sockets\Sockets.vcxproj", "{59D2AAE8-5015-4476-B83B-485433251C3F}"
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -765,6 +767,18 @@ Global
 		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|Win32.Build.0 = Release|Win32
 		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|x64.ActiveCfg = Release|x64
 		{5FFCBD76-9315-4F90-9B35-C92124A4D434}.Release|x64.Build.0 = Release|x64
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Debug|Win32.Build.0 = Debug|Win32
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Debug|x64.ActiveCfg = Debug|x64
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Debug|x64.Build.0 = Debug|x64
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Release|Win32.ActiveCfg = Release|Win32
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Release|Win32.Build.0 = Release|Win32
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Release|x64.ActiveCfg = Release|x64
+		{59D2AAE8-5015-4476-B83B-485433251C3F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
