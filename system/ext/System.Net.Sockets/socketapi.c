@@ -220,4 +220,3 @@ int receive_socket(int socket, void* buf, int len, int flags)
 {
     return recv(socket, buf, len, flags);
 }
-
