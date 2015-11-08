@@ -1,6 +1,6 @@
 include ../Makefile.common
 
-OBJECTS = TypePropagationGraph.o
+OBJECTS = ClassId.o TypePropagationGraph.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

@@ -15,6 +15,9 @@
 #if defined(_WIN32)
 #define _CRT_RAND_S
 #include <stdlib.h>
+#else
+#include <unistd.h>
+#include <fcntl.h>
 #endif
 
 #include <stdexcept>
@@ -51,7 +54,7 @@ uint32_t get_random_seed_from_system()
 }
 
 #else
-   
+
 #error unknown platform
 
 #endif
@@ -67,7 +70,7 @@ private:
     static const uint32_t upperMask = 0x80000000u;
     static const uint32_t lowerMask = 0x7fffffffu;
 public:
-    static bool Initialized() 
+    static bool Initialized()
     {
         return initialized;
     }

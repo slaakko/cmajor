@@ -1,6 +1,6 @@
 project C.Ir;
 target=library;
-assembly <C.ir.cma>;
+assembly <C.Ir.cma>;
 reference <../Ir.Intf/Ir.Intf.cml>;
 source <Constant.cm>;
 source <Factory.cm>;

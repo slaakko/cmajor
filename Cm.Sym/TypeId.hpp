@@ -10,6 +10,7 @@
 #ifndef CM_SYM_TYPE_ID_INCLUDED
 #define CM_SYM_TYPE_ID_INCLUDED
 #include <stdexcept>
+#include <utility>
 
 namespace Cm { namespace Sym {
 

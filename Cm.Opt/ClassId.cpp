@@ -13,6 +13,7 @@
 #include <Cm.Util/Prime.hpp>
 #include <boost/filesystem.hpp>
 #include <algorithm>
+#include <fstream>
 
 namespace Cm { namespace Opt {
 
