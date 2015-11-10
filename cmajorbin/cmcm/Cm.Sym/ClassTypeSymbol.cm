@@ -282,6 +282,54 @@ namespace Cm.Sym
         {
             baseClass = baseClass_;
         }
+        public nothrow override bool IsClassTemplateSymbol() const 
+        { 
+            return !typeParameters.IsEmpty(); 
+        }
+        public override void AddSymbol(Symbol* symbol)
+        {
+            base->AddSymbol(symbol);
+            if (symbol is MemberVariableSymbol*)
+            {
+                MemberVariableSymbol* memberVariableSymbol = cast<MemberVariableSymbol*>(symbol);
+                if (memberVariableSymbol->IsStatic())
+                {
+                    staticMemberVariables.Add(memberVariableSymbol);
+                }
+                else
+                {
+                    memberVariables.Add(memberVariableSymbol);
+                }
+            }
+            else if (symbol is FunctionSymbol*)
+            {
+                FunctionSymbol* functionSymbol = cast<FunctionSymbol*>(symbol);
+                if (functionSymbol->IsDestructor())
+                {
+                    destructor = functionSymbol;
+                }
+                else if (functionSymbol->IsStaticConstructor())
+                {
+                    staticConstructor = functionSymbol;
+                }
+                else if (functionSymbol->IsConvertingConstructor())
+                {
+                    AddConversion(functionSymbol);
+                }
+                else if (functionSymbol->IsConversionFunction())
+                {
+                    AddConversion(functionSymbol);
+                }
+            }
+            else if (symbol is TypeParameterSymbol*)
+            {
+                typeParameters.Add(cast<TypeParameterSymbol*>(symbol));
+            }
+        }
+        public void AddConversion(FunctionSymbol* functionSymbol)
+        {
+            conversions.Insert(functionSymbol);
+        }
         public override void Read(Reader& reader)
         {
             base->Read(reader);
