@@ -16,6 +16,7 @@
 #include <Cm.Debugger/GdbReply.hpp>
 #include <Cm.Debugger/IdeOutput.hpp>
 #include <Cm.Debugger/Inspect.hpp>
+#include <Cm.Debugger/LineStream.hpp>
 #include <algorithm>
 #include <iostream>
 
@@ -146,7 +147,7 @@ void StartCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
             debugInfo.SetCurrentSourceFile(currentSourceFile);
             currentSourceFile->SetActiveLineNumber(mainEntry->GetSourceSpan().Line());
             currentSourceFile->SetListLineNumber(0);
-            std::cout << "debugging started" << std::endl;
+            IoLineStream()->WriteLine("debugging started");
         }
     }
     catch (const std::exception& ex)
@@ -238,7 +239,7 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
         }
         if (!ide)
         {
-            std::cout << "continuing" << std::endl;
+            IoLineStream()->WriteLine("continuing");
         }
         std::vector<std::string> nextCFileLines;
         ExecContinue exec(gdb, inputReader);
@@ -268,7 +269,7 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
             }
             else
             {
-                std::cout << "program received signal " << signal << "\n" << backTraceCommand->ReplyMessage() << std::endl;
+                IoLineStream()->WriteLine("program received signal " + signal + "\n" + backTraceCommand->ReplyMessage());
             }
             return;
         }
@@ -284,7 +285,7 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
             }
             else
             {
-                std::cout << "program exited with code " << exitCode << std::endl;
+                IoLineStream()->WriteLine("program exited with code " + std::to_string(exitCode));
             }
         }
         else
@@ -304,7 +305,7 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
                     SourceFile* currentSourceFile = debugInfo.GetSourceFile(currentNode->Function()->SourceFilePath());
                     debugInfo.SetCurrentSourceFile(currentSourceFile);
                     Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), currentNode->GetSourceSpan().Line());
-                    std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                    IoLineStream()->WriteLine("breakpoint " + std::to_string(bp->Number()) + " at " + sourceFileLine.ToString());
                     currentSourceFile->SetActiveLineNumber(currentNode->GetSourceSpan().Line());
                     currentSourceFile->ListLine(currentNode->GetSourceSpan().Line(), debugInfo.Breakpoints());
                 }
@@ -324,7 +325,7 @@ void ContinueCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& input
                         SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
                         debugInfo.SetCurrentSourceFile(currentSourceFile);
                         Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                        std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                        IoLineStream()->WriteLine("at " + sourceFileLine.ToString());
                         currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                         currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
                     }
@@ -437,7 +438,7 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 }
                 else
                 {
-                    std::cout << "program received signal " << signal << "\n" << backTraceCommand->ReplyMessage() << std::endl;
+                    IoLineStream()->WriteLine("program received signal " + signal + "\n" + backTraceCommand->ReplyMessage());
                 }
                 return;
             }
@@ -453,7 +454,7 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 }
                 else
                 {
-                    std::cout << "program exited" << std::endl;
+                    IoLineStream()->WriteLine("program exited");
                 }
                 return;
             }
@@ -472,7 +473,7 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                     SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
                     debugInfo.SetCurrentSourceFile(currentSourceFile);
                     Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                    std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                    IoLineStream()->WriteLine("breakpoint " + std::to_string(bp->Number()) + " at " + sourceFileLine.ToString());
                     currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                     currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
                 }
@@ -496,7 +497,7 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                         if (nodeBefore && nodeBefore->Function() != nodeAfter->Function())
                         {
                             Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                            std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                            IoLineStream()->WriteLine("at " + sourceFileLine.ToString());
                         }
                         currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                         currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
@@ -526,7 +527,7 @@ void NextCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                     if (nodeBefore && nodeBefore->Function() != nodeAfter->Function())
                     {
                         Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                        std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                        IoLineStream()->WriteLine("at " + sourceFileLine.ToString());
                     }
                     currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                     currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
@@ -661,7 +662,7 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 }
                 else
                 {
-                    std::cout << "program received signal " << signal << "\n" << backTraceCommand->ReplyMessage() << std::endl;
+                    IoLineStream()->WriteLine("program received signal " + signal + "\n" + backTraceCommand->ReplyMessage());
                 }
                 return;
             }
@@ -677,7 +678,7 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                 }
                 else
                 {
-                    std::cout << "program exited" << std::endl;
+                    IoLineStream()->WriteLine("program exited");
                 }
                 return;
             }
@@ -696,7 +697,7 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                     SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
                     debugInfo.SetCurrentSourceFile(currentSourceFile);
                     Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                    std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                    IoLineStream()->WriteLine("breakpoint " + std::to_string(bp->Number()) + " at " + sourceFileLine.ToString());
                     currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                     currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
                 }
@@ -722,7 +723,7 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                         if (nodeAfterIsEntryNode || nodeBefore && nodeBefore->Function() != nodeAfter->Function())
                         {
                             Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                            std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                            IoLineStream()->WriteLine("at " + sourceFileLine.ToString());
                         }
                         currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                         currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
@@ -752,7 +753,7 @@ void StepCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRead
                     if (nodeBefore && nodeBefore->Function() != nodeAfter->Function())
                     {
                         Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                        std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                        IoLineStream()->WriteLine("at " + sourceFileLine.ToString());
                     }
                     currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                     currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
@@ -854,7 +855,7 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
                 }
                 else
                 {
-                    std::cout << "program received signal " << signal << "\n" << backTraceCommand->ReplyMessage() << std::endl;
+                    IoLineStream()->WriteLine("program received signal " + signal + "\n" + backTraceCommand->ReplyMessage());
                 }
                 return;
             }
@@ -870,7 +871,7 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
                 }
                 else
                 {
-                    std::cout << "program exited" << std::endl;
+                    IoLineStream()->WriteLine("program exited");
                 }
                 return;
             }
@@ -889,7 +890,7 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
                     SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
                     debugInfo.SetCurrentSourceFile(currentSourceFile);
                     Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                    std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                    IoLineStream()->WriteLine("breakpoint " + std::to_string(bp->Number()) + " at " + sourceFileLine.ToString());
                     currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                     currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
                 }
@@ -910,7 +911,7 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
                         SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
                         debugInfo.SetCurrentSourceFile(currentSourceFile);
                         Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                        std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                        IoLineStream()->WriteLine("at " + sourceFileLine.ToString());
                         currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                         currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
                     }
@@ -939,7 +940,7 @@ void OutCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputReade
                         SourceFile* currentSourceFile = debugInfo.GetSourceFile(nodeAfter->Function()->SourceFilePath());
                         debugInfo.SetCurrentSourceFile(currentSourceFile);
                         Cm::Core::SourceFileLine sourceFileLine(currentSourceFile->FilePath(), nodeAfter->GetSourceSpan().Line());
-                        std::cout << "at " << sourceFileLine.ToString() << std::endl;
+                        IoLineStream()->WriteLine("at " + sourceFileLine.ToString());
                         currentSourceFile->SetActiveLineNumber(nodeAfter->GetSourceSpan().Line());
                         currentSourceFile->ListLine(nodeAfter->GetSourceSpan().Line(), debugInfo.Breakpoints());
                     }
@@ -991,7 +992,7 @@ void BreakCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
             }
             else
             {
-                std::cout << "breakpoint " << bpNum << " set at " << bpLine.ToString() << std::endl;
+                IoLineStream()->WriteLine("breakpoint " + std::to_string(bpNum) + " set at " + bpLine.ToString());
             }
         }
         else
@@ -1038,7 +1039,7 @@ void ClearCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
             }
             else
             {
-                std::cout << "breakpoint " << bpNum << " deleted" << std::endl;
+                IoLineStream()->WriteLine("breakpoint " + std::to_string(bpNum) + " deleted");
             }
         }
         else
@@ -1112,7 +1113,7 @@ void CallStackCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inpu
                 }
                 else
                 {
-                    std::cout << "#" << i << " " << node->Function()->FunctionDisplayName() << " at " << node->Function()->SourceFilePath() << ":" << node->GetSourceSpan().Line() << std::endl;
+                    IoLineStream()->WriteLine("#" + std::to_string(i) + " " + node->Function()->FunctionDisplayName() + " at " + node->Function()->SourceFilePath() + ":" + std::to_string(node->GetSourceSpan().Line()));
                 }
             }
             else
@@ -1128,7 +1129,7 @@ void CallStackCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inpu
                     }
                     else
                     {
-                        std::cout << "#" << i << " " << node->Function()->FunctionDisplayName() << " at " << node->Function()->SourceFilePath() << ":" << node->GetSourceSpan().Line() << std::endl;
+                        IoLineStream()->WriteLine("#" + std::to_string(i) + " " + node->Function()->FunctionDisplayName() + " at " + node->Function()->SourceFilePath() + ":" + std::to_string(node->GetSourceSpan().Line()));
                     }
                 }
             }
@@ -1175,7 +1176,7 @@ void FrameCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputRea
                 }
                 else
                 {
-                    std::cout << "frame #" << frame << " selected" << std::endl;
+                    IoLineStream()->WriteLine("frame #" + std::to_string(frame) + " selected");
                 }
             }
             else
@@ -1214,7 +1215,7 @@ void ShowBreakpointsCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader
             }
             else
             {
-                std::cout << "breakpoint " << bp->Number() << " at " << sourceFileLine.ToString() << std::endl;
+                IoLineStream()->WriteLine("breakpoint " + std::to_string(bp->Number()) + " at " + sourceFileLine.ToString());
             }
         }
         if (ide)
@@ -1251,7 +1252,7 @@ void SetBreakOnThrowCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader
         }
         else
         {
-            std::cout << "break on throw set " << (breakOnThrow ? "on" : "off") << std::endl;
+            IoLineStream()->WriteLine(std::string("break on throw set ") + (breakOnThrow ? "on" : "off"));
         }
     }
     catch (const std::exception& ex)
@@ -1280,7 +1281,7 @@ void SourcesCommand::Execute(DebugInfo& debugInfo, Gdb& gdb, InputReader& inputR
     {
         for (const std::string& source : sources)
         {
-            std::cout << source << std::endl;
+            IoLineStream()->WriteLine(source);
         }
     }
 }

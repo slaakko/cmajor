@@ -11,9 +11,17 @@
 #include <Cm.Debugger/GdbReply.hpp>
 #include <Cm.Debugger/DebugInfo.hpp>
 #include <Cm.Debugger/IdeOutput.hpp>
+#include <Cm.Debugger/LineStream.hpp>
 #include <Cm.Util/System.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <iostream>
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#else
+#include <unistd.h>
+#include <fcntl.h>
+#endif;
 
 namespace Cm { namespace Debugger {
 
@@ -95,7 +103,7 @@ void RunGdb(Gdb* gdb)
 }
 
 Gdb::Gdb(const std::string& program_, const std::vector<std::string>& args_) : 
-    program(program_), args(args_), gdbHandle(-1), hasReply(false), hasCommand(false), firstStart(true), gdbKilled(false)
+    program(program_), args(args_), gdbHandle(-1), hasReply(false), hasCommand(false), firstStart(true), gdbKilled(false), started(false)
 {
     std::vector<std::string> gdbArgs;
     if (!args.empty())
@@ -113,9 +121,37 @@ Gdb::Gdb(const std::string& program_, const std::vector<std::string>& args_) :
     Cm::Util::RestoreStdHandles(oldHandles);
 }
 
+void RunErrorReader(Gdb* gdb)
+{
+    try
+    {
+        int errorPipeHandle = gdb->GetErrorPipeHandle();
+        static char buffer[8192];
+        int bytesRead = Cm::Util::ReadFromPipe(errorPipeHandle, buffer, sizeof(buffer) - 1);
+        while (bytesRead > 0)
+        {
+            buffer[bytesRead] = 0;
+            std::string buf(buffer);
+            std::vector<std::string> lines = Cm::Util::Split(buf, '\n');
+            for (const std::string& line : lines)
+            {
+                if (gdb->Started())
+                {
+                    ErrorLineStream()->WriteLine(line);
+                }
+            }
+            bytesRead = Cm::Util::ReadFromPipe(errorPipeHandle, buffer, sizeof(buffer) - 1);
+        }
+    }
+    catch (...)
+    {
+    }
+}
+
 void Gdb::Run()
 {
     gdbThread = std::thread(RunGdb, this);
+    errorReaderThread = std::thread(RunErrorReader, this);
 }
 
 void Gdb::DoRun()
@@ -161,7 +197,7 @@ void Gdb::DoRun()
         }
         else
         {
-            std::cerr << "stopped running: " << ex.what() << std::endl;
+            ErrorLineStream()->WriteLine(std::string("stopped running: ") + ex.what());
         }
     }
 }
@@ -177,6 +213,7 @@ std::shared_ptr<GdbCommand> Gdb::Start()
     }
     std::shared_ptr<GdbCommand> startCommand(new GdbStartCommand());
     ExecuteCommand(startCommand);
+    started = true;
     return startCommand;
 }
 
@@ -189,6 +226,7 @@ void Gdb::Quit()
         gdbHandle = -1;
     }
     gdbThread.join();
+    errorReaderThread.join();
 }
 
 std::shared_ptr<GdbCommand> Gdb::Break(const std::string& cFileLine)
@@ -343,8 +381,11 @@ ContinueReplyData Gdb::ReadContinueReply()
                 }
                 else
                 {
-                    std::cout << consoleLines;
-                    std::cout.flush();
+                    if (!consoleLines.empty() && consoleLines[consoleLines.size() - 1] == '\n')
+                    {
+                        consoleLines = consoleLines.substr(0, consoleLines.size() - 1);
+                    }
+                    IoLineStream()->WriteLine(consoleLines);
                 }
             }
         }

@@ -127,7 +127,7 @@ int main(int argc, const char** argv)
                                 if (v[0] == "-config")
                                 {
                                     const string& config = v[1];
-                                    if (config != "debug" && config != "release")
+                                    if (config != "debug" && config != "release" && config != "profile" && config != "full")
                                     {
                                         throw Exception("unknown configuration '" + config + "'");
                                     }

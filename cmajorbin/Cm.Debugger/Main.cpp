@@ -14,6 +14,9 @@ const char* version = "1.3.0";
 #include <Cm.Debugger/Shell.hpp>
 #include <Cm.Debugger/IdeOutput.hpp>
 #include <Cm.Debugger/IdeInput.hpp>
+#include <Cm.Debugger/StdIoLineStream.hpp>
+#include <Cm.Debugger/SocketLineStream.hpp>
+#include <Sockets/SocketLib.hpp>
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
 #include <Cm.Emit/InitDone.hpp>
@@ -34,9 +37,11 @@ struct InitDone
         Cm::Sym::Init();
         Cm::Emit::Init();
         Cm::Debugger::InitIdeInput();
+        Sockets::InitSockets();
     }
     ~InitDone()
     {
+        Sockets::DoneSockets();
         Cm::Debugger::DoneIdeInput();
         Cm::Emit::Done();
         Cm::Sym::Done();
@@ -50,13 +55,17 @@ int main(int argc, const char** argv)
     try
     {
         InitDone initDone;
+        int ioPort = -1;
+        int errorPort = -1;
         if (argc < 2)
         {
             std::cout << "Cmajor Debugger version " << version << "\n" <<
                 "Usage: cmdb [options] <executable> [arguments...]\n" << 
                 "options:\n" << 
-                "-ide       : use IDE command reply format\n" << 
-                "-file=FILE : read commands from FILE" <<
+                "-ide               : use IDE command reply format\n" <<
+                "-ioport=PORT       : receive commands and send replies using socket connected to PORT\n" <<
+                "-errorport=PORT    : send errors to socket connected to PORT\n" << 
+                "-file=FILE         : read commands from FILE" <<
                 std::endl;
             return 1;
         }
@@ -82,6 +91,14 @@ int main(int argc, const char** argv)
                         if (components[0] == "-file")
                         {
                             commandFileName = components[1];
+                        }
+                        else if (components[0] == "-ioport")
+                        {
+                            ioPort = std::stoi(components[1]);
+                        }
+                        else if (components[0] == "-errorport")
+                        {
+                            errorPort = std::stoi(components[1]);
                         }
                         else
                         {
@@ -113,6 +130,11 @@ int main(int argc, const char** argv)
         {
             std::cout << "Cmajor Debugger version " << version << std::endl;
         }
+        if (executable.empty())
+        {
+            std::cerr << "no executable specified" << std::endl;
+            return 1;
+        }
 #ifdef _WIN32
         std::string ext = Cm::Util::Path::GetExtension(executable);
         if (ext.empty())
@@ -129,6 +151,38 @@ int main(int argc, const char** argv)
         {
             throw std::runtime_error("debug information file '" + cmdbFilePath + "' not found");
         }
+        std::unique_ptr<Cm::Debugger::LineStream> ioLineStream;
+        std::unique_ptr<Cm::Debugger::LineStream> errorLineStream;
+        if (ioPort != -1)
+        {
+            Sockets::TcpSocket listenSocket;
+            listenSocket.Bind(ioPort);
+            listenSocket.Listen(100);
+            std::cout << "listening port " << ioPort << std::endl;
+            Sockets::TcpSocket ioSocket = listenSocket.Accept();
+            std::cout << "connection to " << ioPort << " accepted" << std::endl;
+            ioLineStream.reset(new Cm::Debugger::SocketLineStream(std::move(ioSocket)));
+        }
+        else
+        {
+            ioLineStream.reset(new Cm::Debugger::StdIoLineStream());
+        }
+        Cm::Debugger::SetIoLineStream(ioLineStream.get());
+        if (errorPort != -1)
+        {
+            Sockets::TcpSocket listenSocket;
+            listenSocket.Bind(errorPort);
+            listenSocket.Listen(100);
+            std::cout << "listening port " << errorPort << std::endl;
+            Sockets::TcpSocket errorSocket = listenSocket.Accept();
+            std::cout << "connection to " << errorPort << " accepted" << std::endl;
+            errorLineStream.reset(new Cm::Debugger::SocketLineStream(std::move(errorSocket)));
+        }
+        else
+        {
+            errorLineStream.reset(new Cm::Debugger::StdErrorLineStream());
+        }
+        Cm::Debugger::SetErrorLineStream(errorLineStream.get());
         Cm::Debugger::DebugInfo debugInfo(cmdbFilePath);
         Cm::Debugger::Gdb gdb(executable, arguments);
         Cm::Debugger::Shell shell(debugInfo, gdb, commandFileName);
@@ -142,7 +196,7 @@ int main(int argc, const char** argv)
         }
         else
         {
-            std::cerr << ex.what() << std::endl;
+            Cm::Debugger::ErrorLineStream()->WriteLine(ex.what());
         }
         return 1;
     }
@@ -154,7 +208,7 @@ int main(int argc, const char** argv)
         }
         else
         {
-            std::cerr << "unknown exception occurred" << std::endl;
+            Cm::Debugger::ErrorLineStream()->WriteLine("unknown exception occurred");
         }
         return 1;
     }

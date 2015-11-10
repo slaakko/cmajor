@@ -100,7 +100,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Programming\boost32;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Sockets.lib;Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -118,7 +118,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Sockets.lib;Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -138,7 +138,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Sockets.lib;Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Programming\boost32;$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -160,7 +160,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Sockets.lib;Cm.Util.lib;Cm.Parsing.CppObjectModel.lib;Cm.Parsing.lib;Cm.IrIntf.lib;Ir.Intf.lib;Llvm.Ir.lib;C.Ir.lib;Cm.Ser.lib;Cm.Ast.lib;Cm.Sym.lib;Cm.BoundTree.lib;Cm.Bind.lib;Cm.Emit.lib;Cm.Parser.lib;Cm.Core.lib;Cm.Build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -175,9 +175,12 @@
     <ClCompile Include="InspectExpr.cpp" />
     <ClCompile Include="InspectNode.cpp" />
     <ClCompile Include="Interpreter.cpp" />
+    <ClCompile Include="LineStream.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Result.cpp" />
     <ClCompile Include="Shell.cpp" />
+    <ClCompile Include="SocketLineStream.cpp" />
+    <ClCompile Include="StdIoLineStream.cpp" />
     <ClCompile Include="Type.cpp" />
     <ClCompile Include="TypeExpr.cpp" />
     <ClCompile Include="Util.cpp" />
@@ -195,8 +198,11 @@
     <ClInclude Include="InspectExpr.hpp" />
     <ClInclude Include="InspectNode.hpp" />
     <ClInclude Include="Interpreter.hpp" />
+    <ClInclude Include="LineStream.hpp" />
     <ClInclude Include="Result.hpp" />
     <ClInclude Include="Shell.hpp" />
+    <ClInclude Include="SocketLineStream.hpp" />
+    <ClInclude Include="StdIoLineStream.hpp" />
     <ClInclude Include="Type.hpp" />
     <ClInclude Include="TypeExpr.hpp" />
     <ClInclude Include="Util.hpp" />
