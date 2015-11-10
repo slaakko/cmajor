@@ -148,12 +148,15 @@ public:
     ContinueReplyData ReadContinueReply();
     void Write(const std::string& message);
     void ExecuteCommand(std::shared_ptr<GdbCommand> command);
+    int GetErrorPipeHandle() const { return pipeHandles[2]; }
+    bool Started() const { return started; }
 private:
     std::string program;
     std::vector<std::string> args;
     unsigned long long gdbHandle;
     std::vector<int> pipeHandles;
     std::thread gdbThread;
+    std::thread errorReaderThread;
     std::shared_ptr<GdbCommand> commandToExecute;
     std::mutex commandReadyMtx;
     std::condition_variable commandReady;
@@ -162,6 +165,7 @@ private:
     bool hasReply;
     bool hasCommand;
     bool firstStart;
+    bool started;
     bool gdbKilled;
 };
 

@@ -297,7 +297,7 @@ const char* capture_call_stack()
 
 void crash(int signal)
 {
-    fprintf(stderr, "SIGSEGV received. Call stack:\n%s", capture_call_stack());
+    fprintf(stderr, "SIGSEGV received.\n%s", capture_call_stack());
     exit(255);
 }
 

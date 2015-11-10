@@ -11,6 +11,7 @@
 #include <Cm.Debugger/Gdb.hpp>
 #include <Cm.Debugger/DebugInfo.hpp>
 #include <Cm.Debugger/IdeOutput.hpp>
+#include <Cm.Debugger/LineStream.hpp>
 #include <string>
 #include <iostream>
 
@@ -43,7 +44,7 @@ void InputReader::Run()
         bool noMoreCommands = false;
         if (commandFileName.empty())
         {
-            std::getline(std::cin, s);
+            s = IoLineStream()->ReadLine();
         }
         else
         {

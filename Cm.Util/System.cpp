@@ -304,9 +304,10 @@ void RedirectStdHandlesToPipes(std::vector<int>& oldHandles, std::vector<int>& p
     oldHandles.push_back(old0);
     if (dup2(phRead[0], 0) == -1)
     {
-        throw std::runtime_error("RedirectStdHandlesToPipes: dup2(p0, 0)");
+        throw std::runtime_error("RedirectStdHandlesToPipes: dup2(p0, 0) failed");
     }
     pipeHandles.push_back(phRead[1]);
+    close(phRead[0]);
     int phWrite[2];
     if (pipe(phWrite) == -1)
     {
@@ -320,13 +321,35 @@ void RedirectStdHandlesToPipes(std::vector<int>& oldHandles, std::vector<int>& p
     oldHandles.push_back(old1);
     if (dup2(phWrite[1], 1) == -1)
     {
-        throw std::runtime_error("RedirectStdHandlesToPipes: dup2(p1, 1)");
+        throw std::runtime_error("RedirectStdHandlesToPipes: dup2(p1, 1) failed");
     }
     pipeHandles.push_back(phWrite[0]);
+    close(phWrite[1]);
+    int phError[2];
+    if (pipe(phError) == -1)
+    {
+        throw std::runtime_error("RedirectStdHandlesToPipes: pipe failed");
+    }
+    int old2 = dup(2);
+    if (old2 == -1)
+    {
+        throw std::runtime_error("RedirectStdHandlesToPipes: dup(2) failed");
+    }
+    oldHandles.push_back(old2);
+    if (dup2(phError[1], 2) == -1)
+    {
+        throw std::runtime_error("RedirectStdHandlesToPipes: dup2(p2, 2) failed");
+    }
+    pipeHandles.push_back(phError[0]);
+    close(phError[1]);
 }
 
 void RestoreStdHandles(const std::vector<int>& oldHandles)
 {
+    if (oldHandles.size() != 3)
+    {
+        throw std::runtime_error("3 old handles expected ");
+    }
     if (dup2(oldHandles[0], 0) == -1)
     {
         throw std::runtime_error("RestoreStdHandles: dup2 0, old0 failed");
@@ -334,6 +357,10 @@ void RestoreStdHandles(const std::vector<int>& oldHandles)
     if (dup2(oldHandles[1], 1) == -1)
     {
         throw std::runtime_error("RestoreStdHandles: dup2 1, old1 failed");
+    }
+    if (dup2(oldHandles[2], 2) == -1)
+    {
+        throw std::runtime_error("RestoreStdHandles: dup2 2, old2 failed");
     }
 }
 

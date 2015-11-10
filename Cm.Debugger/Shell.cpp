@@ -14,6 +14,7 @@
 #include <Cm.Debugger/Interpreter.hpp>
 #include <Cm.Debugger/GdbReply.hpp>
 #include <Cm.Debugger/IdeOutput.hpp>
+#include <Cm.Debugger/LineStream.hpp>
 #include <iostream>
 
 namespace Cm { namespace Debugger {
@@ -89,7 +90,7 @@ bool Shell::ExecuteNextCommand()
             }
             else
             {
-                std::cerr << "error: " << ex.what() << "." << std::endl;
+                ErrorLineStream()->WriteLine(std::string("error: ") + ex.what() + ".");
             }
         }
         catch (const std::exception& ex)
@@ -100,7 +101,7 @@ bool Shell::ExecuteNextCommand()
             }
             else
             {
-                std::cerr << "error: " << ex.what() << "." << std::endl;
+                ErrorLineStream()->WriteLine(std::string("error: ") + ex.what() + ".");
             }
         }
     }
@@ -112,7 +113,7 @@ bool Shell::ExecuteNextCommand()
         }
         else
         {
-            std::cerr << "error: " << ex.what() << ". Try \"help\"." << std::endl;
+            ErrorLineStream()->WriteLine(std::string("error: ") + ex.what() + ". Try \"help\".");
         }
     }
     return true;

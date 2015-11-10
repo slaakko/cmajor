@@ -10,6 +10,7 @@
 #include <Cm.Debugger/IdeOutput.hpp>
 #include <Cm.Debugger/DebugInfo.hpp>
 #include <Cm.Debugger/Value.hpp>
+#include <Cm.Debugger/LineStream.hpp>
 #include <Cm.Core/Json.cpp>
 #include <iostream>
 
@@ -27,7 +28,7 @@ void IdePrintError(int sequenceNumber, const std::string& errorMessage, bool red
     reply.AddField(Cm::Core::JsonString("sequence"), new Cm::Core::JsonNumber(sequenceNumber));
     reply.AddField(Cm::Core::JsonString("errorMessage"), new Cm::Core::JsonString(errorMessage));
     reply.AddField(Cm::Core::JsonString("redirect"), new Cm::Core::JsonBool(redirectError));
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintState(int sequenceNumber, const std::string& state, int exitCode, const std::string& signal, const std::string& signalCallStack)
@@ -45,7 +46,7 @@ void IdePrintState(int sequenceNumber, const std::string& state, int exitCode, c
         reply.AddField(Cm::Core::JsonString("signal"), new Cm::Core::JsonString(signal));
         reply.AddField(Cm::Core::JsonString("signalCallStack"), new Cm::Core::JsonString(signalCallStack));
     }
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintOutput(int sequenceNumber, const std::string& output)
@@ -54,7 +55,7 @@ void IdePrintOutput(int sequenceNumber, const std::string& output)
     reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("output"));
     reply.AddField(Cm::Core::JsonString("sequence"), new Cm::Core::JsonNumber(sequenceNumber));
     reply.AddField(Cm::Core::JsonString("output"), new Cm::Core::JsonString(output));
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintPosition(int sequenceNumber, Cm::Core::CfgNode* node)
@@ -68,7 +69,7 @@ void IdePrintPosition(int sequenceNumber, Cm::Core::CfgNode* node)
     position->AddField(Cm::Core::JsonString("scol"), new Cm::Core::JsonNumber(node->GetSourceSpan().StartCol()));
     position->AddField(Cm::Core::JsonString("ecol"), new Cm::Core::JsonNumber(node->GetSourceSpan().EndCol()));
     reply.AddField(Cm::Core::JsonString("pos"), position);
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintBreakpointSet(int sequenceNumber, int bpNum)
@@ -77,7 +78,7 @@ void IdePrintBreakpointSet(int sequenceNumber, int bpNum)
     reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("breakpointSet"));
     reply.AddField(Cm::Core::JsonString("sequence"), new Cm::Core::JsonNumber(sequenceNumber));
     reply.AddField(Cm::Core::JsonString("breakpoint"), new Cm::Core::JsonNumber(bpNum));
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintBreakpointRemoved(int sequenceNumber, int bpNum)
@@ -86,7 +87,7 @@ void IdePrintBreakpointRemoved(int sequenceNumber, int bpNum)
     reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("breakpointRemoved"));
     reply.AddField(Cm::Core::JsonString("sequence"), new Cm::Core::JsonNumber(sequenceNumber));
     reply.AddField(Cm::Core::JsonString("deleted"), new Cm::Core::JsonNumber(bpNum));
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintCallStack(int sequenceNumber, const std::vector<Cm::Core::CfgNode*>& nodes)
@@ -104,7 +105,7 @@ void IdePrintCallStack(int sequenceNumber, const std::vector<Cm::Core::CfgNode*>
         frameArray->AddItem(frame);
     }
     reply.AddField(Cm::Core::JsonString("frames"), frameArray);
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintFrameReply(int sequenceNumber, int frame)
@@ -113,7 +114,7 @@ void IdePrintFrameReply(int sequenceNumber, int frame)
     reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("frame"));
     reply.AddField(Cm::Core::JsonString("sequence"), new Cm::Core::JsonNumber(sequenceNumber));
     reply.AddField(Cm::Core::JsonString("frame"), new Cm::Core::JsonNumber(frame));
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintShowBreakpoints(int sequenceNumber, const std::vector<Breakpoint*>& breakpoints)
@@ -132,7 +133,7 @@ void IdePrintShowBreakpoints(int sequenceNumber, const std::vector<Breakpoint*>&
         breakpointArray->AddItem(breakpoint);
     }
     reply.AddField(Cm::Core::JsonString("breakpoints"), breakpointArray);
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintBreakOnThrowReply(int sequenceNumber, bool enabled)
@@ -141,7 +142,7 @@ void IdePrintBreakOnThrowReply(int sequenceNumber, bool enabled)
     reply.AddField(Cm::Core::JsonString("reply"), new Cm::Core::JsonString("breakOnThrow"));
     reply.AddField(Cm::Core::JsonString("sequence"), new Cm::Core::JsonNumber(sequenceNumber));
     reply.AddField(Cm::Core::JsonString("enabled"), new Cm::Core::JsonBool(enabled));
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintSources(int sequenceNumber, const std::vector<std::string>& sources)
@@ -155,7 +156,7 @@ void IdePrintSources(int sequenceNumber, const std::vector<std::string>& sources
         sourcesArray->AddItem(new Cm::Core::JsonString(source));
     }
     reply.AddField(Cm::Core::JsonString("sources"), sourcesArray);
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 void IdePrintInspectResults(int sequenceNumber, const std::vector<std::unique_ptr<Result>>& results)
@@ -176,7 +177,7 @@ void IdePrintInspectResults(int sequenceNumber, const std::vector<std::unique_pt
         resultsArray->AddItem(resultObject);
     }
     reply.AddField(Cm::Core::JsonString("results"), resultsArray);
-    std::cout << reply.ToString() << std::endl;
+    IoLineStream()->WriteLine(reply.ToString());
 }
 
 } } // Cm::Debugger
