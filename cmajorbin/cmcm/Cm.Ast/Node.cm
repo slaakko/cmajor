@@ -328,7 +328,8 @@ namespace Cm.Ast
             while (n > 0)
             {
                 T* node = null;
-                reader.Read(node);
+                T*& nodeRef = node;
+                reader.Read(nodeRef);
                 Add(node);
                 --n;
             }

@@ -52,6 +52,7 @@ namespace Cm.Sym
                     if (!(ownedSymbol.GetPtr() is FunctionGroupSymbol*) && !(ownedSymbol.GetPtr() is ConceptGroupSymbol*))
                     {
                         Symbol* symbol = ownedSymbol.Release();
+                        symbolTable.AddSymbol(symbol);
                         symbol->ResetOwned();
                         symbolTable.Container()->AddSymbol(symbol);
                         if (symbol is TemplateTypeSymbol*)
@@ -63,6 +64,7 @@ namespace Cm.Sym
             }
             for (Symbol* symbol : that->NonOwnedSymbols())
             {
+                symbolTable.AddSymbol(symbol);
                 symbolTable.Container()->AddSymbol(symbol);
                 if (symbol is TemplateTypeSymbol*)
                 {

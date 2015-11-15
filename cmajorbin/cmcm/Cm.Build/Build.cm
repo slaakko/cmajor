@@ -432,7 +432,11 @@ namespace Cm.Build
     {
         List<string> searched;
         string lrp = libraryReferencePath;
-        string libParent = Path.GetParent(lrp);
+        string libParent;
+        if (!Path.GetDirectoryName(lrp).IsEmpty())
+        {
+            libParent = Path.GetDirectoryName(lrp);
+        }
         string projectBase = Path.GetParent(Path.GetParent(projectOutputBase));
         string libDir = Path.Combine(Path.Combine(GetFullPath(Path.Combine(projectBase, libParent)), config), Cm.IrIntf.GetBackendStr());
         string fp = GetFullPath(Path.Combine(libDir, Path.GetFileName(lrp)));

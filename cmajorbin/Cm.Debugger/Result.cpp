@@ -484,6 +484,71 @@ private:
     Context context;
 };
 
+class ResultGrammar::GdbStringRule : public Cm::Parsing::Rule
+{
+public:
+    GdbStringRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        SetValueTypeName("std::string");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<std::string>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<GdbStringRule>(this, &GdbStringRule::A0Action));
+        Cm::Parsing::NonterminalParser* escapeNonterminalParser = GetNonterminal("escape");
+        escapeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<GdbStringRule>(this, &GdbStringRule::Postescape));
+        Cm::Parsing::NonterminalParser* repeatedValueNonterminalParser = GetNonterminal("RepeatedValue");
+        repeatedValueNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<GdbStringRule>(this, &GdbStringRule::PostRepeatedValue));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = std::string(matchBegin, matchEnd);
+    }
+    void Postescape(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromescape_value = std::move(stack.top());
+            context.fromescape = *static_cast<Cm::Parsing::ValueObject<char>*>(fromescape_value.get());
+            stack.pop();
+        }
+    }
+    void PostRepeatedValue(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromRepeatedValue_value = std::move(stack.top());
+            context.fromRepeatedValue = *static_cast<Cm::Parsing::ValueObject<ArrayValue*>*>(fromRepeatedValue_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): value(), fromescape(), fromRepeatedValue() {}
+        std::string value;
+        char fromescape;
+        ArrayValue* fromRepeatedValue;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 class ResultGrammar::StringValueRule : public Cm::Parsing::Rule
 {
 public:
@@ -510,14 +575,22 @@ public:
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringValueRule>(this, &StringValueRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringValueRule>(this, &StringValueRule::A1Action));
         Cm::Parsing::NonterminalParser* xNonterminalParser = GetNonterminal("x");
         xNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StringValueRule>(this, &StringValueRule::Postx));
         Cm::Parsing::NonterminalParser* sNonterminalParser = GetNonterminal("s");
         sNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StringValueRule>(this, &StringValueRule::Posts));
+        Cm::Parsing::NonterminalParser* tNonterminalParser = GetNonterminal("t");
+        tNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StringValueRule>(this, &StringValueRule::Postt));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = new StringValue(context.froms);
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new StringValue(context.fromt);
     }
     void Postx(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -537,13 +610,23 @@ public:
             stack.pop();
         }
     }
+    void Postt(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromt_value = std::move(stack.top());
+            context.fromt = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromt_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): value(), fromx(), froms() {}
+        Context(): value(), fromx(), froms(), fromt() {}
         Value* value;
         uint64_t fromx;
         std::string froms;
+        std::string fromt;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -577,8 +660,6 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AddressValueRule>(this, &AddressValueRule::A0Action));
         Cm::Parsing::NonterminalParser* xNonterminalParser = GetNonterminal("x");
         xNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AddressValueRule>(this, &AddressValueRule::Postx));
-        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
-        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AddressValueRule>(this, &AddressValueRule::Postidentifier));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -593,22 +674,12 @@ public:
             stack.pop();
         }
     }
-    void Postidentifier(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        if (matched)
-        {
-            std::unique_ptr<Cm::Parsing::Object> fromidentifier_value = std::move(stack.top());
-            context.fromidentifier = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromidentifier_value.get());
-            stack.pop();
-        }
-    }
 private:
     struct Context
     {
-        Context(): value(), fromx(), fromidentifier() {}
+        Context(): value(), fromx() {}
         Value* value;
         uint64_t fromx;
-        std::string fromidentifier;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -1315,15 +1386,16 @@ void ResultGrammar::GetReferencedGrammars()
 void ResultGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
-    AddRuleLink(new Cm::Parsing::RuleLink("real", this, "Cm.Parsing.stdlib.real"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
-    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
-    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
     AddRuleLink(new Cm::Parsing::RuleLink("hex_literal", this, "Cm.Parsing.stdlib.hex_literal"));
     AddRuleLink(new Cm::Parsing::RuleLink("long", this, "Cm.Parsing.stdlib.long"));
+    AddRuleLink(new Cm::Parsing::RuleLink("real", this, "Cm.Parsing.stdlib.real"));
+    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
+    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRuleLink(new Cm::Parsing::RuleLink("bool", this, "Cm.Parsing.stdlib.bool"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
     AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("escape", this, "Cm.Parsing.stdlib.escape"));
     AddRule(new ResultRule("Result", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -1380,14 +1452,57 @@ void ResultGrammar::CreateRules()
                     new Cm::Parsing::NonterminalParser("FloatingValue", "FloatingValue", 0))),
             new Cm::Parsing::ActionParser("A5",
                 new Cm::Parsing::NonterminalParser("IntegerValue", "IntegerValue", 0)))));
-    AddRule(new StringValueRule("StringValue", GetScope(),
+    AddRule(new Cm::Parsing::Rule("OctalChar", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::NonterminalParser("x", "hex_literal", 0),
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::NonterminalParser("s", "string", 0))),
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::CharParser('\\'),
+                    new Cm::Parsing::NonterminalParser("o1", "OctalDigit", 0)),
+                new Cm::Parsing::NonterminalParser("o2", "OctalDigit", 0)),
+            new Cm::Parsing::NonterminalParser("o3", "OctalDigit", 0))));
+    AddRule(new GdbStringRule("GdbString", GetScope(),
+        new Cm::Parsing::SequenceParser(
+            new Cm::Parsing::TokenParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::CharParser('\"'),
+                        new Cm::Parsing::ActionParser("A0",
+                            new Cm::Parsing::KleeneStarParser(
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::AlternativeParser(
+                                        new Cm::Parsing::NonterminalParser("OctalChar", "OctalChar", 0),
+                                        new Cm::Parsing::NonterminalParser("escape", "escape", 0)),
+                                    new Cm::Parsing::DifferenceParser(
+                                        new Cm::Parsing::AnyCharParser(),
+                                        new Cm::Parsing::CharParser('\"')))))),
+                    new Cm::Parsing::CharParser('\"'))),
             new Cm::Parsing::OptionalParser(
-                new Cm::Parsing::StringParser("...")))));
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::CharParser(','),
+                    new Cm::Parsing::NonterminalParser("RepeatedValue", "RepeatedValue", 0))))));
+    AddRule(new StringValueRule("StringValue", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::NonterminalParser("x", "hex_literal", 0),
+                        new Cm::Parsing::OptionalParser(
+                            new Cm::Parsing::TokenParser(
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::SequenceParser(
+                                        new Cm::Parsing::CharParser('<'),
+                                        new Cm::Parsing::PositiveParser(
+                                            new Cm::Parsing::CharSetParser(">", true))),
+                                    new Cm::Parsing::CharParser('>'))))),
+                    new Cm::Parsing::ActionParser("A0",
+                        new Cm::Parsing::NonterminalParser("s", "GdbString", 0))),
+                new Cm::Parsing::OptionalParser(
+                    new Cm::Parsing::StringParser("..."))),
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::ActionParser("A1",
+                    new Cm::Parsing::NonterminalParser("t", "GdbString", 0)),
+                new Cm::Parsing::OptionalParser(
+                    new Cm::Parsing::StringParser("..."))))));
     AddRule(new Cm::Parsing::Rule("ParenthesizedExpr", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
@@ -1412,7 +1527,8 @@ void ResultGrammar::CreateRules()
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::SequenceParser(
                             new Cm::Parsing::CharParser('<'),
-                            new Cm::Parsing::NonterminalParser("identifier", "identifier", 0)),
+                            new Cm::Parsing::PositiveParser(
+                                new Cm::Parsing::CharSetParser(">", true))),
                         new Cm::Parsing::CharParser('>')))))));
     AddRule(new OctalDigitRule("OctalDigit", GetScope(),
         new Cm::Parsing::ActionParser("A0",

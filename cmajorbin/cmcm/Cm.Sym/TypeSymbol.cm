@@ -228,9 +228,19 @@ namespace Cm.Sym
             return Cm.Ast.DerivationList();
         }
         public abstract string GetMangleId() const;
-        public nothrow inline void SetIrType(Ir.Intf.Type* irType_)
+        public void SetIrType(Ir.Intf.Type* irType_)
         {
+            if (IrTypeMade())
+            {
+                throw Exception("ir type already made");
+            }
+            if (irType_->Owned())
+            {
+                throw Exception("ir type already owned");
+            }
             irType.Reset(irType_);
+            irType->SetOwned();
+            SetIrTypeMade();
         }
         public nothrow inline Ir.Intf.Type* IrType() const
         {
@@ -239,9 +249,14 @@ namespace Cm.Sym
         public virtual void RecomputeIrType() const
         {
         }
-        public nothrow inline void SetDefaultIrValue(Ir.Intf.Object* defaultIrValue_)
+        public void SetDefaultIrValue(Ir.Intf.Object* defaultIrValue_)
         {
+            if (defaultIrValue_->Owned())
+            {
+                throw Exception("default ir value already owned");
+            }
             defaultIrValue.Reset(defaultIrValue_);
+            defaultIrValue->SetOwned();
         }
         public nothrow inline Ir.Intf.Object* DefaultIrValue() const
         {
