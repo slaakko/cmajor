@@ -93,7 +93,7 @@ namespace Cm.Ast
     public class ReferenceFileDeclaration : ProjectDeclaration
     {
         public ReferenceFileDeclaration(const Span& span_, const string& filePath_, const string& basePath_, const Properties& properties_) :
-            base(span_, properties_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
+            base(span_, properties_), filePath(filePath_)
         {
         }
         public nothrow inline const string& FilePath() const

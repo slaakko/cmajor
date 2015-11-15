@@ -43,6 +43,7 @@ public:
     std::string ToString() const override;
     bool IsStringValue() const override { return true; }
     const std::string& Value() const { return value; }
+    bool HasSubItems() const override;
 private:
     std::string value;
 };

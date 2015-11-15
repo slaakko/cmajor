@@ -54,6 +54,8 @@ namespace Cm.Debugger
         Result(std::string expr): Result*;
         Value: Value*;
         PrimitiveValue: Value*;
+        OctalChar;
+        GdbString: std::string;
         StringValue: Value*;
         ParenthesizedExpr;
         AddressValue: Value*;

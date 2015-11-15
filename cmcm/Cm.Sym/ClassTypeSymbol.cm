@@ -418,6 +418,14 @@ namespace Cm.Sym
                 throw Exception("source file path not set");
             }
             writer.GetBinaryWriter().Write(sourceFilePath);
+        }        
+        public override void SetType(TypeSymbol* typeSymbol, int index)
+        {
+            if (index == -2)
+            {
+                baseClass = cast<ClassTypeSymbol*>(typeSymbol);
+                GetContainerScope()->SetBase(baseClass->GetContainerScope());
+            }            
         }
         public nothrow inline short VPtrIndex() const
         {

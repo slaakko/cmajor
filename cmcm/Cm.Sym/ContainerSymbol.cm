@@ -17,6 +17,7 @@ namespace Cm.Sym
     {
         public nothrow ContainerSymbol(const Span& span_, const string& name_) : base(span_, name_), containerScope()
         {
+            containerScope.SetContainer(this);
         }
         public nothrow override ContainerScope* GetContainerScope() const
         {

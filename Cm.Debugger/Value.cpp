@@ -63,6 +63,12 @@ std::string StringValue::ToString() const
     return "\"" + Cm::Util::StringStr(value) + "\"";
 }
 
+bool StringValue::HasSubItems() const
+{
+    if (value.length() == 0) return false;
+    return true;
+}
+
 AddressValue::AddressValue(uint64_t address_) : address(address_)
 {
 }

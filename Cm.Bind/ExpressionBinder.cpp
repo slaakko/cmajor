@@ -1332,6 +1332,10 @@ void ExpressionBinder::BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::B
 
 void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
 {
+    if (currentFunction->GetFunctionSymbol()->FullName() == "NodeList<ConstraintNode>.Read(NodeList<ConstraintNode>*, Reader&)")
+    {
+        int x = 0;
+    }
     bool generateVirtualCall = false;
     expressionCount = expressionCountStack.top();
     expressionCountStack.pop();
