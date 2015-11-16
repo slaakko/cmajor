@@ -1,0 +1,48 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.BoundTree
+{
+    public class Visitor
+    {
+        public virtual ~Visitor()
+        {
+        }
+        public nothrow Visitor(bool visitFunctionBody_) : visitFunctionBody(visitFunctionBody_), skipContent(false)
+        {
+        }
+        public nothrow inline bool VisitFunctionBody() const
+        {
+            return visitFunctionBody;
+        }
+        public nothrow inline void SetVisitFunctionBody()
+        {
+            visitFunctionBody = true;
+        }
+        public void PushSkipContent()
+        {
+            skipContentStack.Push(skipContent);
+            skipContent = true;
+        }
+        public void PopSkipContent()
+        {
+            skipContent = skipContentStack.Pop();
+        }
+        public nothrow inline bool SkipContent() const
+        {
+            return skipContent;
+        }
+        private bool visitFunctionBody;
+        private bool skipContent;
+        private Stack<bool> skipContentStack;
+    }
+}

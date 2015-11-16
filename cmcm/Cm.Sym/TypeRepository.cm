@@ -155,7 +155,20 @@ namespace Cm.Sym
             derivedTypeSymbol->SetAccess(SymbolAccess.public_);
             if (!(baseType is TypeParameterSymbol*) && !(baseType is FunctionGroupTypeSymbol*))
             {
-                // todo
+                byte n = cast<byte>(finalArrayDimensions.Count());
+                if (n > 0u)
+                {
+                    if (n != 1u)
+                    {
+                        throw Error("arrays of arrays not supported", span);
+                    }
+                    derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span, derivedTypeSymbol->GetLastArrayDimension()));
+                }
+                else
+                {
+                    derivedTypeSymbol->SetIrType(MakeIrType(finalBaseType, finalDerivations, span, 0));
+                    derivedTypeSymbol->SetDefaultIrValue(derivedTypeSymbol->IrType()->CreateDefaultValue());
+                }
             }
             types.Add(UniquePtr<TypeSymbol>(derivedTypeSymbol.GetPtr()));
             AddType(derivedTypeSymbol.GetPtr());
