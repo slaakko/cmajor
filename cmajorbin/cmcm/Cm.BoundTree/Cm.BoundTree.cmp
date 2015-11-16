@@ -1,0 +1,8 @@
+project Cm.BoundTree;
+target=library;
+assembly <Cm.BoundTree.cma>;
+reference <../Cm.Ast/Cm.Ast.cml>;
+reference <../Cm.Sym/Cm.Sym.cml>;
+reference <../Cm.Parser/Cm.Parser.cml>;
+source <BoundNode.cm>;
+source <Visitor.cm>;
