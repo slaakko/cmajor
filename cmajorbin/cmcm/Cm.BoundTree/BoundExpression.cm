@@ -1,0 +1,1022 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.BoundTree
+{
+    public abstract class BoundExpression : BoundNode
+    {
+        public nothrow BoundExpression(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), type(null), cfgNode(null)
+        {
+        }
+        public nothrow inline Cm.Sym.TypeSymbol* Type() const
+        {
+            return type;
+        }
+        public nothrow virtual void SetType(Cm.Sym.TypeSymbol* type_)
+        {
+            type = type_;
+        }
+        public nothrow virtual Cm.Core.ArgumentCategory ArgumentCategory() const
+        {
+            return Cm.Core.ArgumentCategory.rvalue;
+        }
+        public nothrow inline Cm.Core.CfgNode* CfgNode() const
+        {
+            return cfgNode;
+        }
+        public nothrow inline void SetCfgNode(Cm.Core.CfgNode* cfgNode_)
+        {
+            cfgNode = cfgNode_;
+        }
+        public virtual nothrow bool IsBoundNullLiteral() const
+        {
+            return false;
+        }
+        private Cm.Sym.TypeSymbol* type;
+        private Cm.Core.CfgNode* cfgNode;
+    }
+    
+    public class TraceCallInfo
+    {
+        public nothrow TraceCallInfo() : fun(), file(), line()
+        {
+        }
+        public nothrow TraceCallInfo(BoundExpression* fun_, BoundExpression* file_, BoundExpression* line_) : fun(fun_), file(file_), line(line_)
+        {
+        }
+        public nothrow inline BoundExpression* Fun() const
+        {
+            return fun.GetPtr();
+        }
+        public nothrow inline BoundExpression* File() const
+        {
+            return file.GetPtr();
+        }
+        public nothrow inline BoundExpression* Line() const
+        {
+            return line.GetPtr();
+        }
+        private UniquePtr<BoundExpression> fun;
+        private UniquePtr<BoundExpression> file;
+        private UniquePtr<BoundExpression> line;
+    }
+    
+    public class BoundExpressionList
+    {
+        public nothrow BoundExpressionList()
+        {
+        }
+        suppress BoundExpressionList(const BoundExpressionList&);
+        suppress void operator=(const BoundExpressionList&);
+        public default nothrow BoundExpressionList(BoundExpressionList&&);
+        public default nothrow void operator=(BoundExpressionList&&);
+        public typedef List<UniquePtr<BoundExpression>>.ConstIterator ConstIterator;
+        public typedef List<UniquePtr<BoundExpression>>.Iterator Iterator;
+        public nothrow inline ConstIterator CBegin() const 
+        {
+            return expressions.CBegin();
+        }
+        public nothrow inline ConstIterator CEnd() const
+        {
+            return expressions.CEnd();
+        }
+        public nothrow inline ConstIterator Begin() const
+        {
+            return expressions.CBegin();
+        }
+        public nothrow inline ConstIterator End() const
+        {
+            return expressions.CEnd();
+        }
+        public nothrow inline Iterator Begin()
+        {
+            return expressions.Begin();
+        }
+        public nothrow inline Iterator End()
+        {
+            return expressions.End();
+        }
+        public inline void Add(BoundExpression* expr)
+        {
+            expressions.Add(UniquePtr<BoundExpression>(expr));
+        }
+        public nothrow inline bool IsEmpty() const
+        {
+            return expressions.IsEmpty();
+        }
+        public nothrow inline int Count() const
+        {
+            return expressions.Count();
+        }
+        public nothrow inline const BoundExpression* operator[](int index) const
+        {
+            return expressions[index].GetPtr();
+        }
+        public nothrow inline UniquePtr<BoundExpression>& operator[](int index) 
+        {
+            return expressions[index];
+        }
+        public inline void InsertFront(BoundExpression* expr)
+        {
+            expressions.InsertFront(UniquePtr<BoundExpression>(expr));
+        }
+        public inline BoundExpression* ReleaseFirst() 
+        {
+            UniquePtr<BoundExpression> first = Rvalue(expressions.RemoveFirst());
+            return first.Release();
+        }
+        public inline BoundExpression* ReleaseLast()
+        {
+            UniquePtr<BoundExpression> last = Rvalue(expressions.RemoveLast());
+            return last.Release();
+        }
+        public nothrow void Reverse()
+        {
+            System.Reverse(expressions.Begin(), expressions.End());
+        }
+        public void Accept(Visitor& visitor)
+        {
+            for (const UniquePtr<BoundExpression>& expr : expressions)
+            {
+                expr->Accept(visitor);
+            }
+        }
+        private List<UniquePtr<BoundExpression>> expressions;
+    }
+    
+    public class BoundStringLiteral : BoundExpression
+    {
+        public nothrow BoundStringLiteral() : base(null), id(-1)
+        {
+        }
+        public nothrow BoundStringLiteral(Cm.Ast.Node* syntaxNode_, int id_) : base(syntaxNode_), id(id_)
+        {
+        }
+        public nothrow inline int Id() const
+        {
+            return id;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private int id;
+    }
+    
+    public class BoundLiteral : BoundExpression
+    {
+        public nothrow BoundLiteral() : base(null)
+        {
+        }
+        public nothrow BoundLiteral(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public nothrow inline Cm.Sym.Value* Value() const
+        {
+            return value.GetPtr();
+        }
+        public nothrow inline void SetValue(Cm.Sym.Value* value_)
+        {
+            value.Reset(value_);
+        }    
+        public override nothrow void SetType(Cm.Sym.TypeSymbol* type_)
+        {
+            base->SetType(type_);
+            Cm.Sym.NullValue* nullValue = value.GetPtr() as Cm.Sym.NullValue*;
+            if (nullValue != null)
+            {
+                nullValue->SetType(type_);
+            }
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow override bool IsBoundNullLiteral() const
+        {
+            return value.GetPtr() is Cm.Sym.NullValue*;
+        }
+        private UniquePtr<Cm.Sym.Value> value;
+    }
+    
+    public class BoundConstant : BoundExpression
+    {
+        public nothrow BoundConstant() : base(null), symbol(null)
+        {
+        }
+        public nothrow BoundConstant(Cm.Ast.Node* syntaxNode_, Cm.Sym.ConstantSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.ConstantSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private Cm.Sym.ConstantSymbol* symbol;
+    }
+    
+    public class BoundExceptionTableConstant : BoundConstant
+    {
+        public nothrow BoundExceptionTableConstant() : base()
+        {
+        }
+        public nothrow BoundExceptionTableConstant(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_, null)
+        {
+        }
+    }
+    
+    public class BoundClassHierarchyTableConstant : BoundConstant
+    {
+        public nothrow BoundClassHierarchyTableConstant() : base()
+        {
+        }
+        public nothrow BoundClassHierarchyTableConstant(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_, null)
+        {
+        }
+    }
+    
+    public class BoundEnumConstant : BoundExpression
+    {
+        public nothrow BoundEnumConstant() : base(null), symbol(null)
+        {
+        }
+        public nothrow BoundEnumConstant(Cm.Ast.Node* syntaxNode_, Cm.Sym.EnumConstantSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.EnumConstantSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private Cm.Sym.EnumConstantSymbol* symbol;
+    }
+    
+    public class BoundLocalVariable : BoundExpression
+    {
+        public nothrow BoundLocalVariable() : base(null), symbol(null)
+        {
+        }
+        public nothrow BoundLocalVariable(Cm.Ast.Node* syntaxNode_, Cm.Sym.LocalVariableSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
+        public nothrow override Cm.Core.ArgumentCategory ArgumentCategory() const
+        {
+            return Cm.Core.ArgumentCategory.lvalue;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.LocalVariableSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private Cm.Sym.LocalVariableSymbol* symbol;
+    }
+    
+    public class BoundExceptionCodeVariable : BoundLocalVariable
+    {
+        public nothrow BoundExceptionCodeVariable() : base()
+        {
+        }
+    }
+    
+    public class BoundParameter : BoundExpression
+    {
+        public nothrow BoundParameter() : base(null), symbol(null)
+        {
+        }
+        public nothrow BoundParameter(Cm.Ast.Node* syntaxNode_, Cm.Sym.ParameterSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
+        public nothrow override Cm.Core.ArgumentCategory ArgumentCategory() const
+        {
+            if (Type()->IsNonConstReferenceType())
+            {
+                return Cm.Core.ArgumentCategory.lvalue;
+            }
+            return Cm.Core.ArgumentCategory.rvalue;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.ParameterSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private Cm.Sym.ParameterSymbol* symbol;
+    }
+    
+    public class BoundExceptionCodeParameter : BoundParameter
+    {
+        public nothrow BoundExceptionCodeParameter() : base()
+        {
+        }
+    }
+    
+    public class BoundReturnValue : BoundExpression
+    {
+        public nothrow BoundReturnValue() : base(null), symbol(null)
+        {
+        }
+        public nothrow BoundReturnValue(Cm.Ast.Node* syntaxNode_, Cm.Sym.ReturnValueSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.ReturnValueSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private Cm.Sym.ReturnValueSymbol* symbol;
+    }
+    
+    public class BoundMemberVariable : BoundExpression
+    {
+        public nothrow BoundMemberVariable() : base(null), symbol(null)
+        {
+        }
+        public nothrow override Cm.Core.ArgumentCategory ArgumentCategory() const
+        {
+            return Cm.Core.ArgumentCategory.lvalue;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* ClassObject() const
+        {
+            return classObject.GetPtr();
+        }
+        public nothrow inline void SetClassObject(BoundExpression* classObject_)
+        {
+            classObject.Reset(classObject_);
+        }
+        public nothrow inline Cm.Sym.MemberVariableSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private UniquePtr<BoundExpression> classObject;
+        private Cm.Sym.MemberVariableSymbol* symbol;
+    }
+    
+    public class BoundFunctionId : BoundExpression
+    {
+        public nothrow BoundFunctionId() : base(null), symbol(null)
+        {
+        }
+        public nothrow BoundFunctionId(Cm.Ast.Node* syntaxNode_, Cm.Sym.FunctionSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
+        public override void Accept(Visitor& visitor) 
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private Cm.Sym.FunctionSymbol* symbol;
+    }
+    
+    public class BoundTypeExpression : BoundExpression
+    {
+        public nothrow BoundTypeExpression() : base(null), symbol(null)
+        {
+        }
+        public nothrow BoundTypeExpression(Cm.Ast.Node* syntaxNode_, Cm.Sym.TypeSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.TypeSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private Cm.Sym.TypeSymbol* symbol;
+    }
+    
+    public class BoundNamespaceExpression : BoundExpression
+    {
+        public nothrow BoundNamespaceExpression() : base(null), symbol(null)
+        {
+        }
+        public nothrow BoundNamespaceExpression(Cm.Ast.Node* syntaxNode_, Cm.Sym.NamespaceSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.NamespaceSymbol* Symbol() const
+        {
+            return symbol;
+        }
+        private Cm.Sym.NamespaceSymbol* symbol;
+    }
+    
+    public class BoundConversion : BoundExpression
+    {
+        public nothrow BoundConversion() : base(null), operand(), conversionFun(null), boundTemporary()
+        {
+        }
+        public nothrow BoundConversion(Cm.Ast.Node* syntaxNode_, BoundExpression* operand_, Cm.Sym.FunctionSymbol* conversionFun_) : base(syntaxNode_), operand(operand_), conversionFun(conversionFun_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Operand() const
+        {
+            return operand.GetPtr();
+        }
+        public nothrow inline BoundExpression* ReleaseOperand() 
+        {
+            return operand.Release();
+        }
+        public nothrow inline void ResetOperand(BoundExpression* operand_)
+        {
+            operand.Reset(operand_);
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* ConversionFun() const
+        {
+            return conversionFun;
+        }
+        public nothrow inline BoundExpression* BoundTemporary() const
+        {
+            return boundTemporary.GetPtr();
+        }
+        public nothrow inline void SetboundTemporary(BoundExpression* boundTemporary_)
+        {
+            boundTemporary.Reset(boundTemporary_);
+        }
+        private UniquePtr<BoundExpression> operand;
+        private Cm.Sym.FunctionSymbol* conversionFun;
+        private UniquePtr<BoundExpression> boundTemporary;
+    }
+    
+    public class BoundCast : BoundExpression
+    {
+        public nothrow BoundCast() : base(null), operand(), conversionFun(null), sourceType(null)
+        {
+        }
+        public nothrow BoundCast(Cm.Ast.Node* syntaxNode_, BoundExpression* operand_, Cm.Sym.FunctionSymbol* conversionFun_) : base(syntaxNode_), operand(operand_), conversionFun(conversionFun_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public inline nothrow BoundExpression* Operand() const
+        {
+            return operand.GetPtr();
+        }
+        public inline nothrow Cm.Sym.FunctionSymbol* ConversionFun() const
+        {
+            return conversionFun;
+        }
+        public inline nothrow Cm.Sym.TypeSymbol* SourceType() const
+        {
+            return sourceType;
+        }
+        public inline void SetSourceType(Cm.Sym.TypeSymbol* sourceType_)
+        {
+            sourceType = sourceType_;
+        }
+        private UniquePtr<BoundExpression> operand;
+        private Cm.Sym.FunctionSymbol* conversionFun;
+        private Cm.Sym.TypeSymbol* sourceType;
+    }
+    
+    public class BoundIsExpression : BoundExpression
+    {
+        public nothrow BoundIsExpression() : base(null), expr(), leftClassType(null), rightClassType(null)
+        {
+        }
+        public nothrow BoundIsExpression(Cm.Ast.Node* syntaxNode_, BoundExpression* expr_, Cm.Sym.ClassTypeSymbol* leftClassType_, Cm.Sym.ClassTypeSymbol* rightClassType_) :
+            base(syntaxNode_), expr(expr_), leftClassType(leftClassType_), rightClassType(rightClassType_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Expr() const
+        {
+            return expr.GetPtr();
+        }
+        public nothrow inline Cm.Sym.ClassTypeSymbol* LeftClassType() const
+        {
+            return leftClassType;
+        }
+        public nothrow inline Cm.Sym.ClassTypeSymbol* RightClassType() const
+        {
+            return rightClassType;
+        }
+        private UniquePtr<BoundExpression> expr;
+        private Cm.Sym.ClassTypeSymbol* leftClassType;
+        private Cm.Sym.ClassTypeSymbol* rightClassType;
+    }
+
+    public class BoundAsExpression : BoundExpression
+    {
+        public nothrow BoundAsExpression() : base(null), expr(), leftClassType(null), rightClassType(null), boundTemporary()
+        {
+        }
+        public nothrow BoundAsExpression(Cm.Ast.Node* syntaxNode_, BoundExpression* expr_, Cm.Sym.ClassTypeSymbol* leftClassType_, Cm.Sym.ClassTypeSymbol* rightClassType_) :
+            base(syntaxNode_), expr(expr_), leftClassType(leftClassType_), rightClassType(rightClassType_), boundTemporary()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Expr() const
+        {
+            return expr.GetPtr();
+        }
+        public nothrow inline Cm.Sym.ClassTypeSymbol* LeftClassType() const
+        {
+            return leftClassType;
+        }
+        public nothrow inline Cm.Sym.ClassTypeSymbol* RightClassType() const
+        {
+            return rightClassType;
+        }
+        public nothrow inline BoundExpression* BoundTemporary() const
+        {
+            return boundTemporary.GetPtr();
+        }
+        public nothrow inline void SetBoundTemporary(BoundExpression* boundTemporary_)
+        {
+            boundTemporary.Reset(boundTemporary_);
+        }
+        private UniquePtr<BoundExpression> expr;
+        private Cm.Sym.ClassTypeSymbol* leftClassType;
+        private Cm.Sym.ClassTypeSymbol* rightClassType;
+        private UniquePtr<BoundExpression> boundTemporary;
+    }
+    
+    public class BoundSizeOfExpression : BoundExpression
+    {
+        public nothrow BoundSizeOfExpression() : base(null), type(null)
+        {
+        }
+        public nothrow BoundSizeOfExpression(Cm.Ast.Node* syntaxNode_, Cm.Sym.TypeSymbol* type_) : base(syntaxNode_), type(type_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }    
+        public nothrow inline Cm.Sym.TypeSymbol* Type() const
+        {
+            return type;
+        }
+        private Cm.Sym.TypeSymbol* type;
+    }
+    
+    public class BoundDynamicTypeNameExpression : BoundExpression
+    {
+        public nothrow BoundDynamicTypeNameExpression() : base(null), subject(), classType(null)
+        {
+        }
+        public nothrow BoundDynamicTypeNameExpression(Cm.Ast.Node* syntaxNode_, BoundExpression* subject_, Cm.Sym.ClassTypeSymbol* classType_) : base(syntaxNode_), subject(subject_), classType(classType_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Subject() const
+        {
+            return subject.GetPtr();
+        }
+        public nothrow inline Cm.Sym.ClassTypeSymbol* ClassType() const
+        {
+            return classType;
+        }
+        private UniquePtr<BoundExpression> subject;
+        private Cm.Sym.ClassTypeSymbol* classType;
+    }
+    
+    public class BoundUnaryOp : BoundExpression
+    {
+        public nothrow BoundUnaryOp() : base(null), operand(), fun(null), classObjectResultVar(null), traceCallInfo(), argumentCategory(Cm.Core.ArgumentCategory.rvalue)
+        {
+        }
+        public nothrow BoundUnaryOp(Cm.Ast.Node* syntaxNode_, BoundExpression* operand_) : 
+            base(syntaxNode_), operand(operand_), fun(null), classObjectResultVar(null), traceCallInfo(), argumentCategory(Cm.Core.ArgumentCategory.rvalue)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            operand->Accept(visitor);
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Operand() const
+        {
+            return operand.GetPtr();
+        }
+        public nothrow inline BoundExpression* ReleaseOperand() 
+        {
+            return operand.Release();
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Fun() const
+        {
+            return fun;
+        }
+        public nothrow inline void SetFun(Cm.Sym.FunctionSymbol* fun_)
+        {
+            fun = fun_;
+        }
+        public nothrow inline Cm.Sym.LocalVariableSymbol* ClassObjectResultVar() const
+        {
+            return classObjectResultVar;
+        }
+        public nothrow inline void SetClassObjectResultVar(Cm.Sym.LocalVariableSymbol* classObjectResultVar_)
+        {
+            classObjectResultVar = classObjectResultVar_;
+        }
+        public nothrow inline TraceCallInfo* GetTraceCallInfo() const
+        {
+            return traceCallInfo.GetPtr();
+        }
+        public nothrow inline void SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+        {
+            traceCallInfo.Reset(traceCallInfo_);
+        }
+        public nothrow override Cm.Core.ArgumentCategory ArgumentCategory() const
+        {
+            return argumentCategory;
+        }
+        public nothrow inline void SetArgumentCategory(Cm.Core.ArgumentCategory argumentCategory_)
+        {
+            argumentCategory = argumentCategory_;
+        }
+        private UniquePtr<BoundExpression> operand;
+        private Cm.Sym.FunctionSymbol* fun;
+        private Cm.Sym.LocalVariableSymbol* classObjectResultVar;
+        private UniquePtr<TraceCallInfo> traceCallInfo;
+        private Cm.Core.ArgumentCategory argumentCategory;
+    }
+    
+    public class BoundBinaryOp : BoundExpression
+    {
+        public nothrow BoundBinaryOp() : base(null), left(), right(), fun(null), classObjectResultVar(null), traceCallInfo()
+        {
+        }
+        public nothrow BoundBinaryOp(Cm.Ast.Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : 
+            base(syntaxNode_), left(left_), right(right_), fun(null), classObjectResultVar(null), traceCallInfo()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            left->Accept(visitor);
+            right->Accept(visitor);
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Left() const
+        {
+            return left.GetPtr();
+        }
+        public nothrow inline BoundExpression* Right() const
+        {
+            return right.GetPtr();
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Fun() const
+        {
+            return fun;
+        }
+        public nothrow inline void SetFun(Cm.Sym.FunctionSymbol* fun_)
+        {
+            fun = fun_;
+        }
+        public nothrow inline Cm.Sym.LocalVariableSymbol* ClassObjectResultVar() const
+        {
+            return classObjectResultVar;
+        }
+        public nothrow inline void SetClassObjectResultVar(Cm.Sym.LocalVariableSymbol* classObjectResultVar_)
+        {
+            classObjectResultVar = classObjectResultVar_;
+        }
+        public nothrow inline TraceCallInfo* GetTraceCallInfo() const
+        {
+            return traceCallInfo.GetPtr();
+        }
+        public nothrow inline void SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+        {
+            traceCallInfo.Reset(traceCallInfo_);
+        }
+        private UniquePtr<BoundExpression> left;
+        private UniquePtr<BoundExpression> right;
+        private Cm.Sym.FunctionSymbol* fun;
+        private Cm.Sym.LocalVariableSymbol* classObjectResultVar;
+        private UniquePtr<TraceCallInfo> traceCallInfo;
+    }
+    
+    public class BoundPostfixIncDecExpr : BoundExpression
+    {
+        public nothrow BoundPostfixIncDecExpr() : base(null), value(), statement() 
+        {
+        }
+        public nothrow BoundPostfixIncDecExpr(Cm.Ast.Node* syntaxNode_, BoundExpression* value_, BoundStatement* statement_) : base(syntaxNode_), value(value_), statement(statement_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }    
+        public nothrow inline BoundExpression* Value() const
+        {
+            return value.GetPtr();
+        }
+        public nothrow inline BoundStatement* Statement() const
+        {
+            return statement.GetPtr();
+        }
+        public nothrow inline BoundStatement* ReleaseStatement() 
+        {
+            return statement.Release();
+        }
+        private UniquePtr<BoundExpression> value;
+        private UniquePtr<BoundStatement> statement;
+    }
+    
+    public class BoundFunctionGroup : BoundExpression
+    {
+        public nothrow BoundFunctionGroup() : base(null), functionGroupSymbol(null), boundTemplateArguments(), ownedTypeSymbol(), qualifiedScope(null)
+        {
+        }
+        public nothrow BoundFunctionGroup(Cm.Ast.Node* syntaxNode_, Cm.Sym.FunctionGroupSymbol* functionGroupSymbol_) : 
+            base(syntaxNode_), functionGroupSymbol(functionGroupSymbol_), boundTemplateArguments(), ownedTypeSymbol(), qualifiedScope(null)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            throw Exception("not implemented");
+        }
+        public nothrow inline Cm.Sym.FunctionGroupSymbol* FunctionGroupSymbol() const
+        {
+            return functionGroupSymbol;
+        }
+        public nothrow inline const List<Cm.Sym.TypeSymbol*>& BoundTemplateArguments() const
+        {
+            return boundTemplateArguments;
+        }
+        public void SetBoundTemplateArguments(const List<Cm.Sym.TypeSymbol*>& boundTemplateArguments_)
+        {
+            boundTemplateArguments = boundTemplateArguments_;
+        }
+        public override nothrow void SetType(Cm.Sym.TypeSymbol* type_)
+        {
+            base->SetType(type_);
+            ownedTypeSymbol.Reset(type_);
+        }
+        public inline nothrow Cm.Sym.ContainerScope* QualifiedScope() const
+        {
+            return qualifiedScope;
+        }
+        public inline nothrow void SetQualifiedScope(Cm.Sym.ContainerScope* qualifiedScope_)
+        {
+            qualifiedScope = qualifiedScope_;
+        }
+        private Cm.Sym.FunctionGroupSymbol* functionGroupSymbol;
+        private List<Cm.Sym.TypeSymbol*> boundTemplateArguments;
+        private UniquePtr<Cm.Sym.TypeSymbol> ownedTypeSymbol;
+        private Cm.Sym.ContainerScope* qualifiedScope;
+    }
+    
+    public class BoundFunctionCall : BoundExpression
+    {
+        public nothrow BoundFunctionCall() : base(null), arguments(), fun(null), classObjectResultVar(null), temporary(), traceCallInfo(), functionCallSid(Cm.Sym.noSid), sidLiteral()
+        {
+        }
+        public nothrow BoundFunctionCall(Cm.Ast.Node* syntaxNode_, BoundExpressionList&& arguments_) : 
+            base(syntaxNode_), arguments(Rvalue(arguments_)), fun(null), classObjectResultVar(null), temporary(), traceCallInfo(), functionCallSid(Cm.Sym.noSid), sidLiteral()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Fun() const
+        {
+            return fun;
+        }
+        public nothrow inline void SetFun(Cm.Sym.FunctionSymbol* fun_)
+        {
+            fun = fun_;
+        }
+        public nothrow inline const BoundExpressionList& Arguments() const
+        {
+            return arguments;
+        }
+        public nothrow inline BoundExpressionList& Arguments()
+        {
+            return arguments;
+        }
+        public nothrow inline Cm.Sym.LocalVariableSymbol* ClassObjectResultVar() const
+        {
+            return classObjectResultVar;
+        }
+        public nothrow inline void SetClassObjectResultVar(Cm.Sym.LocalVariableSymbol* classObjectResultVar_)
+        {
+            classObjectResultVar = classObjectResultVar_;
+        }
+        public nothrow inline BoundLocalVariable* Temporary() const
+        {
+            return temporary.GetPtr();
+        }
+        public nothrow inline void SetTemporary(BoundLocalVariable* temporary_)
+        {
+            temporary.Reset(temporary_);
+        }
+        public nothrow inline TraceCallInfo* GetTraceCallInfo() const
+        {
+            return traceCallInfo.GetPtr();
+        }
+        public nothrow inline void SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+        {
+            traceCallInfo.Reset(traceCallInfo_);
+        }
+        public nothrow inline uint FunctionCallSid() const
+        {
+            return functionCallSid;
+        }
+        public nothrow inline void SetFunctionCallSid(uint functionCallSid_)
+        {
+            functionCallSid = functionCallSid_;
+        }
+        public nothrow inline BoundStringLiteral* SidLiteral() const
+        {
+            return sidLiteral.GetPtr();
+        }
+        public nothrow inline void SetSidLiteral(BoundStringLiteral* sidLiteral_)
+        {
+            sidLiteral.Reset(sidLiteral_);
+        }
+        private BoundExpressionList arguments;
+        private Cm.Sym.FunctionSymbol* fun;
+        private Cm.Sym.LocalVariableSymbol* classObjectResultVar;
+        private UniquePtr<BoundLocalVariable> temporary;
+        private UniquePtr<TraceCallInfo> traceCallInfo;
+        private uint functionCallSid;
+        private UniquePtr<BoundStringLiteral> sidLiteral;
+    }
+    
+    public class BoundDelegateCall : BoundExpression
+    {
+        public nothrow BoundDelegateCall() : base(null), delegateType(null), subject(), arguments()
+        {
+        }
+        public nothrow BoundDelegateCall(Cm.Ast.Node* syntaxNode_, Cm.Sym.DelegateTypeSymbol* delegateType_, BoundExpression* subject_, BoundExpressionList&& arguments_) :
+            base(syntaxNode_), delegateType(delegateType_), subject(subject_), arguments(Rvalue(arguments_))
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.DelegateTypeSymbol* DelegateType() const
+        {
+            return delegateType;
+        }
+        public nothrow inline BoundExpression* Subject() const
+        {
+            return subject.GetPtr();
+        }
+        public nothrow inline const BoundExpressionList& Arguments() const
+        {
+            return arguments;
+        }
+        public nothrow inline BoundExpressionList& Arguments()
+        {
+            return arguments;
+        }
+        private Cm.Sym.DelegateTypeSymbol* delegateType;
+        private UniquePtr<BoundExpression> subject;
+        private BoundExpressionList arguments;
+    }
+    
+    public class BoundClassDelegateCall : BoundExpression
+    {
+        public nothrow BoundClassDelegateCall() : base(null), classDelegateType(null), subject(), arguments()
+        {
+        }
+        public nothrow BoundClassDelegateCall(Cm.Ast.Node* syntaxNode_, Cm.Sym.ClassDelegateTypeSymbol* classDelegateType_, BoundExpression* subject_, BoundExpressionList&& arguments_) :
+            base(syntaxNode_), classDelegateType(classDelegateType_), subject(subject_), arguments(Rvalue(arguments_))
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.ClassDelegateTypeSymbol* ClassDelegateType() const
+        {
+            return classDelegateType;
+        }
+        public nothrow inline BoundExpression* Subject() const
+        {
+            return subject.GetPtr();
+        }
+        public nothrow inline const BoundExpressionList& Arguments() const
+        {
+            return arguments;
+        }
+        public nothrow inline BoundExpressionList& Arguments()
+        {
+            return arguments;
+        }
+        private Cm.Sym.ClassDelegateTypeSymbol* classDelegateType;
+        private UniquePtr<BoundExpression> subject;
+        private BoundExpressionList arguments;
+    }
+    
+    public abstract class BoundBooleanBinaryExpression : BoundExpression
+    {
+        public nothrow BoundBooleanBinaryExpression() : base(null), left(), right()
+        {
+        }
+        public nothrow BoundBooleanBinaryExpression(Cm.Ast.Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : base(syntaxNode_), left(left_), right(right_)
+        {
+        }
+        public nothrow inline BoundExpression* Left() const
+        {
+            return left.GetPtr();
+        }
+        public nothrow inline BoundExpression* Right() const
+        {
+            return right.GetPtr();
+        }
+        private UniquePtr<BoundExpression> left;
+        private UniquePtr<BoundExpression> right;
+    }
+    
+    public class BoundDisjunction : BoundBooleanBinaryExpression
+    {
+        public nothrow BoundDisjunction() : base(), resultVar(null)
+        {
+        }
+        public nothrow BoundDisjunction(Cm.Ast.Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : base(syntaxNode_, left_, right_), resultVar(null)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public inline nothrow Cm.Sym.LocalVariableSymbol* ResultVar() const
+        {
+            return resultVar;
+        }
+        public inline nothrow void SetResultVar(Cm.Sym.LocalVariableSymbol* resultVar_)
+        {
+            resultVar = resultVar_;
+        }
+        private Cm.Sym.LocalVariableSymbol* resultVar;
+    }
+
+    public class BoundConjunction : BoundBooleanBinaryExpression
+    {
+        public nothrow BoundConjunction() : base(), resultVar(null)
+        {
+        }
+        public nothrow BoundConjunction(Cm.Ast.Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : base(syntaxNode_, left_, right_), resultVar(null)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public inline nothrow Cm.Sym.LocalVariableSymbol* ResultVar() const
+        {
+            return resultVar;
+        }
+        public inline nothrow void SetResultVar(Cm.Sym.LocalVariableSymbol* resultVar_)
+        {
+            resultVar = resultVar_;
+        }
+        private Cm.Sym.LocalVariableSymbol* resultVar;
+    }
+}

@@ -336,7 +336,37 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
 
 void ReadNextSid(Cm::Sym::SymbolTable& symbolTable);
 
-void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 
+std::unordered_map<std::string, uint64_t> ReadCidMap(const std::string& cidFilePath)
+{
+    std::unordered_map<std::string, uint64_t> cidMap;
+    if (boost::filesystem::exists(cidFilePath))
+    {
+        std::ifstream cidFile(cidFilePath);
+        std::string line;
+        while (std::getline(cidFile, line))
+        {
+            std::vector<std::string> components = Cm::Util::Split(line, ':');
+            if (components.size() >= 2)
+            {
+                std::string className = components[0];
+                uint64_t cid = std::stoull(components[1]);
+                cidMap[className] = cid;
+            }
+        }
+    }
+    return cidMap;
+}
+
+void WriteCidMap(const std::string& cidFilePath, const std::unordered_map<std::string, uint64_t>& cidMap)
+{
+    std::ofstream cidFile(cidFilePath);
+    for (const std::pair<std::string, uint64_t>& c : cidMap)
+    {
+        cidFile << c.first << ":" << c.second << std::endl;
+    }
+}
+
+void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, bool rebuild, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths,
     std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable)
 {
@@ -346,8 +376,16 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConcept
     symbolTable.InitVirtualFunctionTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
+        std::unordered_map<std::string, uint64_t> cidMap;
+        std::string cidFilePath = (project->OutputBasePath() / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".cid")).generic_string();
+        if (!rebuild)
+        {
+            cidMap = ReadCidMap(cidFilePath);
+        }
         Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
+        declarationVisitor.SetCidMap(&cidMap);
         compileUnit->Accept(declarationVisitor);
+        WriteCidMap(cidFilePath, cidMap);
     }
 }
 
@@ -1783,7 +1821,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
         Cm::Sym::Module module(cmlFilePath);
         module.CheckFileVersion();
     }
-    BuildSymbolTable(symbolTable, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
+    BuildSymbolTable(symbolTable, rebuild, globalConceptData, syntaxTree, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
     {
         ImportFunctionTables(allReferenceFilePaths);

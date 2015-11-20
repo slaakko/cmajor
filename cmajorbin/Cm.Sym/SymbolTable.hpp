@@ -39,7 +39,7 @@ public:
     void BeginNamespaceScope(Cm::Ast::NamespaceNode* namespaceNode);
     void BeginNamespaceScope(const std::string& namespaceName, const Span& span);
     void EndNamespaceScope();
-    void BeginClassScope(Cm::Ast::ClassNode* classNode);
+    void BeginClassScope(Cm::Ast::ClassNode* classNode, std::unordered_map<std::string, uint64_t>* cidMap);
     void EndClassScope();
     void BeginTemplateTypeScope(Cm::Ast::ClassNode* templateClassNode, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol);
     void EndTemplateTypeScope();

@@ -134,11 +134,29 @@ void SymbolTable::BeginNamespaceScope(const std::string& namespaceName, const Sp
     }
 }
 
-void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode)
+void SymbolTable::BeginClassScope(Cm::Ast::ClassNode* classNode, std::unordered_map<std::string, uint64_t>* cidMap)
 {
     Cm::Ast::IdentifierNode* classId = classNode->Id();
-    uint64_t nextClassNumber = GetClassCounter()->GetCid();
-    ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true, nextClassNumber);
+    uint64_t cid = noCid;
+    if (cidMap)
+    {
+        std::string classTypeFullName = container->FullName().empty() ? classId->Str() : container->FullName() + "." + classId->Str();
+        std::unordered_map<std::string, uint64_t>::const_iterator i = cidMap->find(classTypeFullName);
+        if (i != cidMap->cend())
+        {
+            cid = i->second;
+        }
+        else
+        {
+            cid = GetClassCounter()->GetCid();
+            (*cidMap)[classTypeFullName] = cid;
+        }
+    }
+    if (cid == noCid)
+    {
+        cid = GetClassCounter()->GetCid();
+    }
+    ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true, cid);
     projectClasses.insert(classSymbol);
     SetSidAndAddSymbol(classSymbol);
     classSymbol->SetCompileUnit(classNode->GetCompileUnit());

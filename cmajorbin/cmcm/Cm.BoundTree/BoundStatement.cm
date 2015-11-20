@@ -1,0 +1,1330 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.BoundTree
+{
+    public const uint noStatementId = 0xFFFFFFFF;
+    
+    public abstract class BoundStatement : BoundNode
+    {
+        public nothrow BoundStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), parent(null), cfgNode(null), statementId(noStatementId), labeledStatementId(noStatementId)
+        {
+            if (syntaxNode_ != null)
+            {
+                if (syntaxNode_ is Cm.Ast.StatementNode*)
+                {
+                    Cm.Ast.StatementNode* statementNode = cast<Cm.Ast.StatementNode*>(syntaxNode_);
+                    Cm.Ast.LabelNode* labelNode = statementNode->Label();
+                    if (labelNode != null)
+                    {
+                        label = labelNode->Label();
+                    }
+                }
+            }
+        }
+        public nothrow inline BoundStatement* Parent() const
+        {
+            return parent;
+        }
+        public nothrow inline void SetParent(BoundStatement* parent_)
+        {
+            parent = parent_;
+        }
+        public nothrow inline BoundCompoundStatement* CompoundParent() const
+        {
+            BoundStatement* p = parent;
+            while (p != null && !(p is BoundCompoundStatement*))
+            {
+                p = p->parent;
+            }
+            if (p == null)
+            {
+                return null;
+            }
+            return cast<BoundCompoundStatement*>(p);
+        }
+        public nothrow inline const string& Label() const
+        {
+            return label;
+        }
+        public nothrow inline Cm.Core.CfgNode* CfgNode() const
+        {
+            return cfgNode;
+        }
+        public inline void SetCfgNode(Cm.Core.CfgNode* cfgNode_)
+        {
+            cfgNode = cfgNode_;
+            PatchPrevSet();
+        }
+        public inline void AddToPrevSet(Cm.Core.CfgNode* node)
+        {
+            prevSet.Insert(node);
+        }
+        public void PatchPrevSet()
+        {
+            if (cfgNode == null)
+            {
+                throw Exception("cfg node not set");
+            }
+            int thisNodeId = cfgNode->Id();
+            for (Cm.Core.CfgNode* prev : prevSet)
+            {
+                prev->AddNext(thisNodeId);
+            }
+            prevSet.Clear();
+        }
+        public nothrow inline uint StatementId() const
+        {
+            return statementId;
+        }
+        public nothrow inline void SetStatementId(uint statementId_)
+        {
+            statementId = statementId_;
+        }
+        public nothrow inline uint LabeledStatementId() const
+        {
+            return labeledStatementId;
+        }
+        public nothrow inline void SetLabeledStatementId(uint labeledStatementId_)
+        {
+            labeledStatementId = labeledStatementId_;
+        }
+        public virtual void AddBreakTargetLabel(Ir.Intf.LabelObject* breakTargetLabel)
+        {
+        }
+        public virtual void AddContinueTargetLabel(Ir.Intf.LabelObject* continueTargetLabel)
+        {
+        }
+        public virtual void AddToBreakNextSet(Cm.Core.CfgNode* node)
+        {
+        }
+        public virtual void AddToContinueNextSet(Cm.Core.CfgNode* node)
+        {
+        }
+        private BoundStatement* parent;
+        private string label;
+        private Cm.Core.CfgNode* cfgNode;
+        private HashSet<Cm.Core.CfgNode*> prevSet;
+        private uint statementId;
+        private uint labeledStatementId;
+    }
+    
+    public class BoundStatementList
+    {
+        public nothrow BoundStatementList() : statements()
+        {
+        }
+        public typedef List<UniquePtr<BoundStatement>>.ConstIterator ConstIterator;
+        public typedef List<UniquePtr<BoundStatement>>.Iterator Iterator;
+        public nothrow inline ConstIterator CBegin() const
+        {
+            return statements.CBegin();
+        }
+        public nothrow inline ConstIterator CEnd() const
+        {
+            return statements.CEnd();
+        }
+        public nothrow inline ConstIterator Begin() const
+        {
+            return statements.CBegin();
+        }
+        public nothrow inline ConstIterator End() const
+        {
+            return statements.CEnd();
+        }
+        public nothrow inline Iterator Begin()
+        {
+            return statements.Begin();
+        }
+        public nothrow inline Iterator End()
+        {
+            return statements.End();
+        }
+        public nothrow inline bool IsEmpty() const
+        {
+            return statements.IsEmpty();
+        }
+        public void AddStatement(BoundStatement* statement)
+        {
+            statements.Add(UniquePtr<BoundStatement>(statement));
+        }
+        public void InsertStatement(int index, BoundStatement* statement)
+        {
+            statements.Insert(statements.Begin() + index, UniquePtr<BoundStatement>(statement));
+        }
+        public void Accept(Visitor& visitor)
+        {
+            for (const UniquePtr<BoundStatement>& statement : statements)
+            {
+                visitor.VisitStatement(*statement);
+            }
+        }
+        private List<UniquePtr<BoundStatement>> statements;
+    }
+    
+    public abstract class BoundParentStatement : BoundStatement
+    {
+        public nothrow BoundParentStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public abstract void AddStatement(BoundStatement* statement);
+    }
+    
+    public class BoundCompoundStatement : BoundParentStatement
+    {
+        public nothrow BoundCompoundStatement() : base(null)
+        {
+        }
+        public nothrow BoundCompoundStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void AddStatement(BoundStatement* statement)
+        {
+            statement->SetParent(this);
+            statementList.AddStatement(statement);
+        }
+        public void InsertStatement(int index, BoundStatement* statement)
+        {
+            statement->SetParent(this);
+            statementList.InsertStatement(index, statement);
+        }
+        public nothrow inline bool IsEmpty() const
+        {
+            return statementList.IsEmpty();
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            statementList.Accept(visitor);
+            visitor.EndVisit(*this);
+        }
+        private BoundStatementList statementList;
+    }
+    
+    public class BoundReceiveStatement : BoundStatement
+    {
+        public nothrow BoundReceiveStatement() : base(null), parameterSymbol(null), ctor(null)
+        {
+        }
+        public nothrow BoundReceiveStatement(Cm.Sym.ParameterSymbol* parameterSymbol_) : base(null), parameterSymbol(parameterSymbol_), ctor(null)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.ParameterSymbol* ParameterSymbol() const
+        {
+            return parameterSymbol;
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Constructor() const
+        {
+            return ctor;
+        }
+        public nothrow inline void SetConstructor(Cm.Sym.FunctionSymbol* ctor_)
+        {
+            ctor = ctor_;
+        }
+        private Cm.Sym.ParameterSymbol* parameterSymbol;
+        private Cm.Sym.FunctionSymbol* ctor;
+    }
+    
+    public class BoundInitClassObjectStatement : BoundStatement
+    {
+        public nothrow BoundInitClassObjectStatement() : base(null), boundFunctionCall(null)
+        {
+        }
+        public nothrow BoundInitClassObjectStatement(BoundFunctionCall* boundFunctionCall_) : base(null), boundFunctionCall(boundFunctionCall_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundFunctionCall* FunctionCall() const
+        {
+            return boundFunctionCall.GetPtr();
+        }
+        private UniquePtr<BoundFunctionCall> boundFunctionCall;
+    }
+    
+    public class BoundInitVPtrStatement : BoundStatement
+    {
+        public nothrow BoundInitVPtrStatement() : base(null), classType(null)
+        {
+        }
+        public nothrow BoundInitVPtrStatement(Cm.Sym.ClassTypeSymbol* classType_) : base(null), classType(classType_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.ClassTypeSymbol* ClassType() const
+        {
+            return classType;
+        }
+        private Cm.Sym.ClassTypeSymbol* classType;
+    }
+    
+    public class BoundInitMemberVariableStatement : BoundStatement
+    {
+        public nothrow BoundInitMemberVariableStatement() : base(null), memberVarSymbol(null), ctor(null), arguments(), registerDestructor(false)
+        {
+        }
+        public nothrow BoundInitMemberVariableStatement(Cm.Sym.FunctionSymbol* ctor_, BoundExpressionList&& arguments_) : base(null), memberVarSymbol(null), ctor(ctor_), arguments(Rvalue(arguments_))
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.MemberVariableSymbol* MemberVarSymbol() const
+        {
+            return memberVarSymbol;
+        }
+        public nothrow inline void SetMemberVarSymbol(Cm.Sym.MemberVariableSymbol* memberVarSymbol_)
+        {
+            memberVarSymbol = memberVarSymbol_;
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Constructor() const
+        {
+            return ctor;
+        }
+        public nothrow inline const BoundExpressionList& Arguments() const
+        {
+            return arguments;
+        }
+        public nothrow inline BoundExpressionList& Arguments()
+        {
+            return arguments;
+        }
+        public nothrow inline bool RegisterDestructor() const
+        {
+            return registerDestructor;
+        }
+        public nothrow inline void SetRegisterDestructor()
+        {
+            registerDestructor = true;
+        }
+        private Cm.Sym.MemberVariableSymbol* memberVarSymbol;
+        private Cm.Sym.FunctionSymbol* ctor;
+        private BoundExpressionList arguments;
+        private bool registerDestructor;
+    }
+    
+    public class BoundFunctionCallStatement : BoundStatement
+    {
+        public nothrow BoundFunctionCallStatement() : base(null), function(null), arguments(), traceCallInfo()
+        {
+        }
+        public nothrow BoundFunctionCallStatement(Cm.Sym.FunctionSymbol* function_, BoundExpressionList&& arguments_) : base(null), function(function_), arguments(Rvalue(arguments_)), traceCallInfo()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Function() const
+        {
+            return function;
+        }
+        public nothrow inline const BoundExpressionList& Arguments() const
+        {
+            return arguments;
+        }
+        public nothrow inline BoundExpressionList& Arguments()
+        {
+            return arguments;
+        }
+        public nothrow inline TraceCallInfo* GetTraceCallInfo() const
+        {
+            return traceCallInfo.GetPtr();
+        }
+        public nothrow inline void SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+        {
+            traceCallInfo.Reset(traceCallInfo_);
+        }
+        private Cm.Sym.FunctionSymbol* function;
+        private BoundExpressionList arguments;
+        private UniquePtr<TraceCallInfo> traceCallInfo;
+    }
+    
+    public class BoundReturnStatement : BoundStatement
+    {
+        public nothrow BoundReturnStatement() : base(null), expression(), ctor(null), returnType(null), traceCallInfo(), boundTemporary(), boundReturnValue()
+        {
+        }
+        public nothrow BoundReturnStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), expression(), ctor(null), returnType(null), traceCallInfo(), boundTemporary(), boundReturnValue()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Expression() const
+        {
+            return expression.GetPtr();
+        }
+        public nothrow inline void SetExpression(BoundExpression* expression_)
+        {
+            expression.Reset(expression_);
+        }
+        public nothrow inline bool ReturnsValue() const
+        {
+            return !expression.IsNull();
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Constructor() const
+        {
+            return ctor;
+        }
+        public nothrow inline void SetConstructor(Cm.Sym.FunctionSymbol* ctor_)
+        {
+            ctor = ctor_;
+        }
+        public nothrow inline Cm.Sym.TypeSymbol* ReturnType() const
+        {
+            return returnType;
+        }
+        public nothrow inline void SetReturnType(Cm.Sym.TypeSymbol* returnType_)
+        {
+            returnType = returnType_;
+        }
+        public nothrow inline TraceCallInfo* GetTraceCallInfo() const
+        {
+            return traceCallInfo.GetPtr();
+        }
+        public nothrow inline void SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+        {
+            traceCallInfo.Reset(traceCallInfo_);
+        }
+        public nothrow inline BoundLocalVariable* BoundTemporary() const
+        {
+            return boundTemporary.GetPtr();
+        }
+        public nothrow inline void SetBoundTemporary(BoundLocalVariable* boundTemporary_)
+        {
+            boundTemporary.Reset(boundTemporary_);
+        }
+        public nothrow inline BoundReturnValue* ReturnValue() const 
+        {
+            return boundReturnValue.GetPtr();
+        }
+        public nothrow inline void SetBoundReturnValue(BoundReturnValue* boundReturnValue_)
+        {
+            boundReturnValue.Reset(boundReturnValue_);
+        }
+        private UniquePtr<BoundExpression> expression;
+        private Cm.Sym.FunctionSymbol* ctor;
+        private Cm.Sym.TypeSymbol* returnType;
+        private UniquePtr<TraceCallInfo> traceCallInfo;
+        private UniquePtr<BoundLocalVariable> boundTemporary;
+        private UniquePtr<BoundReturnValue> boundReturnValue;
+    }
+    
+    public class BoundBeginTryStatement : BoundStatement
+    {
+        public nothrow BoundBeginTryStatement() : base(null), firstCatchId(-1)
+        {
+        }
+        public nothrow BoundBeginTryStatement(Cm.Ast.Node* syntaxNode_, int firstCatchId_) : base(syntaxNode_), firstCatchId(firstCatchId_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline int FirstCatchId() const
+        {
+            return firstCatchId;
+        }
+        private int firstCatchId;
+    }
+    
+    public class BoundEndTryStatement : BoundStatement
+    {
+        public nothrow BoundEndTryStatement() : base(null)
+        {
+        }
+        public nothrow BoundEndTryStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class BoundExitBlocksStatement : BoundStatement
+    {
+        public nothrow BoundExitBlocksStatement() : base(null), targetBlock(null)
+        {
+        }
+        public nothrow BoundExitBlocksStatement(Cm.Ast.Node* syntaxNode_, BoundCompoundStatement* targetBlock_) : base(syntaxNode_), targetBlock(targetBlock_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundCompoundStatement* TargetBlock() const
+        {
+            return targetBlock;
+        }
+        public nothrow override void SetCompoundTargetStatement(void* targetStatement)
+        {
+            targetBlock = cast<BoundCompoundStatement*>(targetStatement);
+        }
+        private BoundCompoundStatement* targetBlock;
+    }
+    
+    public class BoundPushGenDebugInfoStatement : BoundStatement
+    {
+        public nothrow BoundPushGenDebugInfoStatement() : base(null), generate(false)
+        {
+        }
+        public nothrow BoundPushGenDebugInfoStatement(Cm.Ast.Node* syntaxNode_, bool generate_) : base(syntaxNode_), generate(generate_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline bool Generate() const
+        {
+            return generate;
+        }
+        private bool generate;
+    }
+    
+    public class BoundPopGenDebugInfoStatement : BoundStatement
+    {
+        public nothrow BoundPopGenDebugInfoStatement() : base(null)
+        {
+        }
+        public nothrow BoundPopGenDebugInfoStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }    
+    }
+    
+    public class BoundBeginThrowStatement : BoundStatement
+    {
+        public nothrow BoundBeginThrowStatement() : base(null)
+        {
+        }
+        public nothrow BoundBeginThrowStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class BoundEndThrowStatement : BoundStatement
+    {
+        public nothrow BoundEndThrowStatement() : base(null)
+        {
+        }
+        public nothrow BoundEndThrowStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class BoundBeginCatchStatement : BoundStatement
+    {
+        public nothrow BoundBeginCatchStatement() : base(null)
+        {
+        }
+        public nothrow BoundBeginCatchStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class BoundConstructionStatement : BoundStatement
+    {
+        public nothrow BoundConstructionStatement() : base(null), localVariable(null), arguments(), ctor(null), traceCallInfo()
+        {
+        }
+        public nothrow BoundConstructionStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), localVariable(null), arguments(), ctor(null), traceCallInfo()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.LocalVariableSymbol* LocalVariable() const
+        {
+            return localVariable;
+        }
+        public nothrow inline void SetLocalVariable(Cm.Sym.LocalVariableSymbol* localVariable_)
+        {
+            localVariable = localVariable_;
+        }
+        public nothrow inline const BoundExpressionList& Arguments() const
+        {
+            return arguments;
+        }
+        public nothrow inline BoundExpressionList& Arguments()
+        {
+            return arguments;
+        }
+        public nothrow inline void SetArguments(BoundExpressionList& arguments_)
+        {
+            arguments = Rvalue(arguments_);
+        }
+        public inline void InsertLocalVariableToArguments()
+        {
+            BoundLocalVariable* boundLocalVariable = new BoundLocalVariable(SyntaxNode(), localVariable);
+            boundLocalVariable->SetType(localVariable->GetType());
+            arguments.InsertFront(boundLocalVariable);
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Constructor() const
+        {
+            return ctor;
+        }
+        public nothrow inline void SetConstructor(Cm.Sym.FunctionSymbol* ctor_)
+        {
+            ctor = ctor_;
+        }
+        public nothrow inline TraceCallInfo* GetTraceCallInfo() const
+        {
+            return traceCallInfo.GetPtr();
+        }
+        public nothrow inline void SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+        {
+            traceCallInfo.Reset(traceCallInfo_);
+        }
+        public void GetResolutionArguments(Cm.Sym.TypeSymbol* localVariableType, List<Cm.Core.Argument>& resolutionArguments)
+        {
+            if (localVariableType->IsPointerType() && arguments.Count() == 1 && arguments[0]->IsBoundNullLiteral())
+            {
+                arguments[0]->SetType(localVariableType);
+            }
+            for (const UniquePtr<BoundExpression>& argument : arguments)
+            {
+                Cm.Core.Argument arg(argument->ArgumentCategory(), argument->Type());
+                if (argument->GetFlag(BoundNodeFlags.argIsTemporary))
+                {
+                    arg.SetBindToRvalueRef();
+                }
+                resolutionArguments.Add(arg);
+            }
+        }
+        private Cm.Sym.LocalVariableSymbol* localVariable;
+        private BoundExpressionList arguments;
+        private Cm.Sym.FunctionSymbol* ctor;
+        private UniquePtr<TraceCallInfo> traceCallInfo;
+    }
+    
+    public class BoundDestructionStatement : BoundStatement
+    {
+        public nothrow BoundDestructionStatement(Cm.Ast.Node* syntaxNode_, Ir.Intf.Object* object_, Cm.Sym.FunctionSymbol* destructor_) : base(syntaxNode_), object(object_), destructor(destructor_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Ir.Intf.Object* Object() const
+        {
+            return object;
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Destructor() const
+        {
+            return destructor;
+        }
+        private Ir.Intf.Object* object;
+        private Cm.Sym.FunctionSymbol* destructor;
+    }
+    
+    public class BoundAssignmentStatement : BoundStatement
+    {
+        public nothrow BoundAssignmentStatement() : base(null), left(), right(), assignment(null), traceCallInfo()
+        {
+        }
+        public nothrow BoundAssignmentStatement(Cm.Ast.Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_, Cm.Sym.FunctionSymbol* assignment_) : 
+            base(syntaxNode_), left(left_), right(right_), assignment(assignment_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Left() const
+        {
+            return left.GetPtr();
+        }
+        public nothrow inline BoundExpression* Right() const
+        {
+            return right.GetPtr();
+        }
+        public nothrow inline UniquePtr<BoundExpression>& RightArgument() 
+        {
+            return right;
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* Assignment() const
+        {
+            return assignment;
+        }
+        public nothrow inline TraceCallInfo* GetTraceCallInfo() const
+        {
+            return traceCallInfo.GetPtr();
+        }
+        public nothrow inline void SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
+        {
+            traceCallInfo.Reset(traceCallInfo_);
+        }
+        private UniquePtr<BoundExpression> left;
+        private UniquePtr<BoundExpression> right;
+        private Cm.Sym.FunctionSymbol* assignment;
+        private UniquePtr<TraceCallInfo> traceCallInfo;
+    }
+    
+    public class BoundSimpleStatement : BoundStatement
+    {
+        public nothrow BoundSimpleStatement() : base(null), expression()
+        {
+        }
+        public nothrow BoundSimpleStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), expression()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Expression() const
+        {
+            return expression.GetPtr();
+        }
+        public nothrow inline bool HasExpression() const
+        {
+            return !expression.IsNull();
+        }
+        public nothrow inline void SetExpression(BoundExpression* expression_)
+        {
+            expression.Reset(expression_);
+        }
+        private UniquePtr<BoundExpression> expression;
+    }
+    
+    public class BoundSwitchStatement : BoundParentStatement
+    {
+        public nothrow BoundSwitchStatement() : base(null), condition(), caseStatements(), defaultStatement(), breakTargetLabels(), breakNextSet()
+        {
+        }
+        public nothrow BoundSwitchStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), condition(), caseStatements(), defaultStatement(), breakTargetLabels(), breakNextSet()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline BoundExpression* Condition() const
+        {
+            return condition.GetPtr();
+        }
+        public nothrow inline void SetCondition(BoundExpression* condition_)
+        {
+            condition.Reset(condition_);
+        }
+        public override void AddStatement(BoundStatement* statement)
+        {
+            statement->SetParent(this);
+            if (statement is BoundCaseStatement*)
+            {
+                caseStatements.AddStatement(statement);
+            }
+            else
+            {
+                defaultStatement.Reset(statement);
+            }
+        }
+        public nothrow inline const BoundStatementList& CaseStatements() const
+        {
+            return caseStatements;
+        }
+        public nothrow inline BoundStatementList& CaseStatements()
+        {
+            return caseStatements;
+        }
+        public nothrow inline BoundStatement* DefaultStatement() const
+        {
+            return defaultStatement.GetPtr();
+        }
+        public override void AddBreakTargetLabel(Ir.Intf.LabelObject* breakTargetLabel) 
+        {
+            breakTargetLabels.Add(breakTargetLabel);
+        }
+        public nothrow inline const List<Ir.Intf.LabelObject*>& BreakTargetLabels() const
+        {
+            return breakTargetLabels;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& BreakTargetLabels() 
+        {
+            return breakTargetLabels;
+        }
+        public override void AddToBreakNextSet(Cm.Core.CfgNode* node)
+        {
+            breakNextSet.Insert(node);
+        }
+        public nothrow inline const HashSet<Cm.Core.CfgNode*>& BreakNextSet() const
+        {
+            return breakNextSet;
+        }
+        private UniquePtr<BoundExpression> condition;
+        private BoundStatementList caseStatements;
+        private UniquePtr<BoundStatement> defaultStatement;
+        private List<Ir.Intf.LabelObject*> breakTargetLabels;
+        private HashSet<Cm.Core.CfgNode*> breakNextSet;
+    }
+    
+    public class BoundCaseStatement : BoundParentStatement
+    {
+        public nothrow BoundCaseStatement() : base(null), statements(), values()
+        {
+        }
+        public nothrow BoundCaseStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), statements(), values()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override void AddStatement(BoundStatement* statement)
+        {
+            statement->SetParent(this);
+            statements.AddStatement(statement);
+        }
+        public inline void AddValue(Cm.Sym.Value* value)
+        {
+            values.Add(UniquePtr<Cm.Sym.Value>(value));
+        }
+        public nothrow inline const BoundStatementList& Statements() const
+        {
+            return statements;
+        }
+        public nothrow inline const List<UniquePtr<Cm.Sym.Value>>& Values() const
+        {
+            return values;
+        }
+        private BoundStatementList statements;
+        private List<UniquePtr<Cm.Sym.Value>> values;
+    }
+    
+    public class BoundDefaultStatement : BoundParentStatement
+    {
+        public nothrow BoundDefaultStatement() : base(null), statements()
+        {
+        }
+        public nothrow BoundDefaultStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), statements()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override void AddStatement(BoundStatement* statement)
+        {
+            statement->SetParent(this);
+            statements.AddStatement(statement);
+        }
+        public nothrow inline const BoundStatementList& Statements() const
+        {
+            return statements;
+        }
+        private BoundStatementList statements;
+    }
+    
+    public class BoundBreakStatement : BoundStatement
+    {
+        public nothrow BoundBreakStatement() : base(null)
+        {
+        }
+        public nothrow BoundBreakStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class BoundContinueStatement : BoundStatement
+    {
+        public nothrow BoundContinueStatement() : base(null)
+        {
+        }
+        public nothrow BoundContinueStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class BoundGotoStatement : BoundStatement
+    {
+        public nothrow BoundGotoStatement() : base(null), targetLabel(), targetStatement(null), targetCompoundParent(null), isExceptionHandlingGoto(false)
+        {
+        }
+        public nothrow BoundGotoStatement(Cm.Ast.Node* syntaxNode_, const string& targetLabel_) : 
+            base(syntaxNode_), targetLabel(targetLabel_), targetStatement(null), targetCompoundParent(null), isExceptionHandlingGoto(false)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline const string& TargetLabel() const
+        {
+            return targetLabel;
+        }
+        public nothrow inline BoundStatement* TargetStatement() const
+        {
+            return targetStatement;
+        }
+        public nothrow inline void SetTargetStatement(BoundStatement* targetStatement_)
+        {
+            targetStatement = targetStatement_;
+        }
+        public nothrow inline BoundCompoundStatement* TargetCompoundParent() const
+        {
+            return targetCompoundParent;
+        }
+        public nothrow inline void SetTargetCompoundParent(BoundCompoundStatement* targetCompoundParent_)
+        {
+            targetCompoundParent = targetCompoundParent_;
+        }
+        public nothrow inline bool IsExceptionHandlingGoto() const
+        {
+            return isExceptionHandlingGoto;
+        }
+        public nothrow inline void SetExceptionHandlingGoto()
+        {
+            isExceptionHandlingGoto = true;
+        }
+        public nothrow override void SetLabeledStatement(void* labeledStatement)
+        {
+            targetStatement = cast<BoundStatement*>(labeledStatement);
+        }
+        public nothrow override void SetCompoundTargetStatement(void* targetStatement)
+        {
+            targetCompoundParent = cast<BoundCompoundStatement*>(targetStatement);
+        }
+        private string targetLabel;
+        private BoundStatement* targetStatement;
+        private BoundCompoundStatement* targetCompoundParent;
+        private bool isExceptionHandlingGoto;
+    }
+    
+    public class BoundGotoCaseStatement : BoundStatement
+    {
+        public nothrow BoundGotoCaseStatement() : base(null), value()
+        {
+        }
+        public nothrow BoundGotoCaseStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), value()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public nothrow inline Cm.Sym.Value* Value() const
+        {
+            return value.GetPtr();
+        }
+        public nothrow inline void SetValue(Cm.Sym.Value* value_)
+        {
+            value.Reset(value_);
+        }
+        private UniquePtr<Cm.Sym.Value> value;
+    }
+    
+    public class BoundGotoDefaultStatement : BoundStatement
+    {
+        public nothrow BoundGotoDefaultStatement() : base(null)
+        {
+        }
+        public nothrow BoundGotoDefaultStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+    }
+    
+    public class BoundConditionalStatement : BoundParentStatement
+    {
+        public nothrow BoundConditionalStatement() : base(null), condition(), thenS(), elseS()
+        {
+        }
+        public nothrow BoundConditionalStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), condition(), thenS(), elseS()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            condition->Accept(visitor);
+            if (!visitor.SkipContent())
+            {
+                thenS->Accept(visitor);
+                if (!elseS.IsNull())
+                {
+                    elseS->Accept(visitor);
+                }
+            }
+            visitor.EndVisit(*this);
+        }
+        public nothrow inline BoundExpression* Condition() const
+        {
+            return condition.GetPtr();
+        }
+        public nothrow inline void SetCondition(BoundExpression* condition_)
+        {
+            condition.Reset(condition_);
+        }
+        public override void AddStatement(BoundStatement* statement)
+        {
+            statement->SetParent(this);
+            if (thenS.IsNull())
+            {
+                thenS.Reset(statement);
+            }
+            else
+            {
+                elseS.Reset(statement);
+            }
+        }
+        public nothrow inline BoundStatement* ThenS() const
+        {
+            return thenS.GetPtr();
+        }
+        public nothrow inline BoundStatement* ElseS() const
+        {
+            return elseS.GetPtr();
+        }
+        private UniquePtr<BoundExpression> condition;
+        private UniquePtr<BoundStatement> thenS;
+        private UniquePtr<BoundStatement> elseS;
+    }
+    
+    public class BoundWhileStatement : BoundParentStatement
+    {
+        public nothrow BoundWhileStatement() : base(null), condition(), statement(), breakTargetLabels(), continueTargetLabels(), breakNextSet(), continueNextSet()
+        {
+        }
+        public nothrow BoundWhileStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), condition(), statement(), breakTargetLabels(), continueTargetLabels(), breakNextSet(), continueNextSet()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            condition->Accept(visitor);
+            if (!visitor.SkipContent())
+            {
+                statement->Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        public override void AddStatement(BoundStatement* statement_)
+        {
+            statement_->SetParent(this);
+            statement.Reset(statement_);
+        }
+        public nothrow inline BoundExpression* Condition() const
+        {
+            return condition.GetPtr();
+        }
+        public nothrow inline void SetCondition(BoundExpression* condition_)
+        {
+            condition.Reset(condition_);
+        }
+        public nothrow inline BoundStatement* Statement() const
+        {
+            return statement.GetPtr();
+        }
+        public nothrow inline const List<Ir.Intf.LabelObject*>& BreakTargetLabels() const
+        {
+            return breakTargetLabels;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& BreakTargetLabels()
+        {
+            return breakTargetLabels;
+        }
+        public nothrow inline const List<Ir.Intf.LabelObject*>& ContinueTargetLabels() const
+        {
+            return continueTargetLabels;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& ContinueTargetLabels()
+        {
+            return continueTargetLabels;
+        }
+        public override void AddBreakTargetLabel(Ir.Intf.LabelObject* breakTargetLabel) 
+        {
+            breakTargetLabels.Add(breakTargetLabel);
+        }
+        public override void AddContinueTargetLabel(Ir.Intf.LabelObject* continueTargetLabel)
+        {
+            continueTargetLabels.Add(continueTargetLabel);
+        }
+        public nothrow inline const HashSet<Cm.Core.CfgNode*>& BreakNextSet() const
+        {
+            return breakNextSet;
+        }
+        public nothrow inline HashSet<Cm.Core.CfgNode*>& BreakNextSet()
+        {
+            return breakNextSet;
+        }
+        public nothrow inline const HashSet<Cm.Core.CfgNode*>& ContinueNextSet() const
+        {
+            return continueNextSet;
+        }
+        public nothrow inline HashSet<Cm.Core.CfgNode*>& ContinueNextSet()
+        {
+            return continueNextSet;
+        }
+        public override void AddToBreakNextSet(Cm.Core.CfgNode* node)
+        {
+            breakNextSet.Insert(node);
+        }
+        public override void AddToContinueNextSet(Cm.Core.CfgNode* node)
+        {
+            continueNextSet.Insert(node);
+        }
+        private UniquePtr<BoundExpression> condition;
+        private UniquePtr<BoundStatement> statement;
+        private List<Ir.Intf.LabelObject*> breakTargetLabels;
+        private List<Ir.Intf.LabelObject*> continueTargetLabels;
+        private HashSet<Cm.Core.CfgNode*> breakNextSet;
+        private HashSet<Cm.Core.CfgNode*> continueNextSet;
+    }
+    
+    public class BoundDoStatement : BoundParentStatement
+    {
+        public nothrow BoundDoStatement() : base(null), statement(), condition(), breakTargetLabels(), continueTargetLabels(), breakNextSet(), continueNextSet()
+        {
+        }
+        public nothrow BoundDoStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), statement(), condition(), breakTargetLabels(), continueTargetLabels(), breakNextSet(), continueNextSet()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (!visitor.SkipContent())
+            {
+                statement->Accept(visitor);
+                condition->Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        public override void AddStatement(BoundStatement* statement_)
+        {
+            statement_->SetParent(this);
+            statement.Reset(statement_);
+        }
+        public nothrow inline BoundStatement* Statement() const
+        {
+            return statement.GetPtr();
+        }
+        public nothrow inline BoundExpression* Condition() const
+        {
+            return condition.GetPtr();
+        }
+        public nothrow inline void SetCondition(BoundExpression* condition_)
+        {
+            condition.Reset(condition_);
+        }
+        public nothrow inline const List<Ir.Intf.LabelObject*>& BreakTargetLabels() const
+        {
+            return breakTargetLabels;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& BreakTargetLabels()
+        {
+            return breakTargetLabels;
+        }
+        public nothrow inline const List<Ir.Intf.LabelObject*>& ContinueTargetLabels() const
+        {
+            return continueTargetLabels;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& ContinueTargetLabels()
+        {
+            return continueTargetLabels;
+        }
+        public override void AddBreakTargetLabel(Ir.Intf.LabelObject* breakTargetLabel) 
+        {
+            breakTargetLabels.Add(breakTargetLabel);
+        }
+        public override void AddContinueTargetLabel(Ir.Intf.LabelObject* continueTargetLabel)
+        {
+            continueTargetLabels.Add(continueTargetLabel);
+        }
+        public nothrow inline const HashSet<Cm.Core.CfgNode*>& BreakNextSet() const
+        {
+            return breakNextSet;
+        }
+        public nothrow inline HashSet<Cm.Core.CfgNode*>& BreakNextSet()
+        {
+            return breakNextSet;
+        }
+        public nothrow inline const HashSet<Cm.Core.CfgNode*>& ContinueNextSet() const
+        {
+            return continueNextSet;
+        }
+        public nothrow inline HashSet<Cm.Core.CfgNode*>& ContinueNextSet()
+        {
+            return continueNextSet;
+        }
+        public override void AddToBreakNextSet(Cm.Core.CfgNode* node)
+        {
+            breakNextSet.Insert(node);
+        }
+        public override void AddToContinueNextSet(Cm.Core.CfgNode* node)
+        {
+            continueNextSet.Insert(node);
+        }
+        private UniquePtr<BoundStatement> statement;
+        private UniquePtr<BoundExpression> condition;
+        private List<Ir.Intf.LabelObject*> breakTargetLabels;
+        private List<Ir.Intf.LabelObject*> continueTargetLabels;
+        private HashSet<Cm.Core.CfgNode*> breakNextSet;
+        private HashSet<Cm.Core.CfgNode*> continueNextSet;
+    }
+    
+    public class BoundForStatement : BoundParentStatement
+    {
+        public nothrow BoundForStatement() : base(null), initS(), condition(), increment(), action(), breakTargetLabels(), continueTargetLabels(), breakNextSet(), continueNextSet()
+        {
+        }
+        public nothrow BoundForStatement(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_), initS(), condition(), increment(), action(), breakTargetLabels(), continueTargetLabels(), breakNextSet(), continueNextSet()
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (!visitor.SkipContent())
+            {
+                initS->Accept(visitor);
+                condition->Accept(visitor);
+                increment->Accept(visitor);
+                action->Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }    
+        public override void AddStatement(BoundStatement* statement)
+        {
+            statement->SetParent(this);
+            if (initS.IsNull())
+            {
+                initS.Reset(statement);
+            }
+            else 
+            {
+                action.Reset(statement);
+            }
+        }
+        public nothrow inline BoundStatement* InitS() const
+        {
+            return initS.GetPtr();
+        }
+        public nothrow inline BoundExpression* Condition() const
+        {
+            return condition.GetPtr();
+        }
+        public nothrow inline void SetCondition(BoundExpression* condition_)
+        {
+            condition.Reset(condition_);
+        }
+        public nothrow inline BoundExpression* Increment() const
+        {
+            return increment.GetPtr();
+        }
+        public nothrow inline void SetIncrement(BoundExpression* increment_)
+        {
+            increment.Reset(increment_);
+        }
+        public nothrow inline BoundStatement* Action() const
+        {
+            return action.GetPtr();
+        }
+        public nothrow inline const List<Ir.Intf.LabelObject*>& BreakTargetLabels() const
+        {
+            return breakTargetLabels;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& BreakTargetLabels()
+        {
+            return breakTargetLabels;
+        }
+        public nothrow inline const List<Ir.Intf.LabelObject*>& ContinueTargetLabels() const
+        {
+            return continueTargetLabels;
+        }
+        public nothrow inline List<Ir.Intf.LabelObject*>& ContinueTargetLabels()
+        {
+            return continueTargetLabels;
+        }
+        public override void AddBreakTargetLabel(Ir.Intf.LabelObject* breakTargetLabel) 
+        {
+            breakTargetLabels.Add(breakTargetLabel);
+        }
+        public override void AddContinueTargetLabel(Ir.Intf.LabelObject* continueTargetLabel)
+        {
+            continueTargetLabels.Add(continueTargetLabel);
+        }
+        public nothrow inline const HashSet<Cm.Core.CfgNode*>& BreakNextSet() const
+        {
+            return breakNextSet;
+        }
+        public nothrow inline HashSet<Cm.Core.CfgNode*>& BreakNextSet()
+        {
+            return breakNextSet;
+        }
+        public nothrow inline const HashSet<Cm.Core.CfgNode*>& ContinueNextSet() const
+        {
+            return continueNextSet;
+        }
+        public nothrow inline HashSet<Cm.Core.CfgNode*>& ContinueNextSet()
+        {
+            return continueNextSet;
+        }
+        public override void AddToBreakNextSet(Cm.Core.CfgNode* node)
+        {
+            breakNextSet.Insert(node);
+        }
+        public override void AddToContinueNextSet(Cm.Core.CfgNode* node)
+        {
+            continueNextSet.Insert(node);
+        }
+        private UniquePtr<BoundStatement> initS;
+        private UniquePtr<BoundExpression> condition;
+        private UniquePtr<BoundExpression> increment;
+        private UniquePtr<BoundStatement> action;
+        private List<Ir.Intf.LabelObject*> breakTargetLabels;
+        private List<Ir.Intf.LabelObject*> continueTargetLabels;
+        private HashSet<Cm.Core.CfgNode*> breakNextSet;
+        private HashSet<Cm.Core.CfgNode*> continueNextSet;
+    }
+}

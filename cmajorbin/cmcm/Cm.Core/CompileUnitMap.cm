@@ -1,0 +1,43 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Core
+{
+    public class CompileUnitMap : Cm.Sym.CompileUnitMap
+    {
+        public void MapCompileUnit(Cm.Ast.CompileUnitNode* compileUnitNode, Cm.Sym.BoundCompileUnit* boundCompileUnit)
+        {
+            boundCompileUnitMap[compileUnitNode] = boundCompileUnit;
+            compileUnitNodeMap[compileUnitNode->FilePath()] = compileUnitNode;
+        }
+        public Cm.Sym.BoundCompileUnit* GetBoundCompileUnit(Cm.Ast.CompileUnitNode* compileUnitNode)
+        {
+            HashMap<Cm.Ast.CompileUnitNode*, Cm.Sym.BoundCompileUnit*>.ConstIterator i = boundCompileUnitMap.CFind(compileUnitNode);
+            if (i != boundCompileUnitMap.CEnd())
+            {
+                return i->second;
+            }
+            return null;
+        }
+        public override Cm.Sym.BoundCompileUnit* GetBoundCompileUnit(const string& compileUnitFilePath)
+        {
+            HashMap<string, Cm.Ast.CompileUnitNode*>.ConstIterator i = compileUnitNodeMap.CFind(compileUnitFilePath);
+            if (i != compileUnitNodeMap.CEnd())
+            {
+                return GetBoundCompileUnit(i->second);
+            }
+            return null;
+        }
+        private HashMap<Cm.Ast.CompileUnitNode*, Cm.Sym.BoundCompileUnit*> boundCompileUnitMap;
+        private HashMap<string, Cm.Ast.CompileUnitNode*> compileUnitNodeMap;
+    }
+}

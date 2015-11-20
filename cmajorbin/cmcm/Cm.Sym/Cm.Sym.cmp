@@ -8,6 +8,7 @@ reference <../Cm.IrIntf/Cm.IrIntf.cml>;
 source <BasicType.cm>;
 source <ClassCounter.cm>;
 source <ClassTypeSymbol.cm>;
+source <CompileUnit.cm>;
 source <ConceptGroupSymbol.cm>;
 source <ConceptSymbol.cm>;
 source <Conditional.cm>;

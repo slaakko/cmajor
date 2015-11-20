@@ -18,6 +18,7 @@ class DeclarationVisitor : public Cm::Ast::Visitor
 {
 public:
     DeclarationVisitor(SymbolTable& symbolTable_);
+    void SetCidMap(std::unordered_map<std::string, uint64_t>* cidMap_);
     void SetTemplateType(Cm::Ast::ClassNode* templateClassNode_, Cm::Sym::TemplateTypeSymbol* templateType_);
     void MarkFunctionSymbolAsTemplateSpecialization() { markFunctionSymbolAsTemplateSpecialization = true; }
     void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
@@ -63,6 +64,7 @@ private:
     Cm::Ast::ClassNode* templateClassNode;
     Cm::Sym::TemplateTypeSymbol* templateType;
     bool markFunctionSymbolAsTemplateSpecialization;
+    std::unordered_map<std::string, uint64_t>* cidMap;
 };
 
 } } // namespace Cm::Sym

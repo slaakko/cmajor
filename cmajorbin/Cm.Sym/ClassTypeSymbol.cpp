@@ -33,7 +33,7 @@ ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_) : 
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, bool getNextId_, uint64_t cid_) :
-    TypeSymbol(span_, name_, getNextId_ ? TypeId(cid) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr),
+    TypeSymbol(span_, name_, getNextId_ ? TypeId(cid_) : TypeId()), flags(ClassTypeSymbolFlags::none), baseClass(nullptr), vptrIndex(-1), destructor(nullptr),
     staticConstructor(nullptr), initializedVar(nullptr), cid(cid_), key(0), level(0), priority(0), compileUnit(nullptr)
 {
 }

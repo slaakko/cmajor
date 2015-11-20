@@ -17,8 +17,13 @@
 namespace Cm { namespace Sym {
 
 DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : 
-    Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(nullptr), templateType(nullptr), markFunctionSymbolAsTemplateSpecialization(false)
+    Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(nullptr), templateType(nullptr), markFunctionSymbolAsTemplateSpecialization(false), cidMap(nullptr)
 {
+}
+
+void DeclarationVisitor::SetCidMap(std::unordered_map<std::string, uint64_t>* cidMap_)
+{
+    cidMap = cidMap_;
 }
 
 void DeclarationVisitor::SetTemplateType(Cm::Ast::ClassNode* templateClassNode_, Cm::Sym::TemplateTypeSymbol* templateType_)
@@ -45,7 +50,7 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::ClassNode& classNode)
     }
     else
     {
-        symbolTable.BeginClassScope(&classNode);
+        symbolTable.BeginClassScope(&classNode, cidMap);
     }
 }
 

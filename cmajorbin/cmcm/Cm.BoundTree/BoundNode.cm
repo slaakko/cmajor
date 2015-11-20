@@ -45,6 +45,12 @@ namespace Cm.BoundTree
             return syntaxNode;
         }
         public abstract void Accept(Visitor& visitor);
+        public virtual nothrow void SetCompoundTargetStatement(void* targetStatement) // todo: move to BcuItem
+        {
+        }
+        public virtual nothrow void SetLabeledStatement(void* labeledStatement) // todo: move to BcuItem
+        {
+        }
         public nothrow inline void SetFlag(BoundNodeFlags flag)
         {
             flags = cast<BoundNodeFlags>(flags | flag);

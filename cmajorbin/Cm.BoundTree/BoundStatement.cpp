@@ -14,7 +14,7 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), parent(nullptr), cfgNode(nullptr), statementId(noStatementdId)
+BoundStatement::BoundStatement(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_), parent(nullptr), cfgNode(nullptr), statementId(noStatementdId), labeledStatementId(noStatementdId)
 {
     if (syntaxNode_)
     {
